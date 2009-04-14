@@ -76,6 +76,7 @@ public final class JcrI18n {
     public static I18n errorWhileFindingNodeWithUuid;
     public static I18n errorWhileFindingNodeWithPath;
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
+    public static I18n noSnsDefinitionForNode;
     public static I18n missingNodeTypeForExistingNode;
     public static I18n unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
     public static I18n unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
@@ -109,6 +110,23 @@ public final class JcrI18n {
     public static I18n notStoredQuery;
     public static I18n invalidQueryLanguage;
 
+    // Type registration messages
+    public static I18n invalidNodeTypeName;
+    public static I18n nodeTypeAlreadyExists;
+    public static I18n invalidPrimaryTypeName;
+    public static I18n invalidSupertypeName;
+    public static I18n supertypesConflict;
+    public static I18n ambiguousPrimaryItemName;
+    public static I18n invalidPrimaryItemName;
+    public static I18n autocreatedNodesNeedDefaults;
+    public static I18n residualDefinitionsCannotBeMandatory;
+    public static I18n cannotOverrideProtectedDefinition;
+    public static I18n cannotMakeMandatoryDefinitionOptional;
+    public static I18n constraintsChangedInSubtype;
+    public static I18n cannotRedefineProperty;
+    public static I18n autocreatedPropertyNeedsDefault;
+    public static I18n singleValuedPropertyNeedsSingleValuedDefault;
+    
     static {
         try {
             I18n.initialize(JcrI18n.class);

@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -34,6 +35,19 @@ import org.jboss.dna.graph.property.ValueFormatException;
  * within the graph as {@link #getString() string values} on a property. These string values can later be
  * {@link #fromString(String, NameFactory) parsed} to reconstruct the identifier. Note that this string representation does not
  * use namespace prefixes, so they are long-lasting and durable.
+ * <p>
+ * What distinguishes one property definition from another is not well documented in the JSR-170 specification. The closest this
+ * version of the spec gets is Section 6.7.15, but that merely says that more than one property definition can have the same name.
+ * The proposed draft of the JSR-283 specification does clarify this more: Section 4.7.15 says :
+ * </p>
+ * <p>
+ * <quote>"Similarly, a node type may have two or more child node definitions with identical name attributes as long as they are
+ * distinguishable by the required primary types attribute (the value returned by
+ * NodeDefinition.getRequiredPrimaryTypes)."</quote>
+ * </p>
+ * <p>
+ * This class is {@link Serializable} and designed to be used as a key in a {@link HashMap}.
+ * </p>
  */
 @Immutable
 public final class NodeDefinitionId implements Serializable {
@@ -51,7 +65,10 @@ public final class NodeDefinitionId implements Serializable {
     private final Name nodeTypeName;
     private final Name childDefinitionName;
     private final Name[] requiredPrimaryTypes;
-    private final String stringVersion;
+    /**
+     * A cached string representation, which is used for {@link #equals(Object)} and {@link #hashCode()} among other things.
+     */
+    private final String stringRepresentation;
 
     /**
      * Create an identifier for a node definition.
@@ -75,7 +92,7 @@ public final class NodeDefinitionId implements Serializable {
             sb.append('/');
             sb.append(requiredPrimaryType.getString());
         }
-        this.stringVersion = sb.toString();
+        this.stringRepresentation = sb.toString();
     }
 
     /**
@@ -121,7 +138,7 @@ public final class NodeDefinitionId implements Serializable {
      * @return the string form
      */
     public String getString() {
-        return this.stringVersion;
+        return this.stringRepresentation;
     }
 
     /**
@@ -153,7 +170,7 @@ public final class NodeDefinitionId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return stringVersion.hashCode();
+        return stringRepresentation.hashCode();
     }
 
     /**
@@ -166,7 +183,7 @@ public final class NodeDefinitionId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof NodeDefinitionId) {
             NodeDefinitionId that = (NodeDefinitionId)obj;
-            return this.stringVersion.equals(that.stringVersion);
+            return this.stringRepresentation.equals(that.stringRepresentation);
         }
         return false;
     }
@@ -178,7 +195,7 @@ public final class NodeDefinitionId implements Serializable {
      */
     @Override
     public String toString() {
-        return this.stringVersion;
+        return this.stringRepresentation;
     }
 
 }

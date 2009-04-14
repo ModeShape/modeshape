@@ -166,6 +166,10 @@ class JcrSession implements Session {
         return this.executionContext.getNamespaceRegistry();
     }
 
+    JcrWorkspace workspace() {
+        return this.workspace;
+    }
+
     /**
      * {@inheritDoc}
      * 

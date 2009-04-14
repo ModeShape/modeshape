@@ -175,6 +175,10 @@ final class JcrWorkspace implements Workspace {
         return this.nodeTypeManager;
     }
 
+    final ExecutionContext context() {
+        return this.context;
+    }
+
     /**
      * {@inheritDoc}
      */

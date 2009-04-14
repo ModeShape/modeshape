@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import javax.jcr.PropertyType;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
@@ -35,6 +36,20 @@ import org.jboss.dna.graph.property.ValueFormatException;
  * stored within the graph as {@link #getString() string values} on a property. These string values can later be
  * {@link #fromString(String, NameFactory) parsed} to reconstruct the identifier. Note that this string representation does not
  * use namespace prefixes, so they are long-lasting and durable.
+ * <p>
+ * What distinguishes one property definition from another is not well documented in the JSR-170 specification. The closest this
+ * version of the spec gets is Section 6.7.15, but that merely says that more than one property definition can have the same name.
+ * The proposed draft of the JSR-283 specification does clarify this more: Section 4.7.15 says :
+ * </p>
+ * <p>
+ * <quote>"A node type may have two or more property definitions with identical name attributes (the value returned by
+ * ItemDefinition.getName) as long as the definitions are otherwise distinguishable by either the required type attribute (the
+ * value returned by PropertyDefinition.getRequiredType) or the multiple attribute (the value returned by
+ * PropertyDefinition.isMultiple)."</quote>
+ * </p>
+ * <p>
+ * This class is {@link Serializable} and designed to be used as a key in a {@link HashMap}.
+ * </p>
  */
 @Immutable
 public final class PropertyDefinitionId implements Serializable {
@@ -53,7 +68,10 @@ public final class PropertyDefinitionId implements Serializable {
     private final Name propertyDefinitionName;
     private final int propertyType;
     private final boolean allowsMultiple;
-    private final String stringVersion;
+    /**
+     * A cached string representation, which is used for {@link #equals(Object)} and {@link #hashCode()} among other things.
+     */
+    private final String stringRepresentation;
 
     /**
      * Create a new identifier for a propety definition.
@@ -73,8 +91,8 @@ public final class PropertyDefinitionId implements Serializable {
         this.propertyDefinitionName = propertyDefinitionName;
         this.propertyType = propertyType;
         this.allowsMultiple = allowsMultiple;
-        this.stringVersion = this.nodeTypeName.getString() + '/' + this.propertyDefinitionName.getString() + '/'
-                             + PropertyType.nameFromValue(propertyType) + '/' + (allowsMultiple ? '*' : '1');
+        this.stringRepresentation = this.nodeTypeName.getString() + '/' + this.propertyDefinitionName.getString() + '/'
+                                    + PropertyType.nameFromValue(propertyType) + '/' + (allowsMultiple ? '*' : '1');
     }
 
     /**
@@ -129,7 +147,7 @@ public final class PropertyDefinitionId implements Serializable {
      * @return the string form
      */
     public String getString() {
-        return this.stringVersion;
+        return this.stringRepresentation;
     }
 
     /**
@@ -167,7 +185,7 @@ public final class PropertyDefinitionId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return this.stringVersion.hashCode();
+        return this.stringRepresentation.hashCode();
     }
 
     /**
@@ -180,7 +198,7 @@ public final class PropertyDefinitionId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof PropertyDefinitionId) {
             PropertyDefinitionId that = (PropertyDefinitionId)obj;
-            return this.stringVersion.equals(that.stringVersion);
+            return this.stringRepresentation.equals(that.stringRepresentation);
         }
         return false;
     }
@@ -192,7 +210,7 @@ public final class PropertyDefinitionId implements Serializable {
      */
     @Override
     public String toString() {
-        return this.stringVersion;
+        return this.stringRepresentation;
     }
 
 }

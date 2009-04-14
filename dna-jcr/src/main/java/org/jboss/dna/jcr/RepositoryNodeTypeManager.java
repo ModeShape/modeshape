@@ -24,7 +24,9 @@
 package org.jboss.dna.jcr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.Map;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -47,6 +50,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.jcr.JcrNodeTypeSource;
 
 /**
  * The {@link RepositoryNodeTypeManager} is the maintainer of node type information for the entire repository at run-time. The
@@ -69,6 +73,27 @@ class RepositoryNodeTypeManager {
     private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions;
     private final PropertyFactory propertyFactory;
     private final PathFactory pathFactory;
+
+    /**
+     * List of ways to filter the returned property definitions
+     * 
+     * @see RepositoryNodeTypeManager#findPropertyDefinitions(List, Name, PropertyCardinality, List)
+     */
+    private enum PropertyCardinality {
+        SINGLE_VALUED_ONLY,
+        MULTI_VALUED_ONLY,
+        ANY
+    }
+
+    /**
+     * List of ways to filter the returned node definitions
+     * 
+     * @see RepositoryNodeTypeManager#findChildNodeDefinitions(List, Name, NodeCardinality, List)
+     */
+    private enum NodeCardinality {
+        NO_SAME_NAME_SIBLINGS,
+        SAME_NAME_SIBLINGS
+    }
 
     RepositoryNodeTypeManager( ExecutionContext context,
                                JcrNodeTypeSource source ) {
@@ -454,6 +479,52 @@ class RepositoryNodeTypeManager {
     }
 
     /**
+     * Searches the supplied primary and mixin node types for all valid property definitions that match the given property name
+     * and cardinality.
+     * <p>
+     * If no satisfactory property definition could be found, this method returns an empty list.
+     * </p>
+     * 
+     * @param typeNamesToCheck the name of the types to check; may not be null
+     * @param propertyName the name of the property for which the definitions should be retrieved
+     * @param typeToCheck the type of definitions to consider (single-valued only, multi-valued only, or all)
+     * @param pendingTypes a list of types that have been created during type registration but not yet registered in the type map
+     * @return a list of all valid property definitions that match the given property name and cardinality
+     */
+    private List<JcrPropertyDefinition> findPropertyDefinitions( List<Name> typeNamesToCheck,
+                                                                 Name propertyName,
+                                                                 PropertyCardinality typeToCheck,
+                                                                 List<JcrNodeType> pendingTypes ) {
+        assert typeNamesToCheck != null;
+        Collection<JcrPropertyDefinition> propDefs = null;
+        List<JcrPropertyDefinition> matchingDefs = new ArrayList<JcrPropertyDefinition>();
+
+        // Look for a single-value property definition on the mixin types that matches by name and type ...
+        for (Name typeNameToCheck : typeNamesToCheck) {
+            JcrNodeType typeName = findTypeInMapOrList(typeNameToCheck, pendingTypes);
+            if (typeName == null) continue;
+
+            switch (typeToCheck) {
+                case SINGLE_VALUED_ONLY:
+                    propDefs = typeName.allSingleValuePropertyDefinitions(propertyName);
+                    break;
+                case MULTI_VALUED_ONLY:
+                    propDefs = typeName.allMultiValuePropertyDefinitions(propertyName);
+                    break;
+                case ANY:
+                    propDefs = typeName.allPropertyDefinitions(propertyName);
+                    break;
+                default:
+                    throw new IllegalStateException("Should be unreachable: " + typeToCheck);
+            }
+
+            matchingDefs.addAll(propDefs);
+        }
+
+        return matchingDefs;
+    }
+
+    /**
      * Determine if the property definitions of the supplied primary type and mixin types allow the property with the supplied
      * name to be removed.
      * 
@@ -563,6 +634,50 @@ class RepositoryNodeTypeManager {
                                                                                          numberOfExistingChildrenWithSameName,
                                                                                          skipProtected);
         return null;
+    }
+
+    /**
+     * Searches the supplied primary and mixin node types for all valid child node definitions that match the given child node
+     * name and cardinality.
+     * <p>
+     * If no satisfactory child node definition could be found, this method returns an empty list.
+     * </p>
+     * 
+     * @param typeNamesToCheck the name of the types to check; may not be null
+     * @param childNodeName the name of the child node for which the definitions should be retrieved
+     * @param typesToCheck the type of definitions to consider (allows SNS or does not allow SNS)
+     * @param pendingTypes a list of types that have been created during type registration but not yet registered in the type map
+     * @return a list of all valid chlid node definitions that match the given child node name and cardinality
+     */
+    private List<JcrNodeDefinition> findChildNodeDefinitions( List<Name> typeNamesToCheck,
+                                                              Name childNodeName,
+                                                              NodeCardinality typesToCheck,
+                                                              List<JcrNodeType> pendingTypes ) {
+        assert typeNamesToCheck != null;
+        Collection<JcrNodeDefinition> nodeDefs = null;
+        List<JcrNodeDefinition> matchingDefs = new ArrayList<JcrNodeDefinition>();
+
+        for (Name typeNameToCheck : typeNamesToCheck) {
+            JcrNodeType typeName = findTypeInMapOrList(typeNameToCheck, pendingTypes);
+            if (typeName == null) continue;
+
+            switch (typesToCheck) {
+                case NO_SAME_NAME_SIBLINGS:
+                    nodeDefs = typeName.allChildNodeDefinitions(childNodeName);
+                    break;
+                case SAME_NAME_SIBLINGS:
+                    nodeDefs = typeName.allChildNodeDefinitions(childNodeName, true);
+                    break;
+            }
+
+            assert nodeDefs != null;
+            for (JcrNodeDefinition definition : nodeDefs) {
+                if (NodeCardinality.NO_SAME_NAME_SIBLINGS == typesToCheck && definition.allowsSameNameSiblings()) continue;
+                matchingDefs.add(definition);
+            }
+        }
+
+        return matchingDefs;
     }
 
     /**
@@ -819,4 +934,531 @@ class RepositoryNodeTypeManager {
 
         batch.create(nodeDefPath).with(propsList).and();
     }
+
+    /**
+     * Registers the node types from the given {@link JcrNodeTypeSource}.
+     * <p>
+     * The effect of this method is &quot;all or nothing&quot;; if an error occurs, no node types are registered or updated.
+     * </p>
+     * <p>
+     * <b>DNA Implementation Notes</b>
+     * </p>
+     * <p>
+     * DNA currently supports registration of batches of types with some constraints. DNA will allow types to be registered if
+     * they meet the following criteria:
+     * <ol>
+     * <li>Existing types cannot be modified in-place - They must be unregistered and re-registered</li>
+     * <li>Types must have a non-null, non-empty name</li>
+     * <li>If a primary item name is specified for the node type, it must match the name of a property OR a child node, not both</li>
+     * <li>Each type must have a valid set of supertypes - that is, the type's supertypes must meet the following criteria:
+     * <ol>
+     * <li>The type must have at least one supertype (unless the type is {@code nt:base}.</li>
+     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a property ({@code p1} and {@code p2}) with the
+     * same name and cardinality ({@code p1.isMultiple() == p2.isMultiple()}). Note that this does prohibit each {@code t1} and
+     * {@code t2} from having a common supertype (or super-supertype, etc.) that declares a property).</li>
+     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a child node ({@code n1} and {@code n2}) with the
+     * same name and SNS status ({@code p1.allowsSameNameSiblings() == p2.allowsSameNameSiblings()}). Note that this does prohibit
+     * each {@code t1} and {@code t2} from having a common supertype (or super-supertype, etc.) that declares a child node).</li>
+     * </ol>
+     * </li>
+     * <li>Each type must have a valid set of properties - that is, the type's properties must meet the following criteria:
+     * <ol>
+     * <li>Residual property definitions cannot be mandatory</li>
+     * <li>If the property is auto-created, it must specify a default value</li>
+     * <li>If the property is single-valued, it can only specify a single default value</li>
+     * <li>If the property overrides an existing property definition from a supertype, the new definition must be mandatory if the
+     * old definition was mandatory</li>
+     * <li>The property cannot override an existing property definition from a supertype if the ancestor definition is protected</li>
+     * <li>If the property overrides an existing property definition from a supertype that specifies value constraints, the new
+     * definition must have the same value constraints as the old definition. <i>This requirement may be relaxed in a future
+     * version of DNA.</i></li>
+     * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
+     * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
+     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * </ol>
+     * Note that an empty set of properties would meet the above criteria.</li>
+     * <li>The type must have a valid set of child nodes - that is, the types's child nodes must meet the following criteria:
+     * <ol>
+     * <li>Residual child node definitions cannot be mandatory</li>
+     * <li>If the child node is auto-created, it must specify a default primary type name</li>
+     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
+     * the batch. <i>This requirement may be relaxed in a future version of DNA.</i></li>
+     * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
+     * the old definition was mandatory</li>
+     * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
+     * protected</li>
+     * <li>If the child node overrides an existing child node definition from a supertype, the required primary types of the new
+     * definition must be more restrictive than the required primary types of the old definition - that is, the new primary types
+     * must defined such that any type that satisfies all of the required primary types for the new definition must also satisfy
+     * all of the required primary types for the old definition. This requirement is analogous to the requirement that overriding
+     * property definitions have a required type that is always convertible to the required type of the overridden definition.</li>
+     * </ol>
+     * Note that an empty set of child nodes would meet the above criteria.</li>
+     * </p>
+     * 
+     * @param nodeTypeSource the batch of {@link NodeType node types} to register
+     * @return the newly registered (or updated) {@link NodeType NodeTypes}
+     * @throws RepositoryException if any of the node types in the the {@link JcrNodeTypeSource} are invalid
+     * @throws RepositoryException if another error occurs
+     */
+    List<JcrNodeType> registerNodeTypes( JcrNodeTypeSource nodeTypeSource ) throws RepositoryException {
+
+        assert nodeTypeSource != null;
+        Collection<JcrNodeType> nodeTypeBatch = nodeTypeSource.getNodeTypes();
+
+        List<JcrNodeType> typesPendingRegistration = new ArrayList<JcrNodeType>(nodeTypeBatch.size());
+
+        for (JcrNodeType nodeType : nodeTypeBatch) {
+            if (nodeType.getInternalName() == null || nodeType.getName().length() == 0) {
+                throw new RepositoryException(JcrI18n.invalidNodeTypeName.text());
+            }
+
+            Name name = nodeType.getInternalName();
+
+            if (nodeTypes.containsKey(name)) {
+                throw new RepositoryException(JcrI18n.nodeTypeAlreadyExists.text(nodeType.getName()));
+            }
+
+            List<JcrNodeType> supertypes = supertypesFor(nodeType, typesPendingRegistration);
+
+            validate(nodeType, supertypes, typesPendingRegistration);
+
+            List<JcrPropertyDefinition> propertyDefs = new ArrayList<JcrPropertyDefinition>(
+                                                                                            nodeType.getDeclaredPropertyDefinitions().length);
+
+            for (JcrPropertyDefinition propertyDef : nodeType.getDeclaredPropertyDefinitions()) {
+                propertyDefs.add(propertyDef.with(this.context));
+            }
+
+            List<JcrNodeDefinition> nodeDefs = new ArrayList<JcrNodeDefinition>(nodeType.getDeclaredChildNodeDefinitions().length);
+
+            for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
+                JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.getRequiredPrimaryTypeNames().size()];
+
+                int i = 0;
+                for (Name primaryTypeName : nodeDef.getRequiredPrimaryTypeNames()) {
+                    requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
+
+                    if (requiredPrimaryTypes[i] == null) {
+                        throw new RepositoryException(JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName()));
+                    }
+                    i++;
+                }
+
+                nodeDefs.add(nodeDef.with(this.context));
+            }
+
+            JcrNodeType newNodeType = new JcrNodeType(this.context, this, name, supertypes,
+                                                      nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
+                                                      nodeType.isMixin(), nodeType.hasOrderableChildNodes());
+            typesPendingRegistration.add(newNodeType);
+        }
+
+        // Graph.Batch batch = graph.batch();
+        for (JcrNodeType nodeType : typesPendingRegistration) {
+            /*
+             * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
+             * solution (even it were also used for childNodeDefinitions and propertyDefinitions).
+             * Probably need to block all read access to these maps during this phase of registration.
+             */
+            nodeTypes.put(nodeType.getInternalName(), nodeType);
+            for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
+                childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+            }
+            for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+                propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+            }
+
+            // projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
+        }
+
+        // batch.execute();
+
+        return typesPendingRegistration;
+    }
+
+    /**
+     * Finds the named type in the given list of types pending registration if it exists, else returns the type definition from
+     * the repository
+     * 
+     * @param typeName the name of the type to retrieve
+     * @param pendingList a list of types that have passed validation but have not yet been committed to the repository
+     * @return the node type with the given name from {@code pendingList} if it exists in the list or from the {@link #nodeTypes
+     *         registered types} if it exists there; may be null
+     */
+    private JcrNodeType findTypeInMapOrList( Name typeName,
+                                             List<JcrNodeType> pendingList ) {
+        for (JcrNodeType pendingNodeType : pendingList) {
+            if (pendingNodeType.getInternalName().equals(typeName)) {
+                return pendingNodeType;
+            }
+        }
+
+        return nodeTypes.get(typeName);
+    }
+
+    /**
+     * Returns the list of node types for the supertypes defined in the given node type.
+     * 
+     * @param nodeType a node type with a non-null array of supertypes
+     * @param pendingTypes the list of types that have been processed in this type batch but not yet committed to the repository's
+     *        set of types
+     * @return a list of node types where each element is the node type for the corresponding element of the array of supertype
+     *         names
+     * @throws RepositoryException if any of the names in the array of supertype names does not correspond to an
+     *         already-registered node type or a node type that is pending registration
+     */
+    private List<JcrNodeType> supertypesFor( JcrNodeType nodeType,
+                                             List<JcrNodeType> pendingTypes ) throws RepositoryException {
+        assert nodeType != null;
+
+        // If no supertypes are provided, assume nt:base as a supertype
+        if (nodeType.getDeclaredSupertypes() == null || nodeType.getDeclaredSupertypes().length == 0) {
+            return Collections.<JcrNodeType>singletonList(nodeTypes.get(JcrNtLexicon.BASE));
+        }
+
+        JcrNodeType[] supertypesArray = nodeType.getDeclaredSupertypes();
+        List<JcrNodeType> supertypes = new ArrayList<JcrNodeType>(supertypesArray.length);
+
+        for (int i = 0; i < supertypesArray.length; i++) {
+            supertypes.add(findTypeInMapOrList(supertypesArray[i].getInternalName(), pendingTypes));
+
+            if (supertypes.get(i) == null) {
+                throw new RepositoryException(JcrI18n.invalidSupertypeName.text(supertypesArray[i].getInternalName(),
+                                                                                nodeType.getName()));
+            }
+        }
+
+        return supertypes;
+    }
+
+    /**
+     * Validates that the supertypes are compatible under DNA restrictions.
+     * <p>
+     * DNA imposes the following rules on the supertypes of a type:
+     * <ol>
+     * <li>The type must have at least one supertype (unless the type is {@code nt:base}.</li>
+     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a property ({@code p1} and {@code p2}) with the
+     * same name and cardinality ({@code p1.isMultiple() == p2.isMultiple()}). Note that this does prohibit each {@code t1} and
+     * {@code t2} from having a common supertype (or super-supertype, etc.) that declares a property).</li>
+     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a child node ({@code n1} and {@code n2}) with the
+     * same name and SNS status ({@code p1.allowsSameNameSiblings() == p2.allowsSameNameSiblings()}). Note that this does prohibit
+     * each {@code t1} and {@code t2} from having a common supertype (or super-supertype, etc.) that declares a child node).</li>
+     * </ol>
+     * </p>
+     * <p>
+     * If any of these rules are violated, a {@link RepositoryException} is thrown.
+     * </p>
+     * 
+     * @param supertypes the supertypes of this node type
+     * @param nodeName the name of the node for which the supertypes are being validated.
+     * @throws RepositoryException if any of the rules described above are violated
+     */
+    private void validate( List<JcrNodeType> supertypes,
+                           String nodeName ) throws RepositoryException {
+        assert supertypes.size() > 0; // This is reasonable now that we default to having a supertype of nt:base
+
+        Map<JcrPropertyDefinition.Key, JcrPropertyDefinition> props = new HashMap<JcrPropertyDefinition.Key, JcrPropertyDefinition>();
+
+        for (JcrNodeType supertype : supertypes) {
+            for (JcrPropertyDefinition property : supertype.propertyDefinitions()) {
+                JcrPropertyDefinition oldProp = props.put(property.getKey(false), property);
+                if (oldProp != null) {
+                    String oldPropTypeName = oldProp.getDeclaringNodeType().getName();
+                    String propTypeName = property.getDeclaringNodeType().getName();
+                    if (!oldPropTypeName.equals(propTypeName)) {
+                        throw new RepositoryException(JcrI18n.supertypesConflict.text(oldPropTypeName,
+                                                                                      propTypeName,
+                                                                                      "property",
+                                                                                      property.getName()));
+                    }
+                }
+            }
+        }
+
+        Map<JcrNodeDefinition.Key, JcrNodeDefinition> childNodes = new HashMap<JcrNodeDefinition.Key, JcrNodeDefinition>();
+
+        for (JcrNodeType supertype : supertypes) {
+            for (JcrNodeDefinition childNode : supertype.childNodeDefinitions()) {
+                JcrNodeDefinition oldNode = childNodes.put(childNode.getKey(false), childNode);
+                if (oldNode != null) {
+                    String oldNodeTypeName = oldNode.getDeclaringNodeType().getName();
+                    String childNodeTypeName = childNode.getDeclaringNodeType().getName();
+                    if (!oldNodeTypeName.equals(childNodeTypeName)) {
+                        throw new RepositoryException(JcrI18n.supertypesConflict.text(oldNodeTypeName,
+                                                                                      childNodeTypeName,
+                                                                                      "child node",
+                                                                                      childNode.getName()));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validates that the given node type definition is valid under the DNA and JCR type rules within the given context.
+     * <p>
+     * See {@link #registerNodeTypes(JcrNodeTypeSource)} for the list of criteria that determine whether a node type definition is
+     * valid.
+     * </p>
+     * 
+     * @param nodeType the node type to attempt to validate
+     * @param supertypes the names of the supertypes of the node type to which this child node belongs
+     * @param pendingTypes the list of types previously registered in this batch but not yet committed to the repository
+     * @throws RepositoryException if the given node type template is not valid
+     */
+    private void validate( JcrNodeType nodeType,
+                           List<JcrNodeType> supertypes,
+                           List<JcrNodeType> pendingTypes ) throws RepositoryException {
+        validate(supertypes, nodeType.getName());
+
+        List<Name> supertypeNames = new ArrayList<Name>(supertypes.size());
+        for (JcrNodeType supertype : supertypes)
+            supertypeNames.add(supertype.getInternalName());
+
+        boolean found = false;
+        String primaryItemName = nodeType.getPrimaryItemName();
+        for (JcrNodeDefinition node : nodeType.getDeclaredChildNodeDefinitions()) {
+            validate(node, supertypeNames, pendingTypes);
+
+            if (primaryItemName != null && primaryItemName.equals(node.getName())) {
+                found = true;
+            }
+        }
+
+        for (JcrPropertyDefinition prop : nodeType.getDeclaredPropertyDefinitions()) {
+            validate(prop, supertypeNames, pendingTypes);
+            if (primaryItemName != null && primaryItemName.equals(prop.getName())) {
+                if (found) {
+                    throw new RepositoryException(JcrI18n.ambiguousPrimaryItemName.text(primaryItemName));
+                }
+                found = true;
+            }
+        }
+
+        if (primaryItemName != null && !found) {
+            throw new RepositoryException(JcrI18n.invalidPrimaryItemName.text(primaryItemName));
+        }
+    }
+
+    /**
+     * Validates that the given child node definition is valid under the DNA and JCR type rules within the given context.
+     * <p>
+     * DNA considers a child node definition valid if it meets these criteria:
+     * <ol>
+     * <li>Residual child node definitions cannot be mandatory</li>
+     * <li>If the child node is auto-created, it must specify a default primary type name</li>
+     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
+     * the batch. This requirement may be relaxed in a future version of DNA.</li>
+     * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
+     * the old definition was mandatory</li>
+     * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
+     * protected</li>
+     * <li>If the child node overrides an existing child node definition from a supertype, the required primary types of the new
+     * definition must be more restrictive than the required primary types of the old definition - that is, the new primary types
+     * must defined such that any type that satisfies all of the required primary types for the new definition must also satisfy
+     * all of the required primary types for the old definition. This requirement is analogous to the requirement that overriding
+     * property definitions have a required type that is always convertible to the required type of the overridden definition.</li>
+     * </ol>
+     * </p>
+     * 
+     * @param node the child node definition to be validated
+     * @param supertypes the names of the supertypes of the node type to which this child node belongs
+     * @param pendingTypes the list of types previously registered in this batch but not yet committed to the repository
+     * @throws RepositoryException if the child node definition is not valid
+     */
+    private void validate( JcrNodeDefinition node,
+                           List<Name> supertypes,
+                           List<JcrNodeType> pendingTypes ) throws RepositoryException {
+        if (node.isAutoCreated() && node.getDefaultPrimaryType() == null) {
+            throw new RepositoryException(JcrI18n.autocreatedNodesNeedDefaults.text());
+        }
+        if (node.isMandatory() && node.getName() == null) {
+            throw new RepositoryException(JcrI18n.residualDefinitionsCannotBeMandatory.text("child nodes"));
+        }
+
+        Name nodeName = context.getValueFactories().getNameFactory().create(node.getName());
+        nodeName = nodeName == null ? JcrNodeType.RESIDUAL_NAME : nodeName;
+
+        List<JcrNodeDefinition> ancestors = findChildNodeDefinitions(supertypes,
+                                                                     nodeName,
+                                                                     node.allowsSameNameSiblings() ? NodeCardinality.SAME_NAME_SIBLINGS : NodeCardinality.NO_SAME_NAME_SIBLINGS,
+                                                                     pendingTypes);
+
+        for (JcrNodeDefinition ancestor : ancestors) {
+            if (ancestor.isProtected()) {
+                throw new RepositoryException(
+                                              JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                                                             "child node"));
+            }
+
+            if (ancestor.isMandatory() && !node.isMandatory()) {
+                throw new RepositoryException(
+                                              JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                                                                 "child node"));
+
+            }
+
+            for (int i = 0; i < ancestor.getRequiredPrimaryTypes().length; i++) {
+                NodeType apt = ancestor.getRequiredPrimaryTypes()[i];
+                boolean found = false;
+                for (Name name : node.getRequiredPrimaryTypeNames()) {
+                    JcrNodeType npt = findTypeInMapOrList(name, pendingTypes);
+
+                    if (npt.isNodeType(apt.getName())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new RepositoryException(
+                                                  "Cannot redefine child node '"
+                                                  + nodeName
+                                                  + "' with required type '"
+                                                  + apt.getName()
+                                                  + "' with new child node that does not required that type or a subtype of that type.");
+
+                }
+            }
+        }
+    }
+
+    /**
+     * Validates that the given property definition is valid under the DNA and JCR type rules within the given context.
+     * <p>
+     * DNA considers a property definition valid if it meets these criteria:
+     * <ol>
+     * <li>Residual properties cannot be mandatory</li>
+     * <li>If the property is auto-created, it must specify a default value</li>
+     * <li>If the property is single-valued, it can only specify a single default value</li>
+     * <li>If the property overrides an existing property definition from a supertype, the new definition must be mandatory if the
+     * old definition was mandatory</li>
+     * <li>The property cannot override an existing property definition from a supertype if the ancestor definition is protected</li>
+     * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
+     * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
+     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * </ol>
+     * Note that an empty set of properties would meet the criteria above.
+     * </p>
+     * 
+     * @param prop the property definition to be validated
+     * @param supertypes the names of the supertypes of the node type to which this property belongs
+     * @param pendingTypes the list of types previously registered in this batch but not yet committed to the repository
+     * @throws RepositoryException if the property definition is not valid
+     */
+    private void validate( JcrPropertyDefinition prop,
+                           List<Name> supertypes,
+                           List<JcrNodeType> pendingTypes ) throws RepositoryException {
+        assert prop != null;
+        assert supertypes != null;
+        assert pendingTypes != null;
+
+        if (prop.isMandatory() && !prop.isProtected() && prop.getName() == null) {
+            throw new RepositoryException(JcrI18n.residualDefinitionsCannotBeMandatory.text("properties"));
+        }
+
+        Value[] defaultValues = prop.getDefaultValues();
+        if (prop.isAutoCreated() && !prop.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
+            throw new RepositoryException(JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
+                                                                                       prop.getDeclaringNodeType().getName()));
+        }
+
+        if (!prop.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
+            throw new RepositoryException(
+                                          JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(prop.getName(),
+                                                                                                    prop.getDeclaringNodeType().getName()));
+        }
+
+        Name propName = context.getValueFactories().getNameFactory().create(prop.getName());
+        propName = propName == null ? JcrNodeType.RESIDUAL_NAME : propName;
+
+        List<JcrPropertyDefinition> ancestors = findPropertyDefinitions(supertypes,
+                                                                        propName,
+                                                                        prop.isMultiple() ? PropertyCardinality.MULTI_VALUED_ONLY : PropertyCardinality.SINGLE_VALUED_ONLY,
+                                                                        pendingTypes);
+
+        for (JcrPropertyDefinition ancestor : ancestors) {
+            if (ancestor.isProtected()) {
+                throw new RepositoryException(
+                                              JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                                                             "property"));
+            }
+
+            if (ancestor.isMandatory() && !prop.isMandatory()) {
+                throw new RepositoryException(
+                                              JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                                                                 "property"));
+
+            }
+
+            // TODO: It would be nice if we could allow modification of constraints if the new constraints were more strict than
+            // the old
+            if (ancestor.getValueConstraints() != null
+                && !Arrays.equals(ancestor.getValueConstraints(), prop.getValueConstraints())) {
+                throw new RepositoryException(JcrI18n.constraintsChangedInSubtype.text(propName,
+                                                                                       ancestor.getDeclaringNodeType().getName()));
+            }
+
+            if (!isAlwaysSafeConversion(prop.getRequiredType(), ancestor.getRequiredType())) {
+                throw new RepositoryException(
+                                              JcrI18n.cannotRedefineProperty.text(propName,
+                                                                                  PropertyType.nameFromValue(prop.getRequiredType()),
+                                                                                  ancestor.getDeclaringNodeType().getName(),
+                                                                                  PropertyType.nameFromValue(ancestor.getRequiredType())));
+
+            }
+        }
+    }
+
+    /**
+     * Returns whether it is always possible to convert a value with JCR property type {@code fromType} to {@code toType}.
+     * <p>
+     * This method is based on the conversions which can never throw an exception in the chart in section 6.2.6 of the JCR 1.0.1
+     * specification.
+     * </p>
+     * 
+     * @param fromType the type to be converted from
+     * @param toType the type to convert to
+     * @return true if any value with type {@code fromType} can be converted to a type of {@code toType} without a
+     *         {@link ValueFormatException} being thrown.
+     * @see PropertyType
+     */
+    private boolean isAlwaysSafeConversion( int fromType,
+                                            int toType ) {
+
+        if (fromType == toType) return true;
+
+        switch (toType) {
+            case PropertyType.BOOLEAN:
+                return fromType == PropertyType.BINARY || fromType == PropertyType.STRING;
+
+            case PropertyType.DATE:
+                return fromType == PropertyType.DOUBLE || fromType == PropertyType.LONG;
+
+            case PropertyType.DOUBLE:
+                // Conversion from DATE could result in out-of-range value
+                return fromType == PropertyType.LONG;
+            case PropertyType.LONG:
+                // Conversion from DATE could result in out-of-range value
+                return fromType == PropertyType.DOUBLE;
+
+            case PropertyType.PATH:
+                return fromType == PropertyType.NAME;
+
+                // Values of any type MAY fail when converting to these types
+            case PropertyType.NAME:
+            case PropertyType.REFERENCE:
+                return false;
+
+                // Any type can be converted to these types
+            case PropertyType.BINARY:
+            case PropertyType.STRING:
+            case PropertyType.UNDEFINED:
+                return true;
+
+            default:
+                throw new IllegalStateException("Unexpected state: " + toType);
+        }
+    }
+
 }

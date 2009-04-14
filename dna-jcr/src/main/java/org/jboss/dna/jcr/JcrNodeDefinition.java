@@ -27,11 +27,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 
 /**
  * DNA implementation of the {@link NodeDefinition} class.
@@ -216,6 +220,75 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     @Override
     public String toString() {
         return getId().toString();
+    }
+
+    Key getKey(boolean includeTypes) {
+        return new Key(this, includeTypes);
+    }
+
+    /**
+     * Internal class that encapsulates composite unique identifier for child node definitions
+     */
+    class Key {
+        String keyString;
+
+        Key( Node node,
+             NamespaceRegistry registry ) throws Exception {
+            StringBuffer buff = new StringBuffer();
+
+            try {
+                String nodeName = node.getProperty(JcrLexicon.NAME.getString(registry)).getString();
+                buff.append(nodeName);
+            } catch (PathNotFoundException pnfe) {
+                // Ignorable, means name is not set.
+                buff.append(JcrNodeType.RESIDUAL_ITEM_NAME);
+            }
+
+            try {
+                Value[] requiredTypes = node.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry)).getValues();
+
+                for (int i = 0; i < requiredTypes.length; i++) {
+                    buff.append('_').append(requiredTypes[i].getString());
+                }
+            } catch (PathNotFoundException pnfe) {
+                // No required types. Weird, but not debilitating.
+            }
+
+            buff.append('_').append(node.getProperty(JcrLexicon.SAME_NAME_SIBLINGS.getString(registry)).getBoolean());
+
+            this.keyString = buff.toString();
+        }
+
+        Key( NodeDefinition def,
+             boolean includeTypes ) {
+            StringBuffer buff = new StringBuffer();
+            buff.append(def.getName());
+
+            if (includeTypes) {
+                NodeType[] requiredTypes = def.getRequiredPrimaryTypes();
+                for (int i = 0; i < requiredTypes.length; i++) {
+                    buff.append('_').append(requiredTypes[i].getName());
+                }
+            }
+
+            buff.append('_').append(def.allowsSameNameSiblings());
+
+            this.keyString = buff.toString();
+        }
+
+        @Override
+        public boolean equals( Object ob ) {
+            if (!(ob instanceof Key)) {
+                return false;
+            }
+
+            return keyString.equals(((Key)ob).keyString);
+        }
+
+        @Override
+        public int hashCode() {
+            return keyString.hashCode();
+        }
     }
 
 }

@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
@@ -334,7 +333,7 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#getDeclaredChildNodeDefinitions()
      */
-    public NodeDefinition[] getDeclaredChildNodeDefinitions() {
+    public JcrNodeDefinition[] getDeclaredChildNodeDefinitions() {
         // Always have to make a copy to prevent changes ...
         return childNodeDefinitions.toArray(new JcrNodeDefinition[childNodeDefinitions.size()]);
     }
@@ -344,10 +343,10 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#getChildNodeDefinitions()
      */
-    public NodeDefinition[] getChildNodeDefinitions() {
+    public JcrNodeDefinition[] getChildNodeDefinitions() {
         // Always have to make a copy to prevent changes ...
         Collection<JcrNodeDefinition> definitions = this.allDefinitions.allChildNodeDefinitions();
-        return definitions.toArray(new NodeDefinition[definitions.size()]);
+        return definitions.toArray(new JcrNodeDefinition[definitions.size()]);
     }
 
     /**
@@ -355,10 +354,10 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#getPropertyDefinitions()
      */
-    public PropertyDefinition[] getPropertyDefinitions() {
+    public JcrPropertyDefinition[] getPropertyDefinitions() {
         // Always have to make a copy to prevent changes ...
         Collection<JcrPropertyDefinition> definitions = this.allDefinitions.allPropertyDefinitions();
-        return definitions.toArray(new PropertyDefinition[definitions.size()]);
+        return definitions.toArray(new JcrPropertyDefinition[definitions.size()]);
     }
 
     /**
@@ -366,9 +365,9 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#getDeclaredSupertypes()
      */
-    public NodeType[] getDeclaredSupertypes() {
+    public JcrNodeType[] getDeclaredSupertypes() {
         // Always have to make a copy to prevent changes ...
-        return declaredSupertypes.toArray(new NodeType[declaredSupertypes.size()]);
+        return declaredSupertypes.toArray(new JcrNodeType[declaredSupertypes.size()]);
     }
 
     /**
@@ -382,13 +381,23 @@ class JcrNodeType implements NodeType {
     }
 
     /**
-     * Returns the internal {@link Name} object for the note type. This method exists outside the JCR API and should not be
+     * Returns the internal {@link Name} object for the node type. This method exists outside the JCR API and should not be
      * exposed outside of the package.
      * 
-     * @return the internal {@link Name} object for the note type.
+     * @return the internal {@link Name} object for the node type.
      */
     Name getInternalName() {
         return name;
+    }
+
+    /**
+     * Returns the internal {@link Name} object for the primary item of this node type. This method exists outside the JCR API and
+     * should not be exposed outside of the package.
+     * 
+     * @return the internal {@link Name} object for the primary item of this node type.
+     */
+    Name getInternalPrimaryItemName() {
+        return primaryItemName;
     }
 
     /**
@@ -410,7 +419,7 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#getDeclaredPropertyDefinitions()
      */
-    public PropertyDefinition[] getDeclaredPropertyDefinitions() {
+    public JcrPropertyDefinition[] getDeclaredPropertyDefinitions() {
         return propertyDefinitions.toArray(new JcrPropertyDefinition[propertyDefinitions.size()]);
     }
 
