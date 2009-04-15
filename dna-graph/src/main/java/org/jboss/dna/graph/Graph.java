@@ -1899,7 +1899,7 @@ public class Graph {
      * @see Results
      */
     public Batch batch() {
-        return new Batch(null);
+        return new Batch(new BatchRequestBuilder());
     }
 
     /**
@@ -1933,7 +1933,8 @@ public class Graph {
         protected boolean executed = false;
 
         /*package*/Batch( BatchRequestBuilder builder ) {
-            this.requestQueue = builder != null ? builder : new BatchRequestBuilder();
+            assert builder != null;
+            this.requestQueue = builder;
             this.workspaceName = Graph.this.getCurrentWorkspaceName();
             this.nextRequests = new BatchConjunction() {
                 public Batch and() {
@@ -1961,7 +1962,7 @@ public class Graph {
          * @return true if there are some requests in this batch that need to be executed, or false execution is not required
          */
         public boolean isExecuteRequired() {
-            return !executed || requestQueue.hasRequests();
+            return !executed && requestQueue.hasRequests();
         }
 
         /**

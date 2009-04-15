@@ -72,6 +72,7 @@ public class BatchRequestBuilder {
         if (pendingRequest != null) {
             // There's a pending request, we need to build it ...
             add(pendingRequest.toRequest());
+            pendingRequest = null;
         }
     }
 

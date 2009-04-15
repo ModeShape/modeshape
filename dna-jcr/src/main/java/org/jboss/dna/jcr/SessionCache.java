@@ -186,7 +186,7 @@ public class SessionCache {
         // Create the batch operations ...
         this.requests = new LinkedList<Request>();
         this.requestBuilder = new BatchRequestBuilder(this.requests);
-        this.operations = this.store.batch();
+        this.operations = this.store.batch(this.requestBuilder);
     }
 
     JcrSession session() {
