@@ -1,3 +1,26 @@
+/*
+ * JBoss DNA (http://www.jboss.org/dna)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * JBoss DNA is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.jboss.dna.jcr;
 
 import java.io.IOException;
@@ -80,7 +103,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             Property specialProperty = ((AbstractJcrNode)node).getProperty(specialPropertyName);
 
             if (specialProperty != null) {
-                emitProperty(specialProperty, contentHandler);
+                emitProperty(specialProperty, contentHandler, skipBinary);
             }
         }
 
@@ -119,11 +142,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             return;
         }
 
-        if (skipBinary && PropertyType.BINARY == prop.getType()) {
-            return;
-        }
-
-        emitProperty(property, contentHandler);
+        emitProperty(property, contentHandler, skipBinary);
     }
 
     /**
@@ -131,11 +150,13 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
      * 
      * @param property the property to be exported
      * @param contentHandler the SAX content handler for which SAX events will be invoked as the XML document is created.
+     * @param skipBinary if <code>true</code>, indicates that binary properties should not be exported
      * @throws SAXException if an exception occurs during generation of the XML document
      * @throws RepositoryException if an exception occurs accessing the content repository
      */
     private void emitProperty( Property property,
-                               ContentHandler contentHandler ) throws RepositoryException, SAXException {
+                               ContentHandler contentHandler,
+                               boolean skipBinary ) throws RepositoryException, SAXException {
         assert property instanceof AbstractJcrProperty : "Illegal attempt to use " + getClass().getName()
                                                          + " on non-DNA property";
 
@@ -164,10 +185,10 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             Value[] values = prop.getValues();
             for (int i = 0; i < values.length; i++) {
 
-                emitValue(values[i], contentHandler, property.getType());
+                emitValue(values[i], contentHandler, property.getType(), skipBinary);
             }
         } else {
-            emitValue(property.getValue(), contentHandler, property.getType());
+            emitValue(property.getValue(), contentHandler, property.getType(), skipBinary);
         }
 
         // end the sv:property element
@@ -180,30 +201,35 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
      * @param value the value to be exported
      * @param contentHandler the SAX content handler for which SAX events will be invoked as the XML document is created.
      * @param propertyType the {@link PropertyType} for the given value
+     * @param skipBinary if <code>true</code>, indicates that binary properties should not be exported
      * @throws SAXException if an exception occurs during generation of the XML document
      * @throws RepositoryException if an exception occurs accessing the content repository
      */
     private void emitValue( Value value,
                             ContentHandler contentHandler,
-                            int propertyType ) throws RepositoryException, SAXException {
+                            int propertyType,
+                            boolean skipBinary ) throws RepositoryException, SAXException {
 
         if (PropertyType.BINARY == propertyType) {
             startElement(contentHandler, JcrSvLexicon.VALUE, null);
 
-            byte[] bytes = new byte[BASE_64_BUFFER_SIZE];
-            int len;
+            // Per section 6.5 of the 1.0.1 spec, we need to emit one empty-value tag for each value if the property is
+            // multi-valued and skipBinary is true
+            if (!skipBinary) {
+                byte[] bytes = new byte[BASE_64_BUFFER_SIZE];
+                int len;
 
-            try {
-                InputStream stream = new Base64.InputStream(value.getStream(), Base64.ENCODE | Base64.URL_SAFE
-                                                                               | Base64.DONT_BREAK_LINES);
+                try {
+                    InputStream stream = new Base64.InputStream(value.getStream(), Base64.ENCODE | Base64.URL_SAFE
+                                                                                   | Base64.DONT_BREAK_LINES);
 
-                while (-1 != (len = stream.read(bytes))) {
-                    contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
+                    while (-1 != (len = stream.read(bytes))) {
+                        contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
+                    }
+                } catch (IOException ioe) {
+                    throw new RepositoryException(ioe);
                 }
-            } catch (IOException ioe) {
-                throw new RepositoryException(ioe);
             }
-
             endElement(contentHandler, JcrSvLexicon.VALUE);
         } else {
             String s = value.getString();
