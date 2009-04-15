@@ -40,6 +40,7 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
@@ -62,7 +63,7 @@ public class XmlHandlerTest {
 
     private XmlHandler handler;
     private ExecutionContext context;
-    private XmlHandler.Destination destination;
+    private Destination destination;
     private boolean skipRootElement = false;
     private Path parentPath;
     private TextDecoder decoder;
@@ -432,7 +433,7 @@ public class XmlHandlerTest {
         }
     }
 
-    protected class RecordingDestination implements XmlHandler.Destination {
+    protected class RecordingDestination implements Destination {
         private final LinkedList<CreateNodeRequest> requests = new LinkedList<CreateNodeRequest>();
         private final String workspace = "Recording Workspace";
 

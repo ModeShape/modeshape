@@ -34,6 +34,7 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -405,46 +406,4 @@ public class XmlHandler extends DefaultHandler2 {
         return result;
     }
 
-    /**
-     * Interface used internally as the destination for the requests. This is used to abstract whether the requests should be
-     * submitted immediately or in a single batch.
-     * 
-     * @author Randall Hauch
-     */
-    @NotThreadSafe
-    public static interface Destination {
-
-        /**
-         * Obtain the execution context of the destination.
-         * 
-         * @return the destination's execution context
-         */
-        public ExecutionContext getExecutionContext();
-
-        /**
-         * Create a node at the supplied path and with the supplied attributes. The path will be absolute.
-         * 
-         * @param path the absolute path of the node
-         * @param properties the properties for the node; never null, but may be empty if there are no properties
-         */
-        public void create( Path path,
-                            List<Property> properties );
-
-        /**
-         * Create a node at the supplied path and with the supplied attributes. The path will be absolute.
-         * 
-         * @param path the absolute path of the node
-         * @param firstProperty the first property
-         * @param additionalProperties the remaining properties for the node
-         */
-        public void create( Path path,
-                            Property firstProperty,
-                            Property... additionalProperties );
-
-        /**
-         * Signal to this destination that any enqueued create requests should be submitted. Usually this happens at the end of
-         * the document parsing, but an implementer must allow for it to be called multiple times and anytime during parsing.
-         */
-        public void submit();
-    }
 }

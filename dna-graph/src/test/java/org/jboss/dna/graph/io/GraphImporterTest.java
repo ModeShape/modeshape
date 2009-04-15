@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph;
+package org.jboss.dna.graph.io;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -36,6 +36,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -156,7 +160,9 @@ public class GraphImporterTest {
             lastExecutedRequest = request;
             if (request instanceof VerifyWorkspaceRequest) {
                 VerifyWorkspaceRequest workspaceRequest = (VerifyWorkspaceRequest)request;
-                workspaceRequest.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
+                workspaceRequest.setActualRootLocation(Location.create(context.getValueFactories()
+                                                                              .getPathFactory()
+                                                                              .createRootPath()));
                 workspaceRequest.setActualWorkspaceName("default");
             }
         }

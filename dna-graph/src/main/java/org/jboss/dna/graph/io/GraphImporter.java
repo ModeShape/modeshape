@@ -21,23 +21,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph;
+package org.jboss.dna.graph.io;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
-import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.JcrNtLexicon;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.xml.XmlHandler;
-import org.jboss.dna.graph.xml.XmlHandler.Destination;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -164,7 +165,7 @@ public class GraphImporter {
 
         // Create the destination for the XmlHandler ...
         Graph.Batch batch = graph.batch();
-        XmlHandler.Destination destination = new CreateOnGraphInBatch(batch);
+        Destination destination = new GraphBatchDestination(batch, true);
 
         // Determine where the content is to be placed ...
         Path parentPath = location.getPath();
@@ -206,7 +207,7 @@ public class GraphImporter {
 
         // Create the destination for the XmlHandler ...
         Graph.Batch batch = graph.batch();
-        XmlHandler.Destination destination = new SubmitToGraphInBatch(batch);
+        Destination destination = new GraphBatchDestination(batch, false);
 
         // Determine where the content is to be placed ...
         Path parentPath = location.getPath();
@@ -223,56 +224,6 @@ public class GraphImporter {
         XmlHandler handler = new XmlHandler(destination, skip, parentPath, decoder, nameAttribute, typeAttribute,
                                             typeAttributeValue, scoping);
         return handler;
-    }
-
-    @NotThreadSafe
-    protected static class CreateOnGraphInBatch implements Destination {
-        protected final Graph.Batch batch;
-
-        protected CreateOnGraphInBatch( Graph.Batch batch ) {
-            assert batch != null;
-            this.batch = batch;
-        }
-
-        public ExecutionContext getExecutionContext() {
-            return batch.getGraph().getContext();
-        }
-
-        public void create( Path path,
-                            List<Property> properties ) {
-            assert properties != null;
-            if (properties.isEmpty()) {
-                batch.create(path).and();
-            } else {
-                batch.create(path, properties).and();
-            }
-        }
-
-        public void create( Path path,
-                            Property firstProperty,
-                            Property... additionalProperties ) {
-            if (firstProperty == null) {
-                batch.create(path).and();
-            } else {
-                batch.create(path, firstProperty, additionalProperties).and();
-            }
-        }
-
-        public void submit() {
-        }
-    }
-
-    @NotThreadSafe
-    protected final static class SubmitToGraphInBatch extends CreateOnGraphInBatch {
-        protected SubmitToGraphInBatch( Graph.Batch batch ) {
-            super(batch);
-        }
-
-        @Override
-        public void submit() {
-            super.submit();
-            batch.execute();
-        }
     }
 
 }

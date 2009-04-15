@@ -50,6 +50,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;

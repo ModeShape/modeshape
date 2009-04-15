@@ -72,12 +72,12 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.GraphImporter;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.jcr.JcrRepository.Options;
 
