@@ -462,6 +462,9 @@ class JcrSession implements Session {
             }
 
             public Value createValue( Node value ) throws RepositoryException {
+                if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
+                    throw new RepositoryException();
+                }
                 String uuid = valueFactories.getStringFactory().create(value.getUUID());
                 return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, uuid);
             }

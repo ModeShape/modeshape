@@ -336,9 +336,18 @@ public class JcrSessionTest {
         assertThat(factory.createValue(0L), notNullValue());
         Node node = Mockito.mock(Node.class);
         stub(node.getUUID()).toReturn(UUID.randomUUID().toString());
+        stub(node.isNodeType("mix:referenceable")).toReturn(true);
         assertThat(factory.createValue(node), notNullValue());
         assertThat(factory.createValue(""), notNullValue());
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
+    }
+
+    @Test (expected=RepositoryException.class)
+    public void shouldNotCreateValueForNonReferenceableNode() throws Exception {
+        ValueFactory factory = session.getValueFactory();
+        Node node = Mockito.mock(Node.class);
+        stub(node.getUUID()).toReturn(UUID.randomUUID().toString());
+        factory.createValue(node);
     }
 
     @Test
