@@ -571,11 +571,10 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @return false
      * @see javax.jcr.Session#hasPendingChanges()
      */
     public boolean hasPendingChanges() {
-        return false;
+        return cache.hasPendingChanges();
     }
 
     /**

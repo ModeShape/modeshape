@@ -218,6 +218,15 @@ public class SessionCache {
     }
 
     /**
+     * Returns whether the session cache has any pending changes that need to be executed.
+     * 
+     * @return true if there are pending changes, or false if there is currently no changes
+     */
+    boolean hasPendingChanges() {
+        return operations.isExecuteRequired();
+    }
+
+    /**
      * Save any changes that have been accumulated by this session.
      * 
      * @throws RepositoryException if any error resulting while saving the changes to the repository
@@ -785,8 +794,8 @@ public class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -886,7 +895,7 @@ public class SessionCache {
                 if (desiredUuid == null) {
                     desiredUuid = UUID.randomUUID();
                 }
-                
+
                 // We know that this property is single-valued
                 JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, desiredUuid.toString());
                 PropertyDefinition propertyDefinition = nodeTypes().findPropertyDefinition(primaryTypeName,
@@ -898,7 +907,8 @@ public class SessionCache {
                 PropertyId propId = new PropertyId(desiredUuid, JcrLexicon.UUID);
                 JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
                 org.jboss.dna.graph.property.Property uuidProperty = propertyFactory.create(JcrLexicon.UUID, desiredUuid);
-                PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple());
+                PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty,
+                                                         defn.isMultiple());
                 properties.put(JcrLexicon.UUID, propInfo);
             }
 
@@ -936,7 +946,10 @@ public class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
+                                                         .nodeNamed(name)
+                                                         .with(desiredUuid)
+                                                         .with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
