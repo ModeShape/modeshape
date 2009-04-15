@@ -615,6 +615,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(mixinName, "mixinName");
         CheckArg.isNotZeroLength(mixinName, "mixinName");
 
+        /*
+         * Special workaround for SeralizationTest (and others) in JR TCK that incorrectly test whether a repository supports
+         * versioning by trying to add mix:versionable to a node.  The 1.0.1 says in section 4.11 that: 
+         * "A node is versionable if and only if it has been assigned the mixin type mix:versionable,
+         * otherwise it is nonversionable. Repositories that do not support versioning will simply not 
+         * provide this mixin type, whereas repositories that do support versioning must provide it."
+         */
+        if (JcrMixLexicon.VERSIONABLE.getString(namespaces()).equals(mixinName)) {
+            return false;
+        }
+
         JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
 
         if (this.isLocked()) {
@@ -1354,7 +1365,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#checkout()
      */
-    public final void checkout() throws UnsupportedRepositoryOperationException  {
+    public final void checkout() throws UnsupportedRepositoryOperationException {
         throw new UnsupportedRepositoryOperationException();
     }
 

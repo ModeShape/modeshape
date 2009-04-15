@@ -55,7 +55,6 @@ public class TypeRegistrationTest {
     private JcrNodeType referenceable;
     private JcrNodeType unstructured;
     private JcrNodeType root;
-    private JcrNodeType versionHistory;
     private JcrNodeType hierarchyNode;
     private JcrNodeType file;
 
@@ -74,7 +73,6 @@ public class TypeRegistrationTest {
         referenceable = repoTypeManager.getNodeType(JcrMixLexicon.REFERENCEABLE);
         unstructured = repoTypeManager.getNodeType(JcrNtLexicon.UNSTRUCTURED);
         root = repoTypeManager.getNodeType(DnaLexicon.ROOT);
-        versionHistory = repoTypeManager.getNodeType(JcrNtLexicon.VERSION_HISTORY);
         hierarchyNode = repoTypeManager.getNodeType(JcrNtLexicon.HIERARCHY_NODE);
         file = repoTypeManager.getNodeType(JcrNtLexicon.FILE);
     }
@@ -548,12 +546,12 @@ public class TypeRegistrationTest {
                                      context,
                                      AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
                                      nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {versionHistory}),
+                                     Arrays.asList(new JcrNodeType[] {file}),
                                      AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
                                      Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                   context,
                                                                                                   null,
-                                                                                                  JcrLexicon.ROOT_VERSION,
+                                                                                                  JcrLexicon.CONTENT,
                                                                                                   OnParentVersionBehavior.VERSION.getJcrValue(),
                                                                                                   false, false, false, false,
                                                                                                   JcrNtLexicon.BASE,

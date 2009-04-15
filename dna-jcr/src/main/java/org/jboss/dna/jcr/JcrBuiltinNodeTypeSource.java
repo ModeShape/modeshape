@@ -31,8 +31,6 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * {@link JcrNodeTypeSource} that provides built-in node types per the 1.0 specification.
@@ -56,7 +54,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
         /*
          * These values get created without a session cache, as they aren't tied to any particular session.
          */
-        Value trueValue = new JcrValue(context.getValueFactories(), null, PropertyType.BOOLEAN, Boolean.TRUE);
+        // Value trueValue = new JcrValue(context.getValueFactories(), null, PropertyType.BOOLEAN, Boolean.TRUE);
         Value ntBaseValue = new JcrValue(context.getValueFactories(), null, PropertyType.NAME, JcrNtLexicon.BASE);
 
         // Stubbing in child node and property definitions for now
@@ -458,117 +456,118 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                  PropertyType.UNDEFINED, NO_CONSTRAINTS, true),}),
                                                    NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
-        JcrNodeType version = new JcrNodeType(
-                                              context,
-                                              NO_NODE_TYPE_MANAGER,
-                                              JcrNtLexicon.VERSION,
-                                              Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                              NO_PRIMARY_ITEM_NAME,
-                                              Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                           context,
-                                                                                                           null,
-                                                                                                           JcrLexicon.FROZEN_NODE,
-                                                                                                           OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                                                           false,
-                                                                                                           false,
-                                                                                                           true,
-                                                                                                           false,
-                                                                                                           null,
-                                                                                                           new JcrNodeType[] {frozenNode}),}),
-                                              Arrays.asList(new JcrPropertyDefinition[] {
-                                                  new JcrPropertyDefinition(context, null, JcrLexicon.CREATED,
-                                                                            OnParentVersionBehavior.ABORT.getJcrValue(), true,
-                                                                            true, true, NO_DEFAULT_VALUES, PropertyType.DATE,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
-                                                                            OnParentVersionBehavior.ABORT.getJcrValue(), false,
-                                                                            false, true, NO_DEFAULT_VALUES,
-                                                                            PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                  new JcrPropertyDefinition(context, null, JcrLexicon.SUCCESSORS,
-                                                                            OnParentVersionBehavior.ABORT.getJcrValue(), false,
-                                                                            false, true, NO_DEFAULT_VALUES,
-                                                                            PropertyType.REFERENCE, NO_CONSTRAINTS, true),}),
-                                              NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        // JcrNodeType version = new JcrNodeType(
+        // context,
+        // NO_NODE_TYPE_MANAGER,
+        // JcrNtLexicon.VERSION,
+        // Arrays.asList(new JcrNodeType[] {base, referenceable}),
+        // NO_PRIMARY_ITEM_NAME,
+        // Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
+        // context,
+        // null,
+        // JcrLexicon.FROZEN_NODE,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // false,
+        // false,
+        // true,
+        // false,
+        // null,
+        // new JcrNodeType[] {frozenNode}),}),
+        // Arrays.asList(new JcrPropertyDefinition[] {
+        // new JcrPropertyDefinition(context, null, JcrLexicon.CREATED,
+        // OnParentVersionBehavior.ABORT.getJcrValue(), true,
+        // true, true, NO_DEFAULT_VALUES, PropertyType.DATE,
+        // NO_CONSTRAINTS, false),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
+        // OnParentVersionBehavior.ABORT.getJcrValue(), false,
+        // false, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, true),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.SUCCESSORS,
+        // OnParentVersionBehavior.ABORT.getJcrValue(), false,
+        // false, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, true),}),
+        // NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        //
+        // JcrNodeType versionLabels = new JcrNodeType(
+        // context,
+        // NO_NODE_TYPE_MANAGER,
+        // JcrNtLexicon.VERSION_LABELS,
+        // Arrays.asList(new JcrNodeType[] {base}),
+        // NO_PRIMARY_ITEM_NAME,
+        // NO_CHILD_NODES,
+        // Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
+        // context,
+        // null,
+        // ALL_NODES,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // false,
+        // false,
+        // true,
+        // NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE,
+        // NO_CONSTRAINTS,
+        // false),}),
+        // NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        //
+        // JcrNodeType versionHistory = new JcrNodeType(
+        // context,
+        // NO_NODE_TYPE_MANAGER,
+        // JcrNtLexicon.VERSION_HISTORY,
+        // Arrays.asList(new JcrNodeType[] {base, referenceable}),
+        // NO_PRIMARY_ITEM_NAME,
+        // Arrays.asList(new JcrNodeDefinition[] {
+        // new JcrNodeDefinition(context, null, JcrLexicon.ROOT_VERSION,
+        // OnParentVersionBehavior.ABORT.getJcrValue(), true,
+        // true, true, false, JcrNtLexicon.VERSION,
+        // new JcrNodeType[] {version}),
+        // new JcrNodeDefinition(context, null, JcrLexicon.VERSION_LABELS,
+        // OnParentVersionBehavior.ABORT.getJcrValue(), true,
+        // true, true, false, JcrNtLexicon.VERSION_LABELS,
+        // new JcrNodeType[] {versionLabels}),
+        // new JcrNodeDefinition(context, null, ALL_NODES,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // false, false, true, false, JcrNtLexicon.VERSION,
+        // new JcrNodeType[] {version}),}),
+        // Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
+        // context,
+        // null,
+        // JcrLexicon.VERSIONABLE_UUID,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // true,
+        // true,
+        // true,
+        // NO_DEFAULT_VALUES,
+        // PropertyType.STRING,
+        // NO_CONSTRAINTS,
+        // false),}),
+        // NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        //
+        // Name CHILD_VERSION_HISTORY = new BasicName(JcrLexicon.Namespace.URI, "childVersionHistory");
+        // JcrNodeType versionedChild = new JcrNodeType(
+        // context,
+        // NO_NODE_TYPE_MANAGER,
+        // JcrNtLexicon.VERSIONED_CHILD,
+        // Arrays.asList(new JcrNodeType[] {base}),
+        // NO_PRIMARY_ITEM_NAME,
+        // NO_CHILD_NODES,
+        // Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
+        // context,
+        // null,
+        // CHILD_VERSION_HISTORY,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // true,
+        // true,
+        // true,
+        // NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE,
+        // NO_CONSTRAINTS,
+        // false),}),
+        // NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType versionLabels = new JcrNodeType(
-                                                    context,
-                                                    NO_NODE_TYPE_MANAGER,
-                                                    JcrNtLexicon.VERSION_LABELS,
-                                                    Arrays.asList(new JcrNodeType[] {base}),
-                                                    NO_PRIMARY_ITEM_NAME,
-                                                    NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         ALL_NODES,
-                                                                                                                         OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         true,
-                                                                                                                         NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.REFERENCE,
-                                                                                                                         NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-        JcrNodeType versionHistory = new JcrNodeType(
-                                                     context,
-                                                     NO_NODE_TYPE_MANAGER,
-                                                     JcrNtLexicon.VERSION_HISTORY,
-                                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                                     NO_PRIMARY_ITEM_NAME,
-                                                     Arrays.asList(new JcrNodeDefinition[] {
-                                                         new JcrNodeDefinition(context, null, JcrLexicon.ROOT_VERSION,
-                                                                               OnParentVersionBehavior.ABORT.getJcrValue(), true,
-                                                                               true, true, false, JcrNtLexicon.VERSION,
-                                                                               new JcrNodeType[] {version}),
-                                                         new JcrNodeDefinition(context, null, JcrLexicon.VERSION_LABELS,
-                                                                               OnParentVersionBehavior.ABORT.getJcrValue(), true,
-                                                                               true, true, false, JcrNtLexicon.VERSION_LABELS,
-                                                                               new JcrNodeType[] {versionLabels}),
-                                                         new JcrNodeDefinition(context, null, ALL_NODES,
-                                                                               OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                               false, false, true, false, JcrNtLexicon.VERSION,
-                                                                               new JcrNodeType[] {version}),}),
-                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          context,
-                                                                                                                          null,
-                                                                                                                          JcrLexicon.VERSIONABLE_UUID,
-                                                                                                                          OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                                                                          true,
-                                                                                                                          true,
-                                                                                                                          true,
-                                                                                                                          NO_DEFAULT_VALUES,
-                                                                                                                          PropertyType.STRING,
-                                                                                                                          NO_CONSTRAINTS,
-                                                                                                                          false),}),
-                                                     NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-        Name CHILD_VERSION_HISTORY = new BasicName(JcrLexicon.Namespace.URI, "childVersionHistory");
-        JcrNodeType versionedChild = new JcrNodeType(
-                                                     context,
-                                                     NO_NODE_TYPE_MANAGER,
-                                                     JcrNtLexicon.VERSIONED_CHILD,
-                                                     Arrays.asList(new JcrNodeType[] {base}),
-                                                     NO_PRIMARY_ITEM_NAME,
-                                                     NO_CHILD_NODES,
-                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          context,
-                                                                                                                          null,
-                                                                                                                          CHILD_VERSION_HISTORY,
-                                                                                                                          OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                                                                          true,
-                                                                                                                          true,
-                                                                                                                          true,
-                                                                                                                          NO_DEFAULT_VALUES,
-                                                                                                                          PropertyType.REFERENCE,
-                                                                                                                          NO_CONSTRAINTS,
-                                                                                                                          false),}),
-                                                     NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {base, unstructured, childNodeDefinition, file, folder,
-            frozenNode, hierarchyNode, linkedFile, nodeType, propertyDefinition, query, resource, nodeType, version,
-            versionHistory, versionLabels, versionedChild}));
+        // Disabling version-related types until DNA supports versioning, as per section 4.11 of the 1.0.1 specification
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {base, unstructured, childNodeDefinition, file, folder, frozenNode,
+            hierarchyNode, linkedFile, nodeType, propertyDefinition, query, resource, nodeType /*, version, versionHistory,
+                   versionLabels, versionedChild */}));
 
         JcrNodeType lockable = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrMixLexicon.LOCKABLE, NO_SUPERTYPES,
                                                NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
@@ -582,37 +581,38 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                              NO_CONSTRAINTS, false)}), IS_A_MIXIN,
                                                UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType versionable = new JcrNodeType(
-                                                  context,
-                                                  NO_NODE_TYPE_MANAGER,
-                                                  JcrMixLexicon.VERSIONABLE,
-                                                  Arrays.asList(new JcrNodeType[] {referenceable}),
-                                                  NO_PRIMARY_ITEM_NAME,
-                                                  NO_CHILD_NODES,
-                                                  Arrays.asList(new JcrPropertyDefinition[] {
-                                                      new JcrPropertyDefinition(context, null, JcrLexicon.BASE_VERSION,
-                                                                                OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                false, true, true, NO_DEFAULT_VALUES,
-                                                                                PropertyType.REFERENCE, NO_CONSTRAINTS, false),
-                                                      new JcrPropertyDefinition(context, null, JcrLexicon.IS_CHECKED_OUT,
-                                                                                OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                true, true, true, new Value[] {trueValue},
-                                                                                PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                      new JcrPropertyDefinition(context, null, JcrLexicon.MERGE_FAILED,
-                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
-                                                                                false, false, true, NO_DEFAULT_VALUES,
-                                                                                PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                      new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
-                                                                                OnParentVersionBehavior.COPY.getJcrValue(),
-                                                                                false, true, true, NO_DEFAULT_VALUES,
-                                                                                PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                      new JcrPropertyDefinition(context, null, JcrLexicon.VERSION_HISTORY,
-                                                                                OnParentVersionBehavior.COPY.getJcrValue(),
-                                                                                false, true, true, NO_DEFAULT_VALUES,
-                                                                                PropertyType.REFERENCE, NO_CONSTRAINTS, false),}),
-                                                  IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        // JcrNodeType versionable = new JcrNodeType(
+        // context,
+        // NO_NODE_TYPE_MANAGER,
+        // JcrMixLexicon.VERSIONABLE,
+        // Arrays.asList(new JcrNodeType[] {referenceable}),
+        // NO_PRIMARY_ITEM_NAME,
+        // NO_CHILD_NODES,
+        // Arrays.asList(new JcrPropertyDefinition[] {
+        // new JcrPropertyDefinition(context, null, JcrLexicon.BASE_VERSION,
+        // OnParentVersionBehavior.IGNORE.getJcrValue(),
+        // false, true, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, false),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.IS_CHECKED_OUT,
+        // OnParentVersionBehavior.IGNORE.getJcrValue(),
+        // true, true, true, new Value[] {trueValue},
+        // PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.MERGE_FAILED,
+        // OnParentVersionBehavior.ABORT.getJcrValue(),
+        // false, false, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, true),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
+        // OnParentVersionBehavior.COPY.getJcrValue(),
+        // false, true, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, true),
+        // new JcrPropertyDefinition(context, null, JcrLexicon.VERSION_HISTORY,
+        // OnParentVersionBehavior.COPY.getJcrValue(),
+        // false, true, true, NO_DEFAULT_VALUES,
+        // PropertyType.REFERENCE, NO_CONSTRAINTS, false),}),
+        // IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {lockable, referenceable, versionable}));
+        // Removing lockable as per section 4.11 of the JCR 1.0.1 specification
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {lockable, referenceable /*, versionable */}));
 
     }
 
