@@ -401,6 +401,8 @@ public class SessionCache {
         PropertyInfo info = findPropertyInfo(propertyId); // throws PathNotFoundException if node not there
         if (info == null) return null; // no such property on this node
 
+        if (DnaLexicon.NODE_DEFINITON.equals(info.getPropertyName())) return null;
+        
         // Now create the appropriate JCR Property object ...
         return createAndCacheJcrPropertyFor(info);
     }
@@ -411,7 +413,9 @@ public class SessionCache {
         Set<Name> propertyNames = info.getPropertyNames();
         Collection<AbstractJcrProperty> result = new ArrayList<AbstractJcrProperty>(propertyNames.size());
         for (Name propertyName : propertyNames) {
-            result.add(findJcrProperty(new PropertyId(nodeUuid, propertyName)));
+            if (!DnaLexicon.NODE_DEFINITON.equals(propertyName)) {
+                result.add(findJcrProperty(new PropertyId(nodeUuid, propertyName)));
+            }
         }
         return result;
     }
