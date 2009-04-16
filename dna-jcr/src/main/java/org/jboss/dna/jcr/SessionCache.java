@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
@@ -228,6 +229,103 @@ public class SessionCache {
     }
 
     /**
+     * Refreshes (removes the cached state) for all cached nodes.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed.
+     * </p>
+     * 
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     */
+    public void refresh( boolean keepChanges ) {
+        if (keepChanges) {
+            // Keep the pending operations
+            Set<UUID> retainedSet = new HashSet<UUID>(this.changedNodes.size() + this.deletedNodes.size());
+            retainedSet.addAll(this.changedNodes.keySet());
+            retainedSet.addAll(this.deletedNodes.keySet());
+
+            // Removed any cached nodes not already in the changed or deleted set
+            this.cachedNodes.keySet().retainAll(retainedSet);
+        } else {
+            // Throw out the old pending operations
+            this.requests.clear();
+            this.changedNodes.clear();
+            this.cachedNodes.clear();
+            this.deletedNodes.clear();
+        }
+
+    }
+
+    /**
+     * Refreshes (removes the cached state) for the node with the given UUID and any of its descendants.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed.
+     * </p>
+     * 
+     * @param nodeUuid the UUID of the node that is to be saved; may not be null
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     * @throws RepositoryException if any error resulting while saving the changes to the repository
+     */
+    public void refresh( UUID nodeUuid,
+                         boolean keepChanges ) throws RepositoryException {
+        // Find the path of the given node ...
+        Path path = getPathFor(nodeUuid);
+
+        // Build the set of affected node UUIDs
+        Set<UUID> nodesUnderBranch = new HashSet<UUID>();
+        Stack<UUID> nodesToVisit = new Stack<UUID>();
+
+        nodesToVisit.add(nodeUuid);
+        while (!nodesToVisit.isEmpty()) {
+            UUID uuid = nodesToVisit.pop();
+            nodesUnderBranch.add(uuid);
+
+            NodeInfo nodeInfo = cachedNodes.get(uuid);
+            // Newly added nodes will be changedNodes but not cachedNodes
+            if (nodeInfo == null) nodeInfo = changedNodes.get(uuid);
+
+            if (nodeInfo != null) {
+                for (ChildNode childNode : nodeInfo.getChildren()) {
+                    nodesToVisit.add(childNode.getUuid());
+                }
+            }
+        }
+
+        if (keepChanges) {
+            // Keep the pending operations
+            for (UUID uuid : nodesUnderBranch) {
+                // getPathFor can (and will) add entries to cachedNodes - hence the existence of nodesToCheck
+                if (getPathFor(uuid).isDecendantOf(path)) {
+                    if (!this.changedNodes.containsKey(uuid) && !this.deletedNodes.containsKey(uuid)) {
+                        this.cachedNodes.remove(uuid);
+                    }
+                }
+            }
+        } else {
+            this.cachedNodes.keySet().removeAll(nodesUnderBranch);
+            this.changedNodes.keySet().removeAll(nodesUnderBranch);
+            this.deletedNodes.keySet().removeAll(nodesUnderBranch);
+
+            // Throw out the old pending operations
+            if (operations.isExecuteRequired()) {
+
+                // Make sure the builder has finished all the requests ...
+                this.requestBuilder.finishPendingRequest();
+
+                // Remove all of the enqueued requests for this branch ...
+                for (Iterator<Request> iter = this.requests.iterator(); iter.hasNext();) {
+                    Request request = iter.next();
+                    assert request instanceof ChangeRequest;
+                    ChangeRequest change = (ChangeRequest)request;
+                    if (change.changes(workspaceName, path)) {
+                        iter.remove();
+                    }
+                }
+            }
+        }
+
+    }
+
+    /**
      * Save any changes that have been accumulated by this session.
      * 
      * @throws RepositoryException if any error resulting while saving the changes to the repository
@@ -263,7 +361,7 @@ public class SessionCache {
     }
 
     /**
-     * Save any changes to the identified node or its decendants. The supplied node may not have been deleted or created in this
+     * Save any changes to the identified node or its descendants. The supplied node may not have been deleted or created in this
      * session since the last save operation.
      * 
      * @param nodeUuid the UUID of the node that is to be saved; may not be null
@@ -313,6 +411,22 @@ public class SessionCache {
                 return;
             }
 
+            /*
+             * branchUuids contains all the roots of the changes, but there may be further changes under the roots (e.g., a
+             * newly created node will have it's parent's UUID in branchUuids, but not the new node's uuid. 
+             */
+            Set<UUID> uuidsUnderBranch = new HashSet<UUID>();
+            for (UUID branchUuid : branchUuids) {
+                uuidsUnderBranch.add(branchUuid);
+                ChangedNodeInfo changedNode = changedNodes.get(branchUuid);
+                if (changedNode != null) {
+                    for (ChildNode childNode : changedNode.getChildren()) {
+                        uuidsUnderBranch.add(childNode.getUuid());
+                    }
+                }
+
+            }
+
             // Now execute the branch ...
             Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
@@ -324,11 +438,9 @@ public class SessionCache {
                 this.operations = store.batch(this.requestBuilder);
 
                 // Remove all the cached, changed or deleted items that were just saved ...
-                for (UUID changedUuid : branchUuids) {
-                    cachedNodes.remove(changedUuid);
-                    changedNodes.remove(changedUuid);
-                    deletedNodes.remove(changedUuid);
-                }
+                cachedNodes.keySet().removeAll(uuidsUnderBranch);
+                changedNodes.keySet().removeAll(uuidsUnderBranch);
+                deletedNodes.keySet().removeAll(uuidsUnderBranch);
             } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
                 throw new PathNotFoundException(e.getLocalizedMessage(), e);
             } catch (RuntimeException e) {
@@ -402,7 +514,7 @@ public class SessionCache {
         if (info == null) return null; // no such property on this node
 
         if (DnaLexicon.NODE_DEFINITON.equals(info.getPropertyName())) return null;
-        
+
         // Now create the appropriate JCR Property object ...
         return createAndCacheJcrPropertyFor(info);
     }

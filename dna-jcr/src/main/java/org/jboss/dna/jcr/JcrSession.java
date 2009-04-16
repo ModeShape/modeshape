@@ -665,6 +665,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) {
+        this.cache.refresh(keepChanges);
     }
 
     /**
