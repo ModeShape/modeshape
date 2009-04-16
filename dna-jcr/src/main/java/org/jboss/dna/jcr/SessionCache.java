@@ -336,7 +336,7 @@ public class SessionCache {
             try {
                 operations.execute();
             } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-                throw new PathNotFoundException(e.getLocalizedMessage(), e);
+                throw new InvalidItemStateException(e.getLocalizedMessage(), e);
             } catch (RuntimeException e) {
                 throw new RepositoryException(e.getLocalizedMessage(), e);
             }
@@ -442,7 +442,7 @@ public class SessionCache {
                 changedNodes.keySet().removeAll(uuidsUnderBranch);
                 deletedNodes.keySet().removeAll(uuidsUnderBranch);
             } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-                throw new PathNotFoundException(e.getLocalizedMessage(), e);
+                throw new InvalidItemStateException(e.getLocalizedMessage(), e);
             } catch (RuntimeException e) {
                 throw new RepositoryException(e.getLocalizedMessage(), e);
             }
