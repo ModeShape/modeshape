@@ -82,26 +82,6 @@ abstract class AbstractJcrItem implements Item {
     /**
      * {@inheritDoc}
      * 
-     * @return <code>false</code>
-     * @see javax.jcr.Item#isModified()
-     */
-    public final boolean isModified() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @return <code>false</code>
-     * @see javax.jcr.Item#isNew()
-     */
-    public final boolean isNew() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see javax.jcr.Item#isSame(javax.jcr.Item)
      */
     public boolean isSame( Item otherItem ) throws RepositoryException {

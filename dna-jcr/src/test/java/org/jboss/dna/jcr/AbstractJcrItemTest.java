@@ -73,6 +73,14 @@ public class AbstractJcrItemTest {
                 return false;
             }
 
+            public boolean isNew() {
+                return false;
+            }
+
+            public boolean isModified() {
+                return false;
+            }
+
             public void refresh( boolean keepChanges ) {
                 throw new UnsupportedOperationException();
             }

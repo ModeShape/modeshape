@@ -104,4 +104,23 @@ public interface NodeInfo {
      * @return the property information, or null if this node has no property with the supplied name
      */
     public PropertyInfo getProperty( Name name );
+
+    /**
+     * Indicates whether the node represented by this {@link NodeInfo} is new (i.e., does not yet exist in the persistent
+     * repository).
+     * 
+     * @return {@code true} if the node represented by this {@link NodeInfo} has not yet been saved to the persistent repository.
+     * @see javax.jcr.Item#isNew()
+     */
+    public boolean isNew();
+
+    /**
+     * Indicates whether the node represented by this {@link NodeInfo} is modified (i.e., exists in the persistent repository with
+     * different child items).
+     * 
+     * @return {@code true} if the immediate child items of the node represented by this {@link NodeInfo} have been modified since
+     *         the last time the node was saved to the persistent repository
+     * @see javax.jcr.Item#isModified()
+     */
+    public boolean isModified();
 }

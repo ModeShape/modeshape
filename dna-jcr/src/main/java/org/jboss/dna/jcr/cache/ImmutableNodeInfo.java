@@ -179,4 +179,24 @@ public class ImmutableNodeInfo implements NodeInfo {
     public PropertyInfo getProperty( Name name ) {
         return this.properties.get(name);
     }
+
+    /**
+     * 
+     * {@inheritDoc}
+     * @return {@code false} always as this object represents unmodified nodes only
+     * @see org.jboss.dna.jcr.cache.NodeInfo#isNew()
+     */
+    public boolean isNew() {
+        return false;
+    }
+
+    /**
+     * 
+     * {@inheritDoc}
+     * @return {@code false} always as this object represents unmodified nodes only
+     * @see org.jboss.dna.jcr.cache.NodeInfo#isModified()
+     */
+    public boolean isModified() {
+        return false;
+    }
 }

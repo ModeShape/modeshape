@@ -154,6 +154,34 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Item#isModified()
+     */
+    public final boolean isModified() {
+        try {
+            return propertyInfo().isModified();
+        }
+        catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#isNew()
+     */
+    public final boolean isNew() {
+        try {
+            return propertyInfo().isNew();
+        }
+        catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @return false
      * @see javax.jcr.Item#isNode()
      */

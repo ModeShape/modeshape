@@ -24,21 +24,16 @@
 package org.jboss.dna.jcr.cache;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
-import static org.jboss.dna.jcr.cache.IsNodeInfoWithChildrenHavingNames.hasChild;
 import static org.jboss.dna.jcr.cache.IsNodeInfoWithChildrenHavingNames.hasChildren;
-import static org.jboss.dna.jcr.cache.IsNodeInfoWithChildrenHavingUuids.hasChild;
 import static org.jboss.dna.jcr.cache.IsNodeInfoWithChildrenHavingUuids.hasChildren;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -56,19 +51,16 @@ import org.junit.Test;
 /**
  * 
  */
-public class ChangedNodeInfoTest {
+public class NewNodeInfoTest {
 
     private ExecutionContext context;
     private PathFactory pathFactory;
-    private NodeInfo original;
     private UUID uuid;
     private Name primaryTypeName;
     private Name[] requiredPrimaryTypes;
     private Location location;
     private NodeDefinitionId definitionId;
-    private ChangedChildren children;
     private Map<Name, PropertyInfo> properties;
-    private List<Name> mixinTypeNames;
     private ChangedNodeInfo changes;
 
     @Before
@@ -83,13 +75,10 @@ public class ChangedNodeInfoTest {
         primaryTypeName = name("acme:geniusType");
         requiredPrimaryTypes = new Name[] {name("acme:requiredTypeA"), name("acme:requiredTypeB")};
         definitionId = new NodeDefinitionId(name("acme:geniusContainerType"), name("acme:geniuses"), requiredPrimaryTypes);
-        children = new ChangedChildren(uuid);
         properties = new HashMap<Name, PropertyInfo>();
-        mixinTypeNames = new LinkedList<Name>();
-        original = new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definitionId, uuid, children, properties);
 
         // Create the changed node representation ...
-        changes = new ChangedNodeInfo(original);
+        changes = new NewNodeInfo(location, primaryTypeName, definitionId, uuid, properties);
     }
 
     protected Name name( String name ) {
@@ -128,15 +117,8 @@ public class ChangedNodeInfoTest {
         return propertyInfo;
     }
 
-    protected ChildNode makeChildInOriginal( String childName ) {
-        ChildNode newChild = children.add(name(childName), UUID.randomUUID(), pathFactory);
-        return newChild;
-    }
-
     protected ChildNode addChildInChanged( String childName ) {
         ChildNode newChild = changes.addChild(name(childName), UUID.randomUUID(), pathFactory);
-        // Make sure that the 'changes' object no longer returns the original object's children object
-        assertThat(changes.getChildren(), is(not(sameInstance(original.getChildren()))));
         return newChild;
     }
 
@@ -151,33 +133,33 @@ public class ChangedNodeInfoTest {
     }
 
     @Test
-    public void shouldNotBeNew() {
-        assertThat(changes.isNew(), is(false));
+    public void shouldBeNew() {
+        assertThat(changes.isNew(), is(true));
     }
 
     @Test
-    public void shouldBeModified() {
-        assertThat(changes.isModified(), is(true));
+    public void shouldNotBeModified() {
+        assertThat(changes.isModified(), is(false));
     }
 
     @Test
-    public void shouldHaveLocationFromOriginal() {
+    public void shouldInitiallyHaveLocation() {
         assertThat(changes.getOriginalLocation(), is(sameInstance(location)));
     }
 
     @Test
-    public void shouldHaveParentUuidFromOriginal() {
+    public void shouldInitiallyHaveParentUuid() {
         assertThat(changes.getParent(), is(sameInstance(uuid)));
     }
 
     @Test
-    public void shouldHavePrimaryTypeNameFromOriginal() {
+    public void shouldInitiallyHavePrimaryTypeName() {
         assertThat(changes.getPrimaryTypeName(), is(sameInstance(primaryTypeName)));
     }
 
     @Test
-    public void shouldHaveMixinTypeNamesFromOriginal() {
-        assertThat(changes.getMixinTypeNames(), is(sameInstance(mixinTypeNames)));
+    public void shouldInitiallyHaveMixinNoTypeNames() {
+        assertThat(changes.getMixinTypeNames().size(), is(0));
     }
 
     @Test
@@ -198,30 +180,27 @@ public class ChangedNodeInfoTest {
     }
 
     @Test
-    public void shouldHaveNodeDefinitionIdFromOriginal() {
+    public void shouldHaveNodeDefinitionId() {
         assertThat(changes.getDefinitionId(), is(sameInstance(definitionId)));
     }
 
     @Test
-    public void shouldHaveChildrenFromOriginal() {
-        assertThat(changes.getChildren(), is(sameInstance((Children)children)));
-
-        ChildNode childA = makeChildInOriginal("childA");
-        assertThat(changes.getChildren().size(), is(1));
-        assertThat(changes.getChildren().getChild(childA.getUuid()), is(sameInstance(childA)));
-        assertThat(changes.getChildren(), hasChild(segment("childA[1]")));
-        assertThat(changes.getChildren(), hasChild(childA.getUuid()));
+    public void shouldHaveNoChildren() {
+        assertThat(changes.getChildren().size(), is(0));
     }
 
     @Test
     public void shouldHaveChildrenAfterAddingChild() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
-        assertThat(changes.getChildren().size(), is(3));
+        assertThat(changes.getChildren().size(), is(0));
 
         // Add child ...
+        ChildNode childA1 = addChildInChanged("childA");
+        assertThat(changes.getChildren().size(), is(1));
+        assertThat(changes.getChildren(), hasChildren(segment("childA")));
+
+        // Add more children ...
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         ChildNode childA3 = addChildInChanged("childA");
 
         // Verify that all children are there in the proper order ...
@@ -236,10 +215,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterAddingMultipleChildren() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...
@@ -266,10 +247,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterAddingMultipleChildrenAndRemovingOthers() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...
@@ -292,10 +275,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterAddingMultipleChildrenAndThenRemovingThoseJustAdded() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...
@@ -334,10 +319,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterDeletingChild() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Delete a child that was added and another that was an original ...
@@ -351,10 +338,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterDeletingMultipleChildren() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Delete a child that was added and another that was an original ...
@@ -369,10 +358,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterDeletingAllChildrenFromTheFirsttChildToTheLast() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Delete all children, from the front to the back ...
@@ -386,10 +377,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterDeletingAllChildrenFromTheLastChildToTheFirst() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Delete all children, from the back to the front ...
@@ -403,10 +396,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterAddingSomeChildrenThenDeletingAllChildrenFromTheFirstChildToTheLast() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...
@@ -428,10 +423,12 @@ public class ChangedNodeInfoTest {
 
     @Test
     public void shouldHaveChildrenAfterAddingSomeChildrenThenDeletingAllChildrenFromTheLastChildToTheFirst() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...
@@ -459,10 +456,12 @@ public class ChangedNodeInfoTest {
     @Test
     @SuppressWarnings( "unused" )
     public void shouldNotRemoveFromNodeInfoWithNoChildChangesAChildThatMatchesSegmentButNotUuid() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Create a bogus node that has a new UUID but with the same segment as 'childA3' ...
@@ -478,10 +477,12 @@ public class ChangedNodeInfoTest {
     @Test
     @SuppressWarnings( "unused" )
     public void shouldNotRemoveFromNodeInfoWithSomeChildChangesAChildThatMatchesSegmentButNotUuid() {
-        // Set up the original ...
-        ChildNode childA1 = makeChildInOriginal("childA");
-        ChildNode childB1 = makeChildInOriginal("childB");
-        ChildNode childA2 = makeChildInOriginal("childA");
+        assertThat(changes.getChildren().size(), is(0));
+
+        // Add some children ...
+        ChildNode childA1 = addChildInChanged("childA");
+        ChildNode childB1 = addChildInChanged("childB");
+        ChildNode childA2 = addChildInChanged("childA");
         assertThat(changes.getChildren().size(), is(3));
 
         // Add some children in the changed representation ...

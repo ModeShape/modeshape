@@ -48,17 +48,26 @@ public class PropertyInfo {
     private final Property dnaProperty;
     private final int propertyType;
     private final boolean multiValued;
+    private final boolean isNew;
+    private final boolean isModified;
 
     public PropertyInfo( PropertyId propertyId,
                          PropertyDefinitionId definitionId,
                          int propertyType,
                          Property dnaProperty,
-                         boolean multiValued ) {
+                         boolean multiValued,
+                         boolean isNew,
+                         boolean isModified ) {
         this.propertyId = propertyId;
         this.definitionId = definitionId;
         this.propertyType = propertyType;
         this.dnaProperty = dnaProperty;
         this.multiValued = multiValued;
+        this.isNew = isNew;
+        this.isModified = isModified;
+
+        assert isNew ? !isModified : true;
+        assert isModified ? !isNew : true;
     }
 
     /**
@@ -120,6 +129,27 @@ public class PropertyInfo {
      */
     public boolean isMultiValued() {
         return multiValued;
+    }
+
+    /**
+     * Indicates whether this property/value combination is new (i.e., does not yet exist in the persistent repository).
+     * 
+     * @return {@code true} if the property has not yet been saved to the persistent repository.
+     * @see javax.jcr.Item#isNew()
+     */
+    public boolean isNew() {
+        return this.isNew;
+    }
+
+    /**
+     * Indicates whether this property/value combination is modified (i.e., exists in the persistent repository with a different
+     * value or values).
+     * 
+     * @return {@code true} if the property has been modified since the last time it was saved to the persistent repository
+     * @see javax.jcr.Item#isModified()
+     */
+    public boolean isModified() {
+        return this.isModified;
     }
 
     /**

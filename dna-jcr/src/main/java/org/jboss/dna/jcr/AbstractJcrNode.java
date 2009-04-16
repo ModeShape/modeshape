@@ -1448,6 +1448,34 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Item#isModified()
+     */
+    public final boolean isModified() {
+        try {
+            return nodeInfo().isModified();
+        }
+        catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#isNew()
+     */
+    public final boolean isNew() {
+        try {
+            return nodeInfo().isNew();
+        }
+        catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#merge(java.lang.String, boolean)
      */

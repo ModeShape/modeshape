@@ -77,6 +77,7 @@ import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.EmptyChildren;
 import org.jboss.dna.jcr.cache.ImmutableChildren;
 import org.jboss.dna.jcr.cache.ImmutableNodeInfo;
+import org.jboss.dna.jcr.cache.NewNodeInfo;
 import org.jboss.dna.jcr.cache.NodeInfo;
 import org.jboss.dna.jcr.cache.PropertyInfo;
 import com.google.common.base.ReferenceType;
@@ -728,7 +729,8 @@ public class SessionCache {
             Property dnaProp = propertyFactory.create(name, objValue);
 
             // Create the property info ...
-            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
+            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple(),
+                                                        existing == null, existing != null);
 
             // Finally update the cached information and record the change ...
             node.setProperty(newProperty, factories());
@@ -841,7 +843,8 @@ public class SessionCache {
             Property dnaProp = propertyFactory.create(name, objValues);
 
             // Create the property info ...
-            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
+            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple(),
+                                                        existing == null, existing != null);
 
             // Finally update the cached information and record the change ...
             node.setProperty(newProperty, factories());
@@ -1040,7 +1043,7 @@ public class SessionCache {
                 JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
                 org.jboss.dna.graph.property.Property uuidProperty = propertyFactory.create(JcrLexicon.UUID, desiredUuid);
                 PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty,
-                                                         defn.isMultiple());
+                                                         defn.isMultiple(), true, false);
                 properties.put(JcrLexicon.UUID, propInfo);
             }
 
@@ -1052,7 +1055,8 @@ public class SessionCache {
                                                                               false);
             PropertyDefinitionId primaryTypeDefinitionId = primaryTypeDefn.getId();
             PropertyInfo primaryTypeInfo = new PropertyInfo(new PropertyId(desiredUuid, primaryTypeProp.getName()),
-                                                            primaryTypeDefinitionId, PropertyType.NAME, primaryTypeProp, false);
+                                                            primaryTypeDefinitionId, PropertyType.NAME, primaryTypeProp, false,
+                                                            true, false);
             properties.put(primaryTypeProp.getName(), primaryTypeInfo);
 
             // Create the property info for the "dna:nodeDefinition" child property ...
@@ -1065,15 +1069,13 @@ public class SessionCache {
                 PropertyDefinitionId nodeDefnDefinitionId = nodeDefnDefn.getId();
                 PropertyInfo nodeDefinitionInfo = new PropertyInfo(new PropertyId(desiredUuid, nodeDefinitionProp.getName()),
                                                                    nodeDefnDefinitionId, PropertyType.STRING, nodeDefinitionProp,
-                                                                   true);
+                                                                   true, true, false);
                 properties.put(nodeDefinitionProp.getName(), nodeDefinitionInfo);
             }
 
             // Now create the child node info, putting it in the changed map (and not the cache map!) ...
-            NodeInfo info = new ImmutableNodeInfo(location, primaryTypeName, null, definition.getId(), node.getUuid(), null,
-                                                  properties);
-            ChangedNodeInfo changedInfo = new ChangedNodeInfo(info);
-            changedNodes.put(desiredUuid, changedInfo);
+            NewNodeInfo newInfo = new NewNodeInfo(location, primaryTypeName, definition.getId(), node.getUuid(), properties);
+            changedNodes.put(desiredUuid, newInfo);
 
             // ---------------------------------------
             // Now record the changes to the store ...
@@ -1741,7 +1743,7 @@ public class SessionCache {
             // Record the property in the node information ...
             PropertyId propId = new PropertyId(uuid, name);
             JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
-            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), propertyType, dnaProp, defn.isMultiple());
+            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), propertyType, dnaProp, defn.isMultiple(), false, false);
             props.put(name, propInfo);
         }
 
@@ -1757,7 +1759,8 @@ public class SessionCache {
                                                                                        false);
             PropertyId propId = new PropertyId(uuid, JcrLexicon.UUID);
             JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
-            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple());
+            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple(),
+                                                     false, false);
             props.put(JcrLexicon.UUID, propInfo);
         } else {
             // Make sure there is NOT a "jcr:uuid" property ...

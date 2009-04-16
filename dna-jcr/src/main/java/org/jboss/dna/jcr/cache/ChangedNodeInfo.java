@@ -379,4 +379,22 @@ public class ChangedNodeInfo implements NodeInfo {
         changedProperties.put(name, null);
         return changed;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.cache.NodeInfo#isNew()
+     */
+    public boolean isNew() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.cache.NodeInfo#isModified()
+     */
+    public boolean isModified() {
+        return true;
+    }
 }
