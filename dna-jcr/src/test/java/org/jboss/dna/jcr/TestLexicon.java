@@ -46,5 +46,8 @@ public class TestLexicon {
     public static final Name CONSTRAINED_PATH = new BasicName(Namespace.URI, "constrainedPath");
     public static final Name CONSTRAINED_REFERENCE = new BasicName(Namespace.URI, "constrainedReference");
     public static final Name CONSTRAINED_STRING = new BasicName(Namespace.URI, "constrainedString");
-    
+
+    public static final Name REFERENCEABLE_UNSTRUCTURED = new BasicName(Namespace.URI, "referenceableUnstructured");
+    public static final Name NO_SAME_NAME_SIBS = new BasicName(Namespace.URI, "noSameNameSibs");
+
 }

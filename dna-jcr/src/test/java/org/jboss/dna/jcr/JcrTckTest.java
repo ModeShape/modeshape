@@ -27,11 +27,14 @@ import java.io.File;
 import java.net.URI;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.jcr.Credentials;
-import javax.jcr.Repository;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.JCRTestSuite;
@@ -50,6 +53,7 @@ import org.apache.jackrabbit.test.api.SetPropertyConstraintViolationExceptionTes
 import org.apache.jackrabbit.test.api.SetPropertyDoubleTest;
 import org.apache.jackrabbit.test.api.SetPropertyInputStreamTest;
 import org.apache.jackrabbit.test.api.SetPropertyLongTest;
+import org.apache.jackrabbit.test.api.SetPropertyNodeTest;
 import org.apache.jackrabbit.test.api.SetPropertyStringTest;
 import org.apache.jackrabbit.test.api.SetPropertyValueTest;
 import org.apache.jackrabbit.test.api.SetValueBinaryTest;
@@ -69,9 +73,11 @@ import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
-import org.jboss.dna.graph.DnaLexicon;
+import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
+import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrMixLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -202,7 +208,7 @@ public class JcrTckTest {
             addTestSuite(SetPropertyDoubleTest.class);
             addTestSuite(SetPropertyInputStreamTest.class);
             addTestSuite(SetPropertyLongTest.class);
-            // addTestSuite(SetPropertyNodeTest.class);
+            addTestSuite(SetPropertyNodeTest.class);
             addTestSuite(SetPropertyStringTest.class);
             addTestSuite(SetPropertyValueTest.class);
             addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
@@ -228,16 +234,16 @@ public class JcrTckTest {
             // addTestSuite(WorkspaceCopyReferenceableTest.class);
             // addTestSuite(WorkspaceCopySameNameSibsTest.class);
             // addTestSuite(WorkspaceCopyTest.class);
-            // addTestSuite(WorkspaceCopyVersionableTest.class);
+            addTestSuite(WorkspaceCopyVersionableTest.class);
             // addTestSuite(WorkspaceMoveReferenceableTest.class);
             // addTestSuite(WorkspaceMoveSameNameSibsTest.class);
             // addTestSuite(WorkspaceMoveTest.class);
-            // addTestSuite(WorkspaceMoveVersionableTest.class);
-            //
+            addTestSuite(WorkspaceMoveVersionableTest.class);
+
             addTestSuite(RepositoryLoginTest.class);
             // addTestSuite(ImpersonateTest.class);
             // addTestSuite(CheckPermissionTest.class);
-            //
+
             // addTestSuite(DocumentViewImportTest.class);
             // addTestSuite(SerializationTest.class);
 
@@ -257,7 +263,7 @@ public class JcrTckTest {
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
-            // addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
         }
     }
 
@@ -265,11 +271,11 @@ public class JcrTckTest {
      * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
      */
     public static class InMemoryRepositoryStub extends RepositoryStub {
-        private Repository repository;
-        protected RepositoryConnection connection;
+        private JcrRepository repository;
+        protected InMemoryRepositorySource source;
         protected AccessControlContext accessControlContext = AccessController.getContext();
 
-        private Credentials credentials = new Credentials() {
+        private Credentials superUserCredentials = new Credentials() {
             private static final long serialVersionUID = 1L;
 
             @SuppressWarnings( "unused" )
@@ -278,17 +284,29 @@ public class JcrTckTest {
             }
         };
 
-        protected ExecutionContext executionContext = new ExecutionContext() {
+        private Credentials readWriteCredentials = new Credentials() {
+            private static final long serialVersionUID = 1L;
 
-            @Override
-            public ExecutionContext create( AccessControlContext accessControlContext ) {
-                return executionContext;
+            @SuppressWarnings( "unused" )
+            public AccessControlContext getAccessControlContext() {
+                return accessControlContext;
             }
         };
 
+        private Credentials readOnlyCredentials = new Credentials() {
+            private static final long serialVersionUID = 1L;
+
+            @SuppressWarnings( "unused" )
+            public AccessControlContext getAccessControlContext() {
+                return accessControlContext;
+            }
+        };
+
+        protected ExecutionContext executionContext = new ExecutionContext();
+
         protected RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
             public RepositoryConnection createConnection( String sourceName ) {
-                return connection;
+                return source.getConnection();
             }
         };
 
@@ -296,29 +314,27 @@ public class JcrTckTest {
             super(env);
 
             // Create the in-memory (DNA) repository
-            InMemoryRepositorySource source = new InMemoryRepositorySource();
+            source = new InMemoryRepositorySource();
 
             // Various calls will fail if you do not set a non-null name for the source
             source.setName("TestRepositorySource");
-
-            // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
-            Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "false");
-            connection = source.getConnection();
-            repository = new JcrRepository(executionContext.create(accessControlContext), connectionFactory, source.getName(),
-                                           null, options);
 
             // Make sure the path to the namespaces exists ...
             Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
             graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
 
+            // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
+            Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "false");
+
+            repository = new JcrRepository(executionContext.create(accessControlContext), connectionFactory, source.getName(),
+                                           null, options);
+            RepositoryNodeTypeManager nodeTypes = repository.getRepositoryTypeManager();
+
             // Set up some sample nodes in the graph to match the expected test configuration
             try {
+                nodeTypes.registerNodeTypes(new TckTestNodeTypeSource(executionContext, nodeTypes));
 
-                // TODO: Should there be an easier way to define these since they will be needed for all JCR repositories?
-                executionContext.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-                executionContext.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
-                executionContext.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
-                executionContext.getNamespaceRegistry().register(JcrSvLexicon.Namespace.PREFIX, JcrSvLexicon.Namespace.URI);
+                executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
                 Path destinationPath = executionContext.getValueFactories().getPathFactory().create("/");
                 GraphImporter importer = new GraphImporter(graph);
@@ -341,9 +357,7 @@ public class JcrTckTest {
          */
         @Override
         public Credentials getSuperuserCredentials() {
-            // TODO: Why must we override this method? The default TCK implementation just returns a particular instance of
-            // SimpleCredentials.
-            return credentials;
+            return superUserCredentials;
         }
 
         /**
@@ -353,9 +367,7 @@ public class JcrTckTest {
          */
         @Override
         public Credentials getReadOnlyCredentials() {
-            // TODO: Why must we override this method? The default TCK implementation just returns a particular instance of
-            // SimpleCredentials.
-            return credentials;
+            return readOnlyCredentials;
         }
 
         /**
@@ -365,9 +377,7 @@ public class JcrTckTest {
          */
         @Override
         public Credentials getReadWriteCredentials() {
-            // TODO: Why must we override this method? The default TCK implementation just returns a particular instance of
-            // SimpleCredentials.
-            return credentials;
+            return readWriteCredentials;
         }
 
         /**
@@ -376,8 +386,86 @@ public class JcrTckTest {
          * @see org.apache.jackrabbit.test.RepositoryStub#getRepository()
          */
         @Override
-        public Repository getRepository() {
+        public JcrRepository getRepository() {
             return repository;
+        }
+
+    }
+
+    static class TckTestNodeTypeSource extends AbstractJcrNodeTypeSource {
+        /** The list of node types. */
+        private final List<JcrNodeType> nodeTypes;
+
+        TckTestNodeTypeSource( ExecutionContext context,
+                               RepositoryNodeTypeManager nodeTypeManager ) {
+            super(null);
+
+            nodeTypes = new ArrayList<JcrNodeType>();
+
+            JcrNodeType base = nodeTypeManager.getNodeType(JcrNtLexicon.BASE);
+
+            if (base == null) {
+                String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
+                String namespaceTypeName = TestLexicon.NO_SAME_NAME_SIBS.getString(context.getNamespaceRegistry());
+                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
+            }
+
+            JcrNodeType referenceable = nodeTypeManager.getNodeType(JcrMixLexicon.REFERENCEABLE);
+
+            if (referenceable == null) {
+                String baseTypeName = JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry());
+                String namespaceTypeName = TestLexicon.REFERENCEABLE_UNSTRUCTURED.getString(context.getNamespaceRegistry());
+                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
+            }
+
+            JcrNodeType unstructured = nodeTypeManager.getNodeType(JcrNtLexicon.UNSTRUCTURED);
+
+            if (unstructured == null) {
+                String baseTypeName = JcrNtLexicon.UNSTRUCTURED.getString(context.getNamespaceRegistry());
+                String namespaceTypeName = TestLexicon.REFERENCEABLE_UNSTRUCTURED.getString(context.getNamespaceRegistry());
+                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
+            }
+
+            // Stubbing in child node and property definitions for now
+            JcrNodeType noSameNameSibs = new JcrNodeType(
+                                                         context,
+                                                         NO_NODE_TYPE_MANAGER,
+                                                         TestLexicon.NO_SAME_NAME_SIBS,
+                                                         Arrays.asList(new JcrNodeType[] {base}),
+                                                         NO_PRIMARY_ITEM_NAME,
+                                                         Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
+                                                                                                                      context,
+                                                                                                                      null,
+                                                                                                                      ALL_NODES,
+                                                                                                                      OnParentVersionBehavior.VERSION.getJcrValue(),
+                                                                                                                      false,
+                                                                                                                      false,
+                                                                                                                      false,
+                                                                                                                      false,
+                                                                                                                      JcrNtLexicon.UNSTRUCTURED,
+                                                                                                                      new JcrNodeType[] {base}),}),
+                                                         NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+
+            JcrNodeType referenceableUnstructured = new JcrNodeType(
+                                                                    context,
+                                                                    NO_NODE_TYPE_MANAGER,
+                                                                    TestLexicon.REFERENCEABLE_UNSTRUCTURED,
+                                                                    Arrays.asList(new JcrNodeType[] {unstructured, referenceable}),
+                                                                    NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, NO_PROPERTIES,
+                                                                    NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+
+            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {referenceableUnstructured, noSameNameSibs}));
+
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
+         */
+        @Override
+        public Collection<JcrNodeType> getDeclaredNodeTypes() {
+            return nodeTypes;
         }
 
     }

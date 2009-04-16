@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
@@ -32,7 +33,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.Credentials;
+import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.Item;
+import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
@@ -46,6 +49,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -60,9 +64,15 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
+import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
+import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrNamespaceRegistry.Behavior;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * @author John Verhaeg
@@ -355,12 +365,13 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getImportContentHandler(java.lang.String, int)
      */
     public ContentHandler getImportContentHandler( String parentAbsPath,
-                                                   int uuidBehavior ) {
-        throw new UnsupportedOperationException();
+                                                   int uuidBehavior ) throws PathNotFoundException, RepositoryException {
+        Path parentPath = this.executionContext.getValueFactories().getPathFactory().create(parentAbsPath);
+
+        return new JcrContentHandler(this, parentPath, uuidBehavior, SaveMode.SESSION);
     }
 
     /**
@@ -595,13 +606,29 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#importXML(java.lang.String, java.io.InputStream, int)
      */
     public void importXML( String parentAbsPath,
                            InputStream in,
-                           int uuidBehavior ) {
-        throw new UnsupportedOperationException();
+                           int uuidBehavior ) throws IOException, InvalidSerializedDataException, RepositoryException {
+
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
+            parser.parse(new InputSource(in));
+        } catch (EnclosingSAXException ese) {
+            Exception cause = ese.getException();
+            if (cause instanceof ItemExistsException) {
+                throw (ItemExistsException)cause;
+            } else if (cause instanceof ConstraintViolationException) {
+                throw (ConstraintViolationException)cause;
+            }
+            throw new RepositoryException(cause);
+        } catch (SAXParseException se) {
+            throw new InvalidSerializedDataException(se);
+        } catch (SAXException se) {
+            throw new RepositoryException(se);
+        }
     }
 
     /**

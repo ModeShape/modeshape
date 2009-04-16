@@ -915,6 +915,31 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                String primaryNodeTypeName )
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
+        return this.addNode(relPath, primaryNodeTypeName, null);
+    }
+
+    /**
+     * Adds the a new node with the given primary type (if specified) at the given relative path with the given UUID (if
+     * specified).
+     * 
+     * @param relPath the at which the new node should be created
+     * @param primaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary type
+     *        from the appropriate definition for this node should be used
+     * @param desiredUuid the UUID (for the jcr.uuid property) of this node; may be null
+     * @return the newly created node
+     * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
+     * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
+     * @throws VersionException not thrown at this time, but included for compatibility with the specification
+     * @throws ConstraintViolationException if the change would violate a node type or implementation-specific constraint.
+     * @throws LockException not thrown at this time, but included for compatibility with the specification
+     * @throws RepositoryException if another error occurs
+     * @see #addNode(String, String)
+     */
+    final AbstractJcrNode addNode( String relPath,
+                                   String primaryNodeTypeName,
+                                   UUID desiredUuid )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
         // Determine the path ...
         NodeEditor editor = null;
         Path path = null;
@@ -976,7 +1001,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Create the child ...
-        ChildNode child = editor.createChild(childName, null, childPrimaryTypeName);
+        ChildNode child = editor.createChild(childName, desiredUuid, childPrimaryTypeName);
         return cache.findJcrNode(child.getUuid());
     }
 

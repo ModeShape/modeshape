@@ -28,7 +28,8 @@
           xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
           xmlns:dna="http://www.jboss.org/dna/1.0"
           jcr:primaryType="nt:unstructured">
-    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;" >
+    <nt:unstructured jcr:name="serializationNode" />
+    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
        <!--  
            This stanza checks for the jcr:xmltext special case for export as per JCR 1.0.1 section 6.4.2.3
          -->
