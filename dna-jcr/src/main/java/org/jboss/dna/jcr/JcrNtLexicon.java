@@ -28,12 +28,9 @@ import org.jboss.dna.graph.property.basic.BasicName;
 
 public class JcrNtLexicon extends org.jboss.dna.graph.JcrNtLexicon {
 
-    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
     public static final Name HIERARCHY_NODE = new BasicName(Namespace.URI, "hierarchyNode");
     public static final Name LINKED_FILE = new BasicName(Namespace.URI, "linkedFile");
-    public static final Name NODE_TYPE = new BasicName(Namespace.URI, "nodeType");
-    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
     public static final Name QUERY = new BasicName(Namespace.URI, "query");
     public static final Name VERSION = new BasicName(Namespace.URI, "version");
     public static final Name VERSIONED_CHILD = new BasicName(Namespace.URI, "versionedChild");

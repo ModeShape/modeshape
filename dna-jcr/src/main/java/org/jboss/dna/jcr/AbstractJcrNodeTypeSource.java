@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
@@ -42,6 +43,12 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     protected static final List<JcrNodeType> NO_SUPERTYPES = Collections.<JcrNodeType>emptyList();
     protected static final List<JcrNodeDefinition> NO_CHILD_NODES = Collections.<JcrNodeDefinition>emptyList();
     protected static final List<JcrPropertyDefinition> NO_PROPERTIES = Collections.<JcrPropertyDefinition>emptyList();
+    protected static final String[] ALL_PROPERTY_TYPES_WITH_UNDEFINED = new String[] {
+        PropertyType.nameFromValue(PropertyType.BINARY), PropertyType.nameFromValue(PropertyType.BOOLEAN),
+        PropertyType.nameFromValue(PropertyType.DATE), PropertyType.nameFromValue(PropertyType.DOUBLE),
+        PropertyType.nameFromValue(PropertyType.LONG), PropertyType.nameFromValue(PropertyType.NAME),
+        PropertyType.nameFromValue(PropertyType.PATH), PropertyType.nameFromValue(PropertyType.REFERENCE),
+        PropertyType.nameFromValue(PropertyType.STRING), PropertyType.nameFromValue(PropertyType.UNDEFINED),};
 
     /** Indicates that the node type has no primary item name - added for readability */
     protected static final Name NO_PRIMARY_ITEM_NAME = null;

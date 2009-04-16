@@ -41,4 +41,10 @@ public class JcrNtLexicon {
     public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
     public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
     public static final Name BASE = new BasicName(Namespace.URI, "base");
+
+    // Names used in the node type definitions ...
+    public static final Name NODE_TYPE = new BasicName(Namespace.URI, "nodeType");
+    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
+    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
+
 }

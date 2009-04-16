@@ -46,4 +46,28 @@ public class JcrLexicon {
     public static final Name MIMETYPE = new BasicName(Namespace.URI, "mimeType");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
+
+    // Names used in the node type definitions ...
+    public static final Name AUTO_CREATED = new BasicName(Namespace.URI, "autoCreated");
+    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
+    public static final Name DEFAULT_PRIMARY_TYPE = new BasicName(Namespace.URI, "defaultPrimaryType");
+    public static final Name DEFAULT_VALUES = new BasicName(Namespace.URI, "defaultValues");
+    public static final Name HAS_ORDERABLE_CHILD_NODES = new BasicName(Namespace.URI, "hasOrderableChildNodes");
+    public static final Name IS_ABSTRACT = new BasicName(Namespace.URI, "isAbstract");
+    public static final Name IS_FULL_TEXT_SEARCHABLE = new BasicName(Namespace.URI, "isFullTextSearchable");
+    public static final Name IS_MIXIN = new BasicName(Namespace.URI, "isMixin");
+    public static final Name IS_QUERY_ORDERABLE = new BasicName(Namespace.URI, "isQueryOrderable");
+    public static final Name IS_QUERYABLE = new BasicName(Namespace.URI, "isQueryable");
+    public static final Name MANDATORY = new BasicName(Namespace.URI, "mandatory");
+    public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
+    public static final Name ON_PARENT_VERSION = new BasicName(Namespace.URI, "onParentVersion");
+    public static final Name PRIMARY_ITEM_NAME = new BasicName(Namespace.URI, "primaryItemName");
+    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
+    public static final Name PROTECTED = new BasicName(Namespace.URI, "protected");
+    public static final Name REQUIRED_PRIMARY_TYPES = new BasicName(Namespace.URI, "requiredPrimaryTypes");
+    public static final Name REQUIRED_TYPE = new BasicName(Namespace.URI, "requiredType");
+    public static final Name SAME_NAME_SIBLINGS = new BasicName(Namespace.URI, "sameNameSiblings");
+    public static final Name SUPERTYPES = new BasicName(Namespace.URI, "supertypes");
+    public static final Name VALUE_CONSTRAINTS = new BasicName(Namespace.URI, "valueConstraints");
+
 }
