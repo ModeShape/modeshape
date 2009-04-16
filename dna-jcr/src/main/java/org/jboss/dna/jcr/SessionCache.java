@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
+import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -842,7 +843,7 @@ public class SessionCache {
             if (desiredUuid == null) desiredUuid = UUID.randomUUID();
 
             // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
-            int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(name);
+            int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(name) + 1;
             JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(node.getPrimaryTypeName(),
                                                                                node.getMixinTypeNames(),
                                                                                name,
@@ -851,6 +852,21 @@ public class SessionCache {
                                                                                true);
             // Make sure there was a valid child node definition ...
             if (definition == null) {
+
+                // Check if the definition would have worked with less SNS
+                definition = nodeTypes().findChildNodeDefinition(node.getPrimaryTypeName(),
+                                                                 node.getMixinTypeNames(),
+                                                                 name,
+                                                                 primaryTypeName,
+                                                                 numSns - 1,
+                                                                 true);
+                if (definition != null) {
+                    // Only failed because there was no SNS definition - throw ItemExistsException per 7.1.4 of 1.0.1 spec
+                    Path pathForChild = pathFactory.create(getPathFor(node), name, numSns + 1);
+                    String msg = JcrI18n.noSnsDefinitionForNode.text(pathForChild, workspaceName());
+                    throw new ItemExistsException(msg);
+                }
+                // Didn't work for other reasons - throw ConstraintViolationException
                 Path pathForChild = pathFactory.create(getPathFor(node), name, numSns + 1);
                 String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(pathForChild, workspaceName());
                 throw new ConstraintViolationException(msg);
