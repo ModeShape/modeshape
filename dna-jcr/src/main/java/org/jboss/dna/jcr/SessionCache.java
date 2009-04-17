@@ -268,12 +268,10 @@ public class SessionCache {
      */
     public void refresh( UUID nodeUuid,
                          boolean keepChanges ) throws RepositoryException {
-        // Find the path of the given node ...
-        Path path = getPathFor(nodeUuid);
-
         // Build the set of affected node UUIDs
         Set<UUID> nodesUnderBranch = new HashSet<UUID>();
         Stack<UUID> nodesToVisit = new Stack<UUID>();
+        Set<UUID> nodesRemovedFromBranch = new HashSet<UUID>();
 
         nodesToVisit.add(nodeUuid);
         while (!nodesToVisit.isEmpty()) {
@@ -283,7 +281,9 @@ public class SessionCache {
             NodeInfo nodeInfo = null;
             ChangedNodeInfo changedInfo = this.changedNodes.get(uuid);
             if (changedInfo != null) {
-                nodesToVisit.addAll(changedInfo.getUuidsForRemovedChildren());
+                Collection<UUID> removedNodes = changedInfo.getUuidsForRemovedChildren();
+                nodesToVisit.addAll(removedNodes);
+                nodesRemovedFromBranch.addAll(removedNodes);
                 nodeInfo = changedInfo;
             } else {
                 nodeInfo = this.cachedNodes.get(uuid);
@@ -294,6 +294,23 @@ public class SessionCache {
                 }
             }
         }
+
+        if (!nodesRemovedFromBranch.isEmpty()) {
+            // Skip any nodes that were moved from one parent to another within this branch ...
+            nodesRemovedFromBranch.removeAll(nodesUnderBranch);
+            // Skip any nodes that were actually deleted (not moved)...
+            nodesRemovedFromBranch.removeAll(this.deletedNodes.keySet());
+            if (!nodesRemovedFromBranch.isEmpty()) {
+                // There was at least one node that was moved from this branch to another parent outside this branch
+                Path path = getPathFor(nodeUuid);
+                String msg = JcrI18n.unableToRefreshBranchSinceAtLeastOneNodeMovedToParentOutsideOfBranch.text(path,
+                                                                                                               workspaceName());
+                throw new RepositoryException(msg);
+            }
+        }
+
+        // Find the path of the given node ...
+        Path path = getPathFor(nodeUuid);
 
         if (keepChanges) {
             // Keep the pending operations

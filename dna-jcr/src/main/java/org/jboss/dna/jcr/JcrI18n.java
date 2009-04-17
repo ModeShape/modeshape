@@ -83,6 +83,7 @@ public final class JcrI18n {
     public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
     public static I18n unableToSetMultiValuedPropertyUsingSingleValue;
     public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
+    public static I18n unableToRefreshBranchSinceAtLeastOneNodeMovedToParentOutsideOfBranch;
     public static I18n allPropertyValuesMustHaveSameType;
 
     public static I18n unableToRemoveRootNode;
@@ -126,7 +127,7 @@ public final class JcrI18n {
     public static I18n cannotRedefineProperty;
     public static I18n autocreatedPropertyNeedsDefault;
     public static I18n singleValuedPropertyNeedsSingleValuedDefault;
-    
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
