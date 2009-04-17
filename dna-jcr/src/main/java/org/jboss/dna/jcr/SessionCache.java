@@ -268,6 +268,13 @@ public class SessionCache {
      */
     public void refresh( UUID nodeUuid,
                          boolean keepChanges ) throws RepositoryException {
+        assert nodeUuid != null;
+        // If the node being refreshed is the root node, then it's more efficient to refresh the whole workspace ...
+        if (this.root.equals(nodeUuid)) {
+            refresh(keepChanges);
+            return;
+        }
+
         // Build the set of affected node UUIDs
         Set<UUID> nodesUnderBranch = new HashSet<UUID>();
         Stack<UUID> nodesToVisit = new Stack<UUID>();
