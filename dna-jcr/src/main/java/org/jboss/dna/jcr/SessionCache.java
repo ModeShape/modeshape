@@ -280,10 +280,14 @@ public class SessionCache {
             UUID uuid = nodesToVisit.pop();
             nodesUnderBranch.add(uuid);
 
-            NodeInfo nodeInfo = cachedNodes.get(uuid);
-            // Newly added nodes will be changedNodes but not cachedNodes
-            if (nodeInfo == null) nodeInfo = changedNodes.get(uuid);
-
+            NodeInfo nodeInfo = null;
+            ChangedNodeInfo changedInfo = this.changedNodes.get(uuid);
+            if (changedInfo != null) {
+                nodesToVisit.addAll(changedInfo.getUuidsForRemovedChildren());
+                nodeInfo = changedInfo;
+            } else {
+                nodeInfo = this.cachedNodes.get(uuid);
+            }
             if (nodeInfo != null) {
                 for (ChildNode childNode : nodeInfo.getChildren()) {
                     nodesToVisit.add(childNode.getUuid());

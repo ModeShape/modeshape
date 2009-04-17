@@ -43,7 +43,11 @@ import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
 import org.apache.jackrabbit.test.api.NodeAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
+import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
+import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
+import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
+import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
@@ -213,11 +217,11 @@ public class JcrTckTest {
             addTestSuite(SetPropertyValueTest.class);
             addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
             // addTestSuite(SetPropertyAssumeTypeTest.class);
-            //
-            // addTestSuite(NodeItemIsModifiedTest.class);
-            // addTestSuite(NodeItemIsNewTest.class);
-            // addTestSuite(PropertyItemIsModifiedTest.class);
-            // addTestSuite(PropertyItemIsNewTest.class);
+
+            addTestSuite(NodeItemIsModifiedTest.class);
+            addTestSuite(NodeItemIsNewTest.class);
+            addTestSuite(PropertyItemIsModifiedTest.class);
+            addTestSuite(PropertyItemIsNewTest.class);
 
             addTestSuite(NodeAddMixinTest.class);
             addTestSuite(NodeCanAddMixinTest.class);

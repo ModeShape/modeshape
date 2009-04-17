@@ -23,6 +23,8 @@
  */
 package org.jboss.dna.jcr.cache;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -92,6 +94,15 @@ public class ChangedNodeInfo implements NodeInfo {
     public ChangedNodeInfo( NodeInfo original ) {
         assert original != null;
         this.original = original;
+    }
+
+    /**
+     * Return the original node information. May be null if this is a new node.
+     * 
+     * @return the original node information
+     */
+    public NodeInfo getOriginal() {
+        return original;
     }
 
     /**
@@ -192,6 +203,23 @@ public class ChangedNodeInfo implements NodeInfo {
     public Children getChildren() {
         if (changedChildren != null) return changedChildren;
         return original.getChildren();
+    }
+
+    /**
+     * Get the UUIDs for the children for this node that have been removed since the node was last persisted.
+     * 
+     * @return a collection of the UUIDs of the removed children; never null but possibly empty
+     */
+    public Collection<UUID> getUuidsForRemovedChildren() {
+        if (original == null) return Collections.emptySet();
+
+        Set<UUID> removedChildren = new HashSet<UUID>();
+        for (ChildNode originalChildNode : original.getChildren()) {
+            if (!this.changedChildren.childrenByUuid.containsKey(originalChildNode.getUuid())) {
+                removedChildren.add(originalChildNode.getUuid());
+            }
+        }
+        return removedChildren;
     }
 
     /**
