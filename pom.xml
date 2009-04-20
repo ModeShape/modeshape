@@ -121,7 +121,7 @@
 		<module>extensions/dna-sequencer-mp3</module>
 		<module>extensions/dna-sequencer-jbpm-jpdl</module>
 		<!--module>extensions/dna-sequencer-esbMessage</module-->
-		<module>extensions/dna-sequencer-cnd</module>
+		<!--module>extensions/dna-sequencer-cnd</module-->
 		<module>extensions/dna-sequencer-java</module>
 		<module>extensions/dna-sequencer-msoffice</module>
 		<module>extensions/dna-sequencer-xml</module>
@@ -384,6 +384,11 @@
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-graph</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-cnd</artifactId>
 				<version>${pom.version}</version>
 			</dependency>
 			<dependency>

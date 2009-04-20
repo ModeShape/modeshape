@@ -21,32 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.sequencer;
+package org.jboss.dna.sequencer.cnd;
 
-import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.collection.SimpleProblems;
-import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.common.AbstractI18nTest;
 
 /**
  * @author John Verhaeg
  */
-@Immutable
-public class MockSequencerContext extends SequencerContext {
+public class CndSequencerI18nTest extends AbstractI18nTest {
 
-    public MockSequencerContext() {
-        super(new ExecutionContext(), null, null, null, new SimpleProblems());
-        getNamespaceRegistry().register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
-        getNamespaceRegistry().register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
-    }
-
-    public MockSequencerContext( String inputPath ) {
-        this(new ExecutionContext(), inputPath);
-    }
-
-    public MockSequencerContext( ExecutionContext context,
-                                 String inputPath ) {
-        super(context, context.getValueFactories().getPathFactory().create(inputPath), null, null, new SimpleProblems());
-        getNamespaceRegistry().register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
-        getNamespaceRegistry().register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
+    public CndSequencerI18nTest() {
+        super(CndSequencerI18n.class);
     }
 }
