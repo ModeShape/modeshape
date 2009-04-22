@@ -33,6 +33,11 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class RepositoryI18n {
 
+    // Configuration
+    public static I18n errorCreatingInstanceOfClass;
+    public static I18n errorCreatingInstanceOfClassUsingClassLoaders;
+    public static I18n errorSettingJavaBeanPropertyOnInstanceOfClass;
+
     // Services and Repository
     public static I18n invalidStateString;
     public static I18n serviceShutdowAndMayNotBeStarted;

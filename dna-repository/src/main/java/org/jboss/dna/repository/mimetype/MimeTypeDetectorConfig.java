@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.repository.mimetype;
 
+import java.util.Map;
 import org.jboss.dna.common.component.ComponentConfig;
 
 /**
@@ -32,8 +33,9 @@ public class MimeTypeDetectorConfig extends ComponentConfig {
 
     public MimeTypeDetectorConfig( String name,
                            String description,
+                           Map<String, Object> properties,
                            String classname,
                            String[] classpath ) {
-        super(name, description, classname, classpath);
+        super(name, description, properties, classname, classpath);
     }
 }

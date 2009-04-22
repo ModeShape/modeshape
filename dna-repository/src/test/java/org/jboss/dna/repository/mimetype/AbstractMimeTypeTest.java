@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +46,7 @@ public abstract class AbstractMimeTypeTest {
 
     protected AbstractMimeTypeTest( Class<? extends MimeTypeDetector> detector ) {
         assertThat(detector, notNullValue());
-        this.config = new MimeTypeDetectorConfig("MIME-Type Detector", "MIME-Type Detector", detector.getName(), null);
+        this.config = new MimeTypeDetectorConfig("MIME-Type Detector", "MIME-Type Detector", Collections.<String, Object>emptyMap(), detector.getName(), null);
     }
 
     @Before
