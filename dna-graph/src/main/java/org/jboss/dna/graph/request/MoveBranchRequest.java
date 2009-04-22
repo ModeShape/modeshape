@@ -265,7 +265,9 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     public boolean changes( String workspace,
                             Path path ) {
-        return this.workspaceName.equals(workspace) && into.hasPath() && into.getPath().isAtOrBelow(path);
+        return this.workspaceName.equals(workspace) 
+            && (into.hasPath() && into.getPath().isAtOrBelow(path)
+                || from.hasPath() && from.getPath().isAtOrBelow(path)); 
     }
 
     /**

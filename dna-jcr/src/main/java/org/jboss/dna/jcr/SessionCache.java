@@ -445,6 +445,7 @@ public class SessionCache {
              * newly created node will have it's parent's UUID in branchUuids, but not the new node's uuid. 
              */
             Set<UUID> uuidsUnderBranch = new HashSet<UUID>();
+            LinkedList<UUID> peersToCheck = new LinkedList<UUID>();
             for (UUID branchUuid : branchUuids) {
                 uuidsUnderBranch.add(branchUuid);
                 ChangedNodeInfo changedNode = changedNodes.get(branchUuid);
@@ -452,10 +453,22 @@ public class SessionCache {
                     for (ChildNode childNode : changedNode.getChildren()) {
                         uuidsUnderBranch.add(childNode.getUuid());
                     }
+                    
+                    Collection<UUID> peers = changedNode.getPeers();
+                    if (peers != null) peersToCheck.addAll(peers);
                 }
 
             }
 
+            /*
+             * Need to check that any peers in a Session.move operation are both in the save
+             */
+            for (UUID peerUuid : peersToCheck) {
+                if (!uuidsUnderBranch.contains(peerUuid)) {
+                    throw new ConstraintViolationException();
+                }
+            }
+            
             // Now execute the branch ...
             Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
@@ -899,6 +912,7 @@ public class SessionCache {
          * list of children. This method automatically disconnects the node from its current parent.
          * 
          * @param nodeUuid the UUID of the existing node; may not be null
+         * @param newNodeName
          * @return the representation of the newly-added child, which includes the {@link ChildNode#getSnsIndex()
          *         same-name-sibling index}
          * @throws ItemNotFoundException if the specified child node could be found in the session or workspace
@@ -906,7 +920,7 @@ public class SessionCache {
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
          * @throws RepositoryException if any other error occurs while reading information from the repository
          */
-        public ChildNode moveToBeChild( UUID nodeUuid )
+        public ChildNode moveToBeChild( UUID nodeUuid, Name newNodeName )
             throws ItemNotFoundException, InvalidItemStateException, ConstraintViolationException, RepositoryException {
 
             if (nodeUuid.equals(node.getUuid()) || isAncestor(nodeUuid)) {
@@ -942,8 +956,8 @@ public class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
                     setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -959,14 +973,18 @@ public class SessionCache {
 
             // Remove the node from the current parent and add it to this ...
             child = existingParentInfo.removeChild(nodeUuid, pathFactory);
-            ChildNode newChild = node.addChild(child.getName(), child.getUuid(), pathFactory);
+            ChildNode newChild = node.addChild(newNodeName, child.getUuid(), pathFactory);
 
             // Set the child's changed representation to point to this node as its parent ...
             existingNodeInfo.setParent(node.getUuid());
-
+            
+            // Set up the peer relationship between the two nodes that must be saved together
+            node.addPeer(existingParent);
+            existingParentInfo.addPeer(node.getUuid());
+            
             // Now, record the operation to do this ...
             operations.move(existingNodeEditor.currentLocation).into(currentLocation);
-
+            
             return newChild;
         }
 

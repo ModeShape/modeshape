@@ -109,7 +109,7 @@ public class ChildPath extends AbstractPath {
     @Override
     public Segment getSegment( int index ) {
         if (index == (size - 1)) return child;
-        return parent.getSegment(index - 1);
+        return parent.getSegment(index);
     }
 
     /**

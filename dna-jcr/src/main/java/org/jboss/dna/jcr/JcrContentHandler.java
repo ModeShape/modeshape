@@ -99,7 +99,7 @@ class JcrContentHandler extends DefaultHandler {
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
         this.session = session;
-        this.currentNode = (AbstractJcrNode)session.getNode(parentPath);
+        this.currentNode = session.getNode(parentPath);
         this.uuidBehavior = uuidBehavior;
         this.saveMode = saveMode;
 
@@ -273,9 +273,9 @@ class JcrContentHandler extends DefaultHandler {
                         uuid = UUID.fromString(rawUuid.get(0).getString());
                     }
 
-                    AbstractJcrNode newNode = parentNode.addNode(currentNodeName,
-                                                                 currentProps.get(primaryTypeName).get(0).getString(),
-                                                                 uuid);
+                    AbstractJcrNode newNode = parentNode.addNode(currentNodeName, currentProps.get(primaryTypeName)
+                                                                                              .get(0)
+                                                                                              .getString(), uuid);
 
                     for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
                         if (entry.getKey().equals(primaryTypeName)) {
@@ -325,8 +325,9 @@ class JcrContentHandler extends DefaultHandler {
                         ByteArrayInputStream is = new ByteArrayInputStream(Base64.decode(s, Base64.URL_SAFE));
                         currentProps.get(currentPropName).add(session.getValueFactory().createValue(is));
                     } else {
-                        currentProps.get(currentPropName).add(session.getValueFactory().createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
-                                                                                                    currentPropType));
+                        currentProps.get(currentPropName).add(session.getValueFactory()
+                                                                     .createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
+                                                                                  currentPropType));
                     }
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);

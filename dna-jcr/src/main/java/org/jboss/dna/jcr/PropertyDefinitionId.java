@@ -74,7 +74,7 @@ public final class PropertyDefinitionId implements Serializable {
     private final String stringRepresentation;
 
     /**
-     * Create a new identifier for a propety definition.
+     * Create a new identifier for a property definition.
      * 
      * @param nodeTypeName the name of the node type; may not be null
      * @param propertyDefinitionName the name of the property definition, which may be a {@link #ANY_NAME residual property}; may

@@ -62,6 +62,7 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
@@ -420,7 +421,7 @@ class JcrSession implements Session {
      * @throws PathNotFoundException if the path could not be found
      * @throws RepositoryException if there is a problem
      */
-    Node getNode( Path path ) throws RepositoryException, PathNotFoundException {
+    AbstractJcrNode getNode( Path path ) throws RepositoryException, PathNotFoundException {
         if (path.isRoot()) return cache.findJcrRootNode();
         return cache.findJcrNode(null, path.relativeTo(rootPath));
     }
@@ -678,12 +679,30 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#move(java.lang.String, java.lang.String)
      */
     public void move( String srcAbsPath,
-                      String destAbsPath ) {
-        throw new UnsupportedOperationException();
+                      String destAbsPath ) throws ItemExistsException, RepositoryException {
+        CheckArg.isNotNull(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotNull(destAbsPath, "destAbsPath");
+
+        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
+        Path destPath = pathFactory.create(destAbsPath);
+
+        Path.Segment newNodeName = destPath.getSegment(destPath.size() - 1);
+        // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
+        if (destAbsPath.endsWith("]")) {
+            throw new RepositoryException();
+        }
+
+        AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
+        AbstractJcrNode newParentNode = getNode(destPath.getParent());
+
+        if (newParentNode.hasNode(newNodeName.getString(executionContext.getNamespaceRegistry()))) {
+            throw new ItemExistsException();
+        }
+
+        newParentNode.editor().moveToBeChild(sourceNode.nodeUuid, newNodeName.getName());
     }
 
     /**

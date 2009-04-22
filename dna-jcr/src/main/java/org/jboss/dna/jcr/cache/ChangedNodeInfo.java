@@ -86,6 +86,8 @@ public class ChangedNodeInfo implements NodeInfo {
      */
     private NodeDefinitionId changedDefinitionId;
 
+    private List<UUID> peers;
+
     /**
      * Create an immutable NodeInfo instance.
      * 
@@ -94,6 +96,35 @@ public class ChangedNodeInfo implements NodeInfo {
     public ChangedNodeInfo( NodeInfo original ) {
         assert original != null;
         this.original = original;
+    }
+
+    /**
+     * Returns the peer nodes for this changed node.
+     * <p>
+     * Peer nodes are nodes that must be saved with this node (e.g., the other changed node in a
+     * {@link javax.jcr.Session#move(String, String)} operation.
+     * </p>
+     * 
+     * @return a collection of the UUIDs for any other nodes that must be saved with this node; may be null
+     */
+    public final Collection<UUID> getPeers() {
+        return peers;
+    }
+
+    /**
+     * Adds a peer node to this change.
+     * <p>
+     * Peer nodes are nodes that must be saved with this node (e.g., the other changed node in a
+     * {@link javax.jcr.Session#move(String, String)} operation.
+     * </p>
+     * 
+     * @param peerUuid the UUID of the peer node
+     */
+    public void addPeer( UUID peerUuid ) {
+        if (peers == null) {
+            peers = new LinkedList<UUID>();
+        }
+        peers.add(peerUuid);
     }
 
     /**
