@@ -88,6 +88,11 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
 
+    /**
+     * This source supports creating references.
+     */
+    protected static final boolean SUPPORTS_REFERENCES = false;
+
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
 
@@ -96,10 +101,12 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private volatile String defaultWorkspace;
     private volatile String[] predefinedWorkspaces = new String[] {};
-    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
+                                                                                                  SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
-                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES);
+                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES,
+                                                                                                  SUPPORTS_REFERENCES);
     private transient CachePolicy cachePolicy;
     private transient CopyOnWriteArraySet<String> availableWorkspaceNames;
 
@@ -236,7 +243,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
-                                                        capabilities.supportsEvents(), allowWorkspaceCreation);
+                                                        capabilities.supportsEvents(), allowWorkspaceCreation,
+                                                        capabilities.supportsReferences());
     }
 
     /**

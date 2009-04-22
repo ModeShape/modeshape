@@ -619,6 +619,23 @@ public class BatchRequestBuilder {
      * @param from the location of the top node in the existing branch that is to be moved
      * @param into the location of the existing node into which the branch should be moved
      * @param workspaceName the name of the workspace
+     * @param newNameForNode the new name for the node being moved, or null if the name of the original should be used
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public BatchRequestBuilder moveBranch( Location from,
+                                           Location into,
+                                           String workspaceName,
+                                           Name newNameForNode ) {
+        return add(new MoveBranchRequest(from, into, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
+    }
+
+    /**
+     * Create a request to move a branch from one location into another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be moved
+     * @param into the location of the existing node into which the branch should be moved
+     * @param workspaceName the name of the workspace
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location
      * @return this builder for method chaining; never null

@@ -93,6 +93,8 @@ public class GraphTest {
     private ExecutionContext context;
     private Path validPath;
     private String validPathString;
+    private Name validName;
+    private String validNameString;
     private UUID validUuid;
     private Property validIdProperty1;
     private Property validIdProperty2;
@@ -120,6 +122,8 @@ public class GraphTest {
         validPathString = "/a/b/c";
         validUuid = UUID.randomUUID();
         validPath = createPath(validPathString);
+        validNameString = "theName";
+        validName = createName(validNameString);
         Name idProperty1Name = createName("id1");
         Name idProperty2Name = createName("id2");
         validIdProperty1 = context.getPropertyFactory().create(idProperty1Name, "1");
@@ -978,6 +982,15 @@ public class GraphTest {
     }
 
     @Test
+    public void shouldMoveAndRenameNodesThroughMultipleMoveRequests() {
+        graph.move(validPath).as(validName).into(validIdProperty1, validIdProperty2).and().move(validUuid).into(validPathString);
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validUuid), Location.create(createPath(validPathString)));
+        assertNoMoreRequests();
+    }
+
+    @Test
     public void shouldIgnoreIncompleteRequests() {
         graph.move(validPath); // missing 'into(...)'
         assertNoMoreRequests();
@@ -1081,8 +1094,33 @@ public class GraphTest {
 
         @Override
         public void process( MoveBranchRequest request ) {
-            // Just update the actual location
-            request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
+            // Just update the actual location ...
+            Name newName = request.desiredName();
+            if (newName == null && request.from().hasPath()) newName = request.from().getPath().getLastSegment().getName();
+            if (newName == null) newName = context.getValueFactories().getNameFactory().create("d");
+            // Figure out the new name and path (if needed)...
+            Path newPath = null;
+            if (request.into().hasPath()) {
+                newPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), newName);
+            } else if (request.from().hasPath()) {
+                newPath = context.getValueFactories().getPathFactory().create("/a/b/c");
+                newPath = context.getValueFactories().getPathFactory().create(newPath, newName);
+            } else {
+                newPath = context.getValueFactories().getPathFactory().create("/a/b/c");
+                newPath = context.getValueFactories().getPathFactory().create(newPath, newName);
+            }
+            // Figure out the old name and path ...
+            Path oldPath = null;
+            if (request.from().hasPath()) {
+                oldPath = request.from().getPath();
+            } else {
+                oldPath = context.getValueFactories().getPathFactory().create("/x/y/z");
+                oldPath = context.getValueFactories().getPathFactory().create(oldPath, newName);
+            }
+            Location fromLocation = request.from().hasIdProperties() ? Location.create(oldPath, request.from().getIdProperties()) : Location.create(oldPath);
+            Location intoLocation = request.into().hasIdProperties() ? Location.create(newPath, request.into().getIdProperties()) : Location.create(newPath);
+
+            request.setActualLocations(fromLocation, intoLocation);
         }
 
         @Override

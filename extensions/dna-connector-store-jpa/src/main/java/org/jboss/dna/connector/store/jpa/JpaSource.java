@@ -132,6 +132,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = true;
     /**
+     * This source supports creating references.
+     */
+    protected static final boolean SUPPORTS_REFERENCES = true;
+    /**
      * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
      * read-only or updateable}.
      */
@@ -191,10 +195,12 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private volatile boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     private volatile String[] predefinedWorkspaces = new String[] {};
-    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
+                                                                                                  SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
-                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES);
+                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES,
+                                                                                                  SUPPORTS_REFERENCES);
     private volatile String modelName;
     private transient Model model;
     private transient DataSource dataSource;
@@ -251,7 +257,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), supportsUpdates,
-                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces());
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
+                                                        capabilities.supportsReferences());
     }
 
     /**
@@ -379,7 +386,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
-                                                        capabilities.supportsEvents(), allowWorkspaceCreation);
+                                                        capabilities.supportsEvents(), allowWorkspaceCreation,
+                                                        capabilities.supportsReferences());
     }
 
     /**
@@ -848,7 +856,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass())
+                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
 

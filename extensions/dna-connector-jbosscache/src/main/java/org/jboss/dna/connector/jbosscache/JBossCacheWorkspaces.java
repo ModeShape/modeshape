@@ -241,7 +241,7 @@ public class JBossCacheWorkspaces {
         } catch (ConfigurationException error) {
             // The workspace name is probably not the name of a configuration ...
             I18n msg = JBossCacheConnectorI18n.workspaceNameWasNotValidConfiguration;
-            Logger.getLogger(getClass()).info(msg, workspaceName, error.getMessage());
+            Logger.getLogger(getClass()).debug(msg.text(workspaceName, error.getMessage()));
         }
 
         if (this.defaultCacheFactoryConfigurationName != null) {
@@ -253,7 +253,7 @@ public class JBossCacheWorkspaces {
                 if (this.workspaceNamesForConfigurationNameProblems.add(workspaceName)) {
                     // Log this problem only the first time ...
                     I18n msg = JBossCacheConnectorI18n.defaultCacheFactoryConfigurationNameWasNotValidConfiguration;
-                    Logger.getLogger(getClass()).warn(msg, workspaceName);
+                    Logger.getLogger(getClass()).debug(msg.text(workspaceName));
                 }
             }
         }

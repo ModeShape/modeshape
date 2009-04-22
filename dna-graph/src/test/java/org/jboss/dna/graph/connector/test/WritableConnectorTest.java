@@ -105,9 +105,19 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldAddChildrenAndSettingProperties() {
-        graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and().create("/b").with("propD",
-                                                                                                                                                  "valueD").and("propE",
-                                                                                                                                                                "valueE").execute();
+        graph.batch()
+             .set("propA")
+             .to("valueA")
+             .on("/")
+             .and()
+             .create("/a")
+             .with("propB", "valueB")
+             .and("propC", "valueC")
+             .and()
+             .create("/b")
+             .with("propD", "valueD")
+             .and("propE", "valueE")
+             .execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
@@ -608,50 +618,54 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
 
-        // Create some references between nodes that aren't involved with the copy ...
-        graph.set("refProp").on("/node1").to(graph.getNodeAt("/node1/node3"));
-        graph.set("refProp").on("/node1/node1").to(graph.getNodeAt("/node3/node2")); // will soon be /node3/node2[1]
+        if (source.getCapabilities().supportsReferences()) {
+            // Create some references between nodes that aren't involved with the copy ...
+            graph.set("refProp").on("/node1").to(graph.getNodeAt("/node1/node3"));
+            graph.set("refProp").on("/node1/node1").to(graph.getNodeAt("/node3/node2")); // will soon be /node3/node2[1]
 
-        // Create some "inward" references from nodes that are NOT being copied to nodes that are being copied ...
-        graph.set("refProp").on("/node1/node2").to(graph.getNodeAt("/node2/node2"));
-        graph.set("refProp").on("/node1/node3").to(graph.getNodeAt("/node2/node2"));
+            // Create some "inward" references from nodes that are NOT being copied to nodes that are being copied ...
+            graph.set("refProp").on("/node1/node2").to(graph.getNodeAt("/node2/node2"));
+            graph.set("refProp").on("/node1/node3").to(graph.getNodeAt("/node2/node2"));
 
-        // Create some "outward" references from nodes that are being copied to nodes that are NOT being copied ...
-        graph.set("refProp").on("/node2/node1").to(graph.getNodeAt("/node1/node1"));
-        graph.set("refProp").on("/node2/node3").to(graph.getNodeAt("/node1/node2"));
+            // Create some "outward" references from nodes that are being copied to nodes that are NOT being copied ...
+            graph.set("refProp").on("/node2/node1").to(graph.getNodeAt("/node1/node1"));
+            graph.set("refProp").on("/node2/node3").to(graph.getNodeAt("/node1/node2"));
 
-        // Create some "internal" references between nodes that are being copied ...
-        graph.set("refProp").on("/node2/node2").to(graph.getNodeAt("/node2/node2/node1"));
-        graph.set("refProp").on("/node2/node3/node1").to(graph.getNodeAt("/node2/node2/node1"));
+            // Create some "internal" references between nodes that are being copied ...
+            graph.set("refProp").on("/node2/node2").to(graph.getNodeAt("/node2/node2/node1"));
+            graph.set("refProp").on("/node2/node3/node1").to(graph.getNodeAt("/node2/node2/node1"));
 
-        // Verify the references are there ...
-        assertReference("/node1", "refProp", "/node1/node3");
-        assertReference("/node1/node1", "refProp", "/node3/node2");
-        assertReference("/node1/node2", "refProp", "/node2/node2");
-        assertReference("/node1/node3", "refProp", "/node2/node2");
-        assertReference("/node2/node1", "refProp", "/node1/node1");
-        assertReference("/node2/node3", "refProp", "/node1/node2");
-        assertReference("/node2/node2", "refProp", "/node2/node2/node1");
-        assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
+            // Verify the references are there ...
+            assertReference("/node1", "refProp", "/node1/node3");
+            assertReference("/node1/node1", "refProp", "/node3/node2");
+            assertReference("/node1/node2", "refProp", "/node2/node2");
+            assertReference("/node1/node3", "refProp", "/node2/node2");
+            assertReference("/node2/node1", "refProp", "/node1/node1");
+            assertReference("/node2/node3", "refProp", "/node1/node2");
+            assertReference("/node2/node2", "refProp", "/node2/node2/node1");
+            assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
+        }
 
         // Copy a branches ...
         graph.copy("/node2").into("/node3");
 
-        // Verify the references are still there ...
-        assertReference("/node1", "refProp", "/node1/node3");
-        assertReference("/node1/node1", "refProp", "/node3/node2[1]");
-        assertReference("/node1/node2", "refProp", "/node2/node2");
-        assertReference("/node1/node3", "refProp", "/node2/node2");
-        assertReference("/node2/node1", "refProp", "/node1/node1");
-        assertReference("/node2/node3", "refProp", "/node1/node2");
-        assertReference("/node2/node2", "refProp", "/node2/node2/node1");
-        assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
+        if (source.getCapabilities().supportsReferences()) {
+            // Verify the references are still there ...
+            assertReference("/node1", "refProp", "/node1/node3");
+            assertReference("/node1/node1", "refProp", "/node3/node2[1]");
+            assertReference("/node1/node2", "refProp", "/node2/node2");
+            assertReference("/node1/node3", "refProp", "/node2/node2");
+            assertReference("/node2/node1", "refProp", "/node1/node1");
+            assertReference("/node2/node3", "refProp", "/node1/node2");
+            assertReference("/node2/node2", "refProp", "/node2/node2/node1");
+            assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
 
-        // And verify that we have a few new (outward and internal) references in the copy ...
-        assertReference("/node3/node2[2]/node1", "refProp", "/node1/node1"); // outward
-        assertReference("/node3/node2[2]/node3", "refProp", "/node1/node2"); // outward
-        assertReference("/node3/node2[2]/node2", "refProp", "/node3/node2[2]/node2/node1"); // internal
-        assertReference("/node3/node2[2]/node3/node1", "refProp", "/node3/node2[2]/node2/node1"); // internal
+            // And verify that we have a few new (outward and internal) references in the copy ...
+            assertReference("/node3/node2[2]/node1", "refProp", "/node1/node1"); // outward
+            assertReference("/node3/node2[2]/node3", "refProp", "/node1/node2"); // outward
+            assertReference("/node3/node2[2]/node2", "refProp", "/node3/node2[2]/node2/node1"); // internal
+            assertReference("/node3/node2[2]/node3/node1", "refProp", "/node3/node2[2]/node2/node1"); // internal
+        }
 
         // Now assert the structure ...
         assertThat(graph.getChildren().of("/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
@@ -730,9 +744,11 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
                                                                          "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node2[2]/node1/node3"), hasProperty("property3",
                                                                          "The quick brown fox jumped over the moon. What? "));
-        assertThat(subgraph.getNode("node2[2]/node2").getChildren(), hasChildren(segment("node1"),
-                                                                                 segment("node2"),
-                                                                                 segment("node3")));
+        if (source.getCapabilities().supportsReferences()) {
+            assertThat(subgraph.getNode("node2[2]/node2").getChildren(), hasChildren(segment("node1"),
+                                                                                     segment("node2"),
+                                                                                     segment("node3")));
+        }
         assertThat(subgraph.getNode("node2[2]/node2"), hasProperty("property1",
                                                                    "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node2[2]/node2"), hasProperty("property2",
@@ -760,9 +776,11 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
                                                                          "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node2[2]/node2/node3"), hasProperty("property3",
                                                                          "The quick brown fox jumped over the moon. What? "));
-        assertThat(subgraph.getNode("node2[2]/node3").getChildren(), hasChildren(segment("node1"),
-                                                                                 segment("node2"),
-                                                                                 segment("node3")));
+        if (source.getCapabilities().supportsReferences()) {
+            assertThat(subgraph.getNode("node2[2]/node3").getChildren(), hasChildren(segment("node1"),
+                                                                                     segment("node2"),
+                                                                                     segment("node3")));
+        }
         assertThat(subgraph.getNode("node2[2]/node3"), hasProperty("property1",
                                                                    "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node2[2]/node3"), hasProperty("property2",
@@ -803,6 +821,569 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
             Reference ref = (Reference)value;
             assertThat(graph.resolve(ref), is(graph.getNodeAt(toNodePath[i])));
         }
+    }
+
+    @Test
+    public void shouldMoveNodes() {
+        // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node1/node1
+        // /node1/node1/node2
+        // /node1/node1/node3
+        // /node1/node2
+        // /node1/node2/node1
+        // /node1/node2/node2
+        // /node1/node2/node3
+        // /node1/node3
+        // /node1/node3/node1
+        // /node1/node3/node2
+        // /node1/node3/node3
+        // /node2
+        // /node2/node1
+        // /node2/node1/node1
+        // /node2/node1/node2
+        // /node2/node1/node3
+        // /node2/node2
+        // /node2/node2/node1
+        // /node2/node2/node2
+        // /node2/node2/node3
+        // /node2/node3
+        // /node2/node3/node1
+        // /node2/node3/node2
+        // /node2/node3/node3
+        // /node3
+        // /node3/node1
+        // /node3/node1/node1
+        // /node3/node1/node2
+        // /node3/node1/node3
+        // /node3/node2
+        // /node3/node2/node1
+        // /node3/node2/node2
+        // /node3/node2/node3
+        // /node3/node3
+        // /node3/node3/node1
+        // /node3/node3/node2
+        // /node3/node3/node3
+        // /secondBranch1
+        // /secondBranch1/secondBranch1
+        // /secondBranch1/secondBranch2
+        // /secondBranch2
+        // /secondBranch2/secondBranch1
+        // /secondBranch2/secondBranch2
+
+        String initialPath = "";
+        int depth = 3;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        // Delete two branches ...
+        graph.move("/node2").into("/node3");
+
+        // Now assert the structure ...
+        assertThat(graph.getChildren().of("/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3/node1"), hasChildren());
+
+        assertThat(graph.getChildren().of("/node3"), hasChildren(segment("node1"),
+                                                                 segment("node2"),
+                                                                 segment("node3"),
+                                                                 segment("node2[2]")));
+        assertThat(graph.getChildren().of("/node3/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3/node1"), hasChildren());
+        assertThat(graph.getChildren().of("/node3/node2[2]"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node2[2]/node1"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node2[2]/node2"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node2[2]/node3"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node2[2]/node1/node1"), hasChildren());
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(4).at("/node3");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("node2[2]"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1").getChildren(), hasChildren(segment("node1"),
+                                                                                 segment("node2"),
+                                                                                 segment("node3")));
+        assertThat(subgraph.getNode("node2[2]/node1"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node1/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node1/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node1/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node1/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node2/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node2/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node2/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node2/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node3/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node3/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2[2]/node3/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[2]/node3/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+    }
+
+    @Test
+    public void shouldMoveAndRenameNodes() {
+        // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node1/node1
+        // /node1/node1/node2
+        // /node1/node1/node3
+        // /node1/node2
+        // /node1/node2/node1
+        // /node1/node2/node2
+        // /node1/node2/node3
+        // /node1/node3
+        // /node1/node3/node1
+        // /node1/node3/node2
+        // /node1/node3/node3
+        // /node2
+        // /node2/node1
+        // /node2/node1/node1
+        // /node2/node1/node2
+        // /node2/node1/node3
+        // /node2/node2
+        // /node2/node2/node1
+        // /node2/node2/node2
+        // /node2/node2/node3
+        // /node2/node3
+        // /node2/node3/node1
+        // /node2/node3/node2
+        // /node2/node3/node3
+        // /node3
+        // /node3/node1
+        // /node3/node1/node1
+        // /node3/node1/node2
+        // /node3/node1/node3
+        // /node3/node2
+        // /node3/node2/node1
+        // /node3/node2/node2
+        // /node3/node2/node3
+        // /node3/node3
+        // /node3/node3/node1
+        // /node3/node3/node2
+        // /node3/node3/node3
+        // /secondBranch1
+        // /secondBranch1/secondBranch1
+        // /secondBranch1/secondBranch2
+        // /secondBranch2
+        // /secondBranch2/secondBranch1
+        // /secondBranch2/secondBranch2
+
+        String initialPath = "";
+        int depth = 3;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        // Delete two branches ...
+        graph.move("/node2").as("node3").into("/node3");
+
+        // Now assert the structure ...
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3/node1"), hasChildren());
+
+        assertThat(graph.getChildren().of("/node3"), hasChildren(segment("node1"),
+                                                                 segment("node2"),
+                                                                 segment("node3"),
+                                                                 segment("node3[2]")));
+        assertThat(graph.getChildren().of("/node3/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3/node1"), hasChildren());
+        assertThat(graph.getChildren().of("/node3/node3[2]"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3[2]/node1"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3[2]/node2"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3[2]/node3"), hasChildren(segment("node1"),
+                                                                                segment("node2"),
+                                                                                segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3[2]/node1/node1"), hasChildren());
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(4).at("/node3");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("node3[2]"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1").getChildren(), hasChildren(segment("node1"),
+                                                                                 segment("node2"),
+                                                                                 segment("node3")));
+        assertThat(subgraph.getNode("node3[2]/node1"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node1/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node1/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node1/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node1/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node2/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node2/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node2/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node2/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3"), hasProperty("property1",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3"), hasProperty("property2",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3"), hasProperty("property3",
+                                                                   "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node3/node1"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node1"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node1"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node3/node2"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node2"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node2"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3[2]/node3/node3"), hasProperty("property1",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node3"), hasProperty("property2",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3[2]/node3/node3"), hasProperty("property3",
+                                                                         "The quick brown fox jumped over the moon. What? "));
+    }
+
+    @Test
+    public void shouldMoveAndRenameNodesToNameWithoutSameNameSibling() {
+        // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node1/node1
+        // /node1/node1/node2
+        // /node1/node1/node3
+        // /node1/node2
+        // /node1/node2/node1
+        // /node1/node2/node2
+        // /node1/node2/node3
+        // /node1/node3
+        // /node1/node3/node1
+        // /node1/node3/node2
+        // /node1/node3/node3
+        // /node2
+        // /node2/node1
+        // /node2/node1/node1
+        // /node2/node1/node2
+        // /node2/node1/node3
+        // /node2/node2
+        // /node2/node2/node1
+        // /node2/node2/node2
+        // /node2/node2/node3
+        // /node2/node3
+        // /node2/node3/node1
+        // /node2/node3/node2
+        // /node2/node3/node3
+        // /node3
+        // /node3/node1
+        // /node3/node1/node1
+        // /node3/node1/node2
+        // /node3/node1/node3
+        // /node3/node2
+        // /node3/node2/node1
+        // /node3/node2/node2
+        // /node3/node2/node3
+        // /node3/node3
+        // /node3/node3/node1
+        // /node3/node3/node2
+        // /node3/node3/node3
+        // /secondBranch1
+        // /secondBranch1/secondBranch1
+        // /secondBranch1/secondBranch2
+        // /secondBranch2
+        // /secondBranch2/secondBranch1
+        // /secondBranch2/secondBranch2
+
+        String initialPath = "";
+        int depth = 3;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        // Delete two branches ...
+        graph.move("/node2").as("nodeX").into("/node3");
+
+        // Now assert the structure ...
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node1/node3/node1"), hasChildren());
+
+        assertThat(graph.getChildren().of("/node3"), hasChildren(segment("node1"),
+                                                                 segment("node2"),
+                                                                 segment("node3"),
+                                                                 segment("nodeX")));
+        assertThat(graph.getChildren().of("/node3/node2"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/node3/node1"), hasChildren());
+        assertThat(graph.getChildren().of("/node3/nodeX"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/nodeX/node1"),
+                   hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/nodeX/node2"),
+                   hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/nodeX/node3"),
+                   hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(graph.getChildren().of("/node3/nodeX/node1/node1"), hasChildren());
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(4).at("/node3");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2[1]"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(subgraph.getNode("nodeX"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1").getChildren(), hasChildren(segment("node1"),
+                                                                              segment("node2"),
+                                                                              segment("node3")));
+        assertThat(subgraph.getNode("nodeX/node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node1/node1"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node1"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node1"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node1/node2"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node2"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node2"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node1/node3"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node3"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node1/node3"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node2/node1"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node1"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node1"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node2/node2"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node2"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node2"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node2/node3"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node3"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node2/node3"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node3/node1"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node1"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node1"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node3/node2"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node2"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node2"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("nodeX/node3/node3"), hasProperty("property1",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node3"), hasProperty("property2",
+                                                                      "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("nodeX/node3/node3"), hasProperty("property3",
+                                                                      "The quick brown fox jumped over the moon. What? "));
     }
 
 }

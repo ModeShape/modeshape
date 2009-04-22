@@ -55,32 +55,41 @@ public class RepositorySourceCapabilities {
      */
     public static final boolean DEFAULT_SUPPORT_CREATING_WORKSPACES = false;
 
+    /**
+     * The default support for creating workspaces is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_REFERENCES = true;
+
     private boolean sameNameSiblings;
     private boolean updates;
     private boolean events;
     private boolean creatingWorkspaces;
+    private boolean references;
 
     /**
      * Create a capabilities object using the defaults, .
      */
     public RepositorySourceCapabilities() {
         this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS,
-             DEFAULT_SUPPORT_CREATING_WORKSPACES);
+             DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
-        this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES);
+        this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES,
+             DEFAULT_SUPPORT_REFERENCES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates,
                                          boolean supportsEvents,
-                                         boolean supportsCreatingWorkspaces ) {
+                                         boolean supportsCreatingWorkspaces,
+                                         boolean supportsReferences ) {
         this.sameNameSiblings = supportsSameNameSiblings;
         this.updates = supportsUpdates;
         this.events = supportsEvents;
         this.creatingWorkspaces = supportsCreatingWorkspaces;
+        this.references = supportsReferences;
     }
 
     /**
@@ -101,6 +110,15 @@ public class RepositorySourceCapabilities {
      */
     public boolean supportsUpdates() {
         return updates;
+    }
+
+    /**
+     * Return whether the source supports references by identifiers.
+     * 
+     * @return true if references are supported, or false otherwise
+     */
+    public boolean supportsReferences() {
+        return references;
     }
 
     /**

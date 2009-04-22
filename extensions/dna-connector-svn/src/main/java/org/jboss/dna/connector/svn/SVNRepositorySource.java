@@ -89,6 +89,10 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_CREATING_WORKSPACES = false;
     /**
+     * This source supports creating references.
+     */
+    protected static final boolean SUPPORTS_REFERENCES = false;
+    /**
      * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
      * read-only or updateable}.
      */
@@ -115,7 +119,8 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     private RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                          DEFAULT_SUPPORTS_UPDATES,
                                                                                          SUPPORTS_EVENTS,
-                                                                                         SUPPORTS_CREATING_WORKSPACES);
+                                                                                         SUPPORTS_CREATING_WORKSPACES,
+                                                                                         SUPPORTS_REFERENCES);
 
     private transient Context jndiContext;
     private transient RepositoryContext repositoryContext;
@@ -259,7 +264,8 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), supportsUpdates,
-                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces());
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
+                                                        capabilities.supportsReferences());
     }
 
     /**

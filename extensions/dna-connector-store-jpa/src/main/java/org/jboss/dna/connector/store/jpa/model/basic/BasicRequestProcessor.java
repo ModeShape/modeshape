@@ -1368,41 +1368,67 @@ public class BasicRequestProcessor extends RequestProcessor {
                     // Now we know that the new parent is not the existing parent ...
                     final int oldIndex = fromEntity.getIndexInParent();
 
+                    // Make sure the child name is set correctly ...
+                    String childOldLocalName = fromEntity.getChildName();
+                    String childLocalName = null;
+                    NamespaceEntity ns = null;
+                    Name childName = request.desiredName();
+                    if (childName != null) {
+                        childLocalName = request.desiredName().getLocalName();
+                        String childNsUri = childName.getNamespaceUri();
+                        ns = namespaces.get(childNsUri, true);
+                    } else {
+                        childName = oldPath.getLastSegment().getName();
+                        childLocalName = fromEntity.getChildName();
+                        ns = fromEntity.getChildNamespace();
+                    }
+
                     // Find the largest SNS index in the existing ChildEntity objects with the same name ...
-                    String childLocalName = fromEntity.getChildName();
-                    NamespaceEntity ns = fromEntity.getChildNamespace();
                     Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
                     query.setParameter("workspaceId", workspaceId);
-                    query.setParameter("parentUuidString", toUuidString);
+                    query.setParameter("parentUuid", toUuidString);
                     query.setParameter("ns", ns.getId());
                     query.setParameter("childName", childLocalName);
                     int nextSnsIndex = 1;
                     try {
-                        nextSnsIndex = (Integer)query.getSingleResult();
+                        Integer index = (Integer)query.getSingleResult();
+                        if (index != null) nextSnsIndex = index.intValue() + 1;
                     } catch (NoResultException e) {
                     }
 
                     // Find the largest child index in the existing ChildEntity objects ...
                     query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
                     query.setParameter("workspaceId", workspaceId);
-                    query.setParameter("parentUuidString", toUuidString);
+                    query.setParameter("parentUuid", toUuidString);
                     int nextIndexInParent = 1;
                     try {
-                        nextIndexInParent = (Integer)query.getSingleResult() + 1;
+                        Integer index = (Integer)query.getSingleResult();
+                        if (index != null) nextIndexInParent = index + 1;
                     } catch (NoResultException e) {
                     }
 
-                    // Move the child entity to be under the new parent ...
-                    fromEntity.setId(new ChildId(workspaceId, toUuidString, fromUuidString));
-                    fromEntity.setIndexInParent(nextIndexInParent);
-                    fromEntity.setSameNameSiblingIndex(nextSnsIndex);
+                    ChildId movedId = new ChildId(workspaceId, toUuidString, fromUuidString);
+                    if (fromEntity.getId().equals(movedId)) {
+                        // The node is being renamed, but not moved ...
+                        fromEntity.setChildName(childLocalName);
+                        fromEntity.setChildNamespace(ns);
+                        fromEntity.setIndexInParent(nextIndexInParent);
+                        fromEntity.setSameNameSiblingIndex(nextSnsIndex);
+                    } else {
+                        // We won't be able to move the entity to a different parent, because that would involve
+                        // changing the PK for the entity, which is not possible. Instead, we have to create a
+                        // new entity with the same identity information, then delete 'fromEntity'
+                        ChildEntity movedEntity = new ChildEntity(movedId, nextIndexInParent, ns, childLocalName, nextSnsIndex);
+                        movedEntity.setAllowsSameNameChildren(fromEntity.getAllowsSameNameChildren());
+                        entities.persist(movedEntity);
+                        entities.remove(fromEntity);
+                    }
 
                     // Flush the entities to the database ...
                     entities.flush();
 
                     // Determine the new location ...
                     Path newParentPath = actualIntoLocation.location.getPath();
-                    Name childName = oldPath.getLastSegment().getName();
                     Path newPath = pathFactory.create(newParentPath, childName, nextSnsIndex);
                     actualNewLocation = actualOldLocation.with(newPath);
 
@@ -1410,7 +1436,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
                                                                         workspaceId,
                                                                         oldParentUuid,
-                                                                        childLocalName,
+                                                                        childOldLocalName,
                                                                         ns.getId(),
                                                                         oldIndex);
 

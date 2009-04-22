@@ -35,9 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -256,8 +258,15 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Node<Name, Object> node = getNode(request, cache, nodePath);
         if (node == null) return;
 
-        node.getParent().removeChild(node.getFqn().getLastElement());
-        request.setActualLocationOfNode(Location.create(nodePath));
+        Path.Segment nameOfRemovedNode = nodePath.getLastSegment();
+        Node<Name, Object> parent = node.getParent();
+        if (cache.removeNode(node.getFqn())) {
+            removeFromChildList(cache, parent, nameOfRemovedNode, getExecutionContext());
+            request.setActualLocationOfNode(Location.create(nodePath));
+        } else {
+            String msg = JBossCacheConnectorI18n.unableToDeleteBranch.text(getSourceName(), request.inWorkspace(), nodePath);
+            request.setError(new RepositorySourceException(msg));
+        }
     }
 
     @Override
@@ -275,12 +284,15 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (newParent == null) return;
 
         // Copy the branch and use the same UUIDs ...
-        Path.Segment newSegment = copyNode(cache, node, newParent, null, true, true, null, null, getExecutionContext());
+        Name desiredName = request.desiredName();
+        Path.Segment newSegment = copyNode(cache, node, newParent, desiredName, true, true, null, null, getExecutionContext());
 
         // Now delete the old node ...
         Node<Name, Object> oldParent = node.getParent();
         boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
         assert removed;
+        Path.Segment nameOfRemovedNode = nodePath.getLastSegment();
+        removeFromChildList(cache, oldParent, nameOfRemovedNode, getExecutionContext());
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
@@ -516,6 +528,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         // Copy the properties ...
         copy.clearData();
         copy.putAll(original.getData());
+        copy.remove(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST); // will be reset later ...
 
         // Generate a new UUID for the new node, overwriting any existing value from the original ...
         if (reuseOriginalUuids) uuidForCopyOfOriginal = uuidFactory.create(original.get(DnaLexicon.UUID));
@@ -635,6 +648,63 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         return null;
     }
 
+    /**
+     * Update the array of {@link Path.Segment path segments} for the children of the supplied node, based upon a node being
+     * removed. This array maintains the ordered list of children (since the {@link Cache} does not maintain the order). Invoking
+     * this method will change any existing children that a {@link Path.Segment#getName() name part} that matches the supplied
+     * <code>changedName</code> to have the appropriate {@link Path.Segment#getIndex() same-name sibling index}.
+     * 
+     * @param cache the cache in which the parent exists ...
+     * @param parent the parent node; may not be null
+     * @param removedNode the segment of the node that was removed, which signals to look for node with the same name; may not be
+     *        null
+     * @param context the execution context; may not be null
+     */
+    protected void removeFromChildList( Cache<Name, Object> cache,
+                                        Node<Name, Object> parent,
+                                        Path.Segment removedNode,
+                                        ExecutionContext context ) {
+        assert parent != null;
+        assert context != null;
+        Set<Node<Name, Object>> children = parent.getChildren();
+        if (children.isEmpty()) {
+            parent.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, null); // replaces any existing value
+            return;
+        }
+
+        // Go through the children, looking for any children with the same name as the 'changedName'
+        Path.Segment[] childNames = (Path.Segment[])parent.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
+        assert childNames != null;
+        int snsIndex = removedNode.getIndex();
+        int index = 0;
+        Path.Segment[] newChildNames = new Path.Segment[childNames.length - 1];
+        for (Path.Segment childName : childNames) {
+            if (!childName.getName().equals(removedNode.getName())) {
+                newChildNames[index] = childName;
+                index++;
+            } else {
+                // The name matches ...
+                if (childName.getIndex() < snsIndex) {
+                    // Just copy ...
+                    newChildNames[index] = childName;
+                    index++;
+                } else if (childName.getIndex() == snsIndex) {
+                    // don't copy ...
+                } else {
+                    // Append an updated segment ...
+                    Path.Segment newSegment = context.getValueFactories()
+                                                     .getPathFactory()
+                                                     .createSegment(childName.getName(), childName.getIndex() - 1);
+                    newChildNames[index] = newSegment;
+                    // Replace the child with the correct FQN ...
+                    changeNodeName(cache, parent, childName, newSegment, context);
+                    index++;
+                }
+            }
+        }
+        parent.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, newChildNames); // replaces any existing value
+    }
+
     protected boolean checkChildren( Node<Name, Object> parent ) {
         Path.Segment[] childNamesProperty = (Path.Segment[])parent.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         Set<Object> childNames = parent.getChildrenNames();
@@ -649,10 +719,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                 names.add((Path.Segment)name);
             }
             Collections.sort(names);
-            // Logger.getLogger(getClass()).trace("Child list on {0} is: {1}",
-            // parent.getFqn(),
-            // StringUtil.readableString(childNamesProperty));
-            // Logger.getLogger(getClass()).trace("Children of {0} is: {1}", parent.getFqn(), StringUtil.readableString(names));
+            Logger.getLogger(getClass()).trace("Child list on {0} is: {1}", parent.getFqn(), childNamesProperty);
+            Logger.getLogger(getClass()).trace("Children of {0} is: {1}", parent.getFqn(), names);
         }
         return result;
     }

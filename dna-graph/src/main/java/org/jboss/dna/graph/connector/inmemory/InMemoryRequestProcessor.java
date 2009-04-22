@@ -192,11 +192,11 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         InMemoryNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
         // Look up the new parent, which must exist ...
-        Path newPath = request.into().getPath();
-        Path newParentPath = newPath.getParent();
+        Path newParentPath = request.into().getPath();
         InMemoryNode newParent = workspace.getNode(newParentPath);
-        node.setParent(newParent);
-        newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
+        workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent);
+        assert node.getParent() == newParent;
+        Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName().getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, node.getUuid());
         request.setActualLocations(oldLocation, newLocation);

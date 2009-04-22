@@ -27,6 +27,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 
 /**
@@ -43,6 +44,7 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
     private final Location from;
     private final Location into;
     private final String workspaceName;
+    private final Name desiredNameForNode;
     private final NodeConflictBehavior conflictBehavior;
     private Location actualOldLocation;
     private Location actualNewLocation;
@@ -58,7 +60,23 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
     public MoveBranchRequest( Location from,
                               Location into,
                               String workspaceName ) {
-        this(from, into, workspaceName, DEFAULT_CONFLICT_BEHAVIOR);
+        this(from, into, workspaceName, null, DEFAULT_CONFLICT_BEHAVIOR);
+    }
+
+    /**
+     * Create a request to move a branch from one location into another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be moved
+     * @param into the location of the existing node into which the branch should be moved
+     * @param workspaceName the name of the workspace
+     * @param newNameForMovedNode the new name for the node being moved, or null if the name of the original should be used
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public MoveBranchRequest( Location from,
+                              Location into,
+                              String workspaceName,
+                              Name newNameForMovedNode ) {
+        this(from, into, workspaceName, newNameForMovedNode, DEFAULT_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -75,6 +93,25 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
                               Location into,
                               String workspaceName,
                               NodeConflictBehavior conflictBehavior ) {
+        this(from, into, workspaceName, null, conflictBehavior);
+    }
+
+    /**
+     * Create a request to move a branch from one location into another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be moved
+     * @param into the location of the existing node into which the branch should be moved
+     * @param workspaceName the name of the workspace
+     * @param newNameForMovedNode the new name for the node being moved, or null if the name of the original should be used
+     * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
+     *        location
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public MoveBranchRequest( Location from,
+                              Location into,
+                              String workspaceName,
+                              Name newNameForMovedNode,
+                              NodeConflictBehavior conflictBehavior ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(into, "into");
         CheckArg.isNotNull(workspaceName, "workspaceName");
@@ -82,6 +119,7 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
         this.from = from;
         this.into = into;
         this.workspaceName = workspaceName;
+        this.desiredNameForNode = newNameForMovedNode;
         this.conflictBehavior = conflictBehavior;
     }
 
@@ -110,6 +148,15 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     public String inWorkspace() {
         return workspaceName;
+    }
+
+    /**
+     * Get the name of the copy if it is to be different than that of the original.
+     * 
+     * @return the desired name of the copy, or null if the name of the original is to be used
+     */
+    public Name desiredName() {
+        return desiredNameForNode;
     }
 
     /**
@@ -150,7 +197,9 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     public boolean hasNoEffect() {
         if (into.hasPath() && into.hasIdProperties() == false && from.hasPath()) {
-            return from.getPath().getParent().equals(into.getPath());
+            if (!from.getPath().getParent().equals(into.getPath())) return false;
+            if (desiredName() != null && !desiredName().equals(from.getPath().getLastSegment().getName())) return false;
+            return true;
         }
         // Can't be determined for certain
         return false;
@@ -160,8 +209,8 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      * Sets the actual and complete location of the node being renamed and its new location. This method must be called when
      * processing the request, and the actual location must have a {@link Location#getPath() path}.
      * 
-     * @param oldLocation the actual location of the node before being renamed
-     * @param newLocation the actual location of the new copy of the node
+     * @param oldLocation the actual location of the node before being moved
+     * @param newLocation the actual new location of the node
      * @throws IllegalArgumentException if the either location is null, if the old location does not represent the
      *         {@link Location#isSame(Location) same location} as the {@link #from() from location}, if the new location does not
      *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}, or if the
@@ -169,19 +218,24 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     public void setActualLocations( Location oldLocation,
                                     Location newLocation ) {
+        CheckArg.isNotNull(oldLocation, "oldLocation");
+        CheckArg.isNotNull(newLocation, "newLocation");
         if (!from.isSame(oldLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, from));
         }
-        if (!into.isSame(newLocation, false)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
-        }
-        assert oldLocation != null;
-        assert newLocation != null;
         if (!oldLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
         }
         if (!newLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
+        }
+        if (into().hasPath() && !newLocation.getPath().getParent().isSameAs(into.getPath())) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
+        }
+        Name actualNewName = newLocation.getPath().getLastSegment().getName();
+        Name expectedNewName = desiredName() != null ? desiredName() : oldLocation.getPath().getLastSegment().getName();
+        if (!actualNewName.equals(expectedNewName)) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
         }
         this.actualNewLocation = newLocation;
     }
@@ -249,6 +303,10 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     @Override
     public String toString() {
-        return "move branch " + from() + " in the \"" + workspaceName + "\" workspace into " + into();
+        if (desiredName() != null) {
+            return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into " + into() + " with name "
+                   + desiredName();
+        }
+        return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into " + into();
     }
 }

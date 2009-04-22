@@ -112,7 +112,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
     private volatile String defaultWorkspace;
     private volatile String[] predefinedWorkspaces = new String[] {};
-    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true);
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
     private transient JBossCacheWorkspaces workspaces;
     private transient Context jndiContext;
 
@@ -417,7 +417,8 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @see #isCreatingWorkspacesAllowed()
      */
     public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
-        capabilities = new RepositorySourceCapabilities(true, capabilities.supportsUpdates(), false, allowWorkspaceCreation);
+        capabilities = new RepositorySourceCapabilities(true, capabilities.supportsUpdates(), false, allowWorkspaceCreation,
+                                                        capabilities.supportsReferences());
     }
 
     /**

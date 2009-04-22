@@ -71,7 +71,8 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true, false, true);
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true, false, true,
+                                                                                                        true);
 
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";

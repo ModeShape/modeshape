@@ -239,7 +239,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
 
-        workspace.moveNode(context, node_b, workspace, node_d);
+        workspace.moveNode(context, node_b, null, workspace, node_d);
 
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -249,7 +249,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b)));
         assertThat(workspace.getNode(pathFactory.create("/d/b[2]/c")), is(sameInstance(node_c)));
 
-        workspace.moveNode(context, node_b, workspace, node_e);
+        workspace.moveNode(context, node_b, null, workspace, node_e);
 
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -302,7 +302,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(new_workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(new_node_b2)));
 
         // Move 'workspace::/a/b' into 'newWorkspace::/d'
-        workspace.moveNode(context, node_b, new_workspace, new_node_d);
+        workspace.moveNode(context, node_b, null, new_workspace, new_node_d);
 
         assertThat(workspace.getNodesByUuid().size(), is(5));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
@@ -579,7 +579,9 @@ public class InMemoryRepositoryWorkspaceTest {
 
     @Test
     public void shouldCreateRepositoryStructure() {
-        workspace.createNode(context, "/a").setProperty(context, "name", "value").setProperty(context, "desc", "Some description");
+        workspace.createNode(context, "/a")
+                 .setProperty(context, "name", "value")
+                 .setProperty(context, "desc", "Some description");
         workspace.createNode(context, "/a/b").setProperty(context, "name", "value2").setProperty(context,
                                                                                                  "desc",
                                                                                                  "Some description 2");

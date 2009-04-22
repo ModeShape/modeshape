@@ -342,11 +342,13 @@ public class InMemoryRepository {
          * 
          * @param context
          * @param node the node to be moved; may not be the {@link Workspace#getRoot() root}
+         * @param desiredNewName the new name for the node, if it is to be changed; may be null
          * @param newWorkspace the workspace containing the new parent node
          * @param newParent the new parent; may not be the {@link Workspace#getRoot() root}
          */
         public void moveNode( ExecutionContext context,
                               InMemoryNode node,
+                              Name desiredNewName,
                               Workspace newWorkspace,
                               InMemoryNode newParent ) {
             assert context != null;
@@ -355,16 +357,22 @@ public class InMemoryRepository {
             assert newWorkspace.getRoot().equals(newParent) != true;
             assert this.getRoot().equals(node) != true;
             InMemoryNode oldParent = node.getParent();
+            Name oldName = node.getName().getName();
             if (oldParent != null) {
                 if (oldParent.equals(newParent)) return;
                 boolean removed = oldParent.getChildren().remove(node);
                 assert removed == true;
                 node.setParent(null);
-                correctSameNameSiblingIndexes(context, oldParent, node.getName().getName());
+                correctSameNameSiblingIndexes(context, oldParent, oldName);
             }
             node.setParent(newParent);
+            Name newName = oldName;
+            if (desiredNewName != null) {
+                newName = desiredNewName;
+                node.setName(context.getValueFactories().getPathFactory().createSegment(desiredNewName, 1));
+            }
             newParent.getChildren().add(node);
-            correctSameNameSiblingIndexes(context, newParent, node.getName().getName());
+            correctSameNameSiblingIndexes(context, newParent, newName);
 
             // If the node was moved to a new workspace...
             if (!this.equals(newWorkspace)) {

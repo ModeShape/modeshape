@@ -38,8 +38,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.statistic.Stopwatch;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
@@ -84,6 +86,7 @@ public abstract class AbstractConnectorTest {
     private static List<RepositoryConnection> openConnections;
     private static boolean running;
     private static Location rootLocation;
+    private static UUID rootUuid;
 
     public void startRepository() throws Exception {
         if (!running) {
@@ -141,6 +144,7 @@ public abstract class AbstractConnectorTest {
             } finally {
                 running = false;
                 rootLocation = null;
+                rootUuid = null;
             }
         }
     }
@@ -292,11 +296,24 @@ public abstract class AbstractConnectorTest {
     }
 
     protected UUID getRootNodeUuid() {
-        if (rootLocation == null) {
+        if (rootUuid == null) {
             Node root = graph.getNodeAt("/");
             rootLocation = root.getLocation();
+            rootUuid = rootLocation.getUuid();
+            if (rootUuid == null) {
+                Property uuid = root.getProperty(DnaLexicon.UUID);
+                if (uuid != null) {
+                    rootUuid = context.getValueFactories().getUuidFactory().create(uuid.getFirstValue());
+                }
+            }
+            if (rootUuid == null) {
+                Property uuid = root.getProperty(JcrLexicon.UUID);
+                if (uuid != null) {
+                    rootUuid = context.getValueFactories().getUuidFactory().create(uuid.getFirstValue());
+                }
+            }
         }
-        return rootLocation.getUuid();
+        return rootUuid;
     }
 
     protected String string( Object value ) {

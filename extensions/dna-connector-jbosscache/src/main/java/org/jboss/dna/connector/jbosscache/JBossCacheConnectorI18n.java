@@ -39,6 +39,7 @@ public final class JBossCacheConnectorI18n {
     public static I18n errorSerializingCachePolicyInSource;
     public static I18n objectFoundInJndiWasNotCache;
     public static I18n objectFoundInJndiWasNotCacheFactory;
+    public static I18n unableToDeleteBranch;
     public static I18n unableToCloneWorkspaces;
     public static I18n unableToCreateWorkspaces;
     public static I18n unableToCreateWorkspace;

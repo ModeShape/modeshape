@@ -436,10 +436,11 @@ public class Graph {
         return new MoveAction<Conjunction<Graph>>(this.nextGraph, from) {
             @Override
             protected Conjunction<Graph> submit( Locations from,
-                                                 Location into ) {
+                                                 Location into,
+                                                 Name newName ) {
                 String workspaceName = getCurrentWorkspaceName();
                 do {
-                    requests.moveBranch(from.getLocation(), into, workspaceName);
+                    requests.moveBranch(from.getLocation(), into, workspaceName, newName);
                 } while ((from = from.next()) != null);
                 return and();
             }
@@ -1066,7 +1067,10 @@ public class Graph {
             public SetValuesTo<Conjunction<Graph>> on( final Location location ) {
                 return new SetValuesTo<Conjunction<Graph>>() {
                     public Conjunction<Graph> to( Node value ) {
-                        return to(value.getLocation());
+                        Reference ref = (Reference)convertReferenceValue(value);
+                        Property property = getContext().getPropertyFactory().create(propertyName, ref);
+                        requests.setProperty(location, getCurrentWorkspaceName(), property);
+                        return nextGraph;
                     }
 
                     public Conjunction<Graph> to( Location value ) {
@@ -2023,10 +2027,11 @@ public class Graph {
             return new MoveAction<BatchConjunction>(this.nextRequests, from) {
                 @Override
                 protected BatchConjunction submit( Locations from,
-                                                   Location into ) {
+                                                   Location into,
+                                                   Name newName ) {
                     String workspaceName = getCurrentWorkspaceName();
                     do {
-                        requestQueue.moveBranch(from.getLocation(), into, workspaceName);
+                        requestQueue.moveBranch(from.getLocation(), into, workspaceName, newName);
                     } while ((from = from.next()) != null);
                     return and();
                 }
@@ -3343,6 +3348,18 @@ public class Graph {
             Node node = (Node)value;
             UUID uuid = node.getLocation().getUuid();
             if (uuid == null) {
+                // Look for a property ...
+                Property uuidProperty = node.getProperty(DnaLexicon.UUID);
+                if (uuidProperty != null) {
+                    uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
+                } else {
+                    uuidProperty = node.getProperty(JcrLexicon.UUID);
+                    if (uuidProperty != null) {
+                        uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
+                    }
+                }
+            }
+            if (uuid == null) {
                 String nodeString = node.getLocation().getString(getContext().getNamespaceRegistry());
                 String msg = GraphI18n.unableToCreateReferenceToNodeWithoutUuid.text(nodeString);
                 throw new IllegalArgumentException(msg);
@@ -3559,6 +3576,30 @@ public class Graph {
     }
 
     /**
+     * A component that defines a new name for a node.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     * @author Randall Hauch
+     */
+    public interface AsName<Next> {
+        /**
+         * Finish the request by specifying the new name.
+         * 
+         * @param newName the new name
+         * @return the interface for additional requests or actions
+         */
+        Next as( String newName );
+
+        /**
+         * Finish the request by specifying the new name.
+         * 
+         * @param newName the new name
+         * @return the interface for additional requests or actions
+         */
+        Next as( Name newName );
+    }
+
+    /**
      * A interface that is used to add more locations that are to be copied/moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
@@ -3632,7 +3673,7 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
      */
-    public interface Move<Next> extends Into<Next>, And<Move<Next>> {
+    public interface Move<Next> extends AsName<Into<Next>>, Into<Next>, And<Move<Next>> {
     }
 
     /**
@@ -5190,11 +5231,16 @@ public class Graph {
         /*package*/Path createPath( String path ) {
             return Graph.this.getContext().getValueFactories().getPathFactory().create(path);
         }
+
+        /*package*/Name createName( String name ) {
+            return Graph.this.getContext().getValueFactories().getNameFactory().create(name);
+        }
     }
 
     @NotThreadSafe
     protected abstract class MoveAction<T> extends AbstractAction<T> implements Move<T> {
         private final Locations from;
+        private Name newName;
 
         /*package*/MoveAction( T afterConjunction,
                                 Location from ) {
@@ -5238,39 +5284,55 @@ public class Graph {
             return this;
         }
 
+        public Into<T> as( Name newName ) {
+            this.newName = newName;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.AsName#as(java.lang.String)
+         */
+        public Into<T> as( String newName ) {
+            return as(createName(newName));
+        }
+
         /**
          * Submit any requests to move the targets into the supplied parent location
          * 
          * @param from the location(s) that are being moved; never null
          * @param into the parent location
+         * @param newName the new name for the node being moved; may be null
          * @return this object, for method chaining
          */
         protected abstract T submit( Locations from,
-                                     Location into );
+                                     Location into,
+                                     Name newName );
 
         public T into( Location into ) {
-            return submit(from, into);
+            return submit(from, into, newName);
         }
 
         public T into( Path into ) {
-            return submit(from, Location.create(into));
+            return submit(from, Location.create(into), newName);
         }
 
         public T into( UUID into ) {
-            return submit(from, Location.create(into));
+            return submit(from, Location.create(into), newName);
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(from, Location.create(firstIdProperty, additionalIdProperties));
+            return submit(from, Location.create(firstIdProperty, additionalIdProperties), newName);
         }
 
         public T into( Property into ) {
-            return submit(from, Location.create(into));
+            return submit(from, Location.create(into), newName);
         }
 
         public T into( String into ) {
-            return submit(from, Location.create(createPath(into)));
+            return submit(from, Location.create(createPath(into)), newName);
         }
     }
 
