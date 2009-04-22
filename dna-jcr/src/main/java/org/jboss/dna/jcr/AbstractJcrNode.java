@@ -963,23 +963,30 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 editor = cache.getEditorFor(parentInfo.getUuid());
             } catch (PathNotFoundException e) {
                 // We're going to throw an exception ... the question is which one ...
-                if (parentPath.size() > 1) {
-                    // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException
-                    // So, if we can't find the parent, try for the parent's parent and see if the last segment of the parent's
-                    // path contains a property ...
-                    Path grandparentPath = parentPath.getParent();
-                    assert grandparentPath != null;
-                    try {
-                        NodeInfo grandparentInfo = cache.findNodeInfo(nodeUuid, grandparentPath); // throws PathNotFoundException
-                        if (grandparentInfo.getProperty(parentPath.getLastSegment().getName()) != null) {
-                            // Need to throw a ConstraintViolationException since the request was to add a child to
-                            // a property ...
-                            throw new ConstraintViolationException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
-                        }
-                    } catch (PathNotFoundException e2) {
-                        // eat, since the original exception is what we want ...
+                try {
+                    NodeInfo grandparentInfo;
+                    if (parentPath.size() > 1) {
+                        // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException
+                        // So, if we can't find the parent, try for the parent's parent and see if the last segment of the parent's
+                        // path contains a property ...
+                        Path grandparentPath = parentPath.getParent();
+                        assert grandparentPath != null;
+                        
+                        grandparentInfo = cache.findNodeInfo(nodeUuid, grandparentPath); // throws PathNotFoundException
                     }
+                    else {
+                        grandparentInfo = this.nodeInfo();
+                    }
+                    
+                    if (grandparentInfo.getProperty(parentPath.getLastSegment().getName()) != null) {
+                        // Need to throw a ConstraintViolationException since the request was to add a child to
+                        // a property ...
+                        throw new ConstraintViolationException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+                    }
+                } catch (PathNotFoundException e2) {
+                    // eat, since the original exception is what we want ...
                 }
+
                 // Otherwise, just throw the PathNotFoundException ...
                 throw e;
             }
