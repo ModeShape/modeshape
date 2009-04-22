@@ -26,6 +26,7 @@ package org.jboss.dna.common.component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -35,6 +36,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Reflection;
 
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
@@ -254,6 +256,14 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             newInstance = doCreateInstance(componentClass);
             if (newInstance instanceof Component) {
                 ((Component<ConfigType>)newInstance).setConfiguration(config);
+            }
+            
+            if (config.getProperties() != null) {
+                for (Map.Entry<String, Object> entry : config.getProperties().entrySet()) {
+                    // Set the JavaBean-style property on the RepositorySource instance ...
+                    Reflection reflection = new Reflection(newInstance.getClass());
+                    reflection.invokeSetterMethodOnTarget(entry.getKey(), newInstance, entry.getValue());
+                }
             }
         } catch (Throwable e) {
             throw new SystemFailureException(e);

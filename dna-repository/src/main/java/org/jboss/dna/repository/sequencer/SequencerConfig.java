@@ -26,6 +26,7 @@ package org.jboss.dna.repository.sequencer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ComponentConfig;
@@ -38,12 +39,12 @@ public class SequencerConfig extends ComponentConfig {
 
     private final Set<SequencerPathExpression> pathExpressions;
 
-    public SequencerConfig( String name, String description, String classname, String[] classpath, String... pathExpressions ) {
-        this(name, description, System.currentTimeMillis(), classname, classpath, pathExpressions);
+    public SequencerConfig( String name, String description, Map<String, Object> properties, String classname, String[] classpath, String... pathExpressions ) {
+        this(name, description, System.currentTimeMillis(), properties, classname, classpath, pathExpressions);
     }
 
-    public SequencerConfig( String name, String description, long timestamp, String classname, String[] classpath, String... pathExpressions ) {
-        super(name, description, timestamp, classname, classpath);
+    public SequencerConfig( String name, String description, long timestamp, Map<String, Object> properties, String classname, String[] classpath, String... pathExpressions ) {
+        super(name, description, timestamp, properties, classname, classpath);
         this.pathExpressions = buildPathExpressionSet(pathExpressions);
     }
 

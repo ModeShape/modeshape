@@ -24,6 +24,7 @@
 
 package org.jboss.dna.repository.sequencer;
 
+import java.util.Collections;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
@@ -51,47 +52,47 @@ public class SequencerConfigTest {
         this.validClassname = MockSequencerA.class.getName();
         this.validPathExpressions = new String[] {"/a/b/c/d[e/@attribute] => ."};
         this.validMavenIds = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
-        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds,
+        this.configA = new SequencerConfig("configA", validDescription, Collections.<String, Object>emptyMap(), MockSequencerA.class.getName(), validMavenIds,
                                            validPathExpressions);
-        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds,
+        this.configB = new SequencerConfig("configB", validDescription, Collections.<String, Object>emptyMap(), MockSequencerB.class.getName(), validMavenIds,
                                            validPathExpressions);
-        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds,
+        this.configA2 = new SequencerConfig("conFigA", validDescription, Collections.<String, Object>emptyMap(), MockSequencerA.class.getName(), validMavenIds,
                                             validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullNameInConstructor() {
-        new SequencerConfig(null, validDescription, validClassname, validMavenIds, validPathExpressions);
+        new SequencerConfig(null, validDescription, Collections.<String, Object>emptyMap(), validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyNameInConstructor() {
-        new SequencerConfig("", validDescription, validClassname, validMavenIds, validPathExpressions);
+        new SequencerConfig("", validDescription, Collections.<String, Object>emptyMap(), validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankNameInConstructor() {
-        new SequencerConfig("   \t", validDescription, validClassname, validMavenIds, validPathExpressions);
+        new SequencerConfig("   \t", validDescription, Collections.<String, Object>emptyMap(), validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, null, validMavenIds, validPathExpressions);
+        new SequencerConfig(validName, validDescription, Collections.<String, Object>emptyMap(), null, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "", validMavenIds, validPathExpressions);
+        new SequencerConfig(validName, validDescription, Collections.<String, Object>emptyMap(), "", validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "   \t", validMavenIds, validPathExpressions);
+        new SequencerConfig(validName, validDescription, Collections.<String, Object>emptyMap(), "   \t", validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowInvalidClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "12.this is not a valid classname", validMavenIds, validPathExpressions);
+        new SequencerConfig(validName, validDescription, Collections.<String, Object>emptyMap(), "12.this is not a valid classname", validMavenIds, validPathExpressions);
     }
 
     @Test
@@ -118,7 +119,7 @@ public class SequencerConfigTest {
 
     @Test
     public void shouldHaveNonNullPathExpressionCollectionWhenThereAreNoPathExpressions() {
-        configA = new SequencerConfig("configA", validDescription, validClassname, validMavenIds);
+        configA = new SequencerConfig("configA", validDescription, Collections.<String, Object>emptyMap(), validClassname, validMavenIds);
         assertThat(configA.getPathExpressions().size(), is(0));
     }
 
@@ -130,7 +131,7 @@ public class SequencerConfigTest {
 
     @Test
     public void shouldGetNonNullSequencerClasspathWhenEmpty() {
-        configA = new SequencerConfig("configA", validDescription, validClassname, null, validPathExpressions);
+        configA = new SequencerConfig("configA", validDescription, Collections.<String, Object>emptyMap(), validClassname, null, validPathExpressions);
         assertThat(configA.getComponentClasspath().size(), is(0));
         assertThat(configA.getComponentClasspathArray().length, is(0));
     }

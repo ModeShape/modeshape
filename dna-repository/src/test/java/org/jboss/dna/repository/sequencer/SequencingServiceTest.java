@@ -31,6 +31,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -306,7 +307,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         String classname = MockSequencerA.class.getName();
         String[] classpath = null;
         String[] pathExpressions = {"/testnodeC/testnodeD/@description => ."};
-        SequencerConfig configA = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
+        SequencerConfig configA = new SequencerConfig(name, desc, Collections.<String, Object>emptyMap(), classname, classpath, pathExpressions);
         sequencingService.addSequencer(configA);
 
         // Start the repository and get a session ...

@@ -26,6 +26,7 @@ package org.jboss.dna.common.component;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -111,4 +112,12 @@ public class ComponentConfigTest {
         assertThat(configA.getComponentClasspathArray().length, is(0));
     }
 
+    @Test
+    public void shouldSetValidProperty() {
+        configA = new ComponentConfig("configA", validDescription, System.currentTimeMillis(), Collections.<String, Object>singletonMap("name", "test name"), MockComponentA.class.getName(), (String[])null);
+        assertThat(configA.getComponentClasspath().size(), is(0));
+        assertThat(configA.getComponentClasspathArray().length, is(0));
+        assertThat(configA.getProperties().size(), is(1));
+        assertThat(configA.getProperties().get("name").toString(), is("test name"));
+    }
 }

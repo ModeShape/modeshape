@@ -23,6 +23,8 @@
  */
 package org.jboss.dna.common.component;
 
+import java.util.Map;
+
 /**
  * @author Randall Hauch
  */
@@ -36,11 +38,12 @@ public class SampleComponentConfig extends ComponentConfig {
      * @param name
      * @param description
      * @param timestamp
+     * @param properties
      * @param classname
      * @param classpath
      */
-    public SampleComponentConfig( String name, String description, long timestamp, String classname, String[] classpath ) {
-        super(name, description, timestamp, classname, classpath);
+    public SampleComponentConfig( String name, String description, long timestamp, Map<String, Object> properties, String classname, String[] classpath ) {
+        super(name, description, timestamp, properties, classname, classpath);
 
     }
 

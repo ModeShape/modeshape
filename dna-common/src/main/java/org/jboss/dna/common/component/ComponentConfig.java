@@ -25,7 +25,9 @@ package org.jboss.dna.common.component;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.CheckArg;
@@ -41,38 +43,73 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
     private final String description;
     private final String componentClassname;
     private final List<String> classpath;
+    private final Map<String, Object> properties;
     private final long timestamp;
 
     /**
      * Create a component configuration.
+     * 
      * @param name the name of the configuration, which is considered to be a unique identifier
      * @param description the description
      * @param classname the name of the Java class used for the component
      * @param classpath the optional classpath (defined in a way compatible with a {@link ClassLoaderFactory}
      * @throws IllegalArgumentException if the name is null, empty or blank, or if the classname is null, empty or not a valid
-     * Java classname
+     *         Java classname
      */
-    public ComponentConfig( String name, String description, String classname, String... classpath ) {
-        this(name, description, System.currentTimeMillis(), classname, classpath);
+    public ComponentConfig( String name,
+                            String description,
+                            String classname,
+                            String... classpath ) {
+        this(name, description, System.currentTimeMillis(), Collections.<String, Object>emptyMap(), classname, classpath);
     }
 
     /**
      * Create a component configuration.
+     * 
+     * @param name the name of the configuration, which is considered to be a unique identifier
+     * @param description the description
+     * @param properties the mapping of properties to values that should be set through reflection after a component is
+     *        instantiated with this configuration information
+     * @param classname the name of the Java class used for the component
+     * @param classpath the optional classpath (defined in a way compatible with a {@link ClassLoaderFactory}
+     * @throws IllegalArgumentException if the name is null, empty or blank, or if the class name is null, empty or not a valid
+     *         Java class name
+     */
+    public ComponentConfig( String name,
+                            String description,
+                            Map<String, Object> properties,
+                            String classname,
+                            String... classpath ) {
+        this(name, description, System.currentTimeMillis(), properties, classname, classpath);
+    }
+
+    /**
+     * Create a component configuration.
+     * 
      * @param name the name of the configuration, which is considered to be a unique identifier
      * @param description the description
      * @param timestamp the timestamp that this component was last changed
+     * @param properties the mapping of properties to values that should be set through reflection after a component is
+     *        instantiated with this configuration information
      * @param classname the name of the Java class used for the component
      * @param classpath the optional classpath (defined in a way compatible with a {@link ClassLoaderFactory}
      * @throws IllegalArgumentException if the name is null, empty or blank, or if the classname is null, empty or not a valid
-     * Java classname
+     *         Java classname
      */
-    public ComponentConfig( String name, String description, long timestamp, String classname, String... classpath ) {
+    public ComponentConfig( String name,
+                            String description,
+                            long timestamp,
+                            Map<String, Object> properties,
+                            String classname,
+                            String... classpath ) {
         CheckArg.isNotEmpty(name, "name");
         this.name = name.trim();
         this.description = description != null ? description.trim() : "";
         this.componentClassname = classname;
         this.classpath = buildList(classpath);
         this.timestamp = timestamp;
+        this.properties = properties != null ? Collections.unmodifiableMap(new HashMap<String, Object>(properties)) : Collections.<String, Object>emptyMap();
+
         // Check the classname is a valid classname ...
         if (!ClassUtil.isFullyQualifiedClassname(classname)) {
             throw new IllegalArgumentException(CommonI18n.componentClassnameNotValid.text(classname, name));
@@ -95,6 +132,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the name of this component.
+     * 
      * @return the component name; never null, empty or blank
      */
     public String getName() {
@@ -103,6 +141,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the description for this component
+     * 
      * @return the description
      */
     public String getDescription() {
@@ -111,6 +150,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the fully-qualified name of the Java class used for instances of this component
+     * 
      * @return the Java class name of this component; never null or empty and always a valid Java class name
      */
     public String getComponentClassname() {
@@ -119,6 +159,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the classpath defined in terms of strings compatible with a {@link ClassLoaderFactory}.
+     * 
      * @return the classpath; never null but possibly empty
      */
     public List<String> getComponentClasspath() {
@@ -127,6 +168,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the classpath defined as an array of strings compatible with a {@link ClassLoaderFactory}.
+     * 
      * @return the classpath as an array; never null but possibly empty
      */
     public String[] getComponentClasspathArray() {
@@ -135,10 +177,20 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
 
     /**
      * Get the system timestamp when this configuration object was created.
+     * 
      * @return the timestamp
      */
     public long getTimestamp() {
         return this.timestamp;
+    }
+
+    /**
+     * Get the (unmodifiable) properties to be set through reflection on components of this type after instantiation
+     * 
+     * @return the properties to be set through reflection on components of this type after instantiation; never null
+     */
+    public Map<String, Object> getProperties() {
+        return this.properties;
     }
 
     /**
@@ -177,10 +229,11 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
     /**
      * Determine whether this component has changed with respect to the supplied component. This method basically checks all
      * attributes, whereas {@link #equals(Object) equals} only checks the {@link #getClass() type} and {@link #getName()}.
+     * 
      * @param component the component to be compared with this one
      * @return true if this componet and the supplied component have some changes, or false if they are exactly equivalent
      * @throws IllegalArgumentException if the supplied component reference is null or is not the same {@link #getClass() type} as
-     * this object
+     *         this object
      */
     public boolean hasChanged( ComponentConfig component ) {
         CheckArg.isNotNull(component, "component");

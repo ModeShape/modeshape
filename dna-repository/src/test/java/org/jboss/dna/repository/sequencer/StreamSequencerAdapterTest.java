@@ -69,7 +69,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     private StreamSequencer streamSequencer;
     private StreamSequencerAdapter sequencer;
     private String[] validExpressions = {"/a/* => /output"};
-    private SequencerConfig validConfig = new SequencerConfig("name", "desc", "something.class", null, validExpressions);
+    private SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(), "something.class", null, validExpressions);
     private JcrTools tools;
     private Session session;
     private SequencerOutputMap sequencerOutput;
