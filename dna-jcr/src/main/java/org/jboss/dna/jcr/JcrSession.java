@@ -180,7 +180,7 @@ class JcrSession implements Session {
     JcrWorkspace workspace() {
         return this.workspace;
     }
-    
+
     Graph.Batch createBatch() {
         return graph.batch();
     }
@@ -619,6 +619,7 @@ class JcrSession implements Session {
 
         try {
             XMLReader parser = XMLReaderFactory.createXMLReader();
+
             parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
             parser.parse(new InputSource(in));
         } catch (EnclosingSAXException ese) {
@@ -706,7 +707,7 @@ class JcrSession implements Session {
             throw new ItemExistsException();
         }
 
-        newParentNode.editor().moveToBeChild(sourceNode.nodeUuid, newNodeName.getName());
+        newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());
     }
 
     /**

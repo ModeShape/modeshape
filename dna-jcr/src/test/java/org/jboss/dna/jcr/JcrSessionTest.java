@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.ByteArrayInputStream;
@@ -46,6 +47,7 @@ import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
@@ -509,4 +511,18 @@ public class JcrSessionTest {
         node.getUUID();
     }
 
+    @Test
+    public void shouldMoveToNewName() throws Exception {
+        session.move("/a/b/c", "/a/b/d");
+        
+        session.getRootNode().getNode("a").getNode("b").getNode("d");
+        try {
+            session.getRootNode().getNode("a").getNode("b").getNode("c");
+
+            fail("Node still exists at /a/b/c after move");
+        }
+        catch (PathNotFoundException e) {
+            // Expected
+        }
+    }
 }

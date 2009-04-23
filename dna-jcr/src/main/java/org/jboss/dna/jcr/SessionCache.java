@@ -1219,7 +1219,7 @@ public class SessionCache {
          * Move the child specified by the supplied UUID to be a child of this node, appending the child to the end of the current
          * list of children. This method automatically disconnects the node from its current parent.
          * 
-         * @param nodeUuid the UUID of the existing node; may not be null
+         * @param child the UUID of the existing node; may not be null
          * @param newNodeName
          * @return the representation of the newly-added child, which includes the {@link ChildNode#getSnsIndex()
          *         same-name-sibling index}
@@ -1228,11 +1228,11 @@ public class SessionCache {
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
          * @throws RepositoryException if any other error occurs while reading information from the repository
          */
-        public ChildNode moveToBeChild( UUID nodeUuid,
+        public ChildNode moveToBeChild( AbstractJcrNode child,
                                         Name newNodeName )
             throws ItemNotFoundException, InvalidItemStateException, ConstraintViolationException, RepositoryException {
 
-            // UUID nodeUuid = child.nodeUuid;
+            UUID nodeUuid = child.nodeUuid;
             if (nodeUuid.equals(node.getUuid()) || isAncestor(nodeUuid)) {
                 Path pathOfNode = getPathFor(nodeUuid);
                 Path thisPath = currentLocation.getPath();
@@ -1241,8 +1241,9 @@ public class SessionCache {
             }
 
             // Is the node already a child?
+            boolean nameDoesNotChange = newNodeName == null || newNodeName.equals(child.path().getLastSegment());
             ChildNode existingChild = node.getChildren().getChild(nodeUuid);
-            if (existingChild != null) return existingChild;
+            if (existingChild != null && nameDoesNotChange) return existingChild;
 
             JcrNodeDefinition definition = findBestNodeDefinition(node.getUuid(), newNodeName, null);
 
@@ -1287,7 +1288,11 @@ public class SessionCache {
             existingParentInfo.addPeer(node.getUuid());
 
             // Now, record the operation to do this ...
-            operations.move(newChildEditor.currentLocation).into(currentLocation);
+            if (nameDoesNotChange) {
+                operations.move(newChildEditor.currentLocation).into(currentLocation);
+            } else {
+                operations.move(newChildEditor.currentLocation).as(newNodeName).into(currentLocation);
+            }
 
             return newChild;
         }
@@ -1592,19 +1597,18 @@ public class SessionCache {
         JcrNodeDefinition definition = nodeTypes().getNodeDefinition(nodeDefinitionId);
         assert definition != null;
 
-        if (root == null) {
-            // Need to determine if this is the root node ...
-            if (location.getPath().isRoot()) {
-                // It is a root node ...
-                JcrRootNode node = new JcrRootNode(this, uuid);
-                jcrNodes.put(uuid, node);
-                root = uuid;
-                return node;
-            }
+        // Need to determine if this is the root node ...
+        if (location.getPath().isRoot()) {
+            // It is a root node ...
+            JcrRootNode node = new JcrRootNode(this, uuid);
+            jcrNodes.put(uuid, node);
+            root = uuid;
+            return node;
         }
 
         // It is not a root node ...
         JcrNode node = new JcrNode(this, uuid);
+        assert !uuid.equals(root);
         jcrNodes.put(uuid, node);
         return node;
     }
