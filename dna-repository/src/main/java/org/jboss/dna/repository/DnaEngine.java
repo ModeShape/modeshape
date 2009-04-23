@@ -76,6 +76,7 @@ public class DnaEngine {
     private final ExecutionContext context;
     private final List<AdministeredService> services;
 
+    private final SessionFactory jcrSessionFactory;
     private final RepositoryService repositoryService;
     private final ObservationService observationService;
     private final SequencingService sequencingService;
@@ -109,8 +110,8 @@ public class DnaEngine {
         // Create the sequencing service ...
         executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now
         sequencingService = new SequencingService();
-        SessionFactory sessionFactory = new SimpleSessionFactory();
-        JcrExecutionContext jcrContext = new JcrExecutionContext(context, sessionFactory, "");
+        jcrSessionFactory = createSessionFactory();
+        JcrExecutionContext jcrContext = new JcrExecutionContext(context, jcrSessionFactory, "");
         sequencingService.setExecutionContext(jcrContext);
         sequencingService.setExecutorService(executorService);
         for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
@@ -132,6 +133,15 @@ public class DnaEngine {
                 return source.getConnection();
             }
         };
+    }
+
+    /**
+     * Method that can be overridden in subclasses to create (and populate) the SessionFactory used by the sequencing service.
+     * 
+     * @return a session factory, which may not be null
+     */
+    protected SessionFactory createSessionFactory() {
+        return new SimpleSessionFactory();
     }
 
     /**
