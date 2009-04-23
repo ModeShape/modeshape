@@ -945,7 +945,8 @@ public class Graph {
     }
 
     /**
-     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
      * <p>
      * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
      * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
@@ -963,6 +964,131 @@ public class Graph {
         Name child = at.getLastSegment().getName();
         requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, properties.iterator());
         return nextGraph;
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param atPath the path to the node that is to be created.
+     * @return an object that may be used to start another request
+     */
+    public GetNodeConjunction<Graph> createIfMissing( String atPath ) {
+        Path at = createPath(atPath);
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        Location location = requests.createNode(Location.create(parent),
+                                                getCurrentWorkspaceName(),
+                                                child,
+                                                EMPTY_PROPERTIES,
+                                                NodeConflictBehavior.DO_NOT_REPLACE).getActualLocationOfNode();
+        return new GetNodeOrReturnGraph(location);
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @return an object that may be used to start another request
+     */
+    public GetNodeConjunction<Graph> createIfMissing( final Path at ) {
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        Location location = requests.createNode(Location.create(parent),
+                                                getCurrentWorkspaceName(),
+                                                child,
+                                                EMPTY_PROPERTIES,
+                                                NodeConflictBehavior.DO_NOT_REPLACE).getActualLocationOfNode();
+        return new GetNodeOrReturnGraph(location);
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param atPath the path to the node that is to be created.
+     * @param properties the properties for the new node
+     * @return an object that may be used to start another request
+     */
+    public GetNodeConjunction<Graph> createIfMissing( String atPath,
+                                                      Property... properties ) {
+        Path at = createPath(atPath);
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        Location location = requests.createNode(Location.create(parent),
+                                                getCurrentWorkspaceName(),
+                                                child,
+                                                properties,
+                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
+        return new GetNodeOrReturnGraph(location);
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @param properties the properties for the new node
+     * @return an object that may be used to start another request
+     */
+    public GetNodeConjunction<Graph> createIfMissing( Path at,
+                                                      Property... properties ) {
+        CheckArg.isNotNull(at, "at");
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        Location location = requests.createNode(Location.create(parent),
+                                                getCurrentWorkspaceName(),
+                                                child,
+                                                properties,
+                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
+        return new GetNodeOrReturnGraph(location);
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
+     * the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @param properties the properties for the new node
+     * @return an object that may be used to start another request
+     */
+    public GetNodeConjunction<Graph> createIfMissing( Path at,
+                                                      Iterable<Property> properties ) {
+        CheckArg.isNotNull(at, "at");
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        Location location = requests.createNode(Location.create(parent),
+                                                getCurrentWorkspaceName(),
+                                                child,
+                                                properties.iterator(),
+                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
+        return new GetNodeOrReturnGraph(location);
     }
 
     /**
@@ -2901,11 +3027,12 @@ public class Graph {
 
                 public On<BatchConjunction> to( Object firstValue,
                                                 Object... otherValues ) {
-                    firstValue = convertReferenceValue(firstValue);
+                    Object[] values = new Object[otherValues.length + 1];
+                    values[0] = convertReferenceValue(firstValue);
                     for (int i = 0, len = otherValues.length; i != len; ++i) {
-                        otherValues[i] = convertReferenceValue(otherValues[i]);
+                        values[i + 1] = convertReferenceValue(otherValues[i]);
                     }
-                    return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
+                    return set(getContext().getPropertyFactory().create(propertyName, values));
                 }
 
                 public On<BatchConjunction> to( Iterable<?> values ) {
@@ -4697,6 +4824,37 @@ public class Graph {
     }
 
     public interface BatchConjunction extends Conjunction<Batch>, Executable<Node> {
+    }
+
+    public interface GetNodeConjunction<Next> extends Conjunction<Next> {
+        Node andReturn();
+    }
+
+    protected class GetNodeOrReturnGraph implements GetNodeConjunction<Graph> {
+        private final Location location;
+
+        GetNodeOrReturnGraph( Location location ) {
+            assert location != null;
+            this.location = location;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Conjunction#and()
+         */
+        public Graph and() {
+            return Graph.this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.GetNodeConjunction#andReturn()
+         */
+        public Node andReturn() {
+            return and().getNodeAt(location);
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------
