@@ -355,12 +355,205 @@ public class SessionCache {
     }
 
     /**
+     * Checks that the child items of the node are consistent with the definitions required by the node's primary type and mixin
+     * types (if any).
+     * <p>
+     * This method first checks that all of the child nodes and properties for the node have definitions based on the current
+     * primary and mixin node types for the node as held in the node type registry. The method then checks that all mandatory (and
+     * non-protected) items are populated.
+     * </p>
+     * 
+     * @param nodeUuid the UUID of the node to check
+     * @param checkSns if true indicates that this method should distinguish between child nodes that have no matching definition
+     *        and child nodes that would have a definition that would match if it allowed same-name siblings. This flag determines
+     *        which exception type should be thrown in that case.
+     * @throws ItemExistsException if checkSns is true and there is no definition that allows same-name siblings for one of the
+     *         node's child nodes and the node already has a child node with the given name
+     * @throws ConstraintViolationException if one of the node's properties or child nodes does not have a matching definition for
+     *         the name and type among the node's primary and mixin types; this should only occur if type definitions have been
+     *         modified since the node was loaded or modified.
+     * @throws RepositoryException if any other error occurs
+     */
+    private void checkAgainstTypeDefinitions( UUID nodeUuid,
+                                              boolean checkSns )
+        throws ConstraintViolationException, ItemExistsException, RepositoryException {
+
+        NodeInfo nodeInfo = findNodeInfo(nodeUuid);
+        AbstractJcrNode node = findJcrNode(nodeUuid);
+
+        Name primaryTypeName = node.getPrimaryTypeName();
+        List<Name> mixinTypeNames = node.getMixinTypeNames();
+        Set<JcrNodeDefinition> satisfiedChildNodes = new HashSet<JcrNodeDefinition>();
+        Set<JcrPropertyDefinition> satisfiedProperties = new HashSet<JcrPropertyDefinition>();
+
+        for (AbstractJcrProperty property : findJcrPropertiesFor(nodeUuid)) {
+            JcrPropertyDefinition definition = findBestPropertyDefintion(primaryTypeName,
+                                                                         mixinTypeNames,
+                                                                         property.property(),
+                                                                         property.getType(),
+                                                                         false);
+            if (definition == null) {
+                throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
+                                                                                 property.getName(),
+                                                                                 node.getPath(),
+                                                                                 primaryTypeName,
+                                                                                 mixinTypeNames));
+            }
+
+            satisfiedProperties.add(definition);
+        }
+
+        Children children = nodeInfo.getChildren();
+        for (ChildNode child : children) {
+            int snsCount = children.getCountOfSameNameSiblingsWithName(child.getName());
+            NodeInfo childInfo = findNodeInfo(child.getUuid());
+            JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
+                                                                               mixinTypeNames,
+                                                                               child.getName(),
+                                                                               childInfo.getPrimaryTypeName(),
+                                                                               snsCount,
+                                                                               false);
+            if (definition == null) {
+                if (checkSns && snsCount > 1) {
+                    definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
+                                                                     mixinTypeNames,
+                                                                     child.getName(),
+                                                                     childInfo.getPrimaryTypeName(),
+                                                                     1,
+                                                                     false);
+
+                    if (definition != null) {
+                        throw new ItemExistsException(JcrI18n.noSnsDefinition.text(child.getName(),
+                                                                                   node.getPath(),
+                                                                                   primaryTypeName,
+                                                                                   mixinTypeNames));
+                    }
+                }
+                throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                                 child.getName(),
+                                                                                 node.getPath(),
+                                                                                 primaryTypeName,
+                                                                                 mixinTypeNames));
+            }
+            satisfiedChildNodes.add(definition);
+        }
+
+        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+        for (JcrPropertyDefinition definition : primaryType.getPropertyDefinitions()) {
+            if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
+                throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
+                                                                                 definition.getName(),
+                                                                                 node.getPath(),
+                                                                                 primaryTypeName,
+                                                                                 mixinTypeNames));
+            }
+        }
+        for (JcrNodeDefinition definition : primaryType.getChildNodeDefinitions()) {
+            if (definition.isMandatory() && !definition.isProtected() && !satisfiedChildNodes.contains(definition)) {
+                throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                                 definition.getName(),
+                                                                                 node.getPath(),
+                                                                                 primaryTypeName,
+                                                                                 mixinTypeNames));
+            }
+        }
+
+        for (Name mixinTypeName : mixinTypeNames) {
+            JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
+            for (JcrPropertyDefinition definition : mixinType.getPropertyDefinitions()) {
+                if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                                     definition.getName(),
+                                                                                     node.getPath(),
+                                                                                     primaryTypeName,
+                                                                                     mixinTypeNames));
+                }
+            }
+            for (JcrNodeDefinition definition : mixinType.getChildNodeDefinitions()) {
+                if (definition.isMandatory() && !definition.isProtected() && !satisfiedChildNodes.contains(definition)) {
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                                     definition.getName(),
+                                                                                     node.getPath(),
+                                                                                     primaryTypeName,
+                                                                                     mixinTypeNames));
+                }
+            }
+
+        }
+    }
+
+    /**
+     * Find the best definition for the child node with the given name on the node with the given UUID.
+     * 
+     * @param nodeUuid the parent node; may not be null
+     * @param newNodeName the name of the potential new child node; may not be null
+     * @param newNodePrimaryTypeName the primary type of the potential new child node; may not be null
+     * @return the definition that best fits the new node name and type
+     * @throws ItemExistsException if there is no definition that allows same-name siblings for the name and type and the parent
+     *         node already has a child node with the given name
+     * @throws ConstraintViolationException if there is no definition for the name and type among the parent node's primary and
+     *         mixin types
+     * @throws RepositoryException if any other error occurs
+     */
+    protected JcrNodeDefinition findBestNodeDefinition( UUID nodeUuid,
+                                                        Name newNodeName,
+                                                        Name newNodePrimaryTypeName )
+        throws ItemExistsException, ConstraintViolationException, RepositoryException {
+        assert (nodeUuid != null);
+        assert (newNodeName != null);
+
+        NodeInfo nodeInfo = findNodeInfo(nodeUuid);
+        AbstractJcrNode node = findJcrNode(nodeUuid);
+
+        Name primaryTypeName = node.getPrimaryTypeName();
+        List<Name> mixinTypeNames = node.getMixinTypeNames();
+
+        Children children = nodeInfo.getChildren();
+        int snsCount = children.getCountOfSameNameSiblingsWithName(newNodeName);
+        JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
+                                                                           mixinTypeNames,
+                                                                           newNodeName,
+                                                                           newNodePrimaryTypeName,
+                                                                           snsCount,
+                                                                           true);
+        if (definition == null) {
+            if (snsCount > 1) {
+                definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
+                                                                 mixinTypeNames,
+                                                                 newNodeName,
+                                                                 newNodePrimaryTypeName,
+                                                                 1,
+                                                                 true);
+
+                if (definition != null) {
+                    throw new ItemExistsException(JcrI18n.noSnsDefinition.text(newNodeName,
+                                                                               node.getPath(),
+                                                                               primaryTypeName,
+                                                                               mixinTypeNames));
+                }
+            }
+
+            throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                             newNodeName,
+                                                                             node.getPath(),
+                                                                             primaryTypeName,
+                                                                             mixinTypeNames));
+        }
+
+        return definition;
+    }
+
+    /**
      * Save any changes that have been accumulated by this session.
      * 
      * @throws RepositoryException if any error resulting while saving the changes to the repository
      */
     public void save() throws RepositoryException {
         if (operations.isExecuteRequired()) {
+            for (UUID changedUuid : changedNodes.keySet()) {
+                checkAgainstTypeDefinitions(changedUuid, false);
+            }
+
             // Execute the batched operations ...
             try {
                 operations.execute();
@@ -453,7 +646,7 @@ public class SessionCache {
                     for (ChildNode childNode : changedNode.getChildren()) {
                         uuidsUnderBranch.add(childNode.getUuid());
                     }
-                    
+
                     Collection<UUID> peers = changedNode.getPeers();
                     if (peers != null) peersToCheck.addAll(peers);
                 }
@@ -468,7 +661,7 @@ public class SessionCache {
                     throw new ConstraintViolationException();
                 }
             }
-            
+
             // Now execute the branch ...
             Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
@@ -653,7 +846,9 @@ public class SessionCache {
     /**
      * Obtain an {@link NodeEditor editor} that can be used to manipulate the properties or children on the node identified by the
      * supplied UUID. The node must exist prior to this call, either as a node that exists in the workspace or as a node that was
-     * created within this session but not yet persited to the workspace.
+     * created within this session but not yet persisted to the workspace. This method returns an editor that batches all changes
+     * in transient storage from where they can be persisted to the repository by {@link javax.jcr.Session#save() saving the
+     * session} or by {@link javax.jcr.Item#save() saving an ancestor}.
      * 
      * @param uuid the UUID of the node that is to be changed; may not be null and must represent an <i>existing</i> node
      * @return the editor; never null
@@ -662,6 +857,26 @@ public class SessionCache {
      * @throws RepositoryException if any other error occurs while reading information from the repository
      */
     public NodeEditor getEditorFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+        return getEditorFor(uuid, this.operations);
+    }
+
+    /**
+     * Obtain an {@link NodeEditor editor} that can be used to manipulate the properties or children on the node identified by the
+     * supplied UUID. The node must exist prior to this call, either as a node that exists in the workspace or as a node that was
+     * created within this session but not yet persisted to the workspace.
+     * 
+     * @param uuid the UUID of the node that is to be changed; may not be null and must represent an <i>existing</i> node
+     * @param operationsBatch the {@link Graph.Batch} to use for batching operations. This should be populated for direct
+     *        persistence (q.v. section 7.1.3.7 of the JCR 1.0.1 specification) and should be null to use session-based
+     *        persistence.
+     * @return the editor; never null
+     * @throws ItemNotFoundException if no such node could be found in the session or workspace
+     * @throws InvalidItemStateException if the item has been marked for deletion within this session
+     * @throws RepositoryException if any other error occurs while reading information from the repository
+     */
+    public NodeEditor getEditorFor( UUID uuid,
+                                    Graph.Batch operationsBatch )
+        throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         // See if we already have something in the changed nodes ...
         ChangedNodeInfo info = changedNodes.get(uuid);
         Location currentLocation = null;
@@ -679,7 +894,7 @@ public class SessionCache {
             // compute the current location ...
             currentLocation = Location.create(getPathFor(info), uuid);
         }
-        return new NodeEditor(info, currentLocation);
+        return new NodeEditor(info, currentLocation, operationsBatch == null ? this.operations : operationsBatch);
     }
 
     /**
@@ -688,11 +903,46 @@ public class SessionCache {
     public final class NodeEditor {
         private final ChangedNodeInfo node;
         private final Location currentLocation;
+        private final Graph.Batch operations;
 
         protected NodeEditor( ChangedNodeInfo node,
-                              Location currentLocation ) {
+                              Location currentLocation,
+                              Graph.Batch operations ) {
             this.node = node;
             this.currentLocation = currentLocation;
+            this.operations = operations;
+        }
+
+        /**
+         * Checks whether there is an existing property with this name that does not match the given cardinality. If such a
+         * property exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 7.1.5 of the JCR 1.0.1
+         * specification.
+         * 
+         * @param propertyName the name of the property
+         * @param isMultiple whether the property must have multiple values
+         * @throws javax.jcr.ValueFormatException if the property exists but has the opposite cardinality
+         * @throws RepositoryException if any other error occurs
+         */
+        private void checkCardinalityOfExistingProperty( Name propertyName,
+                                                         boolean isMultiple )
+            throws javax.jcr.ValueFormatException, RepositoryException {
+            // Check for existing single-valued property - can't set multiple values on single-valued property
+            PropertyInfo propInfo = this.node.getProperty(propertyName);
+            if (propInfo != null && propInfo.isMultiValued() != isMultiple) {
+                NamespaceRegistry namespaces = SessionCache.this.namespaces;
+                String workspaceName = SessionCache.this.workspaceName();
+                if (isMultiple) {
+                    I18n msg = JcrI18n.unableToSetSingleValuedPropertyUsingMultipleValues;
+                    throw new javax.jcr.ValueFormatException(msg.text(propertyName.getString(namespaces),
+                                                                      getPathFor(this.node).getString(namespaces),
+                                                                      workspaceName));
+                }
+                I18n msg = JcrI18n.unableToSetMultiValuedPropertyUsingSingleValue;
+                throw new javax.jcr.ValueFormatException(msg.text(getPathFor(this.node).getString(namespaces),
+                                                                  propertyName,
+                                                                  workspaceName));
+            }
+
         }
 
         /**
@@ -704,19 +954,22 @@ public class SessionCache {
          * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
+         * @throws RepositoryException if any other error occurs
          */
         public PropertyId setProperty( Name name,
-                                       JcrValue value ) throws ConstraintViolationException {
+                                       JcrValue value ) throws ConstraintViolationException, RepositoryException {
             return setProperty(name, value, true);
         }
 
         public PropertyId setProperty( Name name,
                                        JcrValue value,
-                                       boolean skipProtected ) throws ConstraintViolationException {
+                                       boolean skipProtected ) throws ConstraintViolationException, RepositoryException {
             assert name != null;
             assert value != null;
             JcrPropertyDefinition definition = null;
             PropertyId id = null;
+
+            checkCardinalityOfExistingProperty(name, false);
 
             // Look for an existing property ...
             PropertyInfo existing = node.getProperty(name);
@@ -789,13 +1042,18 @@ public class SessionCache {
          * @param name the property name; may not be null
          * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
          *        null but may be empty
+         * @param valueType
          * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
+         * @throws javax.jcr.ValueFormatException
+         * @throws RepositoryException
          */
         public PropertyId setProperty( Name name,
-                                       Value[] values ) throws ConstraintViolationException {
-            return setProperty(name, values, true);
+                                       Value[] values,
+                                       int valueType )
+            throws ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
+            return setProperty(name, values, valueType, true);
         }
 
         /**
@@ -807,16 +1065,66 @@ public class SessionCache {
          *        null but may be empty
          * @param skipProtected if true, attempts to set protected properties will fail. If false, attempts to set protected
          *        properties will be allowed.
+         * @param valueType
          * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
+         * @throws javax.jcr.ValueFormatException
+         * @throws RepositoryException
          */
         public PropertyId setProperty( Name name,
                                        Value[] values,
-                                       boolean skipProtected ) throws ConstraintViolationException {
+                                       int valueType,
+                                       boolean skipProtected )
+            throws ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
             assert name != null;
             assert values != null;
-            int numValues = values.length;
+
+            // TODO: Re-add following line!
+            // checkCardinalityOfExistingProperty(name, true);
+
+            int len = values.length;
+            Value[] newValues = null;
+            if (len == 0) {
+                newValues = JcrMultiValueProperty.EMPTY_VALUES;
+            } else {
+                List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
+                int expectedType = -1;
+                for (int i = 0; i != len; ++i) {
+                    Value value = values[i];
+
+                    if (value == null) continue;
+                    if (expectedType == -1) {
+                        expectedType = value.getType();
+                    } else if (value.getType() != expectedType) {
+                        // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
+                        StringBuilder sb = new StringBuilder();
+                        sb.append('[');
+                        for (int j = 0; j != values.length; ++j) {
+                            if (j != 0) sb.append(",");
+                            sb.append(values[j].toString());
+                        }
+                        sb.append(']');
+                        String propType = PropertyType.nameFromValue(expectedType);
+                        I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
+                        NamespaceRegistry namespaces = SessionCache.this.namespaces;
+                        String path = getPathFor(node.getUuid()).getString(namespaces);
+                        String workspaceName = SessionCache.this.workspaceName();
+                        throw new javax.jcr.ValueFormatException(msg.text(name, values, propType, path, workspaceName));
+                    }
+                    if (value.getType() != valueType && valueType != PropertyType.UNDEFINED) {
+                        value = ((JcrValue)value).asType(valueType);
+                    }
+                    valuesWithDesiredType.add(value);
+                }
+                if (valuesWithDesiredType.isEmpty()) {
+                    newValues = JcrMultiValueProperty.EMPTY_VALUES;
+                } else {
+                    newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
+                }
+            }
+
+            int numValues = newValues.length;
             JcrPropertyDefinition definition = null;
             PropertyId id = null;
 
@@ -836,14 +1144,14 @@ public class SessionCache {
                         // Just use the definition as is ...
                     } else {
                         // Use the property type for the first non-null value ...
-                        int type = values[0].getType();
+                        int type = newValues[0].getType();
                         if (definition.getRequiredType() != PropertyType.UNDEFINED && definition.getRequiredType() != type) {
                             // The property type is not right, so we have to check if we can cast.
                             // It's easier and could save more work if we just find a new property definition that works ...
                             definition = null;
                         } else {
                             // The types match, so see if the value satisfies the constraints ...
-                            if (!definition.satisfiesConstraints(values)) definition = null;
+                            if (!definition.satisfiesConstraints(newValues)) definition = null;
                         }
                     }
                 }
@@ -856,21 +1164,21 @@ public class SessionCache {
                 definition = nodeTypes().findPropertyDefinition(node.getPrimaryTypeName(),
                                                                 node.getMixinTypeNames(),
                                                                 name,
-                                                                values,
+                                                                newValues,
                                                                 skipProtected);
                 if (definition == null) {
                     throw new ConstraintViolationException();
                 }
             }
             // Create the DNA property ...
-            int type = values.length != 0 ? values[0].getType() : definition.getRequiredType();
-            Object[] objValues = new Object[values.length];
+            int type = newValues.length != 0 ? newValues[0].getType() : definition.getRequiredType();
+            Object[] objValues = new Object[newValues.length];
             int propertyType = definition.getRequiredType();
             if (propertyType == PropertyType.UNDEFINED || propertyType == type) {
                 // Can use the values as is ...
                 propertyType = type;
                 for (int i = 0; i != numValues; ++i) {
-                    objValues[i] = ((JcrValue)values[i]).value();
+                    objValues[i] = ((JcrValue)newValues[i]).value();
                 }
             } else {
                 // A cast is required ...
@@ -878,7 +1186,7 @@ public class SessionCache {
                 org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
                 ValueFactory<?> factory = factories().getValueFactory(dnaPropertyType);
                 for (int i = 0; i != numValues; ++i) {
-                    objValues[i] = factory.create(((JcrValue)values[i]).value());
+                    objValues[i] = factory.create(((JcrValue)newValues[i]).value());
                 }
             }
             Property dnaProp = propertyFactory.create(name, objValues);
@@ -920,9 +1228,11 @@ public class SessionCache {
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
          * @throws RepositoryException if any other error occurs while reading information from the repository
          */
-        public ChildNode moveToBeChild( UUID nodeUuid, Name newNodeName )
+        public ChildNode moveToBeChild( UUID nodeUuid,
+                                        Name newNodeName )
             throws ItemNotFoundException, InvalidItemStateException, ConstraintViolationException, RepositoryException {
 
+            // UUID nodeUuid = child.nodeUuid;
             if (nodeUuid.equals(node.getUuid()) || isAncestor(nodeUuid)) {
                 Path pathOfNode = getPathFor(nodeUuid);
                 Path thisPath = currentLocation.getPath();
@@ -931,33 +1241,19 @@ public class SessionCache {
             }
 
             // Is the node already a child?
-            ChildNode child = node.getChildren().getChild(nodeUuid);
-            if (child != null) return child;
+            ChildNode existingChild = node.getChildren().getChild(nodeUuid);
+            if (existingChild != null) return existingChild;
+
+            JcrNodeDefinition definition = findBestNodeDefinition(node.getUuid(), newNodeName, null);
 
             // Get an editor for the child (in its current location) and one for its parent ...
-            NodeEditor existingNodeEditor = getEditorFor(nodeUuid);
-            ChangedNodeInfo existingNodeInfo = existingNodeEditor.node;
-            UUID existingParent = existingNodeInfo.getParent();
-            NodeEditor existingParentEditor = getEditorFor(existingParent);
-            ChangedNodeInfo existingParentInfo = existingParentEditor.node;
+            NodeEditor newChildEditor = getEditorFor(nodeUuid);
 
-            // Verify that this node's definition allows the specified child ...
-            Name childName = existingParentInfo.getChildren().getChild(nodeUuid).getName();
-            int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(childName);
-            JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(node.getPrimaryTypeName(),
-                                                                               node.getMixinTypeNames(),
-                                                                               childName,
-                                                                               childName,
-                                                                               numSns,
-                                                                               true);
-            if (definition == null) {
-                throw new ConstraintViolationException();
-            }
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -967,25 +1263,83 @@ public class SessionCache {
                     node.setDefinitionId(definition.getId());
 
                     // And remove the property from the info ...
-                    existingNodeEditor.removeProperty(DnaLexicon.NODE_DEFINITON);
+                    newChildEditor.removeProperty(DnaLexicon.NODE_DEFINITON);
                 }
             }
 
             // Remove the node from the current parent and add it to this ...
-            child = existingParentInfo.removeChild(nodeUuid, pathFactory);
-            ChildNode newChild = node.addChild(newNodeName, child.getUuid(), pathFactory);
+            ChangedNodeInfo newChildInfo = newChildEditor.node;
+            UUID existingParent = newChildInfo.getParent();
+
+            ChangedNodeInfo existingParentInfo = getEditorFor(existingParent).node;
+            existingChild = existingParentInfo.removeChild(nodeUuid, pathFactory);
+            ChildNode newChild = node.addChild(newNodeName, existingChild.getUuid(), pathFactory);
 
             // Set the child's changed representation to point to this node as its parent ...
-            existingNodeInfo.setParent(node.getUuid());
-            
+            newChildInfo.setParent(node.getUuid());
+
             // Set up the peer relationship between the two nodes that must be saved together
             node.addPeer(existingParent);
             existingParentInfo.addPeer(node.getUuid());
-            
+
+            // Set up the peer relationship between the two nodes that must be saved together
+            node.addPeer(existingParent);
+            existingParentInfo.addPeer(node.getUuid());
+
             // Now, record the operation to do this ...
-            operations.move(existingNodeEditor.currentLocation).into(currentLocation);
-            
+            operations.move(newChildEditor.currentLocation).into(currentLocation);
+
             return newChild;
+        }
+
+        public void addMixin( JcrNodeType mixinCandidateType ) throws javax.jcr.ValueFormatException, RepositoryException {
+            PropertyInfo existingMixinProperty = node.getProperty(JcrLexicon.MIXIN_TYPES);
+
+            // getProperty(JcrLexicon.MIXIN_TYPES);
+            Value[] existingMixinValues;
+            if (existingMixinProperty != null) {
+                existingMixinValues = findJcrProperty(existingMixinProperty.getPropertyId()).getValues();
+            } else {
+                existingMixinValues = new Value[0];
+            }
+
+            Value[] newMixinValues = new Value[existingMixinValues.length + 1];
+            System.arraycopy(existingMixinValues, 0, newMixinValues, 0, existingMixinValues.length);
+            newMixinValues[newMixinValues.length - 1] = new JcrValue(factories(), SessionCache.this, PropertyType.NAME,
+                                                                     mixinCandidateType.getInternalName());
+
+            findJcrProperty(setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, PropertyType.NAME, false));
+
+            // ------------------------------------------------------------------------------
+            // Create any auto-created properties/nodes from new type
+            // ------------------------------------------------------------------------------
+
+            for (JcrPropertyDefinition propertyDefinition : mixinCandidateType.propertyDefinitions()) {
+                if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
+                    if (null == findJcrProperty(new PropertyId(node.getUuid(), propertyDefinition.getInternalName()))) {
+                        assert propertyDefinition.getDefaultValues() != null;
+                        if (propertyDefinition.isMultiple()) {
+                            setProperty(propertyDefinition.getInternalName(),
+                                        propertyDefinition.getDefaultValues(),
+                                        propertyDefinition.getRequiredType());
+                        } else {
+                            assert propertyDefinition.getDefaultValues().length == 1;
+                            setProperty(propertyDefinition.getInternalName(), (JcrValue)propertyDefinition.getDefaultValues()[0]);
+                        }
+                    }
+                }
+            }
+
+            for (JcrNodeDefinition nodeDefinition : mixinCandidateType.childNodeDefinitions()) {
+                if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
+                    Name nodeName = nodeDefinition.getInternalName();
+                    if (!node.getChildren().getChildren(nodeName).hasNext()) {
+                        assert nodeDefinition.getDefaultPrimaryType() != null;
+                        createChild(nodeName, (UUID)null, ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
+                    }
+                }
+            }
+
         }
 
         /**
@@ -1172,7 +1526,7 @@ public class SessionCache {
     }
 
     /**
-     * Find the best property definition in this node's
+     * Find the best property definition in this node's primary type and mixin types.
      * 
      * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
      * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins

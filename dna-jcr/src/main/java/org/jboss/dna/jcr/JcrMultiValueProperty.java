@@ -37,9 +37,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * @author jverhaeg
@@ -191,88 +189,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             return;
         }
 
-        Value[] newValues = null;
-        if (values.length != 0) {
-            int numValues = values.length;
-            int valueType = -1;
-            List<Value> valuesList = new ArrayList<Value>(numValues);
-            ValueFactory<?> factory = null;
-            for (int i = 0; i != numValues; ++i) {
-                Value value = values[i];
-                if (value == null) {
-                    // skip null values ...
-                    continue;
-                }
-                if (valueType == -1) {
-                    valueType = value.getType();
-                } else if (value.getType() != valueType) {
-                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
-                    StringBuilder sb = new StringBuilder();
-                    sb.append('[');
-                    for (int j = 0; j != values.length; ++j) {
-                        if (j != 0) sb.append(",");
-                        sb.append(values[j].toString());
-                    }
-                    sb.append(']');
-                    String propType = PropertyType.nameFromValue(valueType);
-                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
-                    throw new ValueFormatException(msg.text(getName(), values, propType, getPath(), cache.workspaceName()));
-                }
-
-                if (value instanceof JcrValue) {
-                    // just use the value ...
-                    valuesList.add(value);
-                } else {
-                    // This isn't our implementation, so create one for use
-                    if (factory == null) {
-                        int currentType = this.getType();
-                        factory = context().getValueFactories().getValueFactory(PropertyTypeUtil.dnaPropertyTypeFor(currentType));
-                    }
-                    int type = value.getType();
-                    Object data = null;
-                    switch (value.getType()) {
-                        case PropertyType.STRING:
-                            data = value.getString();
-                            break;
-                        case PropertyType.BINARY:
-                            data = value.getStream();
-                            break;
-                        case PropertyType.BOOLEAN:
-                            data = value.getBoolean();
-                            break;
-                        case PropertyType.DATE:
-                            data = value.getDate();
-                            break;
-                        case PropertyType.DOUBLE:
-                            data = value.getDouble();
-                            break;
-                        case PropertyType.LONG:
-                            data = value.getLong();
-                            break;
-                        case PropertyType.NAME:
-                            data = value.getString();
-                            break;
-                        case PropertyType.PATH:
-                            data = value.getString();
-                            break;
-                        case PropertyType.REFERENCE:
-                            data = value.getString();
-                            break;
-                        default:
-                            throw new RepositoryException();
-                    }
-                    valuesList.add(createValue(factory.create(data), type));
-                }
-            }
-            if (valuesList.isEmpty()) {
-                newValues = EMPTY_VALUES;
-            } else {
-                newValues = valuesList.toArray(new Value[valuesList.size()]);
-            }
-        } else {
-            newValues = EMPTY_VALUES;
-        }
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), newValues);
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), values, PropertyType.UNDEFINED);
     }
 
     /**
@@ -305,7 +222,8 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         } else {
             jcrValues = EMPTY_VALUES;
         }
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues);
+        
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues, PropertyType.STRING);
     }
 
     /**

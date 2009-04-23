@@ -128,6 +128,10 @@ public final class JcrI18n {
     public static I18n autocreatedPropertyNeedsDefault;
     public static I18n singleValuedPropertyNeedsSingleValuedDefault;
 
+    public static I18n noDefinition;
+    public static I18n noSnsDefinition;
+    public static I18n missingMandatoryItem;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

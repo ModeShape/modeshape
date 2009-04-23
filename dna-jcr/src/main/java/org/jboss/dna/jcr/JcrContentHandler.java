@@ -32,16 +32,19 @@ import java.util.Stack;
 import java.util.UUID;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
-import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.Base64;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.xml.sax.Attributes;
@@ -71,9 +74,10 @@ class JcrContentHandler extends DefaultHandler {
 
     protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
 
+    private final NameFactory nameFactory;
+
     protected final JcrSession session;
     protected final int uuidBehavior;
-    protected final SaveMode saveMode;
 
     protected final String primaryTypeName;
     protected final String mixinTypesName;
@@ -81,6 +85,8 @@ class JcrContentHandler extends DefaultHandler {
 
     private AbstractJcrNode currentNode;
     private ContentHandler delegate;
+
+    private Graph.Batch pendingOperations;
 
     enum SaveMode {
         WORKSPACE,
@@ -99,13 +105,35 @@ class JcrContentHandler extends DefaultHandler {
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
         this.session = session;
+        this.nameFactory = session.getExecutionContext().getValueFactories().getNameFactory();
         this.currentNode = session.getNode(parentPath);
         this.uuidBehavior = uuidBehavior;
-        this.saveMode = saveMode;
+
+        if (saveMode == SaveMode.WORKSPACE) {
+            this.pendingOperations = session.createBatch();
+        }
 
         this.primaryTypeName = JcrLexicon.PRIMARY_TYPE.getString(this.session.namespaces());
         this.mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(this.session.namespaces());
         this.uuidName = JcrLexicon.UUID.getString(this.session.namespaces());
+    }
+
+    protected final Name nameFor( String name ) {
+        return nameFactory.create(name);
+    }
+
+    protected final Value valueFor( String value,
+                                    int type ) throws ValueFormatException {
+        return session.getValueFactory().createValue(value, type);
+        // return new JcrValue(session.getExecutionContext().getValueFactories(), cache(), type, value);
+    }
+
+    protected final SessionCache cache() {
+        return session.cache();
+    }
+
+    protected final Graph.Batch operations() {
+        return pendingOperations;
     }
 
     /**
@@ -119,6 +147,20 @@ class JcrContentHandler extends DefaultHandler {
                             int length ) throws SAXException {
         assert this.delegate != null;
         delegate.characters(ch, start, length);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.xml.sax.helpers.DefaultHandler#endDocument()
+     */
+    @Override
+    public void endDocument() throws SAXException {
+        if (pendingOperations != null) {
+            pendingOperations.execute();
+        }
+
+        super.endDocument();
     }
 
     /**
@@ -273,9 +315,10 @@ class JcrContentHandler extends DefaultHandler {
                         uuid = UUID.fromString(rawUuid.get(0).getString());
                     }
 
-                    AbstractJcrNode newNode = parentNode.addNode(currentNodeName, currentProps.get(primaryTypeName)
-                                                                                              .get(0)
-                                                                                              .getString(), uuid);
+                    String typeName = currentProps.get(primaryTypeName).get(0).getString();
+                    AbstractJcrNode newNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(currentNodeName),
+                                                                                                                 uuid,
+                                                                                                                 nameFor(typeName)).getUuid());
 
                     for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
                         if (entry.getKey().equals(primaryTypeName)) {
@@ -284,7 +327,8 @@ class JcrContentHandler extends DefaultHandler {
 
                         if (entry.getKey().equals(mixinTypesName)) {
                             for (Value value : entry.getValue()) {
-                                newNode.addMixin(value.getString());
+                                JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(value.getString()));
+                                newNode.editorFor(operations()).addMixin(mixinType);
                             }
                             continue;
                         }
@@ -296,9 +340,11 @@ class JcrContentHandler extends DefaultHandler {
                         List<Value> values = entry.getValue();
 
                         if (values.size() == 1) {
-                            newNode.setProperty(entry.getKey(), values.get(0));
+                            newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()), (JcrValue)values.get(0));
                         } else {
-                            newNode.setProperty(entry.getKey(), values.toArray(new Value[values.size()]));
+                            newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()),
+                                                                        values.toArray(new Value[values.size()]),
+                                                                        PropertyType.UNDEFINED);
                         }
                     }
 
@@ -385,7 +431,7 @@ class JcrContentHandler extends DefaultHandler {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parentNode = (AbstractJcrNode)existingNodeWithUuid.getParent();
-                                existingNodeWithUuid.remove();
+                                parentNode.editorFor(operations()).destroyChild(uuid);
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
                                 uuid = UUID.randomUUID();
@@ -394,7 +440,8 @@ class JcrContentHandler extends DefaultHandler {
                                 if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
                                     throw new ConstraintViolationException();
                                 }
-                                existingNodeWithUuid.remove();
+                                AbstractJcrNode temp = (AbstractJcrNode)existingNodeWithUuid.getParent();
+                                temp.editorFor(operations()).destroyChild(uuid);
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
                                 throw new ItemExistsException();
@@ -403,7 +450,9 @@ class JcrContentHandler extends DefaultHandler {
                 }
 
                 name = DOCUMENT_VIEW_NAME_DECODER.decode(name);
-                AbstractJcrNode currentNode = parentNode.addNode(name, primaryTypeName, uuid);
+                AbstractJcrNode currentNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(name),
+                                                                                                                 uuid,
+                                                                                                                 nameFor(primaryTypeName)).getUuid());
 
                 for (int i = 0; i < atts.getLength(); i++) {
                     if (JcrContentHandler.this.primaryTypeName.equals(atts.getQName(i))) {
@@ -411,7 +460,8 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     if (mixinTypesName.equals(atts.getQName(i))) {
-                        currentNode.addMixin(atts.getValue(i));
+                        JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(atts.getValue(i)));
+                        currentNode.editorFor(operations()).addMixin(mixinType);
                         continue;
                     }
 
@@ -424,7 +474,8 @@ class JcrContentHandler extends DefaultHandler {
                     // String value = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getValue(i));
                     String value = atts.getValue(i);
                     String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                    currentNode.setProperty(propertyName, value);
+                    currentNode.editorFor(operations()).setProperty(nameFor(propertyName),
+                                                                    (JcrValue)valueFor(value, PropertyType.STRING));
                 }
 
                 parentStack.push(currentNode);
@@ -451,12 +502,14 @@ class JcrContentHandler extends DefaultHandler {
                                 int start,
                                 int length ) throws SAXException {
             try {
-                NamespaceRegistry namespaces = session.getExecutionContext().getNamespaceRegistry();
-                Node parentNode = parentStack.peek();
-                Node currentNode = parentNode.addNode(JcrLexicon.XMLTEXT.getString(namespaces),
-                                                      JcrNtLexicon.UNSTRUCTURED.getString(namespaces));
+                AbstractJcrNode parentNode = parentStack.peek();
+                AbstractJcrNode currentNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(JcrLexicon.XMLTEXT,
+                                                                                                                 null,
+                                                                                                                 JcrNtLexicon.UNSTRUCTURED).getUuid());
+
                 String s = new String(ch, start, length);
-                currentNode.setProperty(JcrLexicon.XMLCHARACTERS.getString(namespaces), s);
+                currentNode.editorFor(operations()).setProperty(JcrLexicon.XMLCHARACTERS,
+                                                                (JcrValue)valueFor(s, PropertyType.STRING));
 
             } catch (RepositoryException re) {
                 throw new EnclosingSAXException(re);

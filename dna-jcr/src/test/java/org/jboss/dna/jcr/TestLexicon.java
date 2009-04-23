@@ -47,7 +47,12 @@ public class TestLexicon {
     public static final Name CONSTRAINED_REFERENCE = new BasicName(Namespace.URI, "constrainedReference");
     public static final Name CONSTRAINED_STRING = new BasicName(Namespace.URI, "constrainedString");
 
+    public static final Name MANDATORY_STRING = new BasicName(Namespace.URI, "mandatoryString");
+    public static final Name MANDATORY_CHILD = new BasicName(Namespace.URI, "mandatoryChild");
+
     public static final Name REFERENCEABLE_UNSTRUCTURED = new BasicName(Namespace.URI, "referenceableUnstructured");
     public static final Name NO_SAME_NAME_SIBS = new BasicName(Namespace.URI, "noSameNameSibs");
+    public static final Name NODE_WITH_MANDATORY_PROPERTY = new BasicName(Namespace.URI, "nodeWithMandatoryProperty");
+    public static final Name NODE_WITH_MANDATORY_CHILD = new BasicName(Namespace.URI, "nodeWithMandatoryChild");
 
 }

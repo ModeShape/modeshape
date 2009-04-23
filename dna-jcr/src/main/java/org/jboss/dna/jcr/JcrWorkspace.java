@@ -34,6 +34,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -46,11 +47,9 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -58,8 +57,15 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
+import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
+import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrRepository.Options;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * @author John Verhaeg
@@ -224,8 +230,8 @@ final class JcrWorkspace implements Workspace {
     /**
      * {@inheritDoc}
      */
-    public final ObservationManager getObservationManager() {
-        throw new UnsupportedOperationException();
+    public final ObservationManager getObservationManager() throws UnsupportedRepositoryOperationException {
+        throw new UnsupportedRepositoryOperationException();
     }
 
     /**
@@ -292,17 +298,16 @@ final class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#getImportContentHandler(java.lang.String, int)
      */
-    @SuppressWarnings( "unused" )
     public ContentHandler getImportContentHandler( String parentAbsPath,
                                                    int uuidBehavior )
         throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException,
         RepositoryException {
-        CheckArg.isNotEmpty(parentAbsPath, "parentAbsPath");
-        // Create a graph importer, which can return the content handler that can be used by the caller
-        // to call the handler's event methods to create content...
-        GraphImporter importer = new GraphImporter(graph);
-        Path parentPath = context.getValueFactories().getPathFactory().create(parentAbsPath);
-        return importer.getHandlerForImportingXml(Location.create(parentPath), false);
+
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+
+        Path parentPath = this.context.getValueFactories().getPathFactory().create(parentAbsPath);
+
+        return new JcrContentHandler(this.session, parentPath, uuidBehavior, SaveMode.WORKSPACE);
     }
 
     /**
@@ -310,19 +315,33 @@ final class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#importXML(java.lang.String, java.io.InputStream, int)
      */
-    @SuppressWarnings( "unused" )
     public void importXML( String parentAbsPath,
                            InputStream in,
                            int uuidBehavior )
         throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException,
         InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException {
-        // try {
-        // graph.importXmlFrom(in).into(parentAbsPath);
-        // } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-        // throw new PathNotFoundException(e.getMessage(), e);
-        // } catch (SAXException err) {
-        // }
-        throw new UnsupportedOperationException();
+
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+        CheckArg.isNotNull(in, "in");
+
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
+            parser.parse(new InputSource(in));
+        } catch (EnclosingSAXException ese) {
+            Exception cause = ese.getException();
+            if (cause instanceof ItemExistsException) {
+                throw (ItemExistsException)cause;
+            } else if (cause instanceof ConstraintViolationException) {
+                throw (ConstraintViolationException)cause;
+            }
+            throw new RepositoryException(cause);
+        } catch (SAXParseException se) {
+            throw new InvalidSerializedDataException(se);
+        } catch (SAXException se) {
+            throw new RepositoryException(se);
+        }
+
     }
 
     /**

@@ -180,6 +180,10 @@ class JcrSession implements Session {
     JcrWorkspace workspace() {
         return this.workspace;
     }
+    
+    Graph.Batch createBatch() {
+        return graph.batch();
+    }
 
     /**
      * {@inheritDoc}

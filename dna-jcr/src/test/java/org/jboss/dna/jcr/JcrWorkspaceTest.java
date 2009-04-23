@@ -27,10 +27,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.jboss.dna.graph.ExecutionContext;
@@ -166,7 +168,7 @@ public class JcrWorkspaceTest {
         assertThat(workspace.getNodeTypeManager(), is(notNullValue()));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotAllowGetObservationManager() throws Exception {
         workspace.getObservationManager();
     }
@@ -224,9 +226,14 @@ public class JcrWorkspaceTest {
         assertThat(workspace.getSession(), is(notNullValue()));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowImportXml() throws Exception {
-        workspace.importXML(null, null, 0);
+    @Test
+    public void shouldAllowImportXml() throws Exception {
+        String inputData = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<sv:node xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:nt=\"http://www.jcp.org/jcr/nt/1.0\" "
+            + "xmlns:sv=\"http://www.jcp.org/jcr/sv/1.0\" sv:name=\"workspaceTestNode\">"
+            + "<sv:property sv:name=\"jcr:primaryType\" sv:type=\"Name\">"
+            + "<sv:value>nt:unstructured</sv:value></sv:property></sv:node>";
+        workspace.importXML("/", new ByteArrayInputStream(inputData.getBytes()), 0);
     }
 
     @Test( expected = IllegalArgumentException.class )

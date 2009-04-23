@@ -63,6 +63,7 @@ import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
@@ -73,7 +74,6 @@ import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
-import org.jboss.dna.jcr.cache.PropertyInfo;
 
 /**
  * An abstract implementation of the JCR {@link Node} interface. Instances of this class are created and managed by the
@@ -126,6 +126,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new RepositoryException(msg);
         }
     }
+    
+    final NodeEditor editorFor(Graph.Batch operations) throws RepositoryException {
+        try {
+            return cache.getEditorFor(nodeUuid, operations);
+        } catch (ItemNotFoundException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        } catch (InvalidItemStateException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        }
+    }    
 
     final JcrValue valueFrom( int propertyType,
                               Object value ) {
@@ -237,6 +249,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return session().nodeTypeManager().getNodeType(primaryTypeName);
     }
 
+    Name getPrimaryTypeName() throws RepositoryException {
+        return nodeInfo().getPrimaryTypeName();
+    }
+    
     /**
      * {@inheritDoc}
      * 
@@ -254,6 +270,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (nodeType != null) mixinNodeTypes.add(nodeType);
         }
         return mixinNodeTypes.toArray(new NodeType[mixinNodeTypes.size()]);
+    }
+
+    List<Name> getMixinTypeNames() throws RepositoryException {
+        return nodeInfo().getMixinTypeNames();
     }
 
     /**
@@ -729,50 +749,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ConstraintViolationException();
         }
 
-        Property existingMixinProperty = getProperty(JcrLexicon.MIXIN_TYPES);
-        Value[] existingMixinValues;
-        if (existingMixinProperty != null) {
-            existingMixinValues = existingMixinProperty.getValues();
-        } else {
-            existingMixinValues = new Value[0];
-        }
-
-        Value[] newMixinValues = new Value[existingMixinValues.length + 1];
-        System.arraycopy(existingMixinValues, 0, newMixinValues, 0, existingMixinValues.length);
-        newMixinValues[newMixinValues.length - 1] = valueFrom(PropertyType.NAME, mixinCandidateType.getInternalName());
-
-        cache.findJcrProperty(editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, false));
-
-        // ------------------------------------------------------------------------------
-        // Create any auto-created properties/nodes from new type
-        // ------------------------------------------------------------------------------
-
-        for (JcrPropertyDefinition propertyDefinition : mixinCandidateType.propertyDefinitions()) {
-            if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
-                if (null == cache.findJcrProperty(new PropertyId(nodeUuid, propertyDefinition.getInternalName()))) {
-                    assert propertyDefinition.getDefaultValues() != null;
-                    if (propertyDefinition.isMultiple()) {
-                        setProperty(propertyDefinition.getName(), propertyDefinition.getDefaultValues());
-                    } else {
-                        assert propertyDefinition.getDefaultValues().length == 1;
-                        setProperty(propertyDefinition.getName(), propertyDefinition.getDefaultValues()[0]);
-                    }
-                }
-            }
-        }
-
-        for (JcrNodeDefinition nodeDefinition : mixinCandidateType.childNodeDefinitions()) {
-            if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
-                Name nodeName = nodeDefinition.getInternalName();
-                if (!nodeInfo().getChildren().getChildren(nodeName).hasNext()) {
-                    assert nodeDefinition.getDefaultPrimaryType() != null;
-                    editor().createChild(nodeName,
-                                         (UUID)null,
-                                         ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
-                }
-            }
-        }
-
+        this.editor().addMixin(mixinCandidateType);
     }
 
     /**
@@ -891,7 +868,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
-        cache.findJcrProperty(editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, false));
+        cache.findJcrProperty(editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, PropertyType.NAME, false));
 
     }
 
@@ -1022,217 +999,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Checks whether there is an existing property with this name that does not match the given cardinality. If such a property
-     * exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 7.1.5 of the JCR 1.0.1 specification.
-     * 
-     * @param propertyName the name of the property
-     * @param isMultiple whether the property must have multiple values
-     * @throws javax.jcr.ValueFormatException if the property exists but has the opposite cardinality
-     * @throws RepositoryException if any other error occurs
-     */
-    private void checkCardinalityOfExistingProperty( Name propertyName,
-                                                     boolean isMultiple )
-        throws javax.jcr.ValueFormatException, RepositoryException {
-        // Check for existing single-valued property - can't set multiple values on single-valued property
-        PropertyInfo propInfo = this.nodeInfo().getProperty(propertyName);
-        if (propInfo != null && propInfo.isMultiValued() != isMultiple) {
-            if (isMultiple) {
-                I18n msg = JcrI18n.unableToSetSingleValuedPropertyUsingMultipleValues;
-                throw new ValueFormatException(msg.text(getPath(),
-                                                        propertyName.getString(cache.namespaces),
-                                                        cache.workspaceName()));
-            }
-            I18n msg = JcrI18n.unableToSetMultiValuedPropertyUsingSingleValue;
-            throw new ValueFormatException(msg.text(getPath(), propertyName, cache.workspaceName()));
-        }
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, boolean)
-     */
-    public final Property setProperty( String name,
-                                       boolean value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.BOOLEAN, value)));
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.util.Calendar)
-     */
-    public final Property setProperty( String name,
-                                       Calendar value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, double)
-     */
-    public final Property setProperty( String name,
-                                       double value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.DOUBLE, value)));
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.io.InputStream)
-     */
-    public final Property setProperty( String name,
-                                       InputStream value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, long)
-     */
-    public final Property setProperty( String name,
-                                       long value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.LONG, value)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Node)
-     */
-    public final Property setProperty( String name,
-                                       Node value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String)
-     */
-    public final Property setProperty( String name,
-                                       String value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.STRING, value)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String, int)
-     */
-    public final Property setProperty( String name,
-                                       String value,
-                                       int type )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(type, value)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[])
-     */
-    public final Property setProperty( String name,
-                                       String[] values )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (values == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, true);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valuesFrom(PropertyType.STRING, values)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[], int)
-     */
-    public final Property setProperty( String name,
-                                       String[] values,
-                                       int type )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (values == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, true);
-        return cache.findJcrProperty(editor().setProperty(propertyName, valuesFrom(type, values)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value)
-     */
-    public final Property setProperty( String name,
-                                       Value value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        if (value == null) {
-            // If there is an existing property, then remove it ...
-            return removeExistingValuedProperty(name);
-        }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, (JcrValue)value));
-    }
-
     protected final Property removeExistingValuedProperty( String name )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        throws ConstraintViolationException, RepositoryException {
         PropertyId id = new PropertyId(nodeUuid, nameFrom(name));
         AbstractJcrProperty property = cache.findJcrProperty(id);
         if (property != null) {
@@ -1246,6 +1014,162 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, boolean)
+     */
+    public final Property setProperty( String name,
+                                       boolean value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.util.Calendar)
+     */
+    public final Property setProperty( String name,
+                                       Calendar value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, double)
+     */
+    public final Property setProperty( String name,
+                                       double value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.io.InputStream)
+     */
+    public final Property setProperty( String name,
+                                       InputStream value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, long)
+     */
+    public final Property setProperty( String name,
+                                       long value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Node)
+     */
+    public final Property setProperty( String name,
+                                       Node value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String)
+     */
+    public final Property setProperty( String name,
+                                       String value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String, int)
+     */
+    public final Property setProperty( String name,
+                                       String value,
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(type, value)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[])
+     */
+    public final Property setProperty( String name,
+                                       String[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[], int)
+     */
+    public final Property setProperty( String name,
+                                       String[] values,
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(type, values), PropertyType.UNDEFINED));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value)
+     */
+    public final Property setProperty( String name,
+                                       Value value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            return removeExistingValuedProperty(name);
+        }
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), (JcrValue)value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value, int)
      */
     public final Property setProperty( String name,
@@ -1253,12 +1177,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
-            // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, false);
-        return cache.findJcrProperty(editor().setProperty(propertyName, ((JcrValue)value).asType(type)));
+
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), ((JcrValue)value).asType(type)));
     }
 
     /**
@@ -1273,44 +1195,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        int len = values.length;
-        Value[] newValues = null;
-        if (len == 0) {
-            newValues = JcrMultiValueProperty.EMPTY_VALUES;
-        } else {
-            List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
-            int expectedType = -1;
-            for (int i = 0; i != len; ++i) {
-                Value value = values[i];
-                if (value == null) continue;
-                if (expectedType == -1) {
-                    expectedType = value.getType();
-                } else if (value.getType() != expectedType) {
-                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
-                    StringBuilder sb = new StringBuilder();
-                    sb.append('[');
-                    for (int j = 0; j != values.length; ++j) {
-                        if (j != 0) sb.append(",");
-                        sb.append(values[j].toString());
-                    }
-                    sb.append(']');
-                    String propType = PropertyType.nameFromValue(expectedType);
-                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
-                    throw new ValueFormatException(msg.text(name, values, propType, getPath(), cache.workspaceName()));
-                }
-                valuesWithDesiredType.add(value);
-            }
-            if (valuesWithDesiredType.isEmpty()) {
-                newValues = JcrMultiValueProperty.EMPTY_VALUES;
-            } else {
-                newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
-            }
-        }
 
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, true);
-        // Set the value, perhaps to an empty array ...
-        return cache.findJcrProperty(editor().setProperty(propertyName, newValues));
+        return setProperty(name, values, PropertyType.UNDEFINED);
     }
 
     /**
@@ -1327,48 +1213,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return removeExistingValuedProperty(name);
         }
 
-        int len = values.length;
-        Value[] newValues = null;
-        if (len == 0) {
-            newValues = JcrMultiValueProperty.EMPTY_VALUES;
-        } else {
-            List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
-            int expectedType = -1;
-            for (int i = 0; i != len; ++i) {
-                Value value = values[i];
-
-                if (value == null) continue;
-                if (expectedType == -1) {
-                    expectedType = value.getType();
-                } else if (value.getType() != expectedType) {
-                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
-                    StringBuilder sb = new StringBuilder();
-                    sb.append('[');
-                    for (int j = 0; j != values.length; ++j) {
-                        if (j != 0) sb.append(",");
-                        sb.append(values[j].toString());
-                    }
-                    sb.append(']');
-                    String propType = PropertyType.nameFromValue(expectedType);
-                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
-                    throw new ValueFormatException(msg.text(name, values, propType, getPath(), cache.workspaceName()));
-                }
-                if (value.getType() != type) {
-                    value = ((JcrValue)value).asType(type);
-                }
-                valuesWithDesiredType.add(value);
-            }
-            if (valuesWithDesiredType.isEmpty()) {
-                newValues = JcrMultiValueProperty.EMPTY_VALUES;
-            } else {
-                newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
-            }
-        }
-
-        Name propertyName = nameFrom(name);
-        checkCardinalityOfExistingProperty(propertyName, true);
         // Set the value, perhaps to an empty array ...
-        return cache.findJcrProperty(editor().setProperty(propertyName, newValues));
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), values, type));
     }
 
     /**
