@@ -178,7 +178,6 @@ public class JcrWorkspaceTest {
         assertThat(workspace.getQueryManager(), notNullValue());
     }
 
-    @Test
     public void shouldCreateQuery() throws Exception {
         String statement = "Some query syntax";
 
@@ -241,8 +240,8 @@ public class JcrWorkspaceTest {
         workspace.move(null, null);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowMoveFromPathToAnotherPathInSameWorkspace() throws Exception {
+    @Test
+    public void shouldAllowMoveFromPathToAnotherPathInSameWorkspace() throws Exception {
         workspace.move("/a/b", "/b/b-copy");
     }
 

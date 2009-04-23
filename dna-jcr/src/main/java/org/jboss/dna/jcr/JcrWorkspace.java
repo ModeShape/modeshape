@@ -349,30 +349,31 @@ final class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#move(java.lang.String, java.lang.String)
      */
-    @SuppressWarnings( "unused" )
     public void move( String srcAbsPath,
                       String destAbsPath ) throws PathNotFoundException, RepositoryException {
-        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
-        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+        CheckArg.isNotNull(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotNull(destAbsPath, "destAbsPath");
 
-        // Create the paths ...
-        PathFactory factory = context.getValueFactories().getPathFactory();
-        Path srcPath = null;
-        Path destPath = null;
-        try {
-            srcPath = factory.create(srcAbsPath);
-        } catch (ValueFormatException e) {
-            throw new RepositoryException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
-        }
-        try {
-            destPath = factory.create(destAbsPath);
-        } catch (ValueFormatException e) {
-            throw new RepositoryException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+        // Use the session's execution context so that we get the transient namespace mappings
+        PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
+        Path destPath = pathFactory.create(destAbsPath);
+
+        Path.Segment newNodeName = destPath.getSegment(destPath.size() - 1);
+        // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
+        if (destAbsPath.endsWith("]")) {
+            throw new RepositoryException();
         }
 
-        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        // graph.move(srcPath).to(destPath);
-        throw new UnsupportedOperationException();
+        AbstractJcrNode sourceNode = session.getNode(pathFactory.create(srcAbsPath));
+        AbstractJcrNode newParentNode = session.getNode(destPath.getParent());
+
+        if (newParentNode.hasNode(newNodeName.getString(session.getExecutionContext().getNamespaceRegistry()))) {
+            throw new ItemExistsException();
+        }
+
+        Graph.Batch operations = session.createBatch();
+        newParentNode.editorFor(operations).moveToBeChild(sourceNode, newNodeName.getName());
+        operations.execute();
     }
 
     /**
