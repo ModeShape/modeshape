@@ -85,8 +85,8 @@ public class DnaConfigurationTest {
                                                .and()
                                                .save();
         assertThat(config, is(notNullValue()));
-        assertThat(config.configurationSource.source, is(instanceOf(InMemoryRepositorySource.class)));
-        InMemoryRepositorySource source = (InMemoryRepositorySource)config.configurationSource.source;
+        assertThat(config.configurationSource.getRepositorySource(), is(instanceOf(InMemoryRepositorySource.class)));
+        InMemoryRepositorySource source = (InMemoryRepositorySource)config.configurationSource.getRepositorySource();
         assertThat(source.getName(), is("repository name"));
         assertThat(source.getRetryLimit(), is(5));
     }

@@ -61,13 +61,17 @@ import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleSessionFactory;
 
 /**
- * @author Randall Hauch
+ * A single instance of the DNA services, which is obtained after setting up the {@link DnaConfiguration#build() configuration}.
+ * 
+ * @see DnaConfiguration
  */
 @Immutable
 public class DnaEngine {
 
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
 
+    private final DnaConfiguration.ConfigurationRepository configuration;
+    private final ConfigurationScanner scanner;
     private final Problems problems;
     private final ExecutionContext context;
     private final List<AdministeredService> services;
@@ -85,17 +89,20 @@ public class DnaEngine {
         // Use the configuration's context ...
         this.context = configuration.context();
 
+        // And set up the scanner ...
+        this.configuration = configuration.configurationSource;
+        this.scanner = new ConfigurationScanner(this.problems, this.context, this.configuration);
+
         // Add the configuration source to the repository library ...
-        final DnaConfiguration.Source configSourceInfo = configuration.configurationSource;
-        final RepositorySource configSource = configSourceInfo.source;
+        final RepositorySource configSource = this.configuration.getRepositorySource();
         RepositoryLibrary library = new RepositoryLibrary();
         library.addSource(configSource);
 
         // Create the RepositoryService, pointing it to the configuration repository ...
-        Path pathToConfigurationRoot = configSourceInfo.path;
+        Path pathToConfigurationRoot = this.configuration.getPath();
         repositoryService = new RepositoryService(library, configSource.getName(), "", pathToConfigurationRoot, context);
 
-        for (MimeTypeDetectorConfig config : loadMimeTypeDetectors(problems, context, configSourceInfo)) {
+        for (MimeTypeDetectorConfig config : scanner.getMimeTypeDetectors()) {
             library.getMimeTypeDetectors().addDetector(config);
         }
 
@@ -106,7 +113,7 @@ public class DnaEngine {
         JcrExecutionContext jcrContext = new JcrExecutionContext(context, sessionFactory, "");
         sequencingService.setExecutionContext(jcrContext);
         sequencingService.setExecutorService(executorService);
-        for (SequencerConfig sequencerConfig : loadSequencingConfigurations(problems, context, configSourceInfo)) {
+        for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
             sequencingService.addSequencer(sequencerConfig);
         }
 
@@ -125,136 +132,6 @@ public class DnaEngine {
                 return source.getConnection();
             }
         };
-    }
-
-    protected static List<MimeTypeDetectorConfig> loadMimeTypeDetectors( Problems problems,
-                                                                         ExecutionContext context,
-                                                                         DnaConfiguration.Source source ) {
-        List<MimeTypeDetectorConfig> detectors = new ArrayList<MimeTypeDetectorConfig>();
-        Graph graph = Graph.create(source.source, context);
-        Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(source.path,
-                                                                                        DnaLexicon.MIME_TYPE_DETECTORS);
-        try {
-            Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
-
-            Set<Name> skipProperties = new HashSet<Name>();
-            skipProperties.add(DnaLexicon.READABLE_NAME);
-            skipProperties.add(DnaLexicon.DESCRIPTION);
-            skipProperties.add(DnaLexicon.CLASSNAME);
-            skipProperties.add(DnaLexicon.CLASSPATH);
-            skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
-            Set<String> skipNamespaces = new HashSet<String>();
-            skipNamespaces.add(JcrLexicon.Namespace.URI);
-            skipNamespaces.add(JcrNtLexicon.Namespace.URI);
-            skipNamespaces.add(JcrMixLexicon.Namespace.URI);
-
-            for (Location sequencerLocation : subgraph.getRoot().getChildren()) {
-                Node sequencerNode = subgraph.getNode(sequencerLocation);
-                String name = stringValueOf(context, sequencerNode, DnaLexicon.READABLE_NAME);
-                String desc = stringValueOf(context, sequencerNode, DnaLexicon.DESCRIPTION);
-                String classname = stringValueOf(context, sequencerNode, DnaLexicon.CLASSNAME);
-                String[] classpath = stringValuesOf(context, sequencerNode, DnaLexicon.CLASSPATH);
-                Map<String, Object> properties = new HashMap<String, Object>();
-                for (Property property : sequencerNode.getProperties()) {
-                    Name propertyName = property.getName();
-                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
-                    if (skipProperties.contains(propertyName)) continue;
-                    if (property.isSingle()) {
-                        properties.put(propertyName.getLocalName(), property.getFirstValue());
-                    } else {
-                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
-                    }
-                }
-                MimeTypeDetectorConfig config = new MimeTypeDetectorConfig(name, desc, properties, classname, classpath);
-                detectors.add(config);
-            }
-        } catch (PathNotFoundException e) {
-            // no detectors registered ...
-        }
-        return detectors;
-    }
-
-    protected static List<SequencerConfig> loadSequencingConfigurations( Problems problems,
-                                                                         ExecutionContext context,
-                                                                         DnaConfiguration.Source source ) {
-        List<SequencerConfig> configs = new ArrayList<SequencerConfig>();
-        Graph graph = Graph.create(source.source, context);
-        Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(source.path, DnaLexicon.SEQUENCERS);
-        try {
-            Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
-
-            Set<Name> skipProperties = new HashSet<Name>();
-            skipProperties.add(DnaLexicon.READABLE_NAME);
-            skipProperties.add(DnaLexicon.DESCRIPTION);
-            skipProperties.add(DnaLexicon.CLASSNAME);
-            skipProperties.add(DnaLexicon.CLASSPATH);
-            skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
-            Set<String> skipNamespaces = new HashSet<String>();
-            skipNamespaces.add(JcrLexicon.Namespace.URI);
-            skipNamespaces.add(JcrNtLexicon.Namespace.URI);
-            skipNamespaces.add(JcrMixLexicon.Namespace.URI);
-
-            for (Location sequencerLocation : subgraph.getRoot().getChildren()) {
-                Node sequencerNode = subgraph.getNode(sequencerLocation);
-                String name = stringValueOf(context, sequencerNode, DnaLexicon.READABLE_NAME);
-                String desc = stringValueOf(context, sequencerNode, DnaLexicon.DESCRIPTION);
-                String classname = stringValueOf(context, sequencerNode, DnaLexicon.CLASSNAME);
-                String[] classpath = stringValuesOf(context, sequencerNode, DnaLexicon.CLASSPATH);
-                String[] expressionStrings = stringValuesOf(context, sequencerNode, DnaLexicon.PATH_EXPRESSIONS);
-                List<PathExpression> pathExpressions = new ArrayList<PathExpression>();
-                if (expressionStrings != null) {
-                    for (String expressionString : expressionStrings) {
-                        try {
-                            pathExpressions.add(PathExpression.compile(expressionString));
-                        } catch (Throwable t) {
-                            problems.addError(t,
-                                              RepositoryI18n.pathExpressionIsInvalidOnSequencer,
-                                              expressionString,
-                                              name,
-                                              t.getLocalizedMessage());
-                        }
-                    }
-                }
-                String[] goodExpressionStrings = new String[pathExpressions.size()];
-                for (int i = 0; i != pathExpressions.size(); ++i) {
-                    PathExpression expression = pathExpressions.get(i);
-                    goodExpressionStrings[i] = expression.getExpression();
-                }
-                Map<String, Object> properties = new HashMap<String, Object>();
-                for (Property property : sequencerNode.getProperties()) {
-                    Name propertyName = property.getName();
-                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
-                    if (skipProperties.contains(propertyName)) continue;
-                    if (property.isSingle()) {
-                        properties.put(propertyName.getLocalName(), property.getFirstValue());
-                    } else {
-                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
-                    }
-                }
-                SequencerConfig config = new SequencerConfig(name, desc, properties, classname, classpath, goodExpressionStrings);
-                configs.add(config);
-            }
-        } catch (PathNotFoundException e) {
-            // no detectors registered ...
-        }
-        return configs;
-    }
-
-    private static String stringValueOf( ExecutionContext context,
-                                         Node node,
-                                         Name propertyName ) {
-        Property property = node.getProperty(propertyName);
-        if (property == null) return null;
-        if (property.isEmpty()) return null;
-        return context.getValueFactories().getStringFactory().create(property.getFirstValue());
-    }
-
-    private static String[] stringValuesOf( ExecutionContext context,
-                                            Node node,
-                                            Name propertyName ) {
-        Property property = node.getProperty(propertyName);
-        if (property == null) return null;
-        return context.getValueFactories().getStringFactory().create(property.getValuesAsArray());
     }
 
     /**
@@ -315,5 +192,150 @@ public class DnaEngine {
             Thread.interrupted();
         }
         executorService.shutdown();
+    }
+
+    /**
+     * The component responsible for reading the configuration repository and (eventually) for propagating changes in the
+     * configuration repository into the services.
+     */
+    protected class ConfigurationScanner {
+        private final Problems problems;
+        private final ExecutionContext context;
+        private final DnaConfiguration.ConfigurationRepository configurationRepository;
+
+        protected ConfigurationScanner( Problems problems,
+                                        ExecutionContext context,
+                                        DnaConfiguration.ConfigurationRepository configurationRepository ) {
+            this.problems = problems;
+            this.context = context;
+            this.configurationRepository = configurationRepository;
+        }
+
+        public List<MimeTypeDetectorConfig> getMimeTypeDetectors() {
+            List<MimeTypeDetectorConfig> detectors = new ArrayList<MimeTypeDetectorConfig>();
+            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
+            Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
+                                                                                            DnaLexicon.MIME_TYPE_DETECTORS);
+            try {
+                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
+
+                Set<Name> skipProperties = new HashSet<Name>();
+                skipProperties.add(DnaLexicon.READABLE_NAME);
+                skipProperties.add(DnaLexicon.DESCRIPTION);
+                skipProperties.add(DnaLexicon.CLASSNAME);
+                skipProperties.add(DnaLexicon.CLASSPATH);
+                skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
+                Set<String> skipNamespaces = new HashSet<String>();
+                skipNamespaces.add(JcrLexicon.Namespace.URI);
+                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
+                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
+
+                for (Location detectorLocation : subgraph.getRoot().getChildren()) {
+                    Node node = subgraph.getNode(detectorLocation);
+                    String name = stringValueOf(node, DnaLexicon.READABLE_NAME);
+                    String desc = stringValueOf(node, DnaLexicon.DESCRIPTION);
+                    String classname = stringValueOf(node, DnaLexicon.CLASSNAME);
+                    String[] classpath = stringValuesOf(node, DnaLexicon.CLASSPATH);
+                    Map<String, Object> properties = new HashMap<String, Object>();
+                    for (Property property : node.getProperties()) {
+                        Name propertyName = property.getName();
+                        if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                        if (skipProperties.contains(propertyName)) continue;
+                        if (property.isSingle()) {
+                            properties.put(propertyName.getLocalName(), property.getFirstValue());
+                        } else {
+                            properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                        }
+                    }
+                    MimeTypeDetectorConfig config = new MimeTypeDetectorConfig(name, desc, properties, classname, classpath);
+                    detectors.add(config);
+                }
+            } catch (PathNotFoundException e) {
+                // no detectors registered ...
+            }
+            return detectors;
+        }
+
+        public List<SequencerConfig> getSequencingConfigurations() {
+            List<SequencerConfig> configs = new ArrayList<SequencerConfig>();
+            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
+            Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
+                                                                                            DnaLexicon.SEQUENCERS);
+            try {
+                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
+
+                Set<Name> skipProperties = new HashSet<Name>();
+                skipProperties.add(DnaLexicon.READABLE_NAME);
+                skipProperties.add(DnaLexicon.DESCRIPTION);
+                skipProperties.add(DnaLexicon.CLASSNAME);
+                skipProperties.add(DnaLexicon.CLASSPATH);
+                skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
+                Set<String> skipNamespaces = new HashSet<String>();
+                skipNamespaces.add(JcrLexicon.Namespace.URI);
+                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
+                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
+
+                for (Location sequencerLocation : subgraph.getRoot().getChildren()) {
+                    Node sequencerNode = subgraph.getNode(sequencerLocation);
+                    String name = stringValueOf(sequencerNode, DnaLexicon.READABLE_NAME);
+                    String desc = stringValueOf(sequencerNode, DnaLexicon.DESCRIPTION);
+                    String classname = stringValueOf(sequencerNode, DnaLexicon.CLASSNAME);
+                    String[] classpath = stringValuesOf(sequencerNode, DnaLexicon.CLASSPATH);
+                    String[] expressionStrings = stringValuesOf(sequencerNode, DnaLexicon.PATH_EXPRESSIONS);
+                    List<PathExpression> pathExpressions = new ArrayList<PathExpression>();
+                    if (expressionStrings != null) {
+                        for (String expressionString : expressionStrings) {
+                            try {
+                                pathExpressions.add(PathExpression.compile(expressionString));
+                            } catch (Throwable t) {
+                                problems.addError(t,
+                                                  RepositoryI18n.pathExpressionIsInvalidOnSequencer,
+                                                  expressionString,
+                                                  name,
+                                                  t.getLocalizedMessage());
+                            }
+                        }
+                    }
+                    String[] goodExpressionStrings = new String[pathExpressions.size()];
+                    for (int i = 0; i != pathExpressions.size(); ++i) {
+                        PathExpression expression = pathExpressions.get(i);
+                        goodExpressionStrings[i] = expression.getExpression();
+                    }
+                    Map<String, Object> properties = new HashMap<String, Object>();
+                    for (Property property : sequencerNode.getProperties()) {
+                        Name propertyName = property.getName();
+                        if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                        if (skipProperties.contains(propertyName)) continue;
+                        if (property.isSingle()) {
+                            properties.put(propertyName.getLocalName(), property.getFirstValue());
+                        } else {
+                            properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                        }
+                    }
+                    SequencerConfig config = new SequencerConfig(name, desc, properties, classname, classpath,
+                                                                 goodExpressionStrings);
+                    configs.add(config);
+                }
+            } catch (PathNotFoundException e) {
+                // no detectors registered ...
+            }
+            return configs;
+        }
+
+        private String stringValueOf( Node node,
+                                      Name propertyName ) {
+            Property property = node.getProperty(propertyName);
+            if (property == null) return null;
+            if (property.isEmpty()) return null;
+            return context.getValueFactories().getStringFactory().create(property.getFirstValue());
+        }
+
+        private String[] stringValuesOf( Node node,
+                                         Name propertyName ) {
+            Property property = node.getProperty(propertyName);
+            if (property == null) return null;
+            return context.getValueFactories().getStringFactory().create(property.getValuesAsArray());
+        }
+
     }
 }

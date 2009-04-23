@@ -41,6 +41,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathExpression;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.property.basic.RootPath;
 import org.jboss.dna.repository.sequencer.Sequencer;
 
 /**
@@ -61,14 +62,56 @@ public class DnaConfiguration {
         NAMES_TO_MAP = Collections.unmodifiableMap(names);
     }
 
-    protected class Source {
-        protected RepositorySource source;
-        protected String description;
-        protected Path path;
+    @Immutable
+    protected class ConfigurationRepository {
+        private final RepositorySource source;
+        private final String description;
+        private final Path path;
+
+        protected ConfigurationRepository( RepositorySource source ) {
+            this(source, null, null);
+        }
+
+        protected ConfigurationRepository( RepositorySource source,
+                                           String description,
+                                           Path path ) {
+            this.source = source;
+            this.description = description != null ? description : "";
+            this.path = path != null ? path : RootPath.INSTANCE;
+        }
+
+        /**
+         * @return source
+         */
+        public RepositorySource getRepositorySource() {
+            return source;
+        }
+
+        /**
+         * @return description
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        /**
+         * @return path
+         */
+        public Path getPath() {
+            return path;
+        }
+
+        public ConfigurationRepository with( String description ) {
+            return new ConfigurationRepository(source, description, path);
+        }
+
+        public ConfigurationRepository with( Path path ) {
+            return new ConfigurationRepository(source, description, path);
+        }
     }
 
     private final ExecutionContext context;
-    protected Source configurationSource;
+    protected ConfigurationRepository configurationSource;
     private Path sourcesPath;
     private Path sequencersPath;
     private Path detectorsPath;
@@ -102,13 +145,10 @@ public class DnaConfiguration {
      * 
      * @return the default repository source
      */
-    protected Source createDefaultConfigurationSource() {
+    protected ConfigurationRepository createDefaultConfigurationSource() {
         InMemoryRepositorySource defaultSource = new InMemoryRepositorySource();
         defaultSource.setName("Configuration");
-        Source result = new Source();
-        result.source = defaultSource;
-        result.path = this.context.getValueFactories().getPathFactory().createRootPath();
-        result.description = "Configuration Repository";
+        ConfigurationRepository result = new ConfigurationRepository(defaultSource, "Configuration Repository", null);
         return result;
     }
 
@@ -129,7 +169,7 @@ public class DnaConfiguration {
      */
     protected final Graph graph() {
         if (this.graph == null) {
-            this.graph = Graph.create(configurationSource.source, context);
+            this.graph = Graph.create(configurationSource.getRepositorySource(), context);
         }
         return this.graph;
     }
@@ -170,7 +210,6 @@ public class DnaConfiguration {
      *         be used for the configuration repository; never null
      */
     public ChooseClass<RepositorySource, ConfigRepositoryDetails> withConfigurationRepository() {
-        final Source source = this.configurationSource;
         // The config repository is different, since it has to load immediately ...
         return new ChooseClass<RepositorySource, ConfigRepositoryDetails>() {
             public LoadedFrom<ConfigRepositoryDetails> usingClass( final String className ) {
@@ -203,7 +242,7 @@ public class DnaConfiguration {
 
             public ConfigRepositoryDetails usingClass( Class<? extends RepositorySource> repositorySource ) {
                 try {
-                    source.source = repositorySource.newInstance();
+                    DnaConfiguration.this.configurationSource = new ConfigurationRepository(repositorySource.newInstance());
                 } catch (InstantiationException err) {
                     I18n msg = RepositoryI18n.errorCreatingInstanceOfClass;
                     throw new DnaConfigurationException(msg.text(repositorySource.getName(), err.getLocalizedMessage()), err);
@@ -318,7 +357,7 @@ public class DnaConfiguration {
     protected Path sourcesPath() {
         // Make sure the "dna:sources" node is there
         if (sourcesPath == null) {
-            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.SOURCES);
+            Path path = pathFactory().create(this.configurationSource.getPath(), DnaLexicon.SOURCES);
             Node node = graph().createIfMissing(path).andReturn();
             this.sourcesPath = node.getLocation().getPath();
         }
@@ -328,7 +367,7 @@ public class DnaConfiguration {
     protected Path sequencersPath() {
         // Make sure the "dna:sequencers" node is there
         if (sequencersPath == null) {
-            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.SEQUENCERS);
+            Path path = pathFactory().create(this.configurationSource.getPath(), DnaLexicon.SEQUENCERS);
             Node node = graph().createIfMissing(path).andReturn();
             this.sequencersPath = node.getLocation().getPath();
         }
@@ -338,7 +377,7 @@ public class DnaConfiguration {
     protected Path detectorsPath() {
         // Make sure the "dna:mimeTypeDetectors" node is there
         if (detectorsPath == null) {
-            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.MIME_TYPE_DETECTORS);
+            Path path = pathFactory().create(this.configurationSource.getPath(), DnaLexicon.MIME_TYPE_DETECTORS);
             Node node = graph().createIfMissing(path).andReturn();
             this.detectorsPath = node.getLocation().getPath();
         }
@@ -612,7 +651,7 @@ public class DnaConfiguration {
          * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
          */
         public ConfigRepositoryDetails describedAs( String description ) {
-            DnaConfiguration.this.configurationSource.description = description;
+            DnaConfiguration.this.configurationSource = DnaConfiguration.this.configurationSource.with(description);
             return this;
         }
 
@@ -622,7 +661,8 @@ public class DnaConfiguration {
          * @see org.jboss.dna.repository.DnaConfiguration.SetProperties#with(java.lang.String)
          */
         public PropertySetter<ConfigRepositoryDetails> with( String propertyName ) {
-            return new BeanPropertySetter<ConfigRepositoryDetails>(DnaConfiguration.this.configurationSource.source,
+            return new BeanPropertySetter<ConfigRepositoryDetails>(
+                                                                   DnaConfiguration.this.configurationSource.getRepositorySource(),
                                                                    propertyName, this);
         }
 
@@ -633,7 +673,8 @@ public class DnaConfiguration {
          */
         public ConfigRepositoryDetails under( String path ) {
             CheckArg.isNotNull(path, "path");
-            DnaConfiguration.this.configurationSource.path = context().getValueFactories().getPathFactory().create(path);
+            Path newPath = context().getValueFactories().getPathFactory().create(path);
+            DnaConfiguration.this.configurationSource = DnaConfiguration.this.configurationSource.with(newPath);
             return null;
         }
 
