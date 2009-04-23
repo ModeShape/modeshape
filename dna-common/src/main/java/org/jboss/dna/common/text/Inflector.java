@@ -297,14 +297,13 @@ public class Inflector {
             return replaceAllWithUppercase(result, "(^|_)(.)", 2);
         }
         if (lowerCaseAndUnderscoredWord.length() < 2) return lowerCaseAndUnderscoredWord;
-        return "" + lowerCaseAndUnderscoredWord.charAt(0)
+        return "" + Character.toLowerCase(lowerCaseAndUnderscoredWord.charAt(0))
                + camelCase(lowerCaseAndUnderscoredWord, true, delimiterChars).substring(1);
     }
 
     /**
-     * Makes an underscored form from the expression in the string (the reverse of the
-     * {@link #camelCase(String, boolean, char[]) camelCase} method. Also changes any characters that match the supplied
-     * delimiters into underscore.
+     * Makes an underscored form from the expression in the string (the reverse of the {@link #camelCase(String, boolean, char[])
+     * camelCase} method. Also changes any characters that match the supplied delimiters into underscore.
      * <p>
      * Examples:
      * 
@@ -491,9 +490,9 @@ public class Inflector {
      * other backreferences.
      * <p>
      * The Java {@link Pattern regular expression processing} does not use the preprocessing directives <code>\l</code>,
-     * <code>&#92;u</code>, <code>\L</code>, and <code>\U</code>. If so, such directives could be used in the replacement
-     * string to uppercase or lowercase the backreferences. For example, <code>\L1</code> would lowercase the first
-     * backreference, and <code>&#92;u3</code> would uppercase the 3rd backreference.
+     * <code>&#92;u</code>, <code>\L</code>, and <code>\U</code>. If so, such directives could be used in the replacement string
+     * to uppercase or lowercase the backreferences. For example, <code>\L1</code> would lowercase the first backreference, and
+     * <code>&#92;u3</code> would uppercase the 3rd backreference.
      * </p>
      * 
      * @param input
