@@ -21,8 +21,10 @@
  */
 package org.jboss.dna.repository;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
@@ -737,6 +739,7 @@ public class DnaConfiguration {
 
     protected class GraphSequencerDetails implements SequencerDetails {
         private final Path path;
+        private final List<String> compiledExpressions = new ArrayList<String>();
 
         protected GraphSequencerDetails( Path path ) {
             assert path != null;
@@ -780,7 +783,9 @@ public class DnaConfiguration {
          */
         public SequencerDetails sequencingFrom( PathExpression expression ) {
             CheckArg.isNotNull(expression, "expression");
-            configuration().set(DnaLexicon.PATH_EXPRESSIONS).on(path).to(expression.getExpression());
+            String compiledExpression = expression.getExpression();
+            if (!compiledExpressions.contains(compiledExpression)) compiledExpressions.add(compiledExpression);
+            configuration().set(DnaLexicon.PATH_EXPRESSIONS).on(path).to(compiledExpressions);
             return this;
         }
 

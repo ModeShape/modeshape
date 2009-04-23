@@ -253,8 +253,8 @@ public class DnaConfigurationTest {
                      .usingClass(MockSequencerA.class)
                      .named("The (Main) Sequencer")
                      .describedAs("Mock Sequencer A")
-                     // .sequencingFrom("/foo/source")
-                     // .andOutputtingTo("/foo/target")
+                     .sequencingFrom("/foo/source")
+                     .andOutputtingTo("/foo/target")
                      .sequencingFrom("/bar/source")
                      .andOutputtingTo("/bar/target")
                      .and()
@@ -276,7 +276,7 @@ public class DnaConfigurationTest {
                                                                                MockSequencerA.class.getName()));
         System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSIONS));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSIONS,
-        // "/foo/source => /foo/target",
+                                                                               "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
     }
 
@@ -286,6 +286,14 @@ public class DnaConfigurationTest {
         configuration.addMimeTypeDetector("detector")
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
                      .describedAs("default detector");
+        configuration.addSequencer("sequencerA")
+                     .usingClass(MockSequencerA.class)
+                     .named("The (Main) Sequencer")
+                     .describedAs("Mock Sequencer A")
+                     .sequencingFrom("/foo/source")
+                     .andOutputtingTo("/foo/target")
+                     .sequencingFrom("/bar/source")
+                     .andOutputtingTo("/bar/target");
         configuration.save();
 
         // Verify that the graph has been updated correctly ...
@@ -302,5 +310,15 @@ public class DnaConfigurationTest {
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(DnaLexicon.DESCRIPTION, "default detector"));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"),
                    hasProperty(DnaLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
+        assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("sequencerA")));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.READABLE_NAME, "The (Main) Sequencer"));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.DESCRIPTION, "Mock Sequencer A"));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.CLASSNAME,
+                                                                               MockSequencerA.class.getName()));
+        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSIONS));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSIONS,
+                                                                               "/foo/source => /foo/target",
+                                                                               "/bar/source => /bar/target"));
     }
 }
