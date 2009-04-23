@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.jcr;
+package org.jboss.dna.repository;
 
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
@@ -29,13 +29,17 @@ import org.jboss.dna.graph.property.basic.BasicName;
 /**
  * @author Randall Hauch
  */
-public class DnaLexicon extends org.jboss.dna.repository.DnaLexicon {
+public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
 
-    public static final Name DEFINED = new BasicName(Namespace.URI, "defined");
-    public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
-    public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
-    public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");
-    public static final Name ROOT = new BasicName(Namespace.URI, "root");
-    public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
-    public static final Name URI = new BasicName(Namespace.URI, "uri");
+    public static final Name SOURCES = new BasicName(Namespace.URI, "sources");
+    public static final Name SOURCE = new BasicName(Namespace.URI, "source");
+    public static final Name READABLE_NAME = new BasicName(Namespace.URI, "readableName");
+    public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");
+    public static final Name SEQUENCERS = new BasicName(Namespace.URI, "sequencers");
+    public static final Name SEQUENCER = new BasicName(Namespace.URI, "sequencer");
+    public static final Name PATH_EXPRESSIONS = new BasicName(Namespace.URI, "pathExpressions");
+    public static final Name MIME_TYPE_DETECTORS = new BasicName(Namespace.URI, "mimeTypeDetectors");
+    public static final Name MIME_TYPE_DETECTOR = new BasicName(Namespace.URI, "mimeTypeDetector");
+    public static final Name RETRY_LIMIT = new BasicName(Namespace.URI, "retryLimit");
+    public static final Name DEFAULT_CACHE_POLICY = new BasicName(Namespace.URI, "defaultCachePolicy");
 }

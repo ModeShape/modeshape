@@ -63,12 +63,13 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowCreatingWithConfigRepository() throws InterruptedException {
-        engine = new DnaConfiguration()
-            .withConfigurationRepository()
-            .usingClass(InMemoryRepositorySource.class)
-            .describedAs("Configuration Repository")
-            .with("name").setTo("config repo")
-            .and().build();
+        engine = new DnaConfiguration().withConfigurationRepository()
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .describedAs("Configuration Repository")
+                                       .with("name")
+                                       .setTo("config repo")
+                                       .and()
+                                       .build();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
@@ -84,17 +85,23 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowCreatingMultipleRepositories() throws Exception {
-        engine = new DnaConfiguration()
-            .withConfigurationRepository()
-            .usingClass(InMemoryRepositorySource.class)
-            .describedAs("Configuration Repository")
-            .with("name").setTo("config repo")
-            .and().addRepository("JCR")
-            .usingClass(InMemoryRepositorySource.class)
-            .describedAs("Backing Repository for JCR Implementation")
-            .with("name").setTo("JCR")
-            .and().build();
+        engine = new DnaConfiguration().withConfigurationRepository()
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .describedAs("Configuration Repository")
+                                       .with("name")
+                                       .setTo("config repo")
+                                       .and()
+                                       .addRepository("JCR")
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .describedAs("Backing Repository for JCR Implementation")
+                                       .with("name")
+                                       .setTo("JCR")
+                                       .and()
+                                       .build();
+        // Start the engine ...
+        engine.start();
 
+        // Verify the components are here ...
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
@@ -111,46 +118,52 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowAddingMimeTypeDetectors() throws Exception {
-        engine = new DnaConfiguration()
-            .withConfigurationRepository()
-            .usingClass(InMemoryRepositorySource.class)
-            .describedAs("Configuration Repository")
-            .with("name").setTo("config repo")
-            .and().addMimeTypeDetector("default")
-            .usingClass(MockMimeTypeDetector.class)
-            .describedAs("Default MimeTypeDetector")
-            .with("mimeType").setTo("mock")
-            .and().build();
+        engine = new DnaConfiguration().withConfigurationRepository()
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .describedAs("Configuration Repository")
+                                       .with("name")
+                                       .setTo("config repo")
+                                       .and()
+                                       .addMimeTypeDetector("default")
+                                       .usingClass(MockMimeTypeDetector.class)
+                                       .describedAs("Default MimeTypeDetector")
+                                       .with("mimeType")
+                                       .setTo("mock")
+                                       .and()
+                                       .build();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
         RepositoryLibrary library = engine.getRepositoryService().getRepositorySourceManager();
         MimeTypeDetectors detectors = library.getMimeTypeDetectors();
-        
+
         assertThat(detectors.mimeTypeOf("test", new ByteArrayInputStream("This is useless data".getBytes())), is("mock"));
     }
-    
+
     @Test
     public void shouldAllowAddingSequencers() throws Exception {
-        engine = new DnaConfiguration()
-            .withConfigurationRepository()
-            .usingClass(InMemoryRepositorySource.class)
-            .describedAs("Configuration Repository")
-            .with("name").setTo("config repo")
-            .and().addSequencer("Mock Sequencer A")
-            .usingClass(MockSequencerA.class)
-            .describedAs("A Mock Sequencer")
-            .sequencingFrom("/**").andOutputtingTo("/")
-            .and().build();
+        engine = new DnaConfiguration().withConfigurationRepository()
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .describedAs("Configuration Repository")
+                                       .with("name")
+                                       .setTo("config repo")
+                                       .and()
+                                       .addSequencer("Mock Sequencer A")
+                                       .usingClass(MockSequencerA.class)
+                                       .describedAs("A Mock Sequencer")
+                                       .sequencingFrom("/**")
+                                       .andOutputtingTo("/")
+                                       .and()
+                                       .build();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
         SequencingService sequencer = engine.getSequencingService();
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
-        
-        NodeChanges changes = NodeChanges.create("", Arrays.asList(new Event[] { }));
+
+        NodeChanges changes = NodeChanges.create("", Arrays.asList(new Event[] {}));
         sequencer.onNodeChanges(changes);
 
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
@@ -159,33 +172,32 @@ public class DnaEngineTest {
         stub(e1.getType()).toReturn(Event.NODE_ADDED);
         stub(e1.getPath()).toReturn("/test");
         stub(e1.getUserID()).toReturn("Test");
-        
-//        changes = NodeChanges.create("", Arrays.asList(new Event[] { e1, }));
-//        sequencer.onNodeChanges(changes);
-//        
-//        // Shutdown the engine to force all pending tasks to complete
-//        engine.shutdown();
-//        
-//        assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(1L));
 
-    }    
+        // changes = NodeChanges.create("", Arrays.asList(new Event[] { e1, }));
+        // sequencer.onNodeChanges(changes);
+        //        
+        // // Shutdown the engine to force all pending tasks to complete
+        // engine.shutdown();
+        //        
+        // assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(1L));
+
+    }
 
     public static class MockMimeTypeDetector implements MimeTypeDetector {
         private String mimeType = "";
-        
+
         public MockMimeTypeDetector() {
-            
+
         }
 
-        public void setMimeType(String mimeType) {
+        public void setMimeType( String mimeType ) {
             this.mimeType = mimeType;
         }
-        
+
         public String mimeTypeOf( String name,
                                   InputStream is ) {
             return mimeType;
         }
     }
-
 
 }

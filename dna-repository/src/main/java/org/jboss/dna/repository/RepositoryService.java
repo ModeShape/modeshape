@@ -35,9 +35,9 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.connector.federation.FederationException;
-import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
@@ -205,7 +205,8 @@ public class RepositoryService implements AdministeredService {
 
             // Read the configuration and repository source nodes (children under "/dna:sources") ...
             Graph graph = Graph.create(getConfigurationSourceName(), sources, context);
-            Path pathToSourcesNode = context.getValueFactories().getPathFactory().create(pathToConfigurationRoot, "dna:sources");
+            Path pathToSourcesNode = context.getValueFactories().getPathFactory().create(pathToConfigurationRoot,
+                                                                                         DnaLexicon.SOURCES);
             try {
                 String workspaceName = getConfigurationWorkspaceName();
                 if (workspaceName != null) graph.useWorkspace(workspaceName);
@@ -266,14 +267,10 @@ public class RepositoryService implements AdministeredService {
             problems.addError(err, RepositoryI18n.unableToInstantiateClassUsingClasspath, classname, classpath);
         }
 
-        // We need to set the name using the local name of the node, so hack this by putting another name property
-        // into the map of properties. Since only the local name is used, we don't care what the namespace of the
-        // fake property name is, so create something bogus. However, it really won't hurt if this happens to override an existing
-        // property.
-        String fakeUri = DnaLexicon.Namespace.URI + "/300939b9dg93kd9gb";
-        Name nameName = context.getValueFactories().getNameFactory().create(fakeUri, "name");
-        Property nameProperty = context.getPropertyFactory().create(nameName, path.getLastSegment().getName().getLocalName());
-        properties.put(nameName, nameProperty);
+        // We need to set the name using the local name of the node...
+        Property nameProperty = context.getPropertyFactory().create(JcrLexicon.NAME,
+                                                                    path.getLastSegment().getName().getLocalName());
+        properties.put(JcrLexicon.NAME, nameProperty);
 
         // Now set all the properties that we can, ignoring any property that doesn't fit the pattern ...
         Reflection reflection = new Reflection(source.getClass());

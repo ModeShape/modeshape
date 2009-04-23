@@ -37,6 +37,7 @@ public final class RepositoryI18n {
     public static I18n errorCreatingInstanceOfClass;
     public static I18n errorCreatingInstanceOfClassUsingClassLoaders;
     public static I18n errorSettingJavaBeanPropertyOnInstanceOfClass;
+    public static I18n pathExpressionIsInvalidOnSequencer;
 
     // Services and Repository
     public static I18n invalidStateString;
@@ -113,6 +114,7 @@ public final class RepositoryI18n {
 
     // General
     public static I18n invalidRepositoryNodePath;
+    public static I18n unableToLoadClass;
     public static I18n unableToLoadClassUsingClasspath;
     public static I18n unableToInstantiateClassUsingClasspath;
     public static I18n unableToAccessClassUsingClasspath;

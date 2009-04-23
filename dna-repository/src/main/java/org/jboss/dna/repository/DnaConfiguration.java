@@ -21,43 +21,59 @@
  */
 package org.jboss.dna.repository;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathExpression;
-import org.jboss.dna.graph.sequencer.StreamSequencer;
-import org.jboss.dna.repository.mimetype.MimeTypeDetectorConfig;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.repository.sequencer.Sequencer;
-import org.jboss.dna.repository.sequencer.SequencerConfig;
-import org.jboss.dna.repository.sequencer.StreamSequencerAdapter;
 
 /**
  */
 @Immutable
 public class DnaConfiguration {
 
-    protected RepositorySource configurationSource;
-    protected String configurationSourceDescription;
-    protected Graph configuration;
-    private final ExecutionContext context;
+    protected static final Map<String, Name> NAMES_TO_MAP;
+    static {
+        Map<String, Name> names = new HashMap<String, Name>();
+        names.put(DnaLexicon.READABLE_NAME.getLocalName(), DnaLexicon.READABLE_NAME);
+        names.put(DnaLexicon.DESCRIPTION.getLocalName(), DnaLexicon.DESCRIPTION);
+        names.put(DnaLexicon.DEFAULT_CACHE_POLICY.getLocalName(), DnaLexicon.DEFAULT_CACHE_POLICY);
+        names.put(DnaLexicon.RETRY_LIMIT.getLocalName(), DnaLexicon.RETRY_LIMIT);
+        names.put(DnaLexicon.PATH_EXPRESSIONS.getLocalName(), DnaLexicon.PATH_EXPRESSIONS);
+        names.put(DnaLexicon.CLASSNAME.getLocalName(), DnaLexicon.CLASSNAME);
+        names.put(DnaLexicon.CLASSPATH.getLocalName(), DnaLexicon.CLASSPATH);
+        NAMES_TO_MAP = Collections.unmodifiableMap(names);
+    }
 
-    /**
-     * Mapping of repository names to configured repositories
-     */
-    protected final Map<String, DnaRepositoryDetails> repositories;
-    protected final Map<String, DnaMimeTypeDetectorDetails> mimeTypeDetectors;
-    protected final Map<String, DnaSequencerDetails> sequencers;
+    protected class Source {
+        protected RepositorySource source;
+        protected String description;
+        protected Path path;
+    }
+
+    private final ExecutionContext context;
+    protected Source configurationSource;
+    private Path sourcesPath;
+    private Path sequencersPath;
+    private Path detectorsPath;
+    private Graph graph;
+    private Graph.Batch batch;
 
     /**
      * Create a new configuration for DNA.
@@ -70,45 +86,14 @@ public class DnaConfiguration {
      * Specify a new {@link ExecutionContext} that should be used for this DNA instance.
      * 
      * @param context the new context, or null if a default-constructed execution context should be used
+     * @throws IllegalArgumentException if the supplied context reference is null
      */
     public DnaConfiguration( ExecutionContext context ) {
+        CheckArg.isNotNull(context, "context");
         this.context = context;
-        this.repositories = new HashMap<String, DnaRepositoryDetails>();
-        this.mimeTypeDetectors = new HashMap<String, DnaMimeTypeDetectorDetails>();
-        this.sequencers = new HashMap<String, DnaSequencerDetails>();
 
         // Set up the default configuration repository ...
         this.configurationSource = createDefaultConfigurationSource();
-
-    }
-
-    private DnaConfiguration( DnaConfiguration source ) {
-        this.configuration = source.configuration;
-        this.configurationSource = source.configurationSource;
-        this.context = source.context;
-        this.configurationSourceDescription = source.configurationSourceDescription;
-        this.repositories = new HashMap<String, DnaRepositoryDetails>(source.repositories);
-        this.mimeTypeDetectors = new HashMap<String, DnaMimeTypeDetectorDetails>(source.mimeTypeDetectors);
-        this.sequencers = new HashMap<String, DnaSequencerDetails>(source.sequencers);
-    }
-
-    private DnaConfiguration with( String repositoryName,
-                                   DnaRepositoryDetails details ) {
-        DnaConfiguration newConfig = new DnaConfiguration(this);
-        newConfig.repositories.put(repositoryName, details);
-
-        return newConfig;
-    }
-
-    protected ExecutionContext getExecutionContext() {
-        return this.context;
-    }
-
-    protected Graph getConfiguration() {
-        if (this.configuration == null) {
-            this.configuration = Graph.create(configurationSource, context);
-        }
-        return this.configuration;
     }
 
     /**
@@ -117,14 +102,63 @@ public class DnaConfiguration {
      * 
      * @return the default repository source
      */
-    protected RepositorySource createDefaultConfigurationSource() {
-        this.withConfigurationRepository()
-            .usingClass(InMemoryRepositorySource.class.getName())
-            .loadedFromClasspath()
-            .describedAs("Configuration Repository")
-            .with("name")
-            .setTo("Configuration");
-        return configurationSource;
+    protected Source createDefaultConfigurationSource() {
+        InMemoryRepositorySource defaultSource = new InMemoryRepositorySource();
+        defaultSource.setName("Configuration");
+        Source result = new Source();
+        result.source = defaultSource;
+        result.path = this.context.getValueFactories().getPathFactory().createRootPath();
+        result.description = "Configuration Repository";
+        return result;
+    }
+
+    protected final ExecutionContext context() {
+        return this.context;
+    }
+
+    protected final PathFactory pathFactory() {
+        return context().getValueFactories().getPathFactory();
+    }
+
+    /**
+     * Get the graph containing the configuration information. This should be called only after the
+     * {@link #withConfigurationRepository() configuration repository} is set up.
+     * 
+     * @return the configuration repository graph; never null
+     * @see #graph()
+     */
+    protected final Graph graph() {
+        if (this.graph == null) {
+            this.graph = Graph.create(configurationSource.source, context);
+        }
+        return this.graph;
+    }
+
+    /**
+     * Get the graph batch that can be used to change the configuration, where the changes are enqueued until {@link #save()
+     * saved}. This should be called only after the {@link #withConfigurationRepository() configuration repository} is set up.
+     * 
+     * @return the latest batch for changes to the configuration repository; never null
+     * @see #graph()
+     */
+    protected final Graph.Batch configuration() {
+        if (this.batch == null) {
+            this.batch = graph().batch();
+        }
+        return this.batch;
+    }
+
+    /**
+     * Save any changes that have been made so far to the configuration. This method does nothing if no changes have been made.
+     * 
+     * @return this configuration object for method chaining purposes; never null
+     */
+    public DnaConfiguration save() {
+        if (this.batch != null) {
+            this.batch.execute();
+            this.batch = this.graph.batch();
+        }
+        return this;
     }
 
     /**
@@ -135,40 +169,69 @@ public class DnaConfiguration {
      * @return the interface for choosing the class, which returns the interface used to configure the repository source that will
      *         be used for the configuration repository; never null
      */
-    public ChooseClass<RepositorySource, RepositoryDetails> withConfigurationRepository() {
-        return addRepository(DnaEngine.CONFIGURATION_REPOSITORY_NAME);
+    public ChooseClass<RepositorySource, ConfigRepositoryDetails> withConfigurationRepository() {
+        final Source source = this.configurationSource;
+        // The config repository is different, since it has to load immediately ...
+        return new ChooseClass<RepositorySource, ConfigRepositoryDetails>() {
+            public LoadedFrom<ConfigRepositoryDetails> usingClass( final String className ) {
+                return new LoadedFrom<ConfigRepositoryDetails>() {
+                    @SuppressWarnings( "unchecked" )
+                    public ConfigRepositoryDetails loadedFrom( String... classpath ) {
+                        ClassLoader classLoader = context().getClassLoader(classpath);
+                        Class<? extends RepositorySource> clazz = null;
+                        try {
+                            clazz = (Class<? extends RepositorySource>)classLoader.loadClass(className);
+                        } catch (ClassNotFoundException err) {
+                            throw new DnaConfigurationException(RepositoryI18n.unableToLoadClassUsingClasspath.text(className,
+                                                                                                                    classpath));
+                        }
+                        return usingClass(clazz);
+                    }
+
+                    @SuppressWarnings( "unchecked" )
+                    public ConfigRepositoryDetails loadedFromClasspath() {
+                        Class<? extends RepositorySource> clazz = null;
+                        try {
+                            clazz = (Class<? extends RepositorySource>)Class.forName(className);
+                        } catch (ClassNotFoundException err) {
+                            throw new DnaConfigurationException(RepositoryI18n.unableToLoadClass.text(className));
+                        }
+                        return usingClass(clazz);
+                    }
+                };
+            }
+
+            public ConfigRepositoryDetails usingClass( Class<? extends RepositorySource> repositorySource ) {
+                try {
+                    source.source = repositorySource.newInstance();
+                } catch (InstantiationException err) {
+                    I18n msg = RepositoryI18n.errorCreatingInstanceOfClass;
+                    throw new DnaConfigurationException(msg.text(repositorySource.getName(), err.getLocalizedMessage()), err);
+                } catch (IllegalAccessException err) {
+                    I18n msg = RepositoryI18n.errorCreatingInstanceOfClass;
+                    throw new DnaConfigurationException(msg.text(repositorySource.getName(), err.getLocalizedMessage()), err);
+                }
+                return new ConfigurationSourceDetails();
+            }
+        };
     }
 
     /**
      * Add a new {@link RepositorySource repository} for this configuration. The new repository will have the supplied name, and
      * if the name of an existing repository is used, this will replace the existing repository configuration.
      * 
-     * @param name the name of the new repository that is to be added
+     * @param id the id of the new repository that is to be added
      * @return the interface for choosing the class, which returns the interface used to configure the repository source; never
      *         null
      * @throws IllegalArgumentException if the repository name is null, empty, or otherwise invalid
      * @see #addRepository(RepositorySource)
      */
-    public ChooseClass<RepositorySource, RepositoryDetails> addRepository( final String name ) {
-        return new ClassChooser<RepositorySource, RepositoryDetails>() {
-
-            @Override
-            protected RepositoryDetails getComponentBuilder( String className,
-                                                             String... classpath ) {
-                try {
-                    Class<?> clazz = Class.forName(className);
-                    Object newInstance = clazz.newInstance();
-                    assert newInstance instanceof RepositorySource;
-
-                    DnaRepositoryDetails details = new DnaRepositoryDetails((RepositorySource)newInstance);
-                    DnaConfiguration.this.repositories.put(name, details);
-
-                    return details;
-                } catch (Exception ex) {
-                    throw new DnaConfigurationException(ex);
-                }
-            }
-        };
+    public ChooseClass<RepositorySource, RepositoryDetails> addRepository( final String id ) {
+        CheckArg.isNotEmpty(id, "id");
+        // Now create the "dna:source" node with the supplied id ...
+        Path sourcePath = pathFactory().create(sourcesPath(), id);
+        configuration().create(sourcePath).with(DnaLexicon.READABLE_NAME, id).and();
+        return new ClassChooser<RepositorySource, RepositoryDetails>(sourcePath, new GraphRepositoryDetails(sourcePath));
     }
 
     /**
@@ -181,338 +244,130 @@ public class DnaConfiguration {
      * @see #addRepository(String)
      */
     public DnaConfiguration addRepository( RepositorySource source ) {
-        return this.with(source.getName(), new DnaRepositoryDetails(source));
+        CheckArg.isNotNull(source, "source");
+        CheckArg.isNotEmpty(source.getName(), "source.getName()");
+        String name = source.getName();
+        RepositoryDetails details = addRepository(source.getName()).usingClass(source.getClass().getName()).loadedFromClasspath();
+        // Record all of the bean properties ...
+        Path sourcePath = pathFactory().create(sourcesPath(), name);
+        Reflection reflector = new Reflection(source.getClass());
+        for (String propertyName : reflector.findGetterPropertyNames()) {
+            Object value;
+            try {
+                value = reflector.invokeGetterMethodOnTarget(propertyName, source);
+                if (value == null) continue;
+                propertyName = Inflector.getInstance().lowerCamelCase(propertyName);
+                if (NAMES_TO_MAP.containsKey(propertyName)) {
+                    configuration().set(NAMES_TO_MAP.get(propertyName)).to(value).on(sourcePath);
+                } else {
+                    configuration().set(propertyName).to(value).on(sourcePath);
+                }
+            } catch (ValueFormatException err) {
+                throw err;
+            } catch (Throwable err) {
+                // Unable to call getter and set property
+            }
+        }
+        return details.and();
     }
 
     /**
      * Add a new {@link Sequencer sequencer} to this configuration. The new sequencer will have the supplied name, and if the name
      * of an existing sequencer is used, this will replace the existing sequencer configuration.
      * 
-     * @param name the name of the new sequencer
+     * @param id the identifier of the new sequencer
      * @return the interface for choosing the class, which returns the interface used to configure the sequencer; never null
      * @throws IllegalArgumentException if the sequencer name is null, empty, or otherwise invalid
      */
-    public ChooseClass<Sequencer, SequencerDetails> addSequencer( final String name ) {
-        return new ClassChooser<Sequencer, SequencerDetails>() {
-
-            @Override
-            protected SequencerDetails getComponentBuilder( String className,
-                                                            String... classpath ) {
-                try {
-                    Class<?> clazz = Class.forName(className);
-                    Object newInstance = clazz.newInstance();
-                    assert newInstance instanceof Sequencer;
-
-                    DnaSequencerDetails details = new DnaSequencerDetails(name, (Sequencer)newInstance, classpath);
-                    DnaConfiguration.this.sequencers.put(name, details);
-
-                    return details;
-                } catch (Exception ex) {
-                    throw new DnaConfigurationException(ex);
-                }
-            }
-        };
-    }
-
-    /**
-     * Add a new {@link StreamSequencer sequencer} to this configuration. The new stream sequencer will have the supplied name,
-     * and if the name of an existing sequencer is used, this will replace the existing sequencer configuration.
-     * 
-     * @param name the name of the new sequencer
-     * @return the interface for choosing the class, which returns the interface used to configure the stream sequencer; never
-     *         null
-     * @throws IllegalArgumentException if the sequencer name is null, empty, or otherwise invalid
-     */
-    public ChooseClass<StreamSequencer, SequencerDetails> addStreamSequencer( final String name ) {
-        return new ClassChooser<StreamSequencer, SequencerDetails>() {
-
-            @Override
-            protected SequencerDetails getComponentBuilder( String className,
-                                                            String... classpath ) {
-                try {
-                    Class<?> clazz = Class.forName(className);
-                    Object newInstance = clazz.newInstance();
-                    assert newInstance instanceof StreamSequencer;
-
-                    DnaSequencerDetails details = new DnaSequencerDetails(
-                                                                          name,
-                                                                          new StreamSequencerAdapter((StreamSequencer)newInstance),
-                                                                          classpath);
-                    DnaConfiguration.this.sequencers.put(name, details);
-
-                    return details;
-                } catch (Exception ex) {
-                    throw new DnaConfigurationException(ex);
-                }
-            }
-        };
+    public ChooseClass<Sequencer, SequencerDetails> addSequencer( final String id ) {
+        CheckArg.isNotEmpty(id, "id");
+        // Now create the "dna:sequencer" node with the supplied id ...
+        Path sequencerPath = pathFactory().create(sequencersPath(), id);
+        configuration().create(sequencerPath).with(DnaLexicon.READABLE_NAME, id).and();
+        return new ClassChooser<Sequencer, SequencerDetails>(sequencerPath, new GraphSequencerDetails(sequencerPath));
     }
 
     /**
      * Add a new {@link MimeTypeDetector MIME type detector} to this configuration. The new detector will have the supplied name,
      * and if the name of an existing detector is used, this will replace the existing detector configuration.
      * 
-     * @param name the name of the new detector
+     * @param id the id of the new detector
      * @return the interface for choosing the class, which returns the interface used to configure the detector; never null
      * @throws IllegalArgumentException if the detector name is null, empty, or otherwise invalid
      */
-    public ChooseClass<MimeTypeDetector, MimeTypeDetectorDetails> addMimeTypeDetector( final String name ) {
-        return new ClassChooser<MimeTypeDetector, MimeTypeDetectorDetails>() {
-
-            @Override
-            protected MimeTypeDetectorDetails getComponentBuilder( String className,
-                                                                   String... classpath ) {
-                try {
-                    Class<?> clazz = Class.forName(className);
-                    Object newInstance = clazz.newInstance();
-                    assert newInstance instanceof MimeTypeDetector;
-
-                    DnaMimeTypeDetectorDetails details = new DnaMimeTypeDetectorDetails(name, (MimeTypeDetector)newInstance,
-                                                                                        classpath);
-                    DnaConfiguration.this.mimeTypeDetectors.put(name, details);
-
-                    return details;
-                } catch (Exception ex) {
-                    throw new DnaConfigurationException(ex);
-                }
-            }
-        };
+    public ChooseClass<MimeTypeDetector, MimeTypeDetectorDetails> addMimeTypeDetector( final String id ) {
+        CheckArg.isNotEmpty(id, "id");
+        // Now create the "dna:sequencer" node with the supplied id ...
+        Path detectorPath = pathFactory().create(detectorsPath(), id);
+        configuration().create(detectorPath).with(DnaLexicon.READABLE_NAME, id).and();
+        return new ClassChooser<MimeTypeDetector, MimeTypeDetectorDetails>(detectorPath,
+                                                                           new GraphMimeTypeDetectorDetails(detectorPath));
     }
 
     /**
      * Complete this configuration and create the corresponding engine.
      * 
      * @return the new engine configured by this instance
+     * @throws DnaConfigurationException if the engine cannot be created from this configuration.
      */
-    public DnaEngine build() {
+    public DnaEngine build() throws DnaConfigurationException {
+        save();
         return new DnaEngine(this);
+    }
+
+    protected Path sourcesPath() {
+        // Make sure the "dna:sources" node is there
+        if (sourcesPath == null) {
+            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.SOURCES);
+            Node node = graph().createIfMissing(path).andReturn();
+            this.sourcesPath = node.getLocation().getPath();
+        }
+        return this.sourcesPath;
+    }
+
+    protected Path sequencersPath() {
+        // Make sure the "dna:sequencers" node is there
+        if (sequencersPath == null) {
+            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.SEQUENCERS);
+            Node node = graph().createIfMissing(path).andReturn();
+            this.sequencersPath = node.getLocation().getPath();
+        }
+        return this.sequencersPath;
+    }
+
+    protected Path detectorsPath() {
+        // Make sure the "dna:mimeTypeDetectors" node is there
+        if (detectorsPath == null) {
+            Path path = pathFactory().create(this.configurationSource.path, DnaLexicon.MIME_TYPE_DETECTORS);
+            Node node = graph().createIfMissing(path).andReturn();
+            this.detectorsPath = node.getLocation().getPath();
+        }
+        return this.detectorsPath;
     }
 
     /**
      * Interface used to configure a {@link RepositorySource repository}.
      */
     public interface RepositoryDetails
-        extends SetDescription<RepositoryDetails>, SetProperties<RepositoryDetails>, ConfigurationBuilder {
-
-        RepositorySource getRepositorySource();
+        extends SetName<RepositoryDetails>, SetDescription<RepositoryDetails>, SetProperties<RepositoryDetails>,
+        ConfigurationBuilder {
     }
 
-    /**
-     * Local implementation of the {@link MimeTypeDetectorDetails} interface that tracks all of the user-provided configuration
-     * details.
-     */
-    protected class DnaMimeTypeDetectorDetails implements MimeTypeDetectorDetails {
-        final MimeTypeDetector mimeTypeDetector;
-        private String name;
-        private String description;
-        private Map<String, Object> properties;
-        private String className;
-        private String[] classpath;
-
-        protected DnaMimeTypeDetectorDetails( String name,
-                                              MimeTypeDetector mimeTypeDetector,
-                                              String[] classpath ) {
-            this.mimeTypeDetector = mimeTypeDetector;
-            this.name = name;
-            this.description = mimeTypeDetector.getClass().getName();
-            this.properties = new HashMap<String, Object>();
-            this.className = mimeTypeDetector.getClass().getName();
-            this.classpath = classpath;
-        }
-
-        public Map<String, Object> getProperties() {
-            return properties;
-        }
-
-        protected String getDescription() {
-            return description;
-        }
-
+    public interface ConfigRepositoryDetails
+        extends SetDescription<ConfigRepositoryDetails>, SetProperties<ConfigRepositoryDetails>, ConfigurationBuilder {
         /**
-         * {@inheritDoc}
+         * Specify the path under which the configuration content is to be found. This path is assumed to be "/" by default.
          * 
-         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
+         * @param path the path to the configuration content in the configuration source; may not be null
+         * @return this instance for method chaining purposes; never null
          */
-        public MimeTypeDetectorDetails describedAs( String description ) {
-            this.description = description;
-            return this;
-        }
-
-        public PropertySetter<MimeTypeDetectorDetails> with( final String propertyName ) {
-            return new MappingPropertySetter<MimeTypeDetectorDetails>(propertyName, this);
-        }
-
-        public MimeTypeDetector getMimeTypeDetector() {
-            return mimeTypeDetector;
-        }
-
-        MimeTypeDetectorConfig getMimeTypeDetectorConfig() {
-            return new MimeTypeDetectorConfig(name, description, properties, className, classpath);
-        }
-
-        public DnaConfiguration and() {
-            return DnaConfiguration.this;
-        }
-
-    }
-
-    /**
-     * Local implementation of the {@link RepositoryDetails} interface that tracks all of the user-provided configuration details.
-     */
-    protected class DnaRepositoryDetails implements RepositoryDetails {
-        private final RepositorySource source;
-        private final String description;
-        private Map<String, Object> properties;
-
-        protected DnaRepositoryDetails( RepositorySource source ) {
-            this.source = source;
-            this.description = source.getName();
-            this.properties = new HashMap<String, Object>();
-        }
-
-        protected DnaRepositoryDetails( RepositorySource source,
-                                        String description ) {
-            this.source = source;
-            this.description = description;
-        }
-
-        public Map<String, Object> getProperties() {
-            return properties;
-        }
-
-        protected String getDescription() {
-            return description;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
-         */
-        public RepositoryDetails describedAs( String description ) {
-            return new DnaRepositoryDetails(this.source, description);
-        }
-
-        public PropertySetter<RepositoryDetails> with( final String propertyName ) {
-            return new BeanPropertySetter<RepositoryDetails>(source, propertyName, this);
-        }
-
-        public RepositorySource getRepositorySource() {
-            return source;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
-         */
-        public DnaConfiguration and() {
-            return DnaConfiguration.this;
-        }
-    }
-
-    /**
-     * Local implementation of the {@link SequencerDetails} interface that tracks all of the user-provided configuration details.
-     */
-    protected class DnaSequencerDetails implements SequencerDetails {
-        private final Sequencer sequencer;
-        private String name;
-        private String description;
-        private Map<String, Object> properties;
-        private String className;
-        private String[] classpath;
-        final List<PathExpression> sourcePathExpressions;
-        final List<PathExpression> targetPathExpressions;
-
-        protected DnaSequencerDetails( String name,
-                                       Sequencer sequencer,
-                                       String[] classpath ) {
-            this.sequencer = sequencer;
-            this.name = name;
-            this.description = sequencer.getClass().getName();
-            this.properties = new HashMap<String, Object>();
-            this.className = sequencer.getClass().getName();
-            this.classpath = classpath;
-            this.sourcePathExpressions = new ArrayList<PathExpression>();
-            this.targetPathExpressions = new ArrayList<PathExpression>();
-        }
-
-        public Map<String, Object> getProperties() {
-            return properties;
-        }
-
-        protected String getDescription() {
-            return description;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
-         */
-        public SequencerDetails describedAs( String description ) {
-            this.description = description;
-            return this;
-        }
-
-        public PropertySetter<SequencerDetails> with( final String propertyName ) {
-            return new MappingPropertySetter<SequencerDetails>(propertyName, this);
-        }
-
-        public Sequencer getSequencer() {
-            return sequencer;
-        }
-
-        SequencerConfig getSequencerConfig() {
-            return new SequencerConfig(this.name, this.description, this.properties, this.className, this.classpath);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
-         */
-        public DnaConfiguration and() {
-            return DnaConfiguration.this;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.SequencerDetails#sequencingFrom(java.lang.String)
-         */
-        public PathExpressionOutput sequencingFrom( String inputExpressionPath ) {
-            return this.sequencingFrom(PathExpression.compile(inputExpressionPath));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.DnaConfiguration.SequencerDetails#sequencingFrom(org.jboss.dna.graph.property.PathExpression)
-         */
-        public PathExpressionOutput sequencingFrom( final PathExpression inputExpressionPath ) {
-            final DnaSequencerDetails details = this;
-            return new PathExpressionOutput() {
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.repository.DnaConfiguration.PathExpressionOutput#andOutputtingTo(java.lang.String)
-                 */
-                public DnaSequencerDetails andOutputtingTo( final String outputExpressionPath ) {
-                    details.sourcePathExpressions.add(inputExpressionPath);
-                    details.targetPathExpressions.add(PathExpression.compile(outputExpressionPath));
-                    return details;
-                }
-            };
-        }
-
+        public ConfigRepositoryDetails under( String path );
     }
 
     /**
      * Interface used to configure a {@link Sequencer sequencer}.
      */
-    public interface SequencerDetails extends SetDescription<SequencerDetails>, ConfigurationBuilder {
+    public interface SequencerDetails extends SetName<SequencerDetails>, SetDescription<SequencerDetails>, ConfigurationBuilder {
 
         /**
          * Specify the input {@link PathExpression path expression} represented as a string, which determines when this sequencer
@@ -529,9 +384,9 @@ public class DnaConfiguration {
          * 
          * @param inputPathExpression the path expression for nodes that, when they change, will be passed as an input to the
          *        sequencer
-         * @return the interface used to specify the output path expression; never null
+         * @return the interface used to continue specifying the configuration of the sequencer
          */
-        PathExpressionOutput sequencingFrom( PathExpression inputPathExpression );
+        SequencerDetails sequencingFrom( PathExpression inputPathExpression );
     }
 
     /**
@@ -553,7 +408,8 @@ public class DnaConfiguration {
      * Interface used to configure a {@link MimeTypeDetector MIME type detector}.
      */
     public interface MimeTypeDetectorDetails
-        extends SetDescription<MimeTypeDetectorDetails>, SetProperties<MimeTypeDetectorDetails>, ConfigurationBuilder {
+        extends SetName<MimeTypeDetectorDetails>, SetDescription<MimeTypeDetectorDetails>,
+        SetProperties<MimeTypeDetectorDetails>, ConfigurationBuilder {
     }
 
     /**
@@ -670,6 +526,7 @@ public class DnaConfiguration {
          * 
          * @param clazz the class that should be instantiated
          * @return the next component to continue configuration; never null
+         * @throws DnaConfigurationException if the class could not be accessed and instantiated (if needed)
          * @throws IllegalArgumentException if the class reference is null
          */
         ReturnType usingClass( Class<? extends ComponentClassType> clazz );
@@ -688,6 +545,21 @@ public class DnaConfiguration {
          * @return the next component to continue configuration; never null
          */
         ReturnType describedAs( String description );
+    }
+
+    /**
+     * The interface used to set a human readable name on a component.
+     * 
+     * @param <ReturnType> the interface returned from these methods
+     */
+    public interface SetName<ReturnType> {
+        /**
+         * Specify the human-readable name for this component.
+         * 
+         * @param description the description; may be null or empty
+         * @return the next component to continue configuration; never null
+         */
+        ReturnType named( String description );
     }
 
     /**
@@ -725,14 +597,217 @@ public class DnaConfiguration {
      */
     public interface ConfigurationBuilder {
 
-        Map<String, Object> getProperties();
-
         /**
          * Return a reference to the enclosing configuration so that it can be built or further configured.
          * 
          * @return a reference to the enclosing configuration
          */
         DnaConfiguration and();
+    }
+
+    protected class ConfigurationSourceDetails implements ConfigRepositoryDetails {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
+         */
+        public ConfigRepositoryDetails describedAs( String description ) {
+            DnaConfiguration.this.configurationSource.description = description;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetProperties#with(java.lang.String)
+         */
+        public PropertySetter<ConfigRepositoryDetails> with( String propertyName ) {
+            return new BeanPropertySetter<ConfigRepositoryDetails>(DnaConfiguration.this.configurationSource.source,
+                                                                   propertyName, this);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.ConfigRepositoryDetails#under(java.lang.String)
+         */
+        public ConfigRepositoryDetails under( String path ) {
+            CheckArg.isNotNull(path, "path");
+            DnaConfiguration.this.configurationSource.path = context().getValueFactories().getPathFactory().create(path);
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
+         */
+        public DnaConfiguration and() {
+            return DnaConfiguration.this;
+        }
+    }
+
+    protected class GraphRepositoryDetails implements RepositoryDetails {
+        private final Path path;
+
+        protected GraphRepositoryDetails( Path path ) {
+            assert path != null;
+            this.path = path;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetName#named(java.lang.String)
+         */
+        public RepositoryDetails named( String name ) {
+            configuration().set(DnaLexicon.READABLE_NAME).to(name).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
+         */
+        public RepositoryDetails describedAs( String description ) {
+            configuration().set(DnaLexicon.DESCRIPTION).to(description).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetProperties#with(java.lang.String)
+         */
+        public PropertySetter<RepositoryDetails> with( String propertyName ) {
+            return new GraphPropertySetter<RepositoryDetails>(path, propertyName, this);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
+         */
+        public DnaConfiguration and() {
+            return DnaConfiguration.this;
+        }
+    }
+
+    protected class GraphSequencerDetails implements SequencerDetails {
+        private final Path path;
+
+        protected GraphSequencerDetails( Path path ) {
+            assert path != null;
+            this.path = path;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SequencerDetails#sequencingFrom(java.lang.String)
+         */
+        public PathExpressionOutput sequencingFrom( final String from ) {
+            CheckArg.isNotEmpty(from, "from");
+            return new PathExpressionOutput() {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.repository.DnaConfiguration.PathExpressionOutput#andOutputtingTo(java.lang.String)
+                 */
+                public SequencerDetails andOutputtingTo( String into ) {
+                    CheckArg.isNotEmpty(into, "into");
+                    return sequencingFrom(PathExpression.compile(from + " => " + into));
+                }
+            };
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetName#named(java.lang.String)
+         */
+        public SequencerDetails named( String name ) {
+            configuration().set(DnaLexicon.READABLE_NAME).to(name).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SequencerDetails#sequencingFrom(org.jboss.dna.graph.property.PathExpression)
+         */
+        public SequencerDetails sequencingFrom( PathExpression expression ) {
+            CheckArg.isNotNull(expression, "expression");
+            configuration().set(DnaLexicon.PATH_EXPRESSIONS).on(path).to(expression.getExpression());
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
+         */
+        public SequencerDetails describedAs( String description ) {
+            configuration().set(DnaLexicon.DESCRIPTION).to(description).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
+         */
+        public DnaConfiguration and() {
+            return DnaConfiguration.this;
+        }
+    }
+
+    protected class GraphMimeTypeDetectorDetails implements MimeTypeDetectorDetails {
+        private final Path path;
+
+        protected GraphMimeTypeDetectorDetails( Path path ) {
+            assert path != null;
+            this.path = path;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetName#named(java.lang.String)
+         */
+        public MimeTypeDetectorDetails named( String name ) {
+            configuration().set(DnaLexicon.READABLE_NAME).to(name).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetProperties#with(java.lang.String)
+         */
+        public PropertySetter<MimeTypeDetectorDetails> with( String propertyName ) {
+            return new GraphPropertySetter<MimeTypeDetectorDetails>(path, propertyName, this);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.SetDescription#describedAs(java.lang.String)
+         */
+        public MimeTypeDetectorDetails describedAs( String description ) {
+            configuration().set(DnaLexicon.DESCRIPTION).to(description).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.DnaConfiguration.ConfigurationBuilder#and()
+         */
+        public DnaConfiguration and() {
+            return DnaConfiguration.this;
+        }
     }
 
     /**
@@ -743,10 +818,17 @@ public class DnaConfiguration {
      * @param <ReturnType> the interface that should be returned when the class name and classpath have been chosen.
      * @author Randall Hauch
      */
-    protected abstract class ClassChooser<ComponentClass, ReturnType> implements ChooseClass<ComponentClass, ReturnType> {
+    protected class ClassChooser<ComponentClass, ReturnType> implements ChooseClass<ComponentClass, ReturnType> {
+        protected final Path pathOfComponentNode;
+        protected final ReturnType returnObject;
 
-        protected abstract ReturnType getComponentBuilder( String className,
-                                                           String... classpath );
+        protected ClassChooser( Path pathOfComponentNode,
+                                ReturnType returnObject ) {
+            assert pathOfComponentNode != null;
+            assert returnObject != null;
+            this.pathOfComponentNode = pathOfComponentNode;
+            this.returnObject = returnObject;
+        }
 
         /**
          * {@inheritDoc}
@@ -755,13 +837,22 @@ public class DnaConfiguration {
          */
         public LoadedFrom<ReturnType> usingClass( final String classname ) {
             CheckArg.isNotEmpty(classname, "classname");
+            configuration().set(DnaLexicon.CLASSNAME).to(classname).on(pathOfComponentNode);
             return new LoadedFrom<ReturnType>() {
                 public ReturnType loadedFromClasspath() {
-                    return getComponentBuilder(classname);
+                    return returnObject;
                 }
 
                 public ReturnType loadedFrom( String... classpath ) {
-                    return getComponentBuilder(classname, classpath);
+                    CheckArg.isNotEmpty(classpath, "classpath");
+                    if (classpath.length == 1 && classpath[0] != null) {
+                        configuration().set(DnaLexicon.CLASSPATH).to(classpath[0]).on(pathOfComponentNode);
+                    } else {
+                        Object[] remaining = new String[classpath.length - 1];
+                        System.arraycopy(classpath, 1, remaining, 0, remaining.length);
+                        configuration().set(DnaLexicon.CLASSPATH).to(classpath[0], remaining).on(pathOfComponentNode);
+                    }
+                    return returnObject;
                 }
             };
         }
@@ -773,30 +864,7 @@ public class DnaConfiguration {
          */
         public ReturnType usingClass( Class<? extends ComponentClass> clazz ) {
             CheckArg.isNotNull(clazz, "clazz");
-            return getComponentBuilder(clazz.getName());
-        }
-    }
-
-    /**
-     * Utility method to instantiate a class.
-     * 
-     * @param <T> the interface or superclass that the instantiated object is to implement
-     * @param interfaceType the interface or superclass type that the instantiated object is to implement
-     * @param className the name of the class
-     * @param classloaderNames the names of the class loaders
-     * @return the new instance
-     */
-    @SuppressWarnings( "unchecked" )
-    protected <T> T instantiate( Class<T> interfaceType,
-                                 String className,
-                                 String... classloaderNames ) {
-        // Load the class and create the instance ...
-        try {
-            Class<?> clazz = getExecutionContext().getClassLoader(classloaderNames).loadClass(className);
-            return (T)clazz.newInstance();
-        } catch (Throwable err) {
-            I18n msg = RepositoryI18n.errorCreatingInstanceOfClass;
-            throw new DnaConfigurationException(msg.text(className, err.getMessage()), err);
+            return usingClass(clazz.getName()).loadedFromClasspath();
         }
     }
 
@@ -864,53 +932,96 @@ public class DnaConfiguration {
     }
 
     /**
-     * Reusable implementation of {@link PropertySetter} that aggregates the properties to set to be placed into a map
+     * Reusable implementation of {@link PropertySetter} that sets the property on the specified node in the configuration graph.
      * 
      * @param <ReturnType>
      * @author Randall Hauch
      */
-    protected class MappingPropertySetter<ReturnType extends ConfigurationBuilder> implements PropertySetter<ReturnType> {
+    protected class GraphPropertySetter<ReturnType> implements PropertySetter<ReturnType> {
+        private final Path path;
         private final String beanPropertyName;
         private final ReturnType returnObject;
 
-        protected MappingPropertySetter( String beanPropertyName,
-                                         ReturnType returnObject ) {
+        protected GraphPropertySetter( Path path,
+                                       String beanPropertyName,
+                                       ReturnType returnObject ) {
+            assert path != null;
             assert beanPropertyName != null;
             assert returnObject != null;
-            this.beanPropertyName = beanPropertyName;
+            this.path = path;
+            this.beanPropertyName = Inflector.getInstance().lowerCamelCase(beanPropertyName);
             this.returnObject = returnObject;
         }
 
         public ReturnType setTo( boolean value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( int value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( long value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( short value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( float value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( double value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( String value ) {
-            return setTo((Object)value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
+            return returnObject;
         }
 
         public ReturnType setTo( Object value ) {
-            returnObject.getProperties().put(beanPropertyName, value);
+            if (NAMES_TO_MAP.containsKey(beanPropertyName)) {
+                configuration().set(NAMES_TO_MAP.get(beanPropertyName)).to(value).on(path);
+            } else {
+                configuration().set(beanPropertyName).to(value).on(path);
+            }
             return returnObject;
         }
     }

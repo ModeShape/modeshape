@@ -234,7 +234,7 @@ public class Reflection {
     }
 
     /**
-     * Find the method on the target class that matches the supplied method name.
+     * Find the methods on the target class that matches the supplied method name.
      * 
      * @param methodNamePattern the regular expression pattern for the name of the method that is to be found.
      * @return the Method objects that have a matching name, or an empty array if there are no methods that have a matching name.
@@ -249,6 +249,50 @@ public class Reflection {
             }
         }
         return result.toArray(new Method[result.size()]);
+    }
+
+    /**
+     * Find the getter methods on the target class that begin with "get" or "is", that have no parameters, and that return
+     * something other than void. This method skips the {@link Object#getClass()} method.
+     * 
+     * @return the Method objects for the getters; never null but possibly empty
+     */
+    public Method[] findGetterMethods() {
+        final Method[] allMethods = this.targetClass.getMethods();
+        final List<Method> result = new ArrayList<Method>();
+        for (int i = 0; i < allMethods.length; i++) {
+            final Method m = allMethods[i];
+            int numParams = m.getParameterTypes().length;
+            if (numParams != 0) continue;
+            String name = m.getName();
+            if (name.equals("getClass")) continue;
+            if (m.getReturnType() == Void.TYPE) continue;
+            if (name.startsWith("get") || name.startsWith("is")) {
+                result.add(m);
+            }
+        }
+        return result.toArray(new Method[result.size()]);
+    }
+
+    /**
+     * Find the property names with getter methods on the target class. This method returns the property names for the methods
+     * returned by {@link #findGetterMethods()}.
+     * 
+     * @return the Java Bean property names for the getters; never null but possibly empty
+     */
+    public String[] findGetterPropertyNames() {
+        final Method[] getters = findGetterMethods();
+        final List<String> result = new ArrayList<String>();
+        for (int i = 0; i < getters.length; i++) {
+            final Method m = getters[i];
+            String name = m.getName();
+            if (name.startsWith("get") && name.length() > 3) {
+                result.add(name.substring(3));
+            } else if (name.startsWith("is") && name.length() > 2) {
+                result.add(name.substring(2));
+            }
+        }
+        return result.toArray(new String[result.size()]);
     }
 
     /**

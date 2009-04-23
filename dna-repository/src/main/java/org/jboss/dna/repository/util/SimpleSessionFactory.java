@@ -34,20 +34,8 @@ import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
- * A SessionFactory implementation that creates {@link Session} instances using {@link Repository} instances registered in JNDI.
- * <p>
- * This factory using a naming convention where the name supplied to the {@link #createSession(String)} contains both the name of
- * the repository and the name of the workspace. Typically, this is <i><code>repositoryName/workspaceName</code></i>, where
- * <code>repositoryName</code> is the JNDI name under which the Repository instance was bound, and <code>workspaceName</code>
- * is the name of the workspace. Note that this method looks for the last delimiter in the whole name to distinguish between the
- * repository and workspace names.
- * </p>
- * <p>
- * For example, if "<code>java:comp/env/repository/dataRepository/myWorkspace</code>" is passed to the
- * {@link #createSession(String)} method, this factory will look for a {@link Repository} instance registered in JDNI with the
- * name "<code>java:comp/env/repository/dataRepository</code>" and use it to {@link Repository#login(String) create a session}
- * to the workspace named "<code>myWorkspace</code>".
- * </p>
+ * A SessionFactory implementation that creates {@link Session} instances from a map of named {@link Repository} references
+ * managed by this factory.
  * <p>
  * By default, this factory creates an anonymous JCR session. To use sessions with specific {@link Credentials}, simply
  * {@link #registerCredentials(String, Credentials) register} credentials for the appropriate repository/workspace name. For
