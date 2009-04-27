@@ -62,6 +62,8 @@ import org.apache.jackrabbit.test.api.SetPropertyDoubleTest;
 import org.apache.jackrabbit.test.api.SetPropertyInputStreamTest;
 import org.apache.jackrabbit.test.api.SetPropertyLongTest;
 import org.apache.jackrabbit.test.api.SetPropertyNodeTest;
+import org.apache.jackrabbit.test.api.SetPropertyStringTest;
+import org.apache.jackrabbit.test.api.SetPropertyValueTest;
 import org.apache.jackrabbit.test.api.SetValueBinaryTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
 import org.apache.jackrabbit.test.api.SetValueConstraintViolationExceptionTest;
@@ -216,8 +218,8 @@ public class JcrTckTest {
             addTestSuite(SetPropertyInputStreamTest.class);
             addTestSuite(SetPropertyLongTest.class);
             addTestSuite(SetPropertyNodeTest.class);
-            // addTestSuite(SetPropertyStringTest.class);
-            // addTestSuite(SetPropertyValueTest.class);
+            addTestSuite(SetPropertyStringTest.class);
+            addTestSuite(SetPropertyValueTest.class);
             addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
             // addTestSuite(SetPropertyAssumeTypeTest.class);
 

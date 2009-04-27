@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -40,7 +41,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
-import org.jboss.dna.jcr.DnaLexicon;
+import org.jboss.dna.jcr.DnaIntLexicon;
 import org.jboss.dna.jcr.NodeDefinitionId;
 
 /**
@@ -49,6 +50,7 @@ import org.jboss.dna.jcr.NodeDefinitionId;
  * Each instance maintains a reference to the original (usually immutable) NodeInfo representation that was probably read from the
  * repository.
  */
+@NotThreadSafe
 public class ChangedNodeInfo implements NodeInfo {
 
     protected static final PropertyInfo DELETED_PROPERTY = null;
@@ -88,6 +90,8 @@ public class ChangedNodeInfo implements NodeInfo {
 
     private List<UUID> peers;
 
+    private Set<Name> singleMultiPropertyNames;
+
     /**
      * Create an immutable NodeInfo instance.
      * 
@@ -125,6 +129,19 @@ public class ChangedNodeInfo implements NodeInfo {
             peers = new LinkedList<UUID>();
         }
         peers.add(peerUuid);
+    }
+
+    public boolean setSingleMultiProperty( Name name ) {
+        if (singleMultiPropertyNames == null) singleMultiPropertyNames = new HashSet<Name>();
+        return singleMultiPropertyNames.add(name);
+    }
+
+    public boolean removeSingleMultiProperty( Name name ) {
+        return singleMultiPropertyNames == null ? false : singleMultiPropertyNames.remove(name);
+    }
+
+    public Set<Name> getSingleMultiPropertyNames() {
+        return singleMultiPropertyNames;
     }
 
     /**
@@ -213,8 +230,8 @@ public class ChangedNodeInfo implements NodeInfo {
 
     /**
      * Set the identifier of the node definition for this node. This should normally be changed by
-     * {@link #setProperty(PropertyInfo, ValueFactories) setting} the {@link DnaLexicon#NODE_DEFINITON} property. However, since
-     * that property is not always allowed, this method provides a way to set it locally (without requiring a property).
+     * {@link #setProperty(PropertyInfo, ValueFactories) setting} the {@link DnaIntLexicon#NODE_DEFINITON} property. However,
+     * since that property is not always allowed, this method provides a way to set it locally (without requiring a property).
      * 
      * @param definitionId the new property definition identifier; may not be null
      * @see #setProperty(PropertyInfo, ValueFactories)
@@ -404,7 +421,7 @@ public class ChangedNodeInfo implements NodeInfo {
             for (Object value : newProperty.getProperty()) {
                 changedMixinTypeNames.add(nameFactory.create(value));
             }
-        } else if (name.equals(DnaLexicon.NODE_DEFINITON)) {
+        } else if (name.equals(DnaIntLexicon.NODE_DEFINITON)) {
             ValueFactory<String> stringFactory = factories.getStringFactory();
             String value = stringFactory.create(newProperty.getProperty().getFirstValue());
             changedDefinitionId = NodeDefinitionId.fromString(value, factories.getNameFactory());

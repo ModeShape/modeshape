@@ -65,25 +65,17 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
         // Value trueValue = new JcrValue(context.getValueFactories(), null, PropertyType.BOOLEAN, Boolean.TRUE);
         Value ntBaseValue = new JcrValue(context.getValueFactories(), null, PropertyType.NAME, JcrNtLexicon.BASE);
 
-        JcrNodeType defined = new JcrNodeType(
-                                              context,
-                                              NO_NODE_TYPE_MANAGER,
-                                              DnaLexicon.DEFINED,
-                                              NO_SUPERTYPES,
-                                              DnaLexicon.NODE_DEFINITON,
-                                              NO_CHILD_NODES,
-                                              Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                   context,
-                                                                                                                   null,
-                                                                                                                   DnaLexicon.NODE_DEFINITON,
-                                                                                                                   OnParentVersionBehavior.INITIALIZE.getJcrValue(),
-                                                                                                                   false,
-                                                                                                                   false,
-                                                                                                                   true,
-                                                                                                                   NO_DEFAULT_VALUES,
-                                                                                                                   PropertyType.STRING,
-                                                                                                                   NO_CONSTRAINTS,
-                                                                                                                   false),}),
+        JcrNodeType defined = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, DnaLexicon.BASE, NO_SUPERTYPES,
+                                              DnaIntLexicon.NODE_DEFINITON, NO_CHILD_NODES,
+                                              Arrays.asList(new JcrPropertyDefinition[] {
+                                                  new JcrPropertyDefinition(context, null, DnaIntLexicon.NODE_DEFINITON,
+                                                                            OnParentVersionBehavior.INITIALIZE.getJcrValue(),
+                                                                            false, false, true, NO_DEFAULT_VALUES,
+                                                                            PropertyType.STRING, NO_CONSTRAINTS, false),
+                                                  new JcrPropertyDefinition(context, null, DnaIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                                            OnParentVersionBehavior.INITIALIZE.getJcrValue(),
+                                                                            false, false, true, NO_DEFAULT_VALUES,
+                                                                            PropertyType.STRING, NO_CONSTRAINTS, true),}),
                                               IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
         // Stubbing in child node and property definitions for now
         JcrNodeType base = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.BASE,
@@ -636,7 +628,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
         // Disabling version-related types until DNA supports versioning, as per section 4.11 of the 1.0.1 specification
         nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {defined, base, unstructured, childNodeDefinition, file, folder,
             frozenNode, hierarchyNode, linkedFile, nodeType, propertyDefinition, query, resource, nodeType /*, version, versionHistory,
-                                                                                                              versionLabels, versionedChild */}));
+                                                                                                                            versionLabels, versionedChild */}));
 
         JcrNodeType lockable = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrMixLexicon.LOCKABLE, NO_SUPERTYPES,
                                                NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {

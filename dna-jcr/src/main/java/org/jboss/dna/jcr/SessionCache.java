@@ -53,6 +53,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -127,6 +128,8 @@ public class SessionCache {
      * included anyway. This is currently {@value} .
      */
     private static final boolean INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS = true;
+
+    private static final Set<Name> EMPTY_NAMES = Collections.emptySet();
 
     private final JcrSession session;
     private final String workspaceName;
@@ -391,6 +394,7 @@ public class SessionCache {
                                                                          mixinTypeNames,
                                                                          property.property(),
                                                                          property.getType(),
+                                                                         property.property().isSingle(),
                                                                          false);
             if (definition == null) {
                 throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
@@ -748,7 +752,8 @@ public class SessionCache {
         PropertyInfo info = findPropertyInfo(propertyId); // throws PathNotFoundException if node not there
         if (info == null) return null; // no such property on this node
 
-        if (DnaLexicon.NODE_DEFINITON.equals(info.getPropertyName())) return null;
+        // Skip all internal properties ...
+        if (info.getPropertyName().getNamespaceUri().equals(DnaIntLexicon.Namespace.URI)) return null;
 
         // Now create the appropriate JCR Property object ...
         return createAndCacheJcrPropertyFor(info);
@@ -760,7 +765,7 @@ public class SessionCache {
         Set<Name> propertyNames = info.getPropertyNames();
         Collection<AbstractJcrProperty> result = new ArrayList<AbstractJcrProperty>(propertyNames.size());
         for (Name propertyName : propertyNames) {
-            if (!DnaLexicon.NODE_DEFINITON.equals(propertyName)) {
+            if (!propertyName.getNamespaceUri().equals(DnaIntLexicon.Namespace.URI)) {
                 result.add(findJcrProperty(new PropertyId(nodeUuid, propertyName)));
             }
         }
@@ -1080,8 +1085,7 @@ public class SessionCache {
             assert name != null;
             assert values != null;
 
-            // TODO: Re-add following line!
-            // checkCardinalityOfExistingProperty(name, true);
+            checkCardinalityOfExistingProperty(name, true);
 
             int len = values.length;
             Value[] newValues = null;
@@ -1171,8 +1175,8 @@ public class SessionCache {
                 }
             }
             // Create the DNA property ...
-            int type = newValues.length != 0 ? newValues[0].getType() : definition.getRequiredType();
-            Object[] objValues = new Object[newValues.length];
+            int type = numValues != 0 ? newValues[0].getType() : definition.getRequiredType();
+            Object[] objValues = new Object[numValues];
             int propertyType = definition.getRequiredType();
             if (propertyType == PropertyType.UNDEFINED || propertyType == type) {
                 // Can use the values as is ...
@@ -1198,6 +1202,23 @@ public class SessionCache {
             // Finally update the cached information and record the change ...
             node.setProperty(newProperty, factories());
             operations.set(dnaProp).on(currentLocation);
+
+            // If there is a single value, we need to record that this property is actually a multi-valued property definition ...
+            if (numValues == 1) {
+                if (node.setSingleMultiProperty(name)) {
+                    Set<Name> names = node.getSingleMultiPropertyNames();
+                    // Added this property name to the set, so record the change ...
+                    PropertyInfo singleMulti = createSingleMultiplePropertyInfo(node.getUuid(),
+                                                                                node.getPrimaryTypeName(),
+                                                                                node.getMixinTypeNames(),
+                                                                                names);
+                    node.setProperty(singleMulti, factories());
+                    operations.set(singleMulti.getProperty()).on(currentLocation);
+                }
+            } else {
+                removeSingleMultiProperty(node, name);
+            }
+
             return newProperty.getPropertyId();
         }
 
@@ -1208,11 +1229,33 @@ public class SessionCache {
          * @return true if there was a property with the supplied name, or false if no such property existed
          */
         public boolean removeProperty( Name name ) {
-            if (node.removeProperty(name) != null) {
+            PropertyInfo info = node.removeProperty(name);
+            if (info != null) {
                 operations.remove(name).on(currentLocation);
+                // Is this named in the single-multi property names? ...
+                removeSingleMultiProperty(node, name);
                 return true;
             }
             return false;
+        }
+
+        private void removeSingleMultiProperty( ChangedNodeInfo node,
+                                                Name propertyName ) {
+            if (node.removeSingleMultiProperty(propertyName)) {
+                Set<Name> names = node.getSingleMultiPropertyNames();
+                if (names == null || names.isEmpty()) {
+                    node.removeProperty(DnaIntLexicon.MULTI_VALUED_PROPERTIES);
+                    operations.remove(DnaIntLexicon.MULTI_VALUED_PROPERTIES).on(currentLocation);
+                } else {
+                    // Added this property name to the set, so record the change ...
+                    PropertyInfo singleMulti = createSingleMultiplePropertyInfo(node.getUuid(),
+                                                                                node.getPrimaryTypeName(),
+                                                                                node.getMixinTypeNames(),
+                                                                                names);
+                    node.setProperty(singleMulti, factories());
+                    operations.set(singleMulti.getProperty()).on(currentLocation);
+                }
+            }
         }
 
         /**
@@ -1255,7 +1298,7 @@ public class SessionCache {
                 try {
                     JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
                                                                                                                  .getString());
-                    setProperty(DnaLexicon.NODE_DEFINITON, value);
+                    setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
                     // But we still want the node info to have the correct node definition.
@@ -1264,7 +1307,7 @@ public class SessionCache {
                     node.setDefinitionId(definition.getId());
 
                     // And remove the property from the info ...
-                    newChildEditor.removeProperty(DnaLexicon.NODE_DEFINITON);
+                    newChildEditor.removeProperty(DnaIntLexicon.NODE_DEFINITON);
                 }
             }
 
@@ -1428,7 +1471,7 @@ public class SessionCache {
             // Create the properties ...
             Map<Name, PropertyInfo> properties = new HashMap<Name, PropertyInfo>();
             Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-            Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, definition.getId().getString());
+            Property nodeDefinitionProp = propertyFactory.create(DnaIntLexicon.NODE_DEFINITON, definition.getId().getString());
 
             // Now add the "jcr:uuid" property if and only if referenceable ...
             if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
@@ -1457,6 +1500,7 @@ public class SessionCache {
                                                                               node.getMixinTypeNames(),
                                                                               primaryTypeProp,
                                                                               PropertyType.NAME,
+                                                                              true,
                                                                               false);
             PropertyDefinitionId primaryTypeDefinitionId = primaryTypeDefn.getId();
             PropertyInfo primaryTypeInfo = new PropertyInfo(new PropertyId(desiredUuid, primaryTypeProp.getName()),
@@ -1469,6 +1513,7 @@ public class SessionCache {
                                                                            node.getMixinTypeNames(),
                                                                            nodeDefinitionProp,
                                                                            PropertyType.STRING,
+                                                                           false,
                                                                            false);
             if (nodeDefnDefn != null) {
                 PropertyDefinitionId nodeDefnDefinitionId = nodeDefnDefn.getId();
@@ -1538,6 +1583,8 @@ public class SessionCache {
      *        to include in the search
      * @param dnaProperty the new property that is to be set on this node
      * @param propertyType the property type; must be a valid {@link PropertyType} value
+     * @param isSingle true if the property definition should be single-valued, or false if the property definition should allow
+     *        multiple values
      * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
      *        this operation is being done from within internal implementations
      * @return the property definition that allows setting this property, or null if there is no such definition
@@ -1546,6 +1593,7 @@ public class SessionCache {
                                                                List<Name> mixinTypeNamesOfParent,
                                                                Property dnaProperty,
                                                                int propertyType,
+                                                               boolean isSingle,
                                                                boolean skipProtected ) {
         JcrPropertyDefinition definition = null;
         if (propertyType == PropertyType.UNDEFINED) {
@@ -1553,7 +1601,7 @@ public class SessionCache {
         }
 
         // If single-valued ...
-        if (dnaProperty.isSingle()) {
+        if (isSingle) {
             // Create a value for the DNA property value ...
             Object value = dnaProperty.getFirstValue();
             Value jcrValue = new JcrValue(factories(), SessionCache.this, propertyType, value);
@@ -2047,7 +2095,7 @@ public class SessionCache {
 
         // Look for a node definition stored on the node ...
         JcrNodeDefinition definition = null;
-        org.jboss.dna.graph.property.Property nodeDefnProperty = graphProperties.get(DnaLexicon.NODE_DEFINITON);
+        org.jboss.dna.graph.property.Property nodeDefnProperty = graphProperties.get(DnaIntLexicon.NODE_DEFINITON);
         if (nodeDefnProperty != null && !nodeDefnProperty.isEmpty()) {
             String nodeDefinitionString = stringFactory.create(nodeDefnProperty.getFirstValue());
             NodeDefinitionId id = NodeDefinitionId.fromString(nodeDefinitionString, nameFactory);
@@ -2089,7 +2137,7 @@ public class SessionCache {
         if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
 
         // The process the mixin types ...
-        org.jboss.dna.graph.property.Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
+        Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
         List<Name> mixinTypeNames = null;
         if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
             for (Object mixinTypeValue : mixinTypesProperty) {
@@ -2102,10 +2150,23 @@ public class SessionCache {
             }
         }
 
+        // Create the set of multi-valued property names ...
+        Set<Name> multiValuedPropertyNames = EMPTY_NAMES;
+        Set<Name> newSingleMultiPropertyNames = null;
+        Property multiValuedPropNamesProp = graphProperties.get(DnaIntLexicon.MULTI_VALUED_PROPERTIES);
+        if (multiValuedPropNamesProp != null && !multiValuedPropNamesProp.isEmpty()) {
+            multiValuedPropertyNames = getSingleMultiPropertyNames(multiValuedPropNamesProp, location.getPath(), uuid);
+        }
+
         // Now create the JCR property object wrappers around the other properties ...
         Map<Name, PropertyInfo> props = new HashMap<Name, PropertyInfo>();
-        for (org.jboss.dna.graph.property.Property dnaProp : graphProperties.values()) {
+        for (Property dnaProp : graphProperties.values()) {
             Name name = dnaProp.getName();
+
+            // Is this is single-valued property?
+            boolean isSingle = dnaProp.isSingle();
+            // Make sure that this isn't a multi-valued property with one value ...
+            if (isSingle && multiValuedPropertyNames.contains(name)) isSingle = false;
 
             // Figure out the JCR property type for this property ...
             int propertyType = PropertyTypeUtil.jcrPropertyTypeFor(dnaProp);
@@ -2113,6 +2174,7 @@ public class SessionCache {
                                                                               mixinTypeNames,
                                                                               dnaProp,
                                                                               propertyType,
+                                                                              isSingle,
                                                                               false);
 
             // If there still is no property type defined ...
@@ -2136,6 +2198,12 @@ public class SessionCache {
             if (!isMultiple && dnaProp.isEmpty()) {
                 // Only multi-valued properties can have no values; so if not multi-valued, then skip ...
                 continue;
+            }
+
+            // Update the list of single-valued multi-property names ...
+            if (isMultiple && isSingle) {
+                if (newSingleMultiPropertyNames == null) newSingleMultiPropertyNames = new HashSet<Name>();
+                newSingleMultiPropertyNames.add(name);
             }
 
             // Figure out the property type ...
@@ -2173,12 +2241,84 @@ public class SessionCache {
         // Make sure the "dna:uuid" property did not get in there ...
         props.remove(DnaLexicon.UUID);
 
+        // Make sure the single-valued multi-property names are stored as a property ...
+        if (newSingleMultiPropertyNames != null) {
+            PropertyInfo info = createSingleMultiplePropertyInfo(uuid,
+                                                                 primaryTypeName,
+                                                                 mixinTypeNames,
+                                                                 newSingleMultiPropertyNames);
+            props.put(info.getPropertyName(), info);
+        }
+
         // Create the node information ...
         UUID parentUuid = parentInfo != null ? parentInfo.getUuid() : null;
         List<Location> locations = graphNode.getChildren();
         Children children = locations.isEmpty() ? new EmptyChildren(parentUuid) : new ImmutableChildren(parentUuid, locations);
         props = Collections.unmodifiableMap(props);
         return new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definition.getId(), parentUuid, children, props);
+    }
+
+    protected final PropertyInfo createSingleMultiplePropertyInfo( UUID uuid,
+                                                                   Name primaryTypeName,
+                                                                   List<Name> mixinTypeNames,
+                                                                   Set<Name> newSingleMultiPropertyNames ) {
+        int number = newSingleMultiPropertyNames.size();
+        String[] names = new String[number];
+        JcrValue[] values = new JcrValue[number];
+        if (number == 1) {
+            String str = newSingleMultiPropertyNames.iterator().next().getString(namespaces);
+            names[0] = str;
+            values[0] = new JcrValue(factories(), this, PropertyType.STRING, str);
+        } else {
+            int index = 0;
+            for (Name name : newSingleMultiPropertyNames) {
+                String str = name.getString(namespaces);
+                names[index] = str;
+                values[index] = new JcrValue(factories(), this, PropertyType.STRING, str);
+                ++index;
+            }
+        }
+        PropertyDefinition propertyDefinition = nodeTypes().findPropertyDefinition(primaryTypeName,
+                                                                                   mixinTypeNames,
+                                                                                   DnaIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                                                   values,
+                                                                                   false);
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
+                                                                                                                    .next());
+        PropertyId propId = new PropertyId(uuid, dnaProp.getName());
+        JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
+        return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);
+    }
+
+    protected final Set<Name> getSingleMultiPropertyNames( Property dnaProperty,
+                                                           Path knownPath,
+                                                           UUID knownUuid ) {
+        Set<Name> multiValuedPropertyNames = new HashSet<Name>();
+        for (Object value : dnaProperty) {
+            try {
+                multiValuedPropertyNames.add(nameFactory.create(value));
+            } catch (ValueFormatException e) {
+                String msg = "{0} value \"{1}\" on {2} in \"{3}\" workspace is not a valid name and is being ignored";
+                String path = null;
+                if (knownPath != null) {
+                    path = knownPath.getString(namespaces);
+                } else {
+                    assert knownUuid != null;
+                    try {
+                        path = getPathFor(knownUuid).getString(namespaces);
+                    } catch (RepositoryException err) {
+                        path = knownUuid.toString();
+                    }
+                }
+                Logger.getLogger(getClass()).trace(e,
+                                                   msg,
+                                                   DnaIntLexicon.MULTI_VALUED_PROPERTIES.getString(namespaces),
+                                                   value,
+                                                   path,
+                                                   workspaceName());
+            }
+        }
+        return multiValuedPropertyNames;
     }
 
     /**

@@ -188,6 +188,8 @@ public class SessionCacheTest {
                     }
                 } else if (propertyName.equals(JcrLexicon.PRIMARY_TYPE)) {
                     // This is okay
+                } else if (propertyName.equals(DnaIntLexicon.MULTI_VALUED_PROPERTIES)) {
+                    // This is okay
                 } else {
                     fail("missing property \"" + propertyName + "\" on " + dnaNode);
                 }

@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
- * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
- * is licensed to you under the terms of the GNU Lesser General Public License as
+ * Unless otherwise indicated, all code in JBoss DNA is licensed
+ * to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * JBoss DNA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -27,14 +27,15 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * A lexicon of internal and implementation-specific information
  */
-public class DnaLexicon extends org.jboss.dna.repository.DnaLexicon {
+public class DnaIntLexicon {
 
-    public static final Name BASE = new BasicName(Namespace.URI, "base");
-    public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
-    public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");
-    public static final Name ROOT = new BasicName(Namespace.URI, "root");
-    public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
-    public static final Name URI = new BasicName(Namespace.URI, "uri");
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna/internal/1.0";
+        public static final String PREFIX = "dnaint";
+    }
+
+    public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
+    public static final Name MULTI_VALUED_PROPERTIES = new BasicName(Namespace.URI, "multiValuedProperties");
 }
