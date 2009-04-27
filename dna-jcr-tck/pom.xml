@@ -49,6 +49,13 @@
       <artifactId>dna-jcr</artifactId>
       <version>${pom.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-jcr</artifactId>
+      <version>${pom.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <!-- 
     Testing (note the scope)
     -->

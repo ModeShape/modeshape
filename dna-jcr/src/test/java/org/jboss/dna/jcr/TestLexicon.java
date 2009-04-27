@@ -28,7 +28,6 @@ import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * Namespace and names for DNA testing.
- *
  */
 public class TestLexicon {
 
@@ -55,4 +54,5 @@ public class TestLexicon {
     public static final Name NODE_WITH_MANDATORY_PROPERTY = new BasicName(Namespace.URI, "nodeWithMandatoryProperty");
     public static final Name NODE_WITH_MANDATORY_CHILD = new BasicName(Namespace.URI, "nodeWithMandatoryChild");
 
+    public static final Name UNORDERABLE_UNSTRUCTURED = new BasicName(Namespace.URI, "unorderableUnstructured");
 }
