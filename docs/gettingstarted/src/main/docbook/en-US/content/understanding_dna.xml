@@ -32,7 +32,7 @@
     <para>JBoss DNA is a repository and set of tools that make it easy to capture, version, analyze, and understand the
       fundamental building blocks of information. As models, service and process definitions, schemas, source code, and other
       artifacts are added to the repository, JBoss DNA "sequences" the makeup of these components and extracts their structure
-      and interdependencies. The JBoss DNA web application allows end users to access, visualize, and edit this information in
+      and interdependencies. The JBoss DNA web application will allow end users to access, visualize, and edit this information in
       the terminology and structure they are familiar with. Such domain-specific solutions can be easily created with little or
       no programming.</para>
     <para> JBoss DNA supports the Java Content Repository (JCR) standard and is able to provide a single integrated view of
@@ -356,8 +356,14 @@
       <title>Connecting to information sources</title>
       <para>
         JBoss DNA uses connectors to interact with different information sources to get at the content
-        in those systems. Some ideas for connectors include:</para>
+        in those systems. We already have some connectors, including:</para>
       <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">In-Memory Connector</emphasis>
+            - Uses a Map instance as a repository. This is a simple connector that works really well for small and transient graphs.
+          </para>
+        </listitem>
         <listitem>
           <para>
             <emphasis role="strong">JBoss Cache Connector</emphasis>
@@ -372,19 +378,44 @@
 						This is a powerful connector that is discussed in more detail in the <link linkend="federated_repositories">next section</link>.
           </para>
         </listitem>
-			</itemizedlist>
-			<para>There are also a number of connectors that are planned:</para>
+        <listitem>
+          <para>
+            <emphasis role="strong">File System Connector</emphasis>
+            - Expose the files and directories on a file system through JCR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">JDBC Storage Connector</emphasis>
+            - Store and access information in a relational database through JPA. Also useful for persisting information in the federated
+            repository not stored elsewhere.
+          </para>
+        </listitem>
+      </itemizedlist>
+			<para>We're working on a few other connectors:</para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">JDBC Metadata Connector</emphasis>
+            - Connect to relational databases via JDBC and expose their schema as content in a repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">SVN Connector</emphasis>
+            - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
+            through JCR. Consider using the
+            <ulink url="http://svnkit.com/">SVNkit</ulink>
+            (dual license) library for an API into Subversion.
+          </para>
+        </listitem>        
+      </itemizedlist>
+			<para>And even more connectors that are planned:</para>
       <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">JCR Repository Connector</emphasis>
             - Connect to and interact with other JCR repositories.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">File System Connector</emphasis>
-            - Expose the files and directories on a file system through JCR.
           </para>
         </listitem>
         <listitem>
@@ -396,23 +427,8 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">JDBC Metadata Connector</emphasis>
-            - Connect to relational databases via JDBC and expose their schema as content in a repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">UDDI Connector</emphasis>
             - Interact with UDDI registries to integrate their content into a repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">SVN Connector</emphasis>
-            - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
-            through JCR. Consider using the
-            <ulink url="http://svnkit.com/">SVNkit</ulink>
-            (dual license) library for an API into Subversion.
           </para>
         </listitem>
         <listitem>
@@ -420,13 +436,6 @@
             <emphasis role="strong">CVS Connector</emphasis>
             - Interact with CVS software configuration management (SCM) repositories to expose the managed resources through
             JCR.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">JDBC Storage Connector</emphasis>
-            - Store and access information in a relational database. Also useful for persisting information in the federated
-            repository not stored elsewhere.
           </para>
         </listitem>
         <listitem>

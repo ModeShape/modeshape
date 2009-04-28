@@ -179,7 +179,7 @@
 	  </para>
 	  <para> JBoss DNA has other features as well.  You can create federated repositories that dynamically merge the information 
 		  from multiple databases, services, applications, and other JCR repositories.  JBoss DNA also will allow you to 
-	    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another is
+	    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another goal is
 	    to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
 	  </para>
 	</sect1>
@@ -289,11 +289,26 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">dna-cnd</emphasis>
+            provides a utilities for reading and writing files in the CND (Compact Node Definition) format.
+          </para>
+        </listitem>        
+        <listitem>
+          <para>
             <emphasis role="strong">dna-jcr</emphasis>
             provides the JBoss DNA implementation of the JCR API, which relies upon a repository connector, such as the
             Federation Connector (see
             <code>dna-connector-federation</code>
-            ).
+            ).  As DNA does not fully implement the JCR 1.0.1 specification, there are a series of tests that are currently commented 
+            out in this module.  The <code>dna-jcr-tck</code> module contains all of these tests.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-jcr-tck</emphasis>
+            provides a separate testing project that executes all JackRabbit JCR TCK tests on a nightly basis to track implementation
+            progress against the JCR 1.0 specification.  This module will likely be retired when the <code>dna-jcr</code> implementation
+            is complete.
           </para>
         </listitem>
         <listitem>
@@ -313,13 +328,19 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-maven-classloader</emphasis>
+            <emphasis role="strong">dna-classloader-maven</emphasis>
             is a small library that provides a
             <code>ClassLoaderFactory</code>
             implementation that can create
             <code>java.lang.ClassLoader</code>
             instances capable of loading classes given a Maven Repository and a list of Maven coordinates. The Maven Repository
             can be managed within a JCR repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-common-jdbc</emphasis>
+            contains several helpful utility classes for interacting with JDBC connections.
           </para>
         </listitem>
         <listitem>
@@ -331,11 +352,33 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">dna-connector-filesystem</emphasis>
+            is a DNA repository connector that provides read-only access to file systems, allowing their structure and data to be 
+            viewed as repository content.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
+            is a prototype DNA repository connector that provides read-only access to metadata from relational databases through a JDBC 
+            connection.
+                        <emphasis>This is still under development.</emphasis>
+          </para>
+        </listitem>        
+        <listitem>
+          <para>
             <emphasis role="strong">dna-connector-jbosscache</emphasis>
             is a DNA repository connector that manages content within a
             <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>
             instance. JBoss Cache is a powerful cache implementation that can serve as a distributed cache and that can persist
             information. The cache instance can be found via JNDI or created and managed by the connector.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-connector-store-jpa</emphasis>
+            is a DNA sequencer that provides for persistent storage and access of DNA content in a relational database.  This connector
+            is based on JPA technology.
           </para>
         </listitem>
         <listitem>
@@ -390,8 +433,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-cnd</emphasis>
-            is a prototype DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
-						<emphasis>This is still under development.</emphasis>
+            is a DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
           </para>
         </listitem>
         <listitem>
@@ -401,6 +443,12 @@
 						<emphasis>This is still under development.</emphasis>
           </para>
         </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-java</emphasis>
+            is a DNA sequencer that extracts the structure (methods, fields) from Java source files.
+          </para>
+        </listitem>        
         <listitem>
           <para>
             <emphasis role="strong">dna-mimetype-detector-aperture</emphasis>

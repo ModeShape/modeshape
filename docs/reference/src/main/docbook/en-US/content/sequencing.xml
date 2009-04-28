@@ -341,17 +341,12 @@ sequencingService.addSequencer(sequencerConfig);
     <sect2 id="dna-sequencer-msoffice">
       <title>Microsoft Office document sequencer</title>
       <para>
-      	This sequencer is included in JBoss DNA and processes Microsoft Office documents, including Excel spreadsheets
-				and PowerPoint presentations.  With presentations, the sequencer extracts the slides, titles, text and slide thumbnails.
+      	This sequencer is included in JBoss DNA and processes Microsoft Office documents, including Word documents, Excel spreadsheets,
+				and PowerPoint presentations.  With documents, the sequencer extracts the internal structure based on Heading styles.
+				With presentations, the sequencer extracts the slides, titles, text and slide thumbnails.
 				With spreadsheets, the sequencer extracts the names of the sheets.  And, the sequencer extracts for all the files the
 				general file information, including the name of the author, title, keywords, subject, comments, and various dates.
       </para>
-			<note>
-				<para>
-					Currently, Word documents are not supported.  For more information and the latest status, see
-					<ulink url="&JIRA;-153">DNA-153</ulink>.
-				</para>
-			</note>
 			<para>
 				To use this sequencer, simply include the <code>dna-sequencer-msoffice</code> JAR and all of the
 				<ulink url="http://poi.apache.org/">POI</ulink> JARs
@@ -441,10 +436,24 @@ this.sequencingService.addSequencer(sequencerConfig);
     <sect2 id="dna-sequencer-cnd">
       <title>JCR Compact Node Definition (CND) file sequencer</title>
       <para>
-      	This sequencer is incomplete and is not currently usable.  The purpose is to sequence JCR Compact Node Definition (CND) files
-				to extract the node definitions with their property definitions, and inserting these into the repository using JCR standard notation.
+      	This sequencer processes JCR Compact Node Definition (CND) files
+				to extract the node definitions with their property definitions, and inserts these into the repository using JCR standard notation.
       </para>
     </sect2>
+        <sect2 id="dna-sequencer-jbpm-jpdl">
+      <title>jBPM JPDL file sequencer</title>
+      <para>
+        This sequencer is incomplete and is not currently usable.  The purpose is to sequence jBPM JPDL files to identify metadata
+        about processes, their actors, and their dependencies.
+      </para>
+    </sect2>
+    <sect2 id="dna-sequencer-xml">
+      <title>XML file sequencer</title>
+      <para>
+        This sequencer stores the structure and data of an XML file into the repository.
+      </para>
+    </sect2> 
+    
   </sect1>
   <sect1 id="custom-sequencers">
 	  <title>Creating custom sequencers</title>

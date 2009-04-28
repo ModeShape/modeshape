@@ -50,7 +50,8 @@
 		<note>
 			<para>
 				You should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink>,
-				which is currently JDK 6.  We periodically try to build JBoss DNA using JDK 6, but it's not our official JDK (yet).
+				which is currently JDK 6.  It is possible to build JBoss DNA using JDK 6 without any code changes, but it's 
+				not our official JDK (yet).
 			</para>
 			<para>
 				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any

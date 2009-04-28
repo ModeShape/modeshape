@@ -35,7 +35,7 @@
     <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
     provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
     Java Community Process under <ulink url="&JSR170;">JSR-170</ulink> (JCR 1.0) and is being revised under <ulink url="&JSR283;">JSR-283</ulink>.
-		JBoss DNA provides a JCR 1.0 implementation that allows you to work with the contents of a repository using the
+		JBoss DNA provides a partial JCR 1.0 implementation that allows you to work with the contents of a repository using the
 		JCR API.  For information about how to use the JCR API, please see the <ulink url="&JSR170;">JSR-170</ulink> specification.
   </para>
   <sect1 id="jcr-repositories">

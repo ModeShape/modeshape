@@ -95,7 +95,7 @@
   </para>
   <para> JBoss DNA has other features as well.  You can create federated repositories that dynamically merge the information 
 	  from multiple databases, services, applications, and other JCR repositories.  JBoss DNA also will allow you to 
-    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another is
+    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another goal is
     to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
   </para>
   <para>
