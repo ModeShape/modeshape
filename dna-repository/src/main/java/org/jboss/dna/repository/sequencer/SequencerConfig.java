@@ -39,11 +39,30 @@ public class SequencerConfig extends ComponentConfig {
 
     private final Set<SequencerPathExpression> pathExpressions;
 
-    public SequencerConfig( String name, String description, Map<String, Object> properties, String classname, String[] classpath, String... pathExpressions ) {
+    public SequencerConfig( String name,
+                            String description,
+                            String classname,
+                            String[] classpath,
+                            String... pathExpressions ) {
+        this(name, description, System.currentTimeMillis(), null, classname, classpath, pathExpressions);
+    }
+
+    public SequencerConfig( String name,
+                            String description,
+                            Map<String, Object> properties,
+                            String classname,
+                            String[] classpath,
+                            String... pathExpressions ) {
         this(name, description, System.currentTimeMillis(), properties, classname, classpath, pathExpressions);
     }
 
-    public SequencerConfig( String name, String description, long timestamp, Map<String, Object> properties, String classname, String[] classpath, String... pathExpressions ) {
+    public SequencerConfig( String name,
+                            String description,
+                            long timestamp,
+                            Map<String, Object> properties,
+                            String classname,
+                            String[] classpath,
+                            String... pathExpressions ) {
         super(name, description, timestamp, properties, classname, classpath);
         this.pathExpressions = buildPathExpressionSet(pathExpressions);
     }

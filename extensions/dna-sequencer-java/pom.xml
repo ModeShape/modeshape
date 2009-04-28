@@ -87,49 +87,49 @@
 			<groupId>net.jcip</groupId>
 			<artifactId>jcip-annotations</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.eclipse.jdt</groupId>
-			<artifactId>core</artifactId>
-			<version>3.2.3.v_686_R32x</version>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.core</groupId>
-			<artifactId>runtime</artifactId>
-			<version>3.3.100-v20070530</version>
-			<!-- Exclude this problem library -->
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.equinox</groupId>
-					<artifactId>app</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.core</groupId>
-			<artifactId>resources</artifactId>
-			<version>3.3.0-v20070604</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.4</version>
-		</dependency>
 		<!-- 
-			Apache Jackrabbit (JCR Implementation)
+			Eclipse Java Development Tools (JDT) parser and its (many) required libraries
 		-->
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-core</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>org.eclipse.jdt</groupId>
+      <artifactId>core</artifactId>
+      <version>3.4.2.v_883_R34x</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.core</groupId>
+      <artifactId>resources</artifactId>
+      <version>[3.2.0,4.0.0)</version>
+      <exclusions>
+        <exclusion>
+			    <groupId>org.eclipse.core.runtime.compatibility</groupId>
+			    <artifactId>auth</artifactId>
+        </exclusion>
+        <exclusion>
+			    <groupId>org.eclipse.equinox</groupId>
+			    <artifactId>app</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse</groupId>
+      <artifactId>osgi</artifactId>
+      <version>[3.2.0,4.0.0)</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.core</groupId>
+      <artifactId>runtime</artifactId>
+      <version>[3.2.0,4.0.0)</version>
+      <exclusions>
+        <exclusion>
+			    <groupId>org.eclipse.core.runtime.compatibility</groupId>
+			    <artifactId>auth</artifactId>
+        </exclusion>
+        <exclusion>
+			    <groupId>org.eclipse.equinox</groupId>
+			    <artifactId>app</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
 	</dependencies>
 	<reporting>
 		<plugins>

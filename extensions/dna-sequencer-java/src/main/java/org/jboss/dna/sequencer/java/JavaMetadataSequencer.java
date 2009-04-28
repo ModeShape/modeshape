@@ -26,7 +26,6 @@ package org.jboss.dna.sequencer.java;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -200,7 +199,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
             // sequence package declaration of a unit.
             PackageMetadata packageMetadata = javaMetadata.getPackageMetadata();
             if (packageMetadata != null) {
-                if (StringUtils.isNotEmpty(packageMetadata.getName())) {
+                String packageName = packageMetadata.getName();
+                if (packageName != null && packageName.length() != 0) {
 
                     Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
                                                                               + JAVA_PACKAGE_CHILD_NODE + SLASH

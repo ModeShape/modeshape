@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.jboss.dna.common.util.FileUtil;
-import org.jboss.example.dna.sequencer.SequencingClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,9 +64,15 @@ public class SequencingClientTest {
 
     @After
     public void afterEach() throws Exception {
-        client.shutdownDnaServices();
-        client.shutdownRepository();
-        FileUtil.delete("target/repositoryData");
+        try {
+            client.shutdownDnaServices();
+        } finally {
+            try {
+                client.shutdownRepository();
+            } finally {
+                FileUtil.delete("target/repositoryData");
+            }
+        }
     }
 
     @Test

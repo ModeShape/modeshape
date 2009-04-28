@@ -168,7 +168,8 @@ public class SequencingClient {
 
                 try {
                     // Register the node types (only valid the first time) ...
-                    JackrabbitNodeTypeManager mgr = (JackrabbitNodeTypeManager)this.keepAliveSession.getWorkspace().getNodeTypeManager();
+                    JackrabbitNodeTypeManager mgr = (JackrabbitNodeTypeManager)this.keepAliveSession.getWorkspace()
+                                                                                                    .getNodeTypeManager();
                     mgr.registerNodeTypes(cndFile.openStream(), JackrabbitNodeTypeManager.TEXT_X_JCR_CND);
                 } catch (RepositoryException e) {
                     if (!e.getMessage().contains("already exists")) throw e;
@@ -287,9 +288,11 @@ public class SequencingClient {
         this.sequencingService.getAdministrator().shutdown();
         this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
 
-        // Shut down the observation service ...
-        this.observationService.getAdministrator().shutdown();
-        this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+        if (this.observationService != null) {
+            // Shut down the observation service ...
+            this.observationService.getAdministrator().shutdown();
+            this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+        }
     }
 
     /**
@@ -396,7 +399,8 @@ public class SequencingClient {
                             // import informations
                             javaElements = new ArrayList<Properties>();
                             try {
-                                for (NodeIterator singleImportIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:singleImport").getNodes(); singleImportIterator.hasNext();) {
+                                for (NodeIterator singleImportIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:singleImport")
+                                                                                            .getNodes(); singleImportIterator.hasNext();) {
                                     Node javasingleTypeImportDeclarationNode = singleImportIterator.nextNode();
                                     javaElements.add(extractJavaInfo(javasingleTypeImportDeclarationNode));
                                 }
@@ -407,7 +411,8 @@ public class SequencingClient {
 
                             javaElements = new ArrayList<Properties>();
                             try {
-                                for (NodeIterator javaImportOnDemandIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:importOnDemand").getNodes(); javaImportOnDemandIterator.hasNext();) {
+                                for (NodeIterator javaImportOnDemandIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:importOnDemand")
+                                                                                                  .getNodes(); javaImportOnDemandIterator.hasNext();) {
                                     Node javaImportOnDemandtDeclarationNode = javaImportOnDemandIterator.nextNode();
                                     javaElements.add(extractJavaInfo(javaImportOnDemandtDeclarationNode));
                                 }
@@ -424,7 +429,8 @@ public class SequencingClient {
 
                             // field member informations
                             javaElements = new ArrayList<Properties>();
-                            for (NodeIterator javaFieldTypeIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType").getNodes(); javaFieldTypeIterator.hasNext();) {
+                            for (NodeIterator javaFieldTypeIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType")
+                                                                                         .getNodes(); javaFieldTypeIterator.hasNext();) {
                                 Node rootFieldTypeNode = javaFieldTypeIterator.nextNode();
                                 if (rootFieldTypeNode.hasNode("java:primitiveType")) {
                                     Node javaPrimitiveTypeNode = rootFieldTypeNode.getNode("java:primitiveType");
@@ -449,7 +455,8 @@ public class SequencingClient {
 
                             // constructor informations
                             javaElements = new ArrayList<Properties>();
-                            for (NodeIterator javaConstructorIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor").getNodes(); javaConstructorIterator.hasNext();) {
+                            for (NodeIterator javaConstructorIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor")
+                                                                                           .getNodes(); javaConstructorIterator.hasNext();) {
                                 Node javaConstructor = javaConstructorIterator.nextNode();
                                 javaElements.add(extractJavaInfo(javaConstructor));
                             }
@@ -457,7 +464,8 @@ public class SequencingClient {
 
                             // method informations
                             javaElements = new ArrayList<Properties>();
-                            for (NodeIterator javaMethodIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method").getNodes(); javaMethodIterator.hasNext();) {
+                            for (NodeIterator javaMethodIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method")
+                                                                                      .getNodes(); javaMethodIterator.hasNext();) {
                                 Node javaMethod = javaMethodIterator.nextNode();
                                 javaElements.add(extractJavaInfo(javaMethod));
                             }
