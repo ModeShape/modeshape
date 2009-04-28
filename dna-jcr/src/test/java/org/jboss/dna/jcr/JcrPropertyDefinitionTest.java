@@ -300,12 +300,12 @@ public class JcrPropertyDefinitionTest {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_DATE);
 
-        assertThat(prop.satisfiesConstraints(valueFor("-1945-08-01T01:30:00.000", PropertyType.DATE)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("+1945-07-31T01:30:00.000", PropertyType.DATE)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("+0001-08-01T01:30:00.000", PropertyType.DATE)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("+1975-08-01T01:30:00.000", PropertyType.DATE)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("+1975-08-01T01:31:00.000", PropertyType.DATE)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("+2009-08-01T01:30:00.000", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("-1945-08-01T01:30:00.000Z", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("+1945-07-31T01:30:00.000Z", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("+0001-08-01T01:30:00.000Z", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("+1975-08-01T01:30:00.000Z", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("+1975-08-01T01:31:00.000Z", PropertyType.DATE)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("+2009-08-01T01:30:00.000Z", PropertyType.DATE)), is(true));
     }
 
     @Test
@@ -313,10 +313,10 @@ public class JcrPropertyDefinitionTest {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_DATE);
 
-        Value[] values = new Value[] {valueFor("-1945-08-01T01:30:00.000", PropertyType.DATE),
-            valueFor("+2009-08-01T01:30:00.000", PropertyType.DATE),};
+        Value[] values = new Value[] {valueFor("-1945-08-01T01:30:00.000Z", PropertyType.DATE),
+            valueFor("+2009-08-01T01:30:00.000Z", PropertyType.DATE),};
         assertThat(satisfiesConstraints(prop, new Value[] {}), is(true));
-        assertThat(satisfiesConstraints(prop, new Value[] {valueFor("+1975-08-01T01:31:00.000", PropertyType.DATE)}), is(true));
+        assertThat(satisfiesConstraints(prop, new Value[] {valueFor("+1975-08-01T01:31:00.000Z", PropertyType.DATE)}), is(true));
         assertThat(satisfiesConstraints(prop, values), is(true));
     }
 
