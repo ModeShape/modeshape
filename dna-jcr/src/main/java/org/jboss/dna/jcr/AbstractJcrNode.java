@@ -126,8 +126,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new RepositoryException(msg);
         }
     }
-    
-    final NodeEditor editorFor(Graph.Batch operations) throws RepositoryException {
+
+    final NodeEditor editorFor( Graph.Batch operations ) throws RepositoryException {
         try {
             return cache.getEditorFor(nodeUuid, operations);
         } catch (ItemNotFoundException err) {
@@ -137,7 +137,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
             throw new RepositoryException(msg);
         }
-    }    
+    }
 
     final JcrValue valueFrom( int propertyType,
                               Object value ) {
@@ -241,7 +241,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getPrimaryNodeType()
      */
     public JcrNodeType getPrimaryNodeType() throws RepositoryException {
@@ -252,11 +251,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     Name getPrimaryTypeName() throws RepositoryException {
         return nodeInfo().getPrimaryTypeName();
     }
-    
+
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
     public NodeType[] getMixinNodeTypes() throws RepositoryException {
@@ -564,7 +562,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getNodes(java.lang.String)
      */
     public NodeIterator getNodes( String namePattern ) throws RepositoryException {
@@ -944,17 +941,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     NodeInfo grandparentInfo;
                     if (parentPath.size() > 1) {
                         // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException
-                        // So, if we can't find the parent, try for the parent's parent and see if the last segment of the parent's
+                        // So, if we can't find the parent, try for the parent's parent and see if the last segment of the
+                        // parent's
                         // path contains a property ...
                         Path grandparentPath = parentPath.getParent();
                         assert grandparentPath != null;
-                        
+
                         grandparentInfo = cache.findNodeInfo(nodeUuid, grandparentPath); // throws PathNotFoundException
-                    }
-                    else {
+                    } else {
                         grandparentInfo = this.nodeInfo();
                     }
-                    
+
                     if (grandparentInfo.getProperty(parentPath.getLastSegment().getName()) != null) {
                         // Need to throw a ConstraintViolationException since the request was to add a child to
                         // a property ...
@@ -999,8 +996,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throw new UnsupportedOperationException();
     }
 
-    protected final Property removeExistingValuedProperty( String name )
-        throws ConstraintViolationException, RepositoryException {
+    protected final Property removeExistingValuedProperty( String name ) throws ConstraintViolationException, RepositoryException {
         PropertyId id = new PropertyId(nodeUuid, nameFrom(name));
         AbstractJcrProperty property = cache.findJcrProperty(id);
         if (property != null) {
@@ -1133,7 +1129,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return removeExistingValuedProperty(name);
         }
 
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED));
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name),
+                                                          valuesFrom(PropertyType.STRING, values),
+                                                          PropertyType.UNDEFINED));
     }
 
     /**
@@ -1306,8 +1304,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final boolean isModified() {
         try {
             return nodeInfo().isModified();
-        }
-        catch (RepositoryException re) {
+        } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
@@ -1320,8 +1317,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final boolean isNew() {
         try {
             return nodeInfo().isNew();
-        }
-        catch (RepositoryException re) {
+        } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
