@@ -71,21 +71,26 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
+    /**
+     * The default name for the workspace used by this source, which is a blank string.
+     */
+    public static final String DEFAULT_WORKSPACE_NAME = "";
+
     protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true, false, true,
                                                                                                         true);
 
-    protected static final String ROOT_NODE_UUID = "rootNodeUuid";
-    protected static final String SOURCE_NAME = "sourceName";
-    protected static final String DEFAULT_WORKSPACE_NAME = "defaultWorkspaceName";
-    protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
-    protected static final String JNDI_NAME = "jndiName";
-    protected static final String RETRY_LIMIT = "retryLimit";
+    protected static final String ROOT_NODE_UUID_ATTR = "rootNodeUuid";
+    protected static final String SOURCE_NAME_ATTR = "sourceName";
+    protected static final String DEFAULT_WORKSPACE_NAME_ATTR = "defaultWorkspaceName";
+    protected static final String DEFAULT_CACHE_POLICY_ATTR = "defaultCachePolicy";
+    protected static final String JNDI_NAME_ATTR = "jndiName";
+    protected static final String RETRY_LIMIT_ATTR = "retryLimit";
 
     @GuardedBy( "sourcesLock" )
     private String name;
     @GuardedBy( "this" )
     private String jndiName;
-    private String defaultWorkspaceName;
+    private String defaultWorkspaceName = DEFAULT_WORKSPACE_NAME;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
@@ -164,7 +169,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      * @param defaultWorkspaceName the name of the workspace that should be used by default, or null if "" should be used
      */
     public void setDefaultWorkspaceName( String defaultWorkspaceName ) {
-        this.defaultWorkspaceName = defaultWorkspaceName;
+        this.defaultWorkspaceName = defaultWorkspaceName != null ? defaultWorkspaceName : DEFAULT_WORKSPACE_NAME;
     }
 
     /**
@@ -265,16 +270,16 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
         Reference ref = new Reference(className, factoryClassName, null);
 
         if (getName() != null) {
-            ref.add(new StringRefAddr(SOURCE_NAME, getName()));
+            ref.add(new StringRefAddr(SOURCE_NAME_ATTR, getName()));
         }
         if (getRootNodeUuid() != null) {
-            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
+            ref.add(new StringRefAddr(ROOT_NODE_UUID_ATTR, getRootNodeUuid().toString()));
         }
         if (getJndiName() != null) {
-            ref.add(new StringRefAddr(JNDI_NAME, getJndiName()));
+            ref.add(new StringRefAddr(JNDI_NAME_ATTR, getJndiName()));
         }
         if (getDefaultWorkspaceName() != null) {
-            ref.add(new StringRefAddr(DEFAULT_WORKSPACE_NAME, getDefaultWorkspaceName()));
+            ref.add(new StringRefAddr(DEFAULT_WORKSPACE_NAME_ATTR, getDefaultWorkspaceName()));
         }
         if (getDefaultCachePolicy() != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -282,13 +287,13 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
             try {
                 ObjectOutputStream oos = new ObjectOutputStream(baos);
                 oos.writeObject(policy);
-                ref.add(new BinaryRefAddr(DEFAULT_CACHE_POLICY, baos.toByteArray()));
+                ref.add(new BinaryRefAddr(DEFAULT_CACHE_POLICY_ATTR, baos.toByteArray()));
             } catch (IOException e) {
                 I18n msg = GraphI18n.errorSerializingInMemoryCachePolicyInSource;
                 throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
             }
         }
-        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        ref.add(new StringRefAddr(RETRY_LIMIT_ATTR, Integer.toString(getRetryLimit())));
         return ref;
     }
 
@@ -321,12 +326,12 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
                     }
                 }
             }
-            String sourceName = (String)values.get(SOURCE_NAME);
-            String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
-            String jndiName = (String)values.get(JNDI_NAME);
-            String defaultWorkspaceName = (String)values.get(DEFAULT_WORKSPACE_NAME);
-            Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
-            String retryLimit = (String)values.get(RETRY_LIMIT);
+            String sourceName = (String)values.get(SOURCE_NAME_ATTR);
+            String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID_ATTR);
+            String jndiName = (String)values.get(JNDI_NAME_ATTR);
+            String defaultWorkspaceName = (String)values.get(DEFAULT_WORKSPACE_NAME_ATTR);
+            Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY_ATTR);
+            String retryLimit = (String)values.get(RETRY_LIMIT_ATTR);
 
             // Create the source instance ...
             InMemoryRepositorySource source = new InMemoryRepositorySource();

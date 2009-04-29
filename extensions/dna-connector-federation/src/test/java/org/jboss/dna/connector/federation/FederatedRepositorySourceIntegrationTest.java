@@ -51,7 +51,6 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
@@ -227,7 +226,6 @@ public class FederatedRepositorySourceIntegrationTest {
         }
     }
 
-    @Ignore
     @Test
     public void shouldProvideReadAccessToContentFederatedFromOneSourceThatMatchesTheContentFromTheSource() throws Exception {
         // Set up the configuration to use a single source.
@@ -292,7 +290,6 @@ public class FederatedRepositorySourceIntegrationTest {
         assertChildren(source, "/b/c");
     }
 
-    @Ignore
     @Test
     public void shouldProvideReadAccessToContentFederatedFromMultipleSources() throws Exception {
         // Set up the configuration to use multiple sources.
@@ -312,12 +309,12 @@ public class FederatedRepositorySourceIntegrationTest {
         batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections/projection1")
              .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
              .with(FederatedLexicon.SOURCE_NAME, "source 1")
-             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s1Space")
              .and();
         batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections/projection2")
              .with(FederatedLexicon.PROJECTION_RULES, "/ => /s2")
              .with(FederatedLexicon.SOURCE_NAME, "source 2")
-             .with(FederatedLexicon.WORKSPACE_NAME, "s2 worskspace")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s2 workspace")
              .and();
         batch.execute();
 

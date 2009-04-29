@@ -303,6 +303,7 @@ public abstract class Contribution implements Serializable {
     public boolean isExpired( DateTime utcTime ) {
         assert utcTime != null;
         assert utcTime.toUtcTimeZone().equals(utcTime); // check that it is passed UTC time
+        if (expirationTimeInUtc == null) return false;
         return !expirationTimeInUtc.isAfter(utcTime);
     }
 

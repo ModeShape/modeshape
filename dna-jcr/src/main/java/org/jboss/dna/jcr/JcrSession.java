@@ -147,6 +147,7 @@ class JcrSession implements Session {
         this.graph = Graph.create(this.repository.getRepositorySourceName(),
                                   this.repository.getConnectionFactory(),
                                   this.executionContext);
+        this.graph.useWorkspace(workspace.getName());
 
         this.cache = new SessionCache(this, workspace.getName(), this.executionContext, this.workspace.nodeTypeManager(),
                                       this.graph);

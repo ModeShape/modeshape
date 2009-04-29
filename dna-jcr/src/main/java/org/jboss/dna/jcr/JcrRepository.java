@@ -305,7 +305,7 @@ public class JcrRepository implements Repository {
                                        String workspaceName ) throws RepositoryException {
         // Ensure credentials are either null or provide a JAAS method
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
-        ExecutionContext execContext;
+        ExecutionContext execContext = null;
         if (credentials == null) {
             execContext = executionContext;
         } else {
@@ -371,7 +371,7 @@ public class JcrRepository implements Repository {
                     // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
                     throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
-                workspaceName = graph.getCurrentWorkspace().getName();
+                graph.useWorkspace(workspaceName);
             } catch (InvalidWorkspaceException e) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), e);
             } catch (RepositorySourceException e) {

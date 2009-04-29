@@ -348,7 +348,7 @@ public class XmlHandler extends DefaultHandler2 {
             // No attribute defines the node name ...
             nodeName = nameFactory.create(uri, localName, decoder);
         } else {
-            typePropertyValue = nameFactory.create(uri, localName, decoder);
+            if (typePropertyValue == null) typePropertyValue = nameFactory.create(uri, localName, decoder);
         }
         if (typeAttribute != null) {
             // A attribute defines the node name. Set the type property, if required

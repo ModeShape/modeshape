@@ -139,6 +139,8 @@ final class JcrWorkspace implements Workspace {
         Graph namespaceGraph = Graph.create(this.repository.getRepositorySourceName(),
                                             this.repository.getConnectionFactory(),
                                             context);
+        namespaceGraph.useWorkspace(workspaceName);
+
         Name uriProperty = DnaLexicon.NAMESPACE_URI;
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path root = pathFactory.createRootPath();

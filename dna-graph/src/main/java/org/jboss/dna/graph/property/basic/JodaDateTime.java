@@ -320,6 +320,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
         if (that instanceof JodaDateTime) {
             return this.instance.compareTo(((JodaDateTime)that).instance);
         }
+        if (that == null) return 1;
         long diff = this.toUtcTimeZone().getMilliseconds() - that.toUtcTimeZone().getMilliseconds();
         return (int)diff;
     }
@@ -406,7 +407,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      * @see org.jboss.dna.graph.property.DateTime#minus(long, java.util.concurrent.TimeUnit)
      */
     public org.jboss.dna.graph.property.DateTime minus( long timeAmount,
-                                                          TimeUnit unit ) {
+                                                        TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.minus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
@@ -489,7 +490,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      * @see org.jboss.dna.graph.property.DateTime#plus(long, java.util.concurrent.TimeUnit)
      */
     public org.jboss.dna.graph.property.DateTime plus( long timeAmount,
-                                                         TimeUnit unit ) {
+                                                       TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.plus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }

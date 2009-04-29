@@ -24,39 +24,41 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<dna:system xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<jcr:system xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <dna:namespaces jcr:primaryType="dna:namespaces">
+    </dna:namespaces>
     <!-- Define the sources from which content is made available -->
-    <dna:sources>
-        <dna:source jcr:name="SourceA" dna:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" />
-        <dna:source jcr:name="SourceB" dna:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" />
-        <dna:source jcr:name="SourceC" dna:name="Vehicles" dna:classname="org.jboss.dna.connector.federation.FederatedRepositorySource" 
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <dna:source jcr:name="SourceA" jcr:primaryType="nt:unstructured" dna:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" defaultWorkspaceName="default"/>
+        <dna:source jcr:name="SourceB" jcr:primaryType="nt:unstructured" dna:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" defaultWorkspaceName="default"/>
+        <dna:source jcr:name="SourceC" jcr:primaryType="nt:unstructured" dna:name="Vehicles" dna:classname="org.jboss.dna.connector.federation.FederatedRepositorySource" 
                     dna:repositoryName="Configuration Repository"
                     dna:configurationSourceName="Configuration" 
                     dna:configurationWorkspaceName="default"
-                    dna:configurationSourcePath="/dna:system/dna:federatedRepositories/Vehicles" 
+                    dna:configurationSourcePath="/jcr:system/dna:federatedRepositories/Vehicles" 
                     dna:repositoryConnectionFactoryJndiName="/dna/connectionFactory"
                     dna:executionContextFactoryJndiName="/dna/contextFactory"/>
-        <dna:source jcr:name="SourceD" dna:name="Cache" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" />
+        <dna:source jcr:name="SourceD" jcr:primaryType="nt:unstructured" dna:name="Cache" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" defaultWorkspaceName="default"/>
     </dna:sources>
-    <dna:federatedRepositories>
+    <dna:federatedRepositories jcr:primaryType="nt:unstructured">
         <!-- This section defines from where the content of the 'Vehicles' federated repository is obtained.
              The name of this node must match the 'name' of the source listed above. -->
-        <dna:federatedRepository jcr:name="Vehicles">
+        <dna:federatedRepository jcr:name="Vehicles" jcr:primaryType="nt:unstructured">
             <!-- Define the workspace(s) for this repository -->
-            <dna:workspaces>
-                <dna:workspace jcr:name="default">
+            <dna:workspaces jcr:primaryType="nt:unstructured">
+                <dna:workspace jcr:name="default" jcr:primaryType="nt:unstructured">
                     <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
-                    <dna:cache dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/ => /" />
+                    <dna:cache jcr:primaryType="nt:unstructured" dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/ => /" />
                     <!-- Define how the content in the difference sources maps to the federated/unified repository.
                          This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
                          'Configuration' content (which is defined by this file) will appear under '/'. -->
-                    <dna:projections>
-                        <dna:projection jcr:name="Cars" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
-                        <dna:projection jcr:name="Aircraft" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
-                        <dna:projection jcr:name="Configuration" dna:workspaceName="default"  dna:projectionRules="/ => /" />
+                    <dna:projections jcr:primaryType="nt:unstructured">
+                        <dna:projection jcr:primaryType="nt:unstructured" jcr:name="Cars" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
+                        <dna:projection jcr:primaryType="nt:unstructured" jcr:name="Aircraft" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
+                        <dna:projection jcr:primaryType="nt:unstructured" jcr:name="Configuration" dna:workspaceName="default"  dna:projectionRules="/ => /" />
                     </dna:projections>
                 </dna:workspace>
             </dna:workspaces>
         </dna:federatedRepository>
     </dna:federatedRepositories>
-</dna:system>
+</jcr:system>

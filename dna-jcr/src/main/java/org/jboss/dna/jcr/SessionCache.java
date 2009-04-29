@@ -2134,6 +2134,11 @@ public class SessionCache {
 
         // Start with the primary type ...
         JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+        if (primaryType == null) {
+            Path path = location.getPath();
+            String msg = JcrI18n.missingNodeTypeForExistingNode.text(primaryTypeName.getString(namespaces), path, workspaceName);
+            throw new RepositorySourceException(msg);
+        }
         if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
 
         // The process the mixin types ...

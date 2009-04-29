@@ -196,7 +196,8 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
     public boolean isExpired( DateTime utcTime ) {
         assert utcTime != null;
         assert utcTime.toUtcTimeZone().equals(utcTime); // check that it is passed UTC time
-        return utcTime.isAfter(getExpirationTimeInUtc());
+        DateTime expirationTimeInUtc = getExpirationTimeInUtc();
+        return expirationTimeInUtc == null ? false : utcTime.isAfter(expirationTimeInUtc);
     }
 
     /**

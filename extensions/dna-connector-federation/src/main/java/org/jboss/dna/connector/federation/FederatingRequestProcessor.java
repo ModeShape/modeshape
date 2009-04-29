@@ -25,12 +25,14 @@ package org.jboss.dna.connector.federation;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
@@ -77,6 +79,8 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 @NotThreadSafe
 public class FederatingRequestProcessor extends RequestProcessor {
+
+    private static final Set<Name> HIDDEN_PROPERTIES = Collections.singleton(DnaLexicon.MERGE_PLAN);
 
     private final Map<String, FederatedWorkspace> workspaces;
     private final FederatedWorkspace defaultWorkspace;
@@ -214,6 +218,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         ReadNodeRequest nodeInfo = getNode(request.at(), workspace);
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
+            if (HIDDEN_PROPERTIES.contains(property.getName())) continue;
             request.addProperty(property);
         }
         request.setActualLocationOfNode(nodeInfo.getActualLocationOfNode());
@@ -231,6 +236,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         ReadNodeRequest nodeInfo = getNode(request.at(), workspace);
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
+            if (HIDDEN_PROPERTIES.contains(property.getName())) continue;
             request.addProperty(property);
         }
         for (Location child : nodeInfo.getChildren()) {
@@ -357,8 +363,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
      */
     protected ReadNodeRequest getNode( Location location,
                                        FederatedWorkspace workspace ) throws RepositorySourceException {
-        // Check the cache first ...
         final ExecutionContext context = getExecutionContext();
+
+        // Check the cache first ...
         RepositoryConnection cacheConnection = getConnectionToCacheFor(workspace);
         ReadNodeRequest fromCache = new ReadNodeRequest(location, workspace.getCacheProjection().getWorkspaceName());
         cacheConnection.execute(context, fromCache);
@@ -410,7 +417,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
             if (mergePlan != null) {
                 // We found the merge plan, so check whether it's still valid ...
                 final DateTime now = getCurrentTimeInUtc();
-                if (mergePlan.isExpired(now)) {
+                if (!mergePlan.isExpired(now)) {
                     // It is still valid, so check whether any contribution is from a non-existant projection ...
                     for (Contribution contribution : mergePlan) {
                         if (!workspace.contains(contribution.getSourceName(), contribution.getWorkspaceName())) {
@@ -424,10 +431,10 @@ public class FederatingRequestProcessor extends RequestProcessor {
                 // the valid contributions in the 'contributions' list; any expired contribution
                 // needs to be loaded by adding the name to the 'sourceNames'
                 if (mergePlan.getContributionCount() > 0) {
-                    sourceNames = new HashSet<String>(sourceNames);
+                    sourceNames = new HashSet<String>();
                     for (Contribution contribution : mergePlan) {
-                        if (!contribution.isExpired(now)) {
-                            sourceNames.remove(contribution.getSourceName());
+                        if (contribution.isExpired(now)) {
+                            sourceNames.add(contribution.getSourceName());
                             contributions.add(contribution);
                         }
                     }
@@ -437,7 +444,10 @@ public class FederatingRequestProcessor extends RequestProcessor {
 
         // Get the contributions from the sources given their names ...
         location = fromCache.getActualLocationOfNode();
-        if (location == null) location = fromCache.at(); // not yet in the cache
+        if (location == null) {
+            // Not yet in the cache ...
+            location = fromCache.at();
+        }
         loadContributionsFromSources(location, workspace, sourceNames, contributions); // sourceNames may be null or empty
         FederatedNode mergedNode = createFederatedNode(location, workspace, contributions, true);
         if (mergedNode == null) {
@@ -482,7 +492,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         // Create the node, and use the existing UUID if one is found in the cache ...
         ExecutionContext context = getExecutionContext();
         assert context != null;
-        FederatedNode mergedNode = new FederatedNode(location, federatedWorkspace.getName());
+        FederatedNode mergedNode = new FederatedNode(location.with((UUID)null), federatedWorkspace.getName());
 
         // Merge the results into a single set of results ...
         assert contributions.size() > 0;
@@ -719,7 +729,21 @@ public class FederatingRequestProcessor extends RequestProcessor {
         assert path != null;
         List<Request> requests = new ArrayList<Request>();
         Name childName = null;
-        if (!path.isRoot()) {
+
+        // If the merged node has a merge plan, then add it to the properties if it is not already there ...
+        Map<Name, Property> properties = mergedNode.getPropertiesByName();
+        MergePlan mergePlan = mergedNode.getMergePlan();
+        if (mergePlan != null) {
+            // Record the merge plan on the merged node ...
+            Property mergePlanProperty = getExecutionContext().getPropertyFactory().create(DnaLexicon.MERGE_PLAN,
+                                                                                           (Object)mergePlan);
+            properties.put(mergePlanProperty.getName(), mergePlanProperty);
+        }
+
+        if (path.isRoot()) {
+            // Set the properties ...
+            requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
+        } else {
             // This is not the root node, so we need to create the node ...
             final Location parentLocation = Location.create(path.getParent());
             childName = path.getLastSegment().getName();

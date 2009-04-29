@@ -149,16 +149,15 @@ public class RepositoryClient {
         config.importXmlFrom(location + "/configRepository.xml").into("/");
 
         // Now instantiate the Repository Service ...
-        repositoryService = new RepositoryService(sources, configSource.getName(), "default", context);
+        Path configRoot = context.getValueFactories().getPathFactory().create("/jcr:system");
+        repositoryService = new RepositoryService(sources, configSource.getName(), "default", configRoot, context);
         repositoryService.getAdministrator().start();
 
         // Now import the conten for two of the other in-memory repositories ...
         Graph cars = Graph.create("Cars", sources, context);
-        cars.createWorkspace().named("default");
         cars.importXmlFrom(location + "/cars.xml").into("/");
 
         Graph aircraft = Graph.create("Aircraft", sources, context);
-        aircraft.createWorkspace().named("default");
         aircraft.importXmlFrom(location + "/aircraft.xml").into("/");
     }
 
@@ -249,9 +248,9 @@ public class RepositoryClient {
                 Session session = null;
                 if (loginContext != null) {
                     Credentials credentials = new JaasCredentials(loginContext);
-                    session = jcrRepository.login(credentials, sourceName);
+                    session = jcrRepository.login(credentials, "default");
                 } else {
-                    session = jcrRepository.login(sourceName);
+                    session = jcrRepository.login("default");
                 }
                 try {
                     // Make the path relative to the root by removing the leading slash(es) ...

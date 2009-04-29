@@ -182,8 +182,8 @@ final class LocationWithPathAndProperty extends Location {
     @Override
     public Location with( UUID uuid ) {
         Property idProperty = idProperties.get(0); // fast
-        assert !DnaLexicon.UUID.equals(idProperty.getName());
         if (uuid == null) return Location.create(path);
+        assert !DnaLexicon.UUID.equals(idProperty.getName());
         Property newUuidProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
         return Location.create(path, idProperty, newUuidProperty);
     }
