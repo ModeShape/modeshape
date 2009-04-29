@@ -25,12 +25,9 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -39,7 +36,6 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -399,47 +395,47 @@ public class AbstractJcrNodeTest {
         node.getPrimaryItem();
     }
 
-    @Test
-    public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoProperties() throws Exception {
-        // Set up two properties (one containing references, the other not) ...
-        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {});
-        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
-        // Now call the method ...
-        PropertyIterator iter = node.getReferences();
-        assertThat(iter.getSize(), is(0L));
-        assertThat(iter.hasNext(), is(false));
-    }
-
-    @Test
-    public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoReferenceProperties() throws Exception {
-        // Set up two properties (one containing references, the other not) ...
-        AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
-        AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
-        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
-        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
-        stub(propertyA.getType()).toReturn(PropertyType.LONG);
-        stub(propertyB.getType()).toReturn(PropertyType.BOOLEAN);
-        // Now call the method ...
-        PropertyIterator iter = node.getReferences();
-        assertThat(iter.getSize(), is(0L));
-        assertThat(iter.hasNext(), is(false));
-    }
-
-    @Test
-    public void shouldReturnIteratorFromGetReferencesWhenThereIsAtLeastOneReferenceProperty() throws Exception {
-        // Set up two properties (one containing references, the other not) ...
-        AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
-        AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
-        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
-        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
-        stub(propertyA.getType()).toReturn(PropertyType.LONG);
-        stub(propertyB.getType()).toReturn(PropertyType.REFERENCE);
-        // Now call the method ...
-        PropertyIterator iter = node.getReferences();
-        assertThat(iter.getSize(), is(1L));
-        assertThat(iter.next(), is(sameInstance((Object)propertyB)));
-        assertThat(iter.hasNext(), is(false));
-    }
+    // @Test
+    // public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoProperties() throws Exception {
+    // // Set up two properties (one containing references, the other not) ...
+    // List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {});
+    // stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+    // // Now call the method ...
+    // PropertyIterator iter = node.getReferences();
+    // assertThat(iter.getSize(), is(0L));
+    // assertThat(iter.hasNext(), is(false));
+    // }
+    //
+    // @Test
+    // public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoReferenceProperties() throws Exception {
+    // // Set up two properties (one containing references, the other not) ...
+    // AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
+    // AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
+    // List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
+    // stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+    // stub(propertyA.getType()).toReturn(PropertyType.LONG);
+    // stub(propertyB.getType()).toReturn(PropertyType.BOOLEAN);
+    // // Now call the method ...
+    // PropertyIterator iter = node.getReferences();
+    // assertThat(iter.getSize(), is(0L));
+    // assertThat(iter.hasNext(), is(false));
+    // }
+    //
+    // @Test
+    // public void shouldReturnIteratorFromGetReferencesWhenThereIsAtLeastOneReferenceProperty() throws Exception {
+    // // Set up two properties (one containing references, the other not) ...
+    // AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
+    // AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
+    // List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
+    // stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+    // stub(propertyA.getType()).toReturn(PropertyType.LONG);
+    // stub(propertyB.getType()).toReturn(PropertyType.REFERENCE);
+    // // Now call the method ...
+    // PropertyIterator iter = node.getReferences();
+    // assertThat(iter.getSize(), is(1L));
+    // assertThat(iter.next(), is(sameInstance((Object)propertyB)));
+    // assertThat(iter.hasNext(), is(false));
+    // }
 
     @Test
     public void shouldProvideSession() throws Exception {

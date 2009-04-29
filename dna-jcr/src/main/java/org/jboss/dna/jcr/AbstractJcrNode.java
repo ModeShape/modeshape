@@ -420,6 +420,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getReferences()
      */
     public final PropertyIterator getReferences() throws RepositoryException {
+        if (true) throw new UnsupportedOperationException();
+        // This implementation is just wrong.
         // Iterate through the properties to see which ones have a REFERENCE type ...
         Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeUuid);
         Collection<AbstractJcrProperty> references = new LinkedList<AbstractJcrProperty>();
