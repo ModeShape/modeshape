@@ -69,6 +69,7 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.ChildNode;
@@ -1437,8 +1438,44 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#orderBefore(java.lang.String, java.lang.String)
      */
     public final void orderBefore( String srcChildRelPath,
-                                   String destChildRelPath ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                                   String destChildRelPath ) throws UnsupportedRepositoryOperationException, RepositoryException {
+        if (true) throw new UnsupportedRepositoryOperationException();
+
+        // This implementation is correct, except for not calling the SessionCache or graph layer to do the re-order
+        if (!getPrimaryNodeType().hasOrderableChildNodes()) {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        PathFactory pathFactory = this.cache.pathFactory();
+
+        Path srcPath = pathFactory.create(srcChildRelPath);
+        ChildNode source;
+
+        if (srcPath.isAbsolute() || srcPath.size() != 1) {
+            throw new ItemNotFoundException();
+        }
+        // getLastSegment should return the only segment, since we verified that size() == 1
+        source = nodeInfo().getChildren().getChild(srcPath.getLastSegment());
+        if (source == null) {
+            throw new ItemNotFoundException();
+        }
+
+        Path destPath = null;
+        ChildNode destination = null;
+
+        if (destChildRelPath != null) {
+            destPath = pathFactory.create(destChildRelPath);
+            if (destPath.isAbsolute() || destPath.size() != 1) {
+                throw new ItemNotFoundException();
+            }
+
+            // getLastSegment should return the only segment, since we verified that size() == 1
+            destination = nodeInfo().getChildren().getChild(destPath.getLastSegment());
+            if (destination == null) {
+                throw new ItemNotFoundException();
+            }
+        }
+
     }
 
     protected static List<Object> createPatternsFor( String namePattern ) throws RepositoryException {
