@@ -110,7 +110,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                     if (!childNames.containsKey(childName)) {
                         childNames.put(childName, 1);
                         Path pathToChild = pathFactory.create(location.getPath(), childName);
-                        federatedNode.addChild(Location.create(pathToChild));
+                        federatedNode.addChild(child.with(pathToChild));
                     }
                 }
             } else {
@@ -140,7 +140,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                         index = previousValue;
                     }
                     Path pathToChild = pathFactory.create(location.getPath(), childName, index);
-                    federatedNode.addChild(Location.create(pathToChild));
+                    federatedNode.addChild(child.with(pathToChild)); // keep the same identifiers
                 }
 
                 // Add in the properties ...
@@ -152,7 +152,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
 
                     // Record the property ...
                     Property existing = properties.put(property.getName(), property);
-                    if (existing != null) {
+                    if (existing != null && !existing.equals(property)) {
                         // There's already an existing property, so we need to merge them ...
                         Property merged = merge(existing, property, context.getPropertyFactory(), removeDuplicateProperties);
                         properties.put(property.getName(), merged);
@@ -181,6 +181,8 @@ public class SimpleMergeStrategy implements MergeStrategy {
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
         federatedNode.setMergePlan(mergePlan);
+        Property mergePlanProperty = context.getPropertyFactory().create(DnaLexicon.MERGE_PLAN, (Object)mergePlan);
+        properties.put(mergePlanProperty.getName(), mergePlanProperty);
     }
 
     /**

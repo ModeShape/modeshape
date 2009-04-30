@@ -43,6 +43,11 @@ public final class FederationI18n {
     public static I18n unableToAuthenticateConnectionToFederatedRepository;
     public static I18n repositoryHasBeenShutDown;
     public static I18n errorAddingProjectionRuleParseMethod;
+    public static I18n pathInProjection;
+    public static I18n pathsInProjection;
+    public static I18n unableToPerformOperationUnlessLocationIsFromSingleProjection;
+    public static I18n unableToPerformOperationUnlessLocationsAreFromSingleProjection;
+    public static I18n unableToPerformOperationSpanningWorkspaces;
 
     public static I18n workspaceDoesNotExist;
     public static I18n noDefaultWorkspace;

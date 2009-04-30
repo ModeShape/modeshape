@@ -139,19 +139,32 @@ public class RepositoryClientTest {
         getNodeInfo("Cars", "/Cars");
         assertThat(children, hasItems("Hybrid", "Sports", "Luxury", "Utility"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(2));
+        switch (getApi()) {
+            case DNA:
+                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.size(), is(2));
+                break;
+            case JCR:
+                assertThat(properties.size(), is(1));
+                break;
+        }
 
         getNodeInfo("Cars", "/Cars/Hybrid");
         assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(2));
+        switch (getApi()) {
+            case DNA:
+                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.size(), is(2));
+                break;
+            case JCR:
+                assertThat(properties.size(), is(1));
+                break;
+        }
 
         getNodeInfo("Cars", "/Cars/Sports/Aston Martin DB9");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
         assertProperty("maker", "Aston Martin");
         assertProperty("maker", "Aston Martin");
         assertProperty("model", "DB9");
@@ -163,7 +176,15 @@ public class RepositoryClientTest {
         assertProperty("lengthInInches", "185.5");
         assertProperty("wheelbaseInInches", "108.0");
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
-        assertThat(properties.size(), is(12));
+        switch (getApi()) {
+            case DNA:
+                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.size(), is(12));
+                break;
+            case JCR:
+                assertThat(properties.size(), is(11));
+                break;
+        }
     }
 
     @Test
@@ -173,8 +194,7 @@ public class RepositoryClientTest {
         getNodeInfo("Aircraft", "/Aircraft");
         assertThat(children, hasItems("Business", "Commercial", "Vintage", "Homebuilt"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(2));
+        // assertThat(properties.containsKey("dna:uuid"), is(true)); // not referenceable in JCR
 
         getNodeInfo("Aircraft", "/Aircraft/Commercial");
         assertThat(children, hasItems("Boeing 777",
@@ -186,20 +206,18 @@ public class RepositoryClientTest {
                                       "Airbus A310",
                                       "Embraer RJ-175"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(2));
+        // assertThat(properties.containsKey("dna:uuid"), is(true)); // not referenceable in JCR
 
         getNodeInfo("Aircraft", "/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
+        // assertThat(properties.containsKey("dna:uuid"), is(true));
         assertProperty("maker", "Wright Brothers");
         assertProperty("introduced", "1903");
         assertProperty("range", "852ft");
         assertProperty("maxSpeed", "30mph");
         assertProperty("emptyWeight", "605lb");
         assertProperty("crew", "1");
-        assertThat(properties.size(), is(8));
     }
 
     @Test
@@ -208,29 +226,20 @@ public class RepositoryClientTest {
 
         getNodeInfo("Vehicles", "/");
         assertThat(children, hasItems("Vehicles", "jcr:system"));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(1));
 
         getNodeInfo("Vehicles", "/Vehicles");
         assertThat(children, hasItems("Cars", "Aircraft"));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(1));
 
         getNodeInfo("Vehicles", "/");
         assertThat(children, hasItems("Vehicles", "jcr:system"));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(1));
 
         getNodeInfo("Vehicles", "/Vehicles/Cars/Hybrid");
         assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertThat(properties.size(), is(2));
 
         getNodeInfo("Vehicles", "/Vehicles/Cars/Sports/Aston Martin DB9");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
         assertProperty("maker", "Aston Martin");
         assertProperty("maker", "Aston Martin");
         assertProperty("model", "DB9");
@@ -242,19 +251,16 @@ public class RepositoryClientTest {
         assertProperty("lengthInInches", "185.5");
         assertProperty("wheelbaseInInches", "108.0");
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
-        assertThat(properties.size(), is(12));
 
         getNodeInfo("Vehicles", "/Vehicles/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        assertThat(properties.containsKey("dna:uuid"), is(true));
         assertProperty("maker", "Wright Brothers");
         assertProperty("introduced", "1903");
         assertProperty("range", "852ft");
         assertProperty("maxSpeed", "30mph");
         assertProperty("emptyWeight", "605lb");
         assertProperty("crew", "1");
-        assertThat(properties.size(), is(8));
     }
 
     @Test

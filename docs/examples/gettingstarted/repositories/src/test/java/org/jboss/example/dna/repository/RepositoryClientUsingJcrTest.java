@@ -39,4 +39,14 @@ public class RepositoryClientUsingJcrTest extends RepositoryClientTest {
     protected Api getApi() {
         return RepositoryClient.Api.JCR;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.example.dna.repository.RepositoryClientTest#shouldHaveContentFromVehiclesRepository()
+     */
+    @Override
+    public void shouldHaveContentFromVehiclesRepository() throws Throwable {
+        super.shouldHaveContentFromVehiclesRepository();
+    }
 }

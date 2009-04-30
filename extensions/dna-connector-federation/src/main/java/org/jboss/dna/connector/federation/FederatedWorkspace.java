@@ -184,6 +184,16 @@ public class FederatedWorkspace implements Comparable<FederatedWorkspace> {
     }
 
     /**
+     * Return the unmodifiable list of projections for the source name.
+     * 
+     * @param sourceName the name of the source
+     * @return the list of projections for this source, or null if there are none
+     */
+    public List<Projection> getProjectionsFor( String sourceName ) {
+        return this.projectionsBySourceName.get(sourceName);
+    }
+
+    /**
      * Determine whether this workspace has a projection supplied contribution
      * 
      * @param sourceName the name of the source

@@ -263,7 +263,13 @@ public class InMemoryRepository {
                                 InMemoryNode node ) {
             assert context != null;
             assert node != null;
-            assert getRoot().equals(node) != true;
+            if (getRoot().equals(node)) {
+                nodesByUuid.clear();
+                // Create the root node ...
+                InMemoryNode root = new InMemoryNode(rootNodeUuid);
+                nodesByUuid.put(root.getUuid(), root);
+                return;
+            }
             InMemoryNode parent = node.getParent();
             assert parent != null;
             parent.getChildren().remove(node);

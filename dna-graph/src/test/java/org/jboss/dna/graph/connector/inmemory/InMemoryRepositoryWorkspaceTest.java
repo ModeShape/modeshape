@@ -94,9 +94,11 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getRoot().getUuid(), is(rootUuid));
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowRootToBeRemoved() {
+    @Test
+    public void shouldAllowRootToBeRemoved() {
         workspace.removeNode(context, workspace.getRoot());
+        assertThat(workspace.getRoot().getChildren().size(), is(0));
+        assertThat(workspace.getRoot().getProperties().size(), is(0));
     }
 
     @Test( expected = AssertionError.class )

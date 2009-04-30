@@ -242,6 +242,21 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
     public abstract int getContributionCount();
 
     /**
+     * Get the number of contributions that are not placeholders or empty.
+     * 
+     * @return the number of real contributions
+     */
+    public int getRealContributionCount() {
+        int count = 0;
+        for (Contribution contribution : this) {
+            if (contribution.isPlaceholder()) continue;
+            if (contribution.isEmpty()) continue;
+            ++count;
+        }
+        return count;
+    }
+
+    /**
      * Get the plan annotation property with the given name. Plan annotations are custom properties that may be set by
      * MergeProcessor implementations to store custom properties on the plan. This method does nothing if the supplied name is
      * null

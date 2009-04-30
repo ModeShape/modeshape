@@ -237,6 +237,7 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
         if (!actualNewName.equals(expectedNewName)) {
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
         }
+        this.actualOldLocation = oldLocation;
         this.actualNewLocation = newLocation;
     }
 
@@ -265,9 +266,8 @@ public class MoveBranchRequest extends Request implements ChangeRequest {
      */
     public boolean changes( String workspace,
                             Path path ) {
-        return this.workspaceName.equals(workspace) 
-            && (into.hasPath() && into.getPath().isAtOrBelow(path)
-                || from.hasPath() && from.getPath().isAtOrBelow(path)); 
+        return this.workspaceName.equals(workspace)
+               && (into.hasPath() && into.getPath().isAtOrBelow(path) || from.hasPath() && from.getPath().isAtOrBelow(path));
     }
 
     /**

@@ -115,10 +115,6 @@ public class MixinTest {
         // Set up the initial content ...
         graph = Graph.create(source, context);
 
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system"); // .and().create("/jcr:system/dna:namespaces");
-        graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
-
         // Stub out the connection factory ...
         connectionFactory = new RepositoryConnectionFactory() {
             /**
@@ -318,7 +314,9 @@ public class MixinTest {
     public void shouldAllowAdditionIfResidualChildNodeDoesNotConflict() throws Exception {
         graph.create("/a").and().create("/a/" + CHILD_NODE_B);
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry))
+             .on("/a/" + CHILD_NODE_B)
+             .to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");

@@ -104,6 +104,7 @@ public class OneContributionMergeStrategyTest {
         stub(contribution.getProperties()).toReturn(properties.values().iterator());
         strategy.merge(node, contributions, context);
         properties.put(DnaLexicon.UUID, node.getPropertiesByName().get(DnaLexicon.UUID));
+        properties.put(DnaLexicon.MERGE_PLAN, node.getPropertiesByName().get(DnaLexicon.MERGE_PLAN));
         assertThat(node.getPropertiesByName(), is(properties));
     }
 

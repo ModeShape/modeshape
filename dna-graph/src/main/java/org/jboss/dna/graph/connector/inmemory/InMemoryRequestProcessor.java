@@ -35,6 +35,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -150,7 +151,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         }
         UUID uuid = null;
         for (Property property : request.properties()) {
-            if (property.getName().equals(DnaLexicon.UUID)) {
+            if (property.getName().equals(DnaLexicon.UUID) || property.getName().equals(JcrLexicon.UUID)) {
                 uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
                 break;
             }

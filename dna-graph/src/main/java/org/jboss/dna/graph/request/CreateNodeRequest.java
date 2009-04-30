@@ -168,12 +168,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
         for (Property property : properties) {
             if (property != null) props.add(property);
         }
-        // Add in the location properties ...
-        if (under.hasIdProperties()) {
-            for (Property property : under.getIdProperties()) {
-                if (property != null) props.add(property);
-            }
-        }
         this.properties = Collections.unmodifiableList(props);
     }
 
@@ -206,12 +200,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
         while (properties.hasNext()) {
             Property property = properties.next();
             if (property != null) props.add(property);
-        }
-        // Add in the location properties ...
-        if (under.hasIdProperties()) {
-            for (Property property : under.getIdProperties()) {
-                if (property != null) props.add(property);
-            }
         }
         this.properties = Collections.unmodifiableList(props);
     }

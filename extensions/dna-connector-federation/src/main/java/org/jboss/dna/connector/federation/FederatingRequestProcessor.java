@@ -28,12 +28,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
@@ -43,6 +45,7 @@ import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.cache.CachePolicy;
@@ -56,6 +59,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -70,6 +74,7 @@ import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
@@ -87,6 +92,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
     private final RepositoryConnectionFactory connectionFactory;
     /** The set of all connections, including the cache connection */
     private final Map<String, RepositoryConnection> connectionsBySourceName;
+    protected final PathFactory pathFactory;
     private Logger logger;
 
     /**
@@ -116,6 +122,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         this.logger = context.getLogger(getClass());
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
         this.defaultWorkspace = defaultWorkspace; // may be null
+        this.pathFactory = context.getValueFactories().getPathFactory();
     }
 
     protected DateTime getCurrentTimeInUtc() {
@@ -248,21 +255,30 @@ public class FederatingRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
-     */
-    @Override
-    public void process( CopyBranchRequest request ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        throw new UnsupportedOperationException();
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection projection = asSingleProjection(workspace, request.under(), request);
+        if (projection == null) return;
+
+        // Push down the request ...
+        Location parentLocation = Location.create(projection.pathInSource);
+        String workspaceName = projection.projection.getWorkspaceName();
+        CreateNodeRequest sourceRequest = new CreateNodeRequest(parentLocation, workspaceName, request.named(),
+                                                                request.properties());
+        execute(sourceRequest, projection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocationOfNode(projection.convertToRepository(sourceRequest.getActualLocationOfNode()));
+        }
     }
 
     /**
@@ -272,7 +288,85 @@ public class FederatingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
-        throw new UnsupportedOperationException();
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection projection = asSingleProjection(workspace, request.at(), request);
+        if (projection == null) return;
+
+        // Push down the request ...
+        Location sourceLocation = Location.create(projection.pathInSource);
+        String workspaceName = projection.projection.getWorkspaceName();
+        DeleteBranchRequest sourceRequest = new DeleteBranchRequest(sourceLocation, workspaceName);
+        execute(sourceRequest, projection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocationOfNode(projection.convertToRepository(sourceRequest.getActualLocationOfNode()));
+        }
+
+        // Delete in the cache ...
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(), workspace.getCacheProjection()
+                                                                                          .getWorkspaceName());
+        executeInCache(cacheRequest, workspace);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
+     */
+    @Override
+    public void process( CopyBranchRequest request ) {
+        FederatedWorkspace fromWorkspace = getWorkspace(request, request.fromWorkspace());
+        if (fromWorkspace == null) return;
+        FederatedWorkspace intoWorkspace = getWorkspace(request, request.intoWorkspace());
+        if (intoWorkspace == null) return;
+        if (!fromWorkspace.equals(intoWorkspace)) {
+            // Otherwise there wasn't a single projection with a single path ...
+            String msg = FederationI18n.unableToPerformOperationSpanningWorkspaces.text(fromWorkspace.getName(),
+                                                                                        intoWorkspace.getName());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection fromProjection = asSingleProjection(fromWorkspace, request.from(), request);
+        if (fromProjection == null) return;
+        SingleProjection intoProjection = asSingleProjection(intoWorkspace, request.into(), request);
+        if (intoProjection == null) return;
+        if (!intoProjection.projection.equals(fromProjection.projection)) {
+            // Otherwise there wasn't a single projection with a single path ...
+            String msg = FederationI18n.unableToPerformOperationUnlessLocationsAreFromSingleProjection.text(request.from(),
+                                                                                                            request.into(),
+                                                                                                            fromWorkspace.getName(),
+                                                                                                            fromProjection.projection.getRules(),
+                                                                                                            intoProjection.projection.getRules());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+
+        // Push down the request ...
+        Location fromLocation = Location.create(fromProjection.pathInSource);
+        Location intoLocation = Location.create(intoProjection.pathInSource);
+        String workspaceName = fromProjection.projection.getWorkspaceName();
+        CopyBranchRequest sourceRequest = new CopyBranchRequest(fromLocation, workspaceName, intoLocation, workspaceName,
+                                                                request.desiredName(), request.conflictBehavior());
+        execute(sourceRequest, fromProjection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocations(fromProjection.convertToRepository(sourceRequest.getActualLocationBefore()),
+                                       intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
+        }
+
+        // Delete from the cache the parent of the new location ...
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(), fromWorkspace.getCacheProjection()
+                                                                                                .getWorkspaceName());
+        executeInCache(cacheRequest, fromWorkspace);
     }
 
     /**
@@ -282,7 +376,43 @@ public class FederatingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
-        throw new UnsupportedOperationException();
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection fromProjection = asSingleProjection(workspace, request.from(), request);
+        if (fromProjection == null) return;
+        SingleProjection intoProjection = asSingleProjection(workspace, request.into(), request);
+        if (intoProjection == null) return;
+        if (!intoProjection.projection.equals(fromProjection.projection)) {
+            // Otherwise there wasn't a single projection with a single path ...
+            String msg = FederationI18n.unableToPerformOperationUnlessLocationsAreFromSingleProjection.text(request.from(),
+                                                                                                            request.into(),
+                                                                                                            workspace.getName(),
+                                                                                                            fromProjection.projection.getRules(),
+                                                                                                            intoProjection.projection.getRules());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+
+        // Push down the request ...
+        Location fromLocation = Location.create(fromProjection.pathInSource);
+        Location intoLocation = Location.create(intoProjection.pathInSource);
+        String workspaceName = fromProjection.projection.getWorkspaceName();
+        MoveBranchRequest sourceRequest = new MoveBranchRequest(fromLocation, intoLocation, workspaceName, request.desiredName(),
+                                                                request.conflictBehavior());
+        execute(sourceRequest, fromProjection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocations(fromProjection.convertToRepository(sourceRequest.getActualLocationBefore()),
+                                       intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
+        }
+        // Delete from the cache ...
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(), workspace.getCacheProjection()
+                                                                                            .getWorkspaceName());
+        executeInCache(cacheRequest, workspace);
     }
 
     /**
@@ -292,7 +422,31 @@ public class FederatingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
-        throw new UnsupportedOperationException();
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection projection = asSingleProjection(workspace, request.on(), request);
+        if (projection == null) return;
+
+        // Push down the request ...
+        Location sourceLocation = Location.create(projection.pathInSource);
+        String workspaceName = projection.projection.getWorkspaceName();
+        UpdatePropertiesRequest sourceRequest = new UpdatePropertiesRequest(sourceLocation, workspaceName, request.properties());
+        execute(sourceRequest, projection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocationOfNode(projection.convertToRepository(sourceRequest.getActualLocationOfNode()));
+        }
+
+        // Update the cache ...
+        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(), workspace.getCacheProjection()
+                                                                                                  .getWorkspaceName(),
+                                                                           request.properties());
+        executeInCache(cacheRequest, workspace);
     }
 
     /**
@@ -305,7 +459,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         FederatedWorkspace workspace = getWorkspace(request, request.workspaceName());
         if (workspace != null) {
             request.setActualWorkspaceName(workspace.getName());
-            Location root = Location.create(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
+            Location root = Location.create(pathFactory.createRootPath());
             ReadNodeRequest nodeInfo = getNode(root, workspace);
             if (nodeInfo.hasError()) return;
             request.setActualRootLocation(nodeInfo.getActualLocationOfNode());
@@ -353,6 +507,96 @@ public class FederatingRequestProcessor extends RequestProcessor {
         throw new UnsupportedOperationException();
     }
 
+    @Immutable
+    protected class SingleProjection {
+        protected final Projection projection;
+        protected final Path pathInSource;
+        protected final Location federatedLocation;
+
+        protected SingleProjection( Projection projection,
+                                    Path pathInSource,
+                                    Location federatedLocation ) {
+            this.projection = projection;
+            this.federatedLocation = federatedLocation;
+            this.pathInSource = pathInSource;
+        }
+
+        protected Location convertToRepository( Location sourceLocation ) {
+            assert sourceLocation != null;
+            if (sourceLocation.hasPath()) {
+                Set<Path> paths = projection.getPathsInRepository(sourceLocation.getPath(), pathFactory);
+                assert paths.size() == 1;
+                return sourceLocation.with(paths.iterator().next());
+            }
+            return sourceLocation;
+        }
+    }
+
+    protected SingleProjection asSingleProjection( FederatedWorkspace federatedWorkspace,
+                                                   Location location,
+                                                   Request request ) {
+        // Check the cache for this location ...
+        ReadNodeRequest nodeInfo = getNode(location, federatedWorkspace);
+        if (nodeInfo.hasError()) {
+            request.setError(nodeInfo.getError());
+            return null;
+        }
+        Location actualLocation = nodeInfo.getActualLocationOfNode();
+        Path pathInRepository = actualLocation.getPath();
+        assert pathInRepository != null;
+
+        // Get the merge plan for the node ...
+        MergePlan plan = getMergePlan(nodeInfo);
+        assert plan != null;
+        if (plan.getRealContributionCount() == 1) {
+            for (Contribution contribution : plan) {
+                if (contribution.isEmpty() || contribution.isPlaceholder()) continue;
+                for (Projection projection : federatedWorkspace.getProjectionsFor(contribution.getSourceName())) {
+                    Set<Path> paths = projection.getPathsInSource(pathInRepository, pathFactory);
+                    if (paths.size() == 1) {
+                        return new SingleProjection(projection, paths.iterator().next(), actualLocation);
+                    }
+                }
+            }
+        }
+
+        // Otherwise there wasn't a single projection with a single path ...
+        StringBuilder projections = new StringBuilder();
+        boolean first = true;
+        for (Contribution contribution : plan) {
+            if (contribution.isPlaceholder() || contribution.isEmpty()) continue;
+            if (first) first = false;
+            else projections.append(", ");
+            for (Projection projection : federatedWorkspace.getProjectionsFor(contribution.getSourceName())) {
+                Set<Path> paths = projection.getPathsInSource(pathInRepository, pathFactory);
+                if (paths.size() == 1) {
+                    projections.append(FederationI18n.pathInProjection.text(paths.iterator().next(), projection.getRules()));
+                } else {
+                    projections.append(FederationI18n.pathInProjection.text(paths, projection.getRules()));
+                }
+            }
+        }
+        String msg = FederationI18n.unableToPerformOperationUnlessLocationIsFromSingleProjection.text(location,
+                                                                                                      federatedWorkspace.getName(),
+                                                                                                      projections);
+        request.setError(new UnsupportedRequestException(msg));
+        return null;
+    }
+
+    protected void execute( Request request,
+                            Projection projection ) {
+        RepositoryConnection connection = getConnection(projection);
+        connection.execute(getExecutionContext(), request);
+        // Don't need to close, as we'll close all connections when this processor is closed
+    }
+
+    protected void executeInCache( Request request,
+                                   FederatedWorkspace workspace ) {
+        RepositoryConnection connection = getConnectionToCacheFor(workspace);
+        connection.execute(getExecutionContext(), request);
+        // Don't need to close, as we'll close all connections when this processor is closed
+    }
+
     /**
      * Get the node information from the underlying sources or, if possible, from the cache.
      * 
@@ -363,12 +607,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
      */
     protected ReadNodeRequest getNode( Location location,
                                        FederatedWorkspace workspace ) throws RepositorySourceException {
-        final ExecutionContext context = getExecutionContext();
-
         // Check the cache first ...
-        RepositoryConnection cacheConnection = getConnectionToCacheFor(workspace);
         ReadNodeRequest fromCache = new ReadNodeRequest(location, workspace.getCacheProjection().getWorkspaceName());
-        cacheConnection.execute(context, fromCache);
+        executeInCache(fromCache, workspace);
 
         // Look at the cache results from the cache for problems, or if found a plan in the cache look
         // at the contributions. We'll be putting together the set of source names for which we need to
@@ -395,12 +636,18 @@ public class FederatingRequestProcessor extends RequestProcessor {
                         Location locationToLoad = Location.create(pathToLoad);
                         loadContributionsFromSources(locationToLoad, workspace, null, contributions); // sourceNames may be
                         // null or empty
-                        FederatedNode mergedNode = createFederatedNode(locationToLoad, workspace, contributions, true);
+                        FederatedNode mergedNode = createFederatedNode(locationToLoad, workspace, fromCache, contributions, true);
                         if (mergedNode == null) {
                             // No source had a contribution ...
                             I18n msg = FederationI18n.nodeDoesNotExistAtPath;
                             fromCache.setError(new PathNotFoundException(location, ancestor, msg.text(path, ancestor)));
                             return fromCache;
+                        }
+                        MergePlan mergePlan = mergedNode.getMergePlan();
+                        if (mergePlan != null) {
+                            Property mergePlanProperty = getExecutionContext().getPropertyFactory().create(DnaLexicon.MERGE_PLAN,
+                                                                                                           (Object)mergePlan);
+                            fromCache.addProperty(mergePlanProperty);
                         }
                         contributions.clear();
                         // Move to the next child along the path ...
@@ -449,7 +696,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
             location = fromCache.at();
         }
         loadContributionsFromSources(location, workspace, sourceNames, contributions); // sourceNames may be null or empty
-        FederatedNode mergedNode = createFederatedNode(location, workspace, contributions, true);
+        FederatedNode mergedNode = createFederatedNode(location, workspace, fromCache, contributions, true);
         if (mergedNode == null) {
             // No source had a contribution ...
             if (location.hasPath()) {
@@ -467,6 +714,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
 
     protected FederatedNode createFederatedNode( Location location,
                                                  FederatedWorkspace federatedWorkspace,
+                                                 ReadNodeRequest fromCache,
                                                  List<Contribution> contributions,
                                                  boolean updateCache ) throws RepositorySourceException {
         assert location != null;
@@ -492,7 +740,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         // Create the node, and use the existing UUID if one is found in the cache ...
         ExecutionContext context = getExecutionContext();
         assert context != null;
-        FederatedNode mergedNode = new FederatedNode(location.with((UUID)null), federatedWorkspace.getName());
+        FederatedNode mergedNode = new FederatedNode(location, federatedWorkspace.getName());
 
         // Merge the results into a single set of results ...
         assert contributions.size() > 0;
@@ -502,7 +750,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
         if (updateCache) {
             // Place the results into the cache ...
-            updateCache(federatedWorkspace, mergedNode);
+            updateCache(federatedWorkspace, mergedNode, fromCache);
         }
         // And return the results ...
         return mergedNode;
@@ -525,7 +773,6 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                                  List<Contribution> contributions ) throws RepositorySourceException {
         // At this point, there is no merge plan, so read information from the sources ...
         final ExecutionContext context = getExecutionContext();
-        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         CachePolicy cachePolicy = federatedWorkspace.getCachePolicy();
         // If the location has no path, then we have to submit a request to ALL sources ...
@@ -720,9 +967,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
     }
 
     protected void updateCache( FederatedWorkspace federatedWorkspace,
-                                FederatedNode mergedNode ) throws RepositorySourceException {
+                                FederatedNode mergedNode,
+                                ReadNodeRequest fromCache ) throws RepositorySourceException {
         final ExecutionContext context = getExecutionContext();
-        final RepositoryConnection cacheConnection = getConnectionToCacheFor(federatedWorkspace);
         final Location location = mergedNode.at();
         final Path path = location.getPath();
         final String cacheWorkspace = federatedWorkspace.getCacheProjection().getWorkspaceName();
@@ -733,29 +980,126 @@ public class FederatingRequestProcessor extends RequestProcessor {
         // If the merged node has a merge plan, then add it to the properties if it is not already there ...
         Map<Name, Property> properties = mergedNode.getPropertiesByName();
         MergePlan mergePlan = mergedNode.getMergePlan();
-        if (mergePlan != null) {
+        if (mergePlan != null && !properties.containsKey(DnaLexicon.MERGE_PLAN)) {
             // Record the merge plan on the merged node ...
             Property mergePlanProperty = getExecutionContext().getPropertyFactory().create(DnaLexicon.MERGE_PLAN,
                                                                                            (Object)mergePlan);
             properties.put(mergePlanProperty.getName(), mergePlanProperty);
         }
 
-        if (path.isRoot()) {
-            // Set the properties ...
-            requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
-        } else {
-            // This is not the root node, so we need to create the node ...
+        // Make sure the UUID is being stored ...
+        PropertyFactory propertyFactory = getExecutionContext().getPropertyFactory();
+        Property uuidProperty = properties.get(DnaLexicon.UUID);
+        if (uuidProperty == null) uuidProperty = properties.get(JcrLexicon.UUID);
+        if (uuidProperty == null) {
+            UUID uuid = mergedNode.at().getUuid();
+            if (uuid == null) uuid = UUID.randomUUID();
+            uuidProperty = propertyFactory.create(DnaLexicon.UUID, uuid);
+            properties.put(uuidProperty.getName(), uuidProperty);
+        }
+
+        // Have the children changed ...
+        if (mergedNode.hasError() && !path.isRoot()) {
+            // This is not the root node, so we need to create the node (or replace it if it exists) ...
             final Location parentLocation = Location.create(path.getParent());
             childName = path.getLastSegment().getName();
             requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
                                                mergedNode.getProperties()));
+            // logger.trace("Adding {0} to cache with properties {1}", location, properties);
+            // Now create all of the children that this federated node knows of ...
+            for (Location child : mergedNode.getChildren()) {
+                childName = child.getPath().getLastSegment().getName();
+                requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND, child));
+                // logger.trace("Caching child of {0} named {1}", location, childName);
+            }
+        } else if (fromCache.getChildren().equals(mergedNode.getChildren())) {
+            // Just update the properties ...
+            requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
+            // logger.trace("Updating cached properties on the root to {0}", properties);
+        } else {
+            // The children have changed, so figure out how ...
+            if (fromCache.getChildren().isEmpty()) {
+                // No children in the cache, so just update the properties of the node ...
+                requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
+                // logger.trace("Updating cached properties on {0} to {1}", location, properties);
+
+                // And create all of the children that this federated node knows of ...
+                for (Location child : mergedNode.getChildren()) {
+                    childName = child.getPath().getLastSegment().getName();
+                    requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND, child));
+                    // logger.trace("Caching child of {0} named {1}", location, childName);
+                }
+            } else if (mergedNode.getChildren().isEmpty()) {
+                // There were children in the cache but not in the merged node, so update the cached properties
+                requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
+
+                // and delete all the children ...
+                for (Location child : fromCache.getChildren()) {
+                    requests.add(new DeleteBranchRequest(child, cacheWorkspace));
+                    // logger.trace("Removing {0} from cache", child);
+                }
+            } else {
+                // There were children in the cache and in the merged node. The easy way is to just remove the
+                // branch from the cache, the create it again ...
+                if (path.isRoot()) {
+                    requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
+                    // logger.trace("Updating cached properties on {0} to {1}", location, properties);
+
+                    // and delete all the children ...
+                    for (Location child : fromCache.getChildren()) {
+                        requests.add(new DeleteBranchRequest(child, cacheWorkspace));
+                        // logger.trace("Removing child node {0} from cache", child);
+                    }
+
+                    // Now create all of the children that this federated node knows of ...
+                    for (Location child : mergedNode.getChildren()) {
+                        childName = child.getPath().getLastSegment().getName();
+                        requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
+                                                           child));
+                        // logger.trace("Caching child of {0} named {1}", location, childName);
+                    }
+                } else {
+                    requests.add(new DeleteBranchRequest(location, cacheWorkspace));
+                    // logger.trace("Replacing node {0} from cache", location);
+
+                    // This is not the root node, so we need to create the node (or replace it if it exists) ...
+                    final Location parentLocation = Location.create(path.getParent());
+                    childName = path.getLastSegment().getName();
+                    requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
+                                                       mergedNode.getProperties()));
+                    // logger.trace("Adding {0} to cache with properties {1}", location, properties);
+                    // Now create all of the children that this federated node knows of ...
+                    for (Location child : mergedNode.getChildren()) {
+                        childName = child.getPath().getLastSegment().getName();
+                        requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
+                                                           child));
+                        // logger.trace("Caching child of {0} named {1}", location, childName);
+                    }
+                }
+            }
         }
 
-        // Now create all of the children that this federated node knows of ...
-        for (Location child : mergedNode.getChildren()) {
-            childName = child.getPath().getLastSegment().getName();
-            requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND));
-        }
+        // Execute all the requests ...
+        final RepositoryConnection cacheConnection = getConnectionToCacheFor(federatedWorkspace);
         cacheConnection.execute(context, CompositeRequest.with(requests));
+
+        // If the children did not have UUIDs, then find the actual locations for each of the cached nodes ...
+        if (requests.size() > 1) {
+            Iterator<Request> requestIter = requests.iterator();
+            requestIter.next(); // Skip the first request, which creates/updates the node (we want children)
+            List<Location> children = mergedNode.getChildren();
+            for (int i = 0; i != children.size(); ++i) {
+                Request request = requestIter.next();
+                while (!(request instanceof CreateNodeRequest)) { // skip non-create requests
+                    request = requestIter.next();
+                }
+                Location actual = ((CreateNodeRequest)request).getActualLocationOfNode();
+                Location child = children.get(i);
+                if (!child.hasIdProperties()) {
+                    assert child.getPath().equals(actual.getPath());
+                    children.set(i, actual);
+                }
+            }
+        }
     }
 }

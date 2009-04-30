@@ -141,10 +141,15 @@ final class JcrWorkspace implements Workspace {
                                             context);
         namespaceGraph.useWorkspace(workspaceName);
 
-        Name uriProperty = DnaLexicon.NAMESPACE_URI;
+        // Make sure the "/jcr:system" node exists ...
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path root = pathFactory.createRootPath();
-        Path namespacesPath = context.getValueFactories().getPathFactory().create(root, JcrLexicon.SYSTEM, DnaLexicon.NAMESPACES);
+        Path systemPath = pathFactory.create(root, JcrLexicon.SYSTEM);
+        Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
+        namespaceGraph.createIfMissing(systemPath, systemPrimaryType);
+
+        Name uriProperty = DnaLexicon.NAMESPACE_URI;
+        Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);
         PropertyFactory propertyFactory = context.getPropertyFactory();
         Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
         org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
@@ -168,9 +173,7 @@ final class JcrWorkspace implements Workspace {
         this.queryManager = new JcrQueryManager(this.session);
 
         if (Boolean.valueOf(repository.getOptions().get(Options.PROJECT_NODE_TYPES))) {
-            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(root,
-                                                                                         JcrLexicon.SYSTEM,
-                                                                                         JcrLexicon.NODE_TYPES);
+            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
             repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
         }
     }

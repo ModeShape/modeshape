@@ -41,10 +41,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.connector.federation.FederatedWorkspace;
-import org.jboss.dna.connector.federation.FederatingRequestProcessor;
-import org.jboss.dna.connector.federation.Projection;
-import org.jboss.dna.connector.federation.ProjectionParser;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -55,8 +51,19 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CopyBranchRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.ReadAllChildrenRequest;
+import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.ReadPropertyRequest;
+import org.jboss.dna.graph.request.UnsupportedRequestException;
+import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -93,6 +100,7 @@ public class FederatingRequestProcessorTest {
         cachePolicy = new BasicCachePolicy(219L, TimeUnit.SECONDS);
         cacheSource = new InMemoryRepositorySource();
         cacheSource.setName("Cache");
+        cacheSource.setDefaultWorkspaceName("cacheSpace");
         ProjectionParser ruleParser = ProjectionParser.getInstance();
         cacheProjectionRules = ruleParser.rulesFromStrings(context, "/ => /cache/repo/A");
         cacheProjection = new Projection(cacheSource.getName(), "cacheSpace", cacheProjectionRules);
@@ -126,6 +134,82 @@ public class FederatingRequestProcessorTest {
         doReturn(source2.getConnection()).when(connectionFactory).createConnection(source2.getName());
         doReturn(source3.getConnection()).when(connectionFactory).createConnection(source3.getName());
         doReturn(cacheSource.getConnection()).when(connectionFactory).createConnection(cacheSource.getName());
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Path path( String path ) {
+        return pathFactory.create(path);
+    }
+
+    protected Path.Segment segment( String path ) {
+        return pathFactory.createSegment(path);
+    }
+
+    protected Property property( String name,
+                                 Object... values ) {
+        return context.getPropertyFactory().create(name(name), values);
+    }
+
+    protected Map<Name, Property> addProperty( Map<Name, Property> properties,
+                                               String name,
+                                               Object... values ) {
+        Property property = property(name, values);
+        properties.put(property.getName(), property);
+        return properties;
+    }
+
+    protected void assertNodeHasChildren( String path,
+                                          String... expectedChildSegments ) {
+        Location parent = Location.create(path(path));
+        ReadAllChildrenRequest request = new ReadAllChildrenRequest(parent, "fedSpace");
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path(path)));
+        List<Location> actualChildLocations = request.getChildren();
+        Path.Segment[] actualChildren = new Path.Segment[actualChildLocations.size()];
+        for (int i = 0; i != actualChildren.length; ++i) {
+            Path actualChildPath = actualChildLocations.get(i).getPath();
+            actualChildren[i] = actualChildPath.getLastSegment();
+            assertThat(actualChildPath.getParent(), is(path(path)));
+        }
+        Path.Segment[] expectedChildren = new Path.Segment[expectedChildSegments.length];
+        for (int i = 0; i != expectedChildren.length; ++i) {
+            expectedChildren[i] = segment(expectedChildSegments[i]);
+        }
+        assertThat(actualChildren, is(expectedChildren));
+    }
+
+    protected void assertNodeHasProperty( String path,
+                                          String propertyName,
+                                          Object... expectedValues ) {
+        Location parent = Location.create(path(path));
+        ReadPropertyRequest request = new ReadPropertyRequest(parent, "fedSpace", name(propertyName));
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path(path)));
+        Object[] actualValues = request.getProperty().getValuesAsArray();
+        String[] actualValuesAsStrings = new String[actualValues.length];
+        for (int i = 0; i != actualValues.length; ++i) {
+            actualValuesAsStrings[i] = context.getValueFactories().getStringFactory().create(actualValues[i]);
+        }
+        String[] expectedValuesAsStrings = new String[expectedValues.length];
+        for (int i = 0; i != expectedValues.length; ++i) {
+            expectedValuesAsStrings[i] = context.getValueFactories().getStringFactory().create(expectedValues[i]);
+        }
+        assertThat(actualValuesAsStrings, is(expectedValuesAsStrings));
+    }
+
+    protected void assertNodeHasNoProperty( String path,
+                                            String propertyName ) {
+        Location parent = Location.create(path(path));
+        ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(parent, "fedSpace");
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path(path)));
+        assertThat(request.getPropertiesByName().containsKey(name(propertyName)), is(false));
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -568,9 +652,203 @@ public class FederatingRequestProcessorTest {
         assertThat(contributions.get(2).isExpired(nowPlus310InUtc), is(true)); // expired by cache @ 219
     }
 
-    @Test
-    public void shouldGetNodeUsingPath() {
+    /**
+     * Set up the sources such that:
+     * <ul>
+     * <li>Source 1: "{@code /a => /source/one/a}", "{@code /b => /source/one/b}"</li>
+     * <li>Source 2: "{@code /a => /source/two/a}"</li>
+     * <li>Source 1: "{@code / => /}"</li>
+     * </ul>
+     */
+    protected void initializeSourcesWithContent() {
+        // Set up the content of source 1
+        Graph repository1 = Graph.create(source1, context);
+        repository1.createWorkspace().named("workspace1");
+        Graph.Batch batch = repository1.batch();
+        batch.create("/source").and();
+        batch.create("/source/one").and();
+        batch.create("/source/one/a").with("desc", "source 1 node a description").and();
+        batch.create("/source/one/a/nA").with("desc", "source 1 node nA description").and();
+        batch.create("/source/one/a/nB").with("desc", "source 1 node nB description").and();
+        batch.create("/source/one/a/nC").with("desc", "source 1 node nC description").and();
+        batch.create("/source/one/b").with("desc", "source 1 node b description").and();
+        batch.create("/source/one/b/pA").with("desc", "source 1 node pA description").and();
+        batch.create("/source/one/b/pB").with("desc", "source 1 node pB description").and();
+        batch.create("/source/one/b/pC").with("desc", "source 1 node pC description").and();
+        batch.execute();
 
+        // Set up the content of source 2
+        Graph repository2 = Graph.create(source2, context);
+        repository2.createWorkspace().named("workspace2");
+        batch = repository2.batch();
+        batch.create("/source").and();
+        batch.create("/source/two").and();
+        batch.create("/source/two/a").with("desc", "source 2 node a description").and();
+        batch.create("/source/two/a/qA").with("desc", "source 2 node qA description").and();
+        batch.create("/source/two/a/qB").with("desc", "source 2 node qB description").and();
+        batch.create("/source/two/a/qC").with("desc", "source 2 node qC description").and();
+        batch.execute();
+
+        // Set up the content of source 3
+        Graph repository3 = Graph.create(source3, context);
+        repository3.createWorkspace().named("workspace3");
+        batch = repository3.batch();
+        batch.create("/x").and();
+        batch.create("/x/y").with("desc", "y description").and();
+        batch.create("/x/y/zA").with("desc", "zA description").and();
+        batch.create("/x/y/zB").with("desc", "zB description").and();
+        batch.create("/x/y/zC").with("desc", "zC description").and();
+        batch.create("/b").and();
+        batch.create("/b/by").with("desc", "by description").and();
+        batch.create("/b/by/bzA").with("desc", "bzA description").and();
+        batch.create("/b/by/bzB").with("desc", "bzB description").and();
+        batch.create("/a").and();
+        batch.create("/a/ay").with("desc", "ay description").and();
+        batch.create("/a/ay/azA").with("desc", "azA description").and();
+        batch.create("/a/ay/azB").with("desc", "azB description").and();
+        batch.execute();
+
+    }
+
+    @Test( expected = UnsupportedRequestException.class )
+    public void shouldNotCreateNodeIfParentIsOutsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location parent = Location.create(path("/a")); // source 2 or 3?
+        CreateNodeRequest request = new CreateNodeRequest(parent, "fedSpace", name("child"));
+        executor.process(request);
+        if (request.hasError()) throw request.getError();
+    }
+
+    @Test
+    public void shouldCreateNodeOnlyIfParentIsInsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location parent = Location.create(path("/a/ay")); // source 3
+        CreateNodeRequest request = new CreateNodeRequest(parent, "fedSpace", name("child"));
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path("/a/ay/child")));
+        assertNodeHasChildren("/a/ay", "azA", "azB", "child");
+    }
+
+    @Test( expected = UnsupportedRequestException.class )
+    public void shouldNotDestroyNodeIfOutsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location location = Location.create(path("/a")); // source 2 or 3?
+        DeleteBranchRequest request = new DeleteBranchRequest(location, "fedSpace");
+        executor.process(request);
+        if (request.hasError()) throw request.getError();
+    }
+
+    @Test
+    public void shouldDestroyNodeOnlyIfInsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        Location location = Location.create(path("/a/ay")); // source 3
+        DeleteBranchRequest request = new DeleteBranchRequest(location, "fedSpace");
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path("/a/ay")));
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC");
+    }
+
+    @Test( expected = UnsupportedRequestException.class )
+    public void shouldNotUpdateNodeIfOutsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location location = Location.create(path("/a")); // source 2 or 3?
+        Map<Name, Property> properties = new HashMap<Name, Property>();
+        addProperty(properties, "prop1", "value1");
+        addProperty(properties, "prop2", "value2a", "value2b");
+        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, "fedSpace", properties);
+        executor.process(request);
+        if (request.hasError()) throw request.getError();
+    }
+
+    @Test
+    public void shouldUpdateNodeOnlyIfInsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        // assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasProperty("/a/ay", "desc", "ay description");
+        assertNodeHasNoProperty("/a/ay", "prop1");
+        assertNodeHasNoProperty("/a/ay", "prop2");
+        Location location = Location.create(path("/a/ay")); // source 3
+        Map<Name, Property> properties = new HashMap<Name, Property>();
+        addProperty(properties, "desc", "ay description 2");
+        addProperty(properties, "prop1", "value1");
+        addProperty(properties, "prop2", "value2a", "value2b");
+        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, "fedSpace", properties);
+        executor.process(request);
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationOfNode().getPath(), is(path("/a/ay")));
+        assertNodeHasProperty("/a/ay", "desc", "ay description 2");
+        assertNodeHasProperty("/a/ay", "prop1", "value1");
+        assertNodeHasProperty("/a/ay", "prop2", "value2a", "value2b");
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+    }
+
+    @Test( expected = UnsupportedRequestException.class )
+    public void shouldNotMoveNodeIfParentIsOutsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location from = Location.create(path("/a/ay")); // source 3
+        Location into = Location.create(path("/b")); // source 1 or source 3?
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasChildren("/b", "pA", "pB", "pC", "by");
+        MoveBranchRequest request = new MoveBranchRequest(from, into, "fedSpace");
+        executor.process(request);
+        if (request.hasError()) throw request.getError();
+    }
+
+    @Test
+    public void shouldMoveNodeOnlyIfParentIsInsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location from = Location.create(path("/a/ay")); // source 3
+        Location into = Location.create(path("/b/by")); // source 3
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasChildren("/b", "pA", "pB", "pC", "by");
+        assertNodeHasChildren("/b/by", "bzA", "bzB");
+        MoveBranchRequest request = new MoveBranchRequest(from, into, "fedSpace");
+        executor.process(request);
+        if (request.hasError()) {
+            System.out.println(request.getError().getMessage());
+        }
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationBefore().getPath(), is(path("/a/ay")));
+        assertThat(request.getActualLocationAfter().getPath(), is(path("/b/by/ay")));
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC");
+        assertNodeHasChildren("/b/by", "bzA", "bzB", "ay");
+    }
+
+    @Test( expected = UnsupportedRequestException.class )
+    public void shouldNotCopyNodeIfParentIsOutsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location from = Location.create(path("/a/ay")); // source 3
+        Location into = Location.create(path("/b")); // source 1 or source 3?
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasChildren("/b", "pA", "pB", "pC", "by");
+        CopyBranchRequest request = new CopyBranchRequest(from, "fedSpace", into, "fedSpace");
+        executor.process(request);
+        if (request.hasError()) throw request.getError();
+    }
+
+    @Test
+    public void shouldCopyNodeOnlyIfParentIsInsideSingleProjection() throws Throwable {
+        initializeSourcesWithContent();
+        Location from = Location.create(path("/a/ay")); // source 3
+        Location into = Location.create(path("/b/by")); // source 3
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasChildren("/a/ay", "azA", "azB");
+        assertNodeHasChildren("/b", "pA", "pB", "pC", "by");
+        assertNodeHasChildren("/b/by", "bzA", "bzB");
+        CopyBranchRequest request = new CopyBranchRequest(from, "fedSpace", into, "fedSpace");
+        executor.process(request);
+        if (request.hasError()) {
+            System.out.println(request.getError().getMessage());
+        }
+        assertThat(request.hasError(), is(false));
+        assertThat(request.getActualLocationBefore().getPath(), is(path("/a/ay")));
+        assertThat(request.getActualLocationAfter().getPath(), is(path("/b/by/ay")));
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
+        assertNodeHasChildren("/b/by", "bzA", "bzB", "ay");
+        assertNodeHasChildren("/b/by/ay", "azA", "azB");
     }
 
 }

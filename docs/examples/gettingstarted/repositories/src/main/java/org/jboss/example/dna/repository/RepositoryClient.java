@@ -138,6 +138,7 @@ public class RepositoryClient {
         // Load into the source manager the repository source for the configuration repository ...
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();
         configSource.setName("Configuration");
+        configSource.setDefaultWorkspaceName("default");
         sources.addSource(configSource);
 
         // For this example, we're using a couple of in-memory repositories (including one for the configuration repository).
@@ -145,7 +146,7 @@ public class RepositoryClient {
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
         Graph config = Graph.create("Configuration", sources, context);
-        config.createWorkspace().named("default");
+        config.useWorkspace("default");
         config.importXmlFrom(location + "/configRepository.xml").into("/");
 
         // Now instantiate the Repository Service ...
@@ -295,6 +296,8 @@ public class RepositoryClient {
                             children.add(name);
                         }
                     }
+                } catch (javax.jcr.ItemNotFoundException e) {
+                    return false;
                 } catch (javax.jcr.PathNotFoundException e) {
                     return false;
                 } finally {

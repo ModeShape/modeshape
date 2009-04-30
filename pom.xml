@@ -135,7 +135,7 @@
 		<module>extensions/dna-common-jdbc</module> 
 		<module>extensions/dna-connector-jdbc-metadata</module> 
 		<module>dna-integration-tests</module>
-		<!--module>docs/examples/gettingstarted</module-->
+		<module>docs/examples/gettingstarted</module>
 	</modules>
 
 	<profiles>

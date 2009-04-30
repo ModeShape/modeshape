@@ -223,6 +223,7 @@ public class CopyBranchRequest extends Request implements ChangeRequest {
         if (into.hasPath() && !intoLocation.getPath().getParent().equals(into.getPath())) {
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotChildOfInputLocation.text(intoLocation, into));
         }
+        this.actualFromLocation = fromLocation;
         this.actualIntoLocation = intoLocation;
     }
 
