@@ -68,8 +68,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * @author John Verhaeg
- * @author Randall Hauch
+ *
  */
 @NotThreadSafe
 final class JcrWorkspace implements Workspace {

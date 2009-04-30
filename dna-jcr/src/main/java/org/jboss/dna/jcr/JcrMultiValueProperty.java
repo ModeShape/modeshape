@@ -40,7 +40,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Property;
 
 /**
- * @author jverhaeg
+ * 
  */
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {
@@ -222,7 +222,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         } else {
             jcrValues = EMPTY_VALUES;
         }
-        
+
         cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues, PropertyType.STRING);
     }
 

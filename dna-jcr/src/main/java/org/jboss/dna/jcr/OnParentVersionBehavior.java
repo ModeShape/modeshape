@@ -28,7 +28,7 @@ import javax.jcr.version.OnParentVersionAction;
 /**
  * Enumeration of possible behaviors for on-parent-version setting of properties and child nodes in JCR specification.
  */
-public enum OnParentVersionBehavior {
+enum OnParentVersionBehavior {
     /** @see OnParentVersionAction#ABORT */
     ABORT(OnParentVersionAction.ABORT, OnParentVersionAction.ACTIONNAME_ABORT),
     /** @see OnParentVersionAction#COMPUTE */

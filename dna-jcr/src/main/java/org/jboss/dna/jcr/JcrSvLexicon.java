@@ -27,7 +27,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- *
+ * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/sv/1.0</code>" namespace.
  */
 public class JcrSvLexicon {
 

@@ -85,8 +85,8 @@ public class DnaConfigurationTest {
                                                .and()
                                                .save();
         assertThat(config, is(notNullValue()));
-        assertThat(config.configurationSource.getRepositorySource(), is(instanceOf(InMemoryRepositorySource.class)));
-        InMemoryRepositorySource source = (InMemoryRepositorySource)config.configurationSource.getRepositorySource();
+        assertThat(config.configurationRepository().getRepositorySource(), is(instanceOf(InMemoryRepositorySource.class)));
+        InMemoryRepositorySource source = (InMemoryRepositorySource)config.configurationRepository().getRepositorySource();
         assertThat(source.getName(), is("repository name"));
         assertThat(source.getRetryLimit(), is(5));
     }
@@ -287,7 +287,8 @@ public class DnaConfigurationTest {
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
                      .describedAs("default detector");
         configuration.addSequencer("sequencerA")
-                     .usingClass(MockSequencerA.class)
+                     .usingClass(MockSequencerA.class.getName())
+                     .loadedFromClasspath()
                      .named("The (Main) Sequencer")
                      .describedAs("Mock Sequencer A")
                      .sequencingFrom("/foo/source")

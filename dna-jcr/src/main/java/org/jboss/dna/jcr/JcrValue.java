@@ -45,7 +45,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
- * @author jverhaeg
+ *
  */
 @NotThreadSafe
 final class JcrValue implements Value {

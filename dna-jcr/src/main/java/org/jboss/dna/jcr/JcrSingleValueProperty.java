@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
- * @author jverhaeg
+ *
  */
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 

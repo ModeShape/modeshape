@@ -27,9 +27,9 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/1.0</code>" namespace.
  */
-class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
+public class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
 
     public static final Name BASE_VERSION = new BasicName(Namespace.URI, "baseVersion");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");

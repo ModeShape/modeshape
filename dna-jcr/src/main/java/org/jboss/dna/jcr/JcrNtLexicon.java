@@ -26,6 +26,9 @@ package org.jboss.dna.jcr;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
+/**
+ * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/nt/1.0</code>" namespace.
+ */
 public class JcrNtLexicon extends org.jboss.dna.graph.JcrNtLexicon {
 
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");

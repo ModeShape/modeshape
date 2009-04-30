@@ -43,6 +43,7 @@ public final class JcrI18n {
     public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
+    public static I18n repositoryDoesNotExist;
 
     public static I18n noNamespaceWithPrefix;
     public static I18n noNamespaceWithUri;

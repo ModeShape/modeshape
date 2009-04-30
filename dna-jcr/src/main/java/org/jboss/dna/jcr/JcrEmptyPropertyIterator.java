@@ -31,7 +31,7 @@ import org.jboss.dna.common.util.CheckArg;
 /**
  * 
  */
-public class JcrEmptyPropertyIterator implements PropertyIterator {
+class JcrEmptyPropertyIterator implements PropertyIterator {
 
     /**
      * {@inheritDoc}

@@ -40,7 +40,7 @@ import org.jboss.dna.graph.property.Binary;
  * </p>
  */
 @NotThreadSafe
-public class SelfClosingInputStream extends InputStream {
+class SelfClosingInputStream extends InputStream {
 
     private final Binary binary;
     private final InputStream stream;

@@ -121,7 +121,7 @@ import com.google.common.collect.ReferenceMap;
  * </p>
  */
 @ThreadSafe
-public class SessionCache {
+class SessionCache {
 
     /**
      * Hidden flag that controls whether properties that appear on DNA nodes but not allowed by the node type or mixins should be

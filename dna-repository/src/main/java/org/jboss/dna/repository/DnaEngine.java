@@ -70,7 +70,7 @@ public class DnaEngine {
 
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
 
-    private final DnaConfiguration.ConfigurationRepository configuration;
+    private final Configurator.ConfigurationRepository configuration;
     private final ConfigurationScanner scanner;
     private final Problems problems;
     private final ExecutionContext context;
@@ -84,14 +84,15 @@ public class DnaEngine {
 
     private final RepositoryConnectionFactory connectionFactory;
 
-    DnaEngine( DnaConfiguration configuration ) {
+    DnaEngine( ExecutionContext context,
+               Configurator.ConfigurationRepository configuration ) {
         this.problems = new SimpleProblems();
 
         // Use the configuration's context ...
-        this.context = configuration.context();
+        this.context = context;
 
         // And set up the scanner ...
-        this.configuration = configuration.configurationSource;
+        this.configuration = configuration;
         this.scanner = new ConfigurationScanner(this.problems, this.context, this.configuration);
 
         // Add the configuration source to the repository library ...
@@ -211,11 +212,11 @@ public class DnaEngine {
     protected class ConfigurationScanner {
         private final Problems problems;
         private final ExecutionContext context;
-        private final DnaConfiguration.ConfigurationRepository configurationRepository;
+        private final Configurator.ConfigurationRepository configurationRepository;
 
         protected ConfigurationScanner( Problems problems,
                                         ExecutionContext context,
-                                        DnaConfiguration.ConfigurationRepository configurationRepository ) {
+                                        Configurator.ConfigurationRepository configurationRepository ) {
             this.problems = problems;
             this.context = context;
             this.configurationRepository = configurationRepository;

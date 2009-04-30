@@ -30,7 +30,7 @@ import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
 
 /**
- * @author jverhaeg
+ *
  */
 @NotThreadSafe
 final class JcrNode extends AbstractJcrNode {
