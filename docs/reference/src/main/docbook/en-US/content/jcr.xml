@@ -101,6 +101,15 @@ public &LoginContext; getLoginContext() { return loginContext; }
 </programlisting>
   </sect1>
 	<sect1>
+		<title>JCR Support</title>
+		<para>
+			JBoss DNA currently supports most of the Level 1 and Level 2 feature set defined by the <ulink url="&JSR170;">JSR-170</ulink> specification.
+			Queries, which are part of Level 1, are not implemented, nor are all of the update methods that make up Level 2.
+			So while the current implementation provides many of the features that may be needed by an application, we really hope
+			that this release will allow you to give us some feedback on what we have so far.
+		</para>
+	</sect1>
+	<sect1>
 		<title>Summary</title>
 		<para>
 			In this chapter, we covered how to use JCR with JBoss DNA.  Now that you know how JBoss DNA repositories work,

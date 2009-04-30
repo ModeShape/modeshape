@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "0.3">
+<!ENTITY versionNumber "0.4">
 <!ENTITY copyrightYears "2008-2009">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -50,7 +50,7 @@
 
 <!ENTITY Logger							       		"<ulink url='&API;common/util/Logger.html'><interface>Logger</interface></ulink>">
 <!ENTITY ClassLoaderFactory       		"<ulink url='&API;common/component/ClassLoaderFactory.html'><interface>ClassLoaderFactory</interface></ulink>">
-<!ENTITY StandardClassLoaderFactory		"<ulink url='&API;common/component/ClassLoaderFactory.html'><classname>StandardClassLoaderFactory</classname></ulink>">
+<!ENTITY StandardClassLoaderFactory		"<ulink url='&API;common/component/StandardClassLoaderFactory.html'><classname>StandardClassLoaderFactory</classname></ulink>">
 
 <!-- Types in dna-graph -->
 
@@ -58,6 +58,7 @@
 <!ENTITY GraphBatch				       			"<ulink url='&API;graph/Graph.Batch.html'><classname>Graph.Batch</classname></ulink>">
 <!ENTITY Subgraph							       	"<ulink url='&API;graph/Subgraph.html'><interface>Subgraph</interface></ulink>">
 <!ENTITY Node								       		"<ulink url='&API;graph/Node.html'><interface>Node</interface></ulink>">
+<!ENTITY Workspace								    "<ulink url='&API;graph/Workspace.html'><interface>Workspace</interface></ulink>">
 <!ENTITY Results							       	"<ulink url='&API;graph/Results.html'><interface>Results</interface></ulink>">
 <!ENTITY Location							       	"<ulink url='&API;graph/Location.html'><classname>Location</classname></ulink>">
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><classname>ExecutionContext</classname></ulink>">
@@ -74,13 +75,16 @@
 <!ENTITY RepositoryConnectionFactory	"<ulink url='&API;graph/connector/RepositoryConnectionFactory.html'><interface>RepositoryConnectionFactory</interface></ulink>">
 <!ENTITY RepositorySourceListener			"<ulink url='&API;graph/connector/RepositorySourceListener.html'><interface>RepositorySourceListener</interface></ulink>">
 <!ENTITY RepositorySourceCapabilities	"<ulink url='&API;graph/connector/RepositorySourceCapabilities.html'><classname>RepositorySourceCapabilities</classname></ulink>">
-<!ENTITY InMemoryRepository			  		"<ulink url='&API;graph.connector/inmemory/InMemoryRepository.html'><classname>InMemoryRepository</classname></ulink>">
-<!ENTITY InMemoryRepositorySource  		"<ulink url='&API;graph.connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
+<!ENTITY InMemoryRepository			  		"<ulink url='&API;graph/connector/inmemory/InMemoryRepository.html'><classname>InMemoryRepository</classname></ulink>">
+<!ENTITY InMemoryRepositorySource  		"<ulink url='&API;graph/connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
 <!ENTITY CachePolicy							    "<ulink url='&API;graph/cache/CachePolicy.html'><interface>CachePolicy</interface></ulink>">
-<!ENTITY Request					       			"<ulink url='&API;graph/request/Requests.html'><classname>Request</classname></ulink>">
+<!ENTITY Request					       			"<ulink url='&API;graph/request/Request.html'><classname>Request</classname></ulink>">
 <!ENTITY CompositeRequest					    "<ulink url='&API;graph/request/CompositeRequest.html'><classname>CompositeRequest</classname></ulink>">
 <!ENTITY ReadNodeRequest					    "<ulink url='&API;graph/request/ReadNodeRequest.html'><classname>ReadNodeRequest</classname></ulink>">
 <!ENTITY CopyBranchRequest					  "<ulink url='&API;graph/request/CopyBranchRequest.html'><classname>CopyBranchRequest</classname></ulink>">
+<!ENTITY InvalidRequestException	   	"<ulink url='&API;graph/request/InvalidRequestException.html'><classname>InvalidRequestException</classname></ulink>">
+<!ENTITY InvalidWorkspaceException		"<ulink url='&API;graph/request/InvalidWorkspaceException.html'><classname>InvalidWorkspaceException</classname></ulink>">
+<!ENTITY UnsupportedRequestException	"<ulink url='&API;graph/request/UnsupportedRequestException.html'><classname>UnsupportedRequestException</classname></ulink>">
 <!ENTITY RequestProcessor	       			"<ulink url='&API;graph/request/processor/RequestProcessor.html'><classname>RequestProcessor</classname></ulink>">
 <!ENTITY StreamSequencer		    			"<ulink url='&API;graph/sequencer/StreamSequencer.html'><interface>StreamSequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencer/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">

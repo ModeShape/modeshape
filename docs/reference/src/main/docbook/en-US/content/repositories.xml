@@ -167,6 +167,24 @@
 			<link linkend="connector-library">existing connectors</link> and show how to <link linkend="custom-connectors">create your own connectors</link>.
 		</para>
   </sect1>
+  <sect1 id="repository-workspaces">
+    <title>Workspaces</title>
+		<para>The previous section talked about how connector expose their information through the graph language of JBoss DNA.
+			This is true, except that we didn't dive into too much of the detail.  JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis>
+			in which the content appears, and its very easy for clients using the graph to switch between workspaces.  In fact,
+			workspaces differ from each other in that they provide different views of the same information.
+		</para>
+		<para>Consider a source control system, like SVN or CVS.  These systems provide different views of the source code:
+			a mainline development branch as well as other branches (or tags) commonly used for releases.  So, just like one source
+			file might appear in the mainline branch as well as the previous two release branches, a node in a repository source
+			might appear in multiple workspaces.
+		</para>
+		<para>
+			However, each connector can kind of decide how (or whether) it uses workspaces.  For example, there may be no overlap
+			in the content between workspaces.  Or a connector might only expose a single workspace (in other words, there's only one
+			"default" workspace).
+		</para>
+  </sect1>
   <sect1 id="repository-service">
     <title>Repository Service</title>
 		<para>The JBoss DNA &RepositoryService; is the component that manages the <emphasis>repository sources</emphasis>
@@ -309,6 +327,11 @@
 								cached by other, higher-level components.  The default value of null implies that this source does not define a specific
 								duration for caching information provided by this repository source.</entry>
 						</row>
+						<row>
+							<entry>defaultWorkspaceName</entry>
+							<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+								if none is specified.</entry>
+						</row>
 					</tbody>
 				</tgroup>
 			</table>
@@ -373,6 +396,19 @@
 								cached by other, higher-level components.  The default value of null implies that this source does not define a specific
 								duration for caching information provided by this repository source.</entry>
 						</row>
+						<row>
+							<entry>nameOfDefaultWorkspace</entry>
+							<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+								if none is specified.</entry>
+						</row>
+						<row>
+							<entry>predefinedWorkspaceNames</entry>
+							<entry>Optional property that defines the names of the workspaces that exist and that are available for use without having to create them.</entry>
+						</row>
+						<row>
+							<entry>creatingWorkspacesAllowed</entry>
+							<entry>Optional property that is by default 'true' that defines whether clients can create new workspaces.</entry>
+						</row>
 					</tbody>
 				</tgroup>
 			</table>
@@ -422,22 +458,25 @@
 				cache and federated sources.  This graph structure that is expected at this location is as follows:
 			</para>
 			<programlisting><![CDATA[<!-- Define the federation configuration. -->
-<dna:federation xmlns:dna="http://www.jboss.org/dna" 
+<dna:federatedRepository xmlns:dna="http://www.jboss.org/dna" 
 	                   xmlns:jcr="http://www.jcp.org/jcr/1.0"
                      dna:timeToCache="100000" >
-    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
-    <dna:cache>
-        <dna:projection jcr:name="Cache" dna:projectionRules="/ => /" />
-    </dna:cache>
-    <!-- Define how the content in the two sources maps to the federated/unified repository.
-         This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
-         'Configuration' content (which is defined by this file) will appear under '/'. -->
-    <dna:projections>
+  <dna:workspaces>
+    <dna:workspace jcr:name="default">
+	    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
+      <dna:cache dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/a => /" />
+
+      <!-- Define how the content in the two sources maps to the federated/unified repository.
+           This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
+           'Configuration' content (which is defined by this file) will appear under '/'. -->
+      <dna:projections>
         <dna:projection jcr:name="Cars" dna:projectionRules="/Vehicles => /" />
         <dna:projection jcr:name="Aircraft" dna:projectionRules="/Vehicles => /" />
         <dna:projection jcr:name="Configuration" dna:projectionRules="/ => /" />
-    </dna:projections>
-</dna:federation>
+      </dna:projections>
+    </dna:workspace>
+	</dna:workspaces>
+</dna:federatedRepository>
 ]]></programlisting>
 			<note>
 				<para>
@@ -486,6 +525,11 @@
 								how this federated repository is to be set up and configured.
 								This name is supplied to the &RepositoryConnectionFactory; that is provided to this instance when added to the
 								&RepositoryLibrary;.</entry>
+						</row>
+						<row>
+							<entry>configurationWorkspaceName</entry>
+							<entry>The name of the workspace in the configuration &RepositorySource; with the content defining
+								how this federated repository is to be set up and configured.</entry>
 						</row>
 						<row>
 							<entry>configurationSourcePath</entry>
@@ -601,7 +645,7 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
@@ -616,14 +660,14 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -907,7 +951,7 @@ public interface &RepositoryConnection; {
 				information, although the connector should still perform as expected when requests have incomplete locations.
 			</para>
 			<table frame='all'>
-				<title>Types of Requests</title>
+				<title>Types of Node Operation Requests</title>
 				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
 		      <colspec colname='c1' colwidth="1*"/>
 		      <colspec colname='c2' colwidth="1*"/>
@@ -921,62 +965,76 @@ public interface &RepositoryConnection; {
 						<row>
 							<entry>ReadNodeRequest</entry>
 							<entry>
-								A request to read from the source a node's properties and children.
+								A request to read from the named workspace in the source a node's properties and children.
 								The node may be specified by path and/or by identification properties.
 								The connector returns all properties and the locations for all children,
-								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>VerifyNodeExistsRequest</entry>
+							<entry>
+								A request to verify the existance of a node at the specified location in the named workspace of the source.
+								The connector returns all the actual location for the node if it exists, or
+								sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>ReadAllPropertiesRequest</entry>
 							<entry>
-								A request to read from the source all of the properties of a node.
+								A request to read from the named workspace in the source all of the properties of a node.
 								The node may be specified by path and/or by identification properties.
 								The connector returns all properties that were found on the node,
-								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>ReadPropertyRequest</entry>
 							<entry>
-								A request to read from the source a single property of a node.
+								A request to read from the named workspace in the source a single property of a node.
 								The node may be specified by path and/or by identification properties,
 								and the property is specified by name.
 								The connector returns the property if found on the node,
-								or sets a &PathNotFoundException; error on the request if the node or property did not exist.
+								or sets a &PathNotFoundException; error on the request if the node or property did not exist in the workspace.
 								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>ReadAllChildrenRequest</entry>
 							<entry>
-								A request to read from the source all of the children of a node.
+								A request to read from the named workspace in the source all of the children of a node.
 								The node may be specified by path and/or by identification properties.
 								The connector returns an ordered list of locations for each child found on the node,
 								an empty list if the node had no children,
-								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 								If the node is found, the connector sets on the request the actual location of the parent node (including the path and identification properties).
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>ReadBlockOfChildrenRequest</entry>
 							<entry>
-								A request to read from the source a block of children of a node, starting with the n<superscript>th</superscript> children.
+								A request to read from the named workspace in the source a block of children of a node, starting with the n<superscript>th</superscript> children.
 								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
 								The node may be specified by path and/or by identification properties, and the block
 								is defined by a starting index and a count (i.e., the block size).
 								The connector returns an ordered list of locations for each of the node's children found in the block,
 								or an empty list if there are no children in that range.
 								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
-								or sets a &PathNotFoundException; error on the request if the parent node did not exist.
+								or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>ReadNextBlockOfChildrenRequest</entry>
 							<entry>
-								A request to read from the source a block of children of a node, starting with the children that immediately follow
+								A request to read from the named workspace in the source a block of children of a node, starting with the children that immediately follow
 								a previously-returned child.
 								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
 								The node may be specified by path and/or by identification properties, and the block
@@ -984,7 +1042,8 @@ public interface &RepositoryConnection; {
 								The connector returns an ordered list of locations for each of the node's children found in the block,
 								or an empty list if there are no children in that range.
 								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
-								or sets a &PathNotFoundException; error on the request if the parent node did not exist.
+								or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -997,7 +1056,8 @@ public interface &RepositoryConnection; {
 								nodes found in the branch.  
 								The connector also sets on the request the actual location of the branch's root node (including the path and identification properties).
 								The connector sets a &PathNotFoundException; error on the request if the node at 
-								the top of the branch does not exist.
+								the top of the branch does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1009,7 +1069,8 @@ public interface &RepositoryConnection; {
 								will have their SNS indexes adjusted.  However, if the requested location does not include a SNS index, the new
 								node is added after all existing children, and it's SNS index is set accordingly.)
 								The connector also sets on the request the actual location of the new node (including the path and identification properties)..
-								The connector sets a &PathNotFoundException; error on the request if the parent node does not exist.
+								The connector sets a &PathNotFoundException; error on the request if the parent node does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1018,7 +1079,8 @@ public interface &RepositoryConnection; {
 								A request to remove a set of properties on an existing node.  The request contains the location of the node as well as the
 								names of the properties to be removed.  The connector performs these changes and sets on the request the
 								actual location (including the path and identification properties) of the node.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1027,7 +1089,8 @@ public interface &RepositoryConnection; {
 								A request to set or update properties on an existing node.  The request contains the location of the node as well as the
 								properties to be set and those to be deleted.  The connector performs these changes and sets on the request the
 								actual location (including the path and identification properties) of the node.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1036,19 +1099,23 @@ public interface &RepositoryConnection; {
 								A request to change the name of a node.  The connector changes the node's name, adjusts all SNS indexes
 								accordingly, and returns the actual locations (including the path and identification properties) of both the original
 								location and the new location.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
 							<entry>CopyBranchRequest</entry>
 							<entry>
 								A request to copy a portion of a subgraph that has as its root a particular node, up to a maximum depth.
+								The request includes the name of the workspace where the original node is located as well as the name of the
+								workspace where the copy is to be placed (these may be the same, but may be different).
 								The connector copies the branch from the original location, up to the specified maximum depth, and places a copy
 								of the node as a child of the new location.
 								The connector also sets on the request the actual location (including the path and identification properties)
 								of the original location as well as the location of the new copy.
 								The connector sets a &PathNotFoundException; error on the request if the node at 
-								the top of the branch does not exist.
+								the top of the branch does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if one of the named workspaces does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1059,7 +1126,8 @@ public interface &RepositoryConnection; {
 								The connector also sets on the request the actual location (including the path and identification properties)
 								of the original and new locations.  The connector will adjust SNS indexes accordingly.
 								The connector sets a &PathNotFoundException; error on the request if the node that is to be moved or the
-								new location do not exist.
+								new location do not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1068,7 +1136,8 @@ public interface &RepositoryConnection; {
 								A request to delete an entire branch specified by a single node's location.
 								The connector deletes the specified node and all nodes below it, and sets the actual location,
 								including the path and identification properties, of the node that was deleted.
-								The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist.
+								The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist in the workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
 							</entry>
 						</row>
 						<row>
@@ -1077,6 +1146,60 @@ public interface &RepositoryConnection; {
 								A request that actually comprises multiple requests (none of which will be a composite).
 								The connector simply processes all of the requests in the composite request, but should set on the composite
 								request any error (usually the first error) that occurs during processing of the contained requests.
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>There are also requests that deal with workspaces:</para>
+			<table frame='all'>
+				<title>Types of Workspace Requests</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Name</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>GetWorkspacesRequest</entry>
+							<entry>
+								A request to obtain the names of the existing workspaces that are accessible to the caller.
+							</entry>
+						</row>
+						<row>
+							<entry>VerifyWorkspaceRequest</entry>
+							<entry>
+								A request to verify that a workspace with a particular name exists.
+								The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
+								(e.g., the default workspace name if a null name is supplied).
+							</entry>
+						</row>
+						<row>
+							<entry>CreateWorkspaceRequest</entry>
+							<entry>
+								A request to create a workspace with a particular name.
+								The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
+								(e.g., the default workspace name if a null name is supplied).
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace already exists.
+							</entry>
+						</row>
+						<row>
+							<entry>DestroyWorkspaceRequest</entry>
+							<entry>
+								A request to destroy a workspace with a particular name.
+								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>CloneWorkspaceRequest</entry>
+							<entry>
+								A request to clone one named workspace as another new named workspace.
+								The connector sets a &InvalidWorkspaceException; error on the request if the original workspace does not exist, 
+								or if the new workspace already exists.
 							</entry>
 						</row>
 					</tbody>
@@ -1101,10 +1224,10 @@ public interface &RepositoryConnection; {
 			</para>
 			<note>
 				<para>
-					In many cases, the default implementations of the <code>process(...)</code> methods are <emphasis>sufficient</emphasis>
-					but probably not efficient or optimum.  If that is the case, simply provide your own methods that perform the request
-					in a manner that is efficient for your source.  However, if performance is not a big issue, all of the concrete methods
-					will provide the correct behavior.  And remember, you can always provide better implementations later.
+					The &RequestProcessor; abstract class contains default implementations for quite a few of the <code>process(...)</code> methods,
+					and these will be <emphasis>sufficient</emphasis>	but probably not efficient or optimum.  If you can provide a more efficient
+					implementation given your source, feel free to do so.  However, if performance is not a big issue, all of the concrete methods
+					will provide the correct behavior. Keep things simple to start out - you can always provide better implementations later.
 				</para>
 			</note>
 			<para>
@@ -1116,7 +1239,11 @@ public interface &RepositoryConnection; {
 public void execute( final &ExecutionContext; context,
                      final &Request; request ) throws RepositorySourceException {
     RequestProcessor processor = new RequestProcessor(context);
-    processor.process(request);
+    try {
+        processor.process(request);
+    } finally {
+        processor.close();
+    }
 }</programlisting>
 			<para>
 				If you do this, the bulk of your connector implementation may be in the &RequestProcessor; implementation methods.
@@ -1191,8 +1318,67 @@ public void execute( final &ExecutionContext; context,
 			Just remember that under the covers, a &Graph; is just building &Request; objects, submitting them to the connector,
 			and then exposing the results.
 		</para>
+		<sect2 id="dna_graph_api_workspaces">
+			<title>Using workspaces</title>
 		<para>
-			Let's look at some examples of how the Graph API works.  This first example returns a map of properties (keyed by property name) 
+			Let's look at some examples of how the Graph API works.  This first example shows how to obtain the names of the available workspaces:
+		</para>
+		<programlisting>
+&Set;&lt;&String;> workspaceNames = graph.getWorkspaces();
+</programlisting>
+		<para>Once you know the name of the workspace, you can specify that the graph should use it:
+		</para>
+		<programlisting>
+graph.useWorkspace("myWorkspace");
+</programlisting>
+		<para>
+			From this point forward, all requests will apply to the workspace named "myWorkspace".  At any time, you can use a different workspace,
+			which will affect all subsequent requests made using the graph.  Of course, creating a new workspace is just as easy:
+		</para>
+		<programlisting>
+graph.createWorkspace().named("newWorkspace");
+</programlisting>
+	  <para>This will attempt to create a workspace named "newWorkspace", which will fail if that workspace already exists.  You may
+		want to create a new workspace with a name that should be altered if the name you supply is already used.  The following code shows
+		how you can do this:
+		</para>
+		<programlisting>
+graph.createWorkspace().namedSomethingLike("newWorkspace");
+</programlisting>
+	  <para>If there is no existing workspace named "newWorkspace", a new one will be created with this name.  However, if "newWorkspace" already
+		exists, this call will create a workspace with a name that is some alteration of the supplied name.
+		</para>
+	  <para>
+		You can also clone workspaces, too:
+		</para>
+		<programlisting>
+graph.createWorkspace().clonedFrom("original").named("something");
+</programlisting>
+		<para>
+			or
+		</para>
+		<programlisting>
+graph.createWorkspace().clonedFrom("original").namedSomethingLike("something");
+</programlisting>
+		<para>
+			As you can see, it's very easy to specify which workspace you want to use or to create new workspaces.  You can also find out which workspace
+			the graph is currently using:
+		</para>
+		<programlisting>
+&String; current = graph.getCurrentWorkspaceName();
+</programlisting>
+		<para>or, if you want, you can get more information about the workspace:
+		</para>
+		<programlisting>
+&Workspace; current = graph.getCurrentWorkspace();
+&String; name = current.getName();
+&Location; rootLocation = current.getRoot();
+</programlisting>
+    </sect2>
+		<sect2 id="dna_graph_api_nodes">
+			<title>Working with nodes</title>
+		<para>
+			Now let's switch to working with nodes.  This first example returns a map of properties (keyed by property name) 
 			for a node at a specific &Path;:
 		</para>
 		<programlisting>
@@ -1268,6 +1454,7 @@ for ( &Location; child : results.getNode(path2) ) {
 			The &Graph; interface is actually quite complete and offers a full-featured approach for reading and updating a graph.
 			For more information, see the &Graph; JavaDocs.
 		</para>
+	</sect2>
 	</sect1>
 	<sect1>
 		<title>Summary</title>

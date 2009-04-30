@@ -129,4 +129,24 @@
 			to do it quickly and in a way that makes it easy to understand what the code is supposed to do (or not do).
 		</para>
 	</sect1>
+  <sect1 id="tck-tests">
+    <title>Technology Compatibility Kit (TCK) tests</title>
+    <para>
+    	Many Java specifications provide TCK test suites that can be used to check or verify that an implementation
+      correctly implements the API or SPI defined by the specification.  These TCK tests vary by technology, but
+			<ulink url="&JSR170;">JSR-170</ulink> does provide TCK tests that ensure that a JCR repository implementation exhibits the correct and expected
+			behavior.
+	  </para>
+	  <para>
+		  JBoss DNA has not yet passed enough of the TCK tests to publish the results.  We still have to implement
+		  queries, which is a required feature of Level 1 repositories.  However, suffice to say that JBoss DNA has passed
+		  many of the individual tests that make up the Level 1 and Level 2 tests, and it is a major objective of the next
+		  release to pass the remaining Level 1 and Level 2 tests (along with some other optional features).
+    </para>
+		<para>
+			JBoss DNA also frequently runs the JCR unit tests from the Apache Jackrabbit project.  (Those these tests are not
+			the official TCK, they apparently are used within the official TCK.)  These unit tests are set up in the
+			<code>dna-jcr-tck</code> project.
+		</para>
+  </sect1>
 </chapter>

@@ -45,9 +45,10 @@
   </sect1>
   <sect1 id="architecture">
     <title>Architecture</title>
-    <para>The architecture for JBoss DNA consists of several major components that will be built on top of standard APIs,
+    <para>The planned architecture for JBoss DNA consists of several major components that will be built on top of standard APIs,
       including JCR, JDBC, JNDI and HTTP. The goal is to allow these components to be assembled as needed and add value on top
-      of other DNA components or third-party systems that support these standard APIs.</para>
+      of other DNA components or third-party systems that support these standard APIs.  Not all of these components exist
+      yet - at the moment we're focusing on completing our JCR-compliant implementation using our connector framework.</para>
     <mediaobject>
       <imageobject role="fo">
         <imagedata align="center" fileref="dna-architecture.png" />
@@ -57,18 +58,87 @@
       </imageobject>
     </mediaobject>
     <para>
-      As shown in the diagram above, the major components are (starting at the top):
+      Let's go over each of these components, starting from the bottom of the diagram:
       <itemizedlist>
         <listitem>
           <para>
+            <emphasis role="strong">DNA Connectors</emphasis>
+            are used to communicate with these external sources of information, whether there's one source (like a database) in
+ 						which all of the content is stored, or information is being federated from multiple sources.  The connector's
+ 						job is to interact with the external source and map the source's information into the lower-level graph language used by
+						JBoss DNA.  Connectors also may optionally participate in distributed transactions by exposing an XAResource.
+						In summary, then, the connector API isolates all of the other components from how the graph are persisted.
+						We've built a number of connectors already, but we're always interested in adding more.  Or, you could write your own,
+						since we've designed the connector API to be as straightforward as possible.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA Federation</emphasis>
+            is actually special repository connector that accesses information from multiple other sources via connectors,
+ 						making all this information look like it is part of a single, unified graph.  Because it is a connector,
+ 						it can be used wherever connectors can be used.  And because it uses connectors, the federation connector
+						makes it possible to integrate a wide variety of external systems, like other JCR
+            repositories, databases, applications, and services.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA JCR</emphasis>
+            is an implementation of the JCR API that accesses the content from a single connector.  Our implementation has come a long
+						with in the 0.4 release, and is nearly Level 1 and Level 2 compliant.  Finishing the remaining features, including search
+						and query, are major objectives of our next release.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA Sequencers</emphasis>
+            are pluggable components that automatically process content (typically files) that are uploaded into the repository,
+						looking for useful structure and information in that content.  When a file is uploaded to the repository, JBoss DNA automatically
+						figures out which sequencer(s) should be run, and then runs them.  Each sequencer, then, extracts the meaningful information
+						from the file's content and places that structure in the repository.  Once this information is in
+            the repository, it can be viewed, edited, analyzed, searched, and related to other content. DNA defines a Java
+            interface that sequencers must implement. DNA sequencers operate upon any JCR-compliant repository.
+						We have a number of sequencers, but plan on adding more over time.  Like connectors, the Sequencer API makes it very
+						simple to write sequencers for your own file types.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA Analyses</emphasis>
+            are similar to sequencers, except they process the graph structure rather than uploaded files.  You can think of them
+ 						as report generators, where they process some area of the repository and generate output.  The output doesn't take the
+						form of a document or file, but rather more graph content that is then stored in the repository, where it can be accessed
+						and searched just like any other content.  We're still figuring out how to best make analyzers easy to write and use,
+						and have been focused on other aspects of the architecture.  But we're planning on using analyzers for dependency,
+						similarity, and statistical analyses.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA Maven</emphasis>
+            is a classloader library compatible with Maven 2 project dependencies. This allows the creation of Java ClassLoader
+            instances using Maven 2 style paths, and all dependencies are transitively managed and included.  This exists but is
+						still immature.
+          </para>
+        </listitem>
+      </itemizedlist>
+    </para>
+		<para>
+			The remaining parts of the architecture haven't yet been started, but they service important purposes for a complete metadata
+			repository system.
+			<itemizedlist>
+        <listitem>
+          <para>
             <emphasis role="strong">DNA Eclipse Plugins</emphasis>
-            enable Eclipse users to access the contents of a JBoss DNA repository.
+            enable Eclipse users to access the contents of a JBoss DNA repository.  This is a planned component that may be started soon.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">DNA JDBC Driver</emphasis>
             provides a driver implementation, allowing JDBC-aware applications to connect to and use a JBoss DNA repository.
+            This is a planned component on our roadmap.
           </para>
         </listitem>
         <listitem>
@@ -106,74 +176,19 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">DNA Sequencers</emphasis>
-            are pluggable components that make it possible for content to be uploaded to the repository and automatically
-            processed to extract meaningful structure and place that structure in the repository. Once this information is in
-            the repository, it can be viewed, edited, analyzed, searched, and related to other content. DNA defines a Java
-            interface that sequencers must implement. DNA sequencers operate upon any JCR-compliant repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">DNA Analyses</emphasis>
-            are pluggable components that analyze content and the relationships between content to generate reports or to answer
-            queries. DNA will include some standard analyzers, like dependency analysis and similarity analysis, that are
-            commonly needed by many different solutions. DNA analyzers operate upon any JCR-compliant repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">DNA Views</emphasis>
             are definitions of how types of information are to be presented in a user interface to allow for creation, reading,
             editing, and deletion of information. DNA view definitions consist of data stored in a JCR repository, and as such
             views can be easily added, changed or removed entirely by using the DNA Web Application, requiring no programming.
           </para>
         </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">DNA Repositories</emphasis>
-            is an implementation of the JCR API that builds the content within the repository by accessing and integrating
-            information from one or more sources. 
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">DNA Federation</emphasis>
-            is a special repository connector that accesses information from multiple sources and makes it accessible 
-						as if it were a single repository. DNA Federation allows the integration of external systems, like other JCR
-            repositories, databases, applications, and services.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">DNA Connectors</emphasis>
-            are used to communicate with these external sources of information. In the federation engine, each source is able to
-            contribute node structure and node properties to any part of the federated graph, although typically many connectors
-            will contribute most of their information to isolated subgraphs. The result is that integration from a wide range of
-            systems can be integrated and accessed through the DNA Web Application, DNA Publishing Server, and DNA WebDAV
-            Server. Connectors also may optionally participate in distributed transactions by exposing an XAResource.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">DNA Maven</emphasis>
-            is a classloader library compatible with Maven 2 project dependencies. This allows the creation of Java ClassLoader
-            instances using Maven 2 style paths, and all dependencies are transitively managed and included.
-          </para>
-        </listitem>
       </itemizedlist>
     </para>
     <para>
       Continue reading the rest of this chapter for more detail about the
-      <link linkend="sequencers">sequencing framework</link>
-      available in this release, or the
-      <link linkend="federation">federation engine</link>
-      and
-      <link linkend="federation_connectors">connectors</link>
-      that will be the focus of the next release. Or, skip to the
-      <link linkend="downloading_and_running">examples</link>
-      to see how to start using JBoss DNA &versionNumber;
-      today. 
+      <link linkend="sequencers">sequencing framework</link> available in this release, or the <link linkend="federation">federation engine</link>
+      and <link linkend="federation_connectors">connectors</link>. Or, skip to the <link linkend="downloading_and_running">examples</link>
+      to see how to start using JBoss DNA &versionNumber; today. 
     </para>
   </sect1>
   <sect1 id="sequencers">
@@ -190,7 +205,7 @@
       policies, UML, MetaMatrix models, etc.</para>
     <para>
       JBoss DNA sequencers sit on top of existing JCR repositories (including federated repositories) - they basically extract
-      more useful information from what's already stored in the repository. And they use the existing JCR versioning system. Each
+      more useful information from what's already stored in the repository. And they use the existing JCR event and versioning system. Each
       sequencer typically processes a single kind of file format or a single kind of content. </para>
     <para>The following sequencers are included in JBoss DNA:
       <itemizedlist>
@@ -201,9 +216,7 @@
             writes that image metadata to the repository. It gets the file format, image resolution, number of bits per pixel
             (and optionally number of images), comments and physical resolution from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM,
             PGM, PPM, and PSD files. (This sequencer may be improved in the future to also extract EXIF metadata from JPEG
-            files; see
-            <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
-            .)
+            files; see <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>.)
           </para>
         </listitem>
         <listitem>
@@ -212,8 +225,39 @@
             - A sequencer that processes the contents of an MP3 audio file, extracts the metadata for the file, and then
             writes that image metadata to the repository. It gets the title, author, album, year, and comment.  
             (This sequencer may be improved in the future to also extract other ID3 metadata from other audio file formats; see
-            <ulink url="http://jira.jboss.org/jira/browse/DNA-66">DNA-26</ulink>
-            .)
+            <ulink url="http://jira.jboss.org/jira/browse/DNA-66">DNA-66</ulink>.)
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">ZIP Archive Sequencer</emphasis>
+            - Process ZIP archive files to extract (explode) the contents into the repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Java Source File Sequencer</emphasis>
+            - Process Java source files to extract the class structure (including annotations) into the repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">XML File Sequencer</emphasis>
+            - Process XML files to extract the structure into the repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Microsoft Office File Sequencer</emphasis>
+            - Process Microsoft Office documents, spreadsheets, and presentation files to extract their basic structure.
+						For example, the sequencer extracts the outline of a document, or the title and outline of a presentation. 
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">JCR Compact Node Definition (CND) File Sequencer</emphasis>
+            - Process the CND files defined by JCR, extracting the various node types with their property definitions and child
+						node definitions.
           </para>
         </listitem>
       </itemizedlist>
@@ -222,6 +266,16 @@
       As the community develops additional sequencers, they will also be included in JBoss DNA. Some of those that have been
       identified as being useful include:
       <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">Data Definition Language (DDL) Sequencer</emphasis>
+            - Process various dialects of DDL, including that from Oracle, SQL Server, MySQL, PostgreSQL, and others. May need
+            to be split up into a different sequencer for each dialect. This sequencer is being developed as part of a
+						Google Summer of Code 2009 project. (See
+            <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
+            )
+          </para>
+        </listitem>
         <listitem>
           <para>
             <emphasis role="strong">XML Schema Document (XSD) Sequencer</emphasis>
@@ -259,14 +313,6 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">ZIP Archive Sequencer</emphasis>
-            - Process ZIP archive files to extract (explode) the contents into the repository. (See
-            <ulink url="http://jira.jboss.org/jira/browse/DNA-63">DNA-63</ulink>
-            )
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">Java Archive (JAR) Sequencer</emphasis>
             - Process JAR files to extract (explode) the contents into the classes and file resources. (See
             <ulink url="http://jira.jboss.org/jira/browse/DNA-64">DNA-64</ulink>
@@ -284,14 +330,6 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">Java Source File Sequencer</emphasis>
-            - Process Java source files to extract the class structure (including annotations) into the repository. (See
-            <ulink url="http://jira.jboss.org/jira/browse/DNA-51">DNA-51</ulink>
-            )
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">PDF Sequencer</emphasis>
             - Process PDF files to extract the document metadata, including table of contents. (See
             <ulink url="http://jira.jboss.org/jira/browse/DNA-50">DNA-50</ulink>
@@ -304,15 +342,6 @@
             - Process Maven 2 Project Object Model (POM) files to extract the project information, dependencies, plugins, and
             other content. (See
             <ulink url="http://jira.jboss.org/jira/browse/DNA-24">DNA-24</ulink>
-            )
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">Data Definition Language (DDL) Sequencer</emphasis>
-            - Process various dialects of DDL, including that from Oracle, SQL Server, MySQL, PostgreSQL, and others. May need
-            to be split up into a different sequencer for each dialect. (See
-            <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
             )
           </para>
         </listitem>
@@ -342,7 +371,7 @@
       to access that information as if it were all stored in a single JCR repository, but to really leave the information where
       it is.</para>
     <para>Why not just copy or move the information into a JCR repository?  Moving it is probably pretty difficult, since most 
-			likely there are existing applications that rely upon that information being where it is.  All of those applications
+			likely existing applications rely upon that information being where it is.  All of those applications
 			would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
 			This not only is a lot of work, but it often creates issues with knowing which information is accurate.
 		</para>
@@ -500,11 +529,6 @@
         (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
         be consulted prior to returning the query results, as the results from one source might have contributions from another
         source.</para>
-      <note>
-        <para> It is hoped that the MetaMatrix query engine can be used for this purpose after it is open-sourced. This engine
-          implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
-        </para>
-      </note>
       <para>Searching the whole federated repository is also important. This allows users to simply supply a handful of
         search terms, and to get results that are ranked based upon how close each result is to the search terms. (Searching is
         very different from querying, which involves specifying the exact semantics of what is to be searched and how the

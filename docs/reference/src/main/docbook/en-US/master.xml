@@ -34,7 +34,7 @@
 		<subtitle>Reference Guide</subtitle>
 		<releaseinfo>&versionNumber;</releaseinfo>
 		<productnumber>&versionNumber;</productnumber>
-		<issuenum>1</issuenum>
+		<issuenum>4</issuenum>
 		<mediaobject>
 			<imageobject role="fo">
 				<imagedata fileref="dna-logo.png" align="center"/>

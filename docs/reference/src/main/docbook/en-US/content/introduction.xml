@@ -170,7 +170,7 @@
 	  </para>
 	  <para>
 	    The <emphasis>JBoss DNA project</emphasis>
-	    is building unified metadata repository system that is compliant with JCR.  Nearly all of these capabilities are to be hidden
+	    is building unified metadata repository system that will be compliant with JCR.  Nearly all of these capabilities are to be hidden
 	    below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
 	    existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
 	    have the file content indexed for search purposes. JBoss DNA also defines a library for "sequencing" content - to extract

@@ -403,6 +403,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-jcr-tck</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-federation</artifactId>
 				<version>${pom.version}</version>
 			</dependency>
@@ -413,7 +418,57 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-connector-store-jpa</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-connector-filesystem</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-connector-svn</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-mimetype-detector-aperture</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-cnd</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-images</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-java</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-mp3</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-msoffice</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-xml</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-sequencer-zip</artifactId>
 				<version>${pom.version}</version>
 			</dependency>
 			<!-- 
