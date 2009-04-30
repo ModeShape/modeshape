@@ -66,6 +66,15 @@ public interface Destination {
                         Property... additionalProperties );
 
     /**
+     * Sets the given properties on the node at the supplied path. The path will be absolute.
+     * 
+     * @param path the absolute path of the node
+     * @param properties the remaining properties for the node
+     */
+    public void setProperties( Path path,
+                               Property... properties );
+
+    /**
      * Signal to this destination that any enqueued create requests should be submitted. Usually this happens at the end of the
      * document parsing, but an implementer must allow for it to be called multiple times and anytime during parsing.
      */

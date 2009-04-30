@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <Hybrid>
+        <car name="Toyota Prius" maker="Toyota" model="Prius"/>
+        <car name="Toyota Highlander" maker="Toyota" model="Highlander"/>
+        <car name="Nissan Altima">
+            <property jcr:name="maker">Nissan</property>
+            <model>Altima</model>
+        </car>
+    </Hybrid>
+    <Sports>
+        <car name="Aston Martin DB9" maker="Aston Martin" model="DB9"/>
+        <car name="Infiniti G37">
+            <maker>Infiniti</maker>
+            <category>Turbocharged</category>
+            <driver name="Tony Stewart" />
+            <property jcr:name="model">G37</property>
+            <category>My <![CDATA[Sedan]]></category>
+        </car>
+        <car name="Infiniti G37" maker="Infiniti" model="G37">
+	       <unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my text " />
+	       <unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="that should be merged" />        
+        </car>
+    </Sports>
+</Cars>

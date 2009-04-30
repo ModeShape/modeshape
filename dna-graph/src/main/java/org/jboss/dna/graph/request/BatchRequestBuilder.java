@@ -94,7 +94,7 @@ public class BatchRequestBuilder {
                 return newRequest;
             }
             // We have at least one other request, so add the pending request ...
-            add(newRequest);
+            addPending();
             ++number;
         } else {
             // There is no pending request ...

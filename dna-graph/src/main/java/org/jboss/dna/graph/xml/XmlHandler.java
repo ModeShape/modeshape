@@ -24,6 +24,9 @@
 package org.jboss.dna.graph.xml;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,6 +48,8 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.xml.sax.Attributes;
 import org.xml.sax.ext.DefaultHandler2;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * A {@link DefaultHandler2} specialization that responds to XML content events by creating the corresponding content in the
@@ -160,6 +165,20 @@ public class XmlHandler extends DefaultHandler2 {
      * array of values for each property).
      */
     protected final Object[] propertyValues = new Object[1];
+
+    /**
+     * Character buffer to aggregate nested character data
+     * 
+     * @see ElementEntry
+     */
+    private StringBuilder characterDataBuffer = new StringBuilder();
+
+    /**
+     * Stack of pending {@link ElementEntry element entries} from the root of the imported content to the current node.
+     * 
+     * @see ElementEntry
+     */
+    private final LinkedList<ElementEntry> elementStack = new LinkedList<ElementEntry>();
 
     /**
      * Create a handler that creates content in the supplied graph
@@ -310,6 +329,16 @@ public class XmlHandler extends DefaultHandler2 {
         assert localName != null;
         Name nodeName = null;
 
+        ElementEntry element;
+        if (!elementStack.isEmpty()) {
+            // Add the parent
+            elementStack.peek().addAsNode();
+            element = new ElementEntry(elementStack.peek(), currentPath, null);
+        } else {
+            element = new ElementEntry(null, currentPath, null);
+        }
+        elementStack.addFirst(element);
+
         properties.clear();
         Object typePropertyValue = null;
         // Convert each of the attributes to a property ...
@@ -333,6 +362,7 @@ public class XmlHandler extends DefaultHandler2 {
             // Check to see if this is an attribute that represents the node name (which may be null) ...
             if (nodeName == null && attributeName.equals(nameAttribute)) {
                 nodeName = nameFactory.create(attributes.getValue(i)); // don't use a decoder
+                element.setName(nodeName);
                 continue;
             }
             if (typePropertyValue == null && attributeName.equals(typeAttribute)) {
@@ -340,13 +370,13 @@ public class XmlHandler extends DefaultHandler2 {
                 continue;
             }
             // Create a property for this attribute ...
-            Property property = createProperty(attributeName, attributes.getValue(i));
-            properties.add(property);
+            element.addProperty(attributeName, attributes.getValue(i));
         }
         // Create the node name if required ...
         if (nodeName == null) {
             // No attribute defines the node name ...
             nodeName = nameFactory.create(uri, localName, decoder);
+            element.setName(nodeName);
         } else {
             if (typePropertyValue == null) typePropertyValue = nameFactory.create(uri, localName, decoder);
         }
@@ -354,15 +384,12 @@ public class XmlHandler extends DefaultHandler2 {
             // A attribute defines the node name. Set the type property, if required
             if (typePropertyValue == null) typePropertyValue = typeAttributeValue;
             if (typePropertyValue != null) {
-                propertyValues[0] = typePropertyValue;
-                Property property = propertyFactory.create(typeAttribute, propertyValues);
-                properties.add(property);
+                element.addProperty(typeAttribute, typePropertyValue);
             }
         }
+
         // Update the current path ...
-        currentPath = pathFactory.create(currentPath, nodeName);
-        // Create the node, and note that we don't care about same-name siblings (as the graph will correct them) ...
-        destination.create(currentPath, properties);
+        currentPath = element.path();
     }
 
     /**
@@ -374,8 +401,30 @@ public class XmlHandler extends DefaultHandler2 {
     public void endElement( String uri,
                             String localName,
                             String name ) {
+
+        String s = characterDataBuffer.toString().trim();
+        if (s.length() > 0) {
+            elementStack.removeFirst().addAsPropertySetTo(s);
+        } else if (!elementStack.isEmpty()) {
+            elementStack.removeFirst().submit();
+        }
+        characterDataBuffer = new StringBuilder();
+
         // Nothing to do but to change the current path to be the parent ...
         currentPath = currentPath.getParent();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
+     */
+    @Override
+    public void characters( char[] ch,
+                            int start,
+                            int length ) {
+        // Have to add this to a buffer as one logical set of character data can cause this method to fire multiple times
+        characterDataBuffer.append(ch, start, length);
     }
 
     /**
@@ -402,8 +451,118 @@ public class XmlHandler extends DefaultHandler2 {
     protected Property createProperty( Name propertyName,
                                        Object value ) {
         propertyValues[0] = value;
-        Property result = propertyFactory.create(propertyName, propertyValues);
-        return result;
+        return propertyFactory.create(propertyName, propertyValues);
     }
 
+    /**
+     * Create a property with the given name and values, obtained from an attribute name and value in the XML content.
+     * <p>
+     * By default, this method creates a property by directly using the values as the values of the property.
+     * </p>
+     * 
+     * @param propertyName the name of the property; never null
+     * @param values the attribute values
+     * @return the property; may not be null
+     */
+    protected Property createProperty( Name propertyName,
+                                       Collection<Object> values ) {
+        return propertyFactory.create(propertyName, values);
+    }
+
+    /**
+     * Possible states for an {@link ElementEntry} instance. All element entries start in state {@code TBD} and then transition to
+     * one of the terminating states, {@code NODE} or {@code PROPERTY} when {@link ElementEntry#addAsNode()} or
+     * {@link ElementEntry#addAsPropertySetTo(Object)} is invoked.
+     */
+    protected enum ElementEntryState {
+        NODE,
+        PROPERTY,
+        TBD
+    }
+
+    /**
+     * Element entries hold references to the data of "pending" elements. "Pending" elements are elements which have been
+     * encountered through a {@link XmlHandler#startElement(String, String, String, Attributes)} event but have not yet been fully
+     * committed to the {@link XmlHandler#destination}.
+     * <p>
+     * As the current import semantics allow elements with nested character data to be imported as properties, it is not always
+     * possible to determine whether the element represents a node or a property from within the {@code startElement} method.
+     * Therefore, {@code ElementEntries} are initially created in an {@link ElementEntryState#TBD unknown state} and submitted to
+     * the {@code destination} when it can be positively determined that the entry represents a property (if nested character data
+     * is encountered) or a node (if a child node is detected or the {@link XmlHandler#endElement(String, String, String)} method
+     * is invoked prior to encountering nested character data).
+     * </p>
+     * <p>
+     * As DNA does not currently support a way to add a value to an existing property through the Graph API, {@code
+     * ElementEntries} also contain a {@link Multimap} of property names to values. The node's properties are aggregated and only
+     * submitted to the {@code destination} when the {@link XmlHandler#endElement(String, String, String)} event fires.
+     * </p>
+     */
+    private class ElementEntry {
+
+        private ElementEntry parent;
+        // Stored separately since the root node has no parent ElementEntry but does have a path
+        private Path pathToParent;
+        private Path pathToThisNode;
+        private Name name;
+        private Multimap<Name, Object> properties;
+        private ElementEntryState state;
+
+        protected ElementEntry( ElementEntry parent,
+                                Path pathToParent,
+                                Name name ) {
+            this.parent = parent;
+            this.pathToParent = pathToParent;
+            this.name = name;
+            this.state = ElementEntryState.TBD;
+            properties = new LinkedHashMultimap<Name, Object>();
+        }
+
+        protected void setName( Name name ) {
+            this.name = name;
+            pathToThisNode = pathFactory.create(pathToParent, name);
+        }
+
+        protected void addProperty( Name propertyName,
+                                    Object propertyValue ) {
+            assert state != ElementEntryState.PROPERTY;
+            properties.put(propertyName, propertyValue);
+        }
+
+        protected void addAsNode() {
+            assert state != ElementEntryState.PROPERTY;
+            if (state == ElementEntryState.NODE) return;
+
+            state = ElementEntryState.NODE;
+            destination.create(pathFactory.create(pathToParent, name), Collections.<Property>emptyList());
+        }
+
+        protected void addAsPropertySetTo( Object value ) {
+            assert state != ElementEntryState.NODE;
+            state = ElementEntryState.PROPERTY;
+            parent.addProperty(name, value);
+        }
+
+        protected final Path path() {
+            return pathToThisNode;
+        }
+
+        protected void submit() {
+            if (state == ElementEntryState.PROPERTY) return;
+
+            if (state == ElementEntryState.NODE && properties.size() == 0) return;
+            Property[] propertiesToAdd = new Property[properties.size()];
+            int i = 0;
+            for (Name name : properties.keySet()) {
+                propertiesToAdd[i++] = createProperty(name, properties.get(name));
+            }
+
+            if (state == ElementEntryState.TBD) {
+                // Merge the add and the create
+                destination.create(pathToThisNode, Arrays.asList(propertiesToAdd));
+            } else {
+                destination.setProperties(pathToThisNode, propertiesToAdd);
+            }
+        }
+    }
 }

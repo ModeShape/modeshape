@@ -146,7 +146,11 @@ public class XmlHandlerTest {
 
     @Test
     public void shouldParseXmlDocumentWithoutNamespaces() throws IOException, SAXException {
+        System.out.println("\n");
+        System.out.flush();
         parse("xmlHandler/docWithoutNamespaces.xml");
+        System.out.println("\n");
+        System.out.flush();
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         assertNode("Cars");
         assertNode("Cars/Hybrid");
@@ -350,14 +354,18 @@ public class XmlHandlerTest {
         parse("xmlHandler/docWithoutNamespaces.xml");
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
-        assertNode("Cars", unstructPrimaryType);
-        assertNode("Cars/Hybrid", unstructPrimaryType);
+        assertNode("Cars");
+        assertNode("Cars/Hybrid");
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Prius", "maker=Toyota", "model=Prius");
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Nissan Altima", "maker=Nissan", "model=Altima");
-        assertNode("Cars/Sports", unstructPrimaryType);
+        assertProperties("Cars/Hybrid", unstructPrimaryType);
+        assertNode("Cars/Sports");
         assertNode("Cars/Sports/car", unstructPrimaryType, "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
         assertNode("Cars/Sports/car", unstructPrimaryType, "name=Infiniti G37", "maker=Infiniti", "model=G37");
+        assertProperties("Cars/Sports", unstructPrimaryType);
+        assertProperties("Cars", unstructPrimaryType);
+        
     }
 
     @Test
@@ -371,17 +379,90 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
         String carPrimaryType = "jcr:primaryType={http://default.namespace.com}car";
-        assertNode("c:Cars", unstructPrimaryType);
-        assertNode("c:Cars/c:Hybrid", unstructPrimaryType);
+        assertNode("c:Cars");
+        assertNode("c:Cars/c:Hybrid");
         assertNode("c:Cars/c:Hybrid/c:Toyota Prius", carPrimaryType, "c:maker=Toyota", "c:model=Prius");
         assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", carPrimaryType, "c:maker=Toyota", "c:model=Highlander");
         assertNode("c:Cars/c:Hybrid/c:Nissan Altima", carPrimaryType, "c:maker=Nissan", "c:model=Altima");
-        assertNode("c:Cars/c:Sports", unstructPrimaryType);
+        assertProperties("c:Cars/c:Hybrid", unstructPrimaryType);
+        assertNode("c:Cars/c:Sports");
         assertNode("c:Cars/c:Sports/c:Aston Martin DB9", carPrimaryType, "c:maker=Aston Martin", "c:model=DB9");
         assertNode("c:Cars/c:Sports/c:Infiniti G37", carPrimaryType, "c:maker=Infiniti", "c:model=G37");
+        assertProperties("c:Cars/c:Sports", unstructPrimaryType);
+        assertProperties("c:Cars", unstructPrimaryType);
+    }
+
+    @Test
+    public void shouldParseXmlDocumentWithNestedPropertiesShouldPlaceContentUnderRootNode() throws IOException, SAXException {
+        context.getNamespaceRegistry().register("jcr", "http://www.jcp.org/jcr/1.0");
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
+        parse("xmlHandler/docWithNestedProperties.xml");
+        // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
+        assertNode("Cars");
+        assertNode("Cars/Hybrid");
+        assertNode("Cars/Hybrid/car", "name=Toyota Prius", "maker=Toyota", "model=Prius");
+        assertNode("Cars/Hybrid/car", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertNode("Cars/Hybrid/car");
+        assertProperties("Cars/Hybrid/car", "name=Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/Sports");
+        assertNode("Cars/Sports/car", "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
+        assertNode("Cars/Sports/car");
+        assertNode("Cars/Sports/car/driver", "name=Tony Stewart");
+        assertProperties("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "model=G37", "category=Turbocharged=My Sedan");
+        assertNode("Cars/Sports/car");
+        assertNode("Cars/Sports/car/jcr:xmltext", "jcr:xmlcharacters=This is my text ");        
+        assertNode("Cars/Sports/car/jcr:xmltext", "jcr:xmlcharacters=that should be merged");
+        assertProperties("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "model=G37");
     }
 
     protected void assertNode( String path,
+                               String... properties ) {
+        // Create the expected path ...
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path expectedPath = parentPath != null ? factory.create(parentPath, path) : factory.create("/" + path);
+        // Now get the next request and compare the expected and actual ...
+        CreateNodeRequest request = requests.remove();
+        Path parentPath = request.under().getPath();
+        assertThat(parentPath, is(expectedPath.getParent()));
+        assertThat(request.named(), is(expectedPath.getLastSegment().getName()));
+
+        if (properties.length != 0) {
+            // Create the list of properties ...
+            Map<Name, Property> expectedProperties = new HashMap<Name, Property>();
+            for (String propertyString : properties) {
+                String[] strings = propertyString.split("=");
+                if (strings.length < 2) continue;
+                Name name = context.getValueFactories().getNameFactory().create(strings[0]);
+                Object[] values = new Object[strings.length - 1];
+                for (int i = 1; i != strings.length; ++i) {
+                    values[i - 1] = strings[i];
+                }
+                Property property = context.getPropertyFactory().create(name, values);
+                expectedProperties.put(name, property);
+            }
+
+            for (Property actual : request.properties()) {
+                Property expected = expectedProperties.remove(actual.getName());
+                assertThat("unexpected property: " + actual, expected, is(notNullValue()));
+                assertThat(actual, is(expected));
+            }
+            if (!expectedProperties.isEmpty()) {
+                StringBuilder msg = new StringBuilder("missing actual properties: ");
+                boolean isFirst = true;
+                for (Property expected : expectedProperties.values()) {
+                    if (!isFirst) msg.append(", ");
+                    else isFirst = false;
+                    msg.append(expected.getName());
+                }
+                msg.append(" on node ").append(request.under());
+                System.out.println("Found properties: " + request.properties());
+                assertThat(msg.toString(), expectedProperties.isEmpty(), is(true));
+            }
+        }
+    }
+
+    protected void assertProperties( String path,
                                String... properties ) {
         // Create the expected path ...
         PathFactory factory = context.getValueFactories().getPathFactory();
@@ -399,12 +480,13 @@ public class XmlHandlerTest {
             Property property = context.getPropertyFactory().create(name, values);
             expectedProperties.put(name, property);
         }
-        // Now get the next request and compare the expected and actual ...
-        CreateNodeRequest request = requests.remove();
-        Path parentPath = request.under().getPath();
+
+        CreateNodeRequest propertyRequest = requests.remove();
+        Path parentPath = propertyRequest.under().getPath();
         assertThat(parentPath, is(expectedPath.getParent()));
-        assertThat(request.named(), is(expectedPath.getLastSegment().getName()));
-        for (Property actual : request.properties()) {
+        assertThat(propertyRequest.named(), is(expectedPath.getLastSegment().getName()));
+
+        for (Property actual : propertyRequest.properties()) {
             Property expected = expectedProperties.remove(actual.getName());
             assertThat("unexpected property: " + actual, expected, is(notNullValue()));
             assertThat(actual, is(expected));
@@ -417,6 +499,8 @@ public class XmlHandlerTest {
                 else isFirst = false;
                 msg.append(expected.getName());
             }
+            msg.append(" on node ").append(propertyRequest.under());
+            System.out.println("Found properties: " + propertyRequest.properties());
             assertThat(msg.toString(), expectedProperties.isEmpty(), is(true));
         }
     }
@@ -481,6 +565,21 @@ public class XmlHandlerTest {
             }
         }
 
+        public void setProperties( Path path, 
+                                   Property... properties ) {
+            if (properties.length == 0) {
+                return;
+            }
+            else if (properties.length == 1) {
+                create(path, properties[0]);
+            }
+            else {
+               Property[] additionalProperties = new Property[properties.length - 1];
+               System.arraycopy(properties, 1, additionalProperties, 0, properties.length - 1);
+               create(path, properties[0], additionalProperties);
+            }
+        }        
+        
         @SuppressWarnings( "synthetic-access" )
         public ExecutionContext getExecutionContext() {
             return XmlHandlerTest.this.context;

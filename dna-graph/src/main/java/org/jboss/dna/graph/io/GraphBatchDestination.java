@@ -117,6 +117,18 @@ public class GraphBatchDestination implements Destination {
 
     /**
      * {@inheritDoc}
+     *
+     * @see org.jboss.dna.graph.io.Destination#setProperties(org.jboss.dna.graph.property.Path, org.jboss.dna.graph.property.Property[])
+     */
+    public void setProperties( Path path, 
+                               Property... properties ) {
+        if (properties == null) return;
+        
+        batch.set(properties).on(path);
+    }
+
+    /**
+     * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.io.Destination#submit()
      */

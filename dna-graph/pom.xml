@@ -32,6 +32,11 @@
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
     </dependency>
+    <dependency>
+        <groupId>com.google.code.google-collections</groupId>
+        <artifactId>google-collect</artifactId>
+        <version>snapshot-20080530</version>
+    </dependency>
     <!-- 
     Testing (note the scope)
     -->

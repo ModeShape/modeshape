@@ -111,6 +111,19 @@ public class CndSequencer implements StreamSequencer {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.graph.io.Destination#setProperties(org.jboss.dna.graph.property.Path,
+         *      org.jboss.dna.graph.property.Property[])
+         */
+        public void setProperties( Path path,
+                                   Property... properties ) {
+            for (Property property : properties) {
+                output.setProperty(path, property.getName(), property.getValues());
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.graph.io.Destination#submit()
          */
         public void submit() {
