@@ -3,12 +3,12 @@
 	<parent>
 		<groupId>org.jboss.dna</groupId>
 		<artifactId>dna</artifactId>
-		<version>0.4</version>
+		<version>0.5-SNAPSHOT</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>dna-sequencer-jbpm-jpdl</artifactId>
 	<packaging>jar</packaging>
-	<version>0.4</version>
+	<version>0.5-SNAPSHOT</version>
 	<name>JBoss DNA jBPM jPDL Sequencer</name>
 	<description>
 		JBoss DNA Sequencer that processes jPDL XML document
