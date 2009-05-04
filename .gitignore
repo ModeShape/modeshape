@@ -11,12 +11,21 @@
 /dna-graph/.settings
 /dna-graph/target
 
+# /dna-cnd/
+/dna-cnd/.settings
+/dna-cnd/target
+
 # /dna-integration-tests/
 /dna-integration-tests/.settings
 /dna-integration-tests/target
 
 # /dna-jcr/
+/dna-jcr/.settings
 /dna-jcr/target
+
+# /dna-jcr-tck/
+/dna-jcr-tck/.settings
+/dna-jcr-tck/target
 
 # /dna-repository/
 /dna-repository/.settings
