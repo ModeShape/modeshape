@@ -102,6 +102,15 @@
 			</roles>
 			<timezone>+10</timezone>
 		</developer>
+		<developer>
+			<name>Bojidar Penchev</name>
+			<id>dcodeboy</id>
+			<email>dcodeboy@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
