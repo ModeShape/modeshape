@@ -23,10 +23,16 @@
  */
 package org.jboss.dna.graph;
 
+import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.TextOutputCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -413,7 +419,29 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( String name,
                                   CallbackHandler callbackHandler ) throws LoginException {
-        return new ExecutionContext(this, new LoginContext(name, callbackHandler));
+        LoginContext loginContext = new LoginContext(name, callbackHandler);
+        loginContext.login();
+        
+        return new ExecutionContext(this, loginContext);
+    }
+
+    /**
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link CallbackHandler JAAS
+     * callback handler} to create a new {@link LoginContext login context} with the given user ID and password.
+     * 
+     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
+     * @param userId the user ID to use for authentication
+     * @param password the password to use for authentication
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
+     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
+     *         <code>callbackHandler</code> is null
+     */
+    public ExecutionContext with( String name,
+                                  String userId,
+                                  char[] password ) throws LoginException {
+        return this.with(name, new UserPasswordCallbackHandler(userId, password));
     }
 
     /**
@@ -434,7 +462,10 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( String name,
                                   Subject subject,
                                   CallbackHandler callbackHandler ) throws LoginException {
-        return new ExecutionContext(this, new LoginContext(name, subject, callbackHandler));
+        LoginContext loginContext = new LoginContext(name, subject, callbackHandler);
+        loginContext.login();
+        
+        return new ExecutionContext(this, loginContext);
     }
 
     /**
@@ -470,5 +501,83 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         namespaceRegistry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         // namespaceRegistry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
         // namespaceRegistry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
+    }
+
+    /**
+     * A simple {@link CallbackHandler callback handler} implementation that attempts to provide a user ID and password to any
+     * callbacks that it handles.
+     */
+    protected final class UserPasswordCallbackHandler implements CallbackHandler {
+
+        private static final boolean LOG_TO_CONSOLE = false;
+
+        private final String userId;
+        private final char[] password;
+
+        protected UserPasswordCallbackHandler( String userId,
+                                               char[] password ) {
+            this.userId = userId;
+            this.password = password;
+        }
+
+        /**
+         * 
+         * {@inheritDoc}
+         *
+         * @see javax.security.auth.callback.CallbackHandler#handle(javax.security.auth.callback.Callback[])
+         */
+        public void handle( Callback[] callbacks ) throws UnsupportedCallbackException, IOException {
+            for (int i = 0; i < callbacks.length; i++) {
+                if (callbacks[i] instanceof TextOutputCallback) {
+
+                    // display the message according to the specified type
+                    TextOutputCallback toc = (TextOutputCallback)callbacks[i];
+                    if (!LOG_TO_CONSOLE) {
+                        continue;
+                    }
+
+                    switch (toc.getMessageType()) {
+                        case TextOutputCallback.INFORMATION:
+                            System.out.println(toc.getMessage());
+                            break;
+                        case TextOutputCallback.ERROR:
+                            System.out.println("ERROR: " + toc.getMessage());
+                            break;
+                        case TextOutputCallback.WARNING:
+                            System.out.println("WARNING: " + toc.getMessage());
+                            break;
+                        default:
+                            throw new IOException("Unsupported message type: " + toc.getMessageType());
+                    }
+
+                } else if (callbacks[i] instanceof NameCallback) {
+
+                    // prompt the user for a username
+                    NameCallback nc = (NameCallback)callbacks[i];
+
+                    if (LOG_TO_CONSOLE) {
+                        // ignore the provided defaultName
+                        System.out.print(nc.getPrompt());
+                        System.out.flush();
+                    }
+
+                    nc.setName(this.userId);
+
+                } else if (callbacks[i] instanceof PasswordCallback) {
+
+                    // prompt the user for sensitive information
+                    PasswordCallback pc = (PasswordCallback)callbacks[i];
+                    if (LOG_TO_CONSOLE) {
+                        System.out.print(pc.getPrompt());
+                        System.out.flush();
+                    }
+                    pc.setPassword(this.password);
+
+                } else {
+                    throw new UnsupportedCallbackException(callbacks[i], "Unrecognized Callback");
+                }
+            }
+
+        }
     }
 }

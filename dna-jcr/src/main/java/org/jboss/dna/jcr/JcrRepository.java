@@ -36,6 +36,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
@@ -84,6 +85,11 @@ public class JcrRepository implements Repository {
          * @see DefaultOptions#PROJECT_NODE_TYPES
          */
         PROJECT_NODE_TYPES,
+        /**
+         * The {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name} that specifies which
+         * login modules should be used to validate credentials.
+         */
+        JAAS_LOGIN_CONFIG_NAME,
     }
 
     /**
@@ -94,6 +100,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Options#PROJECT_NODE_TYPES} option is {@value} .
          */
         public static final String PROJECT_NODE_TYPES = Boolean.FALSE.toString();
+
+        /**
+         * The default value for the {@link Options#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
+         */
+        public static final String JAAS_LOGIN_CONFIG_NAME = "dna-jcr";
     }
 
     /**
@@ -105,6 +116,7 @@ public class JcrRepository implements Repository {
         // Initialize the unmodifiable map of default options ...
         EnumMap<Options, String> defaults = new EnumMap<Options, String>(Options.class);
         defaults.put(Options.PROJECT_NODE_TYPES, DefaultOptions.PROJECT_NODE_TYPES);
+        defaults.put(Options.JAAS_LOGIN_CONFIG_NAME, DefaultOptions.JAAS_LOGIN_CONFIG_NAME);
         DEFAULT_OPTIONS = Collections.<Options, String>unmodifiableMap(defaults);
     }
 
@@ -291,7 +303,8 @@ public class JcrRepository implements Repository {
      * 
      * @throws IllegalArgumentException if <code>credentials</code> is not <code>null</code> but:
      *         <ul>
-     *         <li>provides neither a <code>getLoginContext()</code> nor a <code>getAccessControlContext()</code> method.</li>
+     *         <li>provides neither a <code>getLoginContext()</code> nor a <code>getAccessControlContext()</code> method and is
+     *         not an instance of {@code SimpleCredentials}.</li>
      *         <li>provides a <code>getLoginContext()</code> method that doesn't return a {@link LoginContext}.
      *         <li>provides a <code>getLoginContext()</code> method that returns a <code>null</code> {@link LoginContext}.
      *         <li>does not provide a <code>getLoginContext()</code> method, but provides a <code>getAccessControlContext()</code>
@@ -336,8 +349,16 @@ public class JcrRepository implements Repository {
                         }
                         execContext = executionContext.create(accessControlContext);
                     } catch (NoSuchMethodException error2) {
-                        throw new IllegalArgumentException(JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
-                                                           error2);
+                        if (credentials instanceof SimpleCredentials) {
+                            SimpleCredentials simple = (SimpleCredentials)credentials;
+                            execContext = executionContext.with(options.get(Options.JAAS_LOGIN_CONFIG_NAME),
+                                                                simple.getUserID(),
+                                                                simple.getPassword());
+                        } else {
+                            throw new IllegalArgumentException(
+                                                               JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
+                                                               error2);
+                        }
                     }
                 }
             } catch (RuntimeException error) {
