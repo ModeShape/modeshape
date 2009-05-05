@@ -91,6 +91,11 @@
 			Eclipse Java Development Tools (JDT) parser and its (many) required libraries
 		-->
     <dependency>
+      <groupId>org.eclipse</groupId>
+      <artifactId>osgi</artifactId>
+      <version>3.4.3.R34x_v20081215-1030</version>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jdt</groupId>
       <artifactId>core</artifactId>
       <version>3.4.2.v_883_R34x</version>
@@ -109,11 +114,6 @@
 			    <artifactId>app</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse</groupId>
-      <artifactId>osgi</artifactId>
-      <version>[3.2.0,4.0.0)</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.core</groupId>
