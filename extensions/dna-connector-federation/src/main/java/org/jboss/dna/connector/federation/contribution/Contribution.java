@@ -33,6 +33,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.JodaDateTime;
 
@@ -160,8 +161,8 @@ public abstract class Contribution implements Serializable {
                 return new EmptyContribution(sourceName, workspaceName, expirationTime);
             }
             if (children.size() == 1) {
-                return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime, children.iterator()
-                                                                                                                     .next());
+                return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime,
+                                                children.iterator().next());
             }
             if (children.size() == 2) {
                 Iterator<Location> iter = children.iterator();
@@ -402,15 +403,23 @@ public abstract class Contribution implements Serializable {
      */
     @Override
     public String toString() {
+        return getString(null);
+    }
+
+    public String getString( NamespaceRegistry registry ) {
         StringBuffer sb = new StringBuffer();
         sb.append("Contribution from \"");
         sb.append(getSourceName());
-        if (isExpired(new JodaDateTime().toUtcTimeZone())) {
-            sb.append("\": expired ");
-        } else {
-            sb.append("\": expires ");
+        sb.append("\": ");
+        DateTime expiration = getExpirationTimeInUtc();
+        if (expiration != null) {
+            if (isExpired(new JodaDateTime().toUtcTimeZone())) {
+                sb.append("expired ");
+            } else {
+                sb.append("expires ");
+            }
+            sb.append(expiration.getString());
         }
-        sb.append(getExpirationTimeInUtc().getString());
         if (getPropertyCount() != 0) {
             sb.append(" { ");
             boolean first = true;
@@ -418,7 +427,7 @@ public abstract class Contribution implements Serializable {
             while (propIter.hasNext()) {
                 if (!first) sb.append(", ");
                 else first = false;
-                sb.append(propIter.next());
+                sb.append(propIter.next().getString(registry));
             }
             sb.append(" }");
         }
@@ -429,7 +438,7 @@ public abstract class Contribution implements Serializable {
             while (childIter.hasNext()) {
                 if (!first) sb.append(", ");
                 else first = false;
-                sb.append(childIter.next());
+                sb.append(childIter.next().getString(registry));
             }
             sb.append(" >");
         }

@@ -26,8 +26,8 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -36,6 +36,12 @@ import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
+import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
+import org.jboss.dna.jcr.nodetype.NodeTypeExistsException;
+import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -49,91 +55,56 @@ public class TypeRegistrationTest {
 
     private ExecutionContext context;
     private RepositoryNodeTypeManager repoTypeManager;
-    private JcrNodeType ntTemplate;
+    private JcrNodeTypeTemplate ntTemplate;
     private NameFactory nameFactory;
-    private JcrNodeType base;
-    private JcrNodeType referenceable;
-    private JcrNodeType unstructured;
-    private JcrNodeType root;
-    private JcrNodeType hierarchyNode;
-    private JcrNodeType file;
+    private NamespaceRegistry registry;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         nameFactory = context.getValueFactories().getNameFactory();
+        registry = context.getNamespaceRegistry();
 
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(context, source);
-        source = new DnaBuiltinNodeTypeSource(this.context, source);
-        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
 
-        base = repoTypeManager.getNodeType(JcrNtLexicon.BASE);
-        referenceable = repoTypeManager.getNodeType(JcrMixLexicon.REFERENCEABLE);
-        unstructured = repoTypeManager.getNodeType(JcrNtLexicon.UNSTRUCTURED);
-        root = repoTypeManager.getNodeType(DnaLexicon.ROOT);
-        hierarchyNode = repoTypeManager.getNodeType(JcrNtLexicon.HIERARCHY_NODE);
-        file = repoTypeManager.getNodeType(JcrNtLexicon.FILE);
-    }
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
 
-    private Name nameFor( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
-    }
-
-    private JcrNodeTypeSource sourceFor( final JcrNodeType nodeType ) {
-        return new AbstractJcrNodeTypeSource() {
-            @Override
-            public List<JcrNodeType> getDeclaredNodeTypes() {
-                return Collections.singletonList(nodeType);
-            }
-        };
-    }
-
-    private JcrNodeTypeSource sourceFor( final JcrNodeType... nodeTypes ) {
-        return new AbstractJcrNodeTypeSource() {
-            @Override
-            public List<JcrNodeType> getDeclaredNodeTypes() {
-                return Arrays.asList(nodeTypes);
-            }
-        };
+        ntTemplate = new JcrNodeTypeTemplate(context);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullDefinition() throws Exception {
-        repoTypeManager.registerNodeTypes(null);
+        repoTypeManager.registerNodeType(null, true);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowTemplateWithNullContext() throws Exception {
-        repoTypeManager.registerNodeTypes(sourceFor(new JcrNodeType(null, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                                    nameFor(TEST_TYPE_NAME), Arrays.asList(new JcrNodeType[] {}),
-                                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES,
-                                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES)));
+        repoTypeManager.registerNodeType(new JcrNodeTypeTemplate(null), true);
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowNodeTypeWithNoName() throws Exception {
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, null,
-                                     Arrays.asList(new JcrNodeType[] {}), AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES, AbstractJcrNodeTypeSource.NO_PROPERTIES,
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
-        repoTypeManager.registerNodeTypes(sourceFor(ntTemplate));
+        ntTemplate.setName(null);
+        repoTypeManager.registerNodeType(ntTemplate, false);
     }
 
     @Test
     public void shouldAllowNewDefinitionWithNoChildNodesOrProperties() throws Exception {
         Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, testTypeName,
-                                     Arrays.asList(new JcrNodeType[] {}), AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES, AbstractJcrNodeTypeSource.NO_PROPERTIES,
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base"});
 
-        List<JcrNodeType> testNodeTypes = repoTypeManager.registerNodeTypes(sourceFor(ntTemplate));
-        JcrNodeType testNodeType = testNodeTypes.get(0);
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
         JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
@@ -141,40 +112,35 @@ public class TypeRegistrationTest {
         assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
     }
 
-    // @Test( expected = RepositoryException.class )
-    // public void shouldNotAllowModificationIfAllowUpdatesIsFalse() throws Exception {
-    // ntTemplate.setName("nt:base");
-    // repoTypeManager.registerNodeType(ntTemplate, false);
-    // }
+    @Test( expected = NodeTypeExistsException.class )
+    public void shouldNotAllowModificationIfAllowUpdatesIsFalse() throws Exception {
+        ntTemplate.setName("nt:base");
+        repoTypeManager.registerNodeType(ntTemplate, false);
+    }
 
-    // @Test( expected = RepositoryException.class )
-    // public void shouldNotAllowRedefinitionOfNewTypeIfAllowUpdatesIsFalse() throws Exception {
-    // Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
-    // ntTemplate.setName(TEST_TYPE_NAME);
-    // ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base"});
-    //
-    // JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
-    //
-    // assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
-    // JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
-    // assertThat(nodeTypeFromRepo, is(notNullValue()));
-    // assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
-    //
-    // testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
-    // }
+    @Test( expected = NodeTypeExistsException.class )
+    public void shouldNotAllowRedefinitionOfNewTypeIfAllowUpdatesIsFalse() throws Exception {
+        Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base"});
+
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+
+        assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
+        JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
+        assertThat(nodeTypeFromRepo, is(notNullValue()));
+        assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
+
+        testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+    }
 
     @Test
     public void shouldAllowDefinitionWithExistingSupertypes() throws Exception {
         Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, testTypeName,
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
-
-        List<JcrNodeType> testNodeTypes = repoTypeManager.registerNodeTypes(sourceFor(ntTemplate));
-        JcrNodeType testNodeType = testNodeTypes.get(0);
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
         JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
@@ -185,1030 +151,570 @@ public class TypeRegistrationTest {
 
     @Test
     public void shouldAllowDefinitionWithSupertypesFromTypesRegisteredInSameCall() throws Exception {
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        JcrNodeType ntTemplate2 = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                  nameFor(TEST_TYPE_NAME2), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                  AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                  AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                  AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                  AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(context);
+        ntTemplate2.setName(TEST_TYPE_NAME2);
+        ntTemplate2.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, ntTemplate2});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, ntTemplate2)));
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowDefinitionWithSupertypesFromTypesRegisteredInSameCallInWrongOrder() throws Exception {
         // Try to register the supertype AFTER the class that registers it
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        JcrNodeType ntTemplate2 = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                  nameFor(TEST_TYPE_NAME2), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                  AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                  AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                  AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                  AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(context);
+        ntTemplate2.setName(TEST_TYPE_NAME2);
+        ntTemplate2.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate2, ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate2, ntTemplate)));
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate2, ntTemplate}), false);
     }
 
     @Test
     public void shouldAllowDefinitionWithAProperty() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          null,
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.LONG,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false)}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setRequiredType(PropertyType.LONG);
+
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowDefinitionWithProperties() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {
-                                         new JcrPropertyDefinition(context, null, null,
-                                                                   OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                                   false, AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                   PropertyType.LONG, AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                   false),
-                                         new JcrPropertyDefinition(context, null, null,
-                                                                   OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                                   false, AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                   PropertyType.STRING, AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                   true),
-                                         new JcrPropertyDefinition(context, null, nameFor(TEST_PROPERTY_NAME),
-                                                                   OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                                   false, AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                   PropertyType.STRING, AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                   false)}), AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setRequiredType(PropertyType.LONG);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop2 = new JcrPropertyDefinitionTemplate(this.context);
+        prop2.setRequiredType(PropertyType.STRING);
+        prop2.setMultiple(true);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop2);
 
+        JcrPropertyDefinitionTemplate prop3 = new JcrPropertyDefinitionTemplate(this.context);
+        prop3.setName(TEST_PROPERTY_NAME);
+        prop3.setRequiredType(PropertyType.STRING);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop3);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedPropertyWithNoDefault() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          nameFor(TEST_PROPERTY_NAME),
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          true,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.LONG,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.LONG);
+        prop.setAutoCreated(true);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedResidualProperty() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          null,
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          true,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.UNDEFINED,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        prop.setAutoCreated(true);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    // @Test
-    // public void shouldAllowAutocreatedNamedPropertyWithDefault() throws Exception {
-    // ntTemplate.setName(TEST_TYPE_NAME);
-    // ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
-    //
-    // JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
-    // prop.setName(TEST_PROPERTY_NAME);
-    // prop.setRequiredType(PropertyType.UNDEFINED);
-    // prop.setAutoCreated(true);
-    // prop.setDefaultValues(new String[] {"<default>"});
-    // ntTemplate.getPropertyDefinitionTemplates().add(prop);
-    //
-    // List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-    // compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
-    // }
-    //
-    // @Test( expected = RepositoryException.class )
-    // public void shouldNotAllowSingleValuedPropertyWithMultipleDefaults() throws Exception {
-    // ntTemplate.setName(TEST_TYPE_NAME);
-    // ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
-    //
-    // JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
-    // prop.setName(TEST_PROPERTY_NAME);
-    // prop.setRequiredType(PropertyType.UNDEFINED);
-    // prop.setAutoCreated(true);
-    // prop.setDefaultValues(new String[] {"<default>", "too many values"});
-    // ntTemplate.getPropertyDefinitionTemplates().add(prop);
-    //
-    // List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-    // compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
-    // }
+    @Test
+    public void shouldAllowAutocreatedNamedPropertyWithDefault() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-    @Test( expected = RepositoryException.class )
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.STRING);
+        prop.setAutoCreated(true);
+        prop.setDefaultValues(new String[] {"<default>"});
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+    }
+
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
+    public void shouldNotAllowSingleValuedPropertyWithMultipleDefaults() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.STRING);
+        prop.setAutoCreated(true);
+        prop.setDefaultValues(new String[] {"<default>", "too many values"});
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+    }
+
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowMandatoryResidualProperty() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          null,
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          true,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.UNDEFINED,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        prop.setMandatory(true);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowTypeWithChildNode() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, false, false, true,
-                                                                                                  JcrNtLexicon.BASE,
-                                                                                                  new JcrNodeType[] {base})}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setSameNameSiblings(true);
 
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowTypeWithMultipleChildNodes() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {
-                                         new JcrNodeDefinition(context, null, nameFor(TEST_CHILD_NODE_NAME),
-                                                               OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                               false, true, JcrNtLexicon.BASE, new JcrNodeType[] {base}),
-                                         new JcrNodeDefinition(context, null, nameFor(TEST_CHILD_NODE_NAME),
-                                                               OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                               false, false, JcrNtLexicon.BASE, new JcrNodeType[] {unstructured}),
-                                         new JcrNodeDefinition(context, null, nameFor(TEST_CHILD_NODE_NAME + "2"),
-                                                               OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                               false, true, JcrNtLexicon.BASE, new JcrNodeType[] {base}),
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-                                     }), AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setSameNameSiblings(true);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        child.setSameNameSiblings(false);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME + "2");
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setSameNameSiblings(true);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedChildNodeWithNoDefaultPrimaryType() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  true, false, false, false,
-                                                                                                  null, new JcrNodeType[] {base}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setAutoCreated(true);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowMandatoryResidualChildNode() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  null,
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, true, false, false,
-                                                                                                  JcrNtLexicon.BASE,
-                                                                                                  new JcrNodeType[] {base}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setMandatory(true);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingProtectedProperty() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          JcrLexicon.PRIMARY_TYPE,
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.NAME,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(JcrLexicon.PRIMARY_TYPE.getString(registry));
+        prop.setRequiredType(PropertyType.NAME);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingProtectedChildNode() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {root, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  JcrLexicon.SYSTEM,
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, false, false, false,
-                                                                                                  JcrNtLexicon.BASE,
-                                                                                                  new JcrNodeType[] {base}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"dna:root", "mix:referenceable"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        ntTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingMandatoryChildNodeWithOptionalChildNode() throws Exception {
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {file}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  JcrLexicon.CONTENT,
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, false, false, false,
-                                                                                                  JcrNtLexicon.BASE,
-                                                                                                  new JcrNodeType[] {base}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"jcr:versionHistory",});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate)));
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        ntTemplate.getNodeDefinitionTemplates().add(child);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowOverridingPropertyFromCommonAncestor() throws Exception {
         /*
-        * testNode declares prop testProperty
-        * testNodeB extends testNode
-        * testNodeC extends testNode
-        * testNodeD extends testNodeB and testNodeC and overrides testProperty --> LEGAL
-        */
+         * testNode declares prop testProperty
+         * testNodeB extends testNode
+         * testNodeC extends testNode
+         * testNodeD extends testNodeB and testNodeC and overrides testProperty --> LEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          nameFor(TEST_PROPERTY_NAME),
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.UNDEFINED,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        JcrNodeType nodeCTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "C"), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeCTemplate.setName(TEST_TYPE_NAME + "C");
+        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        JcrNodeType nodeDTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "D"),
-                                                    Arrays.asList(new JcrNodeType[] {nodeBTemplate, nodeCTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.STRING,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeDTemplate.setName(TEST_TYPE_NAME + "D");
+        nodeDTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate, nodeCTemplate, nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate,
-                                                                                           nodeBTemplate,
-                                                                                           nodeCTemplate,
-                                                                                           nodeDTemplate)));
+        prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.STRING);
+        nodeDTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
+            nodeDTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingPropertyFromDifferentAncestors() throws Exception {
         /*
-        * testNode
-        * testNodeB extends testNode and declares prop testProperty
-        * testNodeC extends testNode and declares prop testProperty
-        * testNodeD extends testNodeB and testNodeC and overrides testProperty --> ILLEGAL
-        */
+         * testNode 
+         * testNodeB extends testNode and declares prop testProperty
+         * testNodeC extends testNode and declares prop testProperty
+         * testNodeD extends testNodeB and testNodeC and overrides testProperty --> ILLEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.UNDEFINED,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        JcrNodeType nodeCTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "C"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.UNDEFINED,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeCTemplate.setName(TEST_TYPE_NAME + "C");
+        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        JcrNodeType nodeDTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "D"),
-                                                    Arrays.asList(new JcrNodeType[] {nodeBTemplate, nodeCTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.STRING,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        nodeCTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate, nodeCTemplate, nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate,
-                                                                                           nodeBTemplate,
-                                                                                           nodeCTemplate,
-                                                                                           nodeDTemplate)));
+        JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeDTemplate.setName(TEST_TYPE_NAME + "D");
+        nodeDTemplate.setDeclaredSupertypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
+            nodeDTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowOverridingChildNodeFromCommonAncestor() throws Exception {
         /*
-        * testNode declares node testChildNode
-        * testNodeB extends testNode
-        * testNodeC extends testNode
-        * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> LEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  null,
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, false, false, false,
-                                                                                                  JcrNtLexicon.BASE,
-                                                                                                  new JcrNodeType[] {base}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares node testChildNode
+         * testNodeB extends testNode
+         * testNodeC extends testNode
+         * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> LEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        ntTemplate.getNodeDefinitionTemplates().add(child);
 
-        JcrNodeType nodeCTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "C"), Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        JcrNodeType nodeDTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "D"),
-                                                    Arrays.asList(new JcrNodeType[] {nodeBTemplate, nodeCTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 JcrLexicon.SYSTEM,
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                 new JcrNodeType[] {unstructured}),}),
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
+        JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeCTemplate.setName(TEST_TYPE_NAME + "C");
+        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeDTemplate.setName(TEST_TYPE_NAME + "D");
+        nodeDTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate, nodeCTemplate, nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate,
-                                                                                           nodeBTemplate,
-                                                                                           nodeCTemplate,
-                                                                                           nodeDTemplate)));
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        nodeDTemplate.getNodeDefinitionTemplates().add(child);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
+            nodeDTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingChildNodeFromDifferentAncestors() throws Exception {
         /*
-        * testNode
-        * testNodeB extends testNode and declares node testChildNode
-        * testNodeC extends testNode and declares node testChildNode
-        * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> ILLEGAL
-        */
-        ntTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER, nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME, AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode 
+         * testNodeB extends testNode and declares node testChildNode
+         * testNodeC extends testNode and declares node testChildNode
+         * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> ILLEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 null,
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 JcrNtLexicon.BASE,
-                                                                                                                 new JcrNodeType[] {base}),}),
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
-        JcrNodeType nodeCTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "C"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 null,
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 JcrNtLexicon.BASE,
-                                                                                                                 new JcrNodeType[] {base}),}),
+        JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeCTemplate.setName(TEST_TYPE_NAME + "C");
+        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(JcrLexicon.SYSTEM.getString(registry));
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        nodeCTemplate.getNodeDefinitionTemplates().add(child);
 
-        JcrNodeType nodeDTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "D"),
-                                                    Arrays.asList(new JcrNodeType[] {nodeBTemplate, nodeCTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 JcrLexicon.SYSTEM,
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                 new JcrNodeType[] {unstructured}),}),
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
+        JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeDTemplate.setName(TEST_TYPE_NAME + "D");
+        nodeDTemplate.setDeclaredSupertypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
 
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
-
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate, nodeCTemplate, nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate,
-                                                                                           nodeBTemplate,
-                                                                                           nodeCTemplate,
-                                                                                           nodeDTemplate)));
-    }
-
-    @Test( expected = RepositoryException.class )
-    public void shouldNotAllowExtendingChildNodeIfSnsChanges() throws Exception {
-        /*
-        * testNode declares node testChildNode with no SNS
-        * testNodeB extends testNode with node testChildNode with SNS -> ILLEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false, false, false, false,
-                                                                                                  null, new JcrNodeType[] {root}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
-
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 true,
-                                                                                                                 JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                 new JcrNodeType[] {unstructured}),}),
-
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
-
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, nodeBTemplate)));
-
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
+            nodeDTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowExtendingPropertyIfMultipleChanges() throws Exception {
         /*
-        * testNode declares SV property testProperty
-        * testNodeB extends testNode with MV property testProperty with incompatible type -> LEGAL
-        * testNodeC extends testNode, testNodeB -> LEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          nameFor(TEST_PROPERTY_NAME),
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.LONG,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares SV property testProperty
+         * testNodeB extends testNode with MV property testProperty with incompatible type -> LEGAL
+         * testNodeC extends testNode, testNodeB -> LEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.DATE,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         true),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.DOUBLE);
+        prop.setMultiple(false);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        JcrNodeType nodeCTemplate = new JcrNodeType(context, AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "C"), Arrays.asList(new JcrNodeType[] {ntTemplate,
-                                                        nodeBTemplate}), AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate, nodeCTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate,
-                                                                                           nodeBTemplate,
-                                                                                           nodeCTemplate)));
+        prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.BOOLEAN);
+        prop.setMultiple(true);
+        nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeCTemplate.setName(TEST_TYPE_NAME + "C");
+        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME, nodeBTemplate.getName()});
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowOverridingPropertyIfTypeNarrows() throws Exception {
         /*
-        * testNode declares SV property testProperty of type UNDEFINED
-        * testNodeB extends testNode with SV property testProperty of type STRING -> LEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          nameFor(TEST_PROPERTY_NAME),
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.STRING,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares SV property testProperty of type UNDEFINED
+         * testNodeB extends testNode with SV property testProperty of type STRING -> LEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.LONG,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.UNDEFINED);
+        prop.setMultiple(false);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, nodeBTemplate)));
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+
+        prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.STRING);
+        prop.setMultiple(false);
+        nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingPropertyIfTypeDoesNotNarrow() throws Exception {
         /*
-        * testNode declares SV property testProperty of type DATE
-        * testNodeB extends testNode with SV property testProperty of type NAME -> ILLEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          nameFor(TEST_PROPERTY_NAME),
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          false,
-                                                                                                          AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                          PropertyType.DATE,
-                                                                                                          AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                          false),}),
-                                     AbstractJcrNodeTypeSource.NOT_MIXIN, AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares SV property testProperty of type BOOLEAN
+         * testNodeB extends testNode with SV property testProperty of type DOUBLE -> ILLEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    AbstractJcrNodeTypeSource.NO_CHILD_NODES,
-                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         context,
-                                                                                                                         null,
-                                                                                                                         nameFor(TEST_PROPERTY_NAME),
-                                                                                                                         OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         false,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_DEFAULT_VALUES,
-                                                                                                                         PropertyType.NAME,
-                                                                                                                         AbstractJcrNodeTypeSource.NO_CONSTRAINTS,
-                                                                                                                         false),}),
-                                                    AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.BOOLEAN);
+        prop.setMultiple(false);
+        ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, nodeBTemplate)));
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+
+        prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(TEST_PROPERTY_NAME);
+        prop.setRequiredType(PropertyType.DOUBLE);
+        prop.setMultiple(false);
+        nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
+
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
     @Test
     public void shouldAllowOverridingChildNodeIfRequiredTypesNarrow() throws Exception {
         /*
-        * testNode declares No-SNS childNode testChildNode requiring type nt:hierarchy
-        * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:file -> LEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  null,
-                                                                                                  new JcrNodeType[] {hierarchyNode}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares No-SNS childNode testChildNode requiring type nt:hierarchy
+         * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:file -> LEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 true,
-                                                                                                                 null,
-                                                                                                                 new JcrNodeType[] {file}),}),
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:hierarchyNode"});
+        child.setSameNameSiblings(false);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
 
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, nodeBTemplate)));
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:file"});
+        child.setSameNameSiblings(false);
+        nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    @Test( expected = RepositoryException.class )
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingChildNodeIfRequiredTypesDoNotNarrow() throws Exception {
         /*
-        * testNode declares No-SNS childNode testChildNode requiring type nt:hierarchy
-        * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:base -> ILLEGAL
-        */
-        ntTemplate = new JcrNodeType(
-                                     context,
-                                     AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                     nameFor(TEST_TYPE_NAME),
-                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
-                                     AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                  context,
-                                                                                                  null,
-                                                                                                  nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                  OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  false,
-                                                                                                  null,
-                                                                                                  new JcrNodeType[] {hierarchyNode}),}),
-                                     AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                     AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+         * testNode declares No-SNS childNode testChildNode requiring type nt:hierarchy
+         * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:base -> ILLEGAL
+         */
+        ntTemplate.setName(TEST_TYPE_NAME);
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
 
-        JcrNodeType nodeBTemplate = new JcrNodeType(
-                                                    context,
-                                                    AbstractJcrNodeTypeSource.NO_NODE_TYPE_MANAGER,
-                                                    nameFor(TEST_TYPE_NAME + "B"),
-                                                    Arrays.asList(new JcrNodeType[] {ntTemplate}),
-                                                    AbstractJcrNodeTypeSource.NO_PRIMARY_ITEM_NAME,
-                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                 context,
-                                                                                                                 null,
-                                                                                                                 nameFor(TEST_CHILD_NODE_NAME),
-                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 false,
-                                                                                                                 true,
-                                                                                                                 null,
-                                                                                                                 new JcrNodeType[] {base}),}),
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:hierarchyNode"});
+        child.setSameNameSiblings(false);
+        ntTemplate.getNodeDefinitionTemplates().add(child);
 
-                                                    AbstractJcrNodeTypeSource.NO_PROPERTIES, AbstractJcrNodeTypeSource.NOT_MIXIN,
-                                                    AbstractJcrNodeTypeSource.UNORDERABLE_CHILD_NODES);
+        JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
+        nodeBTemplate.setName(TEST_TYPE_NAME + "B");
+        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
 
-        List<JcrNodeType> templates = Arrays.asList(new JcrNodeType[] {ntTemplate, nodeBTemplate,});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(sourceFor(ntTemplate, nodeBTemplate)));
+        child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(TEST_CHILD_NODE_NAME);
+        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setSameNameSiblings(false);
+        nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
+        List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
     }
 
-    private void compareTemplatesToNodeTypes( List<JcrNodeType> templates,
+    private void compareTemplatesToNodeTypes( List<NodeTypeDefinition> templates,
                                               List<JcrNodeType> nodeTypes ) {
         assertThat(templates.size(), is(nodeTypes.size()));
 
         for (int i = 0; i < nodeTypes.size(); i++) {
-            JcrNodeType jntt = templates.get(i);
+            JcrNodeTypeTemplate jntt = (JcrNodeTypeTemplate)templates.get(i);
             compareTemplateToNodeType(jntt, null);
             compareTemplateToNodeType(jntt, nodeTypes.get(i));
         }
     }
 
-    private void compareTemplateToNodeType( JcrNodeType template,
+    private void compareTemplateToNodeType( JcrNodeTypeTemplate template,
                                             JcrNodeType nodeType ) {
         Name nodeTypeName = nameFactory.create(template.getName());
         if (nodeType == null) {
@@ -1218,20 +724,19 @@ public class TypeRegistrationTest {
 
         assertThat(nodeType, is(notNullValue()));
         assertThat(nodeType.getName(), is(template.getName()));
-
         assertThat(nodeType.getDeclaredSupertypes().length, is(template.getDeclaredSupertypes().length));
         for (int i = 0; i < template.getDeclaredSupertypes().length; i++) {
-            assertThat(template.getDeclaredSupertypes()[i].getName(), is(nodeType.getDeclaredSupertypes()[i].getName()));
+            assertThat(template.getDeclaredSupertypes()[i], is(nodeType.getDeclaredSupertypes()[i].getName()));
         }
         assertThat(template.isMixin(), is(nodeType.isMixin()));
         assertThat(template.hasOrderableChildNodes(), is(nodeType.hasOrderableChildNodes()));
 
         PropertyDefinition[] propertyDefs = nodeType.getDeclaredPropertyDefinitions();
-        List<JcrPropertyDefinition> propertyTemplates = Arrays.asList(template.getDeclaredPropertyDefinitions());
+        List<PropertyDefinitionTemplate> propertyTemplates = template.getPropertyDefinitionTemplates();
 
         assertThat(propertyDefs.length, is(propertyTemplates.size()));
-        for (JcrPropertyDefinition pt : propertyTemplates) {
-            JcrPropertyDefinition propertyTemplate = pt;
+        for (PropertyDefinitionTemplate pt : propertyTemplates) {
+            JcrPropertyDefinitionTemplate propertyTemplate = (JcrPropertyDefinitionTemplate)pt;
 
             PropertyDefinition matchingDefinition = null;
             for (int i = 0; i < propertyDefs.length; i++) {
@@ -1249,21 +754,30 @@ public class TypeRegistrationTest {
         }
 
         NodeDefinition[] childNodeDefs = nodeType.getDeclaredChildNodeDefinitions();
-        List<JcrNodeDefinition> childNodeTemplates = Arrays.asList(template.getDeclaredChildNodeDefinitions());
+        List<NodeDefinitionTemplate> childNodeTemplates = template.getNodeDefinitionTemplates();
 
         assertThat(childNodeDefs.length, is(childNodeTemplates.size()));
-        for (JcrNodeDefinition nt : childNodeTemplates) {
-            JcrNodeDefinition childNodeTemplate = nt;
+        for (NodeDefinitionTemplate nt : childNodeTemplates) {
+            JcrNodeDefinitionTemplate childNodeTemplate = (JcrNodeDefinitionTemplate)nt;
 
             NodeDefinition matchingDefinition = null;
             for (int i = 0; i < childNodeDefs.length; i++) {
-                JcrNodeDefinition nd = (JcrNodeDefinition)childNodeDefs[i];
+                NodeDefinition nd = childNodeDefs[i];
 
                 String ntName = childNodeTemplate.getName() == null ? JcrNodeType.RESIDUAL_ITEM_NAME : childNodeTemplate.getName();
                 if (nd.getName().equals(ntName) && nd.allowsSameNameSiblings() == childNodeTemplate.allowsSameNameSiblings()) {
 
-                    boolean matchesOnRequiredTypes = childNodeTemplate.getRequiredPrimaryTypeNames()
-                                                                      .equals(nd.getRequiredPrimaryTypeNames());
+                    if (nd.getRequiredPrimaryTypes().length != childNodeTemplate.getRequiredPrimaryTypeNames().length) continue;
+
+                    boolean matchesOnRequiredTypes = true;
+                    for (int j = 0; j < nd.getRequiredPrimaryTypes().length; j++) {
+                        String ndName = nd.getRequiredPrimaryTypes()[j].getName();
+                        String tempName = childNodeTemplate.getRequiredPrimaryTypeNames()[j];
+                        if (!ndName.equals(tempName)) {
+                            matchesOnRequiredTypes = false;
+                            break;
+                        }
+                    }
 
                     if (matchesOnRequiredTypes) {
                         matchingDefinition = nd;
@@ -1277,7 +791,7 @@ public class TypeRegistrationTest {
 
     }
 
-    private void comparePropertyTemplateToPropertyDefinition( JcrPropertyDefinition template,
+    private void comparePropertyTemplateToPropertyDefinition( JcrPropertyDefinitionTemplate template,
                                                               JcrPropertyDefinition definition ) {
 
         assertThat(definition, is(notNullValue()));
@@ -1294,7 +808,7 @@ public class TypeRegistrationTest {
         assertThat(template.isProtected(), is(definition.isProtected()));
     }
 
-    private void compareNodeTemplateToNodeDefinition( JcrNodeDefinition template,
+    private void compareNodeTemplateToNodeDefinition( JcrNodeDefinitionTemplate template,
                                                       JcrNodeDefinition definition ) {
         assertThat(definition, is(notNullValue()));
         assertThat(definition.getDeclaringNodeType(), is(notNullValue()));
@@ -1306,7 +820,7 @@ public class TypeRegistrationTest {
         assertThat(template.isMandatory(), is(definition.isMandatory()));
         assertThat(template.isProtected(), is(definition.isProtected()));
 
-        assertThat(template.with(repoTypeManager).getDefaultPrimaryType(), is(definition.getDefaultPrimaryType()));
+        assertThat(template.getDefaultPrimaryType(), is(definition.getDefaultPrimaryType()));
         assertThat(template.allowsSameNameSiblings(), is(definition.allowsSameNameSiblings()));
 
         // assertThat(template.getRequiredPrimaryTypeNames(), is(definition.getRequiredPrimaryTypeNames()));

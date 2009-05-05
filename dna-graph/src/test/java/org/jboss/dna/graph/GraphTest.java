@@ -817,16 +817,8 @@ public class GraphTest {
         assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch()
-             .move(validPath)
-             .into(validIdProperty1, validIdProperty2)
-             .and()
-             .move(validPathString)
-             .into(validIdProperty1, validIdProperty2)
-             .and()
-             .move(validUuid)
-             .into(validPath)
-             .execute();
+        graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).and().move(validPathString).into(validIdProperty1,
+                                                                                                                validIdProperty2).and().move(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
@@ -852,16 +844,8 @@ public class GraphTest {
         assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch()
-             .copy(validPath)
-             .into(validIdProperty1, validIdProperty2)
-             .and()
-             .copy(validPathString)
-             .into(validIdProperty1, validIdProperty2)
-             .and()
-             .copy(validUuid)
-             .into(validPath)
-             .execute();
+        graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).and().copy(validPathString).into(validIdProperty1,
+                                                                                                                validIdProperty2).and().copy(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));

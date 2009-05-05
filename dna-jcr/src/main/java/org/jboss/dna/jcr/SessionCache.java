@@ -1296,8 +1296,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1530,10 +1530,7 @@ class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
-                                                         .nodeNamed(name)
-                                                         .with(desiredUuid)
-                                                         .with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
@@ -2288,8 +2285,8 @@ class SessionCache {
                                                                                    DnaIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                                    values,
                                                                                    false);
-        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
-                                                                                                                    .next());
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                  newSingleMultiPropertyNames.iterator().next());
         PropertyId propId = new PropertyId(uuid, dnaProp.getName());
         JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
         return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);

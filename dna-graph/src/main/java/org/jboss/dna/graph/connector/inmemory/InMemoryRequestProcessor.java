@@ -143,6 +143,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         CheckArg.isNotNull(parent, "request.under().getPath()");
         InMemoryNode node = null;
         // Look up the parent node, which must exist ...
+        // System.err.println(request.toString());
         InMemoryNode parentNode = workspace.getNode(parent);
         if (parentNode == null) {
             Path lowestExisting = workspace.getLowestExistingPath(parent);

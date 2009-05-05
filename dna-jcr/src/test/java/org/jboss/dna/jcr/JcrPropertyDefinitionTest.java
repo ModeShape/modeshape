@@ -27,13 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -46,6 +47,8 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
+import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,11 +124,21 @@ public class JcrPropertyDefinitionTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.context, source);
-        source = new DnaBuiltinNodeTypeSource(this.context, source);
-        source = new TestNodeTypeSource(this.context, source);
-        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
+
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
+
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
+
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
@@ -149,7 +162,7 @@ public class JcrPropertyDefinitionTest {
             session.logout();
         }
     }
-    
+
     private JcrPropertyDefinition propertyDefinitionFor( NodeType nodeType,
                                                          Name propertyName ) {
         PropertyDefinition propertyDefs[] = nodeType.getPropertyDefinitions();
@@ -634,118 +647,59 @@ public class JcrPropertyDefinitionTest {
         assertThat(satisfiesConstraints(prop, new Value[] {value}), is(false));
     }
 
-    class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
+    private List<NodeTypeTemplate> getTestTypes() {
+        NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);
+        constrainedType.setName("dnatest:constrainedType");
 
-        /** The list of primary node types. */
-        private final List<JcrNodeType> nodeTypes;
+        PropertyDefinitionTemplate propBinary = new JcrPropertyDefinitionTemplate(this.context);
+        propBinary.setName("dnatest:constrainedBinary");
+        propBinary.setRequiredType(PropertyType.BINARY);
+        propBinary.setValueConstraints(EXPECTED_BINARY_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propBinary);
 
-        TestNodeTypeSource( ExecutionContext context,
-                            JcrNodeTypeSource predecessor ) {
-            super(predecessor);
+        PropertyDefinitionTemplate propDate = new JcrPropertyDefinitionTemplate(this.context);
+        propDate.setName("dnatest:constrainedDate");
+        propDate.setRequiredType(PropertyType.DATE);
+        propDate.setValueConstraints(EXPECTED_DATE_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propDate);
 
-            nodeTypes = new ArrayList<JcrNodeType>();
+        PropertyDefinitionTemplate propDouble = new JcrPropertyDefinitionTemplate(this.context);
+        propDouble.setName("dnatest:constrainedDouble");
+        propDouble.setRequiredType(PropertyType.DOUBLE);
+        propDouble.setValueConstraints(EXPECTED_DOUBLE_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propDouble);
 
-            JcrNodeType base = findType(JcrNtLexicon.BASE);
+        PropertyDefinitionTemplate propLong = new JcrPropertyDefinitionTemplate(this.context);
+        propLong.setName("dnatest:constrainedLong");
+        propLong.setRequiredType(PropertyType.LONG);
+        propLong.setValueConstraints(EXPECTED_LONG_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propLong);
 
-            if (base == null) {
-                String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = DnaLexicon.NAMESPACE.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
+        PropertyDefinitionTemplate propName = new JcrPropertyDefinitionTemplate(this.context);
+        propName.setName("dnatest:constrainedName");
+        propName.setRequiredType(PropertyType.NAME);
+        propName.setValueConstraints(EXPECTED_NAME_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propName);
 
-            // Stubbing in child node and property definitions for now
-            JcrNodeType constrainedType = new JcrNodeType(
-                                                          context,
-                                                          NO_NODE_TYPE_MANAGER,
-                                                          TestLexicon.CONSTRAINED_TYPE,
-                                                          Arrays.asList(new JcrNodeType[] {base}),
-                                                          NO_PRIMARY_ITEM_NAME,
-                                                          NO_CHILD_NODES,
-                                                          Arrays.asList(new JcrPropertyDefinition[] {
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_BINARY,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.BINARY,
-                                                                                        EXPECTED_BINARY_CONSTRAINTS, false),
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_DATE,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.DATE,
-                                                                                        EXPECTED_DATE_CONSTRAINTS, false),
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_DOUBLE,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.DOUBLE,
-                                                                                        EXPECTED_DOUBLE_CONSTRAINTS, false),
+        PropertyDefinitionTemplate propPath = new JcrPropertyDefinitionTemplate(this.context);
+        propPath.setName("dnatest:constrainedPath");
+        propPath.setRequiredType(PropertyType.PATH);
+        propPath.setValueConstraints(EXPECTED_PATH_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propPath);
 
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_LONG,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.LONG,
-                                                                                        EXPECTED_LONG_CONSTRAINTS, false),
+        PropertyDefinitionTemplate propReference = new JcrPropertyDefinitionTemplate(this.context);
+        propReference.setName("dnatest:constrainedReference");
+        propReference.setRequiredType(PropertyType.REFERENCE);
+        propReference.setValueConstraints(EXPECTED_REFERENCE_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propReference);
 
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_NAME,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.NAME,
-                                                                                        EXPECTED_NAME_CONSTRAINTS, false),
+        PropertyDefinitionTemplate propString = new JcrPropertyDefinitionTemplate(this.context);
+        propString.setName("dnatest:constrainedString");
+        propString.setRequiredType(PropertyType.STRING);
+        propString.setValueConstraints(EXPECTED_STRING_CONSTRAINTS);
+        constrainedType.getPropertyDefinitionTemplates().add(propString);
 
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_PATH,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.PATH,
-                                                                                        EXPECTED_PATH_CONSTRAINTS, false),
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_REFERENCE,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.REFERENCE,
-                                                                                        new String[] {"dna:root",}, false),
-
-                                                              new JcrPropertyDefinition(
-                                                                                        context,
-                                                                                        null,
-                                                                                        TestLexicon.CONSTRAINED_STRING,
-                                                                                        OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                        false, false, false, NO_DEFAULT_VALUES,
-                                                                                        PropertyType.STRING,
-                                                                                        EXPECTED_STRING_CONSTRAINTS, false),
-
-                                                          }), NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {constrainedType}));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
-
+        return Collections.singletonList(constrainedType);
     }
 
 }

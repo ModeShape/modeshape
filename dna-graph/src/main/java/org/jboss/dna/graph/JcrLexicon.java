@@ -60,6 +60,7 @@ public class JcrLexicon {
     public static final Name IS_QUERYABLE = new BasicName(Namespace.URI, "isQueryable");
     public static final Name MANDATORY = new BasicName(Namespace.URI, "mandatory");
     public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
+    public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");
     public static final Name ON_PARENT_VERSION = new BasicName(Namespace.URI, "onParentVersion");
     public static final Name PRIMARY_ITEM_NAME = new BasicName(Namespace.URI, "primaryItemName");
     public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");

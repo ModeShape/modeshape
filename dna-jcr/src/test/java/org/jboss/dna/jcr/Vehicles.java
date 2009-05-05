@@ -23,14 +23,14 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import javax.jcr.PropertyType;
+import javax.jcr.version.OnParentVersionAction;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * Define the node types for the "vehix" namespace.
@@ -63,108 +63,115 @@ public class Vehicles {
 
     }
 
-    public static class NodeTypeSource extends AbstractJcrNodeTypeSource {
+    public static List<NodeTypeTemplate> getNodeTypes( ExecutionContext context ) {
+        JcrPropertyDefinitionTemplate property;
 
-        private final List<JcrNodeType> nodeTypes;
+        NodeTypeTemplate car = new JcrNodeTypeTemplate(context);
+        car.setName("vehix:car");
+        car.setOrderableChildNodes(true);
 
-        public NodeTypeSource( ExecutionContext context,
-                               JcrNodeTypeSource predecessor ) {
-            super(predecessor);
-            this.nodeTypes = new ArrayList<JcrNodeType>();
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:maker");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        car.getPropertyDefinitionTemplates().add(property);
 
-            JcrNodeType base = findType(JcrNtLexicon.BASE);
-            JcrNodeType unstructured = findType(JcrNtLexicon.UNSTRUCTURED);
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:model");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        car.getPropertyDefinitionTemplates().add(property);
 
-            // Add in the "vehix:car" node type (which extends "nt:unstructured") ...
-            JcrNodeType car = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, Lexicon.CAR,
-                                              Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
-                                              Arrays.asList(new JcrPropertyDefinition[] {
-                                                  new JcrPropertyDefinition(context, null, Lexicon.MAKER,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.MODEL,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.INTRODUCED,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.LONG,
-                                                                            NO_CONSTRAINTS, false),
-                                                  /* Year IS mandatory for car */
-                                                  new JcrPropertyDefinition(context, null, Lexicon.YEAR,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            true, false, NO_DEFAULT_VALUES, PropertyType.LONG,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.MSRP,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.USER_RATING,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.DOUBLE,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.VALUE_RATING,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.DOUBLE,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.MPG_CITY,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.LONG,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.MPG_HIGHWAY,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.LONG,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.LENGTH_IN_INCHES,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.DOUBLE,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.WHEELBASE_IN_INCHES,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.DOUBLE,
-                                                                            NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(context, null, Lexicon.ENGINE,
-                                                                            OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
-                                                                            false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
-                                                                            NO_CONSTRAINTS, false),}), NOT_MIXIN,
-                                              ORDERABLE_CHILD_NODES);
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:introduced");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.LONG);
+        car.getPropertyDefinitionTemplates().add(property);
 
-            // Add in the "vehix:aircraft" node type (which extends "nt:unstructured") ...
-            JcrNodeType aircraft = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, Lexicon.AIRCRAFT,
-                                                   Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
-                                                   NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
-                                                       new JcrPropertyDefinition(context, null, Lexicon.MAKER,
-                                                                                 OnParentVersionBehavior.COMPUTE.getJcrValue(),
-                                                                                 false, false, false, NO_DEFAULT_VALUES,
-                                                                                 PropertyType.STRING, NO_CONSTRAINTS, false),
-                                                       new JcrPropertyDefinition(context, null, Lexicon.MODEL,
-                                                                                 OnParentVersionBehavior.COMPUTE.getJcrValue(),
-                                                                                 false, false, false, NO_DEFAULT_VALUES,
-                                                                                 PropertyType.STRING, NO_CONSTRAINTS, false),
-                                                       /* Year is NOT mandatory for aircraft */
-                                                       new JcrPropertyDefinition(context, null, Lexicon.YEAR,
-                                                                                 OnParentVersionBehavior.COMPUTE.getJcrValue(),
-                                                                                 false, false, false, NO_DEFAULT_VALUES,
-                                                                                 PropertyType.LONG, NO_CONSTRAINTS, false),
-                                                       new JcrPropertyDefinition(context, null, Lexicon.INTRODUCED,
-                                                                                 OnParentVersionBehavior.COMPUTE.getJcrValue(),
-                                                                                 false, false, false, NO_DEFAULT_VALUES,
-                                                                                 PropertyType.LONG, NO_CONSTRAINTS, false),}),
-                                                   NOT_MIXIN, ORDERABLE_CHILD_NODES);
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:year");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setMandatory(true);
+        property.setRequiredType(PropertyType.LONG);
+        car.getPropertyDefinitionTemplates().add(property);
 
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
-        }
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:msrp");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        car.getPropertyDefinitionTemplates().add(property);
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:userRating");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.DOUBLE);
+        car.getPropertyDefinitionTemplates().add(property);
 
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:valueRating");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.DOUBLE);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:mpgCity");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.LONG);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:mpgHighway");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.LONG);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:lengthInInches");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.DOUBLE);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:wheelbaseInInches");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.DOUBLE);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:engine");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        car.getPropertyDefinitionTemplates().add(property);
+
+        NodeTypeTemplate aircraft = new JcrNodeTypeTemplate(context);
+        aircraft.setName("vehix:aircraft");
+        aircraft.setDeclaredSupertypeNames(new String[] {"nt:unstructured"});
+        aircraft.setOrderableChildNodes(true);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:maker");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        aircraft.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:model");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.STRING);
+        aircraft.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:introduced");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.LONG);
+        aircraft.getPropertyDefinitionTemplates().add(property);
+
+        property = new JcrPropertyDefinitionTemplate(context);
+        property.setName("vehix:year");
+        property.setOnParentVersion(OnParentVersionAction.COMPUTE);
+        property.setRequiredType(PropertyType.LONG);
+        aircraft.getPropertyDefinitionTemplates().add(property);
+
+        return Arrays.asList(new NodeTypeTemplate[] {car, aircraft,});
     }
 }

@@ -146,7 +146,6 @@ public abstract class BasicProperty implements Property {
      * {@inheritDoc}
      */
     public String getString( NamespaceRegistry namespaceRegistry ) {
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return getString(namespaceRegistry, null, null);
     }
 

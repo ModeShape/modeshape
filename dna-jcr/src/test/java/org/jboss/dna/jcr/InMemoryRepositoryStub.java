@@ -27,20 +27,14 @@ import java.io.File;
 import java.net.URI;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.jcr.Credentials;
-import javax.jcr.PropertyType;
 import org.apache.jackrabbit.test.RepositoryStub;
+import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.JcrMixLexicon;
-import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -114,7 +108,16 @@ public class InMemoryRepositoryStub extends RepositoryStub {
 
         // Set up some sample nodes in the graph to match the expected test configuration
         try {
-            nodeTypes.registerNodeTypes(new TckTestNodeTypeSource(executionContext, nodeTypes));
+            CndNodeTypeSource nodeTypeSource = new CndNodeTypeSource("/tck_test_types.cnd");
+
+            for (Problem problem : nodeTypeSource.getProblems()) {
+                System.err.println(problem);
+            }
+            if (!nodeTypeSource.isValid()) {
+                throw new IllegalStateException("Problems loading TCK test node types");
+            }
+
+            nodeTypes.registerNodeTypes(nodeTypeSource);
 
             executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
@@ -170,159 +173,5 @@ public class InMemoryRepositoryStub extends RepositoryStub {
     @Override
     public JcrRepository getRepository() {
         return repository;
-    }
-
-    class TckTestNodeTypeSource extends AbstractJcrNodeTypeSource {
-        /** The list of node types. */
-        private final List<JcrNodeType> nodeTypes;
-
-        TckTestNodeTypeSource( ExecutionContext context,
-                               RepositoryNodeTypeManager nodeTypeManager ) {
-            super(null);
-
-            nodeTypes = new ArrayList<JcrNodeType>();
-
-            JcrNodeType base = nodeTypeManager.getNodeType(JcrNtLexicon.BASE);
-
-            if (base == null) {
-                String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = TestLexicon.NO_SAME_NAME_SIBS.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
-
-            JcrNodeType referenceable = nodeTypeManager.getNodeType(JcrMixLexicon.REFERENCEABLE);
-
-            if (referenceable == null) {
-                String baseTypeName = JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = TestLexicon.REFERENCEABLE_UNSTRUCTURED.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
-
-            JcrNodeType unstructured = nodeTypeManager.getNodeType(JcrNtLexicon.UNSTRUCTURED);
-
-            if (unstructured == null) {
-                String baseTypeName = JcrNtLexicon.UNSTRUCTURED.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = TestLexicon.REFERENCEABLE_UNSTRUCTURED.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
-
-            // Stubbing in child node and property definitions for now
-            JcrNodeType noSameNameSibs = new JcrNodeType(
-                                                         context,
-                                                         NO_NODE_TYPE_MANAGER,
-                                                         TestLexicon.NO_SAME_NAME_SIBS,
-                                                         Arrays.asList(new JcrNodeType[] {base}),
-                                                         NO_PRIMARY_ITEM_NAME,
-                                                         Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                      context,
-                                                                                                                      null,
-                                                                                                                      ALL_NODES,
-                                                                                                                      OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                      false,
-                                                                                                                      false,
-                                                                                                                      false,
-                                                                                                                      false,
-                                                                                                                      JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                      new JcrNodeType[] {base}),}),
-                                                         NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            JcrNodeType referenceableUnstructured = new JcrNodeType(
-                                                                    context,
-                                                                    NO_NODE_TYPE_MANAGER,
-                                                                    TestLexicon.REFERENCEABLE_UNSTRUCTURED,
-                                                                    Arrays.asList(new JcrNodeType[] {unstructured, referenceable}),
-                                                                    NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, NO_PROPERTIES,
-                                                                    NOT_MIXIN, ORDERABLE_CHILD_NODES);
-
-            JcrNodeType nodeWithMandatoryProperty = new JcrNodeType(
-                                                                    context,
-                                                                    NO_NODE_TYPE_MANAGER,
-                                                                    TestLexicon.NODE_WITH_MANDATORY_PROPERTY,
-                                                                    Arrays.asList(new JcrNodeType[] {unstructured, referenceable}),
-                                                                    NO_PRIMARY_ITEM_NAME,
-                                                                    NO_CHILD_NODES,
-                                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                                         context,
-                                                                                                                                         null,
-                                                                                                                                         TestLexicon.MANDATORY_STRING,
-                                                                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
-                                                                                                                                         false,
-                                                                                                                                         true,
-                                                                                                                                         false,
-                                                                                                                                         NO_DEFAULT_VALUES,
-                                                                                                                                         PropertyType.UNDEFINED,
-                                                                                                                                         NO_CONSTRAINTS,
-                                                                                                                                         false)}),
-                                                                    NOT_MIXIN, ORDERABLE_CHILD_NODES);
-            JcrNodeType nodeWithMandatoryChild = new JcrNodeType(
-                                                                 context,
-                                                                 NO_NODE_TYPE_MANAGER,
-                                                                 TestLexicon.NODE_WITH_MANDATORY_CHILD,
-                                                                 Arrays.asList(new JcrNodeType[] {unstructured, referenceable}),
-                                                                 NO_PRIMARY_ITEM_NAME,
-                                                                 Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                              context,
-                                                                                                                              null,
-                                                                                                                              TestLexicon.MANDATORY_CHILD,
-                                                                                                                              OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                              false,
-                                                                                                                              true,
-                                                                                                                              false,
-                                                                                                                              false,
-                                                                                                                              JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                              new JcrNodeType[] {base}),}),
-                                                                 NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
-
-            JcrNodeType unorderableUnstructured = new JcrNodeType(
-                                                                  context,
-                                                                  NO_NODE_TYPE_MANAGER,
-                                                                  TestLexicon.UNORDERABLE_UNSTRUCTURED,
-                                                                  Arrays.asList(new JcrNodeType[] {base}),
-                                                                  NO_PRIMARY_ITEM_NAME,
-                                                                  Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                               context,
-                                                                                                                               null,
-                                                                                                                               ALL_NODES,
-                                                                                                                               OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                               false,
-                                                                                                                               false,
-                                                                                                                               false,
-                                                                                                                               true,
-                                                                                                                               TestLexicon.UNORDERABLE_UNSTRUCTURED,
-                                                                                                                               new JcrNodeType[] {base}),}),
-                                                                  Arrays.asList(new JcrPropertyDefinition[] {
-                                                                      new JcrPropertyDefinition(
-                                                                                                context,
-                                                                                                null,
-                                                                                                ALL_NODES,
-                                                                                                OnParentVersionBehavior.COPY.getJcrValue(),
-                                                                                                false, false, false,
-                                                                                                NO_DEFAULT_VALUES,
-                                                                                                PropertyType.UNDEFINED,
-                                                                                                NO_CONSTRAINTS, false),
-                                                                      new JcrPropertyDefinition(
-                                                                                                context,
-                                                                                                null,
-                                                                                                ALL_NODES,
-                                                                                                OnParentVersionBehavior.COPY.getJcrValue(),
-                                                                                                false, false, false,
-                                                                                                NO_DEFAULT_VALUES,
-                                                                                                PropertyType.UNDEFINED,
-                                                                                                NO_CONSTRAINTS, true),}),
-                                                                  NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {referenceableUnstructured, noSameNameSibs,
-                nodeWithMandatoryProperty, nodeWithMandatoryChild, unorderableUnstructured,}));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
     }
 }

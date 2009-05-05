@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.StringUtil;
@@ -99,11 +100,19 @@ public class SessionCacheTest {
         stub(session.namespaces()).toReturn(context.getNamespaceRegistry());
 
         // Load up all the node types ...
-        JcrNodeTypeSource nodeTypeSource = null;
-        nodeTypeSource = new JcrBuiltinNodeTypeSource(this.context, nodeTypeSource);
-        nodeTypeSource = new DnaBuiltinNodeTypeSource(this.context, nodeTypeSource);
-        nodeTypeSource = new Vehicles.NodeTypeSource(context, nodeTypeSource);
-        repoTypes = new RepositoryNodeTypeManager(context, nodeTypeSource);
+        repoTypes = new RepositoryNodeTypeManager(context);
+        try {
+            this.repoTypes.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+            this.repoTypes.registerNodeTypes(new NodeTemplateNodeTypeSource(Vehicles.getNodeTypes(context)));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
+
         nodeTypes = new JcrNodeTypeManager(this.context, repoTypes);
         stub(session.nodeTypeManager()).toReturn(nodeTypes);
 

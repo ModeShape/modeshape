@@ -29,14 +29,14 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -47,6 +47,7 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.basic.BasicName;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,8 +60,15 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class ItemDefinitionTest {
 
+    private static final Name NODE_TYPE_A = new BasicName(TestLexicon.Namespace.URI, "nodeA");
+    private static final Name NODE_TYPE_B = new BasicName(TestLexicon.Namespace.URI, "nodeB");
+    private static final Name NODE_TYPE_C = new BasicName(TestLexicon.Namespace.URI, "nodeC");
+
+    private static final Name SINGLE_PROP1 = new BasicName(TestLexicon.Namespace.URI, "singleProp1");
+    private static final Name SINGLE_PROP2 = new BasicName(TestLexicon.Namespace.URI, "singleProp2");
+
     private String workspaceName;
-    private ExecutionContext context;
+    protected ExecutionContext context;
     private InMemoryRepositorySource source;
     private JcrWorkspace workspace;
     private JcrSession session;
@@ -109,11 +117,19 @@ public class ItemDefinitionTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.context, source);
-        source = new DnaBuiltinNodeTypeSource(this.context, source);
-        source = new TestNodeTypeSource(this.context, source);
-        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
+
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
@@ -151,9 +167,6 @@ public class ItemDefinitionTest {
 
         propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C, Collections.<Name>emptyList(), badName, null, true, true);
         assertThat(propDef, is(nullValue()));
-
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_D, Collections.<Name>emptyList(), badName, null, true, true);
-        assertThat(propDef, is(nullValue()));
     }
 
     @Test
@@ -179,7 +192,7 @@ public class ItemDefinitionTest {
                                                          true,
                                                          true);
         assertThat(propDef, is(notNullValue()));
-        assertEquals(propDef.getRequiredType(), PropertyType.LONG);
+        assertEquals(propDef.getRequiredType(), PropertyType.DOUBLE);
 
         propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C,
                                                          Collections.<Name>emptyList(),
@@ -188,32 +201,9 @@ public class ItemDefinitionTest {
                                                          true,
                                                          true);
         assertThat(propDef, is(notNullValue()));
-        assertEquals(propDef.getRequiredType(), PropertyType.BOOLEAN);
+        assertEquals(propDef.getRequiredType(), PropertyType.LONG);
     }
 
-    @Test
-    public void shouldPreferLeftmostSupertypeForDefinition() {
-        /*
-         * This specification doesn't mandate this, but since DNA supports multiple inheritance, we
-         * have imposed the rule that property or child-node definitions should be preferred based on
-         * distance from the given node type in the hierarchy with the order of the supertypes in the declaration
-         * being the tiebreaker.
-         */
-        JcrPropertyDefinition propDef;
-
-        // Should prefer the inherited definition from NODE_TYPE_A since it was declared before NODE_TYPE_C in NODE_TYPE_D's list
-        // of supertypes
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_D,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP1,
-                                                         null,
-                                                         true,
-                                                         true);
-        assertThat(propDef, is(notNullValue()));
-        assertEquals(propDef.getRequiredType(), PropertyType.STRING);
-
-    }
-    
     @Test
     public void shouldFindBestMatchDefinition() {
         /*
@@ -223,11 +213,11 @@ public class ItemDefinitionTest {
         Value doubleValue = session.getValueFactory().createValue(0.7);
         Value longValue = session.getValueFactory().createValue(10);
         Value stringValue = session.getValueFactory().createValue("Should not work");
-        
+
         JcrPropertyDefinition propDef;
 
         // Should prefer the double definition from NODE_TYPE_C since the value is of type double
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_D,
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C,
                                                          Collections.<Name>emptyList(),
                                                          SINGLE_PROP2,
                                                          doubleValue,
@@ -237,7 +227,7 @@ public class ItemDefinitionTest {
         assertEquals(propDef.getRequiredType(), PropertyType.DOUBLE);
 
         // Should prefer the long definition from NODE_TYPE_C since the value is of type long
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_D,
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C,
                                                          Collections.<Name>emptyList(),
                                                          SINGLE_PROP2,
                                                          longValue,
@@ -247,134 +237,77 @@ public class ItemDefinitionTest {
         assertEquals(propDef.getRequiredType(), PropertyType.LONG);
 
         // Should not allow a string though, since the NODE_TYPE_C definition narrows the acceptable types to double and long
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_D,
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C,
                                                          Collections.<Name>emptyList(),
                                                          SINGLE_PROP2,
                                                          stringValue,
                                                          true,
                                                          true);
         assertThat(propDef, is(nullValue()));
-        
-    }
-
-    static final Name NODE_TYPE_A = new BasicName(TestLexicon.Namespace.URI, "nodeA");
-    static final Name NODE_TYPE_B = new BasicName(TestLexicon.Namespace.URI, "nodeB");
-    static final Name NODE_TYPE_C = new BasicName(TestLexicon.Namespace.URI, "nodeC");
-    static final Name NODE_TYPE_D = new BasicName(TestLexicon.Namespace.URI, "nodeD");
-
-    static final Name SINGLE_PROP1 = new BasicName(TestLexicon.Namespace.URI, "singleProp1");
-    static final Name SINGLE_PROP2 = new BasicName(TestLexicon.Namespace.URI, "singleProp2");
-
-    class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
-
-        /** The list of primary node types. */
-        private final List<JcrNodeType> nodeTypes;
-
-        /*
-         * Build a hierarchy of node types with the following relationships:
-         *  
-         *   dnatest:nodeA extends nt:base
-         *   dnatest:nodeB extends nt:base
-         *   dnatest:nodeC extends dnatest:nodeB
-         *   dnatest:nodeD extends dnatest:nodeA and dnatest:nodeC
-         *   
-         * And the following single-valued property definitions
-         * 
-         *   dnatest:nodeA defines properties:
-         *      dnatest:singleProp1 of type STRING
-         *   dnatest:nodeB defines properties:
-         *      dnatest:singleProp1 of type LONG
-         *      dnatest:singleProp2 of type UNDEFINED
-         *   dnatest:nodeC defines properties:
-         *      dnatest:singleProp1 of type BOOLEAN
-         *      dnatest:singleProp2 of type DOUBLE     
-         *      dnatest:singleProp2 of type LONG (note the double-definition)
-         *   dnatest:nodeD defines properties:
-         *      < NO PROPERTIES DEFINED IN THIS TYPE >
-         */
-
-        TestNodeTypeSource( ExecutionContext context,
-                            JcrNodeTypeSource predecessor ) {
-            super(predecessor);
-
-            nodeTypes = new ArrayList<JcrNodeType>();
-
-            JcrNodeType base = findType(JcrNtLexicon.BASE);
-
-            if (base == null) {
-                String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = DnaLexicon.NAMESPACE.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
-
-            // Stubbing in child node and property definitions for now
-            JcrNodeType nodeA = new JcrNodeType(
-                                                context,
-                                                NO_NODE_TYPE_MANAGER,
-                                                NODE_TYPE_A,
-                                                Arrays.asList(new JcrNodeType[] {base}),
-                                                NO_PRIMARY_ITEM_NAME,
-                                                NO_CHILD_NODES,
-                                                Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                     context,
-                                                                                                                     null,
-                                                                                                                     SINGLE_PROP1,
-                                                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                     false,
-                                                                                                                     false,
-                                                                                                                     false,
-                                                                                                                     NO_DEFAULT_VALUES,
-                                                                                                                     PropertyType.STRING,
-                                                                                                                     NO_CONSTRAINTS,
-                                                                                                                     false),}),
-                                                NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            JcrNodeType nodeB = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, NODE_TYPE_B,
-                                                Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
-                                                Arrays.asList(new JcrPropertyDefinition[] {
-                                                    new JcrPropertyDefinition(context, null, SINGLE_PROP1,
-                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                              false, false, false, NO_DEFAULT_VALUES,
-                                                                              PropertyType.LONG, NO_CONSTRAINTS, false),
-                                                    new JcrPropertyDefinition(context, null, SINGLE_PROP2,
-                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                              false, false, false, NO_DEFAULT_VALUES,
-                                                                              PropertyType.UNDEFINED, NO_CONSTRAINTS, false),}),
-                                                NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-            JcrNodeType nodeC = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, NODE_TYPE_C,
-                                                Arrays.asList(new JcrNodeType[] {nodeB}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
-                                                Arrays.asList(new JcrPropertyDefinition[] {
-                                                    new JcrPropertyDefinition(context, null, SINGLE_PROP1,
-                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                              false, false, false, NO_DEFAULT_VALUES,
-                                                                              PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                    new JcrPropertyDefinition(context, null, SINGLE_PROP2,
-                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                              false, false, false, NO_DEFAULT_VALUES,
-                                                                              PropertyType.DOUBLE, NO_CONSTRAINTS, false),
-                                                    new JcrPropertyDefinition(context, null, SINGLE_PROP2,
-                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                              false, false, false, NO_DEFAULT_VALUES,
-                                                                              PropertyType.LONG, NO_CONSTRAINTS, false),
-
-                                                }), NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            JcrNodeType nodeD = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, NODE_TYPE_D, Arrays.asList(new JcrNodeType[] {
-                nodeA, nodeC}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {nodeA, nodeB, nodeC, nodeD}));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
 
     }
 
+    /*
+    * Build a hierarchy of node types with the following relationships:
+    *  
+    *   dnatest:nodeA extends nt:base
+    *   dnatest:nodeB extends nt:base
+    *   dnatest:nodeC extends dnatest:nodeB
+    *   
+    * And the following single-valued property definitions
+    * 
+    *   dnatest:nodeA defines properties:
+    *      dnatest:singleProp1 of type STRING
+    *   dnatest:nodeB defines properties:
+    *      dnatest:singleProp1 of type DOUBLE
+    *      dnatest:singleProp2 of type UNDEFINED
+    *   dnatest:nodeC defines properties:
+    *      dnatest:singleProp1 of type LONG
+    *      dnatest:singleProp2 of type DOUBLE     
+    *      dnatest:singleProp2 of type LONG (note the double-definition)
+    */
+
+    private List<NodeTypeTemplate> getTestTypes() {
+        NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);
+        nodeA.setName("dnatest:nodeA");
+
+        JcrPropertyDefinitionTemplate nodeASingleProp1 = new JcrPropertyDefinitionTemplate(context);
+        nodeASingleProp1.setName("dnatest:singleProp1");
+        nodeASingleProp1.setRequiredType(PropertyType.STRING);
+        nodeA.getPropertyDefinitionTemplates().add(nodeASingleProp1);
+
+        NodeTypeTemplate nodeB = new JcrNodeTypeTemplate(context);
+        nodeB.setName("dnatest:nodeB");
+
+        JcrPropertyDefinitionTemplate nodeBSingleProp1 = new JcrPropertyDefinitionTemplate(context);
+        nodeBSingleProp1.setName("dnatest:singleProp1");
+        nodeBSingleProp1.setRequiredType(PropertyType.DOUBLE);
+        nodeB.getPropertyDefinitionTemplates().add(nodeBSingleProp1);
+
+        JcrPropertyDefinitionTemplate nodeBSingleProp2 = new JcrPropertyDefinitionTemplate(context);
+        nodeBSingleProp2.setName("dnatest:singleProp2");
+        nodeBSingleProp2.setRequiredType(PropertyType.UNDEFINED);
+        nodeB.getPropertyDefinitionTemplates().add(nodeBSingleProp2);
+
+        NodeTypeTemplate nodeC = new JcrNodeTypeTemplate(context);
+        nodeC.setName("dnatest:nodeC");
+        nodeC.setDeclaredSupertypeNames(new String[] {"dnatest:nodeB"});
+
+        JcrPropertyDefinitionTemplate nodeCSingleProp1 = new JcrPropertyDefinitionTemplate(context);
+        nodeCSingleProp1.setName("dnatest:singleProp1");
+        nodeCSingleProp1.setRequiredType(PropertyType.LONG);
+        nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp1);
+
+        JcrPropertyDefinitionTemplate nodeCSingleProp2Double = new JcrPropertyDefinitionTemplate(context);
+        nodeCSingleProp2Double.setName("dnatest:singleProp2");
+        nodeCSingleProp2Double.setRequiredType(PropertyType.DOUBLE);
+        nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp2Double);
+
+        JcrPropertyDefinitionTemplate nodeCSingleProp2Long = new JcrPropertyDefinitionTemplate(context);
+        nodeCSingleProp2Long.setName("dnatest:singleProp2");
+        nodeCSingleProp2Long.setRequiredType(PropertyType.LONG);
+        nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp2Long);
+
+        return Arrays.asList(new NodeTypeTemplate[] {nodeA, nodeB, nodeC});
+    }
 }

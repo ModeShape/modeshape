@@ -577,6 +577,7 @@ public class CndImporter {
                                factory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, hasOrderableChildNodes),
                                factory.create(JcrLexicon.IS_MIXIN, isMixin),
                                factory.create(JcrLexicon.IS_QUERYABLE, isQueryable),
+                               factory.create(JcrLexicon.NODE_TYPE_NAME, name),
                                factory.create(JcrLexicon.PRIMARY_ITEM_NAME, primaryItemName));
 
             return path;
@@ -599,7 +600,7 @@ public class CndImporter {
 
             // Create the node for the node type ...
             if (name == null) return null;
-            Path path = pathFactory().create(parentPath, name);
+            Path path = pathFactory().create(parentPath, JcrLexicon.PROPERTY_DEFINITION);
 
             PropertyFactory factory = context.getPropertyFactory();
             destination.create(path,
@@ -608,6 +609,7 @@ public class CndImporter {
                                factory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultValues),
                                factory.create(JcrLexicon.MULTIPLE, multiple),
                                factory.create(JcrLexicon.MANDATORY, mandatory),
+                               factory.create(JcrLexicon.NAME, name),
                                factory.create(JcrLexicon.AUTO_CREATED, autoCreated),
                                factory.create(JcrLexicon.PROTECTED, isProtected),
                                factory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion),
@@ -632,7 +634,7 @@ public class CndImporter {
 
             // Create the node for the node type ...
             if (name == null) return null;
-            Path path = pathFactory().create(parentPath, name);
+            Path path = pathFactory().create(parentPath, JcrLexicon.CHILD_NODE_DEFINITION);
 
             PropertyFactory factory = context.getPropertyFactory();
             destination.create(path,
@@ -640,6 +642,7 @@ public class CndImporter {
                                factory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, (Object[])requiredPrimaryTypes),
                                factory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, defaultPrimaryType),
                                factory.create(JcrLexicon.MANDATORY, mandatory),
+                               factory.create(JcrLexicon.NAME, name),
                                factory.create(JcrLexicon.AUTO_CREATED, autoCreated),
                                factory.create(JcrLexicon.PROTECTED, isProtected),
                                factory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion),

@@ -27,9 +27,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -37,12 +36,13 @@ import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
-import javax.jcr.Value;
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.OnParentVersionAction;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -50,6 +50,9 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.basic.BasicName;
+import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
+import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +76,7 @@ public class MixinTest {
     static final Name MIXIN_TYPE_C = new BasicName("", "mixinTypeC");
     static final Name MIXIN_TYPE_WITH_AUTO_PROP = new BasicName("", "mixinTypeWithAutoCreatedProperty");
     static final Name MIXIN_TYPE_WITH_AUTO_CHILD = new BasicName("", "mixinTypeWithAutoCreatedChildNode");
-    static final Name PRIMARY_TYPE_A = new BasicName("", "mixinTypeA");
+    static final Name PRIMARY_TYPE_A = new BasicName("", "primaryTypeA");
 
     static final Name PROPERTY_A = new BasicName("", "propertyA");
     static final Name PROPERTY_B = new BasicName("", "propertyB");
@@ -129,11 +132,21 @@ public class MixinTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.context, source);
-        source = new DnaBuiltinNodeTypeSource(this.context, source);
-        source = new TestNodeTypeSource(this.context, source);
-        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
+
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
+
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
+
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
@@ -314,9 +327,7 @@ public class MixinTest {
     public void shouldAllowAdditionIfResidualChildNodeDoesNotConflict() throws Exception {
         graph.create("/a").and().create("/a/" + CHILD_NODE_B);
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry))
-             .on("/a/" + CHILD_NODE_B)
-             .to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
@@ -460,214 +471,95 @@ public class MixinTest {
         nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
     }
 
-    class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
+    private List<NodeTypeTemplate> getTestTypes() {
+        NodeTypeTemplate mixinTypeA = new JcrNodeTypeTemplate(this.context);
+        mixinTypeA.setName("mixinTypeA");
+        mixinTypeA.setMixin(true);
 
-        /** The list of primary node types. */
-        private final List<JcrNodeType> nodeTypes;
+        NodeDefinitionTemplate childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        childNodeA.setName("nodeA");
+        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeA.getNodeDefinitionTemplates().add(childNodeA);
 
-        TestNodeTypeSource( ExecutionContext context,
-                            JcrNodeTypeSource predecessor ) {
-            super(predecessor);
+        PropertyDefinitionTemplate propertyA = new JcrPropertyDefinitionTemplate(this.context);
+        propertyA.setName("propertyA");
+        propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyA.setRequiredType(PropertyType.STRING);
+        mixinTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-            nodeTypes = new ArrayList<JcrNodeType>();
+        NodeTypeTemplate mixinTypeB = new JcrNodeTypeTemplate(this.context);
+        mixinTypeB.setName("mixinTypeB");
+        mixinTypeB.setMixin(true);
 
-            JcrNodeType base = findType(JcrNtLexicon.BASE);
+        NodeDefinitionTemplate childNodeB = new JcrNodeDefinitionTemplate(this.context);
+        childNodeB.setName("nodeB");
+        childNodeB.setDefaultPrimaryType("nt:base");
+        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeB.getNodeDefinitionTemplates().add(childNodeB);
 
-            if (base == null) {
-                String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = DnaLexicon.NAMESPACE.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
+        PropertyDefinitionTemplate propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        propertyB.setName("propertyB");
+        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyB.setRequiredType(PropertyType.BINARY);
+        mixinTypeB.getPropertyDefinitionTemplates().add(propertyB);
 
-            JcrNodeType unstructured = findType(JcrNtLexicon.UNSTRUCTURED);
+        NodeTypeTemplate mixinTypeC = new JcrNodeTypeTemplate(this.context);
+        mixinTypeC.setName("mixinTypeC");
+        mixinTypeC.setMixin(true);
 
-            if (unstructured == null) {
-                String baseTypeName = JcrNtLexicon.UNSTRUCTURED.getString(context.getNamespaceRegistry());
-                String namespaceTypeName = DnaLexicon.NAMESPACE.getString(context.getNamespaceRegistry());
-                throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
-            }
+        childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        childNodeA.setName("nodeA");
+        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeC.getNodeDefinitionTemplates().add(childNodeA);
 
-            Value tenValue = new JcrValue(context.getValueFactories(), null, PropertyType.LONG, 10);
+        propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        propertyB.setName("propertyB");
+        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyB.setRequiredType(PropertyType.STRING);
+        mixinTypeC.getPropertyDefinitionTemplates().add(propertyB);
 
-            // Stubbing in child node and property definitions for now
-            JcrNodeType mixinTypeA = new JcrNodeType(
-                                                     context,
-                                                     NO_NODE_TYPE_MANAGER,
-                                                     MIXIN_TYPE_A,
-                                                     Arrays.asList(new JcrNodeType[] {base}),
-                                                     NO_PRIMARY_ITEM_NAME,
-                                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                  context,
-                                                                                                                  null,
-                                                                                                                  CHILD_NODE_A,
-                                                                                                                  OnParentVersionAction.IGNORE,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  JcrNtLexicon.BASE,
-                                                                                                                  new JcrNodeType[] {base}),}),
-                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          context,
-                                                                                                                          null,
-                                                                                                                          PROPERTY_A,
-                                                                                                                          OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          NO_DEFAULT_VALUES,
-                                                                                                                          PropertyType.STRING,
-                                                                                                                          NO_CONSTRAINTS,
-                                                                                                                          false),}),
-                                                     IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        NodeTypeTemplate mixinTypeWithAutoChild = new JcrNodeTypeTemplate(this.context);
+        mixinTypeWithAutoChild.setName("mixinTypeWithAutoCreatedChildNode");
+        mixinTypeWithAutoChild.setMixin(true);
 
-            JcrNodeType mixinTypeB = new JcrNodeType(
-                                                     context,
-                                                     NO_NODE_TYPE_MANAGER,
-                                                     MIXIN_TYPE_B,
-                                                     Arrays.asList(new JcrNodeType[] {base}),
-                                                     NO_PRIMARY_ITEM_NAME,
-                                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                  context,
-                                                                                                                  null,
-                                                                                                                  CHILD_NODE_B,
-                                                                                                                  OnParentVersionAction.IGNORE,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  JcrNtLexicon.BASE,
-                                                                                                                  new JcrNodeType[] {base}),}),
-                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          context,
-                                                                                                                          null,
-                                                                                                                          PROPERTY_B,
-                                                                                                                          OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          NO_DEFAULT_VALUES,
-                                                                                                                          PropertyType.BINARY,
-                                                                                                                          NO_CONSTRAINTS,
-                                                                                                                          false),}),
-                                                     IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        childNodeB = new JcrNodeDefinitionTemplate(this.context);
+        childNodeB.setName("nodeB");
+        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        childNodeB.setMandatory(true);
+        childNodeB.setAutoCreated(true);
+        childNodeB.setDefaultPrimaryType("nt:unstructured");
+        childNodeB.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        mixinTypeWithAutoChild.getNodeDefinitionTemplates().add(childNodeB);
 
-            JcrNodeType mixinTypeC = new JcrNodeType(
-                                                     context,
-                                                     NO_NODE_TYPE_MANAGER,
-                                                     MIXIN_TYPE_C,
-                                                     Arrays.asList(new JcrNodeType[] {base}),
-                                                     NO_PRIMARY_ITEM_NAME,
-                                                     Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                  context,
-                                                                                                                  null,
-                                                                                                                  CHILD_NODE_A,
-                                                                                                                  OnParentVersionAction.IGNORE,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  false,
-                                                                                                                  JcrNtLexicon.BASE,
-                                                                                                                  new JcrNodeType[] {base}),}),
-                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          context,
-                                                                                                                          null,
-                                                                                                                          PROPERTY_B,
-                                                                                                                          OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          false,
-                                                                                                                          NO_DEFAULT_VALUES,
-                                                                                                                          PropertyType.STRING,
-                                                                                                                          NO_CONSTRAINTS,
-                                                                                                                          false),}),
-                                                     IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        NodeTypeTemplate mixinTypeWithAutoProperty = new JcrNodeTypeTemplate(this.context);
+        mixinTypeWithAutoProperty.setName("mixinTypeWithAutoCreatedProperty");
+        mixinTypeWithAutoProperty.setMixin(true);
 
-            JcrNodeType mixinTypeWithAutoChild = new JcrNodeType(
-                                                                 context,
-                                                                 NO_NODE_TYPE_MANAGER,
-                                                                 MIXIN_TYPE_WITH_AUTO_CHILD,
-                                                                 Arrays.asList(new JcrNodeType[] {base}),
-                                                                 NO_PRIMARY_ITEM_NAME,
-                                                                 Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                              context,
-                                                                                                                              null,
-                                                                                                                              CHILD_NODE_B,
-                                                                                                                              OnParentVersionAction.IGNORE,
-                                                                                                                              true,
-                                                                                                                              true,
-                                                                                                                              false,
-                                                                                                                              false,
-                                                                                                                              JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                              new JcrNodeType[] {unstructured}),}),
-                                                                 NO_PROPERTIES, IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        propertyB.setName("propertyB");
+        propertyB.setMandatory(true);
+        propertyB.setAutoCreated(true);
+        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyB.setRequiredType(PropertyType.LONG);
+        propertyB.setDefaultValues(new String[] {"10"});
+        mixinTypeWithAutoProperty.getPropertyDefinitionTemplates().add(propertyB);
 
-            JcrNodeType mixinTypeWithAutoProperty = new JcrNodeType(
-                                                                    context,
-                                                                    NO_NODE_TYPE_MANAGER,
-                                                                    MIXIN_TYPE_WITH_AUTO_PROP,
-                                                                    Arrays.asList(new JcrNodeType[] {base}),
-                                                                    NO_PRIMARY_ITEM_NAME,
-                                                                    NO_CHILD_NODES,
-                                                                    Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                                         context,
-                                                                                                                                         null,
-                                                                                                                                         PROPERTY_B,
-                                                                                                                                         OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                                         true,
-                                                                                                                                         true,
-                                                                                                                                         false,
-                                                                                                                                         new Value[] {tenValue},
-                                                                                                                                         PropertyType.LONG,
-                                                                                                                                         NO_CONSTRAINTS,
-                                                                                                                                         false),}),
-                                                                    IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
+        NodeTypeTemplate primaryTypeA = new JcrNodeTypeTemplate(this.context);
+        primaryTypeA.setName("primaryTypeA");
 
-            JcrNodeType primaryTypeA = new JcrNodeType(
-                                                       context,
-                                                       NO_NODE_TYPE_MANAGER,
-                                                       PRIMARY_TYPE_A,
-                                                       Arrays.asList(new JcrNodeType[] {base}),
-                                                       NO_PRIMARY_ITEM_NAME,
-                                                       Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                    context,
-                                                                                                                    null,
-                                                                                                                    CHILD_NODE_A,
-                                                                                                                    OnParentVersionAction.IGNORE,
-                                                                                                                    false,
-                                                                                                                    false,
-                                                                                                                    false,
-                                                                                                                    false,
-                                                                                                                    JcrNtLexicon.BASE,
-                                                                                                                    new JcrNodeType[] {base}),}),
-                                                       Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                            context,
-                                                                                                                            null,
-                                                                                                                            PROPERTY_A,
-                                                                                                                            OnParentVersionBehavior.IGNORE.getJcrValue(),
-                                                                                                                            false,
-                                                                                                                            false,
-                                                                                                                            false,
-                                                                                                                            NO_DEFAULT_VALUES,
-                                                                                                                            PropertyType.STRING,
-                                                                                                                            NO_CONSTRAINTS,
-                                                                                                                            false),}),
-                                                       NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        childNodeA.setName("nodeA");
+        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        primaryTypeA.getNodeDefinitionTemplates().add(childNodeA);
 
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
-                mixinTypeWithAutoProperty, primaryTypeA,}));
-        }
+        propertyA = new JcrPropertyDefinitionTemplate(this.context);
+        propertyA.setName("propertyA");
+        propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyA.setRequiredType(PropertyType.STRING);
+        primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
-
+        return Arrays.asList(new NodeTypeTemplate[] {mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
+            mixinTypeWithAutoProperty, primaryTypeA,});
     }
 
 }

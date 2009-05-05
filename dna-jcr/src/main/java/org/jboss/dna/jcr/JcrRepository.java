@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.util.Collections;
@@ -199,10 +200,18 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
         this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
 
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.executionContext);
-        source = new DnaBuiltinNodeTypeSource(this.executionContext, source);
-        this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, source);
+        this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext);
+
+        try {
+            this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
+                "/org/jboss/dna/jcr/jsr_170_builtins.cnd", "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
 
         if (options == null) {
             this.options = DEFAULT_OPTIONS;

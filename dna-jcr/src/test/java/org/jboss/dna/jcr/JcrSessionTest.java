@@ -35,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
@@ -130,10 +131,17 @@ public class JcrSessionTest {
         };
 
         // Set up the repo type manager
-        JcrNodeTypeSource nodeTypes = null;
-        nodeTypes = new JcrBuiltinNodeTypeSource(context, nodeTypes);
-        nodeTypes = new DnaBuiltinNodeTypeSource(context, nodeTypes);
-        repoTypeManager = new RepositoryNodeTypeManager(context, nodeTypes);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
 
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
@@ -344,7 +352,7 @@ public class JcrSessionTest {
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
     }
 
-    @Test (expected=RepositoryException.class)
+    @Test( expected = RepositoryException.class )
     public void shouldNotCreateValueForNonReferenceableNode() throws Exception {
         ValueFactory factory = session.getValueFactory();
         Node node = Mockito.mock(Node.class);
@@ -450,8 +458,7 @@ public class JcrSessionTest {
     public void rootNodeShouldBeReferenceable() throws RepositoryException {
         Node rootNode = session.getRootNode();
 
-        assertTrue(rootNode.getPrimaryNodeType()
-                           .isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
+        assertTrue(rootNode.getPrimaryNodeType().isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
     }
 
     @Test
@@ -514,14 +521,13 @@ public class JcrSessionTest {
     @Test
     public void shouldMoveToNewName() throws Exception {
         session.move("/a/b/c", "/a/b/d");
-        
+
         session.getRootNode().getNode("a").getNode("b").getNode("d");
         try {
             session.getRootNode().getNode("a").getNode("b").getNode("c");
 
             fail("Node still exists at /a/b/c after move");
-        }
-        catch (PathNotFoundException e) {
+        } catch (PathNotFoundException e) {
             // Expected
         }
     }

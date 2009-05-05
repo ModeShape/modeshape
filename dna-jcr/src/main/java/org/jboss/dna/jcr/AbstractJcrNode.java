@@ -99,6 +99,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     final UUID internalUuid() {
         return nodeUuid;
     }
+    
+    final Name name() throws RepositoryException {
+        return cache.getNameOf(nodeUuid);
+    }
 
     final NodeInfo nodeInfo() throws ItemNotFoundException, RepositoryException {
         return cache.findNodeInfo(nodeUuid);
@@ -1551,5 +1555,22 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public void save() throws RepositoryException {
         cache.save(nodeUuid);
+    }
+
+    @Override
+    public String toString() {
+        
+        try {
+            PropertyIterator iter = this.getProperties();
+            StringBuffer propertyBuff = new StringBuffer();
+            while (iter.hasNext()) {
+                AbstractJcrProperty prop = (AbstractJcrProperty) iter.nextProperty();
+                propertyBuff.append(prop.toString()).append(", ");
+            }
+            return this.getPath() + " {" + propertyBuff.toString() + "}";
+        }
+        catch (RepositoryException re) {
+            return re.getMessage();
+        }
     }
 }

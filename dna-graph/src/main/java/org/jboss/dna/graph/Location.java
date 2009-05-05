@@ -472,7 +472,6 @@ public abstract class Location implements Iterable<Property> {
      * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
      */
     public String getString( NamespaceRegistry namespaceRegistry ) {
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return getString(namespaceRegistry, null, null);
     }
 
@@ -491,7 +490,6 @@ public abstract class Location implements Iterable<Property> {
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return getString(namespaceRegistry, encoder, null);
     }
 

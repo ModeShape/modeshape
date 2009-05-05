@@ -1,0 +1,27 @@
+/*
+ * DNA Built-In Types
+ */
+ 
+ 
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<dna = "http://www.jboss.org/dna/1.0">
+
+[dna:namespace] > nt:base
+- dna:uri (string) primary protected version
+
+[dna:namespaces] > nt:base
++ * (dna:namespace) = dna:namespace protected version
+
+[dna:nodeTypes] > nt:base
++ * (nt:nodeType) = nt:nodeType protected version
+
+[dna:system] > nt:base
++ dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected version
++ dna:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected version
+
+[dna:root] > nt:base, mix:referenceable orderable
+- * (undefined) multiple version
+- * (undefined) version
++ jcr:system (dna:system) = dna:system autocreated mandatory protected ignore
++ * (nt:base) = nt:base multiple version

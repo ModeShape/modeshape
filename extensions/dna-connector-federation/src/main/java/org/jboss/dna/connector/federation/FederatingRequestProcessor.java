@@ -55,11 +55,13 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -274,11 +276,24 @@ public class FederatingRequestProcessor extends RequestProcessor {
         execute(sourceRequest, projection.projection);
 
         // Copy/transform the results ...
+        Location location = projection.convertToRepository(sourceRequest.getActualLocationOfNode());
         if (sourceRequest.hasError()) {
             request.setError(sourceRequest.getError());
         } else {
-            request.setActualLocationOfNode(projection.convertToRepository(sourceRequest.getActualLocationOfNode()));
+            request.setActualLocationOfNode(location);
         }
+
+        // Add the cache ...
+        Map<Name, Property> props = new HashMap<Name, Property>();
+        for (Property property : request.properties()) {
+            props.put(property.getName(), property);
+        }
+        for (Property idProperty : location) {
+            props.put(idProperty.getName(), idProperty);
+        }
+        CreateNodeRequest cacheRequest = new CreateNodeRequest(parentLocation, workspace.getCacheProjection().getWorkspaceName(),
+                                                               request.named(), props.values());
+        executeInCache(cacheRequest, workspace);
     }
 
     /**
@@ -309,8 +324,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete in the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(), workspace.getCacheProjection()
-                                                                                          .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(),
+                                                                   workspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, workspace);
     }
 
@@ -364,8 +379,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete from the cache the parent of the new location ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(), fromWorkspace.getCacheProjection()
-                                                                                                .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(),
+                                                                   fromWorkspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, fromWorkspace);
     }
 
@@ -410,8 +425,11 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                        intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
         }
         // Delete from the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(), workspace.getCacheProjection()
-                                                                                            .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(),
+                                                                   workspace.getCacheProjection().getWorkspaceName());
+        executeInCache(cacheRequest, workspace);
+        // Mark the new parent node as being expired ...
+        cacheRequest = new DeleteBranchRequest(request.into(), workspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, workspace);
     }
 
@@ -443,8 +461,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Update the cache ...
-        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(), workspace.getCacheProjection()
-                                                                                                  .getWorkspaceName(),
+        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(),
+                                                                           workspace.getCacheProjection().getWorkspaceName(),
                                                                            request.properties());
         executeInCache(cacheRequest, workspace);
     }
@@ -595,6 +613,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
         RepositoryConnection connection = getConnectionToCacheFor(workspace);
         connection.execute(getExecutionContext(), request);
         // Don't need to close, as we'll close all connections when this processor is closed
+        if (logger.isTraceEnabled()) {
+            traceCacheUpdate(request);
+        }
     }
 
     /**
@@ -730,10 +751,11 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
         if (!foundNonEmptyContribution) return null;
         if (logger.isTraceEnabled()) {
-            logger.trace("Loaded {0} from sources, resulting in these contributions:", location);
+            NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+            logger.trace("Loaded {0} from sources, resulting in these contributions:", location.getString(registry));
             int i = 0;
             for (Contribution contribution : contributions) {
-                logger.trace("  {0} {1}", ++i, contribution);
+                logger.trace("  {0} {1}", ++i, contribution.getString(registry));
             }
         }
 
@@ -818,6 +840,11 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                                                 request.getChildren());
                 contributions.add(contribution);
             }
+            if (contributions.isEmpty() && logger.isTraceEnabled()) {
+                NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+                logger.trace("Failed to load {0} from any source", location.getString(registry));
+            }
+            return;
         }
 
         // Otherwise, we can do it by path and projections ...
@@ -998,85 +1025,86 @@ public class FederatingRequestProcessor extends RequestProcessor {
             properties.put(uuidProperty.getName(), uuidProperty);
         }
 
-        // Have the children changed ...
-        if (mergedNode.hasError() && !path.isRoot()) {
-            // This is not the root node, so we need to create the node (or replace it if it exists) ...
-            final Location parentLocation = Location.create(path.getParent());
-            childName = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
-                                               mergedNode.getProperties()));
-            // logger.trace("Adding {0} to cache with properties {1}", location, properties);
-            // Now create all of the children that this federated node knows of ...
-            for (Location child : mergedNode.getChildren()) {
-                childName = child.getPath().getLastSegment().getName();
-                requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND, child));
-                // logger.trace("Caching child of {0} named {1}", location, childName);
-            }
-        } else if (fromCache.getChildren().equals(mergedNode.getChildren())) {
-            // Just update the properties ...
-            requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
-            // logger.trace("Updating cached properties on the root to {0}", properties);
-        } else {
-            // The children have changed, so figure out how ...
-            if (fromCache.getChildren().isEmpty()) {
-                // No children in the cache, so just update the properties of the node ...
-                requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
-                // logger.trace("Updating cached properties on {0} to {1}", location, properties);
-
-                // And create all of the children that this federated node knows of ...
+        // If the node didn't exist in the first place ...
+        if (mergedNode.hasError()) {
+            // We need to create the node...
+            if (path.isRoot()) {
+                // We don't need to re-create the root, just update the properties and/or children ...
+            } else {
+                // This is not the root node, so we need to create the node (or replace it if it exists) ...
+                final Location parentLocation = Location.create(path.getParent());
+                childName = path.getLastSegment().getName();
+                requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
+                                                   mergedNode.getProperties()));
+                // Now create all of the children that this federated node knows of ...
                 for (Location child : mergedNode.getChildren()) {
                     childName = child.getPath().getLastSegment().getName();
                     requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND, child));
-                    // logger.trace("Caching child of {0} named {1}", location, childName);
                 }
-            } else if (mergedNode.getChildren().isEmpty()) {
-                // There were children in the cache but not in the merged node, so update the cached properties
+            }
+        } else {
+            // The node existed, so figure out what to update ...
+            if (fromCache.getChildren().equals(mergedNode.getChildren())) {
+                // Just update the properties ...
                 requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
-
-                // and delete all the children ...
-                for (Location child : fromCache.getChildren()) {
-                    requests.add(new DeleteBranchRequest(child, cacheWorkspace));
-                    // logger.trace("Removing {0} from cache", child);
-                }
             } else {
-                // There were children in the cache and in the merged node. The easy way is to just remove the
-                // branch from the cache, the create it again ...
-                if (path.isRoot()) {
+                // The children have changed, so figure out how ...
+                if (fromCache.getChildren().isEmpty()) {
+                    // No children in the cache, so just update the properties of the node ...
                     requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
-                    // logger.trace("Updating cached properties on {0} to {1}", location, properties);
+
+                    // And create all of the children that this federated node knows of ...
+                    for (Location child : mergedNode.getChildren()) {
+                        childName = child.getPath().getLastSegment().getName();
+                        requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
+                                                           child));
+                    }
+                } else if (mergedNode.getChildren().isEmpty()) {
+                    // There were children in the cache but not in the merged node, so update the cached properties
+                    requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
 
                     // and delete all the children ...
                     for (Location child : fromCache.getChildren()) {
                         requests.add(new DeleteBranchRequest(child, cacheWorkspace));
-                        // logger.trace("Removing child node {0} from cache", child);
-                    }
-
-                    // Now create all of the children that this federated node knows of ...
-                    for (Location child : mergedNode.getChildren()) {
-                        childName = child.getPath().getLastSegment().getName();
-                        requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
-                                                           child));
-                        // logger.trace("Caching child of {0} named {1}", location, childName);
                     }
                 } else {
-                    requests.add(new DeleteBranchRequest(location, cacheWorkspace));
-                    // logger.trace("Replacing node {0} from cache", location);
+                    // There were children in the cache and in the merged node. The easy way is to just remove the
+                    // branch from the cache, the create it again ...
+                    if (path.isRoot()) {
+                        requests.add(new UpdatePropertiesRequest(location, cacheWorkspace, properties));
 
-                    // This is not the root node, so we need to create the node (or replace it if it exists) ...
-                    final Location parentLocation = Location.create(path.getParent());
-                    childName = path.getLastSegment().getName();
-                    requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
-                                                       mergedNode.getProperties()));
-                    // logger.trace("Adding {0} to cache with properties {1}", location, properties);
-                    // Now create all of the children that this federated node knows of ...
-                    for (Location child : mergedNode.getChildren()) {
-                        childName = child.getPath().getLastSegment().getName();
-                        requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
-                                                           child));
-                        // logger.trace("Caching child of {0} named {1}", location, childName);
+                        // and delete all the children ...
+                        for (Location child : fromCache.getChildren()) {
+                            requests.add(new DeleteBranchRequest(child, cacheWorkspace));
+                        }
+
+                        // Now create all of the children that this federated node knows of ...
+                        for (Location child : mergedNode.getChildren()) {
+                            childName = child.getPath().getLastSegment().getName();
+                            requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
+                                                               child));
+                        }
+                    } else {
+                        requests.add(new DeleteBranchRequest(location, cacheWorkspace));
+
+                        // This is not the root node, so we need to create the node (or replace it if it exists) ...
+                        final Location parentLocation = Location.create(path.getParent());
+                        childName = path.getLastSegment().getName();
+                        requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName,
+                                                           NodeConflictBehavior.REPLACE, mergedNode.getProperties()));
+                        // Now create all of the children that this federated node knows of ...
+                        for (Location child : mergedNode.getChildren()) {
+                            childName = child.getPath().getLastSegment().getName();
+                            requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND,
+                                                               child));
+                        }
                     }
                 }
             }
+        }
+
+        if (logger.isTraceEnabled()) {
+            traceCacheUpdates(requests);
         }
 
         // Execute all the requests ...
@@ -1101,5 +1129,60 @@ public class FederatingRequestProcessor extends RequestProcessor {
                 }
             }
         }
+    }
+
+    private void traceCacheUpdates( Iterable<Request> requests ) {
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        logger.trace("Updating cache:");
+        for (Request request : requests) {
+            if (!(request instanceof ChangeRequest)) continue;
+            if (request instanceof CreateNodeRequest) {
+                CreateNodeRequest create = (CreateNodeRequest)request;
+                logger.trace("  creating {0} under {1} with properties {2}",
+                             create.named().getString(registry),
+                             create.under().getString(registry),
+                             readable(registry, create.properties()));
+            } else if (request instanceof UpdatePropertiesRequest) {
+                UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
+                logger.trace("  updating {0} with properties {1}",
+                             update.on().getString(registry),
+                             readable(registry, update.properties().values()));
+            } else {
+                logger.trace("  " + request.toString());
+            }
+        }
+    }
+
+    private void traceCacheUpdate( Request request ) {
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        if (!(request instanceof ChangeRequest)) return;
+        logger.trace("Updating cache:");
+        if (request instanceof CreateNodeRequest) {
+            CreateNodeRequest create = (CreateNodeRequest)request;
+            logger.trace("  creating {0} under {1} with properties {2}",
+                         create.named().getString(registry),
+                         create.under().getString(registry),
+                         readable(registry, create.properties()));
+        } else if (request instanceof UpdatePropertiesRequest) {
+            UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
+            logger.trace("  updating {0} with properties {1}",
+                         update.on().getString(registry),
+                         readable(registry, update.properties().values()));
+        } else {
+            logger.trace("  " + request.toString());
+        }
+    }
+
+    private String readable( NamespaceRegistry registry,
+                             Collection<Property> properties ) {
+        if (properties.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Property prop : properties) {
+            if (first) first = false;
+            else sb.append(",");
+            sb.append(prop.getString(registry));
+        }
+        return sb.toString();
     }
 }

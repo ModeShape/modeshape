@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -41,6 +42,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
@@ -116,10 +118,18 @@ public class RepositoryNodeTypeManagerTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.context, source);
-        source = new DnaBuiltinNodeTypeSource(this.context, source);
-        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context);
+        try {
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
+
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
@@ -224,8 +234,8 @@ public class RepositoryNodeTypeManagerTest {
         assertThat(nodeType.hasOrderableChildNodes(),
                    is(typeNode.getProperty(JcrLexicon.HAS_ORDERABLE_CHILD_NODES.getString(registry)).getBoolean()));
         try {
-            assertThat(nodeType.getPrimaryItemName(), is(typeNode.getProperty(JcrLexicon.PRIMARY_ITEM_NAME.getString(registry))
-                                                                 .getString()));
+            assertThat(nodeType.getPrimaryItemName(),
+                       is(typeNode.getProperty(JcrLexicon.PRIMARY_ITEM_NAME.getString(registry)).getString()));
         } catch (PathNotFoundException pnfe) {
             assertThat(nodeType.getPrimaryItemName(), is(nullValue()));
         }
@@ -288,8 +298,7 @@ public class RepositoryNodeTypeManagerTest {
 
         Set<Name> requiredPrimaryTypeNames = nodeDef.getRequiredPrimaryTypeNames();
         try {
-            Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry))
-                                                        .getValues();
+            Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry)).getValues();
             assertEquals(requiredPrimaryTypes.length, requiredPrimaryTypeNames.size());
             for (int i = 0; i < requiredPrimaryTypes.length; i++) {
                 Name rptName = context.getValueFactories().getNameFactory().create(requiredPrimaryTypes[i].getString());
@@ -312,8 +321,7 @@ public class RepositoryNodeTypeManagerTest {
         assertEquals(nodeDef.allowsSameNameSiblings(),
                      childNodeNode.getProperty(JcrLexicon.SAME_NAME_SIBLINGS.getString(registry)).getBoolean());
         assertEquals(nodeDef.getOnParentVersion(),
-                     OnParentVersionAction.valueFromName(childNodeNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry))
-                                                                      .getString()));
+                     OnParentVersionAction.valueFromName(childNodeNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry)).getString()));
 
     }
 
@@ -334,8 +342,7 @@ public class RepositoryNodeTypeManagerTest {
         assertEquals(propertyDef.isMultiple(), propNode.getProperty(JcrLexicon.MULTIPLE.getString(registry)).getBoolean());
         assertEquals(propertyDef.isProtected(), propNode.getProperty(JcrLexicon.PROTECTED.getString(registry)).getBoolean());
         assertEquals(propertyDef.getOnParentVersion(),
-                     OnParentVersionAction.valueFromName(propNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry))
-                                                                 .getString()));
+                     OnParentVersionAction.valueFromName(propNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry)).getString()));
         assertEquals(propertyDef.getRequiredType(),
                      PropertyType.valueFromName(propNode.getProperty(JcrLexicon.REQUIRED_TYPE.getString(registry)).getString()));
 

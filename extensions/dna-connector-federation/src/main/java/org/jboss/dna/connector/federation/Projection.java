@@ -306,9 +306,11 @@ public class Projection implements Comparable<Projection>, Serializable {
         CheckArg.isNotNull(factory, "factory");
         assert canonicalPathInRepository == null ? true : canonicalPathInRepository.equals(canonicalPathInRepository.getCanonicalPath());
         Set<Path> paths = new HashSet<Path>();
-        for (Rule rule : getRules()) {
-            Path pathInSource = rule.getPathInSource(canonicalPathInRepository, factory);
-            if (pathInSource != null) paths.add(pathInSource);
+        if (canonicalPathInRepository != null) {
+            for (Rule rule : getRules()) {
+                Path pathInSource = rule.getPathInSource(canonicalPathInRepository, factory);
+                if (pathInSource != null) paths.add(pathInSource);
+            }
         }
         return paths;
     }

@@ -779,10 +779,10 @@ public class FederatingRequestProcessorTest {
         executor.process(request);
         assertThat(request.hasError(), is(false));
         assertThat(request.getActualLocationOfNode().getPath(), is(path("/a/ay")));
+        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
         assertNodeHasProperty("/a/ay", "desc", "ay description 2");
         assertNodeHasProperty("/a/ay", "prop1", "value1");
         assertNodeHasProperty("/a/ay", "prop2", "value2a", "value2b");
-        assertNodeHasChildren("/a", "nA", "nB", "nC", "qA", "qB", "qC", "ay");
     }
 
     @Test( expected = UnsupportedRequestException.class )

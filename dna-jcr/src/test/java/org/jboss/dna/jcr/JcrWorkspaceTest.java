@@ -28,10 +28,12 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -100,10 +102,17 @@ public class JcrWorkspaceTest {
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
 
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(context, source);
-        source = new DnaBuiltinNodeTypeSource(context, source);
-        repoManager = new RepositoryNodeTypeManager(context, source);
+        repoManager = new RepositoryNodeTypeManager(context);
+        try {
+            this.repoManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
+                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
+        } catch (RepositoryException re) {
+            re.printStackTrace();
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        }
 
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getRepositoryTypeManager()).toReturn(repoManager);
@@ -228,10 +237,10 @@ public class JcrWorkspaceTest {
     @Test
     public void shouldAllowImportXml() throws Exception {
         String inputData = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            + "<sv:node xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:nt=\"http://www.jcp.org/jcr/nt/1.0\" "
-            + "xmlns:sv=\"http://www.jcp.org/jcr/sv/1.0\" sv:name=\"workspaceTestNode\">"
-            + "<sv:property sv:name=\"jcr:primaryType\" sv:type=\"Name\">"
-            + "<sv:value>nt:unstructured</sv:value></sv:property></sv:node>";
+                           + "<sv:node xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:nt=\"http://www.jcp.org/jcr/nt/1.0\" "
+                           + "xmlns:sv=\"http://www.jcp.org/jcr/sv/1.0\" sv:name=\"workspaceTestNode\">"
+                           + "<sv:property sv:name=\"jcr:primaryType\" sv:type=\"Name\">"
+                           + "<sv:value>nt:unstructured</sv:value></sv:property></sv:node>";
         workspace.importXML("/", new ByteArrayInputStream(inputData.getBytes()), 0);
     }
 

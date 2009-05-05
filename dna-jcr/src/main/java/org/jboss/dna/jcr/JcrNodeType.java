@@ -140,6 +140,12 @@ class JcrNodeType implements NodeType {
             JcrNodeType superType = thisAndAllSupertypes.get(i);
             for (NodeType superSuperType : superType.getDeclaredSupertypes()) {
                 JcrNodeType jcrSuperSuperType = (JcrNodeType)superSuperType;
+                
+                if (jcrSuperSuperType == null) {
+                    assert JcrNtLexicon.BASE.equals(name);
+                    continue;
+                }
+                
                 if (typeNames.add(jcrSuperSuperType.getInternalName())) {
                     thisAndAllSupertypes.add(jcrSuperSuperType);
                 }

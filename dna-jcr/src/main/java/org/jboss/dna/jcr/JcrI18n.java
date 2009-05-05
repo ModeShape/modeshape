@@ -133,6 +133,8 @@ public final class JcrI18n {
     public static I18n noSnsDefinition;
     public static I18n missingMandatoryItem;
 
+    public static I18n allNodeTypeTemplatesMustComeFromSameSession;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

@@ -33,18 +33,26 @@ public class JcrReadingTest extends AbstractJcrAccessTest {
 
     @Test
     public void testReadingTrees() throws Exception {
-        int[] breadths = new int[] { 10, };
-        int[] depths = new int[] { 1, 2, 3, };
-        int[] properties = new int[] { 0, 7, 100 };
-        
+        int[] breadths = new int[] {10,};
+        int[] depths = new int[] {1, 2, 3,};
+        int[] properties = new int[] {0, 7, 50};
+
         for (int i = 0; i < breadths.length; i++) {
             for (int j = 0; j < depths.length; j++) {
                 for (int k = 0; k < properties.length; k++) {
                     String testName = "/" + breadths[i] + "x" + depths[j] + "x" + properties[k] + "test";
                     session().getRootNode().addNode(testName, "nt:unstructured");
                     createSubgraph(session(), testName, depths[j], breadths[i], properties[k], false, null, null, null);
-                    
-                    traverseSubgraph(session(), testName, depths[j], breadths[i], properties[k], false, new Stopwatch(), System.out, null);
+
+                    traverseSubgraph(session(),
+                                     testName,
+                                     depths[j],
+                                     breadths[i],
+                                     properties[k],
+                                     false,
+                                     new Stopwatch(),
+                                     System.out,
+                                     null);
                 }
             }
         }

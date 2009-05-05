@@ -81,11 +81,6 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         this.namespaceProperties = Collections.unmodifiableList(properties);
         createNamespaceParentIfNeeded();
         initializeCacheFromStore(cache);
-
-        // Load in the namespaces from the execution context used by the store ...
-        for (Namespace namespace : store.getContext().getNamespaceRegistry().getNamespaces()) {
-            register(namespace.getPrefix(), namespace.getNamespaceUri());
-        }
     }
 
     private void createNamespaceParentIfNeeded() {
@@ -220,6 +215,9 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
     }
 
     protected void initializeCacheFromStore( NamespaceRegistry cache ) {
+        // Get the namespaces that the store is using ...
+        Set<Namespace> toRegister = new HashSet<Namespace>(store.getContext().getNamespaceRegistry().getNamespaces());
+
         // Read the store ...
         try {
             Subgraph nsGraph = store.getSubgraphOfDepth(2).at(parentOfNamespaceNodes);
@@ -231,13 +229,35 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                 if (uri != null) {
                     String prefix = getPrefixFor(nsLocation.getPath());
                     cache.register(prefix, uri);
+                    // If we found it, we don't need to register it ...
+                    toRegister.remove(new BasicNamespace(prefix, uri));
                 }
             }
 
             // Empty prefix to namespace mapping is built-in
             cache.register("", "");
+            toRegister.remove(cache.getNamespaceForPrefix(""));
+
+            // Persist any namespaces that we didn't find ...
+            if (!toRegister.isEmpty()) {
+                Graph.Batch batch = store.batch();
+                PathFactory pathFactory = store.getContext().getValueFactories().getPathFactory();
+                for (Namespace namespace : toRegister) {
+                    String prefix = namespace.getPrefix();
+                    if (prefix.length() == 0) continue;
+                    String uri = namespace.getNamespaceUri();
+                    Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, prefix);
+                    batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).and();
+                }
+                batch.execute();
+            }
+
         } catch (PathNotFoundException e) {
             // Nothing to read
+        }
+        // Load in the namespaces from the execution context used by the store ...
+        for (Namespace namespace : store.getContext().getNamespaceRegistry().getNamespaces()) {
+            register(namespace.getPrefix(), namespace.getNamespaceUri());
         }
     }
 
@@ -291,10 +311,10 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                 // Generated prefixes are simply "ns" followed by the SNS index ...
                 PathFactory pathFactory = store.getContext().getValueFactories().getPathFactory();
                 Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, GENERATED_PREFIX);
-                Location actualLocation = store.createAt(pathToNamespaceNode)
-                                               .with(namespaceProperties)
-                                               .and(uriPropertyName, namespaceUri)
-                                               .getLocation();
+                Property uriProperty = store.getContext().getPropertyFactory().create(uriPropertyName, namespaceUri);
+                List<Property> props = new ArrayList<Property>(namespaceProperties);
+                props.add(uriProperty);
+                Location actualLocation = store.createIfMissing(pathToNamespaceNode, props).andReturn().getLocation();
 
                 return getPrefixFor(actualLocation.getPath());
             }
