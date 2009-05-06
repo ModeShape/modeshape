@@ -316,6 +316,11 @@ public class SequencingClient {
         String nodePath = this.userInterface.getRepositoryPath("/a/b/" + filename);
         String mimeType = getMimeType(url);
 
+        if (mimeType == null) {
+        	System.err.println("Could not determine mime type for file.  Cancelling upload.");
+        	return;
+        }
+        
         // Now use the JCR API to upload the file ...
         Session session = createSession();
         JcrTools tools = this.executionContext.getTools();
@@ -565,7 +570,7 @@ public class SequencingClient {
         if (filename.endsWith(".ras")) return "image/x-cmu-raster";
         if (filename.endsWith(".mp3")) return "audio/mpeg";
         if (filename.endsWith(".java")) return "text/x-java-source";
-        throw new SystemFailureException("Unknown mime type for " + file);
+        return null;
     }
 
 }

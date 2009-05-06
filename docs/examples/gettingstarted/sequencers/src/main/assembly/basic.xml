@@ -35,6 +35,10 @@
       <fileMode>0744</fileMode>
     </file>
     <file>
+      <source>src/main/config/run.cmd</source>
+      <fileMode>0744</fileMode>
+    </file>
+    <file>
       <source>src/main/resources/jackrabbitConfig.xml</source>
       <fileMode>0644</fileMode>
     </file>
