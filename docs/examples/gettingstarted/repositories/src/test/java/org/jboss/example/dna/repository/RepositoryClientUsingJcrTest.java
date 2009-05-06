@@ -47,6 +47,6 @@ public class RepositoryClientUsingJcrTest extends RepositoryClientTest {
      */
     @Override
     public void shouldHaveContentFromVehiclesRepository() throws Throwable {
-        // super.shouldHaveContentFromVehiclesRepository();
+        super.shouldHaveContentFromVehiclesRepository();
     }
 }
