@@ -160,6 +160,12 @@ public class RepositoryClient {
 
         Graph aircraft = Graph.create("Aircraft", sources, context);
         aircraft.importXmlFrom(location + "/aircraft.xml").into("/");
+
+        Graph vehicles = Graph.create("Vehicles", sources, context);
+        vehicles.create("/Vehicles");
+        vehicles.importXmlFrom(location + "/cars.xml").into("/Vehicles");
+        vehicles.importXmlFrom(location + "/aircraft.xml").into("/Vehicles");
+    
     }
 
     /**
