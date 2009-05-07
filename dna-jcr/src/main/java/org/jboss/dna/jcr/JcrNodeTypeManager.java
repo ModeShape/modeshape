@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
@@ -38,6 +39,12 @@ import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
+import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
+import org.jboss.dna.jcr.nodetype.NodeTypeExistsException;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
+import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
  * Local implementation of @{link NodeTypeManager}. This class handles translation between {@link Name}s and {@link String}s based
@@ -178,7 +185,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
      * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints}. Otherwise,
+     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
      * the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
@@ -237,7 +244,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
      * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints}. Otherwise,
+     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
      * the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
@@ -359,4 +366,88 @@ class JcrNodeTypeManager implements NodeTypeManager {
                                                           skipProtected);
     }
 
+    /**
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting
+     * {@link NodeType} object.
+     * <p>
+     * Typically, the object passed to this method will be a {@link NodeTypeTemplate} (a subclass of {@link NodeTypeDefinition})
+     * acquired from {@link JcrNodeTypeManager#createNodeTypeTemplate()} and then filled-in with definition information.
+     * </p>
+     * 
+     * @param template the new node type to register
+     * @param allowUpdate must be {@code false}; DNA does not allow updating node types at this time
+     * @return the {@code newly created node type}
+     * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
+     * @throws NodeTypeExistsException if {@code allowUpdate} is false and the {@code NodeTypeDefinition} specifies a node type
+     *         name that already exists
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; DNA does not allow updating node types at
+     *         this time.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeType registerNodeType( NodeTypeDefinition template,
+                                      boolean allowUpdate )
+        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+        RepositoryException {
+        return this.repositoryTypeManager.registerNodeType(template, allowUpdate);
+    }
+
+    /**
+     * Registers or updates the specified Collection of {@code NodeTypeDefinition} objects. This method is used to register or
+     * update a set of node types with mutual dependencies. Returns an iterator over the resulting {@code NodeType} objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
+     * </p>
+     * 
+     * @param templates the new node types to register
+     * @param allowUpdates must be {@code false}; DNA does not allow updating node types at this time
+     * @return the {@code newly created node types}
+     * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
+     * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
+     *         specifies a node type name that already exists
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; DNA does not allow updating node types at
+     *         this time.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeTypeIterator registerNodeTypes( Collection<NodeTypeDefinition> templates,
+                                               boolean allowUpdates )
+        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+        RepositoryException {
+        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
+    }
+
+    /**
+     * Returns an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
+     * {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}
+     * 
+     * @return an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
+     *         {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeTypeTemplate createNodeTypeTemplate() throws RepositoryException {
+        return new JcrNodeTypeTemplate(this.context);
+    }
+
+    /**
+     * Returns an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
+     * a {@code NodeTypeTemplate}.
+     * 
+     * @return an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
+     *         a {@code NodeTypeTemplate}.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeDefinitionTemplate createNodeDefinitionTemplate() throws RepositoryException {
+        return new JcrNodeDefinitionTemplate(this.context);
+    }
+
+    /**
+     * Returns an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
+     * a {@code NodeTypeTemplate}.
+     * 
+     * @return an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
+     *         a {@code NodeTypeTemplate}.
+     * @throws RepositoryException if another error occurs
+     */
+    public PropertyDefinitionTemplate createPropertyDefinitionTemplate() throws RepositoryException {
+        return new JcrPropertyDefinitionTemplate(this.context);
+    }
 }
