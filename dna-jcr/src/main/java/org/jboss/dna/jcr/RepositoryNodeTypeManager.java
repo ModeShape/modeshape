@@ -104,11 +104,11 @@ class RepositoryNodeTypeManager {
 
     private final ExecutionContext context;
 
-    @GuardedBy("nodeTypeManagerLock")
+    @GuardedBy( "nodeTypeManagerLock" )
     private final Map<Name, JcrNodeType> nodeTypes;
-    @GuardedBy("nodeTypeManagerLock")
+    @GuardedBy( "nodeTypeManagerLock" )
     private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions;
-    @GuardedBy("nodeTypeManagerLock")
+    @GuardedBy( "nodeTypeManagerLock" )
     private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions;
     private final PropertyFactory propertyFactory;
     private final PathFactory pathFactory;
@@ -146,19 +146,30 @@ class RepositoryNodeTypeManager {
         nodeTypes = new HashMap<Name, JcrNodeType>(50);
     }
 
+    /**
+     * Return an immutable snapshot of the node types that are currently registered in this node type manager.
+     * 
+     * @return the immutable collection of (immutable) node types; never null
+     */
     public Collection<JcrNodeType> getAllNodeTypes() {
         try {
             nodeTypeManagerLock.readLock().lock();
-            return nodeTypes.values();
+            return Collections.unmodifiableCollection(new ArrayList<JcrNodeType>(nodeTypes.values()));
         } finally {
             nodeTypeManagerLock.readLock().unlock();
         }
     }
 
+    /**
+     * Return an immutable snapshot of the mixin node types that are currently registered in this node type manager.
+     * 
+     * @return the immutable collection of (immutable) mixin node types; never null
+     * @see #getPrimaryNodeTypes()
+     */
     public Collection<JcrNodeType> getMixinNodeTypes() {
         try {
             nodeTypeManagerLock.readLock().lock();
-            
+
             List<JcrNodeType> types = new ArrayList<JcrNodeType>(nodeTypes.size());
 
             for (JcrNodeType nodeType : nodeTypes.values()) {
@@ -171,6 +182,12 @@ class RepositoryNodeTypeManager {
         }
     }
 
+    /**
+     * Return an immutable snapshot of the primary node types that are currently registered in this node type manager.
+     * 
+     * @return the immutable collection of (immutable) primary node types; never null
+     * @see #getMixinNodeTypes()
+     */
     public Collection<JcrNodeType> getPrimaryNodeTypes() {
         try {
             nodeTypeManagerLock.readLock().lock();
