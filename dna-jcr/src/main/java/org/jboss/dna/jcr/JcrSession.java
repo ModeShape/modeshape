@@ -28,7 +28,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.security.acl.Group;
 import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +87,9 @@ class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
+    private static final String READ_PERMISSION = "readonly";
+    private static final String WRITE_PERMISSION = "readwrite";
+
     /**
      * The repository that created this session.
      */
@@ -114,6 +120,11 @@ class JcrSession implements Session {
      * The graph representing this session, which uses the {@link #graph session's graph}.
      */
     private final Graph graph;
+
+    /**
+     * The set of assigned entitlements for the logged-in subject
+     */
+    private Set<String> entitlements;
 
     private final SessionCache cache;
 
@@ -153,12 +164,29 @@ class JcrSession implements Session {
                                       this.graph);
         this.isLive = true;
 
+        Subject subject = this.executionContext.getSubject();
+        this.entitlements = new HashSet<String>();
+
+        if (subject != null) {
+            for (Principal principal : subject.getPrincipals()) {
+                if (principal instanceof Group) {
+                    Group group = (Group)principal;
+                    Enumeration<? extends Principal> roles = group.members();
+
+                    while (roles.hasMoreElements()) {
+                        Principal role = roles.nextElement();
+                        entitlements.add(role.getName());
+                    }
+                }
+            }
+        }
         assert this.repository != null;
         assert this.sessionAttributes != null;
         assert this.workspace != null;
         assert this.executionContext != null;
         assert this.sessionRegistry != null;
         assert this.graph != null;
+        assert this.entitlements != null;
     }
 
     // Added to facilitate mock testing of items without necessarily requiring an entire repository structure to be built
@@ -274,6 +302,18 @@ class JcrSession implements Session {
     }
 
     /**
+     * Returns the entitlements (permissions) available to the {@link ExecutionContext#getSubject() subject} for this session.
+     * <p>
+     * Entitlements are exposed through this method to allow for easier mock testing.
+     * </p>
+     * 
+     * @return the entitlements (permissions) available to the {@link ExecutionContext#getSubject() subject} for this session.
+     */
+    Set<String> entitlements() {
+        return this.entitlements;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @throws IllegalArgumentException if either <code>path</code> or <code>actions</code> is empty or <code>null</code>.
@@ -283,9 +323,22 @@ class JcrSession implements Session {
                                  String actions ) {
         CheckArg.isNotEmpty(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
-        if (!"read".equals(actions)) {
-            throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
+
+        Set<String> entitlements = entitlements();
+        if ("read".equals(actions)) {
+            // readonly access is sufficient
+            if (entitlements.contains(READ_PERMISSION) || entitlements.contains(READ_PERMISSION + "." + this.workspace.getName())) {
+                return;
+            }
         }
+
+        // need readwrite access
+        if (entitlements.contains(WRITE_PERMISSION) || entitlements.contains(WRITE_PERMISSION + "." + this.workspace.getName())) {
+            return;
+        }
+
+        throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
+
     }
 
     /**
@@ -602,11 +655,8 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#impersonate(javax.jcr.Credentials)
      */
-    @SuppressWarnings( "unused" )
     public Session impersonate( Credentials credentials ) throws RepositoryException {
-        // this is not right:
-        // return repository.login(credentials);
-        throw new UnsupportedOperationException();
+        return repository.login(credentials, this.workspace.getName());
     }
 
     /**

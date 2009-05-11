@@ -38,7 +38,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
@@ -192,11 +191,6 @@ public class JcrSessionTest {
         session.addLockToken(null);
     }
 
-    @Test
-    public void shouldAllowCheckReadPermission() throws Exception {
-        session.checkPermission("/", "read");
-    }
-
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCheckPermissionWithNoPath() throws Exception {
         session.checkPermission(null, "read");
@@ -215,11 +209,6 @@ public class JcrSessionTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCheckPermissionWithEmptyActions() throws Exception {
         session.checkPermission("/", "");
-    }
-
-    @Test( expected = AccessControlException.class )
-    public void shouldNotAllowCheckNonReadPermission() throws Exception {
-        session.checkPermission("/", "any");
     }
 
     @Test
@@ -363,11 +352,6 @@ public class JcrSessionTest {
     @Test
     public void shouldNotHavePendingChanges() throws Exception {
         assertThat(session.hasPendingChanges(), is(false));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldAllowImpersonation() throws Exception {
-        assertThat(session.impersonate(null), notNullValue());
     }
 
     @Test

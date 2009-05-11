@@ -25,12 +25,9 @@ package org.jboss.dna.jcr;
 
 import java.io.File;
 import java.net.URI;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
-import javax.jcr.Credentials;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.graph.ExecutionContext;
@@ -42,71 +39,56 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.jcr.JcrRepository.Options;
+import org.jboss.security.config.IDTrustConfiguration;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
  */
 public class InMemoryRepositoryStub extends RepositoryStub {
     private JcrRepository repository;
-    protected InMemoryRepositorySource source;
-    protected AccessControlContext accessControlContext = AccessController.getContext();
 
-    private Credentials superUserCredentials = new Credentials() {
-        private static final long serialVersionUID = 1L;
+    static {
 
-        @SuppressWarnings( "unused" )
-        public AccessControlContext getAccessControlContext() {
-            return accessControlContext;
+        // Initialize IDTrust
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+
+        try {
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
-    };
-
-    private Credentials readWriteCredentials = new Credentials() {
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings( "unused" )
-        public AccessControlContext getAccessControlContext() {
-            return accessControlContext;
-        }
-    };
-
-    private Credentials readOnlyCredentials = new Credentials() {
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings( "unused" )
-        public AccessControlContext getAccessControlContext() {
-            return accessControlContext;
-        }
-    };
-
-    protected ExecutionContext executionContext = new ExecutionContext();
-
-    protected RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-        public RepositoryConnection createConnection( String sourceName ) {
-            return source.getConnection();
-        }
-    };
+    }
 
     public InMemoryRepositoryStub( Properties env ) {
         super(env);
 
         // Create the in-memory (DNA) repository
-        source = new InMemoryRepositorySource();
+        final InMemoryRepositorySource source = new InMemoryRepositorySource();
 
         // Various calls will fail if you do not set a non-null name for the source
         source.setName("TestRepositorySource");
 
-        // Make sure the path to the namespaces exists ...
-        Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        ExecutionContext executionContext = new ExecutionContext();
+        executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+
+        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
+            public RepositoryConnection createConnection( String sourceName ) {
+                return source.getConnection();
+            }
+        };
 
         // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
         Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "false");
 
-        repository = new JcrRepository(executionContext.create(accessControlContext), connectionFactory, source.getName(), null,
-                                       options);
+        repository = new JcrRepository(executionContext, connectionFactory, source.getName(), null, options);
         RepositoryNodeTypeManager nodeTypes = repository.getRepositoryTypeManager();
 
         // Set up some sample nodes in the graph to match the expected test configuration
+        Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
+        GraphImporter importer = new GraphImporter(graph);
+        Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+
         try {
             CndNodeTypeSource nodeTypeSource = new CndNodeTypeSource("/tck_test_types.cnd");
 
@@ -119,50 +101,14 @@ public class InMemoryRepositoryStub extends RepositoryStub {
 
             nodeTypes.registerNodeTypes(nodeTypeSource);
 
-            executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-            Path destinationPath = executionContext.getValueFactories().getPathFactory().create("/");
-            GraphImporter importer = new GraphImporter(graph);
-
             URI xmlContent = new File("src/test/resources/repositoryForTckTests.xml").toURI();
-            Graph.Batch batch = importer.importXml(xmlContent, Location.create(destinationPath));
-            batch.execute();
+            importer.importXml(xmlContent, Location.create(destinationPath)).execute();
 
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.
             ex.printStackTrace();
             throw new IllegalStateException("Repository initialization failed.", ex);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getSuperuserCredentials()
-     */
-    @Override
-    public Credentials getSuperuserCredentials() {
-        return superUserCredentials;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getReadOnlyCredentials()
-     */
-    @Override
-    public Credentials getReadOnlyCredentials() {
-        return readOnlyCredentials;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getReadOnlyCredentials()
-     */
-    @Override
-    public Credentials getReadWriteCredentials() {
-        return readWriteCredentials;
     }
 
     /**

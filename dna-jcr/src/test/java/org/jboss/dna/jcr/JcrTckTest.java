@@ -27,7 +27,9 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.JCRTestSuite;
 import org.apache.jackrabbit.test.api.AddNodeTest;
+import org.apache.jackrabbit.test.api.CheckPermissionTest;
 import org.apache.jackrabbit.test.api.DocumentViewImportTest;
+import org.apache.jackrabbit.test.api.ImpersonateTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
 import org.apache.jackrabbit.test.api.NodeAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
@@ -226,8 +228,8 @@ public class JcrTckTest {
             addTestSuite(WorkspaceMoveVersionableTest.class);
 
             addTestSuite(RepositoryLoginTest.class);
-            // addTestSuite(ImpersonateTest.class);
-            // addTestSuite(CheckPermissionTest.class);
+            addTestSuite(ImpersonateTest.class);
+            addTestSuite(CheckPermissionTest.class);
 
             addTestSuite(DocumentViewImportTest.class);
             addTestSuite(SerializationTest.class);
