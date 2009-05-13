@@ -27,11 +27,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
 
 /**
@@ -43,9 +50,10 @@ import org.jboss.dna.graph.GraphI18n;
 public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
 
     /**
-     * The default location of the properties file containing the extension patterns to MIME types.
+     * The default location of the properties file containing the extension patterns to MIME types. Value is "{@value} ".
      */
-    public static final String MIME_TYPE_EXTENSIONS_RESOURCE_PATH = "/org/jboss/dna/graph/MimeTypes.properties";
+    public static final String MIME_TYPE_EXTENSIONS_RESOURCE_PATH = "/org/jboss/dna/graph/mime.types";
+    // public static final String MIME_TYPE_EXTENSIONS_RESOURCE_PATH = "/org/jboss/dna/graph/MimeTypes.properties";
 
     /**
      * The mapping of extension (which includes the leading '.') to MIME type.
@@ -54,7 +62,7 @@ public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
 
     /**
      * Create a default instance of the extension-based MIME type detector. The set of extension patterns to MIME-types is loaded
-     * from "org.jboss.dna.graph.MimeTypes.properties".
+     * from the "org/jboss/dna/graph/mime.types" classpath resource.
      */
     public ExtensionBasedMimeTypeDetector() {
         this(null, true);
@@ -62,8 +70,8 @@ public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
 
     /**
      * Create an instance of the extension-based MIME type detector by using the supplied mappings. The set of extension patterns
-     * to MIME-types is loaded from "org.jboss.dna.graph.MimeTypes.properties", but the supplied extension mappings override any
-     * default mappings.
+     * to MIME-types is loaded from the "org/jboss/dna/graph/mime.types" classpath resource, but the supplied extension mappings
+     * override any default mappings.
      * 
      * @param extensionsToMimeTypes the mapping of extension patterns to MIME types, which will override the default mappings; may
      *        be null if the default mappings are to be used
@@ -74,8 +82,8 @@ public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
 
     /**
      * Create an instance of the extension-based MIME type detector by using the supplied mappings. If requested, the set of
-     * extension patterns to MIME-types is loaded from "org.jboss.dna.graph.MimeTypes.properties" and any supplied extension
-     * mappings override any default mappings.
+     * extension patterns to MIME-types is loaded from the "org/jboss/dna/graph/mime.types" classpath resource and any supplied
+     * extension mappings override any default mappings.
      * 
      * @param extensionsToMimeTypes the mapping of extension patterns to MIME types, which will override the default mappings; may
      *        be null if the default mappings are to be used
@@ -114,21 +122,78 @@ public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
         mimeTypesByExtension = Collections.unmodifiableMap(mappingsByAnyCharExtension);
     }
 
+    /**
+     * Load the default extensions from {@link #MIME_TYPE_EXTENSIONS_RESOURCE_PATH}, which can either be a property file or a
+     * tab-delimited *nix-style MIME types file (common in web servers and libraries). If an extension applies to more than one
+     * MIME type, the first one in the file wins.
+     * 
+     * @return the default mappings; never null
+     */
     protected static Map<String, String> getDefaultMappings() {
-        Properties extensionsToMimeTypes = new Properties();
+        Map<String, Set<String>> duplicates = new HashMap<String, Set<String>>();
+        return load(ExtensionBasedMimeTypeDetector.class.getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH), duplicates);
+    }
+
+    /**
+     * Load the default extensions from the supplied stream, which may provide the contents in the format of property file or a
+     * tab-delimited *nix-style MIME types file (common in web servers and libraries). If an extension applies to more than one
+     * MIME type, the first one in the file wins.
+     * 
+     * @param stream the stream containing the content; may not be null
+     * @param duplicateMimeTypesByExtension a map into which any extension should be placed if there are multiple MIME types that
+     *        apply; may be null if this information is not required
+     * @return the default mappings; never null
+     */
+    protected static Map<String, String> load( InputStream stream,
+                                               Map<String, Set<String>> duplicateMimeTypesByExtension ) {
+        CheckArg.isNotNull(stream, "stream");
+        // Create a Regex pattern that can be used for each line. This pattern looks for a mime type
+        // (which may contain no whitespace or '=') followed by an optional whitespace, an optional equals sign,
+        // optionally more whitespace, and finally by a string of one or more extensions.
+        Pattern linePattern = Pattern.compile("\\s*([^\\s=]+)\\s*=?\\s*(.*)");
+        List<String> lines = null;
         try {
-            extensionsToMimeTypes.load(ExtensionBasedMimeTypeDetector.class.getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH));
+            String content = IoUtil.read(stream);
+            lines = StringUtil.splitLines(content);
         } catch (IOException e) {
             I18n msg = GraphI18n.unableToAccessResourceFileFromClassLoader;
             Logger.getLogger(ExtensionBasedMimeTypeDetector.class).warn(e, msg, MIME_TYPE_EXTENSIONS_RESOURCE_PATH);
         }
         Map<String, String> mimeTypesByExtension = new HashMap<String, String>();
-        for (Map.Entry<Object, Object> entry : extensionsToMimeTypes.entrySet()) {
-            String mimeType = entry.getKey().toString().trim();
-            String extensionStrings = entry.getValue().toString().toLowerCase().trim();
-            for (String extensionString : extensionStrings.split("\\s+")) {
-                extensionString = extensionString.trim();
-                if (extensionString.length() != 0) mimeTypesByExtension.put(extensionString, mimeType);
+        if (lines != null) {
+            for (String line : lines) {
+                line = line.trim();
+                if (line.length() == 0 || line.startsWith("#")) continue;
+                // Apply the pattern to each line ...
+                Matcher matcher = linePattern.matcher(line);
+                if (matcher.matches()) {
+                    String mimeType = matcher.group(1).trim().toLowerCase();
+                    String extensions = matcher.group(2).trim().toLowerCase();
+                    if (extensions.length() != 0) {
+                        // A valid mime type with at least one extension was found, so for each extension ...
+                        for (String extensionString : extensions.split("\\s+")) {
+                            extensionString = extensionString.trim();
+                            if (extensionString.length() != 0) {
+                                // Register the extension with the MIME type ...
+                                String existingMimeType = mimeTypesByExtension.put(extensionString, mimeType);
+                                if (existingMimeType != null) {
+                                    // A MIME type already had this extension, so use the first one ...
+                                    mimeTypesByExtension.put(extensionString, existingMimeType);
+                                    if (duplicateMimeTypesByExtension != null) {
+                                        // And record the duplicate ...
+                                        Set<String> dups = duplicateMimeTypesByExtension.get(extensionString);
+                                        if (dups == null) {
+                                            dups = new HashSet<String>();
+                                            duplicateMimeTypesByExtension.put(extensionString, dups);
+                                        }
+                                        dups.add(existingMimeType);
+                                        dups.add(mimeType);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         return mimeTypesByExtension;
