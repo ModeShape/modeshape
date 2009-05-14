@@ -337,7 +337,11 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
                 Location next = queue.poll();
                 if (next == null) throw new NoSuchElementException();
                 List<Location> children = getChildren(next);
-                if (children != null && children.size() > 0) queue.addAll(0, children);
+                if (children != null && children.size() > 0) {
+                    // We should only add the children if they are nodes in the branch, so check the first one...
+                    Location firstChild = children.get(0);
+                    if (includes(firstChild)) queue.addAll(0, children);
+                }
                 return next;
             }
 

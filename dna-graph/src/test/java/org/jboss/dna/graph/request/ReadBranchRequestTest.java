@@ -27,6 +27,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
+import java.util.Iterator;
+import org.jboss.dna.graph.Location;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -103,5 +105,68 @@ public class ReadBranchRequestTest extends AbstractRequestTest {
         request = new ReadBranchRequest(validPathLocation1, workspace1, 20);
         ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1, workspace1, 2);
         assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldIterateOverNodesInBranchOfDepthOne() {
+        request = new ReadBranchRequest(location("/a"), workspace1, 1);
+        request.setActualLocationOfNode(request.at());
+        request.setChildren(location("/a"), location("/a/b"), location("/a/c"));
+        Iterator<Location> actual = request.iterator();
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a")));
+        assertThat(actual.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldIterateOverNodesInBranchOfDepthTwo() {
+        request = new ReadBranchRequest(location("/a"), workspace1, 2);
+        request.setActualLocationOfNode(request.at());
+        request.setChildren(location("/a"), location("/a/b"), location("/a/c"), location("/a/d"));
+        request.setChildren(location("/a/b"), location("/a/b/j"), location("/a/b/k"));
+        request.setChildren(location("/a/c"), location("/a/c/j"), location("/a/c/k"));
+        request.setChildren(location("/a/d"));
+        Iterator<Location> actual = request.iterator();
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/b")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/c")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/d")));
+        assertThat(actual.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldIterateOverNodesInBranchOfDepthThree() {
+        request = new ReadBranchRequest(location("/a"), workspace1, 3);
+        request.setActualLocationOfNode(request.at());
+        request.setChildren(location("/a"), location("/a/b"), location("/a/c"), location("/a/d"));
+        request.setChildren(location("/a/b"), location("/a/b/j"), location("/a/b/k"));
+        request.setChildren(location("/a/c"), location("/a/c/j"), location("/a/c/k"));
+        request.setChildren(location("/a/c/j"), location("/a/c/j/j1"), location("/a/c/j/j2"));
+        request.setChildren(location("/a/c/k"), location("/a/c/k/k1"), location("/a/c/k/k2"));
+        request.setChildren(location("/a/b/j"), location("/a/b/j/m"), location("/a/b/j/n"));
+        request.setChildren(location("/a/b/k"));
+        request.setChildren(location("/a/d"));
+        Iterator<Location> actual = request.iterator();
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/b")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/b/j")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/b/k")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/c")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/c/j")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/c/k")));
+        assertThat(actual.hasNext(), is(true));
+        assertThat(actual.next(), is(location("/a/d")));
+        assertThat(actual.hasNext(), is(false));
     }
 }

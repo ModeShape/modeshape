@@ -93,6 +93,10 @@ public abstract class AbstractRequestTest {
         return context.getValueFactories().getNameFactory().create(name);
     }
 
+    protected Location location( String path ) {
+        return Location.create(createPath(path));
+    }
+
     protected abstract Request createRequest();
 
     @Test
