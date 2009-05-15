@@ -39,20 +39,19 @@ import org.jboss.dna.repository.Configurator.MimeTypeDetectorDetails;
 import org.jboss.dna.repository.Configurator.RepositoryDetails;
 
 /**
- * A configuration builder for a {@link JcrEngine}.  This class is an internal domain-specific language (DSL),
- * and is designed to be used in a traditional way or in a method-chained manner:
+ * A configuration builder for a {@link JcrEngine}. This class is an internal domain-specific language (DSL), and is designed to
+ * be used in a traditional way or in a method-chained manner:
+ * 
  * <pre>
- * configuration.addRepository("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
- * configuration.addMimeTypeDetector("detector")
- *              .usingClass(ExtensionBasedMimeTypeDetector.class)
- *              .describedAs("default detector");
- * configuration.addSequencer("MicrosoftDocs")
- *              .usingClass("org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer")
+ * configuration.addRepository(&quot;Source1&quot;).usingClass(InMemoryRepositorySource.class).describedAs(&quot;description&quot;);
+ * configuration.addMimeTypeDetector(&quot;detector&quot;).usingClass(ExtensionBasedMimeTypeDetector.class).describedAs(&quot;default detector&quot;);
+ * configuration.addSequencer(&quot;MicrosoftDocs&quot;)
+ *              .usingClass(&quot;org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer&quot;)
  *              .loadedFromClasspath()
- *              .named("Microsoft Document sequencer")
- *              .describedAs("Our primary sequencer for all .doc files")
- *              .sequencingFrom("/public//(*.(doc|xml|ppt)[*]/jcr:content[@jcr:data]")
- *              .andOutputtingTo("/documents/$1");
+ *              .named(&quot;Microsoft Document sequencer&quot;)
+ *              .describedAs(&quot;Our primary sequencer for all .doc files&quot;)
+ *              .sequencingFrom(&quot;/public//(*.(doc|xml|ppt)[*]/jcr:content[@jcr:data]&quot;)
+ *              .andOutputtingTo(&quot;/documents/$1&quot;);
  * configuration.save();
  * </pre>
  */
@@ -98,15 +97,15 @@ public class JcrConfiguration
         return builder.withConfigurationRepository();
     }
 
-//    /**
-//     * {@inheritDoc}
-//     * 
-//     * @see org.jboss.dna.repository.Configurator.SequencerConfigurator#addSequencer(java.lang.String)
-//     */
-//    public ChooseClass<Sequencer, SequencerDetails<JcrConfiguration>> addSequencer( String id ) {
-//        CheckArg.isNotEmpty(id, "id");
-//        return builder.addSequencer(id);
-//    }
+    // /**
+    // * {@inheritDoc}
+    // *
+    // * @see org.jboss.dna.repository.Configurator.SequencerConfigurator#addSequencer(java.lang.String)
+    // */
+    // public ChooseClass<Sequencer, SequencerDetails<JcrConfiguration>> addSequencer( String id ) {
+    // CheckArg.isNotEmpty(id, "id");
+    // return builder.addSequencer(id);
+    // }
 
     /**
      * {@inheritDoc}
@@ -212,12 +211,10 @@ public class JcrConfiguration
                         ReturnType builder ) {
             super(context, builder);
         }
-        
+
         protected Graph getGraph() {
             return graph();
         }
-
-
 
         /**
          * {@inheritDoc}
@@ -240,17 +237,18 @@ public class JcrConfiguration
                 super(path, returnObject);
             }
 
+            @SuppressWarnings( "synthetic-access" )
             public OptionSetter<JcrRepositoryDetails<RT>> with( final JcrRepository.Option option ) {
                 final Path optionsPath = createOrReplaceNode(path(), DnaLexicon.OPTIONS);
 
                 final JcrRepositoryDetails<RT> details = this;
-                
+
                 return new OptionSetter<JcrRepositoryDetails<RT>>() {
                     public JcrRepositoryDetails<RT> setTo( String value ) {
                         Path optionPath = createOrReplaceNode(optionsPath, option.name());
                         configuration().set(DnaLexicon.VALUE).to(value).on(optionPath);
-                        
-                        return details; 
+
+                        return details;
                     }
                 };
             }
