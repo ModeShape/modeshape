@@ -34,6 +34,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import net.jcip.annotations.Immutable;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 
@@ -112,12 +113,12 @@ class JcrQueryManager implements QueryManager {
         return new String[] {Query.XPATH};
     }
 
-    @Immutable
+    @NotThreadSafe
     protected abstract class AbstractJcrQuery implements Query {
         private final JcrSession session;
         private final String language;
         private final String statement;
-        private final Path storedPath;
+        private Path storedPath;
 
         protected AbstractJcrQuery( JcrSession session,
                                     String statement,
@@ -184,7 +185,13 @@ class JcrQueryManager implements QueryManager {
             throws PathNotFoundException, ConstraintViolationException, RepositoryException {
             NamespaceRegistry namespaces = this.session.namespaces();
             
-            Path path = session.getExecutionContext().getValueFactories().getPathFactory().create(absPath);
+            Path path;
+            try {
+                path = session.getExecutionContext().getValueFactories().getPathFactory().create(absPath);
+            }
+            catch (IllegalArgumentException iae) {
+                throw new RepositoryException(JcrI18n.invalidPathParameter.text("absPath", absPath));
+            }
             Path parentPath = path.getParent();
 
             Node parentNode = session.getNode(parentPath);
@@ -194,12 +201,14 @@ class JcrQueryManager implements QueryManager {
             queryNode.setProperty(JcrLexicon.LANGUAGE.getString(namespaces), this.language);
             queryNode.setProperty(JcrLexicon.STATEMENT.getString(namespaces), this.statement);
             
+            this.storedPath = path;
+            
             return queryNode;
         }
 
     }
 
-    @Immutable
+    @NotThreadSafe
     protected class XPathQuery extends AbstractJcrQuery {
 
         XPathQuery( JcrSession session,
