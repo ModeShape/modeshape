@@ -25,16 +25,12 @@ package org.jboss.dna.jcr;
 
 import java.io.File;
 import java.net.URI;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Path;
@@ -45,6 +41,8 @@ import org.jboss.security.config.IDTrustConfiguration;
  * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
  */
 public class InMemoryRepositoryStub extends RepositoryStub {
+    private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
+    
     private JcrRepository repository;
 
     static {
@@ -64,32 +62,34 @@ public class InMemoryRepositoryStub extends RepositoryStub {
         super(env);
 
         // Create the in-memory (DNA) repository
-        final InMemoryRepositorySource source = new InMemoryRepositorySource();
-
-        // Various calls will fail if you do not set a non-null name for the source
-        source.setName("TestRepositorySource");
-
-        ExecutionContext executionContext = new ExecutionContext();
+        JcrEngine engine = new JcrConfiguration()
+            .withConfigurationRepository()
+            .usingClass(InMemoryRepositorySource.class.getName())
+            .loadedFromClasspath()
+            .describedAs("configuration repository")
+            .with("name").setTo("configuration")
+            .and()
+            .addRepository("JCR Repository")
+            .usingClass(InMemoryRepositorySource.class.getName())
+            .loadedFromClasspath()
+            .with(Options.PROJECT_NODE_TYPES).setTo(Boolean.FALSE.toString())
+            .describedAs("JCR Repository")
+            .with("name").setTo(REPOSITORY_SOURCE_NAME)
+            .and().build();
+        engine.start();
+        
+        ExecutionContext executionContext = engine.getExecutionContext();
         executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-            public RepositoryConnection createConnection( String sourceName ) {
-                return source.getConnection();
-            }
-        };
-
-        // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
-        Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "false");
-
-        repository = new JcrRepository(executionContext, connectionFactory, source.getName(), null, options);
-        RepositoryNodeTypeManager nodeTypes = repository.getRepositoryTypeManager();
-
-        // Set up some sample nodes in the graph to match the expected test configuration
-        Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
-        GraphImporter importer = new GraphImporter(graph);
-        Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
-
         try {
+            repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
+            RepositoryNodeTypeManager nodeTypes = repository.getRepositoryTypeManager();
+
+            // Set up some sample nodes in the graph to match the expected test configuration
+            Graph graph = Graph.create(repository.getRepositorySourceName(), engine.getRepositoryConnectionFactory(), executionContext);
+            GraphImporter importer = new GraphImporter(graph);
+            Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+
             CndNodeTypeSource nodeTypeSource = new CndNodeTypeSource("/tck_test_types.cnd");
 
             for (Problem problem : nodeTypeSource.getProblems()) {

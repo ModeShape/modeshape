@@ -40,6 +40,8 @@ public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
     public static final Name PATH_EXPRESSIONS = new BasicName(Namespace.URI, "pathExpressions");
     public static final Name MIME_TYPE_DETECTORS = new BasicName(Namespace.URI, "mimeTypeDetectors");
     public static final Name MIME_TYPE_DETECTOR = new BasicName(Namespace.URI, "mimeTypeDetector");
+    public static final Name OPTIONS = new BasicName(Namespace.URI, "options");
+    public static final Name VALUE = new BasicName(Namespace.URI, "value");
     public static final Name RETRY_LIMIT = new BasicName(Namespace.URI, "retryLimit");
     public static final Name DEFAULT_CACHE_POLICY = new BasicName(Namespace.URI, "defaultCachePolicy");
 }

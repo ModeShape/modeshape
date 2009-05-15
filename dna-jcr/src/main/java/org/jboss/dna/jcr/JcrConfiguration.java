@@ -25,11 +25,14 @@ package org.jboss.dna.jcr;
 
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.repository.Configurator;
 import org.jboss.dna.repository.DnaConfiguration;
 import org.jboss.dna.repository.DnaConfigurationException;
+import org.jboss.dna.repository.DnaLexicon;
 import org.jboss.dna.repository.Configurator.ChooseClass;
 import org.jboss.dna.repository.Configurator.ConfigRepositoryDetails;
 import org.jboss.dna.repository.Configurator.MimeTypeDetectorDetails;
@@ -58,7 +61,7 @@ public class JcrConfiguration
     Configurator.RepositoryConfigurator<JcrConfiguration>, Configurator.MimeDetectorConfigurator<JcrConfiguration>,
     Configurator.Builder<JcrEngine> {
 
-    private final DnaConfiguration.Builder<JcrConfiguration> builder;
+    private final JcrConfiguration.Builder<JcrConfiguration> builder;
 
     /**
      * Create a new configuration for DNA.
@@ -74,7 +77,7 @@ public class JcrConfiguration
      * @throws IllegalArgumentException if the supplied context reference is null
      */
     public JcrConfiguration( ExecutionContext context ) {
-        this.builder = new DnaConfiguration.Builder<JcrConfiguration>(context, this);
+        this.builder = new JcrConfiguration.Builder<JcrConfiguration>(context, this);
     }
 
     /**
@@ -110,7 +113,7 @@ public class JcrConfiguration
      * 
      * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
      */
-    public ChooseClass<RepositorySource, RepositoryDetails<JcrConfiguration>> addRepository( String id ) {
+    public ChooseClass<RepositorySource, JcrRepositoryDetails<JcrConfiguration>> addRepository( String id ) {
         CheckArg.isNotEmpty(id, "id");
         return builder.addRepository(id);
     }
@@ -145,6 +148,10 @@ public class JcrConfiguration
         return builder.save();
     }
 
+    protected Graph graph() {
+        return builder.getGraph();
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -153,5 +160,101 @@ public class JcrConfiguration
     public JcrEngine build() throws DnaConfigurationException {
         save();
         return new JcrEngine(builder.buildDnaEngine());
+    }
+
+    public interface JcrRepositoryDetails<ReturnType>
+        extends RepositoryDetails<ReturnType>, SetOptions<JcrRepositoryDetails<ReturnType>> {
+
+    }
+
+    /**
+     * Interface for configuring the {@link JcrRepository.Options JCR repository options} for a {@link JcrRepository JCR
+     * repository}.
+     * 
+     * @param <ReturnType> the interface returned after the option has been set.
+     */
+    public interface SetOptions<ReturnType> {
+        /**
+         * Specify the repository option that is to be set. The value may be set using the interface returned by this method.
+         * 
+         * @param option the option to be set
+         * @return the interface used to set the value for the property; never null
+         */
+        OptionSetter<ReturnType> with( JcrRepository.Options option );
+    }
+
+    /**
+     * The interface used to set the value for a {@link JcrRepository.Options JCR repository option}.
+     * 
+     * @param <ReturnType> the interface returned from these methods
+     * @see JcrConfiguration.SetOptions#with(org.jboss.dna.jcr.JcrRepository.Options)
+     */
+    public interface OptionSetter<ReturnType> {
+        /**
+         * Set the property value to an integer.
+         * 
+         * @param value the new value for the property
+         * @return the next component to continue configuration; never null
+         */
+        ReturnType setTo( String value );
+    }
+
+    public static class Builder<ReturnType> extends DnaConfiguration.Builder<ReturnType> {
+
+        /**
+         * Specify a new {@link ExecutionContext} that should be used for this DNA instance.
+         * 
+         * @param context the new context, or null if a default-constructed execution context should be used
+         * @param builder the builder object returned from all the methods
+         * @throws IllegalArgumentException if the supplied context reference is null
+         */
+        public Builder( ExecutionContext context,
+                        ReturnType builder ) {
+            super(context, builder);
+        }
+        
+        protected Graph getGraph() {
+            return graph();
+        }
+
+
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
+         */
+        @Override
+        public ChooseClass<RepositorySource, JcrRepositoryDetails<ReturnType>> addRepository( String id ) {
+            CheckArg.isNotEmpty(id, "id");
+            // Now create the "dna:source" node with the supplied id ...
+            Path path = createOrReplaceNode(sourcesPath(), id);
+            JcrRepositoryDetails<ReturnType> details = new JcrGraphRepositoryDetails<ReturnType>(path, builder);
+            return new ClassChooser<RepositorySource, JcrRepositoryDetails<ReturnType>>(path, details);
+        }
+
+        public class JcrGraphRepositoryDetails<RT> extends GraphRepositoryDetails<RT> implements JcrRepositoryDetails<RT> {
+
+            protected JcrGraphRepositoryDetails( Path path,
+                                                 RT returnObject ) {
+                super(path, returnObject);
+            }
+
+            public OptionSetter<JcrRepositoryDetails<RT>> with( final JcrRepository.Options option ) {
+                final Path optionsPath = createOrReplaceNode(path(), DnaLexicon.OPTIONS);
+
+                final JcrRepositoryDetails<RT> details = this;
+                
+                return new OptionSetter<JcrRepositoryDetails<RT>>() {
+                    public JcrRepositoryDetails<RT> setTo( String value ) {
+                        Path optionPath = createOrReplaceNode(optionsPath, option.name());
+                        configuration().set(DnaLexicon.VALUE).to(value).on(optionPath);
+                        
+                        return details; 
+                    }
+                };
+            }
+        }
+
     }
 }

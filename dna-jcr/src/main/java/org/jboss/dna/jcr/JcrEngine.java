@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -33,8 +32,15 @@ import javax.jcr.RepositoryException;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.jcr.JcrRepository.Options;
 import org.jboss.dna.repository.DnaEngine;
 import org.jboss.dna.repository.RepositoryService;
@@ -108,7 +114,7 @@ public class JcrEngine {
      * @throws IllegalArgumentException if the repository name is null, blank or invalid
      * @throws RepositoryException if there is no repository with the specified name
      */
-    public final Repository getRepository( String repositoryName ) throws RepositoryException {
+    public final JcrRepository getRepository( String repositoryName ) throws RepositoryException {
         CheckArg.isNotEmpty(repositoryName, "repositoryName");
         try {
             repositoriesLock.lock();
@@ -131,7 +137,49 @@ public class JcrEngine {
     protected JcrRepository doCreateJcrRepository( String repositoryName ) {
         RepositoryConnectionFactory connectionFactory = getRepositoryConnectionFactory();
         Map<String, String> descriptors = null;
-        Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "false");
+
+        /*
+         * Extract the JCR options from the configuration graph
+         */
+        String configurationName = dnaEngine.getRepositoryService().getConfigurationSourceName();
+        Map<Options, String> options = new HashMap<Options, String>();
+
+        PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
+        Graph configuration = Graph.create(connectionFactory.createConnection(configurationName), getExecutionContext());
+
+        try {
+            Node sources = configuration.getNodeAt(pathFactory.create(DnaLexicon.SOURCES));
+
+            /*
+             * Hopefully, this can all get cleaned up when the connector layer supports queries
+             */
+            for (Location childLocation : sources.getChildren()) {
+                Node source = configuration.getNodeAt(childLocation);
+
+                Property nameProperty = source.getProperty("name");
+                if (nameProperty != null && nameProperty.getFirstValue().toString().equals(repositoryName)) {
+                    for (Location optionsLocation : source.getChildren()) {
+                        if (DnaLexicon.OPTIONS.equals(optionsLocation.getPath().getLastSegment().getName())) {
+                            Node optionsNode = configuration.getNodeAt(optionsLocation);
+
+                            for (Location optionLocation : optionsNode.getChildren()) {
+                                Path.Segment segment = optionLocation.getPath().getLastSegment();
+                                Node optionNode = configuration.getNodeAt(optionLocation);
+                                Property valueProperty = optionNode.getProperty(DnaLexicon.VALUE);
+
+                                options.put(Options.valueOf(segment.getName().getLocalName()),
+                                            valueProperty.getFirstValue().toString());
+
+                            }
+
+                        }
+                    }
+                }
+            }
+        } catch (PathNotFoundException pnfe) {
+            // Must not be any configuration set up
+        }
+
         return new JcrRepository(getExecutionContext(), connectionFactory, repositoryName, descriptors, options);
     }
 

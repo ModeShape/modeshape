@@ -98,7 +98,7 @@ public abstract class Configurator<BuilderType> {
          * @throws IllegalArgumentException if the repository name is null, empty, or otherwise invalid
          * @see #addRepository(RepositorySource)
          */
-        public ChooseClass<RepositorySource, RepositoryDetails<ReturnType>> addRepository( final String id );
+        public ChooseClass<RepositorySource, ? extends RepositoryDetails<ReturnType>> addRepository( final String id );
 
         /**
          * Add a new {@link RepositorySource repository} for this configuration. The new repository will have the supplied name,
@@ -518,8 +518,16 @@ public abstract class Configurator<BuilderType> {
         Path path = pathFactory().create(parentPath, id);
         configuration().create(path).with(DnaLexicon.READABLE_NAME, id).and();
         return path;
+
     }
 
+    protected Path createOrReplaceNode( Path parentPath,
+                                        Name id ) {
+        Path path = pathFactory().create(parentPath, id);
+        configuration().create(path).with(DnaLexicon.READABLE_NAME, id).and();
+        return path;
+    }
+    
     protected void recordBeanPropertiesInGraph( Path path,
                                                 Object javaBean ) {
         Reflection reflector = new Reflection(javaBean.getClass());
@@ -652,7 +660,7 @@ public abstract class Configurator<BuilderType> {
         protected final Path pathOfComponentNode;
         protected final ReturnType returnObject;
 
-        protected ClassChooser( Path pathOfComponentNode,
+        public ClassChooser( Path pathOfComponentNode,
                                 ReturnType returnObject ) {
             assert pathOfComponentNode != null;
             assert returnObject != null;
@@ -835,6 +843,10 @@ public abstract class Configurator<BuilderType> {
             this.returnObject = returnObject;
         }
 
+        protected Path path() {
+            return this.path;
+        }
+        
         /**
          * {@inheritDoc}
          * 

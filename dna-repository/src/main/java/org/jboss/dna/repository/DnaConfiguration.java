@@ -105,7 +105,7 @@ public class DnaConfiguration
      * 
      * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
      */
-    public ChooseClass<RepositorySource, RepositoryDetails<DnaConfiguration>> addRepository( String id ) {
+    public ChooseClass<RepositorySource, ? extends RepositoryDetails<DnaConfiguration>> addRepository( String id ) {
         return builder.addRepository(id);
     }
 
@@ -248,7 +248,7 @@ public class DnaConfiguration
          * 
          * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
          */
-        public ChooseClass<RepositorySource, RepositoryDetails<ReturnType>> addRepository( String id ) {
+        public ChooseClass<RepositorySource, ? extends RepositoryDetails<ReturnType>> addRepository( String id ) {
             CheckArg.isNotEmpty(id, "id");
             // Now create the "dna:source" node with the supplied id ...
             Path path = createOrReplaceNode(sourcesPath(), id);
