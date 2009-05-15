@@ -47,6 +47,7 @@ import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
@@ -350,6 +351,39 @@ public abstract class RequestProcessor {
      *         have remained after the delete operation completed
      */
     public abstract void process( DeleteBranchRequest request );
+
+    /**
+     * Process a request to delete all of the child nodes under the supplied existing node.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the delete request
+     * @throws ReferentialIntegrityException if the delete could not be performed because some references to deleted nodes would
+     *         have remained after the delete operation completed
+     */
+    public void process( DeleteChildrenRequest request ) {
+        if (request == null) return;
+        if (request.isCancelled()) return;
+        // First get all of the children under the node ...
+        ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at(), request.inWorkspace());
+        process(readChildren);
+        if (readChildren.hasError()) {
+            request.setError(readChildren.getError());
+            return;
+        }
+        if (readChildren.isCancelled()) return;
+
+        // Issue a DeleteBranchRequest for each child ...
+        for (Location child : readChildren) {
+            if (request.isCancelled()) return;
+            DeleteBranchRequest deleteChild = new DeleteBranchRequest(child, request.inWorkspace());
+            process(deleteChild);
+        }
+
+        // Set the actual location of the parent node ...
+        request.setActualLocationOfNode(readChildren.getActualLocationOfNode());
+    }
 
     /**
      * Process a request to move a branch at a specified location into a different location.

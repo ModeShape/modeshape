@@ -85,6 +85,7 @@ import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
@@ -1243,15 +1244,34 @@ public class BasicRequestProcessor extends RequestProcessor {
     @Override
     public void process( DeleteBranchRequest request ) {
         logger.trace(request.toString());
+        Location location = delete(request, request.at(), request.inWorkspace(), true);
+        if (location != null) request.setActualLocationOfNode(location);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        logger.trace(request.toString());
+        Location location = delete(request, request.at(), request.inWorkspace(), false);
+        if (location != null) request.setActualLocationOfNode(location);
+    }
+
+    protected Location delete( Request request,
+                               Location location,
+                               String workspaceName,
+                               boolean deleteTopOfBranch ) {
         Location actualLocation = null;
         try {
             // Find the workspace ...
-            WorkspaceEntity workspace = getExistingWorkspace(request.inWorkspace(), request);
-            if (workspace == null) return;
+            WorkspaceEntity workspace = getExistingWorkspace(workspaceName, request);
+            if (workspace == null) return null;
             Long workspaceId = workspace.getId();
             assert workspaceId != null;
 
-            Location location = request.at();
             ActualLocation actual = getActualLocation(workspaceId, location);
             actualLocation = actual.location;
             Path path = actualLocation.getPath();
@@ -1274,7 +1294,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 List<Location> deletedLocations = query.getNodeLocations(true, true);
 
                 // Now delete the subgraph ...
-                query.deleteSubgraph(true);
+                query.deleteSubgraph(deleteTopOfBranch);
 
                 // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
                 List<ReferenceEntity> invalidReferences = query.getInwardReferences();
@@ -1299,14 +1319,16 @@ public class BasicRequestProcessor extends RequestProcessor {
                     throw new ReferentialIntegrityException(invalidRefs, msg);
                 }
 
-                // And adjust the SNS index and indexes ...
-                ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
-                                                                    workspaceId,
-                                                                    parentUuidString,
-                                                                    childName,
-                                                                    nsId,
-                                                                    indexInParent);
-                entities.flush();
+                if (deleteTopOfBranch) {
+                    // And adjust the SNS index and indexes ...
+                    ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
+                                                                        workspaceId,
+                                                                        parentUuidString,
+                                                                        childName,
+                                                                        nsId,
+                                                                        indexInParent);
+                    entities.flush();
+                }
 
                 // Remove from the cache of children locations all entries for deleted nodes ...
                 cache.removeBranch(workspaceId, deletedLocations);
@@ -1317,9 +1339,9 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);
-            return;
+            return null;
         }
-        request.setActualLocationOfNode(actualLocation);
+        return actualLocation;
     }
 
     /**
