@@ -168,7 +168,7 @@ public class JcrConfiguration
     }
 
     /**
-     * Interface for configuring the {@link JcrRepository.Options JCR repository options} for a {@link JcrRepository JCR
+     * Interface for configuring the {@link JcrRepository.Option JCR repository options} for a {@link JcrRepository JCR
      * repository}.
      * 
      * @param <ReturnType> the interface returned after the option has been set.
@@ -184,10 +184,10 @@ public class JcrConfiguration
     }
 
     /**
-     * The interface used to set the value for a {@link JcrRepository.Options JCR repository option}.
+     * The interface used to set the value for a {@link JcrRepository.Option JCR repository option}.
      * 
      * @param <ReturnType> the interface returned from these methods
-     * @see JcrConfiguration.SetOptions#with(org.jboss.dna.jcr.JcrRepository.Options)
+     * @see JcrConfiguration.SetOptions#with(org.jboss.dna.jcr.JcrRepository.Option)
      */
     public interface OptionSetter<ReturnType> {
         /**

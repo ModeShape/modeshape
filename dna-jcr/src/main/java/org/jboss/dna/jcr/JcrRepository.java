@@ -83,7 +83,7 @@ public class JcrRepository implements Repository {
          * Flag that defines whether or not the node types should be exposed as content under the "{@code
          * /jcr:system/jcr:nodeTypes}" node. Value is either "<code>true</code>" or "<code>false</code>" (default).
          * 
-         * @see DefaultOptions#PROJECT_NODE_TYPES
+         * @see DefaultOption#PROJECT_NODE_TYPES
          */
         PROJECT_NODE_TYPES,
         /**
@@ -94,16 +94,16 @@ public class JcrRepository implements Repository {
     }
 
     /**
-     * The default values for each of the {@link Options}.
+     * The default values for each of the {@link Option}.
      */
     public static class DefaultOption {
         /**
-         * The default value for the {@link Options#PROJECT_NODE_TYPES} option is {@value} .
+         * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
          */
         public static final String PROJECT_NODE_TYPES = Boolean.FALSE.toString();
 
         /**
-         * The default value for the {@link Options#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
+         * The default value for the {@link Option#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
          */
         public static final String JAAS_LOGIN_CONFIG_NAME = "dna-jcr";
     }
@@ -152,7 +152,7 @@ public class JcrRepository implements Repository {
      * @param connectionFactory the factory for repository connections
      * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
-     * @param options the optional {@link Options settings} for this repository; may be null
+     * @param options the optional {@link Option settings} for this repository; may be null
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */

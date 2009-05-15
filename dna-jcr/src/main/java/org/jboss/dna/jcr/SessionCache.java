@@ -665,7 +665,13 @@ class SessionCache {
                     throw new ConstraintViolationException();
                 }
             }
-
+            
+            for (UUID changedUuid : uuidsUnderBranch) {
+                if (!this.deletedNodes.containsKey(changedUuid)) {
+                    checkAgainstTypeDefinitions(changedUuid, false);
+                }
+            }
+            
             // Now execute the branch ...
             Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
