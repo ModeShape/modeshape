@@ -41,7 +41,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.jcr.JcrRepository.Options;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaEngine;
 import org.jboss.dna.repository.RepositoryService;
 import org.jboss.dna.repository.observation.ObservationService;
@@ -142,7 +142,7 @@ public class JcrEngine {
          * Extract the JCR options from the configuration graph
          */
         String configurationName = dnaEngine.getRepositoryService().getConfigurationSourceName();
-        Map<Options, String> options = new HashMap<Options, String>();
+        Map<Option, String> options = new HashMap<Option, String>();
 
         PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
         Graph configuration = Graph.create(connectionFactory.createConnection(configurationName), getExecutionContext());
@@ -167,7 +167,7 @@ public class JcrEngine {
                                 Node optionNode = configuration.getNodeAt(optionLocation);
                                 Property valueProperty = optionNode.getProperty(DnaLexicon.VALUE);
 
-                                options.put(Options.valueOf(segment.getName().getLocalName()),
+                                options.put(Option.valueOf(segment.getName().getLocalName()),
                                             valueProperty.getFirstValue().toString());
 
                             }

@@ -156,8 +156,8 @@ public class JcrRepositoryTest {
     @Test
     public void shouldHaveDefaultOptionsWhenNotOverridden() {
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
-        assertThat(repository.getOptions().get(JcrRepository.Options.PROJECT_NODE_TYPES),
-                   is(JcrRepository.DefaultOptions.PROJECT_NODE_TYPES));
+        assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
+                   is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
     }
 
     @Test

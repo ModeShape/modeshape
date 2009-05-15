@@ -77,7 +77,7 @@ public class JcrRepository implements Repository {
     /**
      * The available options for the {@code JcrRepository}.
      */
-    public enum Options {
+    public enum Option {
 
         /**
          * Flag that defines whether or not the node types should be exposed as content under the "{@code
@@ -96,7 +96,7 @@ public class JcrRepository implements Repository {
     /**
      * The default values for each of the {@link Options}.
      */
-    public static class DefaultOptions {
+    public static class DefaultOption {
         /**
          * The default value for the {@link Options#PROJECT_NODE_TYPES} option is {@value} .
          */
@@ -111,14 +111,14 @@ public class JcrRepository implements Repository {
     /**
      * The static unmodifiable map of default options, which are initialized in the static initializer.
      */
-    protected static final Map<Options, String> DEFAULT_OPTIONS;
+    protected static final Map<Option, String> DEFAULT_OPTIONS;
 
     static {
         // Initialize the unmodifiable map of default options ...
-        EnumMap<Options, String> defaults = new EnumMap<Options, String>(Options.class);
-        defaults.put(Options.PROJECT_NODE_TYPES, DefaultOptions.PROJECT_NODE_TYPES);
-        defaults.put(Options.JAAS_LOGIN_CONFIG_NAME, DefaultOptions.JAAS_LOGIN_CONFIG_NAME);
-        DEFAULT_OPTIONS = Collections.<Options, String>unmodifiableMap(defaults);
+        EnumMap<Option, String> defaults = new EnumMap<Option, String>(Option.class);
+        defaults.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
+        defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
+        DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
     private final String sourceName;
@@ -126,7 +126,7 @@ public class JcrRepository implements Repository {
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
-    private final Map<Options, String> options;
+    private final Map<Option, String> options;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -160,7 +160,7 @@ public class JcrRepository implements Repository {
                           RepositoryConnectionFactory connectionFactory,
                           String repositorySourceName,
                           Map<String, String> descriptors,
-                          Map<Options, String> options ) {
+                          Map<Option, String> options ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -217,7 +217,7 @@ public class JcrRepository implements Repository {
             this.options = DEFAULT_OPTIONS;
         } else {
             // Initialize with defaults, then add supplied options ...
-            EnumMap<Options, String> localOptions = new EnumMap<Options, String>(DEFAULT_OPTIONS);
+            EnumMap<Option, String> localOptions = new EnumMap<Option, String>(DEFAULT_OPTIONS);
             localOptions.putAll(options);
             this.options = Collections.unmodifiableMap(localOptions);
         }
@@ -237,7 +237,7 @@ public class JcrRepository implements Repository {
      * 
      * @return the unmodifiable options; never null
      */
-    public Map<Options, String> getOptions() {
+    public Map<Option, String> getOptions() {
         return options;
     }
 
@@ -360,7 +360,7 @@ public class JcrRepository implements Repository {
                     } catch (NoSuchMethodException error2) {
                         if (credentials instanceof SimpleCredentials) {
                             SimpleCredentials simple = (SimpleCredentials)credentials;
-                            execContext = executionContext.with(options.get(Options.JAAS_LOGIN_CONFIG_NAME),
+                            execContext = executionContext.with(options.get(Option.JAAS_LOGIN_CONFIG_NAME),
                                                                 simple.getUserID(),
                                                                 simple.getPassword());
                         } else {

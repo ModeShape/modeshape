@@ -73,7 +73,7 @@ public class RepositoryNodeTypeManagerTest {
     private RepositoryConnectionFactory connectionFactory;
     private RepositoryNodeTypeManager repoTypeManager;
     private Map<String, Object> sessionAttributes;
-    private Map<JcrRepository.Options, String> options;
+    private Map<JcrRepository.Option, String> options;
     @Mock
     private JcrRepository repository;
 
@@ -135,8 +135,8 @@ public class RepositoryNodeTypeManagerTest {
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
 
         // Stub out the repository options ...
-        options = new EnumMap<JcrRepository.Options, String>(JcrRepository.Options.class);
-        options.put(JcrRepository.Options.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
+        options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
+        options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
         stub(repository.getOptions()).toReturn(options);
 
         // Set up the session attributes ...

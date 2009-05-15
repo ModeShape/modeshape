@@ -180,7 +180,7 @@ public class JcrConfiguration
          * @param option the option to be set
          * @return the interface used to set the value for the property; never null
          */
-        OptionSetter<ReturnType> with( JcrRepository.Options option );
+        OptionSetter<ReturnType> with( JcrRepository.Option option );
     }
 
     /**
@@ -240,7 +240,7 @@ public class JcrConfiguration
                 super(path, returnObject);
             }
 
-            public OptionSetter<JcrRepositoryDetails<RT>> with( final JcrRepository.Options option ) {
+            public OptionSetter<JcrRepositoryDetails<RT>> with( final JcrRepository.Option option ) {
                 final Path optionsPath = createOrReplaceNode(path(), DnaLexicon.OPTIONS);
 
                 final JcrRepositoryDetails<RT> details = this;

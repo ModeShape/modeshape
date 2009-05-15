@@ -59,7 +59,7 @@ import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
-import org.jboss.dna.jcr.JcrRepository.Options;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -171,7 +171,7 @@ final class JcrWorkspace implements Workspace {
         this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repoTypeManager);
         this.queryManager = new JcrQueryManager(this.session);
 
-        if (Boolean.valueOf(repository.getOptions().get(Options.PROJECT_NODE_TYPES))) {
+        if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
             Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
             repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
         }

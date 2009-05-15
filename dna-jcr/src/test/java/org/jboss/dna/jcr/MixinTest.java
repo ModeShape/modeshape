@@ -93,7 +93,7 @@ public class MixinTest {
     private RepositoryConnectionFactory connectionFactory;
     private RepositoryNodeTypeManager repoTypeManager;
     private Map<String, Object> sessionAttributes;
-    private Map<JcrRepository.Options, String> options;
+    private Map<JcrRepository.Option, String> options;
     private NamespaceRegistry registry;
     @Mock
     private JcrRepository repository;
@@ -152,8 +152,8 @@ public class MixinTest {
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
 
         // Stub out the repository options ...
-        options = new EnumMap<JcrRepository.Options, String>(JcrRepository.Options.class);
-        options.put(JcrRepository.Options.PROJECT_NODE_TYPES, Boolean.FALSE.toString());
+        options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
+        options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.FALSE.toString());
         stub(repository.getOptions()).toReturn(options);
 
         // Set up the session attributes ...

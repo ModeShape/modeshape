@@ -34,7 +34,7 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.io.GraphImporter;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.JcrRepository.Options;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.security.config.IDTrustConfiguration;
 
 /**
@@ -72,7 +72,7 @@ public class InMemoryRepositoryStub extends RepositoryStub {
             .addRepository("JCR Repository")
             .usingClass(InMemoryRepositorySource.class.getName())
             .loadedFromClasspath()
-            .with(Options.PROJECT_NODE_TYPES).setTo(Boolean.FALSE.toString())
+            .with(Option.PROJECT_NODE_TYPES).setTo(Boolean.FALSE.toString())
             .describedAs("JCR Repository")
             .with("name").setTo(REPOSITORY_SOURCE_NAME)
             .and().build();

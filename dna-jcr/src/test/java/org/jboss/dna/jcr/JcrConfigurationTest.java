@@ -39,7 +39,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.JcrRepository.Options;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaConfiguration;
 import org.jboss.dna.repository.DnaEngine;
 import org.jboss.dna.repository.RepositoryLibrary;
@@ -265,7 +265,7 @@ public class JcrConfigurationTest {
                      .addRepository("Source2")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
-                     .with(Options.JAAS_LOGIN_CONFIG_NAME).setTo("test")
+                     .with(Option.JAAS_LOGIN_CONFIG_NAME).setTo("test")
                      .describedAs("description")
                      .with("name").setTo("JCR Repository")
                      .and()
@@ -282,9 +282,9 @@ public class JcrConfigurationTest {
         
         JcrRepository repository = engine.getRepository("JCR Repository");
         
-        Map<Options, String> options = new HashMap<Options, String>();
-        options.put(Options.JAAS_LOGIN_CONFIG_NAME, "test");
-        options.put(Options.PROJECT_NODE_TYPES, "false");
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.JAAS_LOGIN_CONFIG_NAME, "test");
+        options.put(Option.PROJECT_NODE_TYPES, "false");
         assertThat(repository.getOptions(), is(options));
     }
     
