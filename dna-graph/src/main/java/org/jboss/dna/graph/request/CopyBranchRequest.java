@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.request;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
@@ -262,6 +263,28 @@ public class CopyBranchRequest extends Request implements ChangeRequest {
      */
     public Location changedLocation() {
         return into;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(from, fromWorkspace, into, intoWorkspace);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualFromLocation = null;
+        this.actualIntoLocation = null;
     }
 
     /**

@@ -111,7 +111,7 @@ public abstract class RequestProcessor {
      * 
      * @return the repository source name; never null or empty
      */
-    public String getSourceName() {
+    public final String getSourceName() {
         return sourceName;
     }
 
@@ -120,7 +120,7 @@ public abstract class RequestProcessor {
      * 
      * @return the execution context; never null
      */
-    public ExecutionContext getExecutionContext() {
+    public final ExecutionContext getExecutionContext() {
         return this.context;
     }
 
@@ -129,8 +129,15 @@ public abstract class RequestProcessor {
      * 
      * @return the current time in UTC; never null
      */
-    protected DateTime getNowInUtc() {
+    protected final DateTime getNowInUtc() {
         return this.nowInUtc;
+    }
+
+    /**
+     * @return defaultCachePolicy
+     */
+    protected final CachePolicy getDefaultCachePolicy() {
+        return defaultCachePolicy;
     }
 
     /**
@@ -139,7 +146,10 @@ public abstract class RequestProcessor {
      * @param request the cacheable request
      */
     protected void setCacheableInfo( CacheableRequest request ) {
-        request.setCachePolicy(defaultCachePolicy);
+        // Set it only if the request has no cache policy already ...
+        if (request.getCachePolicy() == null && defaultCachePolicy != null) {
+            request.setCachePolicy(defaultCachePolicy);
+        }
         request.setTimeLoaded(nowInUtc);
     }
 
@@ -151,7 +161,18 @@ public abstract class RequestProcessor {
      */
     protected void setCacheableInfo( CacheableRequest request,
                                      CachePolicy cachePolicy ) {
-        request.setCachePolicy(cachePolicy);
+        if (cachePolicy == null) cachePolicy = defaultCachePolicy;
+        if (cachePolicy != null) {
+            if (request.getCachePolicy() != null) {
+                // Set the supplied only if less than the current ...
+                if (request.getCachePolicy().getTimeToLive() > cachePolicy.getTimeToLive()) {
+                    request.setCachePolicy(cachePolicy);
+                }
+            } else {
+                // There is no current policy, so set the supplied policy ...
+                request.setCachePolicy(cachePolicy);
+            }
+        }
         request.setTimeLoaded(nowInUtc);
     }
 
@@ -175,6 +196,8 @@ public abstract class RequestProcessor {
             process((CreateNodeRequest)request);
         } else if (request instanceof DeleteBranchRequest) {
             process((DeleteBranchRequest)request);
+        } else if (request instanceof DeleteChildrenRequest) {
+            process((DeleteChildrenRequest)request);
         } else if (request instanceof MoveBranchRequest) {
             process((MoveBranchRequest)request);
         } else if (request instanceof ReadAllChildrenRequest) {
@@ -229,6 +252,7 @@ public abstract class RequestProcessor {
         if (request == null) return;
         int numberOfErrors = 0;
         List<Throwable> errors = null;
+        // Iterate over the requests in this composite, but only iterate once so that
         for (Request embedded : request) {
             assert embedded != null;
             if (embedded.isCancelled()) return;
@@ -252,9 +276,12 @@ public abstract class RequestProcessor {
                 errorString.append("\n");
                 errorString.append("\t" + error.getMessage());
             }
-            String msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors,
-                                                                             request.size(),
-                                                                             errorString.toString());
+            String msg = null;
+            if (request.size() == CompositeRequest.UNKNOWN_NUMBER_OF_REQUESTS) {
+                msg = GraphI18n.multipleErrorsWhileExecutingManyRequests.text(numberOfErrors, errorString.toString());
+            } else {
+                msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, request.size(), errorString.toString());
+            }
             request.setError(new RepositorySourceException(getSourceName(), msg));
         }
     }

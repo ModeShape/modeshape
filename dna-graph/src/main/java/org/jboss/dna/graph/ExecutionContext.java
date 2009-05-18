@@ -42,6 +42,7 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.connector.federation.FederatedLexicon;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -421,7 +422,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                                   CallbackHandler callbackHandler ) throws LoginException {
         LoginContext loginContext = new LoginContext(name, callbackHandler);
         loginContext.login();
-        
+
         return new ExecutionContext(this, loginContext);
     }
 
@@ -464,7 +465,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                                   CallbackHandler callbackHandler ) throws LoginException {
         LoginContext loginContext = new LoginContext(name, subject, callbackHandler);
         loginContext.login();
-        
+
         return new ExecutionContext(this, loginContext);
     }
 
@@ -499,6 +500,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         namespaceRegistry.register(JcrMixLexicon.Namespace.PREFIX, JcrMixLexicon.Namespace.URI);
         namespaceRegistry.register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
         namespaceRegistry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
+        namespaceRegistry.register(FederatedLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         // namespaceRegistry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
         // namespaceRegistry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
     }
@@ -521,9 +523,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         }
 
         /**
-         * 
          * {@inheritDoc}
-         *
+         * 
          * @see javax.security.auth.callback.CallbackHandler#handle(javax.security.auth.callback.Callback[])
          */
         public void handle( Callback[] callbacks ) throws UnsupportedCallbackException, IOException {

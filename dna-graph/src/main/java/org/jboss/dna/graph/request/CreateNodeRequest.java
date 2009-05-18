@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
@@ -320,6 +321,27 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
      */
     public Location changedLocation() {
         return under;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocation = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(under, childName, workspaceName);
     }
 
     /**

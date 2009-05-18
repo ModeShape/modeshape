@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -377,6 +378,28 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocation = null;
+        this.nodes.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(at, workspaceName);
     }
 
     /**

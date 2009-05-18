@@ -305,7 +305,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
         Subgraph subgraph1 = graph.getSubgraphOfDepth(10).at(root);
         for (int i = 0; i != 4; ++i) {
             Subgraph subgraph2 = graph.getSubgraphOfDepth(10).at(root);
-            assertEquivalentSubgraphs(subgraph1, subgraph2, true);
+            assertEquivalentSubgraphs(subgraph1, subgraph2, true, true);
         }
     }
 }

@@ -79,7 +79,7 @@ public class InMemoryConnectorReadableTest extends ReadableConnectorTest {
         Location root = graph.getCurrentWorkspace().getRoot();
         Subgraph subgraph1 = graph.getSubgraphOfDepth(10).at(root);
         Subgraph subgraph2 = graph.getSubgraphOfDepth(10).at(root);
-        assertEquivalentSubgraphs(subgraph1, subgraph2, true);
+        assertEquivalentSubgraphs(subgraph1, subgraph2, true, true);
     }
 
 }

@@ -141,6 +141,18 @@ public final class CreateWorkspaceRequest extends Request {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualWorkspaceName = null;
+        this.actualLocationOfRoot = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override

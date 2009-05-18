@@ -613,15 +613,21 @@ public abstract class AbstractConnectorTest {
      * @param subgraph2 the second subgraph; may not be null
      * @param idPropertiesShouldMatch true if the identification properties of each corresponding node should match, or false if
      *        the identification properties should be ignored
+     * @param pathsShouldMatch true if the absolute paths of the subgraphs should match, or false if only the relative paths
+     *        within the subgraphs should match
      */
-    public void assertEquivalentSubgraphs( Subgraph subgraph1,
-                                           Subgraph subgraph2,
-                                           boolean idPropertiesShouldMatch ) {
+    public static void assertEquivalentSubgraphs( Subgraph subgraph1,
+                                                  Subgraph subgraph2,
+                                                  boolean idPropertiesShouldMatch,
+                                                  boolean pathsShouldMatch ) {
         assertThat(subgraph1, is(notNullValue()));
         assertThat(subgraph2, is(notNullValue()));
 
         // Shortcut ...
         if (subgraph1.getLocation().equals(subgraph2.getLocation())) return;
+
+        Path rootPath1 = subgraph1.getRoot().getLocation().getPath();
+        Path rootPath2 = subgraph2.getRoot().getLocation().getPath();
 
         // Iterate over each subgraph. Note that because each location should have a path, the path can be used
         // to ensure the structure matches.
@@ -631,10 +637,19 @@ public abstract class AbstractConnectorTest {
             Node node1 = iter1.next();
             Node node2 = iter2.next();
 
+            assertThat(node1, is(notNullValue()));
+            assertThat(node2, is(notNullValue()));
+
             // Each node should have equivalent paths ..
             assertThat(node1.getLocation().hasPath(), is(true));
             assertThat(node2.getLocation().hasPath(), is(true));
-            assertThat(node1.getLocation().getPath(), is(node2.getLocation().getPath()));
+            if (pathsShouldMatch) {
+                assertThat(node1.getLocation().getPath(), is(node2.getLocation().getPath()));
+            } else {
+                Path relativeNode1 = node1.getLocation().getPath().relativeTo(rootPath1);
+                Path relativeNode2 = node2.getLocation().getPath().relativeTo(rootPath2);
+                assertThat(relativeNode1, is(relativeNode2));
+            }
 
             // Each node should have the same Identification properties ...
             if (idPropertiesShouldMatch) {
@@ -654,7 +669,7 @@ public abstract class AbstractConnectorTest {
                     properties2.remove(idProperty.getName());
                 }
             }
-            assertThat(properties1.values(), is(properties2.values()));
+            assertThat(properties1, is(properties2));
 
             // Each node should have the same children. We can check this, tho this will be enforced when comparing paths ...
             assertThat(node1.getChildrenSegments(), is(node2.getChildrenSegments()));
@@ -672,8 +687,8 @@ public abstract class AbstractConnectorTest {
      * @param node1 the first node; may not be null
      * @param node2 the second node; may not be null
      */
-    public void assertSameNode( Node node1,
-                                Node node2 ) {
+    public static void assertSameNode( Node node1,
+                                       Node node2 ) {
         assertThat(node1, is(notNullValue()));
         assertThat(node2, is(notNullValue()));
 
@@ -701,8 +716,8 @@ public abstract class AbstractConnectorTest {
      * @param node the node; may not be null
      * @param properties the expected properties
      */
-    public void assertSameProperties( Node node,
-                                      Map<Name, Property> properties ) {
+    public static void assertSameProperties( Node node,
+                                             Map<Name, Property> properties ) {
         assertThat(node, is(notNullValue()));
         assertThat(properties, is(notNullValue()));
         Set<Name> names = new HashSet<Name>(properties.keySet());
@@ -720,8 +735,8 @@ public abstract class AbstractConnectorTest {
      * @param node the node; may not be null
      * @param properties the expected properties
      */
-    public void assertSameProperties( Node node,
-                                      Iterable<Property> properties ) {
+    public static void assertSameProperties( Node node,
+                                             Iterable<Property> properties ) {
         assertThat(node, is(notNullValue()));
         assertThat(properties, is(notNullValue()));
         Set<Name> names = new HashSet<Name>(node.getPropertiesByName().keySet());

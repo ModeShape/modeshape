@@ -42,6 +42,15 @@ public class DnaLexicon {
     public static final Name CLASSPATH = new BasicName(Namespace.URI, "classpath");
     public static final Name NAMESPACES = new BasicName(Namespace.URI, "namespaces");
     public static final Name PROJECTION_RULES = new BasicName(Namespace.URI, "projectionRules");
+    public static final Name READ_ONLY = new BasicName(Namespace.URI, "readOnly");
     public static final Name TIME_TO_EXPIRE = new BasicName(Namespace.URI, "timeToExpire");
     public static final Name NAMESPACE_URI = new BasicName(Namespace.URI, "uri");
+
+    public static final Name WORKSPACES = new BasicName(Namespace.URI, "workspaces");
+    public static final Name SOURCE_NAME = new BasicName(Namespace.URI, "sourceName");
+    public static final Name WORKSPACE_NAME = new BasicName(Namespace.URI, "workspaceName");
+    public static final Name DEFAULT_WORKSPACE_NAME = new BasicName(Namespace.URI, "defaultWorkspaceName");
+    public static final Name PROJECTION = new BasicName(Namespace.URI, "projection");
+    public static final Name PROJECTIONS = new BasicName(Namespace.URI, "projections");
+
 }

@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -110,6 +111,23 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
     }
 
     /**
+     * Add to the list of children that has been read the supplied children with the given path and identification properties. The
+     * children are added in order.
+     * 
+     * @param children the locations of the children that were read
+     * @throws IllegalArgumentException if the parameter is null
+     * @see #addChild(Location)
+     * @see #addChild(Path, Property)
+     * @see #addChild(Path, Property, Property...)
+     */
+    public void addChildren( Iterable<Location> children ) {
+        CheckArg.isNotNull(children, "children");
+        for (Location child : children) {
+            if (child != null) this.children.add(child);
+        }
+    }
+
+    /**
      * Add to the list of children that has been read the child with the given path and identification properties. The children
      * should be added in order.
      * 
@@ -185,6 +203,27 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     public Location getActualLocationOfNode() {
         return actualOf;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualOf = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(of, workspaceName);
     }
 
     /**

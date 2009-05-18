@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -138,6 +139,18 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
     }
 
     /**
+     * Add a property that was read from the {@link RepositoryConnection}
+     * 
+     * @param properties the properties that were read
+     * @throws IllegalArgumentException if the property is null
+     */
+    public void addProperties( Iterable<Property> properties ) {
+        for (Property property : properties) {
+            this.properties.put(property.getName(), property);
+        }
+    }
+
+    /**
      * Get the children that were read from the {@link RepositoryConnection} after the request was processed. Each child is
      * represented by a location.
      * 
@@ -154,6 +167,23 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      */
     public Iterator<Location> iterator() {
         return children.iterator();
+    }
+
+    /**
+     * Add to the list of children that has been read the supplied children with the given path and identification properties. The
+     * children are added in order.
+     * 
+     * @param children the locations of the children that were read
+     * @throws IllegalArgumentException if the parameter is null
+     * @see #addChild(Location)
+     * @see #addChild(Path, Property)
+     * @see #addChild(Path, Property, Property...)
+     */
+    public void addChildren( Iterable<Location> children ) {
+        CheckArg.isNotNull(children, "children");
+        for (Location child : children) {
+            if (child != null) this.children.add(child);
+        }
     }
 
     /**
@@ -230,6 +260,29 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocation = null;
+        this.children.clear();
+        this.properties.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(at, workspaceName);
     }
 
     /**

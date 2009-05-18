@@ -157,7 +157,27 @@ public class InMemoryRequestProcessor extends RequestProcessor {
                 break;
             }
         }
-        node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+        switch (request.conflictBehavior()) {
+            case APPEND:
+            case DO_NOT_REPLACE:
+                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                break;
+            case REPLACE:
+                // See if the node already exists (this doesn't record an error on the request) ...
+                node = getTargetNode(workspace, null, Location.create(pathFactory.create(parent, request.named()), uuid));
+                if (node != null) {
+                    workspace.removeNode(getExecutionContext(), node);
+                }
+                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                break;
+            case UPDATE:
+                // See if the node already exists (this doesn't record an error on the request) ...
+                node = getTargetNode(workspace, null, Location.create(pathFactory.create(parent, request.named()), uuid));
+                if (node == null) {
+                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                } // otherwise, we found it and we're setting any properties below
+                break;
+        }
         assert node != null;
         Path path = getExecutionContext().getValueFactories().getPathFactory().create(parent, node.getName());
         // Now add the properties to the supplied node ...
@@ -381,7 +401,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
                 node = workspace.getNode(path);
             }
         }
-        if (node == null) {
+        if (node == null && request != null) {
             if (path == null) {
                 if (uuid == null) {
                     // Missing both path and UUID ...

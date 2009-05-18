@@ -46,6 +46,8 @@ public class CompositeRequest extends Request implements Iterable<Request> {
 
     private static final long serialVersionUID = 1L;
 
+    public static final int UNKNOWN_NUMBER_OF_REQUESTS = Integer.MAX_VALUE;
+
     /**
      * Return a request that either wraps multiple requests, or the single request if only one is supplied.
      * 
@@ -195,8 +197,8 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * @param requests the modifiable list of requests; may not be null
      * @param readOnly true if all of the requests are {@link Request#isReadOnly() read-only}
      */
-    /*package*/CompositeRequest( List<? extends Request> requests,
-                                  boolean readOnly ) {
+    protected CompositeRequest( List<? extends Request> requests,
+                                boolean readOnly ) {
         // Iterate through the requests and set the cancelled flag of each request to this object's flag ...
         final AtomicBoolean flag = super.getCancelledFlag();
         for (Request request : requests) {
@@ -204,6 +206,16 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         }
         this.requests = Collections.unmodifiableList(requests);
         this.readOnly = readOnly;
+    }
+
+    /**
+     * Create a composite request from the supplied list of requests. This is useful only for subclasses.
+     * 
+     * @param readOnly true if all of the requests are {@link Request#isReadOnly() read-only}
+     */
+    protected CompositeRequest( boolean readOnly ) {
+        this.requests = Collections.emptyList();
+        this.readOnly = false;
     }
 
     /**

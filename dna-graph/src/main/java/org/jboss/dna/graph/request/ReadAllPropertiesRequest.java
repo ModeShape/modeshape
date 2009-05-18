@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -146,6 +147,18 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
     }
 
     /**
+     * Add a property that was read from the {@link RepositoryConnection}
+     * 
+     * @param properties the properties that were read
+     * @throws IllegalArgumentException if the property is null
+     */
+    public void addProperties( Iterable<Property> properties ) {
+        for (Property property : properties) {
+            this.properties.put(property.getName(), property);
+        }
+    }
+
+    /**
      * Get the number of children for this node.
      * 
      * @return the number of children, or {@link #UNKNOWN_NUMBER_OF_CHILDREN} if the number of children was not yet read
@@ -191,6 +204,27 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocation = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(at, workspaceName);
     }
 
     /**

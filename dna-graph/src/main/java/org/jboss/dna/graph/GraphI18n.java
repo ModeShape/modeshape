@@ -68,6 +68,7 @@ public final class GraphI18n {
     public static I18n executedRequest;
     public static I18n closingRequestProcessor;
     public static I18n closedRequestProcessor;
+    public static I18n multipleErrorsWhileExecutingManyRequests;
     public static I18n multipleErrorsWhileExecutingRequests;
     public static I18n unsupportedRequestType;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
@@ -88,12 +89,32 @@ public final class GraphI18n {
     public static I18n unableToFindRepositorySourceWithName;
 
     /* In-Memory Connector */
-    public static I18n inMemoryConnectorName;
     public static I18n inMemoryNodeDoesNotExist;
     public static I18n errorSerializingInMemoryCachePolicyInSource;
     public static I18n inMemoryConnectorRequestsMustHavePathOrUuid;
     public static I18n workspaceDoesNotExistInRepository;
     public static I18n workspaceAlreadyExistsInRepository;
+
+    /* Federation Connection */
+    public static I18n namePropertyIsRequiredForFederatedRepositorySource;
+    public static I18n propertyIsRequiredForFederatedRepositorySource;
+    public static I18n federatedRepositorySourceMustBeInitialized;
+    public static I18n errorReadingConfigurationForFederatedRepositorySource;
+    public static I18n errorAddingProjectionRuleParseMethod;
+    public static I18n requiredNodeDoesNotExistRelativeToNode;
+    public static I18n unableToObtainConnectionToFederatedSource;
+    public static I18n workspaceDoesNotExistInFederatedRepository;
+    public static I18n locationCannotBeProjectedIntoWorkspaceAndSource;
+    public static I18n unableToAddRequestToChannelThatIsDone;
+    public static I18n federatedSourceDoesNotSupportCreatingWorkspaces;
+    public static I18n federatedSourceDoesNotSupportCloningWorkspaces;
+    public static I18n federatedSourceDoesNotSupportDestroyingWorkspaces;
+    public static I18n unableToProjectSourceInformationIntoWorkspace;
+    public static I18n unableToCreateNodeUnderPlaceholder;
+    public static I18n unableToUpdatePlaceholder;
+    public static I18n unableToDeletePlaceholder;
+    public static I18n copyLimitedToBeWithinSingleSource;
+    public static I18n moveLimitedToBeWithinSingleSource;
 
     static {
         try {

@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.request;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
@@ -178,11 +179,23 @@ public final class CloneWorkspaceRequest extends Request {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocationOfRoot = null;
+        this.actualWorkspaceName = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode() {
-        return desiredNameOfTargetWorkspace.hashCode();
+        return HashCode.compute(nameOfWorkspaceToBeCloned, desiredNameOfTargetWorkspace);
     }
 
     /**

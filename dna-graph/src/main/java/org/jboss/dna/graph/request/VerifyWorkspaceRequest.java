@@ -106,6 +106,18 @@ public final class VerifyWorkspaceRequest extends Request {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocationOfRoot = null;
+        this.actualWorkspaceName = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override

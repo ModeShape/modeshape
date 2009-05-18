@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.request;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -136,6 +137,27 @@ public class RemovePropertyRequest extends Request implements ChangeRequest {
     public boolean changes( String workspace,
                             Path path ) {
         return this.workspaceName.equals(workspace) && from.hasPath() && from.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.actualLocation = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(from, workspaceName, propertyName);
     }
 
     /**

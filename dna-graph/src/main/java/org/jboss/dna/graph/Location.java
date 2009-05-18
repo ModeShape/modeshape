@@ -45,7 +45,7 @@ import org.jboss.dna.graph.property.Property;
  * @author Randall Hauch
  */
 @Immutable
-public abstract class Location implements Iterable<Property> {
+public abstract class Location implements Iterable<Property>, Comparable<Location> {
 
     /**
      * Simple shared iterator instance that is used when there are no properties.
@@ -429,6 +429,24 @@ public abstract class Location implements Iterable<Property> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    public int compareTo( Location that ) {
+        if (this == that) return 0;
+        if (this.hasPath() && that.hasPath()) {
+            return this.getPath().compareTo(that.getPath());
+        }
+        UUID thisUuid = this.getUuid();
+        UUID thatUuid = that.getUuid();
+        if (thisUuid != null && thatUuid != null) {
+            return thisUuid.compareTo(thatUuid);
+        }
+        return this.hashCode() - that.hashCode();
     }
 
     /**

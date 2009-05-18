@@ -986,7 +986,7 @@ public class Graph {
                                                 getCurrentWorkspaceName(),
                                                 child,
                                                 EMPTY_PROPERTIES,
-                                                NodeConflictBehavior.DO_NOT_REPLACE).getActualLocationOfNode();
+                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
         return new GetNodeOrReturnGraph(location);
     }
 
@@ -1009,7 +1009,7 @@ public class Graph {
                                                 getCurrentWorkspaceName(),
                                                 child,
                                                 EMPTY_PROPERTIES,
-                                                NodeConflictBehavior.DO_NOT_REPLACE).getActualLocationOfNode();
+                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
         return new GetNodeOrReturnGraph(location);
     }
 
@@ -1716,15 +1716,13 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
-                                               .getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
-                                       .getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -5248,10 +5246,7 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext()
-                                  .getValueFactories()
-                                  .getPathFactory()
-                                  .create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }

@@ -71,6 +71,17 @@ public class GetWorkspacesRequest extends CacheableRequest {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.Request#cancel()
+     */
+    @Override
+    public void cancel() {
+        super.cancel();
+        this.availableWorkspaceNames = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override

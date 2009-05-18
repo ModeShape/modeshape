@@ -283,7 +283,7 @@ public abstract class WorkspaceConnectorTest extends AbstractConnectorTest {
                 // Verify that the content of 'workspace1' matches that of 'workspace2'
                 Subgraph subgraph1 = graph.getSubgraphOfDepth(100000).at(workspace1.getRoot());
                 Subgraph subgraph2 = graph.getSubgraphOfDepth(100000).at(workspace2.getRoot());
-                assertEquivalentSubgraphs(subgraph1, subgraph2, true);
+                assertEquivalentSubgraphs(subgraph1, subgraph2, true, true);
             } catch (InvalidRequestException error) {
                 // Updates may not be supported, but if they are then this is a failure ...
                 if (source.getCapabilities().supportsUpdates()) throw error;
