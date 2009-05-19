@@ -36,12 +36,6 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryContext;
-import org.jboss.dna.graph.connector.RepositorySource;
-import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 
 /**
@@ -371,12 +365,6 @@ public class TimeDelayingRepositorySource implements RepositorySource {
 
         public long getCloseCount() {
             return this.closeCount.get();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void setListener( RepositorySourceListener listener ) {
         }
 
     }

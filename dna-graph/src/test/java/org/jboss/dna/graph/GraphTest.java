@@ -48,7 +48,7 @@ import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.observe.ChangeObserver;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
@@ -817,8 +817,16 @@ public class GraphTest {
         assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).and().move(validPathString).into(validIdProperty1,
-                                                                                                                validIdProperty2).and().move(validUuid).into(validPath).execute();
+        graph.batch()
+             .move(validPath)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .move(validPathString)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .move(validUuid)
+             .into(validPath)
+             .execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
@@ -844,8 +852,16 @@ public class GraphTest {
         assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).and().copy(validPathString).into(validIdProperty1,
-                                                                                                                validIdProperty2).and().copy(validUuid).into(validPath).execute();
+        graph.batch()
+             .copy(validPath)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .copy(validPathString)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .copy(validUuid)
+             .into(validPath)
+             .execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
@@ -1227,8 +1243,7 @@ public class GraphTest {
             return true;
         }
 
-        public void setListener( RepositorySourceListener listener ) {
+        public void setObserver( ChangeObserver observer ) {
         }
-
     }
 }

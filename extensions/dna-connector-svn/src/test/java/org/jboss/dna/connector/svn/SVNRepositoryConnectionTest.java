@@ -23,8 +23,6 @@
 */
 package org.jboss.dna.connector.svn;
 
-import static org.mockito.Mockito.stub;
-import static org.mockito.Mockito.verify;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
@@ -37,7 +35,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.text.UrlEncoder;
-import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -46,7 +43,6 @@ import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
@@ -148,29 +144,9 @@ public class SVNRepositoryConnectionTest {
     @Test
     public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
         CachePolicy policy = mock(CachePolicy.class);
-        repository  = SVNConnectorTestUtil.createRepository(svnUrl, "sp", "");
+        repository = SVNConnectorTestUtil.createRepository(svnUrl, "sp", "");
         connection = new SVNRepositoryConnection("the source name", policy, false, repository);
         assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
-    }
-
-    @Test
-    public void shouldHaveNoOpListenerWhenCreated() {
-        assertThat(connection.getListener(), is(sameInstance(SVNRepositoryConnection.NO_OP_LISTENER)));
-    }
-
-    @Test
-    public void shouldUseNoOpListenerWhenSettingListenerToNull() {
-        connection.setListener(null);
-        assertThat(connection.getListener(), is(sameInstance(SVNRepositoryConnection.NO_OP_LISTENER)));
-    }
-
-    @Test
-    public void shouldSetListenerToNonNullValue() {
-        RepositorySourceListener listener = mock(RepositorySourceListener.class);
-        connection.setListener(listener);
-        assertThat(connection.getListener(), is(sameInstance(listener)));
-        connection.setListener(null);
-        assertThat(connection.getListener(), is(sameInstance(SVNRepositoryConnection.NO_OP_LISTENER)));
     }
 
     @Test( expected = PathNotFoundException.class )
@@ -253,16 +229,22 @@ public class SVNRepositoryConnectionTest {
 
     @Test
     public void shouldAddAndDeleteChildUnderRootNode() throws Exception {
-        graph.batch().create("/nodeC").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)).and(propertyFactory().create(JcrLexicon.CREATED,
-                                                                                                                                                 dateFactory().create(new Date()))).execute();
+        graph.batch()
+             .create("/nodeC")
+             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
+             .and(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(new Date())))
+             .execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
         assertThat(root.getChildren(), hasChild(child("nodeC")));
         SVNNodeKind nodeCKind = repository.checkPath("nodeC", -1);
         assertThat(nodeCKind, is(SVNNodeKind.DIR));
-        graph.batch().create("/nodeC/nodeC_1").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)).and(propertyFactory().create(JcrLexicon.CREATED,
-                                                                                                                                                         dateFactory().create(new Date()))).execute();
+        graph.batch()
+             .create("/nodeC/nodeC_1")
+             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
+             .and(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(new Date())))
+             .execute();
         // Now look up the root node ...
         Node nodeC = graph.getNodeAt("/nodeC");
         assertThat(nodeC, is(notNullValue()));
@@ -272,8 +254,12 @@ public class SVNRepositoryConnectionTest {
 
         byte[] content1 = "My content".getBytes();
         Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, binaryFactory().create(content1));
-        graph.batch().create("/nodeC/nodeC_1/file1.txt").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE)).and(propertyFactory().create(JcrLexicon.CREATED,
-                                                                                                                                                                 new Date())).and(jcrDataProperty).execute();
+        graph.batch()
+             .create("/nodeC/nodeC_1/file1.txt")
+             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE))
+             .and(propertyFactory().create(JcrLexicon.CREATED, new Date()))
+             .and(jcrDataProperty)
+             .execute();
 
         // Look up the file
         Node nodeC1 = graph.getNodeAt("/nodeC/nodeC_1");

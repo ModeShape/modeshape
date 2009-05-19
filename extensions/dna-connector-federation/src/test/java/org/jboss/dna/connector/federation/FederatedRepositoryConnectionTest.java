@@ -33,7 +33,6 @@ import static org.mockito.Mockito.verify;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,29 +92,4 @@ public class FederatedRepositoryConnectionTest {
         verify(repository, times(1)).isRunning();
     }
 
-    @Test
-    public void shouldAddListenerToRepositoryWhenSetOnConnection() {
-        // Old listener is no-op, so it is not removed from repository ...
-        RepositorySourceListener listener = mock(RepositorySourceListener.class);
-        connection.setListener(listener);
-        verify(repository, times(1)).addListener(listener);
-
-        // Old listener is NOT no-op, so it is removed from repository ...
-        RepositorySourceListener listener2 = mock(RepositorySourceListener.class);
-        connection.setListener(listener2);
-        verify(repository, times(1)).removeListener(listener);
-        verify(repository, times(1)).addListener(listener2);
-    }
-
-    @Test
-    public void shouldRemoveListenerFromRepositoryWhenConnectionIsClosed() {
-        // Old listener is NOT no-op, so it is removed from repository ...
-        RepositorySourceListener listener2 = mock(RepositorySourceListener.class);
-        connection.setListener(listener2);
-        verify(repository, times(1)).addListener(listener2);
-
-        // Closing connection will remove listener ...
-        connection.close();
-        verify(repository, times(1)).removeListener(listener2);
-    }
 }

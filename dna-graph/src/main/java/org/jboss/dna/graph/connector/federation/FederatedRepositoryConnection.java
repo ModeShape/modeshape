@@ -37,7 +37,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.Request;
@@ -255,11 +254,4 @@ class FederatedRepositoryConnection implements RepositoryConnection {
         // do nothing else, since we don't currently hold any state
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
-     */
-    public void setListener( RepositorySourceListener listener ) {
-    }
 }

@@ -23,8 +23,11 @@
  */
 package org.jboss.dna.graph.observe;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
 
 /**
  * Reusable manager of change listeners, typically employed by another {@link Observable} implementation.
@@ -32,7 +35,7 @@ import net.jcip.annotations.ThreadSafe;
 @ThreadSafe
 public class ChangeObservers implements Observable {
 
-    private CopyOnWriteArrayList<ChangeObserver> observers = new CopyOnWriteArrayList<ChangeObserver>();
+    private CopyOnWriteArrayList<ObserverReference> observers = new CopyOnWriteArrayList<ObserverReference>();
 
     public ChangeObservers() {
     }
@@ -43,7 +46,7 @@ public class ChangeObservers implements Observable {
      * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
      */
     public boolean register( ChangeObserver observer ) {
-        if (observer != null && observers.addIfAbsent(observer)) {
+        if (observer != null && observers.addIfAbsent(new ObserverReference(observer))) {
             observer.registeredWith(this);
             return true;
         }
@@ -63,4 +66,68 @@ public class ChangeObservers implements Observable {
         return false;
     }
 
+    /**
+     * Broadcast the supplied changes to the registered observers.
+     * 
+     * @param changes the changes to broadcast
+     * @throws IllegalArgumentException if the changes reference is null
+     */
+    public void broadcast( Changes changes ) {
+        CheckArg.isNotNull(changes, "changes");
+        for (ObserverReference observerReference : observers) {
+            ChangeObserver observer = observerReference.get();
+            if (observer == null) {
+                observers.remove(observerReference);
+                continue;
+            }
+            try {
+                observer.notify(changes);
+            } catch (Throwable t) {
+                Logger.getLogger(getClass()).debug(t, "Exception while notifying");
+            }
+        }
+    }
+
+    /**
+     * A {@link WeakReference} implementation that provides a valid
+     */
+    protected final class ObserverReference extends WeakReference<ChangeObserver> {
+        final int hc;
+
+        protected ObserverReference( ChangeObserver source ) {
+            super(source);
+            this.hc = source.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return hc;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof ObserverReference) {
+                ObserverReference that = (ObserverReference)obj;
+                ChangeObserver thisSource = this.get();
+                ChangeObserver thatSource = that.get();
+                return thisSource == thatSource; // reference equality, not object equality!
+            }
+            if (obj instanceof ChangeObserver) {
+                ChangeObserver that = (ChangeObserver)obj;
+                return this.get() == that; // reference equality, not object equality!
+            }
+            return false;
+        }
+    }
 }

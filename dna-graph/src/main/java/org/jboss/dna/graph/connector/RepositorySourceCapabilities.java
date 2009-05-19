@@ -122,7 +122,7 @@ public class RepositorySourceCapabilities {
     }
 
     /**
-     * Return whether the source supports events through {@link RepositorySourceListener}s.
+     * Return whether the source supports publishing change events.
      * 
      * @return true if events are supported, or false if the source is not capable of generating events
      */

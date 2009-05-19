@@ -32,7 +32,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -41,20 +40,8 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 public class InMemoryRepositoryConnection implements RepositoryConnection {
 
-    protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
-
-        /**
-         * {@inheritDoc}
-         */
-        public void notify( String sourceName,
-                            Object... events ) {
-            // do nothing
-        }
-    };
-
     private final InMemoryRepositorySource source;
     private final InMemoryRepository repository;
-    private RepositorySourceListener listener = NO_OP_LISTENER;
 
     InMemoryRepositoryConnection( InMemoryRepositorySource source,
                                   InMemoryRepository repository ) {
@@ -91,13 +78,6 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
     public boolean ping( long time,
                          TimeUnit unit ) {
         return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        this.listener = listener != null ? listener : NO_OP_LISTENER;
     }
 
     /**
@@ -141,13 +121,6 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.stop();
             logger.trace("InMemoryRepositoryConnection.execute(...) took " + sw.getTotalDuration());
         }
-    }
-
-    /**
-     * @return listener
-     */
-    protected RepositorySourceListener getListener() {
-        return this.listener;
     }
 
     /**

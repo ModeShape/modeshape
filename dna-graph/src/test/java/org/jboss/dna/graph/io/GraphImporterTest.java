@@ -45,7 +45,7 @@ import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.observe.ChangeObserver;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -114,7 +114,9 @@ public class GraphImporterTest {
                          "repositoryName=repositoryB",
                          "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured",
                          "dna:classname=org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
-        assertCreateProperties(iter, "/a/b/dna:system[1]/dna:sources[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
+        assertCreateProperties(iter,
+                               "/a/b/dna:system[1]/dna:sources[1]",
+                               "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertCreateProperties(iter, "/a/b/dna:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertThat(iter.hasNext(), is(false));
     }
@@ -129,7 +131,7 @@ public class GraphImporterTest {
         Path parentPath = createNode.under().getPath();
         assertThat(parentPath, is(expectedPath.getParent()));
         assertThat(createNode.named(), is(expectedPath.getLastSegment().getName()));
-        
+
         if (properties.length > 0) {
             Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
             for (Property prop : createNode.properties()) {
@@ -162,21 +164,20 @@ public class GraphImporterTest {
                                         String path,
                                         String... properties ) {
         Request nextCommand = iterator.next();
-        
+
         if (nextCommand instanceof UpdatePropertiesRequest) {
-            assertUpdateProperties((UpdatePropertiesRequest) nextCommand, path, properties);
-        }
-        else if (nextCommand instanceof SetPropertyRequest) {
-            assertSetProperty((SetPropertyRequest) nextCommand, path, properties);
-        }
-        else {
+            assertUpdateProperties((UpdatePropertiesRequest)nextCommand, path, properties);
+        } else if (nextCommand instanceof SetPropertyRequest) {
+            assertSetProperty((SetPropertyRequest)nextCommand, path, properties);
+        } else {
             fail("Invalid next request type: " + nextCommand.getClass().getName());
         }
-        
+
     }
+
     public void assertUpdateProperties( UpdatePropertiesRequest createNode,
-                                  String path,
-                                  String... properties ) {
+                                        String path,
+                                        String... properties ) {
         Path expectedPath = context.getValueFactories().getPathFactory().create(path);
         Path parentPath = createNode.changedLocation().getPath().getParent();
         assertThat(parentPath, is(expectedPath.getParent()));
@@ -208,39 +209,38 @@ public class GraphImporterTest {
     }
 
     public void assertSetProperty( SetPropertyRequest createNode,
-                                        String path,
-                                        String... properties ) {
-              Path expectedPath = context.getValueFactories().getPathFactory().create(path);
-              Path parentPath = createNode.changedLocation().getPath().getParent();
-              assertThat(parentPath, is(expectedPath.getParent()));
-              assertThat(createNode.changedLocation().getPath().getLastSegment().getName(), is(expectedPath.getLastSegment().getName()));
-              Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
-              Property prop = createNode.property();
-              propertiesByName.put(prop.getName(), prop);
+                                   String path,
+                                   String... properties ) {
+        Path expectedPath = context.getValueFactories().getPathFactory().create(path);
+        Path parentPath = createNode.changedLocation().getPath().getParent();
+        assertThat(parentPath, is(expectedPath.getParent()));
+        assertThat(createNode.changedLocation().getPath().getLastSegment().getName(), is(expectedPath.getLastSegment().getName()));
+        Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
+        Property prop = createNode.property();
+        propertiesByName.put(prop.getName(), prop);
 
-              for (String propertyStr : properties) {
-                  if (propertyStr == "any properties") {
-                      propertiesByName.clear();
-                      break;
-                  }
-                  Matcher matcher = Pattern.compile("([^=]+)=(.*)").matcher(propertyStr);
-                  if (!matcher.matches()) continue;
-                  System.out.println("Property: " + propertyStr + " ==> " + matcher);
-                  Name propertyName = context.getValueFactories().getNameFactory().create(matcher.group(1));
-                  System.out.println("Property name: " + matcher.group(1));
-                  String value = matcher.group(2); // doesn't handle multiple values!!
-                  if (value.trim().length() == 0) value = null;
-                  Property actual = propertiesByName.remove(propertyName);
-                  Property expectedProperty = context.getPropertyFactory().create(propertyName, value);
-                  assertThat("missing property " + propertyName, actual, is(expectedProperty));
-              }
-              if (!propertiesByName.isEmpty()) {
-                  System.out.println("Properties for " + path + "\n" + propertiesByName);
-              }
-              assertThat(propertiesByName.isEmpty(), is(true));
-          }
+        for (String propertyStr : properties) {
+            if (propertyStr == "any properties") {
+                propertiesByName.clear();
+                break;
+            }
+            Matcher matcher = Pattern.compile("([^=]+)=(.*)").matcher(propertyStr);
+            if (!matcher.matches()) continue;
+            System.out.println("Property: " + propertyStr + " ==> " + matcher);
+            Name propertyName = context.getValueFactories().getNameFactory().create(matcher.group(1));
+            System.out.println("Property name: " + matcher.group(1));
+            String value = matcher.group(2); // doesn't handle multiple values!!
+            if (value.trim().length() == 0) value = null;
+            Property actual = propertiesByName.remove(propertyName);
+            Property expectedProperty = context.getPropertyFactory().create(propertyName, value);
+            assertThat("missing property " + propertyName, actual, is(expectedProperty));
+        }
+        if (!propertiesByName.isEmpty()) {
+            System.out.println("Properties for " + path + "\n" + propertiesByName);
+        }
+        assertThat(propertiesByName.isEmpty(), is(true));
+    }
 
-    
     protected class MockRepositoryConnection implements RepositoryConnection {
         public void close() {
         }
@@ -276,7 +276,7 @@ public class GraphImporterTest {
             return true;
         }
 
-        public void setListener( RepositorySourceListener listener ) {
+        public void setObserver( ChangeObserver observer ) {
         }
     }
 

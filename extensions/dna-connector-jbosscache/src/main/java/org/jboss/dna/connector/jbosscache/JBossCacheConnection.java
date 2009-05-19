@@ -29,7 +29,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -40,20 +39,8 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 public class JBossCacheConnection implements RepositoryConnection {
 
-    protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
-
-        /**
-         * {@inheritDoc}
-         */
-        public void notify( String sourceName,
-                            Object... events ) {
-            // do nothing
-        }
-    };
-
     private final JBossCacheSource source;
     private final JBossCacheWorkspaces workspaces;
-    private RepositorySourceListener listener = NO_OP_LISTENER;
 
     JBossCacheConnection( JBossCacheSource source,
                           JBossCacheWorkspaces workspaces ) {
@@ -95,13 +82,6 @@ public class JBossCacheConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public void setListener( RepositorySourceListener listener ) {
-        this.listener = listener != null ? listener : NO_OP_LISTENER;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void close() {
         // do nothing
     }
@@ -122,12 +102,5 @@ public class JBossCacheConnection implements RepositoryConnection {
         } finally {
             processor.close();
         }
-    }
-
-    /**
-     * @return listener
-     */
-    protected RepositorySourceListener getListener() {
-        return this.listener;
     }
 }

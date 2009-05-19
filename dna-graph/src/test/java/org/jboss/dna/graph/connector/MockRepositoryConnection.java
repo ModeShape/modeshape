@@ -134,13 +134,4 @@ public class MockRepositoryConnection implements RepositoryConnection {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        throw new UnsupportedOperationException();
-    }
-
 }

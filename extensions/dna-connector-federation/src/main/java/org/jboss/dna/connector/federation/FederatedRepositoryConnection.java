@@ -24,14 +24,12 @@
 package org.jboss.dna.connector.federation;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -41,16 +39,8 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 @ThreadSafe
 public class FederatedRepositoryConnection implements RepositoryConnection {
 
-    protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
-        public void notify( String sourceName,
-                            Object... events ) {
-            // do nothing
-        }
-    };
-
     private final FederatedRepository repository;
     private final String sourceName;
-    private final AtomicReference<RepositorySourceListener> listener;
 
     protected FederatedRepositoryConnection( FederatedRepository repository,
                                              String sourceName ) {
@@ -58,7 +48,6 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
         assert repository != null;
         this.sourceName = sourceName;
         this.repository = repository;
-        this.listener = new AtomicReference<RepositorySourceListener>(NO_OP_LISTENER);
         this.repository.register(this);
     }
 
@@ -88,18 +77,6 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      */
     public XAResource getXAResource() {
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        if (listener == null) listener = NO_OP_LISTENER;
-        RepositorySourceListener oldListener = this.listener.getAndSet(listener);
-        this.repository.addListener(listener);
-        if (oldListener != NO_OP_LISTENER) {
-            this.repository.removeListener(oldListener);
-        }
     }
 
     /**
@@ -136,11 +113,6 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void close() {
-        try {
-            this.repository.removeListener(this.listener.get());
-        } finally {
-            this.repository.unregister(this);
-        }
     }
 
 }

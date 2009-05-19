@@ -1011,14 +1011,6 @@ public class RepositoryConnectionPool {
                 returnConnection(this);
             }
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void setListener( RepositorySourceListener listener ) {
-            if (!closed) this.original.setListener(listener);
-        }
-
     }
 
 }

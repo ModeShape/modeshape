@@ -26,14 +26,12 @@ package org.jboss.dna.connector.filesystem;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -50,7 +48,6 @@ public class FileSystemConnection implements RepositoryConnection {
     private final CachePolicy cachePolicy;
     private final Set<String> availableWorkspaceNames;
     private final boolean creatingWorkspacesAllowed;
-    private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
     private final FilenameFilter filenameFilter;
     private final boolean updatesAllowed;
 
@@ -98,17 +95,6 @@ public class FileSystemConnection implements RepositoryConnection {
      */
     public XAResource getXAResource() {
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        if (listener != null) {
-            listeners.addIfAbsent(listener);
-        }
     }
 
     /**

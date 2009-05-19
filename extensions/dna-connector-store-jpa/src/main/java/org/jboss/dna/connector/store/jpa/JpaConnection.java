@@ -24,7 +24,6 @@
 package org.jboss.dna.connector.store.jpa;
 
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
 import javax.transaction.xa.XAResource;
@@ -32,7 +31,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -43,7 +41,6 @@ public class JpaConnection implements RepositoryConnection {
 
     private final String name;
     private final CachePolicy cachePolicy;
-    private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
     private final EntityManager entityManager;
     private final Model model;
     private final UUID rootNodeUuid;
@@ -89,17 +86,6 @@ public class JpaConnection implements RepositoryConnection {
      */
     public String getSourceName() {
         return name;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        if (listener != null) {
-            listeners.addIfAbsent(listener);
-        }
     }
 
     /**

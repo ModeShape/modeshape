@@ -30,7 +30,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.request.Request;
@@ -48,22 +47,10 @@ import org.tmatesoft.svn.core.io.SVNRepository;
  */
 public class SVNRepositoryConnection implements RepositoryConnection {
 
-    protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
-
-        /**
-         * {@inheritDoc}
-         */
-        public void notify( String sourceName,
-                            Object... events ) {
-            // do nothing
-        }
-    };
-
     private final String sourceName;
     private final CachePolicy cachePolicy;
     private final SVNRepository repository;
     private final boolean updatesAllowed;
-    private RepositorySourceListener listener = NO_OP_LISTENER;
 
     public SVNRepositoryConnection( String sourceName,
                                     CachePolicy cachePolicy,
@@ -142,13 +129,6 @@ public class SVNRepositoryConnection implements RepositoryConnection {
 
     /**
      * {@inheritDoc}
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        this.listener = listener != null ? listener : NO_OP_LISTENER;
-    }
-
-    /**
-     * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connector.RepositoryConnection#close()
      */
@@ -175,12 +155,5 @@ public class SVNRepositoryConnection implements RepositoryConnection {
         } finally {
             processor.close();
         }
-    }
-
-    /**
-     * @return listener
-     */
-    protected RepositorySourceListener getListener() {
-        return this.listener;
     }
 }

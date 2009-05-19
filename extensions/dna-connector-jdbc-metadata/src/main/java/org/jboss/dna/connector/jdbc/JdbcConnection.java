@@ -26,17 +26,14 @@ package org.jboss.dna.connector.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import javax.transaction.xa.XAResource;
 import javax.sql.XAConnection;
-
+import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -53,14 +50,13 @@ public class JdbcConnection implements RepositoryConnection {
 
     private final String name;
     private final CachePolicy cachePolicy;
-    private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
     private final Connection connection;
     private final UUID rootNodeUuid;
 
     /*package*/JdbcConnection( String sourceName,
-                               CachePolicy cachePolicy,
-                               Connection connection,
-                               UUID rootNodeUuid) {
+                                CachePolicy cachePolicy,
+                                Connection connection,
+                                UUID rootNodeUuid ) {
         assert sourceName != null;
         assert connection != null;
         assert rootNodeUuid != null;
@@ -77,17 +73,6 @@ public class JdbcConnection implements RepositoryConnection {
      */
     public String getSourceName() {
         return name;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
-     */
-    public void setListener( RepositorySourceListener listener ) {
-        if (listener != null) {
-            listeners.addIfAbsent(listener);
-        }
     }
 
     /**
@@ -110,13 +95,13 @@ public class JdbcConnection implements RepositoryConnection {
             try {
                 return ((XAConnection)connection).getXAResource();
             } catch (SQLException e) {
-                // handle an exception silently so far and write it to the log 
+                // handle an exception silently so far and write it to the log
                 log.error(e, JdbcMetadataI18n.unableToGetXAResource, getSourceName());
                 return null;
             }
         }
         // default
-        return null;    
+        return null;
     }
 
     /**
@@ -129,7 +114,7 @@ public class JdbcConnection implements RepositoryConnection {
         try {
             // JDBC 4 has a method to check validity of a connection (connection.isValid(timeout))
             // but many drivers didn't get updated with latest spec
-            return connection != null && ! connection.isClosed();
+            return connection != null && !connection.isClosed();
         } catch (SQLException e) {
             // debug
             if (log.isDebugEnabled()) {
@@ -147,8 +132,8 @@ public class JdbcConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        // create processor and delegate handling 
-        RequestProcessor proc = new JdbcRequestProcesor(getSourceName(),context, connection, rootNodeUuid);
+        // create processor and delegate handling
+        RequestProcessor proc = new JdbcRequestProcesor(getSourceName(), context, connection, rootNodeUuid);
         try {
             proc.process(request);
         } finally {
@@ -164,7 +149,7 @@ public class JdbcConnection implements RepositoryConnection {
     public void close() {
         try {
             // release the JDBC connection resource
-            if (connection != null && ! connection.isClosed()) {
+            if (connection != null && !connection.isClosed()) {
                 connection.close();
             }
         } catch (Exception e) {

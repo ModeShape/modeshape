@@ -25,9 +25,7 @@ package org.jboss.dna.connector.federation;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,7 +36,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
-import org.jboss.dna.graph.connector.RepositorySourceListener;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
@@ -59,7 +56,6 @@ public class FederatedRepository {
     private final AtomicInteger openExecutors = new AtomicInteger(0);
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
-    private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
 
     /**
      * Create a federated repository instance.
@@ -160,42 +156,6 @@ public class FederatedRepository {
      */
     public boolean isTerminated() {
         return this.openExecutors.get() != 0;
-    }
-
-    /**
-     * Add a listener that is to receive notifications to changes to content within this repository. This method does nothing if
-     * the supplied listener is null.
-     * 
-     * @param listener the new listener
-     * @return true if the listener was added, or false if the listener was not added (if reference is null, or if non-null
-     *         listener is already an existing listener)
-     */
-    public boolean addListener( RepositorySourceListener listener ) {
-        if (listener == null) return false;
-        return this.listeners.addIfAbsent(listener);
-    }
-
-    /**
-     * Remove the supplied listener. This method does nothing if the supplied listener is null.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
-     * 
-     * @param listener the listener to remove
-     * @return true if the listener was removed, or false if the listener was not registered
-     */
-    public boolean removeListener( RepositorySourceListener listener ) {
-        if (listener == null) return false;
-        return this.listeners.remove(listener);
-    }
-
-    /**
-     * Get the list of listeners, which is the actual list used by the repository.
-     * 
-     * @return the listeners
-     */
-    public List<RepositorySourceListener> getListeners() {
-        return this.listeners;
     }
 
     /**

@@ -47,11 +47,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  * returning the connection from a connection pool.
  * </p>
  * <p>
- * DNA hasn't yet defined the event mechanism, so connectors don't have any methods to invoke on the
- * {@link RepositorySourceListener}. This will be defined in the next release, so feel free to manage the listeners now. Note that
- * by default the {@link RepositorySourceCapabilities} returns false for supportsEvents().
- * </p>
- * <p>
  * The most important method on this interface, though, is the {@link #execute(ExecutionContext, Request)} method, which serves as
  * the mechanism by which the component using the connector access and manipulates the content exposed by the connector. The first
  * parameter to this method is the {@link ExecutionContext}, which contains the information about environment as well as the
@@ -147,13 +142,6 @@ public interface RepositoryConnection {
      */
     boolean ping( long time,
                   TimeUnit unit ) throws InterruptedException;
-
-    /**
-     * Set the listener that is to receive notifications to changes to content within this source.
-     * 
-     * @param listener the new listener, or null if no component is interested in the change notifications
-     */
-    void setListener( RepositorySourceListener listener );
 
     /**
      * Get the default cache policy for this repository. If none is provided, a global cache policy will be used.
