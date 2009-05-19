@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
@@ -42,6 +43,7 @@ import org.jboss.dna.common.util.CheckArg;
  * 
  * @author Randall Hauch
  */
+@Immutable
 public class CompositeRequest extends Request implements Iterable<Request> {
 
     private static final long serialVersionUID = 1L;

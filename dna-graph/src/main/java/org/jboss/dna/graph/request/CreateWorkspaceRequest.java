@@ -105,8 +105,10 @@ public final class CreateWorkspaceRequest extends Request {
      * {@link CreateConflictBehavior#CREATE_WITH_ADJUSTED_NAME alter the name}.
      * 
      * @param actualWorkspaceName the actual name of the workspace that was created, or null if a workspace was not created
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualWorkspaceName( String actualWorkspaceName ) {
+        checkNotFrozen();
         this.actualWorkspaceName = actualWorkspaceName;
     }
 
@@ -123,8 +125,10 @@ public final class CreateWorkspaceRequest extends Request {
      * Set the actual location of the root node in the new workspace.
      * 
      * @param actualLocationOfRoot the actual location of the workspace's root node.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualRootLocation( Location actualLocationOfRoot ) {
+        checkNotFrozen();
         this.actualLocationOfRoot = actualLocationOfRoot;
     }
 

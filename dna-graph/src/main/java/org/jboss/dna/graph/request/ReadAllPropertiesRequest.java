@@ -129,8 +129,10 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * @return the previous property that had the same name, or null if there was no previously-recorded property with the same
      *         name
      * @throws IllegalArgumentException if the property is null
+     * @throws IllegalStateException if the request is frozen
      */
     public Property addProperty( Property property ) {
+        checkNotFrozen();
         return this.properties.put(property.getName(), property);
     }
 
@@ -139,8 +141,10 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * 
      * @param properties the properties that were read
      * @throws IllegalArgumentException if the property is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void addProperties( Property... properties ) {
+        checkNotFrozen();
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
         }
@@ -151,8 +155,10 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * 
      * @param properties the properties that were read
      * @throws IllegalArgumentException if the property is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void addProperties( Iterable<Property> properties ) {
+        checkNotFrozen();
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
         }
@@ -172,8 +178,10 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * 
      * @param numberOfChildren the number of children
      * @throws IllegalArgumentException if the number of childre is negative
+     * @throws IllegalStateException if the request is frozen
      */
     public void setNumberOfChildren( int numberOfChildren ) {
+        checkNotFrozen();
         CheckArg.isNonNegative(numberOfChildren, "numberOfChildren");
         this.numberOfChildren = numberOfChildren;
     }
@@ -185,8 +193,10 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * @param actual the actual location of the node being read, or null if the {@link #at() current location} should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!at.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
         }

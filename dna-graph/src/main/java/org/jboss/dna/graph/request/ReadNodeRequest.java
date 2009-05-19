@@ -121,8 +121,10 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * @return the previous property that had the same name, or null if there was no previously-recorded property with the same
      *         name
      * @throws IllegalArgumentException if the property is null
+     * @throws IllegalStateException if the request is frozen
      */
     public Property addProperty( Property property ) {
+        checkNotFrozen();
         return this.properties.put(property.getName(), property);
     }
 
@@ -130,9 +132,12 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * Add a property that was read from the {@link RepositoryConnection}
      * 
      * @param properties the properties that were read
-     * @throws IllegalArgumentException if the property is null
+     * @throws IllegalArgumentException if the properties array is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void addProperties( Property... properties ) {
+        checkNotFrozen();
+        CheckArg.isNotNull(properties, "properties");
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
         }
@@ -142,9 +147,12 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * Add a property that was read from the {@link RepositoryConnection}
      * 
      * @param properties the properties that were read
-     * @throws IllegalArgumentException if the property is null
+     * @throws IllegalArgumentException if the iterable reference is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void addProperties( Iterable<Property> properties ) {
+        checkNotFrozen();
+        CheckArg.isNotNull(properties, "properties");
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
         }
@@ -175,11 +183,13 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * 
      * @param children the locations of the children that were read
      * @throws IllegalArgumentException if the parameter is null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChildren( Iterable<Location> children ) {
+        checkNotFrozen();
         CheckArg.isNotNull(children, "children");
         for (Location child : children) {
             if (child != null) this.children.add(child);
@@ -192,10 +202,12 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * 
      * @param child the location of the child that was read
      * @throws IllegalArgumentException if the location is null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Path, Property)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChild( Location child ) {
+        checkNotFrozen();
         CheckArg.isNotNull(child, "child");
         this.children.add(child);
     }
@@ -208,12 +220,14 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * @param firstIdProperty the first identification property of the child that was just read
      * @param remainingIdProperties the remaining identification properties of the child that was just read
      * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property)
      */
     public void addChild( Path pathToChild,
                           Property firstIdProperty,
                           Property... remainingIdProperties ) {
+        checkNotFrozen();
         Location child = Location.create(pathToChild, firstIdProperty, remainingIdProperties);
         this.children.add(child);
     }
@@ -225,11 +239,13 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * @param pathToChild the path of the child that was just read
      * @param idProperty the identification property of the child that was just read
      * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChild( Path pathToChild,
                           Property idProperty ) {
+        checkNotFrozen();
         Location child = Location.create(pathToChild, idProperty);
         this.children.add(child);
     }
@@ -241,8 +257,10 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      * @param actual the actual location of the node being read, or null if the {@link #at() current location} should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!at.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
         }

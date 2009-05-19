@@ -69,8 +69,10 @@ public final class VerifyWorkspaceRequest extends Request {
      * Set the actual name of the workspace.
      * 
      * @param actualWorkspaceName the actual name of the workspace; never null
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualWorkspaceName( String actualWorkspaceName ) {
+        checkNotFrozen();
         CheckArg.isNotNull(actualWorkspaceName, "actualWorkspaceName");
         this.actualWorkspaceName = actualWorkspaceName;
     }
@@ -88,8 +90,10 @@ public final class VerifyWorkspaceRequest extends Request {
      * Set the actual location of the root node in the new workspace.
      * 
      * @param actualLocationOfRoot the actual location of the workspace's root node.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualRootLocation( Location actualLocationOfRoot ) {
+        checkNotFrozen();
         this.actualLocationOfRoot = actualLocationOfRoot;
     }
 

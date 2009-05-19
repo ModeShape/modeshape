@@ -117,8 +117,10 @@ public class ReadPropertyRequest extends CacheableRequest {
      * @param property the property that was read
      * @throws IllegalArgumentException if the property's name does not match the {@link #named() name of the property} that was
      *         to be read
+     * @throws IllegalStateException if the request is frozen
      */
     public void setProperty( Property property ) {
+        checkNotFrozen();
         if (property != null) CheckArg.isEquals(property.getName(), "property's name", named(), "property name");
         this.property = property;
     }
@@ -130,8 +132,10 @@ public class ReadPropertyRequest extends CacheableRequest {
      * @param actual the actual location of the node being read, or null if the {@link #on() current location} should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #on() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!on.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
         }

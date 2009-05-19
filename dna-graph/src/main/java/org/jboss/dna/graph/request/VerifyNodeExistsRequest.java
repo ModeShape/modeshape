@@ -91,8 +91,10 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      * @param actual the actual location of the node being read, or null if the {@link #at() current location} should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!at.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
         }

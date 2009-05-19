@@ -43,7 +43,7 @@ import org.jboss.dna.graph.property.Property;
  * 
  * @author Randall Hauch
  */
-public class CreateNodeRequest extends Request implements Iterable<Property>, ChangeRequest {
+public class CreateNodeRequest extends ChangeRequest implements Iterable<Property> {
 
     private static final long serialVersionUID = 1L;
 
@@ -279,8 +279,10 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
      *        used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #under() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         CheckArg.isNotNull(actual, "actual");
         if (!under.isSame(actual, false)) { // not same if actual is null
         }
@@ -309,6 +311,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
+    @Override
     public boolean changes( String workspace,
                             Path path ) {
         return this.workspaceName.equals(workspace) && under.hasPath() && under.getPath().isAtOrBelow(path);
@@ -319,6 +322,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property>, Ch
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
+    @Override
     public Location changedLocation() {
         return under;
     }

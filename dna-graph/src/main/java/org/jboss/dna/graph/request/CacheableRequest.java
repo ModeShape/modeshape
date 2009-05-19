@@ -62,16 +62,20 @@ public abstract class CacheableRequest extends Request implements Cacheable {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalStateException if the request is frozen
      * @see org.jboss.dna.graph.cache.Cacheable#setCachePolicy(org.jboss.dna.graph.cache.CachePolicy)
      */
     public void setCachePolicy( CachePolicy cachePolicy ) {
+        checkNotFrozen();
         policy = cachePolicy;
     }
 
     /**
      * @param timeLoaded Sets timeLoaded to the specified value.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setTimeLoaded( DateTime timeLoaded ) {
+        checkNotFrozen();
         this.timeLoaded = timeLoaded;
     }
 }

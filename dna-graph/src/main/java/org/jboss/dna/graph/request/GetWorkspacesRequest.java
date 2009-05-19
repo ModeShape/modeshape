@@ -63,8 +63,10 @@ public class GetWorkspacesRequest extends CacheableRequest {
      * Set the names of the workspaces that are available (at least to the current user)
      * 
      * @param availableWorkspaceNames Sets availableWorkspaceNames to the specified value.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setAvailableWorkspaceNames( Set<String> availableWorkspaceNames ) {
+        checkNotFrozen();
         this.availableWorkspaceNames = availableWorkspaceNames;
     }
 

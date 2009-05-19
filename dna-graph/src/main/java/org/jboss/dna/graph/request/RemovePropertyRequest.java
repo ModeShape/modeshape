@@ -36,7 +36,7 @@ import org.jboss.dna.graph.property.Path;
  * 
  * @author Randall Hauch
  */
-public class RemovePropertyRequest extends Request implements ChangeRequest {
+public class RemovePropertyRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -108,8 +108,10 @@ public class RemovePropertyRequest extends Request implements ChangeRequest {
      * @param actual the actual location of the node being updated, or null if the {@link #from() current location} should be used
      * @throws IllegalArgumentException if the actual location does represent the {@link Location#isSame(Location) same location}
      *         as the {@link #from() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!from.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, from));
         }
@@ -134,6 +136,7 @@ public class RemovePropertyRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
+    @Override
     public boolean changes( String workspace,
                             Path path ) {
         return this.workspaceName.equals(workspace) && from.hasPath() && from.getPath().isAtOrBelow(path);
@@ -183,6 +186,7 @@ public class RemovePropertyRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
+    @Override
     public Location changedLocation() {
         return from;
     }

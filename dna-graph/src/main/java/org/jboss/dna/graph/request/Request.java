@@ -25,6 +25,7 @@ package org.jboss.dna.graph.request;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 
 /**
@@ -37,18 +38,20 @@ public abstract class Request implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Throwable error;
-    private AtomicBoolean cancelled;
+    private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private final AtomicBoolean frozen = new AtomicBoolean(false);
 
     protected Request() {
-        this.cancelled = new AtomicBoolean(false);
     }
 
     /**
      * Set the error for this request.
      * 
      * @param error the error to be associated with this request, or null if this request is to have no error
+     * @throws IllegalStateException if the request is frozen
      */
     public void setError( Throwable error ) {
+        checkNotFrozen();
         this.error = error;
     }
 
@@ -117,8 +120,11 @@ public abstract class Request implements Serializable {
      * <p>
      * This method is safe to be called by different threads.
      * </p>
+     * 
+     * @throws IllegalStateException if the request is frozen
      */
     public void cancel() {
+        checkNotFrozen();
         this.cancelled.set(true);
     }
 
@@ -128,4 +134,31 @@ public abstract class Request implements Serializable {
      * @return true if this request reads information, or false if it requests that the repository content be changed in some way
      */
     public abstract boolean isReadOnly();
+
+    /**
+     * Determine whether this request has been frozen, preventing any further updates.
+     * 
+     * @return true if the request has been frozen, or false otherwise
+     */
+    public boolean isFrozen() {
+        return frozen.get();
+    }
+
+    /**
+     * Freeze this request to prevent any further modification. This method does nothing if the request is already frozen.
+     */
+    public void freeze() {
+        frozen.set(true);
+    }
+
+    /**
+     * Utility method to check that the request is not frozen, and if it is to throw an {@link IllegalStateException}.
+     * 
+     * @throws IllegalStateException if the request is frozen
+     */
+    protected void checkNotFrozen() throws IllegalStateException {
+        if (frozen.get()) {
+            throw new IllegalStateException(GraphI18n.requestIsFrozenAndMayNotBeChanged.text(this));
+        }
+    }
 }

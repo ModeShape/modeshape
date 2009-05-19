@@ -6,8 +6,8 @@
  * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
- * Unless otherwise indicated, all code in JBoss DNA is licensed
- * to you under the terms of the GNU Lesser General Public License as
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
@@ -21,35 +21,37 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.request;
+package org.jboss.dna.graph.observe;
 
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Path;
+import javax.security.auth.Subject;
+import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.request.ChangeRequest;
 
 /**
- * A Request to make changes in a graph.
+ * A set of changes that were made atomically. Each change is in the form of a frozen {@link ChangeRequest}.
  */
-public abstract class ChangeRequest extends Request {
-
-    private static final long serialVersionUID = 1L;
-
-    protected ChangeRequest() {
-    }
+@Immutable
+public interface Changes extends Iterable<ChangeRequest> {
 
     /**
-     * Determine if this request changes the branch at the given path.
+     * Get the user that made these changes.
      * 
-     * @param workspace the name of the workspace; may not be null
-     * @param path the path; may not be null
-     * @return true if this request changes a node under the given path
+     * @return the user; never null
      */
-    public abstract boolean changes( String workspace,
-                                     Path path );
+    public Subject getUser();
 
     /**
-     * Get the location of the top-most node that is to be changed by this request.
+     * Get the name of the source that was changed.
      * 
-     * @return the location changed by this request
+     * @return the source name; never null
      */
-    public abstract Location changedLocation();
+    public String getSourceName();
+
+    /**
+     * Get the timestamp that the changes were made. All changes within the change set were all made at this instant in time.
+     * 
+     * @return the timestamp of the changes; never null
+     */
+    public DateTime getTimestamp();
 }

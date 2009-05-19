@@ -37,7 +37,7 @@ import org.jboss.dna.graph.property.Path;
  * 
  * @author Randall Hauch
  */
-public class CopyBranchRequest extends Request implements ChangeRequest {
+public class CopyBranchRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -205,9 +205,11 @@ public class CopyBranchRequest extends Request implements ChangeRequest {
      *         {@link Location#isSame(Location) same location} as the {@link #from() from location}; if the new location does not
      *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}; if the either
      *         location does not have a path
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location fromLocation,
                                     Location intoLocation ) {
+        checkNotFrozen();
         if (!from.isSame(fromLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(fromLocation, from));
         }
@@ -251,6 +253,7 @@ public class CopyBranchRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
+    @Override
     public boolean changes( String workspace,
                             Path path ) {
         return this.intoWorkspace.equals(workspace) && into.hasPath() && into.getPath().isAtOrBelow(path);
@@ -261,6 +264,7 @@ public class CopyBranchRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
+    @Override
     public Location changedLocation() {
         return into;
     }

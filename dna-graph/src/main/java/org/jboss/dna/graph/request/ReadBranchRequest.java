@@ -199,9 +199,11 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * @param node the location of the node that appears on this branch; must {@link Location#hasPath() have a path}
      * @param properties the properties on the node
      * @throws IllegalArgumentException if the node is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void setProperties( Location node,
                                Property... properties ) {
+        checkNotFrozen();
         CheckArg.isNotNull(node, "node");
         assert node.hasPath();
         Node nodeObj = nodes.get(node.getPath());
@@ -222,9 +224,11 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * @param node the location of the node that appears on this branch; must {@link Location#hasPath() have a path}
      * @param properties the properties on the node
      * @throws IllegalArgumentException if the node is null
+     * @throws IllegalStateException if the request is frozen
      */
     public void setProperties( Location node,
                                Iterable<Property> properties ) {
+        checkNotFrozen();
         CheckArg.isNotNull(node, "node");
         assert node.hasPath();
         Node nodeObj = nodes.get(node.getPath());
@@ -243,9 +247,11 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * 
      * @param parent the location of the parent; must {@link Location#hasPath() have a path}
      * @param children the location of each child, in the order they appear in the parent
+     * @throws IllegalStateException if the request is frozen
      */
     public void setChildren( Location parent,
                              Location... children ) {
+        checkNotFrozen();
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotNull(children, "children");
         assert parent.hasPath();
@@ -262,9 +268,11 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * 
      * @param parent the location of the parent; must {@link Location#hasPath() have a path}
      * @param children the location of each child, in the order they appear in the parent
+     * @throws IllegalStateException if the request is frozen
      */
     public void setChildren( Location parent,
                              List<Location> children ) {
+        checkNotFrozen();
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotNull(children, "children");
         assert parent.hasPath();

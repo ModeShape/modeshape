@@ -131,11 +131,13 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * 
      * @param children the locations of the children that were read
      * @throws IllegalArgumentException if the parameter is null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChildren( Iterable<Location> children ) {
+        checkNotFrozen();
         CheckArg.isNotNull(children, "children");
         for (Location child : children) {
             if (child != null) this.children.add(child);
@@ -148,10 +150,12 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * 
      * @param child the location of the child that was read
      * @throws IllegalArgumentException if the location is null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Path, Property)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChild( Location child ) {
+        checkNotFrozen();
         CheckArg.isNotNull(child, "child");
         this.children.add(child);
     }
@@ -164,12 +168,14 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * @param firstIdProperty the first identification property of the child that was just read
      * @param remainingIdProperties the remaining identification properties of the child that was just read
      * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property)
      */
     public void addChild( Path pathToChild,
                           Property firstIdProperty,
                           Property... remainingIdProperties ) {
+        checkNotFrozen();
         Location child = Location.create(pathToChild, firstIdProperty, remainingIdProperties);
         this.children.add(child);
     }
@@ -181,11 +187,13 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * @param pathToChild the path of the child that was just read
      * @param idProperty the identification property of the child that was just read
      * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
      * @see #addChild(Location)
      * @see #addChild(Path, Property, Property...)
      */
     public void addChild( Path pathToChild,
                           Property idProperty ) {
+        checkNotFrozen();
         Location child = Location.create(pathToChild, idProperty);
         this.children.add(child);
     }
@@ -198,8 +206,10 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      *        should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #startingAfter() starting after location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfStartingAfterNode( Location actual ) {
+        checkNotFrozen();
         if (!startingAfter.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, startingAfter));
         }

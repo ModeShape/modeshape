@@ -36,7 +36,7 @@ import org.jboss.dna.graph.property.Path;
  * 
  * @author Randall Hauch
  */
-public class RenameNodeRequest extends Request implements ChangeRequest {
+public class RenameNodeRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -113,9 +113,11 @@ public class RenameNodeRequest extends Request implements ChangeRequest {
      *         location does not have the same parent as the old location, or if the new location does not have the same
      *         {@link Path.Segment#getName() name} on {@link Path#getLastSegment() last segment} as that {@link #toName()
      *         specified on the request}
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location oldLocation,
                                     Location newLocation ) {
+        checkNotFrozen();
         if (!at.isSame(oldLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, at));
         }
@@ -164,6 +166,7 @@ public class RenameNodeRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
+    @Override
     public boolean changes( String workspace,
                             Path path ) {
         return this.workspaceName.equals(workspace) && at.hasPath() && at.getPath().getParent().isAtOrBelow(path);
@@ -174,6 +177,7 @@ public class RenameNodeRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
+    @Override
     public Location changedLocation() {
         return at;
     }

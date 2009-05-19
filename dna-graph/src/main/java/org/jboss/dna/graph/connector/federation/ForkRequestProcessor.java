@@ -669,6 +669,16 @@ class ForkRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#completeRequest(org.jboss.dna.graph.request.Request)
+     */
+    @Override
+    protected void completeRequest( Request request ) {
+        // Do nothing here, as this is the federated request
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyNodeExistsRequest)
      */
     @Override

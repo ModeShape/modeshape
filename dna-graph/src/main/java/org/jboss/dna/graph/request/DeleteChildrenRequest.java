@@ -32,7 +32,7 @@ import org.jboss.dna.graph.property.Path;
  * Instruction that all nodes below a supplied node be deleted. This is similar to {@link DeleteBranchRequest}, except that the
  * parent node (top node in the branch) is not deleted.
  */
-public class DeleteChildrenRequest extends Request implements ChangeRequest {
+public class DeleteChildrenRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -90,8 +90,10 @@ public class DeleteChildrenRequest extends Request implements ChangeRequest {
      * @param actual the actual location of the node being deleted, or null if the {@link #at() current location} should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
      *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
+        checkNotFrozen();
         if (!at.isSame(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
         }
@@ -116,6 +118,7 @@ public class DeleteChildrenRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
+    @Override
     public boolean changes( String workspace,
                             Path path ) {
         return this.workspaceName.equals(workspace) && at.hasPath() && at.getPath().isAtOrBelow(path);
@@ -126,6 +129,7 @@ public class DeleteChildrenRequest extends Request implements ChangeRequest {
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
+    @Override
     public Location changedLocation() {
         return at;
     }

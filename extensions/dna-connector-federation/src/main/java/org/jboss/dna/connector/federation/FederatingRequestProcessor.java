@@ -324,8 +324,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete in the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(),
-                                                                   workspace.getCacheProjection().getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(), workspace.getCacheProjection()
+                                                                                          .getWorkspaceName());
         executeInCache(cacheRequest, workspace);
     }
 
@@ -379,8 +379,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete from the cache the parent of the new location ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(),
-                                                                   fromWorkspace.getCacheProjection().getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(), fromWorkspace.getCacheProjection()
+                                                                                                .getWorkspaceName());
         executeInCache(cacheRequest, fromWorkspace);
     }
 
@@ -425,8 +425,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                        intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
         }
         // Delete from the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(),
-                                                                   workspace.getCacheProjection().getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(), workspace.getCacheProjection()
+                                                                                            .getWorkspaceName());
         executeInCache(cacheRequest, workspace);
         // Mark the new parent node as being expired ...
         cacheRequest = new DeleteBranchRequest(request.into(), workspace.getCacheProjection().getWorkspaceName());
@@ -461,8 +461,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Update the cache ...
-        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(),
-                                                                           workspace.getCacheProjection().getWorkspaceName(),
+        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(), workspace.getCacheProjection()
+                                                                                                  .getWorkspaceName(),
                                                                            request.properties());
         executeInCache(cacheRequest, workspace);
     }
@@ -647,7 +647,10 @@ public class FederatingRequestProcessor extends RequestProcessor {
             // that already exists in the cache.
             PathNotFoundException notFound = (PathNotFoundException)fromCache.getError();
             Path lowestExistingAncestor = notFound.getLowestAncestorThatDoesExist();
+
             if (location.hasPath()) {
+                // Create a new instance so that we can update it ...
+                fromCache = new ReadNodeRequest(location, workspace.getCacheProjection().getWorkspaceName());
                 Path path = location.getPath();
                 Path ancestor = path.getParent();
                 if (!ancestor.equals(lowestExistingAncestor)) {
@@ -1144,9 +1147,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
                              readable(registry, create.properties()));
             } else if (request instanceof UpdatePropertiesRequest) {
                 UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
-                logger.trace("  updating {0} with properties {1}",
-                             update.on().getString(registry),
-                             readable(registry, update.properties().values()));
+                logger.trace("  updating {0} with properties {1}", update.on().getString(registry), readable(registry,
+                                                                                                             update.properties()
+                                                                                                                   .values()));
             } else {
                 logger.trace("  " + request.toString());
             }
@@ -1165,9 +1168,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
                          readable(registry, create.properties()));
         } else if (request instanceof UpdatePropertiesRequest) {
             UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
-            logger.trace("  updating {0} with properties {1}",
-                         update.on().getString(registry),
-                         readable(registry, update.properties().values()));
+            logger.trace("  updating {0} with properties {1}", update.on().getString(registry), readable(registry,
+                                                                                                         update.properties()
+                                                                                                               .values()));
         } else {
             logger.trace("  " + request.toString());
         }
