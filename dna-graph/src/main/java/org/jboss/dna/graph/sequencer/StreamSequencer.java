@@ -52,5 +52,5 @@ public interface StreamSequencer {
      */
     void sequence( InputStream stream,
                    SequencerOutput output,
-                   SequencerContext context );
+                   StreamSequencerContext context );
 }

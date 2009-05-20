@@ -29,7 +29,7 @@
  * <p>The {@link StreamSequencer} interface is a special form of sequencer that processes information coming
  * through an {@link java.io.InputStream}. Implementations are responsible for processing the content and generating
  * structured content using the supplied {@link SequencerOutput} interface.  Additional details about the information
- * being sequenced is available in the supplied {@link SequencerContext}.
+ * being sequenced is available in the supplied {@link StreamSequencerContext}.
  * </p>
  */
 

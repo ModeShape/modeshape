@@ -32,7 +32,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 
 /**
@@ -43,14 +43,14 @@ import org.jboss.dna.graph.sequencer.SequencerOutput;
 public class MockSequencerOutput implements SequencerOutput {
 
     private final Map<Path, Map<Name, Property>> propertiesByPath;
-    private final SequencerContext context;
+    private final StreamSequencerContext context;
     private final LinkedList<Path> nodePathsInCreationOrder;
 
-    public MockSequencerOutput( SequencerContext context ) {
+    public MockSequencerOutput( StreamSequencerContext context ) {
         this(context, false);
     }
 
-    public MockSequencerOutput( SequencerContext context,
+    public MockSequencerOutput( StreamSequencerContext context,
                                 boolean recordOrderOfNodeCreation ) {
         this.context = context;
         this.propertiesByPath = new HashMap<Path, Map<Name, Property>>();

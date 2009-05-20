@@ -31,7 +31,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 
@@ -44,11 +44,11 @@ public class CndSequencer implements StreamSequencer {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.graph.sequencer.SequencerOutput, org.jboss.dna.graph.sequencer.SequencerContext)
+     *      org.jboss.dna.graph.sequencer.SequencerOutput, org.jboss.dna.graph.sequencer.StreamSequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context ) {
+                          StreamSequencerContext context ) {
         // Create the destination that forwards to the sequencer output ...
         Destination destination = new OutputDestination(output, context);
         // Use the CND importer ...
@@ -64,10 +64,10 @@ public class CndSequencer implements StreamSequencer {
 
     protected class OutputDestination implements Destination {
         private final SequencerOutput output;
-        private final SequencerContext context;
+        private final StreamSequencerContext context;
 
         protected OutputDestination( SequencerOutput output,
-                                     SequencerContext context ) {
+                                     StreamSequencerContext context ) {
             this.output = output;
             this.context = context;
         }

@@ -27,7 +27,7 @@ import java.io.InputStream;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.xml.sax.InputSource;
@@ -84,11 +84,11 @@ public class XmlSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
+     * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context ) {
+                          StreamSequencerContext context ) {
         XMLReader reader;
         try {
             // Set up the XML handler ...

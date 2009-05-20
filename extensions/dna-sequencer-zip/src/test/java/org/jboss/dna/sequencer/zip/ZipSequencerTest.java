@@ -28,7 +28,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.io.InputStream;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.junit.After;
 import org.junit.Test;
 
@@ -58,7 +58,7 @@ public class ZipSequencerTest {
         InputStream is = getTestZip("testzip.zip");
         ZipSequencer zs = new ZipSequencer();
         SequencingOutputTestClass seqtest = new SequencingOutputTestClass();
-        SequencerContext context = mock(SequencerContext.class);
+        StreamSequencerContext context = mock(StreamSequencerContext.class);
         zs.sequence(is, seqtest, context);
 
         assertThat(seqtest.properties.get(2).getPath(), is("zip:content/test subfolder/test2.txt/jcr:content"));

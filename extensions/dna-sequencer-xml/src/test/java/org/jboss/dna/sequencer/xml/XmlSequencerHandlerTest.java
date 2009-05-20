@@ -45,7 +45,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.sequencer.MockSequencerContext;
 import org.jboss.dna.graph.sequencer.MockSequencerOutput;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.InputSource;
@@ -59,7 +59,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 public class XmlSequencerHandlerTest {
 
     private XmlSequencerHandler handler;
-    private SequencerContext context;
+    private StreamSequencerContext context;
     private MockSequencerOutput output;
     private TextDecoder decoder;
     private Name primaryType;

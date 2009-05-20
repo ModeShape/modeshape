@@ -24,7 +24,7 @@
 package org.jboss.dna.graph.sequencers;
 
 import java.sql.Connection;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 
 /**
@@ -46,5 +46,5 @@ public interface JdbcSequencer {
      */
     void sequence( Connection connection,
                    SequencerOutput output,
-                   SequencerContext context );
+                   StreamSequencerContext context );
 }

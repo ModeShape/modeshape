@@ -33,7 +33,7 @@ import java.net.URL;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.sequencer.MockSequencerContext;
 import org.jboss.dna.graph.sequencer.MockSequencerOutput;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +66,7 @@ public class XmlSequencerTest {
     private URL xml3;
     private URL xml4;
     private URL xsd;
-    private SequencerContext context;
+    private StreamSequencerContext context;
 
     @Before
     public void beforeEach() {

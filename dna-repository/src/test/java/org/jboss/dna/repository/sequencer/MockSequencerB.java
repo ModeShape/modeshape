@@ -28,13 +28,10 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.jcr.Node;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.sequencer.Sequencer;
-import org.jboss.dna.repository.sequencer.SequencerConfig;
-import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -73,7 +70,7 @@ public class MockSequencerB implements Sequencer {
                          String sequencedPropertyName,
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
-                         JcrExecutionContext context,
+                         SequencerContext context,
                          Problems problems ) {
         // increment the counter and record the progress ...
         this.counter.incrementAndGet();

@@ -44,7 +44,7 @@ import org.jboss.dna.repository.RepositoryI18n;
  */
 public class NodeChanges implements Iterable<NodeChange> {
 
-    public static NodeChanges create( final String repositoryWorkspaceName, Iterable<Event> events ) throws RepositoryException {
+    public static NodeChanges create( final String repositorySourceName, final String repositoryWorkspaceName, Iterable<Event> events ) throws RepositoryException {
         Map<String, NodeChangeDetails> detailsByNodePath = new HashMap<String, NodeChangeDetails>();
         // Process each of the events, extracting the node path and property details for each ...
         for (Event event : events) {
@@ -101,7 +101,7 @@ public class NodeChanges implements Iterable<NodeChange> {
         // Create the node changes ...
         List<NodeChange> result = new ArrayList<NodeChange>(detailsByNodePath.size());
         for (NodeChangeDetails detail : detailsByNodePath.values()) {
-            NodeChange change = new NodeChange(repositoryWorkspaceName, detail.getNodePath(), detail.getEventTypes(), detail.getModifiedProperties(), detail.getRemovedProperties());
+            NodeChange change = new NodeChange(repositorySourceName, repositoryWorkspaceName, detail.getNodePath(), detail.getEventTypes(), detail.getModifiedProperties(), detail.getRemovedProperties());
             result.add(change);
         }
         return new NodeChanges(result);

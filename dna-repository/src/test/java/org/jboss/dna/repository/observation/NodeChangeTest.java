@@ -51,7 +51,7 @@ public class NodeChangeTest {
         validModifiedProperties.add("jcr:name");
         validModifiedProperties.add("jcr:title");
         validRemovedProperties.add("jcr:mime");
-        nodeChange = new NodeChange(validRepositoryWorkspaceName, validAbsolutePath, validEventTypes, validModifiedProperties,
+        nodeChange = new NodeChange("", validRepositoryWorkspaceName, validAbsolutePath, validEventTypes, validModifiedProperties,
                                     validRemovedProperties);
     }
 

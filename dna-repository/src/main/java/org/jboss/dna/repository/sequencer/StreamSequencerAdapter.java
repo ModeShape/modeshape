@@ -23,38 +23,26 @@
  */
 package org.jboss.dna.repository.sequencer;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Value;
 import org.jboss.dna.common.collection.Problems;
-import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.sequencer.SequencerContext;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -93,30 +81,33 @@ public class StreamSequencerAdapter implements Sequencer {
                          String sequencedPropertyName,
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
-                         JcrExecutionContext execContext,
-                         Problems problems ) throws RepositoryException, SequencerException {
+                         SequencerContext context,
+                         Problems problems ) throws SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resulted in the call to this
         // sequencer.
         // 'changes' contains all of the changes to this node that occurred in the transaction.
         // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data.
 
         // Get the property that contains the data, given by 'propertyName' ...
-        Property sequencedProperty = null;
-        try {
-            sequencedProperty = input.getProperty(sequencedPropertyName);
-        } catch (PathNotFoundException e) {
-            String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getPath());
-            throw new SequencerException(msg, e);
+        Property sequencedProperty = input.getProperty(sequencedPropertyName);
+
+        if (sequencedProperty == null) {
+            String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getLocation());
+            throw new SequencerException(msg);
         }
 
         // Get the binary property with the image content, and build the image metadata from the image ...
-        SequencerOutputMap output = new SequencerOutputMap(execContext.getValueFactories());
+        SequencerOutputMap output = new SequencerOutputMap(context.getExecutionContext().getValueFactories());
         InputStream stream = null;
         Throwable firstError = null;
         try {
-            stream = sequencedProperty.getStream();
-            SequencerContext sequencerContext = createSequencerContext(input, sequencedProperty, execContext, problems);
-            this.streamSequencer.sequence(stream, output, sequencerContext);
+            // Parallel the JCR lemma for converting objects into streams
+            stream = new ByteArrayInputStream(sequencedProperty.toString().getBytes());
+            StreamSequencerContext StreamSequencerContext = createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         context,
+                                                                                         problems);
+            this.streamSequencer.sequence(stream, output, StreamSequencerContext);
         } catch (Throwable t) {
             // Record the error ...
             firstError = t;
@@ -139,26 +130,53 @@ public class StreamSequencerAdapter implements Sequencer {
 
         // Find each output node and save the image metadata there ...
         for (RepositoryNodePath outputPath : outputPaths) {
-            Session session = null;
-            try {
-                // Get the name of the repository workspace and the path to the output node
-                final String repositoryWorkspaceName = outputPath.getRepositoryWorkspaceName();
-                final String nodePath = outputPath.getNodePath();
+            // Get the name of the repository workspace and the path to the output node
+            final String repositoryWorkspaceName = outputPath.getWorkspaceName();
+            final String nodePath = outputPath.getNodePath();
 
-                // Create a session to the repository where the data should be written ...
-                session = execContext.getSessionFactory().createSession(repositoryWorkspaceName);
+            // Find or create the output node in this session ...
+            context.graph().useWorkspace(repositoryWorkspaceName);
 
-                // Find or create the output node in this session ...
-                Node outputNode = execContext.getTools().findOrCreateNode(session, nodePath);
+            buildPathTo(nodePath, context);
+            Node outputNode = context.graph().getNodeAt(nodePath);
 
-                // Now save the image metadata to the output node ...
-                if (saveOutput(outputNode, output, execContext)) {
-                    session.save();
-                }
-            } finally {
-                // Always close the session ...
-                if (session != null) session.logout();
-            }
+            // Now save the image metadata to the output node ...
+            saveOutput(outputNode, output, context);
+        }
+
+        context.getDestination().submit();
+    }
+
+    /**
+     * Creates all nodes along the given node path if they are missing. Ensures that nodePath is a valid path to a node.
+     * 
+     * @param nodePath the node path to create
+     * @param context the sequencer context under which it should be created
+     */
+    private void buildPathTo( String nodePath,
+                              SequencerContext context ) {
+        PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
+        Path targetPath = pathFactory.create(nodePath);
+
+        buildPathTo(targetPath, context);
+    }
+
+    /**
+     * Creates all nodes along the given node path if they are missing. Ensures that nodePath is a valid path to a node.
+     * 
+     * @param nodePath the node path to create
+     * @param context the sequencer context under which it should be created
+     */
+    private void buildPathTo( Path targetPath,
+                              SequencerContext context ) {
+        PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
+
+        Path workingPath = pathFactory.createRootPath();
+        Path.Segment[] segments = targetPath.getSegmentsArray();
+        for (int i = 0; i < segments.length; i++) {
+            workingPath = pathFactory.create(workingPath, segments[i]);
+
+            context.graph().createIfMissing(workingPath);
         }
     }
 
@@ -169,129 +187,37 @@ public class StreamSequencerAdapter implements Sequencer {
      * @param outputNode the existing node onto (or below) which the output is to be written; never null
      * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
-     * @return true if the output was written to the node, or false if no information was written
-     * @throws RepositoryException
      */
-    protected boolean saveOutput( Node outputNode,
-                                  SequencerOutputMap output,
-                                  JcrExecutionContext context ) throws RepositoryException {
-        if (output.isEmpty()) return false;
-        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        final NamespaceRegistry namespaceRegistry = context.getNamespaceRegistry();
-        final Path outputNodePath = pathFactory.create(outputNode.getPath());
-        final Name jcrPrimaryTypePropertyName = context.getValueFactories().getNameFactory().create("jcr:primaryType");
+    protected void saveOutput( Node outputNode,
+                               SequencerOutputMap output,
+                               SequencerContext context ) {
+        if (output.isEmpty()) return;
+        final PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
+        final PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
+        // TODO: Is it safe to assume that the location for this node will include a path?
+        final Path outputNodePath = pathFactory.create(outputNode.getLocation().getPath());
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
         for (SequencerOutputMap.Entry entry : output) {
             Path targetNodePath = entry.getPath();
-            Name primaryType = entry.getPrimaryTypeValue();
 
             // Resolve this path relative to the output node path, handling any parent or self references ...
             Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
-            Path relativePath = absolutePath.relativeTo(outputNodePath);
 
-            // Find or add the node (which may involve adding intermediate nodes) ...
-            Node targetNode = outputNode;
-            for (int i = 0, max = relativePath.size(); i != max; ++i) {
-                Path.Segment segment = relativePath.getSegment(i);
-                String qualifiedName = segment.getString(namespaceRegistry);
-                if (targetNode.hasNode(qualifiedName)) {
-                    targetNode = targetNode.getNode(qualifiedName);
-                } else {
-                    // It doesn't exist, so create it ...
-                    if (segment.hasIndex()) {
-                        // Use a name without an index ...
-                        qualifiedName = segment.getName().getString(namespaceRegistry);
-                    }
-                    // We only have the primary type for the final one ...
-                    if (i == (max - 1) && primaryType != null) {
-                        targetNode = targetNode.addNode(qualifiedName, primaryType.getString(namespaceRegistry,
-                                                                                             Path.NO_OP_ENCODER));
-                    } else {
-                        targetNode = targetNode.addNode(qualifiedName);
-                    }
-                }
-                assert targetNode != null;
-            }
-            assert targetNode != null;
-
+            List<Property> properties = new LinkedList<Property>();
             // Set all of the properties on this
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                String propertyName = property.getName().getString(namespaceRegistry, Path.NO_OP_ENCODER);
-                Object value = property.getValue();
-                if (jcrPrimaryTypePropertyName.equals(property.getName())) {
-                    // Skip the primary type property (which is protected in Jackrabbit 1.5)
-                    Logger.getLogger(this.getClass()).trace("Skipping property {0}/{1}={2}",
-                                                            targetNode.getPath(),
-                                                            propertyName,
-                                                            value);
-                    continue;
-                }
-                Logger.getLogger(this.getClass()).trace("Writing property {0}/{1}={2}", targetNode.getPath(), propertyName, value);
-                if (value instanceof Boolean) {
-                    targetNode.setProperty(propertyName, ((Boolean)value).booleanValue());
-                } else if (value instanceof String) {
-                    targetNode.setProperty(propertyName, (String)value);
-                } else if (value instanceof String[]) {
-                    targetNode.setProperty(propertyName, (String[])value);
-                } else if (value instanceof Integer) {
-                    targetNode.setProperty(propertyName, ((Integer)value).intValue());
-                } else if (value instanceof Short) {
-                    targetNode.setProperty(propertyName, ((Short)value).shortValue());
-                } else if (value instanceof Long) {
-                    targetNode.setProperty(propertyName, ((Long)value).longValue());
-                } else if (value instanceof Float) {
-                    targetNode.setProperty(propertyName, ((Float)value).floatValue());
-                } else if (value instanceof Double) {
-                    targetNode.setProperty(propertyName, ((Double)value).doubleValue());
-                } else if (value instanceof Binary) {
-                    Binary binaryValue = (Binary)value;
-                    try {
-                        binaryValue.acquire();
-                        targetNode.setProperty(propertyName, binaryValue.getStream());
-                    } finally {
-                        binaryValue.release();
-                    }
-                } else if (value instanceof BigDecimal) {
-                    targetNode.setProperty(propertyName, ((BigDecimal)value).doubleValue());
-                } else if (value instanceof DateTime) {
-                    targetNode.setProperty(propertyName, ((DateTime)value).toCalendar());
-                } else if (value instanceof Date) {
-                    DateTime instant = context.getValueFactories().getDateFactory().create((Date)value);
-                    targetNode.setProperty(propertyName, instant.toCalendar());
-                } else if (value instanceof Calendar) {
-                    targetNode.setProperty(propertyName, (Calendar)value);
-                } else if (value instanceof Name) {
-                    Name nameValue = (Name)value;
-                    String stringValue = nameValue.getString(namespaceRegistry);
-                    targetNode.setProperty(propertyName, stringValue);
-                } else if (value instanceof Path) {
-                    // Find the path to reference node ...
-                    Path pathToReferencedNode = (Path)value;
-                    if (!pathToReferencedNode.isAbsolute()) {
-                        // Resolve the path relative to the output node ...
-                        pathToReferencedNode = outputNodePath.resolve(pathToReferencedNode);
-                    }
-                    // Find the referenced node ...
-                    try {
-                        Node referencedNode = outputNode.getNode(pathToReferencedNode.getString());
-                        targetNode.setProperty(propertyName, referencedNode);
-                    } catch (PathNotFoundException e) {
-                        String msg = RepositoryI18n.errorGettingNodeRelativeToNode.text(value, outputNode.getPath());
-                        throw new SequencerException(msg, e);
-                    }
-                } else if (value == null) {
-                    // Remove the property ...
-                    targetNode.setProperty(propertyName, (String)null);
-                } else {
-                    String msg = RepositoryI18n.unknownPropertyValueType.text(value, value.getClass().getName());
-                    throw new SequencerException(msg);
-                }
+                // String propertyName = property.getName().getString(namespaceRegistry, Path.NO_OP_ENCODER);
+                properties.add(propertyFactory.create(property.getName(), property.getValue()));
+                // TODO: Handle reference properties - currently passed in as Paths
             }
-        }
 
-        return true;
+            if (absolutePath.getParent() != null) {
+                buildPathTo(absolutePath.getParent(), context);
+            }
+            context.getDestination().create(absolutePath, properties);
+        }
     }
 
     protected String[] extractMixinTypes( Object value ) {
@@ -300,90 +226,35 @@ public class StreamSequencerAdapter implements Sequencer {
         return null;
     }
 
-    protected SequencerContext createSequencerContext( Node input,
-                                                       Property sequencedProperty,
-                                                       ExecutionContext context,
-                                                       Problems problems ) throws RepositoryException {
+    protected StreamSequencerContext createStreamSequencerContext( Node input,
+                                                                   Property sequencedProperty,
+                                                                   SequencerContext context,
+                                                                   Problems problems ) {
         assert input != null;
         assert sequencedProperty != null;
         assert context != null;
         assert problems != null;
-        // Translate JCR path and property values to DNA constructs and cache them to improve performance and prevent
-        // RepositoryException from being thrown by getters
         // Note: getMimeType() will still operate lazily, and thus throw a SequencerException, since it is very intrusive and
         // potentially slow-running.
-        ValueFactories factories = context.getValueFactories();
-        Path path = factories.getPathFactory().create(input.getPath());
-        Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>();
-        for (PropertyIterator iter = input.getProperties(); iter.hasNext();) {
-            javax.jcr.Property jcrProp = iter.nextProperty();
-            org.jboss.dna.graph.property.Property prop;
-            if (jcrProp.getDefinition().isMultiple()) {
-                Value[] jcrVals = jcrProp.getValues();
-                Object[] vals = new Object[jcrVals.length];
-                int ndx = 0;
-                for (Value jcrVal : jcrVals) {
-                    vals[ndx++] = convert(factories, jcrProp.getName(), jcrVal);
-                }
-                prop = context.getPropertyFactory().create(factories.getNameFactory().create(jcrProp.getName()), vals);
-            } else {
-                Value jcrVal = jcrProp.getValue();
-                Object val = convert(factories, jcrProp.getName(), jcrVal);
-                prop = context.getPropertyFactory().create(factories.getNameFactory().create(jcrProp.getName()), val);
-            }
-            props.add(prop);
-        }
+        ValueFactories factories = context.getExecutionContext().getValueFactories();
+        // TODO: Is this safe?
+        Path path = factories.getPathFactory().create(input.getLocation().getPath());
+
+        Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
+                                                                                                              input.getPropertiesByName().values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(sequencedProperty, path.getLastSegment().getName().getLocalName());
-        return new SequencerContext(context, path, props, mimeType, problems);
+        return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
     }
 
-    protected Object convert( ValueFactories factories,
-                              String name,
-                              Value jcrValue ) throws RepositoryException {
-        switch (jcrValue.getType()) {
-            case PropertyType.BINARY: {
-                return factories.getBinaryFactory().create(jcrValue.getStream());
-            }
-            case PropertyType.BOOLEAN: {
-                return factories.getBooleanFactory().create(jcrValue.getBoolean());
-            }
-            case PropertyType.DATE: {
-                return factories.getDateFactory().create(jcrValue.getDate());
-            }
-            case PropertyType.DOUBLE: {
-                return factories.getDoubleFactory().create(jcrValue.getDouble());
-            }
-            case PropertyType.LONG: {
-                return factories.getLongFactory().create(jcrValue.getLong());
-            }
-            case PropertyType.NAME: {
-                return factories.getNameFactory().create(jcrValue.getString());
-            }
-            case PropertyType.PATH: {
-                return factories.getPathFactory().create(jcrValue.getString());
-            }
-            case PropertyType.REFERENCE: {
-                return factories.getReferenceFactory().create(jcrValue.getString());
-            }
-            case PropertyType.STRING: {
-                return factories.getStringFactory().create(jcrValue.getString());
-            }
-            default: {
-                throw new RepositoryException(RepositoryI18n.unknownPropertyValueType.text(name, jcrValue.getType()));
-            }
-        }
-    }
-
-    @SuppressWarnings( "null" )
-    // The need for the SuppressWarnings looks like an Eclipse bug
     protected String getMimeType( Property sequencedProperty,
                                   String name ) {
         SequencerException err = null;
         String mimeType = null;
         InputStream stream = null;
         try {
-            stream = sequencedProperty.getStream();
+            // Parallel the JCR lemma for converting objects into streams
+            stream = new ByteArrayInputStream(sequencedProperty.toString().getBytes());
             mimeType = MimeType.of(name, stream);
             return mimeType;
         } catch (Exception error) {
@@ -398,7 +269,6 @@ public class StreamSequencerAdapter implements Sequencer {
                 }
             }
         }
-        if (err != null) throw err;
-        return mimeType;
+        throw err;
     }
 }

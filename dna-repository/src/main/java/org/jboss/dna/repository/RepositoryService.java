@@ -235,7 +235,6 @@ public class RepositoryService implements AdministeredService {
      * @param problems the problems container in which any problems should be reported; never null
      * @return the repository source instance, or null if it could not be created
      */
-    @SuppressWarnings( "null" )
     protected RepositorySource createRepositorySource( Path path,
                                                        Map<Name, Property> properties,
                                                        Problems problems ) {

@@ -222,9 +222,10 @@ public class SequencingClient {
             }
             this.executionContext = new JcrExecutionContext(sessionFactory, repositoryWorkspaceName);
 
-            // Create the sequencing service, passing in the execution context ...
+            // Create the sequencing service, passing in the execution context and the repository library ...
             this.sequencingService = new SequencingService();
             this.sequencingService.setExecutionContext(executionContext);
+            //this.sequencingService.setRepositoryLibrary(repositoryLibrary);
 
             // Configure the sequencers. In this example, we only two sequencers that processes image and mp3 files.
             // So create a configurations. Note that the sequencing service expects the class to be on the thread's current
@@ -269,7 +270,7 @@ public class SequencingClient {
             this.observationService = new ObservationService(this.executionContext.getSessionFactory());
             this.observationService.getAdministrator().start();
             this.observationService.addListener(this.sequencingService);
-            this.observationService.monitor(repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED
+            this.observationService.monitor(this.repositoryName, repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED
                                                                      | Event.PROPERTY_CHANGED);
         }
         // Start up the sequencing service ...

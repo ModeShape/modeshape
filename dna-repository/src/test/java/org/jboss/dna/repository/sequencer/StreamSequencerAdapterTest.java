@@ -32,31 +32,26 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import javax.jcr.Node;
-import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
-import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.sequencer.SequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.sequencer.SequencerConfig;
-import org.jboss.dna.repository.sequencer.SequencerException;
-import org.jboss.dna.repository.sequencer.SequencerOutputMap;
-import org.jboss.dna.repository.sequencer.StreamSequencerAdapter;
-import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
-import org.jboss.dna.repository.util.SessionFactory;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,35 +59,33 @@ import org.junit.Test;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
+public class StreamSequencerAdapterTest {
 
     private StreamSequencer streamSequencer;
     private StreamSequencerAdapter sequencer;
     private String[] validExpressions = {"/a/* => /output"};
-    private SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(), "something.class", null, validExpressions);
-    private JcrTools tools;
-    private Session session;
+    private SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(),
+                                                              "something.class", null, validExpressions);
     private SequencerOutputMap sequencerOutput;
     private String sampleData = "The little brown fox didn't something bad.";
-    private JcrExecutionContext context;
-    private String repositoryWorkspaceName = "something";
+    private ExecutionContext context;
+    private SequencerContext seqContext;
+    private String repositorySourceName = "repository";
+    private String repositoryWorkspaceName = "";
     private Problems problems;
-    private javax.jcr.Property sequencedProperty;
+    private Graph graph;
+    private Property sequencedProperty;
 
     @Before
     public void beforeEach() {
-        final JcrTools tools = new JcrTools();
-        this.tools = tools;
-        final SessionFactory sessionFactory = new SessionFactory() {
-
-            public Session createSession( String name ) {
-                return createTestSession();
-            }
-        };
         problems = new SimpleProblems();
-        this.context = new JcrExecutionContext(sessionFactory, "doesn't matter");
+        this.context = new ExecutionContext();
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         final SequencerOutputMap finalOutput = sequencerOutput;
+
+        InMemoryRepositorySource source = new InMemoryRepositorySource();
+        source.setName("repository");
+        graph = Graph.create(source.getConnection(), context);
         this.streamSequencer = new StreamSequencer() {
 
             /**
@@ -101,7 +94,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
              */
             public void sequence( InputStream stream,
                                   SequencerOutput output,
-                                  SequencerContext context ) {
+                                  StreamSequencerContext context ) {
                 for (SequencerOutputMap.Entry entry : finalOutput) {
                     Path nodePath = entry.getPath();
                     for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
@@ -111,26 +104,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
             }
         };
         sequencer = new StreamSequencerAdapter(streamSequencer);
-    }
-
-    @After
-    public void afterEach() {
-        if (session != null) {
-            try {
-                session.logout();
-            } finally {
-                session = null;
-            }
-        }
-    }
-
-    protected Session createTestSession() {
-        try {
-            return getRepository().login(getTestCredentials());
-        } catch (Exception e) {
-            fail("Unable to create repository session: " + e.getMessage());
-            return null; // won't get here
-        }
+        seqContext = new SequencerContext(context, graph);
     }
 
     protected void testSequencer( final StreamSequencer sequencer ) throws Throwable {
@@ -138,22 +112,23 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
             public void sequence( InputStream stream,
                                   SequencerOutput output,
-                                  SequencerContext context ) {
+                                  StreamSequencerContext context ) {
                 sequencer.sequence(stream, output, context);
             }
         };
         StreamSequencerAdapter adapter = new StreamSequencerAdapter(streamSequencer);
-        startRepository();
-        session = getRepository().login(getTestCredentials());
-        Node inputNode = tools.findOrCreateNode(session, "/a/b/c");
-        Node outputNode = tools.findOrCreateNode(session, "/d/e");
-        inputNode.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, inputNode.getPath(), Event.PROPERTY_CHANGED,
+
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/d").and().create("/d/e");
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+        Node inputNode = graph.getNodeAt("/a/b/c");
+
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, outputNode.getPath()));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
-        adapter.execute(inputNode, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        adapter.execute(inputNode, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
     }
 
     @Test
@@ -188,181 +163,201 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldExecuteSequencerOnExistingNodeAndOutputToExistingNode() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
         // Set up the repository for the test ...
-        Node nodeC = tools.findOrCreateNode(session, "/a/b/c");
-        Node nodeE = tools.findOrCreateNode(session, "/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/d").and().create("/d/e");
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        Node nodeE = graph.getNodeAt("/d/e");
         assertThat(nodeC, is(notNullValue()));
         assertThat(nodeE, is(notNullValue()));
-        assertThat(nodeE.getNodes().getSize(), is(0l));
-        assertThat(nodeE.getProperties().getSize(), is(1l)); // jcr:primaryType
-        assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
+        assertThat(nodeE.getChildren().size(), is(0));
+        assertThat(nodeE.getProperties().size(), is(1)); // jcr:uuid
+        // assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
 
         // Set the property that will be sequenced ...
-        nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, nodeE.getPath()));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
-        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
     }
 
     @Test( expected = SequencerException.class )
     public void shouldExecuteSequencerOnExistingNodeWithMissingSequencedPropertyAndOutputToExistingNode() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
         // Set up the repository for the test ...
-        Node nodeC = tools.findOrCreateNode(session, "/a/b/c");
-        Node nodeE = tools.findOrCreateNode(session, "/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/d").and().create("/d/e");
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        Node nodeE = graph.getNodeAt("/d/e");
         assertThat(nodeC, is(notNullValue()));
         assertThat(nodeE, is(notNullValue()));
-        assertThat(nodeE.getNodes().getSize(), is(0l));
-        assertThat(nodeE.getProperties().getSize(), is(1l)); // jcr:primaryType
-        assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
+        assertThat(nodeE.getChildren().size(), is(0));
+        assertThat(nodeE.getProperties().size(), is(1)); // jcr:uuid
+        // assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
 
         // Set the property that will be sequenced ...
         // THIS TEST REQUIRES THIS PROPERTY TO BE NULL OR NON-EXISTANT
-        nodeC.setProperty("sequencedProperty", (InputStream)null);
+        graph.set("sequencedProperty").on(nodeC.getLocation()).to((String)null);
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, nodeE.getPath()));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer, which should cause the exception ...
-        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
     }
 
     @Test
     public void shouldExecuteSequencerOnExistingNodeAndOutputToMultipleExistingNodes() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
         // Set up the repository for the test ...
-        Node nodeC = tools.findOrCreateNode(session, "/a/b/c");
-        Node nodeE = tools.findOrCreateNode(session, "/d/e");
-        assertThat(nodeC, is(notNullValue()));
-        assertThat(nodeE, is(notNullValue()));
-        assertThat(nodeE.getNodes().getSize(), is(0l));
-        assertThat(nodeE.getProperties().getSize(), is(1l)); // jcr:primaryType
-        assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/d").and().create("/d/e");
 
         // Set the property that will be sequenced ...
-        nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        Node nodeE = graph.getNodeAt("/d/e");
+        assertThat(nodeC, is(notNullValue()));
+        assertThat(nodeE, is(notNullValue()));
+        assertThat(nodeE.getChildren().size(), is(0));
+        assertThat(nodeE.getProperties().size(), is(1)); // jcr:uuid
+        // assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/d/e"));
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/x/y/z"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/x/y/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
-        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
 
         // Check to see that the output nodes have been created ...
-        assertThat(session.getRootNode().hasNode("d/e"), is(true));
-        assertThat(session.getRootNode().hasNode("x/y/z"), is(true));
+        assertThat(graph.getNodeAt("/d/e"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/x/y/z"), is(notNullValue()));
     }
 
     @Test
     public void shouldExecuteSequencerOnExistingNodeAndOutputToNonExistingNode() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
         // Set up the repository for the test ...
-        Node nodeC = tools.findOrCreateNode(session, "/a/b/c");
-        assertThat(session.getRootNode().hasNode("d"), is(false));
-        assertThat(nodeC, is(notNullValue()));
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
 
         // Set the property that will be sequenced ...
-        nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        try {
+            graph.getNodeAt("/d");
+            fail();
+        }
+        catch(PathNotFoundException pnfe) {
+            // Expected
+        }
+        assertThat(nodeC, is(notNullValue()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/d/e"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
-        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
 
         // Check to see that the "/d/e" node has been created ...
-        assertThat(session.getRootNode().hasNode("d/e"), is(true));
+        assertThat(graph.getNodeAt("/d/e"), is(notNullValue()));
     }
 
     @Test
     public void shouldExecuteSequencerOnExistingNodeAndOutputToMultipleNonExistingNodes() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
         // Set up the repository for the test ...
-        Node nodeC = tools.findOrCreateNode(session, "/a/b/c");
-        assertThat(session.getRootNode().hasNode("d"), is(false));
-        assertThat(session.getRootNode().hasNode("x"), is(false));
-        assertThat(nodeC, is(notNullValue()));
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
 
         // Set the property that will be sequenced ...
-        nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        try {
+            graph.getNodeAt("/d");
+            fail();
+        }
+        catch(PathNotFoundException pnfe) {
+            // Expected
+        }
+        try {
+            graph.getNodeAt("/x");
+            fail();
+        }
+        catch(PathNotFoundException pnfe) {
+            // Expected
+        }
+        assertThat(nodeC, is(notNullValue()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
                                                Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/d/e"));
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/x/y/z"));
-        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/x/z"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/x/y/z"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/x/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
-        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, problems);
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
 
         // Check to see that the output nodes have been created ...
-        assertThat(session.getRootNode().hasNode("d/e"), is(true));
-        assertThat(session.getRootNode().hasNode("x/y/z"), is(true));
-        assertThat(session.getRootNode().hasNode("x/z"), is(true));
+        assertThat(graph.getNodeAt("/d/e"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/x/y/z"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/x/z"), is(notNullValue()));
 
         // Check to see that the sequencer-generated nodes have been created ...
         // Node beta = session.getRootNode().getNode("d/e/alpha/beta");
         // for (PropertyIterator iter = beta.getProperties(); iter.hasNext();) {
         // Property property = iter.nextProperty();
-        // System.out.println("Property on " + beta.getPath() + " ===> " + property.getName() + " = " + property.getValue());
+        // System.out.println("Property on " + beta.getLocation().getPath() + " ===> " + property.getName() + " = " +
+        // property.getValue());
         // }
-        assertThat(session.getRootNode().getNode("d/e/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
-        assertThat(session.getRootNode().getNode("x/y/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
-        assertThat(session.getRootNode().getNode("x/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
+        assertThat(graph.getNodeAt("/d/e/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
+        assertThat(graph.getNodeAt("/x/y/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
+        assertThat(graph.getNodeAt("/x/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
     }
 
     @Test
@@ -376,7 +371,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
             public void sequence( InputStream stream,
                                   SequencerOutput output,
-                                  SequencerContext context ) {
+                                  StreamSequencerContext context ) {
                 assertThat(stream, notNullValue());
             }
         });
@@ -388,7 +383,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
             public void sequence( InputStream stream,
                                   SequencerOutput output,
-                                  SequencerContext context ) {
+                                  StreamSequencerContext context ) {
                 assertThat(output, notNullValue());
             }
         });
@@ -400,7 +395,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
             public void sequence( InputStream stream,
                                   SequencerOutput output,
-                                  SequencerContext context ) {
+                                  StreamSequencerContext context ) {
                 assertThat(context, notNullValue());
             }
         });
@@ -408,104 +403,111 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullInputNode() throws Exception {
-        sequencer.createSequencerContext(null, sequencedProperty, context, problems);
+        sequencer.createStreamSequencerContext(null, sequencedProperty, seqContext, problems);
     }
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullSequencedProperty() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        Node input = tools.findOrCreateNode(session, "/a");
-        sequencer.createSequencerContext(input, null, context, problems);
+        graph.create("/a");
+        Node input = graph.getNodeAt("/a");
+        sequencer.createStreamSequencerContext(input, null, seqContext, problems);
     }
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        Node input = tools.findOrCreateNode(session, "/a");
-        sequencer.createSequencerContext(input, sequencedProperty, null, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a");
+        Node input = graph.getNodeAt("/a");
+        sequencer.createStreamSequencerContext(input, sequencedProperty, null, problems);
     }
 
     @Test
     public void shouldProvideNamespaceRegistry() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getNamespaceRegistry(), notNullValue());
     }
 
     @Test
     public void shouldProvideValueFactories() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getValueFactories(), notNullValue());
     }
 
     @Test
     public void shouldProvidePathToInput() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getInputPath(), is(context.getValueFactories().getPathFactory().create("/a/b/c")));
     }
 
     @Test
     public void shouldNeverReturnNullInputProperties() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getInputProperties(), notNullValue());
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
     }
 
     @Test
     public void shouldProvideInputProperties() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        input.setProperty("x", true);
-        input.setProperty("y", new String[] {"asdf", "xyzzy"});
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.set("x").on("/a/b/c").to(true);
+        graph.set("y").on("/a/b/c").to(Arrays.asList(new String[] {"asdf", "xyzzy"}));
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input, sequencedProperty, seqContext, problems);
         assertThat(sequencerContext.getInputProperties(), notNullValue());
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
         assertThat(sequencerContext.getInputProperties().size(), is(3));
-        verifyProperty(sequencerContext,
-                       "jcr:primaryType",
-                       context.getValueFactories().getNameFactory().create("{http://www.jcp.org/jcr/nt/1.0}unstructured"));
+        // verifyProperty(sequencerContext, "jcr:uuid", /* some UUID */null );
         verifyProperty(sequencerContext, "x", true);
         verifyProperty(sequencerContext, "y", "asdf", "xyzzy");
     }
 
     @Test
     public void shouldCreateSequencerContextThatProvidesMimeType() throws Exception {
-        startRepository();
-        session = getRepository().login(getTestCredentials());
 
-        this.sequencedProperty = mock(javax.jcr.Property.class);
-        Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        Node input = graph.getNodeAt("/a/b/c");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getMimeType(), is("text/plain"));
     }
 
-    private void verifyProperty( SequencerContext context,
+    private void verifyProperty( StreamSequencerContext context,
                                  String name,
                                  Object... values ) {
         Property prop = context.getInputProperty(context.getValueFactories().getNameFactory().create(name));

@@ -43,7 +43,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXParseException;
@@ -55,7 +55,7 @@ import org.xml.sax.ext.DefaultHandler2;
 public class XmlSequencerHandler extends DefaultHandler2 {
 
     private final SequencerOutput output;
-    private final SequencerContext context;
+    private final StreamSequencerContext context;
 
     /**
      * Decoder for XML names, to turn '_xHHHH_' sequences in the XML element and attribute names into the corresponding UTF-16
@@ -138,7 +138,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * @param scoping
      */
     XmlSequencerHandler( SequencerOutput output,
-                         SequencerContext context,
+                         StreamSequencerContext context,
                          Name nameAttribute,
                          Name defaultPrimaryType,
                          TextDecoder textDecoder,

@@ -1931,6 +1931,58 @@ public class Graph {
     }
 
     /**
+     * Import the content from the provided stream of XML data, specifying via the returned {@link ImportInto object} where the
+     * content is to be imported.
+     * 
+     * @param stream the open stream of XML data that the importer can read the content that is to be imported
+     * @return the object that should be used to specify into which the content is to be imported
+     * @throws IllegalArgumentException if the <code>stream</code> or destination path are null
+     */
+    public ImportInto<Conjunction<Graph>> importXmlFrom( final InputStream stream ) {
+        CheckArg.isNotNull(stream, "stream");
+        
+        return new ImportInto<Conjunction<Graph>>() {
+            private boolean skipRootElement = false;
+
+            public ImportInto<Conjunction<Graph>> skippingRootElement( boolean skipRootElement ) {
+                this.skipRootElement = skipRootElement;
+                return this;
+            }
+
+            public Conjunction<Graph> into( String path ) throws IOException, SAXException {
+                return into(Location.create(createPath(path)));
+            }
+
+            public Conjunction<Graph> into( Path path ) throws IOException, SAXException {
+                return into(Location.create(path));
+            }
+
+            public Conjunction<Graph> into( Property idProperty ) throws IOException, SAXException {
+                return into(Location.create(idProperty));
+            }
+
+            public Conjunction<Graph> into( Property firstIdProperty,
+                                            Property... additionalIdProperties ) throws IOException, SAXException {
+                return into(Location.create(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> into( Iterable<Property> idProperties ) throws IOException, SAXException {
+                return into(Location.create(idProperties));
+            }
+
+            public Conjunction<Graph> into( UUID uuid ) throws IOException, SAXException {
+                return into(Location.create(uuid));
+            }
+
+            public Conjunction<Graph> into( Location at ) throws IOException, SAXException {
+                GraphImporter importer = new GraphImporter(Graph.this);
+                importer.importXml(stream, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
+                return Graph.this.nextGraph;
+            }
+        };
+    }
+
+    /**
      * Import the content from the XML file at the supplied URI, specifying via the returned {@link ImportInto object} where the
      * content is to be imported.
      * 

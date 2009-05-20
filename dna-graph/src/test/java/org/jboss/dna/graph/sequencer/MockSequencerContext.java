@@ -31,7 +31,7 @@ import org.jboss.dna.graph.ExecutionContext;
  * @author John Verhaeg
  */
 @Immutable
-public class MockSequencerContext extends SequencerContext {
+public class MockSequencerContext extends StreamSequencerContext {
 
     public MockSequencerContext() {
         super(new ExecutionContext(), null, null, null, new SimpleProblems());

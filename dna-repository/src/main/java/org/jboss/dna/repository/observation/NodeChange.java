@@ -35,6 +35,7 @@ import org.jboss.dna.common.util.HashCode;
 @Immutable
 public class NodeChange {
 
+    private final String repositorySourceName;
     private final String repositoryWorkspaceName;
     private final String absolutePath;
     private final int eventTypes;
@@ -42,9 +43,11 @@ public class NodeChange {
     private final Set<String> removedProperties;
     private final int hc;
 
-    public NodeChange( String repositoryWorkspaceName, String absolutePath, int eventTypes, Set<String> modifiedProperties, Set<String> removedProperties ) {
+    public NodeChange( String repositorySourceName, String repositoryWorkspaceName, String absolutePath, int eventTypes, Set<String> modifiedProperties, Set<String> removedProperties ) {
+        assert repositorySourceName != null;
         assert repositoryWorkspaceName != null;
         assert absolutePath != null;
+        this.repositorySourceName = repositorySourceName;
         this.repositoryWorkspaceName = repositoryWorkspaceName;
         this.absolutePath = absolutePath.trim();
         this.hc = HashCode.compute(this.repositoryWorkspaceName, this.absolutePath);
@@ -62,6 +65,13 @@ public class NodeChange {
         return this.absolutePath;
     }
 
+    /**
+     * @return repositorySourceName
+     */
+    public String getRepositorySourceName() {
+        return this.repositorySourceName;
+    }
+    
     /**
      * @return repositoryWorkspaceName
      */

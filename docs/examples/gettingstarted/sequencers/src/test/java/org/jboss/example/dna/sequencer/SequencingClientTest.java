@@ -33,6 +33,7 @@ import java.net.URL;
 import org.jboss.dna.common.util.FileUtil;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -98,6 +99,7 @@ public class SequencingClientTest {
         client.shutdownRepository();
     }
 
+    @Ignore
     @Test
     public void shouldUploadAndSequencePngFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.pngImageUrl, "/a/b/caution.png", 1));
@@ -117,6 +119,7 @@ public class SequencingClientTest {
         assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
+    @Ignore
     @Test
     public void shouldUploadAndSequenceJpegFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.jpegImageUrl, "/a/b/caution.jpeg", 1));
@@ -155,6 +158,7 @@ public class SequencingClientTest {
         assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(0l));
     }
 
+    @Ignore
     @Test
     public void shouldUploadAndSequenceMp3File() throws Exception {
         client.setUserInterface(new MockUserInterface(this.mp3Url, "/a/b/test.mp3", 1));
@@ -187,6 +191,7 @@ public class SequencingClientTest {
         }
     }
 
+    @Ignore
     @Test
     public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));

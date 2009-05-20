@@ -38,7 +38,7 @@ import org.jboss.dna.graph.property.Property;
 /**
  * @author John Verhaeg
  */
-public class SequencerContext extends ExecutionContext {
+public class StreamSequencerContext extends ExecutionContext {
 
     private final Path inputPath;
     private final Map<Name, Property> inputPropertiesByName;
@@ -46,7 +46,7 @@ public class SequencerContext extends ExecutionContext {
     private final Problems problems;
     private final String mimeType;
 
-    public SequencerContext( ExecutionContext context,
+    public StreamSequencerContext( ExecutionContext context,
                              Path inputPath,
                              Set<Property> inputProperties,
                              String mimeType,

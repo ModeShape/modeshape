@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.dna.graph.sequencer.MockSequencerContext;
 import org.jboss.dna.graph.sequencer.MockSequencerOutput;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +47,7 @@ public class JavaMetadataSequencerTest {
     private InputStream content;
     private MockSequencerOutput output;
     private File source;
-    private SequencerContext context;
+    private StreamSequencerContext context;
 
     @Before
     public void beforeEach() {

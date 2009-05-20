@@ -27,7 +27,7 @@ import java.io.InputStream;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 
@@ -88,11 +88,11 @@ public class ImageMetadataSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
+     * @see StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context ) {
+                          StreamSequencerContext context ) {
 
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);

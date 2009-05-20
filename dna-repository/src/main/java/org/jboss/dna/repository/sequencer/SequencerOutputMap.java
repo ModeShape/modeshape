@@ -50,18 +50,14 @@ import org.jboss.dna.graph.sequencer.SequencerOutput;
 @NotThreadSafe
 public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOutputMap.Entry> {
 
-    private static final String JCR_NAME_PROPERTY_NAME = "jcr:name";
-
     private final Map<Path, List<PropertyValue>> data;
     private transient boolean valuesSorted = true;
     private final ValueFactories factories;
-    private final Name jcrName;
 
     public SequencerOutputMap( ValueFactories factories ) {
         CheckArg.isNotNull(factories, "factories");
         this.data = new HashMap<Path, List<PropertyValue>>();
         this.factories = factories;
-        this.jcrName = this.factories.getNameFactory().create(JCR_NAME_PROPERTY_NAME);
     }
 
     ValueFactories getFactories() {
@@ -76,8 +72,6 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
                              Object... values ) {
         CheckArg.isNotNull(nodePath, "nodePath");
         CheckArg.isNotNull(propertyName, "property");
-        // Ignore the "jcr:name" property, as that's handled by the path ...
-        if (this.jcrName.equals(propertyName)) return;
 
         // Find or create the entry for this node ...
         List<PropertyValue> properties = this.data.get(nodePath);

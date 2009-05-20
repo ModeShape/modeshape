@@ -56,9 +56,6 @@ import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.service.AdministeredService;
-import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.SimpleSessionFactory;
 
 /**
  * A single instance of the DNA services, which is obtained after setting up the {@link DnaConfiguration#build() configuration}.
@@ -76,7 +73,6 @@ public class DnaEngine {
     private final ExecutionContext context;
     private final List<AdministeredService> services;
 
-    private final SessionFactory jcrSessionFactory;
     private final RepositoryService repositoryService;
     private final ObservationService observationService;
     private final SequencingService sequencingService;
@@ -111,10 +107,9 @@ public class DnaEngine {
         // Create the sequencing service ...
         executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now
         sequencingService = new SequencingService();
-        jcrSessionFactory = createSessionFactory();
-        JcrExecutionContext jcrContext = new JcrExecutionContext(context, jcrSessionFactory, "");
-        sequencingService.setExecutionContext(jcrContext);
+        sequencingService.setExecutionContext(context);
         sequencingService.setExecutorService(executorService);
+        sequencingService.setRepositoryLibrary(repositoryService.getRepositorySourceManager());
         for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
             sequencingService.addSequencer(sequencerConfig);
         }
@@ -134,15 +129,6 @@ public class DnaEngine {
                 return source.getConnection();
             }
         };
-    }
-
-    /**
-     * Method that can be overridden in subclasses to create (and populate) the SessionFactory used by the sequencing service.
-     * 
-     * @return a session factory, which may not be null
-     */
-    protected SessionFactory createSessionFactory() {
-        return new SimpleSessionFactory();
     }
 
     /**

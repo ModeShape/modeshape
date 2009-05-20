@@ -163,7 +163,7 @@ public class DnaEngineTest {
         SequencingService sequencer = engine.getSequencingService();
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
 
-        NodeChanges changes = NodeChanges.create("", Arrays.asList(new Event[] {}));
+        NodeChanges changes = NodeChanges.create("config repo", "", Arrays.asList(new Event[] {}));
         sequencer.onNodeChanges(changes);
 
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));

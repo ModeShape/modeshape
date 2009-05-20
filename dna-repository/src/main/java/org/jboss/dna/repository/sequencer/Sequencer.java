@@ -24,17 +24,14 @@
 package org.jboss.dna.repository.sequencer;
 
 import java.util.Set;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.component.Component;
+import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.observation.NodeChangeListener;
 import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.observation.ObservationService;
-import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -52,12 +49,11 @@ public interface Sequencer extends Component<SequencerConfig> {
 
     /**
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
-     * this method is responsible for {@link JcrExecutionContext#getSessionFactory() getting sessions}, modifying the appropriate
-     * nodes, {@link Session#save() saving} any changes made by this sequencer, and {@link Session#logout() closing} all sessions
-     * (and any other acquired resources), even in the case of exceptions.
+     * this method is responsible for modifying the appropriate nodes and {@link Destination#submit() saving} any changes made by
+     * this sequencer, and closing any other acquired resources, even in the case of exceptions.
      * <p>
      * The {@link SequencingService} determines the sequencers that should be executed by monitoring the changes to one or more
-     * workspaces (it is a {@link NodeChangeListener} registered with the {@link ObservationService}). Changes in those workspaces
+     * workspaces (it is a listener registered with the {@link ObservationService}). Changes in those workspaces
      * are aggregated for each transaction, and organized into {@link NodeChanges changes for each node}. The SequencingService
      * then determines for each {@link NodeChange set of changes to a node} the set of full paths to the properties that have
      * changed and whether those paths {@link SequencerPathExpression#matcher(String) match} the sequencer's
@@ -76,17 +72,16 @@ public interface Sequencer extends Component<SequencerConfig> {
      * @param changes the immutable summary of changes that occurred on the <code>input</code> node within the transaction; never
      *        null
      * @param outputPaths the paths to the nodes where the sequencing content should be placed; never null and never empty, but
-     *        the set may contain paths for non-existant nodes or may reference the <code>input</code> node
+     *        the set may contain paths for non-existent nodes or may reference the <code>input</code> node
      * @param context the context in which this sequencer is executing; never null
      * @param problems the interface used for recording problems; never null
-     * @throws RepositoryException if there is a problem while working with the repository
      * @throws SequencerException if there is an error in this sequencer
      */
     void execute( Node input,
                   String sequencedPropertyName,
                   NodeChange changes,
                   Set<RepositoryNodePath> outputPaths,
-                  JcrExecutionContext context,
-                  Problems problems ) throws RepositoryException, SequencerException;
+                  SequencerContext context,
+                  Problems problems ) throws SequencerException;
 
 }

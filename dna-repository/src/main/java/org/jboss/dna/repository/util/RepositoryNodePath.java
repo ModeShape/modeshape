@@ -37,27 +37,29 @@ public class RepositoryNodePath {
 
     protected static final Pattern PATTERN = Pattern.compile("([^:/]):(/.*)");
 
-    public static RepositoryNodePath parse( String path, String defaultRepositoryWorkspaceName ) {
+    public static RepositoryNodePath parse( String path, String repositorySourceName, String defaultRepositoryWorkspaceName ) {
         Matcher matcher = PATTERN.matcher(path);
         if (matcher.matches()) {
             try {
-                return new RepositoryNodePath(matcher.group(1), matcher.group(2));
+                return new RepositoryNodePath(repositorySourceName, matcher.group(1), matcher.group(2));
             } catch (Throwable t) {
                 throw new IllegalArgumentException(RepositoryI18n.invalidRepositoryNodePath.text(path, t.getMessage()));
             }
         }
-        return new RepositoryNodePath(defaultRepositoryWorkspaceName, path);
+        return new RepositoryNodePath(repositorySourceName, defaultRepositoryWorkspaceName, path);
 
     }
 
-    private final String repositoryName;
+    private final String repositorySourceName;
+    private final String workspaceName;
     private final String nodePath;
     private final int hc;
 
-    public RepositoryNodePath( String repositoryName, String nodePath ) {
-        this.repositoryName = repositoryName;
+    public RepositoryNodePath( String repositorySourceName, String workspaceName, String nodePath ) {
+        this.repositorySourceName = repositorySourceName;
+        this.workspaceName = workspaceName;
         this.nodePath = nodePath;
-        this.hc = HashCode.compute(this.repositoryName, this.nodePath);
+        this.hc = HashCode.compute(this.repositorySourceName, this.workspaceName, this.nodePath);
     }
 
     /**
@@ -70,10 +72,18 @@ public class RepositoryNodePath {
     /**
      * @return repositoryName
      */
-    public String getRepositoryWorkspaceName() {
-        return this.repositoryName;
+    public String getRepositorySourceName() {
+        return this.repositorySourceName;
     }
 
+    /**
+     * 
+     * @return the workspace name
+     */
+    public String getWorkspaceName() {
+        return this.workspaceName;
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -90,7 +100,8 @@ public class RepositoryNodePath {
         if (obj == this) return true;
         if (obj instanceof RepositoryNodePath) {
             RepositoryNodePath that = (RepositoryNodePath)obj;
-            if (!this.repositoryName.equals(that.repositoryName)) return false;
+            if (!this.repositorySourceName.equals(that.repositorySourceName)) return false;
+            if (!this.workspaceName.equals(that.workspaceName)) return false;
             if (!this.nodePath.equals(that.nodePath)) return false;
             return true;
         }
@@ -102,6 +113,6 @@ public class RepositoryNodePath {
      */
     @Override
     public String toString() {
-        return this.repositoryName + ":" + this.nodePath;
+        return this.repositorySourceName + ":" + this.workspaceName + ":" + this.nodePath;
     }
 }

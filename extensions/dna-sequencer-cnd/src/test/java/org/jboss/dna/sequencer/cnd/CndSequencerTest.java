@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.net.URL;
 import org.jboss.dna.graph.sequencer.MockSequencerContext;
 import org.jboss.dna.graph.sequencer.MockSequencerOutput;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +47,7 @@ public class CndSequencerTest {
     private URL cndImages;
     private URL cndMp3;
     private URL cndBuiltIns;
-    private SequencerContext context;
+    private StreamSequencerContext context;
 
     @Before
     public void beforeEach() {

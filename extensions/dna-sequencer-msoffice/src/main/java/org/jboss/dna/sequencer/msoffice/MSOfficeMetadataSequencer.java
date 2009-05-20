@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
-import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadata;
@@ -123,7 +123,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context ) {
+                          StreamSequencerContext context ) {
 
         MSOfficeMetadata metadata = MSOfficeMetadataReader.instance(stream);
 
