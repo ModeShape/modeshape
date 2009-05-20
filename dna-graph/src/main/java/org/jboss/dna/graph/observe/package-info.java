@@ -87,20 +87,6 @@
  * Third, the requests that make up a {@link Changes} instance can actually be replayed.  Consider the case of a cache
  * that is backed by a {@link org.jboss.dna.graph.connector.RepositorySource}, which might use an observer to keep the cache in sync.  
  * As the cache is notified of Changes, the cache can simply replay the changes against its source.
- * </p>
- * <h3>Change feed and timelines</h3>
- * <p>
- * While it is often sufficient to register observers and receive notifications of the changes as they occur, it
- * is also often useful to be able to ask for the changes that have occurred since some time or date.  This allows
- * a component to poll for changes or, for example, to catch up on the changes that occurred previous to registering
- * an observer.
- * </p>
- * <p>
- * Components that implement {@link Observable} may also implement the {@link ChangeFeed} interface to allow for 
- * components to {@link ChangeFeed#changesSince(org.jboss.dna.graph.property.DateTime) poll for changes}.  The result
- * of this method is a {@link ChangeTimeline} object that contains the {@link Changes} as well as the time period during which
- * the change sets occurred.  Note that an empty {@link ChangeTimeline} object implies there were no changes made during the time period.
- * </p>
  */
 
 package org.jboss.dna.graph.observe;

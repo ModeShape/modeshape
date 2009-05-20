@@ -41,6 +41,11 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryConnectionPool;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.observe.ChangeObserver;
+import org.jboss.dna.graph.observe.ChangeObservers;
+import org.jboss.dna.graph.observe.Changes;
+import org.jboss.dna.graph.observe.Observable;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
 import org.jboss.dna.repository.service.ServiceAdministrator;
@@ -52,7 +57,7 @@ import org.jboss.dna.repository.service.ServiceAdministrator;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RepositoryLibrary implements RepositoryConnectionFactory {
+public class RepositoryLibrary implements RepositoryConnectionFactory, Observable {
 
     /**
      * The administrative component for this service.
@@ -106,8 +111,9 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
     private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
-    protected final ExecutionContext executionContext;
+    private final ExecutionContext executionContext;
     private final RepositoryContext repositoryContext;
+    private final ObservationBus observationBus = new InMemoryObservationBus();
 
     /**
      * Create a new manager instance.
@@ -146,11 +152,12 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
      *        this manager; may be null if there is no delegate
      * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
      */
-    public RepositoryLibrary( ExecutionContext executionContext,
+    public RepositoryLibrary( final ExecutionContext executionContext,
                               RepositoryConnectionFactory delegate ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         this.delegate = delegate;
         this.executionContext = executionContext;
+        final ObservationBus observationBus = this.observationBus;
         this.repositoryContext = new RepositoryContext() {
             /**
              * {@inheritDoc}
@@ -158,7 +165,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
              * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
              */
             public ExecutionContext getExecutionContext() {
-                return RepositoryLibrary.this.executionContext;
+                return executionContext;
             }
 
             /**
@@ -170,7 +177,34 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
                 return RepositoryLibrary.this;
             }
 
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
+             */
+            public Observer getObserver() {
+                return observationBus.hasObservers() ? observationBus : null;
+            }
+
         };
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
+     */
+    public boolean register( ChangeObserver observer ) {
+        return observationBus.register(observer);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.ChangeObserver)
+     */
+    public boolean unregister( ChangeObserver observer ) {
+        return observationBus.unregister(observer);
     }
 
     /**
@@ -235,6 +269,8 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
         } finally {
             this.sourcesLock.readLock().unlock();
         }
+        // Remove all listeners ...
+        this.observationBus.shutdown();
     }
 
     /**
@@ -461,5 +497,66 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
             this.sourcesLock.readLock().unlock();
         }
         return null;
+    }
+
+    protected interface ObservationBus extends Observable, Observer {
+        boolean hasObservers();
+
+        void shutdown();
+    }
+
+    protected class InMemoryObservationBus implements ObservationBus {
+        private final ChangeObservers observers = new ChangeObservers();
+
+        protected InMemoryObservationBus() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
+         */
+        public boolean register( ChangeObserver observer ) {
+            return observers.register(observer);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.ChangeObserver)
+         */
+        public boolean unregister( ChangeObserver observer ) {
+            return observers.unregister(observer);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
+         */
+        public void notify( Changes changes ) {
+            if (changes != null) {
+                // Broadcast the changes to the registered observers ...
+                observers.broadcast(changes);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.RepositoryLibrary.ObservationBus#hasObservers()
+         */
+        public boolean hasObservers() {
+            return !observers.isEmpty();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.RepositoryLibrary.ObservationBus#shutdown()
+         */
+        public void shutdown() {
+            observers.shutdown();
+        }
     }
 }

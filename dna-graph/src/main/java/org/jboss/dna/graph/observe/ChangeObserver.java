@@ -38,7 +38,7 @@ import org.jboss.dna.common.util.Logger;
  * </p>
  */
 @ThreadSafe
-public abstract class ChangeObserver {
+public abstract class ChangeObserver implements Observer {
 
     private final CopyOnWriteArraySet<ChangeSourceReference> sources = new CopyOnWriteArraySet<ChangeSourceReference>();
 
@@ -155,5 +155,4 @@ public abstract class ChangeObserver {
             return false;
         }
     }
-
 }

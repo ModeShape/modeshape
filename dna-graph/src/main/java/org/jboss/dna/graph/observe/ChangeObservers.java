@@ -24,7 +24,9 @@
 package org.jboss.dna.graph.observe;
 
 import java.lang.ref.WeakReference;
+import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
@@ -35,7 +37,8 @@ import org.jboss.dna.common.util.Logger;
 @ThreadSafe
 public class ChangeObservers implements Observable {
 
-    private CopyOnWriteArrayList<ObserverReference> observers = new CopyOnWriteArrayList<ObserverReference>();
+    private final CopyOnWriteArrayList<ObserverReference> observers = new CopyOnWriteArrayList<ObserverReference>();
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     public ChangeObservers() {
     }
@@ -46,7 +49,7 @@ public class ChangeObservers implements Observable {
      * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
      */
     public boolean register( ChangeObserver observer ) {
-        if (observer != null && observers.addIfAbsent(new ObserverReference(observer))) {
+        if (observer != null && !shutdown.get() && observers.addIfAbsent(new ObserverReference(observer))) {
             observer.registeredWith(this);
             return true;
         }
@@ -64,6 +67,30 @@ public class ChangeObservers implements Observable {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Unregister all registered observers, and mark this as no longer accepting new registered observers.
+     */
+    public void shutdown() {
+        shutdown.set(true);
+        while (!observers.isEmpty()) {
+            Iterator<ObserverReference> iter = observers.iterator(); // gets snapshot
+            observers.clear();
+            while (iter.hasNext()) {
+                ObserverReference reference = iter.next();
+                if (reference.get() != null) reference.get().unregisteredWith(this);
+            }
+        }
+    }
+
+    /**
+     * Determine whether there are any observers at the time this method is called.
+     * 
+     * @return true if there are currently no observers, or false if there is at least one observer
+     */
+    public boolean isEmpty() {
+        return observers.isEmpty();
     }
 
     /**

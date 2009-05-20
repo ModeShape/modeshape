@@ -36,7 +36,8 @@ public interface Observable {
      * Register the supplied observer. This method does nothing if the observer reference is null.
      * 
      * @param observer the observer to be added; may be null
-     * @return true if the observer was added, or false if the observer was null or if the observer was already registered
+     * @return true if the observer was added, or false if the observer was null, if the observer was already registered, or if
+     *         the observer could not be added
      */
     boolean register( ChangeObserver observer );
 

@@ -51,6 +51,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -122,6 +123,10 @@ public abstract class AbstractConnectorTest {
                 @SuppressWarnings( "synthetic-access" )
                 public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                     return connectionFactory;
+                }
+
+                public Observer getObserver() {
+                    return null; // no observers here
                 }
             });
 
