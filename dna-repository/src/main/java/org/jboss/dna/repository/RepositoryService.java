@@ -251,6 +251,7 @@ public class RepositoryService implements AdministeredService {
         if (problems.hasErrors()) return null;
 
         // Create the instance ...
+        assert classnameProperty != null;
         String classname = stringFactory.create(classnameProperty.getValues().next());
         String[] classpath = classpathProperty == null ? new String[] {} : stringFactory.create(classpathProperty.getValuesAsArray());
         ClassLoader classLoader = context.getClassLoader(classpath);
@@ -265,6 +266,7 @@ public class RepositoryService implements AdministeredService {
         } catch (Throwable err) {
             problems.addError(err, RepositoryI18n.unableToInstantiateClassUsingClasspath, classname, classpath);
         }
+        if (source == null) return null;
 
         // We need to set the name using the local name of the node...
         Property nameProperty = context.getPropertyFactory().create(JcrLexicon.NAME,

@@ -164,7 +164,7 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * Creates all nodes along the given node path if they are missing. Ensures that nodePath is a valid path to a node.
      * 
-     * @param nodePath the node path to create
+     * @param targetPath the node path to create
      * @param context the sequencer context under which it should be created
      */
     private void buildPathTo( Path targetPath,
@@ -241,7 +241,8 @@ public class StreamSequencerAdapter implements Sequencer {
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
-                                                                                                              input.getPropertiesByName().values());
+                                                                                                              input.getPropertiesByName()
+                                                                                                                   .values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
