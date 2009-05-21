@@ -116,7 +116,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                        Map<String, FederatedWorkspace> workspaces,
                                        FederatedWorkspace defaultWorkspace,
                                        RepositoryConnectionFactory connectionFactory ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         CheckArg.isNotEmpty(workspaces, "workspaces");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         this.workspaces = workspaces;

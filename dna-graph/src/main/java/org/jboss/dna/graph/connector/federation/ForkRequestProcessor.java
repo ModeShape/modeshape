@@ -497,7 +497,7 @@ class ForkRequestProcessor extends RequestProcessor {
                                  ExecutionContext context,
                                  DateTime now,
                                  Queue<FederatedRequest> federatedRequestQueue ) {
-        super(repository.getSourceName(), context, now);
+        super(repository.getSourceName(), context, null, now);
         this.repository = repository;
         this.executor = this.repository.getExecutor();
         this.connectionFactory = this.repository.getConnectionFactory();

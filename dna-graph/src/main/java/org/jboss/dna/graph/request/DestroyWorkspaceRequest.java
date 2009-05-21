@@ -24,15 +24,18 @@
 package org.jboss.dna.graph.request;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * Request that an existing workspace with the supplied name be destroyed.
  */
-public final class DestroyWorkspaceRequest extends Request {
+public final class DestroyWorkspaceRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
     private final String workspaceName;
+    private Location actualLocationOfRoot;
 
     /**
      * Create a request to destroy an existing workspace.
@@ -52,6 +55,26 @@ public final class DestroyWorkspaceRequest extends Request {
      */
     public String workspaceName() {
         return workspaceName;
+    }
+
+    /**
+     * Get the actual location of the root node in the new workspace, or null if the workspace was not (yet) created.
+     * 
+     * @return the actual location of the root node in the new workspace, or null if the workspace was not (yet) created
+     */
+    public Location getActualLocationOfRoot() {
+        return actualLocationOfRoot;
+    }
+
+    /**
+     * Set the actual location of the root node in the new workspace.
+     * 
+     * @param actualLocationOfRoot the actual location of the workspace's root node.
+     * @throws IllegalStateException if the request is frozen
+     */
+    public void setActualRootLocation( Location actualLocationOfRoot ) {
+        checkNotFrozen();
+        this.actualLocationOfRoot = actualLocationOfRoot;
     }
 
     /**
@@ -98,5 +121,26 @@ public final class DestroyWorkspaceRequest extends Request {
     @Override
     public String toString() {
         return "destroy workspace \"" + workspaceName() + "\"";
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    @Override
+    public Location changedLocation() {
+        return actualLocationOfRoot;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    @Override
+    public boolean changes( String workspace,
+                            Path path ) {
+        return workspaceName().equals(workspace);
     }
 }

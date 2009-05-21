@@ -31,6 +31,7 @@ import javax.persistence.EntityManager;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,6 +108,7 @@ public class ModelTest {
         @Override
         public RequestProcessor createRequestProcessor( String sourceName,
                                                         ExecutionContext context,
+                                                        Observer observer,
                                                         EntityManager entityManager,
                                                         UUID rootNodeUuid,
                                                         String nameOfDefaultWorkspace,

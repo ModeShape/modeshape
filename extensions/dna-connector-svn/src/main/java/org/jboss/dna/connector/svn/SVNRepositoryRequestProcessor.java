@@ -103,7 +103,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                                              ExecutionContext context,
                                              SVNRepository repository,
                                              boolean updatesAllowed ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
         this.updatesAllowed = updatesAllowed;
         this.repository = repository;

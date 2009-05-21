@@ -58,6 +58,7 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 
 /**
  * The {@link RepositorySource} for the connector that stores content in a (custom) relational database. This connector uses Java
@@ -929,7 +930,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         if (entityManager == null) {
             entityManager = entityManagerFactory.createEntityManager();
         }
-        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, defaultWorkspace,
+        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
+        return new JpaConnection(getName(), observer, cachePolicy, entityManager, model, rootUuid, defaultWorkspace,
                                  getPredefinedWorkspaceNames(), largeValueSizeInBytes, isCreatingWorkspacesAllowed(),
                                  compressData, referentialIntegrityEnforced);
     }

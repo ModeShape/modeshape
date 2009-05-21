@@ -29,6 +29,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -94,7 +95,8 @@ public class JBossCacheConnection implements RepositoryConnection {
      */
     public void execute( final ExecutionContext context,
                          final Request request ) throws RepositorySourceException {
-        RequestProcessor processor = new JBossCacheRequestProcessor(getSourceName(), context, workspaces,
+        Observer observer = source.getObserver();
+        RequestProcessor processor = new JBossCacheRequestProcessor(getSourceName(), context, observer, workspaces,
                                                                     source.getNameOfDefaultWorkspace(),
                                                                     source.isCreatingWorkspacesAllowed());
         try {

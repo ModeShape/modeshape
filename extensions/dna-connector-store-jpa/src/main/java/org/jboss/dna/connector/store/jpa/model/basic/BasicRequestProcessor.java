@@ -66,6 +66,7 @@ import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -132,6 +133,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     /**
      * @param sourceName
      * @param context
+     * @param observer
      * @param entityManager
      * @param rootNodeUuid
      * @param nameOfDefaultWorkspace
@@ -143,6 +145,7 @@ public class BasicRequestProcessor extends RequestProcessor {
      */
     public BasicRequestProcessor( String sourceName,
                                   ExecutionContext context,
+                                  Observer observer,
                                   EntityManager entityManager,
                                   UUID rootNodeUuid,
                                   String nameOfDefaultWorkspace,
@@ -151,7 +154,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                   boolean creatingWorkspacesAllowed,
                                   boolean compressData,
                                   boolean enforceReferentialIntegrity ) {
-        super(sourceName, context);
+        super(sourceName, context, observer);
         assert entityManager != null;
         assert rootNodeUuid != null;
         assert predefinedWorkspaceNames != null;
@@ -949,6 +952,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        record(request);
     }
 
     /**
@@ -1234,6 +1238,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualFromLocation, actualToLocation);
+        record(request);
     }
 
     /**
@@ -1245,7 +1250,10 @@ public class BasicRequestProcessor extends RequestProcessor {
     public void process( DeleteBranchRequest request ) {
         logger.trace(request.toString());
         Location location = delete(request, request.at(), request.inWorkspace(), true);
-        if (location != null) request.setActualLocationOfNode(location);
+        if (location != null) {
+            request.setActualLocationOfNode(location);
+            record(request);
+        }
     }
 
     /**
@@ -1257,7 +1265,10 @@ public class BasicRequestProcessor extends RequestProcessor {
     public void process( DeleteChildrenRequest request ) {
         logger.trace(request.toString());
         Location location = delete(request, request.at(), request.inWorkspace(), false);
-        if (location != null) request.setActualLocationOfNode(location);
+        if (location != null) {
+            request.setActualLocationOfNode(location);
+            record(request);
+        }
     }
 
     protected Location delete( Request request,
@@ -1473,6 +1484,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualOldLocation, actualNewLocation);
+        record(request);
     }
 
     /**
@@ -1523,6 +1535,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (!creatingWorkspacesAllowed) {
             String msg = JpaConnectorI18n.unableToCreateWorkspaces.text(getSourceName());
             request.setError(new InvalidRequestException(msg));
+            return;
         }
         Set<String> existingNames = workspaces.getWorkspaceNames();
         int counter = 0;
@@ -1544,6 +1557,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Create the root node ...
         Location root = Location.create(pathFactory.createRootPath());
         request.setActualRootLocation(getActualLocation(entity.getId(), root).location);
+        record(request);
     }
 
     /**
@@ -1557,6 +1571,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (!creatingWorkspacesAllowed) {
             String msg = JpaConnectorI18n.unableToCreateWorkspaces.text(getSourceName());
             request.setError(new InvalidRequestException(msg));
+            return;
         }
         Set<String> existingNames = workspaces.getWorkspaceNames();
         String name = request.desiredNameOfTargetWorkspace();
@@ -1642,6 +1657,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Finish up the request ...
         Location root = Location.create(pathFactory.createRootPath(), rootNodeUuid);
         request.setActualRootLocation(getActualLocation(intoWorkspace.getId(), root).location);
+        record(request);
     }
 
     /**
@@ -1656,6 +1672,9 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (workspace == null) return;
         Long workspaceId = workspace.getId();
         assert workspaceId != null;
+
+        // Get the actual location of the root node ...
+        ActualLocation actual = getActualLocation(workspaceId, Location.create(pathFactory.createRootPath()));
 
         // Delete the workspace ...
         workspaces.destroy(workspace.getName());
@@ -1675,6 +1694,10 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         // Delete unused large values ...
         LargeValueEntity.deleteUnused(entities);
+
+        // Finish the request ...
+        request.setActualRootLocation(actual.location);
+        record(request);
     }
 
     /**

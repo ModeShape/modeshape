@@ -57,6 +57,7 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -309,7 +310,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                 config = this.configuration;
             }
         }
-        return new FederatedRepositoryConnection(config);
+        Observer observer = this.context != null ? this.context.getObserver() : null;
+        return new FederatedRepositoryConnection(config, observer);
     }
 
     /**

@@ -338,7 +338,7 @@ public class JoinRequestProcessorTest {
         protected JoinRequestProcessorWithUnknownHandler( FederatedRepository repository,
                                                           ExecutionContext context,
                                                           DateTime now ) {
-            super(repository, context, now);
+            super(repository, context, null, now);
         }
 
         @Override

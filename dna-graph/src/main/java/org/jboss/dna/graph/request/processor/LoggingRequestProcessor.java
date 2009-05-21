@@ -69,7 +69,7 @@ public class LoggingRequestProcessor extends RequestProcessor {
     public LoggingRequestProcessor( RequestProcessor delegate,
                                     Logger logger,
                                     Logger.Level level ) {
-        super(delegate.getSourceName(), delegate.getExecutionContext());
+        super(delegate.getSourceName(), delegate.getExecutionContext(), null);
         CheckArg.isNotNull(logger, "logger");
         this.delegate = delegate;
         this.logger = logger;

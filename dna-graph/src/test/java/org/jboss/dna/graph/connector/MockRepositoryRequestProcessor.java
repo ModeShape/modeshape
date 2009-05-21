@@ -64,7 +64,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     public MockRepositoryRequestProcessor( String sourceName,
                                            ExecutionContext context,
                                            Queue<Request> processed ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         assert processed != null;
         this.processed = processed;
     }

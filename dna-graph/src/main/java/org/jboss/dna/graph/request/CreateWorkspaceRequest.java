@@ -25,12 +25,13 @@ package org.jboss.dna.graph.request;
 
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * Request that a new workspace be created with the supplied name. The request also specifies the desired
  * {@link #conflictBehavior() behavior} for the recipient if a workspace already exists with the name.
  */
-public final class CreateWorkspaceRequest extends Request {
+public final class CreateWorkspaceRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -188,5 +189,26 @@ public final class CreateWorkspaceRequest extends Request {
     @Override
     public String toString() {
         return "create new workspace \"" + desiredNameOfNewWorkspace() + "\"";
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    @Override
+    public Location changedLocation() {
+        return actualLocationOfRoot;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    @Override
+    public boolean changes( String workspace,
+                            Path path ) {
+        return actualWorkspaceName != null && actualWorkspaceName.equals(workspace);
     }
 }

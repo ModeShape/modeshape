@@ -40,6 +40,7 @@ import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -85,16 +86,18 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     /**
      * @param sourceName the name of the source in which this processor is operating
      * @param context the execution context in which this processor operates
+     * @param observer the observer to which events should be published; may be null if the events are not be published
      * @param workspaces the manager for the workspaces
      * @param defaultWorkspaceName the name of the default workspace; never null
      * @param creatingWorkspacesAllowed true if clients can create new workspaces, or false otherwise
      */
     JBossCacheRequestProcessor( String sourceName,
                                 ExecutionContext context,
+                                Observer observer,
                                 JBossCacheWorkspaces workspaces,
                                 String defaultWorkspaceName,
                                 boolean creatingWorkspacesAllowed ) {
-        super(sourceName, context);
+        super(sourceName, context, observer);
         assert workspaces != null;
         assert defaultWorkspaceName != null;
         this.workspaces = workspaces;
@@ -180,6 +183,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         }
         Path nodePath = pathFactory.create(parent, newSegment);
         request.setActualLocationOfNode(Location.create(nodePath));
+        record(request);
     }
 
     @Override
@@ -211,6 +215,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             node.put(propName, value);
         }
         request.setActualLocationOfNode(Location.create(nodePath));
+        record(request);
     }
 
     @Override
@@ -247,6 +252,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
+        record(request);
     }
 
     @Override
@@ -263,6 +269,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (cache.removeNode(node.getFqn())) {
             removeFromChildList(cache, parent, nameOfRemovedNode, getExecutionContext());
             request.setActualLocationOfNode(Location.create(nodePath));
+            record(request);
         } else {
             String msg = JBossCacheConnectorI18n.unableToDeleteBranch.text(getSourceName(), request.inWorkspace(), nodePath);
             request.setError(new RepositorySourceException(msg));
@@ -296,6 +303,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
+        record(request);
     }
 
     /**
@@ -363,6 +371,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         }
         request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
         request.setActualWorkspaceName(workspaceName);
+        record(request);
     }
 
     /**
@@ -412,6 +421,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         // Copy the list of child segments in the root (this maintains the order of the children) ...
         Path.Segment[] childNames = (Path.Segment[])fromRoot.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         intoRoot.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childNames);
+        record(request);
     }
 
     /**
@@ -421,10 +431,14 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        if (!this.workspaces.removeWorkspace(request.workspaceName())) {
-            String msg = JBossCacheConnectorI18n.workspaceDoesNotExist.text(request.workspaceName());
+        Cache<Name, Object> fromCache = workspaces.getWorkspace(request.workspaceName(), false);
+        if (fromCache == null) {
+            String msg = JBossCacheConnectorI18n.workspaceDoesNotExist.text(getSourceName(), request.workspaceName());
             request.setError(new InvalidWorkspaceException(msg));
+            return;
         }
+        request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
+        record(request);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

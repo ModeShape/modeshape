@@ -35,6 +35,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.federation.FederatedRequest.ProjectedRequest;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -81,16 +82,18 @@ class JoinRequestProcessor extends RequestProcessor {
      * 
      * @param repository the federated repository configuration; never null
      * @param context the execution context in which this processor is executing; may not be null
+     * @param observer the observer for change events; may be null
      * @param now the timestamp representing the current time in UTC; may not be null
      */
     public JoinRequestProcessor( FederatedRepository repository,
                                  ExecutionContext context,
+                                 Observer observer,
                                  DateTime now ) {
-        super(repository.getSourceName(), context, now, repository.getDefaultCachePolicy());
+        super(repository.getSourceName(), context, observer, now, repository.getDefaultCachePolicy());
         // this.repository = repository;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
-        this.mirrorProcessor = new JoinMirrorRequestProcessor(repository.getSourceName(), context, now,
+        this.mirrorProcessor = new JoinMirrorRequestProcessor(repository.getSourceName(), context, observer, now,
                                                               repository.getDefaultCachePolicy());
     }
 

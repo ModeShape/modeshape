@@ -71,7 +71,7 @@ public class JBossCacheRequestProcessorTest {
         initialWorkspaceNames.add("workspace2");
         defaultWorkspaceName = initialWorkspaceNames.iterator().next();
         workspaces = new JBossCacheWorkspaces("source", cacheFactory, defaultConfigName, initialWorkspaceNames, jndi);
-        processor = new JBossCacheRequestProcessor("source", context, workspaces, defaultWorkspaceName, true);
+        processor = new JBossCacheRequestProcessor("source", context, null, workspaces, defaultWorkspaceName, true);
 
         pathFactory = context.getValueFactories().getPathFactory();
     }

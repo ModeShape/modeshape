@@ -66,7 +66,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
                                 ExecutionContext context,
                                 Connection connection,
                                 UUID rootNodeUuid ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         this.connection = connection;
         this.rootNodeUuid = rootNodeUuid;
     }
@@ -83,7 +83,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
                                 Connection connection,
                                 UUID rootNodeUuid,
                                 DateTime now ) {
-        super(sourceName, context, now);
+        super(sourceName, context, null, now);
         this.connection = connection;
         this.rootNodeUuid = rootNodeUuid;
     }

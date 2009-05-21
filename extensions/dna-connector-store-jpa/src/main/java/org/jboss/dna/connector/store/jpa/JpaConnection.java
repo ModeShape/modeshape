@@ -31,6 +31,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -50,8 +51,10 @@ public class JpaConnection implements RepositoryConnection {
     private final long largeValueMinimumSizeInBytes;
     private final boolean compressData;
     private final boolean enforceReferentialIntegrity;
+    private final Observer observer;
 
     /*package*/JpaConnection( String sourceName,
+                               Observer observer,
                                CachePolicy cachePolicy,
                                EntityManager entityManager,
                                Model model,
@@ -66,6 +69,7 @@ public class JpaConnection implements RepositoryConnection {
         assert entityManager != null;
         assert model != null;
         assert rootNodeUuid != null;
+        this.observer = observer;
         this.name = sourceName;
         this.cachePolicy = cachePolicy; // may be null
         this.entityManager = entityManager;
@@ -127,6 +131,7 @@ public class JpaConnection implements RepositoryConnection {
         long size = largeValueMinimumSizeInBytes;
         RequestProcessor proc = model.createRequestProcessor(name,
                                                              context,
+                                                             observer,
                                                              entityManager,
                                                              rootNodeUuid,
                                                              nameOfDefaultWorkspace,

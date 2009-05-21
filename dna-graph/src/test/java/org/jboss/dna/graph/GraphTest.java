@@ -1058,7 +1058,7 @@ public class GraphTest {
     @SuppressWarnings( "synthetic-access" )
     class Processor extends RequestProcessor {
         protected Processor() {
-            super(sourceName, context);
+            super(sourceName, context, null);
         }
 
         @Override

@@ -102,7 +102,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        RequestProcessor processor = new InMemoryRequestProcessor(context, this.repository);
+        RequestProcessor processor = new InMemoryRequestProcessor(context, this.repository, this.source.getRepositoryContext());
 
         Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
         lock.lock();

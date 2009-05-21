@@ -28,6 +28,7 @@ import java.util.Map;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
@@ -67,9 +68,10 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
 
     JoinMirrorRequestProcessor( String sourceName,
                                 ExecutionContext context,
+                                Observer observer,
                                 DateTime now,
                                 CachePolicy defaultCachePolicy ) {
-        super(sourceName, context, now, defaultCachePolicy);
+        super(sourceName, context, observer, now, defaultCachePolicy);
 
     }
 
@@ -171,7 +173,8 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadNextBlockOfChildrenRequest request ) {
-        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest()
+                                                                                                .getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocationOfStartingAfterNode(source.getActualLocationOfStartingAfterNode());
         for (Location childInSource : source.getChildren()) {

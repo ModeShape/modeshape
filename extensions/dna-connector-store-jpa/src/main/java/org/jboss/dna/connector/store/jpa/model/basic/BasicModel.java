@@ -32,6 +32,7 @@ import org.jboss.dna.connector.store.jpa.model.common.ChangeLogEntity;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 import org.jboss.dna.connector.store.jpa.model.common.WorkspaceEntity;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
@@ -101,12 +102,13 @@ public class BasicModel extends Model {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(String, ExecutionContext, EntityManager, UUID, String,
-     *      String[], long, boolean, boolean, boolean)
+     * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(String, ExecutionContext, Observer, EntityManager,
+     *      UUID, String, String[], long, boolean, boolean, boolean)
      */
     @Override
     public RequestProcessor createRequestProcessor( String sourceName,
                                                     ExecutionContext context,
+                                                    Observer observer,
                                                     EntityManager entityManager,
                                                     UUID rootNodeUuid,
                                                     String nameOfDefaultWorkspace,
@@ -115,7 +117,7 @@ public class BasicModel extends Model {
                                                     boolean creatingWorkspacesAllowed,
                                                     boolean compressData,
                                                     boolean enforceReferentialIntegrity ) {
-        return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, nameOfDefaultWorkspace,
+        return new BasicRequestProcessor(sourceName, context, observer, entityManager, rootNodeUuid, nameOfDefaultWorkspace,
                                          predefinedWorkspaceNames, largeValueMinimumSizeInBytes, creatingWorkspacesAllowed,
                                          compressData, enforceReferentialIntegrity);
     }

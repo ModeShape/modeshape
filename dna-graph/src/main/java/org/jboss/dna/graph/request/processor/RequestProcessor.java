@@ -35,12 +35,15 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Changes;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
 import org.jboss.dna.graph.request.CacheableRequest;
+import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -82,20 +85,25 @@ public abstract class RequestProcessor {
     private final String sourceName;
     private final DateTime nowInUtc;
     private final CachePolicy defaultCachePolicy;
+    private final List<ChangeRequest> changes;
+    private final Observer observer;
 
     protected RequestProcessor( String sourceName,
-                                ExecutionContext context ) {
-        this(sourceName, context, null, null);
+                                ExecutionContext context,
+                                Observer observer ) {
+        this(sourceName, context, observer, null, null);
     }
 
     protected RequestProcessor( String sourceName,
                                 ExecutionContext context,
+                                Observer observer,
                                 DateTime now ) {
-        this(sourceName, context, now, null);
+        this(sourceName, context, observer, now, null);
     }
 
     protected RequestProcessor( String sourceName,
                                 ExecutionContext context,
+                                Observer observer,
                                 DateTime now,
                                 CachePolicy defaultCachePolicy ) {
         CheckArg.isNotEmpty(sourceName, "sourceName");
@@ -104,6 +112,20 @@ public abstract class RequestProcessor {
         this.sourceName = sourceName;
         this.nowInUtc = now != null ? now : context.getValueFactories().getDateFactory().createUtc();
         this.defaultCachePolicy = defaultCachePolicy;
+        this.changes = observer != null ? new LinkedList<ChangeRequest>() : null;
+        this.observer = observer;
+    }
+
+    /**
+     * Record the supplied change request for publishing through the event mechanism.
+     * 
+     * @param request the completed change request; may not be null
+     */
+    protected void record( ChangeRequest request ) {
+        assert request != null;
+        assert !request.isCancelled();
+        assert !request.hasError();
+        if (changes != null) changes.add(request);
     }
 
     /**
@@ -761,7 +783,11 @@ public abstract class RequestProcessor {
      * Close this processor, allowing it to clean up any open resources.
      */
     public void close() {
-        // do nothing
+        // Publish any changes ...
+        if (observer != null && !this.changes.isEmpty()) {
+            Changes changes = new Changes(context.getSubject(), getSourceName(), getNowInUtc(), this.changes);
+            observer.notify(changes);
+        }
     }
 
     /**

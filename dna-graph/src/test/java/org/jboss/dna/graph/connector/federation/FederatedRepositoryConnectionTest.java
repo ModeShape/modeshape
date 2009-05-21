@@ -50,7 +50,7 @@ public class FederatedRepositoryConnectionTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        connection = new FederatedRepositoryConnection(repository);
+        connection = new FederatedRepositoryConnection(repository, null);
     }
 
     @Test

@@ -37,6 +37,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.Request;
@@ -76,11 +77,14 @@ class FederatedRepositoryConnection implements RepositoryConnection {
     private final FederatedRepository repository;
     private final Stopwatch stopwatch;
     private final Logger logger;
+    private final Observer observer;
 
-    FederatedRepositoryConnection( FederatedRepository repository ) {
+    FederatedRepositoryConnection( FederatedRepository repository,
+                                   Observer observer ) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
         this.stopwatch = logger.isTraceEnabled() ? new Stopwatch() : null;
+        this.observer = observer;
     }
 
     /**
@@ -208,7 +212,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
             // ----------------------------------------------------------------------------------------------------
             // Step 2: Join the results of the source-specific (forked) requests back into the submitted requests
             // ----------------------------------------------------------------------------------------------------
-            JoinRequestProcessor join = new JoinRequestProcessor(repository, context, nowInUtc);
+            JoinRequestProcessor join = new JoinRequestProcessor(repository, context, observer, nowInUtc);
             try {
                 if (awaitAllSubtasks) {
                     join.process(requests);

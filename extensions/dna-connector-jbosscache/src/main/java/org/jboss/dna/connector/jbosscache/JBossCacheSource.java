@@ -58,6 +58,7 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -115,6 +116,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
     private transient JBossCacheWorkspaces workspaces;
     private transient Context jndiContext;
+    private transient RepositoryContext repositoryContext;
 
     /**
      * Create a repository source instance.
@@ -128,6 +130,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
     }
 
     /**
@@ -474,6 +477,17 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
         }
 
         return new JBossCacheConnection(this, this.workspaces);
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    protected RepositoryContext getRepositoryContext() {
+        return repositoryContext;
+    }
+
+    protected Observer getObserver() {
+        return repositoryContext != null ? repositoryContext.getObserver() : null;
     }
 
     protected Context getContext() {

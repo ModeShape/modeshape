@@ -26,6 +26,7 @@ package org.jboss.dna.graph.request;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -33,7 +34,7 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * the {@link #targetConflictBehavior() target conflict behavior} defines the behavior to be followed. If the workspace being
  * cloned does not exist, the {@link #cloneConflictBehavior() clone conflict behavior} defines the behavior to be followed.
  */
-public final class CloneWorkspaceRequest extends Request {
+public final class CloneWorkspaceRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -227,5 +228,26 @@ public final class CloneWorkspaceRequest extends Request {
     @Override
     public String toString() {
         return "clone workspace \"" + nameOfWorkspaceToBeCloned() + "\" as workspace \"" + desiredNameOfTargetWorkspace() + "\"";
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    @Override
+    public Location changedLocation() {
+        return actualLocationOfRoot;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    @Override
+    public boolean changes( String workspace,
+                            Path path ) {
+        return actualWorkspaceName != null && actualWorkspaceName.equals(workspace);
     }
 }

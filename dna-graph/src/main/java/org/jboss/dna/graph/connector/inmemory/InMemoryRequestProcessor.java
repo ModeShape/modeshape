@@ -37,6 +37,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -70,8 +71,9 @@ public class InMemoryRequestProcessor extends RequestProcessor {
     private final InMemoryRepository repository;
 
     protected InMemoryRequestProcessor( ExecutionContext context,
-                                        InMemoryRepository repository ) {
-        super(repository.getSourceName(), context);
+                                        InMemoryRepository repository,
+                                        RepositoryContext repositoryContext ) {
+        super(repository.getSourceName(), context, repositoryContext != null ? repositoryContext.getObserver() : null);
         this.repository = repository;
         pathFactory = context.getValueFactories().getPathFactory();
         propertyFactory = context.getPropertyFactory();
@@ -133,6 +135,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
+        record(request);
     }
 
     @Override
@@ -149,6 +152,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             Path lowestExisting = workspace.getLowestExistingPath(parent);
             request.setError(new PathNotFoundException(request.under(), lowestExisting,
                                                        GraphI18n.inMemoryNodeDoesNotExist.text(parent)));
+            return;
         }
         UUID uuid = null;
         for (Property property : request.properties()) {
@@ -193,6 +197,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         }
         Location actualLocation = getActualLocation(path, node);
         request.setActualLocationOfNode(actualLocation);
+        record(request);
     }
 
     @Override
@@ -204,6 +209,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         workspace.removeNode(getExecutionContext(), node);
         Location actualLocation = getActualLocation(request.at().getPath(), node);
         request.setActualLocationOfNode(actualLocation);
+        record(request);
     }
 
     @Override
@@ -222,6 +228,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newParent.getUuid());
         request.setActualLocations(oldLocation, newLocation);
+        record(request);
     }
 
     @Override
@@ -243,6 +250,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         }
         Location actualLocation = getActualLocation(request.on().getPath(), node);
         request.setActualLocationOfNode(actualLocation);
+        record(request);
     }
 
     /**
@@ -263,6 +271,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             InMemoryNode root = workspace.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(workspace.getName());
+            record(request);
         }
     }
 
@@ -273,7 +282,12 @@ public class InMemoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        if (!repository.destroyWorkspace(request.workspaceName())) {
+        InMemoryRepository.Workspace workspace = repository.getWorkspace(getExecutionContext(), request.workspaceName());
+        if (workspace != null) {
+            InMemoryNode root = workspace.getRoot();
+            request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
+            record(request);
+        } else {
             String msg = GraphI18n.workspaceDoesNotExistInRepository.text(request.workspaceName(), repository.getSourceName());
             request.setError(new InvalidWorkspaceException(msg));
         }
@@ -353,6 +367,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             InMemoryNode root = target.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(target.getName());
+            record(request);
         }
     }
 

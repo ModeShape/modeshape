@@ -128,6 +128,7 @@ public class BasicModelTest {
         stub(manager.getTransaction()).toReturn(txn);
         RequestProcessor proc = model.createRequestProcessor("test source",
                                                              context,
+                                                             null,
                                                              manager,
                                                              UUID.randomUUID(),
                                                              "default workspace",

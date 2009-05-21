@@ -45,6 +45,13 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
     private final DateTime timestamp;
     private final List<ChangeRequest> changeRequests;
 
+    public Changes( Subject subject,
+                    String sourceName,
+                    DateTime timestamp,
+                    List<ChangeRequest> requests ) {
+        this("", subject, sourceName, timestamp, requests);
+    }
+
     public Changes( String processId,
                     Subject subject,
                     String sourceName,

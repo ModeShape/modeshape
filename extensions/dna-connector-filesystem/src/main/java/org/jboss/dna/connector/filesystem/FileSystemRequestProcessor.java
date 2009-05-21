@@ -100,7 +100,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                           ExecutionContext context,
                                           FilenameFilter filenameFilter,
                                           boolean updatesAllowed ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         assert defaultWorkspace != null;
         assert defaultWorkspace.exists();
         assert defaultWorkspace.canRead();
@@ -391,9 +391,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneWorkspaceRequest request ) {
-        if (!updatesAllowed) {
-            request.setError(new InvalidRequestException(FileSystemI18n.sourceIsReadOnly.text(getSourceName())));
-        }
+        updatesAllowed(request);
     }
 
     /**
@@ -416,6 +414,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
             availableWorkspaceNames.add(workspaceName);
+            record(request);
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
         }
@@ -436,6 +435,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         // This doesn't delete the file/directory; rather, it just remove the workspace from the available set ...
         if (!this.availableWorkspaceNames.remove(workspaceName)) {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
+        } else {
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
+            record(request);
         }
     }
 
