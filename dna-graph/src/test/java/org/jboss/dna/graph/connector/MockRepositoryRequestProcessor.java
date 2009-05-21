@@ -100,7 +100,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -110,7 +110,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneWorkspaceRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -120,7 +120,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -130,7 +130,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -140,7 +140,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -150,7 +150,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -160,7 +160,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -190,7 +190,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -250,7 +250,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RemovePropertyRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -260,7 +260,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RenameNodeRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -270,7 +270,7 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( SetPropertyRequest request ) {
-        record(request);
+        recordChange(request);
     }
 
     /**

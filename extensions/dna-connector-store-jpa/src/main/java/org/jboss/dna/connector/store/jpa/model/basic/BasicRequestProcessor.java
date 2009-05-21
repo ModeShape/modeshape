@@ -952,7 +952,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -1238,7 +1238,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualFromLocation, actualToLocation);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -1252,7 +1252,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         Location location = delete(request, request.at(), request.inWorkspace(), true);
         if (location != null) {
             request.setActualLocationOfNode(location);
-            record(request);
+            recordChange(request);
         }
     }
 
@@ -1267,7 +1267,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         Location location = delete(request, request.at(), request.inWorkspace(), false);
         if (location != null) {
             request.setActualLocationOfNode(location);
-            record(request);
+            recordChange(request);
         }
     }
 
@@ -1484,7 +1484,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualOldLocation, actualNewLocation);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -1557,7 +1557,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Create the root node ...
         Location root = Location.create(pathFactory.createRootPath());
         request.setActualRootLocation(getActualLocation(entity.getId(), root).location);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -1657,7 +1657,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Finish up the request ...
         Location root = Location.create(pathFactory.createRootPath(), rootNodeUuid);
         request.setActualRootLocation(getActualLocation(intoWorkspace.getId(), root).location);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -1697,7 +1697,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         // Finish the request ...
         request.setActualRootLocation(actual.location);
-        record(request);
+        recordChange(request);
     }
 
     /**

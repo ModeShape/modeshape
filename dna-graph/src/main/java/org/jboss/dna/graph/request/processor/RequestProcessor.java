@@ -121,7 +121,7 @@ public abstract class RequestProcessor {
      * 
      * @param request the completed change request; may not be null
      */
-    protected void record( ChangeRequest request ) {
+    protected void recordChange( ChangeRequest request ) {
         assert request != null;
         assert !request.isCancelled();
         assert !request.hasError();

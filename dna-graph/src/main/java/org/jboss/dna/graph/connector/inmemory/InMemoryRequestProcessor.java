@@ -135,7 +135,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -197,7 +197,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         }
         Location actualLocation = getActualLocation(path, node);
         request.setActualLocationOfNode(actualLocation);
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -209,7 +209,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         workspace.removeNode(getExecutionContext(), node);
         Location actualLocation = getActualLocation(request.at().getPath(), node);
         request.setActualLocationOfNode(actualLocation);
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -228,7 +228,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newParent.getUuid());
         request.setActualLocations(oldLocation, newLocation);
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -250,7 +250,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         }
         Location actualLocation = getActualLocation(request.on().getPath(), node);
         request.setActualLocationOfNode(actualLocation);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -271,7 +271,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             InMemoryNode root = workspace.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(workspace.getName());
-            record(request);
+            recordChange(request);
         }
     }
 
@@ -286,7 +286,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         if (workspace != null) {
             InMemoryNode root = workspace.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
-            record(request);
+            recordChange(request);
         } else {
             String msg = GraphI18n.workspaceDoesNotExistInRepository.text(request.workspaceName(), repository.getSourceName());
             request.setError(new InvalidWorkspaceException(msg));
@@ -367,7 +367,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             InMemoryNode root = target.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(target.getName());
-            record(request);
+            recordChange(request);
         }
     }
 

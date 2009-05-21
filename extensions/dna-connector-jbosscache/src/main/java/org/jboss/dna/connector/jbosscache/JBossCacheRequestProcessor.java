@@ -183,7 +183,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         }
         Path nodePath = pathFactory.create(parent, newSegment);
         request.setActualLocationOfNode(Location.create(nodePath));
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -215,7 +215,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             node.put(propName, value);
         }
         request.setActualLocationOfNode(Location.create(nodePath));
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -252,7 +252,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
-        record(request);
+        recordChange(request);
     }
 
     @Override
@@ -269,7 +269,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (cache.removeNode(node.getFqn())) {
             removeFromChildList(cache, parent, nameOfRemovedNode, getExecutionContext());
             request.setActualLocationOfNode(Location.create(nodePath));
-            record(request);
+            recordChange(request);
         } else {
             String msg = JBossCacheConnectorI18n.unableToDeleteBranch.text(getSourceName(), request.inWorkspace(), nodePath);
             request.setError(new RepositorySourceException(msg));
@@ -303,7 +303,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -371,7 +371,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         }
         request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
         request.setActualWorkspaceName(workspaceName);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -421,7 +421,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         // Copy the list of child segments in the root (this maintains the order of the children) ...
         Path.Segment[] childNames = (Path.Segment[])fromRoot.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         intoRoot.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childNames);
-        record(request);
+        recordChange(request);
     }
 
     /**
@@ -438,7 +438,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
-        record(request);
+        recordChange(request);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

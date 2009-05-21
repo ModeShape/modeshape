@@ -414,7 +414,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
             availableWorkspaceNames.add(workspaceName);
-            record(request);
+            recordChange(request);
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
         }
@@ -437,7 +437,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
         } else {
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
-            record(request);
+            recordChange(request);
         }
     }
 
