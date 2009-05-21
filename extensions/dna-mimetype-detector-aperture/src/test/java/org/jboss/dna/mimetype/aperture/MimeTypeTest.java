@@ -22,8 +22,7 @@
 package org.jboss.dna.mimetype.aperture;
 
 import java.io.FileNotFoundException;
-import org.jboss.dna.mimetype.aperture.ApertureMimeTypeDetector;
-import org.jboss.dna.repository.mimetype.AbstractMimeTypeTest;
+import org.jboss.dna.graph.mimetype.AbstractMimeTypeTest;
 import org.junit.Test;
 
 /**
@@ -43,7 +42,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_ansi_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_ansi_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_ansi_txt() {
@@ -53,7 +52,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_empty_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_empty_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_empty_txt() {
@@ -63,7 +62,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_txt() {
@@ -73,7 +72,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_with_null_character_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_with_null_character_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_with_null_character_txt() {
@@ -83,7 +82,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf16be_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf16be_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_utf16be_txt() {
@@ -93,7 +92,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf16le_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf16le_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_utf16le_txt() {
@@ -103,7 +102,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf8_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_utf8_txt()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_utf8_txt() {
@@ -113,7 +112,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_without_extension()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForText_plain_text_without_extension()
      */
     @Override
     protected String expectedMimeTypeForText_plain_text_without_extension() {
@@ -123,7 +122,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_staroffice_5_2_rtf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_staroffice_5_2_rtf()
      */
     @Override
     protected String expectedMimeTypeForRtf_rtf_staroffice_5_2_rtf() {
@@ -133,7 +132,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_openoffice_2_0_rtf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_openoffice_2_0_rtf()
      */
     @Override
     protected String expectedMimeTypeForRtf_rtf_openoffice_2_0_rtf() {
@@ -143,7 +142,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_word_2000_rtf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_word_2000_rtf()
      */
     @Override
     protected String expectedMimeTypeForRtf_rtf_word_2000_rtf() {
@@ -153,7 +152,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_openoffice_1_1_5_rtf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForRtf_rtf_openoffice_1_1_5_rtf()
      */
     @Override
     protected String expectedMimeTypeForRtf_rtf_openoffice_1_1_5_rtf() {
@@ -163,7 +162,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForRtf_test_rtf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForRtf_test_rtf()
      */
     @Override
     protected String expectedMimeTypeForRtf_test_rtf() {
@@ -173,7 +172,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle3_mp3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle3_mp3()
      */
     @Override
     protected String expectedMimeTypeForMp3_jingle3_mp3() {
@@ -183,7 +182,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle1_mp3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle1_mp3()
      */
     @Override
     protected String expectedMimeTypeForMp3_jingle1_mp3() {
@@ -193,7 +192,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle2_mp3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMp3_jingle2_mp3()
      */
     @Override
     protected String expectedMimeTypeForMp3_jingle2_mp3() {
@@ -203,7 +202,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMp3_test_128_44_jstereo_mp3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMp3_test_128_44_jstereo_mp3()
      */
     @Override
     protected String expectedMimeTypeForMp3_test_128_44_jstereo_mp3() {
@@ -213,7 +212,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMp3_test_mp3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMp3_test_mp3()
      */
     @Override
     protected String expectedMimeTypeForMp3_test_mp3() {
@@ -243,7 +242,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_geotagged_jpg()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_geotagged_jpg()
      */
     @Override
     protected String expectedMimeTypeForJpeg_jpg_geotagged_jpg() {
@@ -253,7 +252,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_exif_zerolength_jpg()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_exif_zerolength_jpg()
      */
     @Override
     protected String expectedMimeTypeForJpeg_jpg_exif_zerolength_jpg() {
@@ -263,7 +262,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_geotagged_ipanema_jpg()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_geotagged_ipanema_jpg()
      */
     @Override
     protected String expectedMimeTypeForJpeg_jpg_geotagged_ipanema_jpg() {
@@ -273,7 +272,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_exif_img_9367_JPG()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForJpeg_jpg_exif_img_9367_JPG()
      */
     @Override
     protected String expectedMimeTypeForJpeg_jpg_exif_img_9367_JPG() {
@@ -283,7 +282,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForJpeg_test_jpg()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForJpeg_test_jpg()
      */
     @Override
     protected String expectedMimeTypeForJpeg_test_jpg() {
@@ -293,7 +292,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPortablePixelMap_test_ppm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPortablePixelMap_test_ppm()
      */
     @Override
     protected String expectedMimeTypeForPortablePixelMap_test_ppm() {
@@ -303,7 +302,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPortablePixelMap_test_pnm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPortablePixelMap_test_pnm()
      */
     @Override
     protected String expectedMimeTypeForPortablePixelMap_test_pnm() {
@@ -343,7 +342,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_utf8_bom()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_utf8_bom()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_utf8_bom() {
@@ -353,7 +352,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_CurrencyFormatterExample_mxml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_CurrencyFormatterExample_mxml()
      */
     @Override
     protected String expectedMimeTypeForXml_CurrencyFormatterExample_mxml() {
@@ -363,7 +362,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_test_excel_spreadsheet_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_test_excel_spreadsheet_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_test_excel_spreadsheet_xml() {
@@ -373,7 +372,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_test_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_test_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_test_xml() {
@@ -383,7 +382,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_handwritten_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_handwritten_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_handwritten_xml() {
@@ -393,7 +392,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_dtd_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_dtd_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_nonexistent_dtd_xml() {
@@ -403,7 +402,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_remote_dtd_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_remote_dtd_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_nonexistent_remote_dtd_xml() {
@@ -413,7 +412,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_remote_xsd_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_remote_xsd_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_nonexistent_remote_xsd_xml() {
@@ -423,7 +422,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_xsd_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForXml_xml_nonexistent_xsd_xml()
      */
     @Override
     protected String expectedMimeTypeForXml_xml_nonexistent_xsd_xml() {
@@ -443,7 +442,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_html_condenast_html()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_html_condenast_html()
      */
     @Override
     protected String expectedMimeTypeForHtml_html_condenast_html() {
@@ -453,7 +452,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_html_handwritten_html()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_html_handwritten_html()
      */
     @Override
     protected String expectedMimeTypeForHtml_html_handwritten_html() {
@@ -463,7 +462,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_html_handwritten_with_wrong_file_extension_txt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_html_handwritten_with_wrong_file_extension_txt()
      */
     @Override
     protected String expectedMimeTypeForHtml_html_handwritten_with_wrong_file_extension_txt() {
@@ -473,7 +472,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_html_quelle_de_html()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_html_quelle_de_html()
      */
     @Override
     protected String expectedMimeTypeForHtml_html_quelle_de_html() {
@@ -483,7 +482,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_html_utf16_leading_whitespace_wrong_extension_doc()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_html_utf16_leading_whitespace_wrong_extension_doc()
      */
     @Override
     protected String expectedMimeTypeForHtml_html_utf16_leading_whitespace_wrong_extension_doc() {
@@ -493,7 +492,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForHtml_master_xml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForHtml_master_xml()
      */
     @Override
     protected String expectedMimeTypeForHtml_master_xml() {
@@ -533,7 +532,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_test_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_test_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_test_pdf() {
@@ -543,7 +542,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_no_author_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_no_author_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_no_author_pdf() {
@@ -553,7 +552,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_openoffice_1_1_5_writer_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_openoffice_1_1_5_writer_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_openoffice_1_1_5_writer_pdf() {
@@ -563,7 +562,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_openoffice_2_0_writer_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_openoffice_2_0_writer_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_openoffice_2_0_writer_pdf() {
@@ -573,7 +572,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfcreator_0_8_0_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfcreator_0_8_0_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_word_2000_pdfcreator_0_8_0_pdf() {
@@ -583,7 +582,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfmaker_7_0_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfmaker_7_0_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_word_2000_pdfmaker_7_0_pdf() {
@@ -593,7 +592,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfwriter_7_0_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_word_2000_pdfwriter_7_0_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_word_2000_pdfwriter_7_0_pdf() {
@@ -603,7 +602,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_distiller_6_weirdchars_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPdf_pdf_distiller_6_weirdchars_pdf()
      */
     @Override
     protected String expectedMimeTypeForPdf_pdf_distiller_6_weirdchars_pdf() {
@@ -613,7 +612,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPostscript_test_eps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPostscript_test_eps()
      */
     @Override
     protected String expectedMimeTypeForPostscript_test_eps() {
@@ -623,7 +622,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPostscript_test_ps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPostscript_test_ps()
      */
     @Override
     protected String expectedMimeTypeForPostscript_test_ps() {
@@ -643,7 +642,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForGZip_test_tar_gz()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForGZip_test_tar_gz()
      */
     @Override
     protected String expectedMimeTypeForGZip_test_tar_gz() {
@@ -653,7 +652,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForGZip_test_txt_gz()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForGZip_test_txt_gz()
      */
     @Override
     protected String expectedMimeTypeForGZip_test_txt_gz() {
@@ -693,7 +692,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForOpenDocumentPresentation_openoffice_2_0_impress_odp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForOpenDocumentPresentation_openoffice_2_0_impress_odp()
      */
     @Override
     protected String expectedMimeTypeForOpenDocumentPresentation_openoffice_2_0_impress_odp() {
@@ -703,7 +702,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForOpenDocumentPresentation_component_architecture_odp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForOpenDocumentPresentation_component_architecture_odp()
      */
     @Override
     protected String expectedMimeTypeForOpenDocumentPresentation_component_architecture_odp() {
@@ -798,7 +797,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForStarOfficeWriterTemplate()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForStarOfficeWriterTemplate()
      */
     @Override
     protected String expectedMimeTypeForStarOfficeWriterTemplate() {
@@ -808,7 +807,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForStarOfficeCalcTemplate()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForStarOfficeCalcTemplate()
      */
     @Override
     protected String expectedMimeTypeForStarOfficeCalcTemplate() {
@@ -818,7 +817,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForStarOfficeDrawTemplate()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForStarOfficeDrawTemplate()
      */
     @Override
     protected String expectedMimeTypeForStarOfficeDrawTemplate() {
@@ -828,7 +827,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForStarOfficeImpressTemplate()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForStarOfficeImpressTemplate()
      */
     @Override
     protected String expectedMimeTypeForStarOfficeImpressTemplate() {
@@ -838,7 +837,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_test_word_2000_doc()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_test_word_2000_doc()
      */
     @Override
     protected String expectedMimeTypeForWord_test_word_2000_doc() {
@@ -848,7 +847,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_test_word_6_0_95_doc()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_test_word_6_0_95_doc()
      */
     @Override
     protected String expectedMimeTypeForWord_test_word_6_0_95_doc() {
@@ -858,7 +857,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2000_doc()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2000_doc()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2000_doc() {
@@ -868,7 +867,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2000_with_wrong_file_extension_pdf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2000_with_wrong_file_extension_pdf()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2000_with_wrong_file_extension_pdf() {
@@ -878,7 +877,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_dotx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_dotx()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2007beta2_dotx() {
@@ -888,7 +887,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_docm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_docm()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2007beta2_docm() {
@@ -898,7 +897,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_docx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_docx()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2007beta2_docx() {
@@ -908,7 +907,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_dotm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWord_microsoft_word_2007beta2_dotm()
      */
     @Override
     protected String expectedMimeTypeForWord_microsoft_word_2007beta2_dotm() {
@@ -918,7 +917,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_spreadsheet_4_0_2000_wks()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_spreadsheet_4_0_2000_wks()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_spreadsheet_4_0_2000_wks() {
@@ -928,7 +927,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_7_0_wps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_7_0_wps()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_word_processor_7_0_wps() {
@@ -938,7 +937,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_spreadsheet_7_0_xlr()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_spreadsheet_7_0_xlr()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_spreadsheet_7_0_xlr() {
@@ -948,7 +947,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_2000_wps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_2000_wps()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_word_processor_2000_wps() {
@@ -958,7 +957,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_4_0_wps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_4_0_wps()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_word_processor_4_0_wps() {
@@ -968,7 +967,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_3_0_wps()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorks_microsoft_works_word_processor_3_0_wps()
      */
     @Override
     protected String expectedMimeTypeForWorks_microsoft_works_word_processor_3_0_wps() {
@@ -978,7 +977,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorkbook_corel_quattro_pro_6_wb2()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorkbook_corel_quattro_pro_6_wb2()
      */
     @Override
     protected String expectedMimeTypeForWorkbook_corel_quattro_pro_6_wb2() {
@@ -988,7 +987,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWorkbook_microsoft_works_spreadsheet_3_0_wks()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWorkbook_microsoft_works_spreadsheet_3_0_wks()
      */
     @Override
     protected String expectedMimeTypeForWorkbook_microsoft_works_spreadsheet_3_0_wks() {
@@ -998,7 +997,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_test_excel_2000_xls()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_test_excel_2000_xls()
      */
     @Override
     protected String expectedMimeTypeForExcel_test_excel_2000_xls() {
@@ -1008,7 +1007,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltx()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltx() {
@@ -1018,7 +1017,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2000_xls()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2000_xls()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2000_xls() {
@@ -1028,7 +1027,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlam()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlam()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlam() {
@@ -1038,7 +1037,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltm()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xltm() {
@@ -1048,7 +1047,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsx()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsx() {
@@ -1058,7 +1057,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsb()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsb()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsb() {
@@ -1068,7 +1067,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsm()
      */
     @Override
     protected String expectedMimeTypeForExcel_microsoft_excel_2007beta2_xlsm() {
@@ -1078,7 +1077,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potm()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potm() {
@@ -1088,7 +1087,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsm()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsm() {
@@ -1098,7 +1097,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptm()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptm()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptm() {
@@ -1108,7 +1107,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptx()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_pptx() {
@@ -1118,7 +1117,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potx()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_potx() {
@@ -1128,7 +1127,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2000_ppt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2000_ppt()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2000_ppt() {
@@ -1138,7 +1137,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_test_ppt()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_test_ppt()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_test_ppt() {
@@ -1148,7 +1147,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsx()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsx()
      */
     @Override
     protected String expectedMimeTypeForPowerpoint_microsoft_powerpoint_2007beta2_ppsx() {
@@ -1173,7 +1172,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForShw_corel_presentations_3_0_shw()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForShw_corel_presentations_3_0_shw()
      */
     @Override
     protected String expectedMimeTypeForShw_corel_presentations_3_0_shw() {
@@ -1183,7 +1182,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForShw_corel_presentations_x3_shw()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForShw_corel_presentations_x3_shw()
      */
     @Override
     protected String expectedMimeTypeForShw_corel_presentations_x3_shw() {
@@ -1193,7 +1192,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPro_corel_quattro_pro_7_wb3()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPro_corel_quattro_pro_7_wb3()
      */
     @Override
     protected String expectedMimeTypeForPro_corel_quattro_pro_7_wb3() {
@@ -1203,7 +1202,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForPro_corel_quattro_pro_x3_qpw()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForPro_corel_quattro_pro_x3_qpw()
      */
     @Override
     protected String expectedMimeTypeForPro_corel_quattro_pro_x3_qpw() {
@@ -1213,7 +1212,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_x3_wpd()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_x3_wpd()
      */
     @Override
     protected String expectedMimeTypeForWordperfect_corel_wordperfect_x3_wpd() {
@@ -1223,7 +1222,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_4_2_wp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_4_2_wp()
      */
     @Override
     protected String expectedMimeTypeForWordperfect_corel_wordperfect_4_2_wp() {
@@ -1233,7 +1232,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_0_wp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_0_wp()
      */
     @Override
     protected String expectedMimeTypeForWordperfect_corel_wordperfect_5_0_wp() {
@@ -1243,7 +1242,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_1_far_east_wp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_1_far_east_wp()
      */
     @Override
     protected String expectedMimeTypeForWordperfect_corel_wordperfect_5_1_far_east_wp() {
@@ -1253,7 +1252,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_1_wp()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForWordperfect_corel_wordperfect_5_1_wp()
      */
     @Override
     protected String expectedMimeTypeForWordperfect_corel_wordperfect_5_1_wp() {
@@ -1263,7 +1262,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMail_test_excel_web_archive_mht()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMail_test_excel_web_archive_mht()
      */
     @Override
     protected String expectedMimeTypeForMail_test_excel_web_archive_mht() {
@@ -1273,7 +1272,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMail_mail_thunderbird_1_5_eml()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMail_mail_thunderbird_1_5_eml()
      */
     @Override
     protected String expectedMimeTypeForMail_mail_thunderbird_1_5_eml() {
@@ -1283,7 +1282,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMail_mhtml_firefox_mht()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMail_mhtml_firefox_mht()
      */
     @Override
     protected String expectedMimeTypeForMail_mhtml_firefox_mht() {
@@ -1293,7 +1292,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForMail_mhtml_internet_explorer_mht()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForMail_mhtml_internet_explorer_mht()
      */
     @Override
     protected String expectedMimeTypeForMail_mhtml_internet_explorer_mht() {
@@ -1308,7 +1307,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_vCards_SAP_vcf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_vCards_SAP_vcf()
      */
     @Override
     protected String expectedMimeTypeForVCard_vcard_vCards_SAP_vcf() {
@@ -1318,7 +1317,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_antoni_kontact_vcf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_antoni_kontact_vcf()
      */
     @Override
     protected String expectedMimeTypeForVCard_vcard_antoni_kontact_vcf() {
@@ -1328,7 +1327,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_antoni_outlook2003_vcf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_antoni_outlook2003_vcf()
      */
     @Override
     protected String expectedMimeTypeForVCard_vcard_antoni_outlook2003_vcf() {
@@ -1338,7 +1337,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_dirk_vcf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_dirk_vcf()
      */
     @Override
     protected String expectedMimeTypeForVCard_vcard_dirk_vcf() {
@@ -1348,7 +1347,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_rfc2426_vcf()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForVCard_vcard_rfc2426_vcf()
      */
     @Override
     protected String expectedMimeTypeForVCard_vcard_rfc2426_vcf() {
@@ -1358,7 +1357,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_Todos1_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_Todos1_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_Todos1_ics() {
@@ -1368,7 +1367,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_basicCalendar_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_basicCalendar_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_basicCalendar_ics() {
@@ -1378,7 +1377,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_1_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_1_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_1_ics() {
@@ -1388,7 +1387,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_2_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_2_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_2_ics() {
@@ -1398,7 +1397,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_3_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_3_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_3_ics() {
@@ -1408,7 +1407,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_4_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_4_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_4_ics() {
@@ -1418,7 +1417,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_5_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_5_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_5_ics() {
@@ -1428,7 +1427,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_6_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_6_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_6_ics() {
@@ -1438,7 +1437,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_exrule_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_exrule_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_exrule_ics() {
@@ -1448,7 +1447,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_cal01_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_cal01_ics() {
@@ -1458,7 +1457,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_calconnect7_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_calconnect7_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_calconnect7_ics() {
@@ -1468,7 +1467,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_calconnect9_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_calconnect9_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_calconnect9_ics() {
@@ -1478,7 +1477,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_combined_multiplevcalendar_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_combined_multiplevcalendar_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_combined_multiplevcalendar_ics() {
@@ -1488,7 +1487,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_combined_onevcalendar_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_combined_onevcalendar_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_combined_onevcalendar_ics() {
@@ -1498,7 +1497,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_extendedCalendar_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_extendedCalendar_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_extendedCalendar_ics() {
@@ -1508,7 +1507,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_freebusy_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_freebusy_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_freebusy_ics() {
@@ -1518,7 +1517,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_geol_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_geol_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_geol_ics() {
@@ -1528,7 +1527,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_gkexample_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_gkexample_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_gkexample_ics() {
@@ -1538,7 +1537,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_incoming_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_incoming_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_incoming_ics() {
@@ -1548,7 +1547,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_korganizer_jicaltest_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_korganizer_jicaltest_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_korganizer_jicaltest_ics() {
@@ -1558,7 +1557,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_korganizer_jicaltest_vjournal_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_korganizer_jicaltest_vjournal_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_korganizer_jicaltest_vjournal_ics() {
@@ -1568,7 +1567,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_php_flp_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_php_flp_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_php_flp_ics() {
@@ -1578,7 +1577,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_simplevevent_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_simplevevent_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_simplevevent_ics() {
@@ -1588,7 +1587,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_sunbird_sample_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_sunbird_sample_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_sunbird_sample_ics() {
@@ -1598,7 +1597,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_tag_bug_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_tag_bug_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_tag_bug_ics() {
@@ -1608,7 +1607,7 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.mimetype.AbstractMimeTypeTest#expectedMimeTypeForCalendar_test_created_ics()
+     * @see AbstractMimeTypeTest#expectedMimeTypeForCalendar_test_created_ics()
      */
     @Override
     protected String expectedMimeTypeForCalendar_test_created_ics() {

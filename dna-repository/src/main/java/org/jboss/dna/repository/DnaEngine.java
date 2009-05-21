@@ -47,13 +47,13 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetectorConfig;
+import org.jboss.dna.graph.mimetype.MimeTypeDetectors;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathExpression;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.repository.mimetype.MimeTypeDetectorConfig;
-import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
 import org.jboss.dna.repository.sequencer.SequencingService;
 
