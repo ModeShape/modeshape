@@ -25,6 +25,7 @@ package org.jboss.dna.repository.mimetype;
 
 import java.util.Map;
 import org.jboss.dna.common.component.ComponentConfig;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 
 /**
  * @author jverhaeg
@@ -32,10 +33,23 @@ import org.jboss.dna.common.component.ComponentConfig;
 public class MimeTypeDetectorConfig extends ComponentConfig {
 
     public MimeTypeDetectorConfig( String name,
-                           String description,
-                           Map<String, Object> properties,
-                           String classname,
-                           String[] classpath ) {
+                                   String description,
+                                   Map<String, Object> properties,
+                                   String classname,
+                                   String[] classpath ) {
         super(name, description, properties, classname, classpath);
+    }
+
+    public MimeTypeDetectorConfig( String name,
+                                   String description,
+                                   Map<String, Object> properties,
+                                   Class<? extends MimeTypeDetector> clazz ) {
+        super(name, description, properties, clazz.getName());
+    }
+
+    public MimeTypeDetectorConfig( String name,
+                                   String description,
+                                   Class<? extends MimeTypeDetector> clazz ) {
+        super(name, description, clazz.getName());
     }
 }

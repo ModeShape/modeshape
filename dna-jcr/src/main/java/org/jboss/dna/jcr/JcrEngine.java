@@ -25,6 +25,7 @@ package org.jboss.dna.jcr;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Repository;
@@ -44,7 +45,6 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaEngine;
 import org.jboss.dna.repository.RepositoryService;
-import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencer.SequencingService;
 
 /**
@@ -96,10 +96,6 @@ public class JcrEngine {
 
     protected final RepositoryService getRepositoryService() {
         return dnaEngine.getRepositoryService();
-    }
-
-    protected final ObservationService getObservationService() {
-        return dnaEngine.getObservationService();
     }
 
     protected final SequencingService getSequencingService() {
@@ -167,8 +163,8 @@ public class JcrEngine {
                                 Node optionNode = configuration.getNodeAt(optionLocation);
                                 Property valueProperty = optionNode.getProperty(DnaLexicon.VALUE);
 
-                                options.put(Option.valueOf(segment.getName().getLocalName()),
-                                            valueProperty.getFirstValue().toString());
+                                options.put(Option.valueOf(segment.getName().getLocalName()), valueProperty.getFirstValue()
+                                                                                                           .toString());
 
                             }
 
@@ -187,11 +183,40 @@ public class JcrEngine {
      * Lifecycle methods
      */
 
+    /**
+     * Start this engine to make it available for use.
+     * 
+     * @throws IllegalStateException if this method is called when already shut down.
+     * @see #shutdown()
+     */
     public void start() {
         dnaEngine.start();
     }
 
+    /**
+     * Shutdown this engine to close all connections, terminate any ongoing background operations (such as sequencing), and
+     * reclaim any resources that were acquired by this engine. This method may be called multiple times, but only the first time
+     * has an effect.
+     * 
+     * @see #start()
+     */
     public void shutdown() {
         dnaEngine.shutdown();
     }
+
+    /**
+     * Blocks until the shutdown has completed, or the timeout occurs, or the current thread is interrupted, whichever happens
+     * first.
+     * 
+     * @param timeout the maximum time to wait for each component in this engine
+     * @param unit the time unit of the timeout argument
+     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut down
+     *         completely
+     * @throws InterruptedException if interrupted while waiting
+     */
+    public boolean awaitTermination( long timeout,
+                                     TimeUnit unit ) throws InterruptedException {
+        return dnaEngine.awaitTermination(timeout, unit);
+    }
+
 }

@@ -22,7 +22,6 @@
 package org.jboss.dna.repository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,16 +45,17 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathExpression;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.repository.mimetype.MimeTypeDetectorConfig;
-import org.jboss.dna.repository.observation.ObservationService;
+import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
 import org.jboss.dna.repository.sequencer.SequencingService;
-import org.jboss.dna.repository.service.AdministeredService;
 
 /**
  * A single instance of the DNA services, which is obtained after setting up the {@link DnaConfiguration#build() configuration}.
@@ -71,12 +71,11 @@ public class DnaEngine {
     private final ConfigurationScanner scanner;
     private final Problems problems;
     private final ExecutionContext context;
-    private final List<AdministeredService> services;
 
     private final RepositoryService repositoryService;
-    private final ObservationService observationService;
     private final SequencingService sequencingService;
     private final ExecutorService executorService;
+    private final MimeTypeDetectors detectors;
 
     private final RepositoryConnectionFactory connectionFactory;
 
@@ -85,40 +84,38 @@ public class DnaEngine {
         this.problems = new SimpleProblems();
 
         // Use the configuration's context ...
-        this.context = context;
+        this.detectors = new MimeTypeDetectors();
+        this.context = context.with(detectors);
 
         // And set up the scanner ...
         this.configuration = configuration;
         this.scanner = new ConfigurationScanner(this.problems, this.context, this.configuration);
 
-        // Add the configuration source to the repository library ...
-        final RepositorySource configSource = this.configuration.getRepositorySource();
-        RepositoryLibrary library = new RepositoryLibrary();
-        library.addSource(configSource);
+        // Add the mime type detectors in the configuration ...
+        for (MimeTypeDetectorConfig config : scanner.getMimeTypeDetectors()) {
+            detectors.addDetector(config);
+        }
+        // Add an extension-based detector by default ...
+        detectors.addDetector(new MimeTypeDetectorConfig("ExtensionDetector", "Extension-based MIME type detector",
+                                                         ExtensionBasedMimeTypeDetector.class));
 
         // Create the RepositoryService, pointing it to the configuration repository ...
         Path pathToConfigurationRoot = this.configuration.getPath();
-        repositoryService = new RepositoryService(library, configSource.getName(), "", pathToConfigurationRoot, context);
-
-        for (MimeTypeDetectorConfig config : scanner.getMimeTypeDetectors()) {
-            library.getMimeTypeDetectors().addDetector(config);
-        }
+        String configWorkspaceName = this.configuration.getWorkspace();
+        final RepositorySource configSource = this.configuration.getRepositorySource();
+        repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context);
 
         // Create the sequencing service ...
         executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now
         sequencingService = new SequencingService();
         sequencingService.setExecutionContext(context);
         sequencingService.setExecutorService(executorService);
-        sequencingService.setRepositoryLibrary(repositoryService.getRepositorySourceManager());
+        sequencingService.setRepositoryLibrary(repositoryService.getRepositoryLibrary());
         for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
             sequencingService.addSequencer(sequencerConfig);
         }
 
-        // Create the observation service ...
-        observationService = null; // new ObservationService(null);
-
-        this.services = Arrays.asList(new AdministeredService[] { /* observationService, */repositoryService, sequencingService,});
-
+        // Set up the connection factory for this engine ...
         connectionFactory = new RepositoryConnectionFactory() {
             public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                 RepositorySource source = DnaEngine.this.getRepositorySource(sourceName);
@@ -140,48 +137,87 @@ public class DnaEngine {
         return problems;
     }
 
-    /*
-     * Lookup methods
+    /**
+     * Get the context in which this engine is executing.
+     * 
+     * @return the execution context; never null
      */
     public final ExecutionContext getExecutionContext() {
         return context;
     }
 
+    /**
+     * Get the {@link RepositorySource} instance used by this engine.
+     * 
+     * @param repositoryName the name of the repository source
+     * @return the source, or null if no source with the given name exists
+     */
     public final RepositorySource getRepositorySource( String repositoryName ) {
-        return repositoryService.getRepositorySourceManager().getSource(repositoryName);
+        return repositoryService.getRepositoryLibrary().getSource(repositoryName);
     }
 
+    /**
+     * Get a factory of connections, backed by the RepositorySor
+     * 
+     * @return the connection factory; never null
+     */
     public final RepositoryConnectionFactory getRepositoryConnectionFactory() {
         return connectionFactory;
     }
 
+    /**
+     * Get the repository service.
+     * 
+     * @return the repository service owned by this engine; never null
+     */
     public final RepositoryService getRepositoryService() {
         return repositoryService;
     }
 
-    public final ObservationService getObservationService() {
-        return observationService;
-    }
-
+    /**
+     * Get the sequencing service.
+     * 
+     * @return the sequencing service owned by this engine; never null
+     */
     public final SequencingService getSequencingService() {
         return sequencingService;
+    }
+
+    /**
+     * Return the component that is able to detect MIME types given the name of a stream and a stream.
+     * 
+     * @return the MIME type detector used by this engine; never null
+     */
+    protected final MimeTypeDetector getMimeTypeDetector() {
+        return detectors;
     }
 
     /*
      * Lifecycle methods
      */
-
+    /**
+     * Start this engine to make it available for use.
+     * 
+     * @throws IllegalStateException if this method is called when already shut down.
+     * @see #shutdown()
+     */
     public void start() {
-        for (AdministeredService service : services) {
-            service.getAdministrator().start();
-        }
+        repositoryService.getAdministrator().start();
+        sequencingService.getAdministrator().start();
     }
 
+    /**
+     * Shutdown this engine to close all connections, terminate any ongoing background operations (such as sequencing), and
+     * reclaim any resources that were acquired by this engine. This method may be called multiple times, but only the first time
+     * has an effect.
+     * 
+     * @see #start()
+     */
     public void shutdown() {
-        for (AdministeredService service : services) {
-            service.getAdministrator().shutdown();
-        }
+        // First, shutdown the sequencing service, which will prevent any additional jobs from going through ...
+        sequencingService.getAdministrator().shutdown();
 
+        // Then terminate the executor service, which may be running background jobs that are not yet completed ...
         try {
             executorService.awaitTermination(10 * 60, TimeUnit.SECONDS); // No TimeUnit.MINUTES in JDK 5
         } catch (InterruptedException ie) {
@@ -189,6 +225,27 @@ public class DnaEngine {
             Thread.interrupted();
         }
         executorService.shutdown();
+
+        // Finally shut down the repository source, which closes all connections ...
+        repositoryService.getAdministrator().shutdown();
+    }
+
+    /**
+     * Blocks until the shutdown has completed, or the timeout occurs, or the current thread is interrupted, whichever happens
+     * first.
+     * 
+     * @param timeout the maximum time to wait for each component in this engine
+     * @param unit the time unit of the timeout argument
+     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut down
+     *         completely
+     * @throws InterruptedException if interrupted while waiting
+     */
+    public boolean awaitTermination( long timeout,
+                                     TimeUnit unit ) throws InterruptedException {
+        if (!sequencingService.getAdministrator().awaitTermination(timeout, unit)) return false;
+        if (!executorService.awaitTermination(timeout, unit)) return false;
+        if (!repositoryService.getAdministrator().awaitTermination(timeout, unit)) return false;
+        return true;
     }
 
     /**

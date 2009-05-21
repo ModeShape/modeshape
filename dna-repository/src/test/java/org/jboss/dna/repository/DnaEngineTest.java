@@ -37,7 +37,6 @@ import javax.jcr.observation.Event;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.sequencer.MockSequencerA;
 import org.jboss.dna.repository.sequencer.SequencingService;
@@ -74,7 +73,7 @@ public class DnaEngineTest {
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
-        RepositoryLibrary library = engine.getRepositoryService().getRepositorySourceManager();
+        RepositoryLibrary library = engine.getRepositoryService().getRepositoryLibrary();
         assertThat(library.getConnectionPool("config repo").getInUseCount(), is(0));
 
         RepositoryConnection connection = library.getConnectionPool("config repo").getConnection();
@@ -109,7 +108,7 @@ public class DnaEngineTest {
         assertThat(engine.getRepositorySource("JCR"), is(instanceOf(InMemoryRepositorySource.class)));
         assertThat(engine.getRepositorySource("JCR").getName(), is("JCR"));
 
-        RepositoryLibrary library = engine.getRepositoryService().getRepositorySourceManager();
+        RepositoryLibrary library = engine.getRepositoryService().getRepositoryLibrary();
         RepositoryConnection connection = library.getConnectionPool("JCR").getConnection();
         assertThat(connection.ping(500, TimeUnit.MILLISECONDS), is(true));
         connection.close();
@@ -135,10 +134,8 @@ public class DnaEngineTest {
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
-        RepositoryLibrary library = engine.getRepositoryService().getRepositorySourceManager();
-        MimeTypeDetectors detectors = library.getMimeTypeDetectors();
-
-        assertThat(detectors.mimeTypeOf("test", new ByteArrayInputStream("This is useless data".getBytes())), is("mock"));
+        MimeTypeDetector detector = engine.getExecutionContext().getMimeTypeDetector();
+        assertThat(detector.mimeTypeOf("test", new ByteArrayInputStream("This is useless data".getBytes())), is("mock"));
     }
 
     @Test

@@ -41,8 +41,6 @@ import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 @ThreadSafe
 public final class MimeTypeDetectors implements MimeTypeDetector {
 
-    public static final MimeTypeDetectors DEFAULT_DETECTORS = new MimeTypeDetectors();
-
     /**
      * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
      * loader}, or if <code>null</code> the class loader for this class.

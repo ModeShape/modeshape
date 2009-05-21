@@ -43,26 +43,29 @@ import org.junit.Test;
 public abstract class AbstractMimeTypeTest {
 
     private final MimeTypeDetectorConfig config;
+    private MimeTypeDetectors detectors;
 
     protected AbstractMimeTypeTest( Class<? extends MimeTypeDetector> detector ) {
         assertThat(detector, notNullValue());
-        this.config = new MimeTypeDetectorConfig("MIME-Type Detector", "MIME-Type Detector", Collections.<String, Object>emptyMap(), detector.getName(), null);
+        this.config = new MimeTypeDetectorConfig("MIME-Type Detector", "MIME-Type Detector",
+                                                 Collections.<String, Object>emptyMap(), detector.getName(), null);
     }
 
     @Before
     public void before() throws Exception {
-        MimeType.addDetector(config);
+        detectors = new MimeTypeDetectors();
+        detectors.addDetector(config);
     }
 
     @After
     public void after() {
-        MimeType.removeDetector(config);
+        detectors.removeDetector(config);
     }
 
     protected void testMimeType( String name,
                                  String mimeType ) throws Exception {
         InputStream content = new File("../../dna-repository/src/test/resources/" + name).toURI().toURL().openStream();
-        assertThat(MimeType.of(name, content), is(mimeType));
+        assertThat(detectors.mimeTypeOf(name, content), is(mimeType));
     }
 
     protected abstract String expectedMimeTypeForText_test_txt();

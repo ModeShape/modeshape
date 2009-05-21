@@ -169,6 +169,14 @@ public abstract class Configurator<BuilderType> {
          * @return this instance for method chaining purposes; never null
          */
         public ConfigRepositoryDetails<ReturnType> under( String path );
+
+        /**
+         * Specify the path under which the configuration content is to be found. This path is assumed to be "/" by default.
+         * 
+         * @param workspace the name of the workspace with the configuration content in the configuration source; may not be null
+         * @return this instance for method chaining purposes; never null
+         */
+        public ConfigRepositoryDetails<ReturnType> inWorkspace( String workspace );
     }
 
     /**
@@ -454,7 +462,7 @@ public abstract class Configurator<BuilderType> {
     protected ConfigurationRepository createDefaultConfigurationSource() {
         InMemoryRepositorySource defaultSource = new InMemoryRepositorySource();
         defaultSource.setName("Configuration");
-        ConfigurationRepository result = new ConfigurationRepository(defaultSource, "Configuration Repository", null);
+        ConfigurationRepository result = new ConfigurationRepository(defaultSource, "Configuration Repository", null, null);
         return result;
     }
 
@@ -527,7 +535,7 @@ public abstract class Configurator<BuilderType> {
         configuration().create(path).with(DnaLexicon.READABLE_NAME, id).and();
         return path;
     }
-    
+
     protected void recordBeanPropertiesInGraph( Path path,
                                                 Object javaBean ) {
         Reflection reflector = new Reflection(javaBean.getClass());
@@ -612,7 +620,7 @@ public abstract class Configurator<BuilderType> {
          * @see org.jboss.dna.repository.Configurator.SetDescription#describedAs(java.lang.String)
          */
         public ConfigRepositoryDetails<ReturnType> describedAs( String description ) {
-            Configurator.this.configurationSource = Configurator.this.configurationSource.with(description);
+            Configurator.this.configurationSource = Configurator.this.configurationSource.withDescription(description);
             return this;
         }
 
@@ -630,13 +638,23 @@ public abstract class Configurator<BuilderType> {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.repository.Configurator.ConfigRepositoryDetails#inWorkspace(java.lang.String)
+         */
+        public ConfigRepositoryDetails<ReturnType> inWorkspace( String workspace ) {
+            Configurator.this.configurationSource = Configurator.this.configurationSource.withWorkspace(workspace);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.repository.Configurator.ConfigRepositoryDetails#under(java.lang.String)
          */
         public ConfigRepositoryDetails<ReturnType> under( String path ) {
             CheckArg.isNotNull(path, "path");
             Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(path);
             Configurator.this.configurationSource = Configurator.this.configurationSource.with(newPath);
-            return null;
+            return this;
         }
 
         /**
@@ -661,7 +679,7 @@ public abstract class Configurator<BuilderType> {
         protected final ReturnType returnObject;
 
         public ClassChooser( Path pathOfComponentNode,
-                                ReturnType returnObject ) {
+                             ReturnType returnObject ) {
             assert pathOfComponentNode != null;
             assert returnObject != null;
             this.pathOfComponentNode = pathOfComponentNode;
@@ -846,7 +864,7 @@ public abstract class Configurator<BuilderType> {
         protected Path path() {
             return this.path;
         }
-        
+
         /**
          * {@inheritDoc}
          * 
@@ -1018,17 +1036,20 @@ public abstract class Configurator<BuilderType> {
         private final RepositorySource source;
         private final String description;
         private final Path path;
+        private final String workspace;
 
         protected ConfigurationRepository( RepositorySource source ) {
-            this(source, null, null);
+            this(source, null, null, null);
         }
 
         protected ConfigurationRepository( RepositorySource source,
                                            String description,
-                                           Path path ) {
+                                           Path path,
+                                           String workspace ) {
             this.source = source;
             this.description = description != null ? description : "";
             this.path = path != null ? path : RootPath.INSTANCE;
+            this.workspace = workspace != null ? workspace : "";
         }
 
         /**
@@ -1052,12 +1073,23 @@ public abstract class Configurator<BuilderType> {
             return path;
         }
 
-        public ConfigurationRepository with( String description ) {
-            return new ConfigurationRepository(source, description, path);
+        /**
+         * @return workspace
+         */
+        public String getWorkspace() {
+            return workspace;
+        }
+
+        public ConfigurationRepository withDescription( String description ) {
+            return new ConfigurationRepository(source, description, path, workspace);
         }
 
         public ConfigurationRepository with( Path path ) {
-            return new ConfigurationRepository(source, description, path);
+            return new ConfigurationRepository(source, description, path, workspace);
+        }
+
+        public ConfigurationRepository withWorkspace( String workspace ) {
+            return new ConfigurationRepository(source, description, path, workspace);
         }
     }
 }

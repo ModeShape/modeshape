@@ -156,6 +156,35 @@ public class RepositoryService implements AdministeredService {
     }
 
     /**
+     * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the supplied
+     * configuration repository.
+     * 
+     * @param configurationSource the {@link RepositorySource} that is the configuration repository
+     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
+     *        repository, or null if the default workspace of the source should be used (if there is one)
+     * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
+     *        service as the root of the service's configuration; if null, then "/dna:system" is used
+     * @param context the execution context in which this service should run
+     * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
+     */
+    public RepositoryService( RepositorySource configurationSource,
+                              String configurationWorkspaceName,
+                              Path pathToConfigurationRoot,
+                              ExecutionContext context ) {
+        CheckArg.isNotNull(configurationSource, "configurationSource");
+        CheckArg.isNotNull(context, "context");
+        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
+                                                                              .getPathFactory()
+                                                                              .create("/dna:system");
+        this.sources = new RepositoryLibrary();
+        this.sources.addSource(configurationSource);
+        this.pathToConfigurationRoot = pathToConfigurationRoot;
+        this.configurationSourceName = configurationSource.getName();
+        this.configurationWorkspaceName = configurationWorkspaceName;
+        this.context = context;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public ServiceAdministrator getAdministrator() {
@@ -177,9 +206,11 @@ public class RepositoryService implements AdministeredService {
     }
 
     /**
-     * @return sources
+     * Get the library of {@link RepositorySource} instances used by this service.
+     * 
+     * @return the RepositorySource library; never null
      */
-    public RepositoryLibrary getRepositorySourceManager() {
+    public RepositoryLibrary getRepositoryLibrary() {
         return sources;
     }
 

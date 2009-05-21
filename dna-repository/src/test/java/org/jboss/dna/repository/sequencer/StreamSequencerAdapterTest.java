@@ -50,6 +50,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.graph.sequencer.StreamSequencerContext;
+import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.junit.Before;
@@ -79,7 +80,8 @@ public class StreamSequencerAdapterTest {
     @Before
     public void beforeEach() {
         problems = new SimpleProblems();
-        this.context = new ExecutionContext();
+        // Set up the MIME type detectors ...
+        this.context = new ExecutionContext().with(new MimeTypeDetectors());
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         final SequencerOutputMap finalOutput = sequencerOutput;
 
@@ -277,8 +279,7 @@ public class StreamSequencerAdapterTest {
         try {
             graph.getNodeAt("/d");
             fail();
-        }
-        catch(PathNotFoundException pnfe) {
+        } catch (PathNotFoundException pnfe) {
             // Expected
         }
         assertThat(nodeC, is(notNullValue()));
@@ -314,15 +315,13 @@ public class StreamSequencerAdapterTest {
         try {
             graph.getNodeAt("/d");
             fail();
-        }
-        catch(PathNotFoundException pnfe) {
+        } catch (PathNotFoundException pnfe) {
             // Expected
         }
         try {
             graph.getNodeAt("/x");
             fail();
-        }
-        catch(PathNotFoundException pnfe) {
+        } catch (PathNotFoundException pnfe) {
             // Expected
         }
         assertThat(nodeC, is(notNullValue()));
@@ -479,13 +478,15 @@ public class StreamSequencerAdapterTest {
     @Test
     public void shouldProvideInputProperties() throws Exception {
 
-
         this.sequencedProperty = mock(Property.class);
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
         graph.set("x").on("/a/b/c").to(true);
         graph.set("y").on("/a/b/c").to(Arrays.asList(new String[] {"asdf", "xyzzy"}));
         Node input = graph.getNodeAt("/a/b/c");
-        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input, sequencedProperty, seqContext, problems);
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
         assertThat(sequencerContext.getInputProperties(), notNullValue());
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
         assertThat(sequencerContext.getInputProperties().size(), is(3));

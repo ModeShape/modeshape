@@ -41,7 +41,6 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.repository.RepositoryI18n;
-import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
@@ -234,21 +233,19 @@ public class StreamSequencerAdapter implements Sequencer {
         assert sequencedProperty != null;
         assert context != null;
         assert problems != null;
-        // Note: getMimeType() will still operate lazily, and thus throw a SequencerException, since it is very intrusive and
-        // potentially slow-running.
         ValueFactories factories = context.getExecutionContext().getValueFactories();
-        // TODO: Is this safe?
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
                                                                                                               input.getPropertiesByName()
                                                                                                                    .values());
         props = Collections.unmodifiableSet(props);
-        String mimeType = getMimeType(sequencedProperty, path.getLastSegment().getName().getLocalName());
+        String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
     }
 
-    protected String getMimeType( Property sequencedProperty,
+    protected String getMimeType( SequencerContext context,
+                                  Property sequencedProperty,
                                   String name ) {
         SequencerException err = null;
         String mimeType = null;
@@ -256,7 +253,7 @@ public class StreamSequencerAdapter implements Sequencer {
         try {
             // Parallel the JCR lemma for converting objects into streams
             stream = new ByteArrayInputStream(sequencedProperty.toString().getBytes());
-            mimeType = MimeType.of(name, stream);
+            mimeType = context.getExecutionContext().getMimeTypeDetector().mimeTypeOf(name, stream);
             return mimeType;
         } catch (Exception error) {
             err = new SequencerException(error);

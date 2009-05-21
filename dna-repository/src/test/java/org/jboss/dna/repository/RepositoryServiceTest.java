@@ -282,7 +282,7 @@ public class RepositoryServiceTest {
         service.getAdministrator().start();
 
         // Get the source, which should be configured ...
-        RepositorySource repositorySourceA = service.getRepositorySourceManager().getSource("source A");
+        RepositorySource repositorySourceA = service.getRepositoryLibrary().getSource("source A");
         assertThat(repositorySourceA, is(instanceOf(FakeRepositorySource.class)));
         FakeRepositorySource sourceA = (FakeRepositorySource)repositorySourceA;
 

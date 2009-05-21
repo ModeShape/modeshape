@@ -301,7 +301,7 @@ public class JcrConfigurationTest {
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
-        RepositoryLibrary library = engine.getRepositoryService().getRepositorySourceManager();
+        RepositoryLibrary library = engine.getRepositoryService().getRepositoryLibrary();
         assertThat(library.getConnectionPool("config repo").getInUseCount(), is(0));
 
         RepositoryConnection connection = library.getConnectionPool("config repo").getConnection();
