@@ -71,6 +71,7 @@ import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.jcr.cache.ChangedNodeInfo;
 import org.jboss.dna.jcr.cache.ChildNode;
@@ -624,7 +625,13 @@ class SessionCache {
                 if (change.changes(workspaceName, path)) {
                     branchRequests.add(request);
                     // Record the UUID of the node being saved now ...
-                    UUID changedUuid = change.changedLocation().getUuid();
+                    UUID changedUuid = null;
+                    if (change instanceof CreateNodeRequest) {
+                        // We want the parent UUID ...
+                        changedUuid = ((CreateNodeRequest)change).under().getUuid();
+                    } else {
+                        changedUuid = change.changedLocation().getUuid();
+                    }
                     assert changedUuid != null;
                     branchUuids.add(changedUuid);
                 } else {
@@ -665,13 +672,13 @@ class SessionCache {
                     throw new ConstraintViolationException();
                 }
             }
-            
+
             for (UUID changedUuid : uuidsUnderBranch) {
                 if (!this.deletedNodes.containsKey(changedUuid)) {
                     checkAgainstTypeDefinitions(changedUuid, false);
                 }
             }
-            
+
             // Now execute the branch ...
             Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
@@ -1302,8 +1309,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1536,7 +1543,10 @@ class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
+                                                         .nodeNamed(name)
+                                                         .with(desiredUuid)
+                                                         .with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
@@ -2291,8 +2301,8 @@ class SessionCache {
                                                                                    DnaIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                                    values,
                                                                                    false);
-        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES,
-                                                  newSingleMultiPropertyNames.iterator().next());
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
+                                                                                                                    .next());
         PropertyId propId = new PropertyId(uuid, dnaProp.getName());
         JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
         return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);

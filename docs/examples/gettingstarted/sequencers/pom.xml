@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-repository</artifactId>
+      <artifactId>dna-jcr</artifactId>
       <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>

@@ -34,24 +34,26 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import javax.jcr.observation.Event;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetectors;
+import org.jboss.dna.graph.observe.NetChangeObserver.ChangeType;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.graph.sequencer.StreamSequencerContext;
-import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,8 +127,11 @@ public class StreamSequencerAdapterTest {
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
         Node inputNode = graph.getNodeAt("/a/b/c");
 
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = inputNode.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
@@ -181,8 +186,11 @@ public class StreamSequencerAdapterTest {
         // Set the property that will be sequenced ...
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -214,8 +222,11 @@ public class StreamSequencerAdapterTest {
         graph.set("sequencedProperty").on(nodeC.getLocation()).to((String)null);
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -247,8 +258,11 @@ public class StreamSequencerAdapterTest {
         // assertThat(nodeE.getProperty("jcr:primaryType").getString(), is("nt:unstructured"));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -285,8 +299,11 @@ public class StreamSequencerAdapterTest {
         assertThat(nodeC, is(notNullValue()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -327,8 +344,11 @@ public class StreamSequencerAdapterTest {
         assertThat(nodeC, is(notNullValue()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositorySourceName, repositoryWorkspaceName, "/a/b/c", Event.PROPERTY_CHANGED,
-                                               Collections.singleton("sequencedProperty"), null);
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositorySourceName, repositoryWorkspaceName, location,
+                                             EnumSet.of(ChangeType.PROPERTY_CHANGED), Collections.singleton(sequencedProperty),
+                                             null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();

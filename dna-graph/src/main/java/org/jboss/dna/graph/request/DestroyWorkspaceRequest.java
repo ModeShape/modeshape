@@ -136,6 +136,16 @@ public final class DestroyWorkspaceRequest extends ChangeRequest {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
     @Override

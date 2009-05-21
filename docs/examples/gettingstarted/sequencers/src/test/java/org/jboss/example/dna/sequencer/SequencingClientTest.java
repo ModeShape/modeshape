@@ -91,6 +91,7 @@ public class SequencingClientTest {
 
     }
 
+    @Ignore
     @Test
     public void shouldStartupAndShutdownRepositoryAndSequencingService() throws Exception {
         client.startRepository();
@@ -139,6 +140,7 @@ public class SequencingClientTest {
         assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
+    @Ignore
     @Test
     public void shouldUploadAndNotSequencePictFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.pictImageUrl, "/a/b/caution.pict", 0));

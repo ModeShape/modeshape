@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.Node;
-import org.jboss.dna.repository.observation.NodeChange;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -68,7 +68,7 @@ public class MockSequencerA implements Sequencer {
      */
     public void execute( Node input,
                          String sequencedPropertyName,
-                         NodeChange changes,
+                         NetChange changes,
                          Set<RepositoryNodePath> outputPaths,
                          SequencerContext context,
                          Problems problems ) {

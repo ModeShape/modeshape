@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
@@ -41,7 +42,6 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.repository.RepositoryI18n;
-import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -78,7 +78,7 @@ public class StreamSequencerAdapter implements Sequencer {
      */
     public void execute( Node input,
                          String sequencedPropertyName,
-                         NodeChange changes,
+                         NetChange changes,
                          Set<RepositoryNodePath> outputPaths,
                          SequencerContext context,
                          Problems problems ) throws SequencerException {

@@ -204,6 +204,16 @@ public final class CreateWorkspaceRequest extends ChangeRequest {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return actualWorkspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
      */
     @Override

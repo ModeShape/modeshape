@@ -29,6 +29,7 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.component.Component;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.io.Destination;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.observation.ObservationService;
@@ -53,10 +54,10 @@ public interface Sequencer extends Component<SequencerConfig> {
      * this sequencer, and closing any other acquired resources, even in the case of exceptions.
      * <p>
      * The {@link SequencingService} determines the sequencers that should be executed by monitoring the changes to one or more
-     * workspaces (it is a listener registered with the {@link ObservationService}). Changes in those workspaces
-     * are aggregated for each transaction, and organized into {@link NodeChanges changes for each node}. The SequencingService
-     * then determines for each {@link NodeChange set of changes to a node} the set of full paths to the properties that have
-     * changed and whether those paths {@link SequencerPathExpression#matcher(String) match} the sequencer's
+     * workspaces (it is a listener registered with the {@link ObservationService}). Changes in those workspaces are aggregated
+     * for each transaction, and organized into {@link NodeChanges changes for each node}. The SequencingService then determines
+     * for each {@link NodeChange set of changes to a node} the set of full paths to the properties that have changed and whether
+     * those paths {@link SequencerPathExpression#matcher(String) match} the sequencer's
      * {@link SequencerConfig#getPathExpressions() path expressions}. Each path expression produces the path to the output node,
      * and these output paths are accumulated and (with the original node that changed, the node change summary, and other
      * information) supplied to the sequencer via this method.
@@ -79,7 +80,7 @@ public interface Sequencer extends Component<SequencerConfig> {
      */
     void execute( Node input,
                   String sequencedPropertyName,
-                  NodeChange changes,
+                  NetChange changes,
                   Set<RepositoryNodePath> outputPaths,
                   SequencerContext context,
                   Problems problems ) throws SequencerException;

@@ -23,10 +23,13 @@
  */
 package org.jboss.dna.graph.request;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * Instruction that all nodes below a supplied node be deleted. This is similar to {@link DeleteBranchRequest}, except that the
@@ -39,6 +42,7 @@ public class DeleteChildrenRequest extends ChangeRequest {
     private final Location at;
     private final String workspaceName;
     private Location actualLocation;
+    private List<Location> actualChildrenDeleted = new LinkedList<Location>();
 
     /**
      * Create a request to delete all children of the supplied node. The supplied parent node will not be deleted.
@@ -105,6 +109,88 @@ public class DeleteChildrenRequest extends ChangeRequest {
     }
 
     /**
+     * Add to the list of children that has been read the supplied children with the given path and identification properties. The
+     * children are added in order.
+     * 
+     * @param children the locations of the children that were read
+     * @throws IllegalArgumentException if the parameter is null
+     * @throws IllegalStateException if the request is frozen
+     * @see #addDeletedChild(Location)
+     * @see #addDeletedChild(Path, Property)
+     * @see #addDeletedChild(Path, Property, Property...)
+     */
+    public void addDeletedChildren( Iterable<Location> children ) {
+        checkNotFrozen();
+        CheckArg.isNotNull(children, "children");
+        for (Location child : children) {
+            if (child != null) this.actualChildrenDeleted.add(child);
+        }
+    }
+
+    /**
+     * Add to the list of children that has been read the child with the given path and identification properties. The children
+     * should be added in order.
+     * 
+     * @param child the location of the child that was read
+     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalStateException if the request is frozen
+     * @see #addDeletedChild(Path, Property)
+     * @see #addDeletedChild(Path, Property, Property...)
+     */
+    public void addDeletedChild( Location child ) {
+        checkNotFrozen();
+        CheckArg.isNotNull(child, "child");
+        this.actualChildrenDeleted.add(child);
+    }
+
+    /**
+     * Add to the list of children that has been read the child with the given path and identification properties. The children
+     * should be added in order.
+     * 
+     * @param pathToChild the path of the child that was just read
+     * @param firstIdProperty the first identification property of the child that was just read
+     * @param remainingIdProperties the remaining identification properties of the child that was just read
+     * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
+     * @see #addDeletedChild(Location)
+     * @see #addDeletedChild(Path, Property)
+     */
+    public void addDeletedChild( Path pathToChild,
+                                 Property firstIdProperty,
+                                 Property... remainingIdProperties ) {
+        checkNotFrozen();
+        Location child = Location.create(pathToChild, firstIdProperty, remainingIdProperties);
+        this.actualChildrenDeleted.add(child);
+    }
+
+    /**
+     * Add to the list of children that has been read the child with the given path and identification property. The children
+     * should be added in order.
+     * 
+     * @param pathToChild the path of the child that was just read
+     * @param idProperty the identification property of the child that was just read
+     * @throws IllegalArgumentException if the path or identification properties are null
+     * @throws IllegalStateException if the request is frozen
+     * @see #addDeletedChild(Location)
+     * @see #addDeletedChild(Path, Property, Property...)
+     */
+    public void addDeletedChild( Path pathToChild,
+                                 Property idProperty ) {
+        checkNotFrozen();
+        Location child = Location.create(pathToChild, idProperty);
+        this.actualChildrenDeleted.add(child);
+    }
+
+    /**
+     * Get the list of the actual children that were deleted.
+     * 
+     * @return the actual children, or empty if there were no children (if frozen)
+     */
+    public List<Location> getActualChildrenDeleted() {
+        return actualChildrenDeleted;
+    }
+
+    /**
      * Get the actual location of the node that was deleted.
      * 
      * @return the actual location, or null if the actual location was not set
@@ -132,6 +218,16 @@ public class DeleteChildrenRequest extends ChangeRequest {
     @Override
     public Location changedLocation() {
         return at;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return workspaceName;
     }
 
     /**

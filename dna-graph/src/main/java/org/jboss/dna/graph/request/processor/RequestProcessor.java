@@ -436,6 +436,7 @@ public abstract class RequestProcessor {
             if (request.isCancelled()) return;
             DeleteBranchRequest deleteChild = new DeleteBranchRequest(child, request.inWorkspace());
             process(deleteChild);
+            request.addDeletedChild(child);
         }
 
         // Set the actual location of the parent node ...

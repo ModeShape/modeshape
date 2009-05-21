@@ -30,30 +30,22 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.observation.Event;
-import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.repository.RepositoryLibrary;
-import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.service.ServiceAdministrator;
-import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.SessionFactory;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
  */
-public class SequencingServiceTest extends AbstractJcrRepositoryTest {
+public class SequencingServiceTest {
 
     public static final int ALL_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED
                                               | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
@@ -62,9 +54,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
     private RepositoryLibrary sources;
-    private ObservationService observationService;
     private SequencingService sequencingService;
-    private JcrExecutionContext executionContext;
+    private ExecutionContext executionContext;
 
     @Before
     public void beforeEach() {
@@ -72,32 +63,17 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName(REPOSITORY_SOURCE_NAME);
         sources.addSource(source);
-        
-        SessionFactory sessionFactory = new SessionFactory() {
-            public Session createSession( String name ) throws RepositoryException {
-                assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
-                try {
-                    return getRepository().login(getTestCredentials());
-                } catch (IOException e) {
-                    throw new SystemFailureException(e);
-                }
-            }
-        };
-        this.executionContext = new JcrExecutionContext(sessionFactory, REPOSITORY_WORKSPACE_NAME);
+
+        this.executionContext = new ExecutionContext();
         this.sequencingService = new SequencingService();
         this.sequencingService.setExecutionContext(this.executionContext);
         this.sequencingService.setRepositoryLibrary(sources);
-        this.observationService = new ObservationService(this.executionContext.getSessionFactory());
-        this.observationService.addListener(this.sequencingService);
     }
 
     @After
     public void afterEach() throws Exception {
-        this.observationService.getAdministrator().shutdown();
-        this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
         this.sequencingService.getAdministrator().shutdown();
         this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
-        super.shutdownRepository();
     }
 
     @Test
@@ -210,108 +186,6 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldBeAbleToMonitorWorkspaceWhenPausedOrStarted() throws Exception {
-        startRepository();
-        Session session = getRepository().login(getTestCredentials());
-
-        // Try when paused ...
-        assertThat(sequencingService.getAdministrator().isPaused(), is(true));
-        assertThat(observationService.getAdministrator().pause().isPaused(), is(true));
-        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_SOURCE_NAME, REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
-        assertThat(listener, is(notNullValue()));
-        assertThat(listener.getAbsolutePath(), is("/"));
-        assertThat(listener.getEventTypes(), is(Event.NODE_ADDED));
-
-        // Cause an event ...
-        session.getRootNode().addNode("testnodeA", "nt:unstructured");
-        session.save();
-        Thread.sleep(100); // let the events be handled ...
-        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)1));
-
-        // Reset the statistics and remove the listener ...
-        sequencingService.getStatistics().reset();
-        observationService.getStatistics().reset();
-        assertThat(listener.isRegistered(), is(true));
-        listener.unregister();
-        assertThat(listener.isRegistered(), is(false));
-
-        // Start the sequencing sequencingService and try monitoring the workspace ...
-        assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
-        assertThat(observationService.getAdministrator().start().isStarted(), is(true));
-        ObservationService.WorkspaceListener listener2 = observationService.monitor(REPOSITORY_SOURCE_NAME, REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
-        assertThat(listener2.isRegistered(), is(true));
-        assertThat(listener2, is(notNullValue()));
-        assertThat(listener2.getAbsolutePath(), is("/"));
-        assertThat(listener2.getEventTypes(), is(Event.NODE_ADDED));
-
-        // Cause an event ...
-        session.getRootNode().addNode("testnodeB", "nt:unstructured");
-        session.save();
-        Thread.sleep(100); // let the events be handled ...
-
-        // Check the results: nothing ignored, and 1 node skipped (since no sequencers apply)
-        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
-        assertThat(sequencingService.getStatistics().getNumberOfNodesSkipped(), is((long)1));
-
-        sequencingService.getAdministrator().shutdown();
-        sequencingService.getStatistics().reset();
-        observationService.getAdministrator().shutdown();
-        observationService.getStatistics().reset();
-
-        // Cause another event ...
-        session.getRootNode().addNode("testnodeC", "nt:unstructured");
-        session.save();
-        Thread.sleep(100); // let the events be handled ...
-        // The listener should no longer be registered ...
-        assertThat(listener2.isRegistered(), is(false));
-
-        // Check the results: nothing ignored, and nothing skipped
-        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
-        assertThat(sequencingService.getStatistics().getNumberOfNodesSkipped(), is((long)0));
-    }
-
-    @Test
-    public void shouldUnregisterAllWorkspaceListenersWhenSystemIsShutdownAndNotWhenPaused() throws Exception {
-        startRepository();
-        Session session = getRepository().login(getTestCredentials());
-
-        // Start the sequencing sequencingService and try monitoring the workspace ...
-        assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
-        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_SOURCE_NAME, REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
-        assertThat(listener.isRegistered(), is(true));
-        assertThat(listener, is(notNullValue()));
-        assertThat(listener.getAbsolutePath(), is("/"));
-        assertThat(listener.getEventTypes(), is(Event.NODE_ADDED));
-
-        // Cause an event ...
-        session.getRootNode().addNode("testnodeB", "nt:unstructured");
-        session.save();
-        assertThat(listener.isRegistered(), is(true));
-
-        // Pause the sequencingService, can cause an event ...
-        sequencingService.getAdministrator().pause();
-        session.getRootNode().addNode("testnodeB", "nt:unstructured");
-        session.save();
-        assertThat(listener.isRegistered(), is(true));
-
-        // Shut down the services and await termination ...
-        sequencingService.getAdministrator().shutdown();
-        observationService.getAdministrator().shutdown();
-        sequencingService.getAdministrator().awaitTermination(2, TimeUnit.SECONDS);
-        observationService.getAdministrator().awaitTermination(2, TimeUnit.SECONDS);
-
-        // Cause another event ...
-        session.getRootNode().addNode("testnodeC", "nt:unstructured");
-        session.save();
-
-        // The listener should no longer be registered ...
-        assertThat(listener.isRegistered(), is(false));
-    }
-
-    // FIXME: This test needs to be unignored after the observation service is re-written to not use JCR 
-    
-    @Ignore
-    @Test
     public void shouldExecuteSequencersUponChangesToRepositoryThatMatchSequencerPathExpressions() throws Exception {
         // Add configurations for a sequencer ...
         String name = "MockSequencerA";
@@ -319,20 +193,15 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         String classname = MockSequencerA.class.getName();
         String[] classpath = null;
         String[] pathExpressions = {"/testnodeC/testnodeD/@description => ."};
-        SequencerConfig configA = new SequencerConfig(name, desc, Collections.<String, Object>emptyMap(), classname, classpath, pathExpressions);
+        SequencerConfig configA = new SequencerConfig(name, desc, Collections.<String, Object>emptyMap(), classname, classpath,
+                                                      pathExpressions);
         sequencingService.addSequencer(configA);
-
-        // Start the repository and get a session ...
-        startRepository();
-        Session session = getRepository().login(getTestCredentials());
 
         // Start the sequencing sequencingService and try monitoring the workspace ...
         assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
-        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_SOURCE_NAME, REPOSITORY_WORKSPACE_NAME, ALL_EVENT_TYPES);
-        assertThat(listener.isRegistered(), is(true));
-        assertThat(listener, is(notNullValue()));
-        assertThat(listener.getAbsolutePath(), is("/"));
-        assertThat(listener.getEventTypes(), is(ALL_EVENT_TYPES));
+
+        // Create a graph for the source ...
+        Graph graph = Graph.create(sources.getSource(REPOSITORY_SOURCE_NAME), executionContext);
 
         // The sequencer should not yet have run ...
         MockSequencerA sequencerA = (MockSequencerA)sequencingService.getSequencerLibrary().getInstances().get(0);
@@ -342,22 +211,21 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
 
         // Cause an event, but not one that the sequencer cares about ...
-        Node nodeC = session.getRootNode().addNode("testnodeC", "nt:unstructured");
-        assertThat(nodeC, is(notNullValue()));
-        session.save();
+        graph.batch().create("/testnodeC").with("jcr:primaryType", "nt:unstructured").and().execute();
+
+        // Verify that our sequencer was not called ...
         assertThat(sequencerA.getCounter(), is(0));
         assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
 
         // Cause another event, but again one that the sequencer does not care about ...
-        Node nodeD = nodeC.addNode("testnodeD", "nt:unstructured");
-        assertThat(nodeD, is(notNullValue()));
-        session.save();
+        graph.batch().create("/testnodeC/testnodeD").with("jcr:primaryType", "nt:unstructured").and().execute();
+
+        // Verify that our sequencer was not called ...
         assertThat(sequencerA.getCounter(), is(0));
         assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
 
         // Now set the property that the sequencer DOES care about ...
-        nodeD.setProperty("description", "This is the value");
-        session.save();
+        graph.batch().set("description").on("/testnodeC/testnodeD").to("This is the value").and().execute();
 
         // Wait for the event to be processed and the sequencer to be called ...
         sequencerA.awaitExecution(4, TimeUnit.SECONDS); // wait for the sequencer to be called

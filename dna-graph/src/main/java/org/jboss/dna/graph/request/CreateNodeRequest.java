@@ -324,7 +324,17 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
      */
     @Override
     public Location changedLocation() {
-        return under;
+        return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return workspaceName;
     }
 
     /**

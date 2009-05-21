@@ -287,6 +287,16 @@ public class MoveBranchRequest extends ChangeRequest {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.Request#cancel()
      */
     @Override

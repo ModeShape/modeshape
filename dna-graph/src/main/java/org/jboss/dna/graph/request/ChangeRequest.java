@@ -52,4 +52,11 @@ public abstract class ChangeRequest extends Request {
      * @return the location changed by this request
      */
     public abstract Location changedLocation();
+
+    /**
+     * Get the name of the workspace that was changed by this request.
+     * 
+     * @return the name of the workspace changed by this request
+     */
+    public abstract String changedWorkspace();
 }

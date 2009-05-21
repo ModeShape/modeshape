@@ -34,7 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.jcr.observation.Event;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.SimpleProblems;
@@ -48,24 +47,28 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.observe.ChangeObserver;
+import org.jboss.dna.graph.observe.NetChangeObserver;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.observation.NodeChangeListener;
-import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
 import org.jboss.dna.repository.service.AdministeredService;
 import org.jboss.dna.repository.service.ServiceAdministrator;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
- * A sequencing system is used to monitor changes in the content of DNA repositories and to sequence the
- * content to extract or to generate structured information.
+ * A sequencing system is used to monitor changes in the content of DNA repositories and to sequence the content to extract or to
+ * generate structured information.
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class SequencingService implements AdministeredService, NodeChangeListener {
+public class SequencingService implements AdministeredService {
 
     /**
      * Interface used to select the set of {@link Sequencer} instances that should be run.
@@ -84,7 +87,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         List<Sequencer> selectSequencers( List<Sequencer> sequencers,
                                           Node node,
-                                          NodeChange nodeChange );
+                                          NetChange nodeChange );
     }
 
     /**
@@ -97,37 +100,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
         public List<Sequencer> selectSequencers( List<Sequencer> sequencers,
                                                  Node node,
-                                                 NodeChange nodeChange ) {
+                                                 NetChange nodeChange ) {
             return sequencers;
-        }
-    }
-
-    /**
-     * Interface used to determine whether a {@link NodeChange} should be processed.
-     * 
-     * @author Randall Hauch
-     */
-    public static interface NodeFilter {
-
-        /**
-         * Determine whether the node represented by the supplied change should be submitted for sequencing.
-         * 
-         * @param nodeChange the node change event
-         * @return true if the node should be submitted for sequencing, or false if the change should be ignored
-         */
-        boolean accept( NodeChange nodeChange );
-    }
-
-    /**
-     * The default filter implementation, which accepts only new nodes or nodes that have new or changed properties.
-     * 
-     * @author Randall Hauch
-     */
-    protected static class DefaultNodeFilter implements NodeFilter {
-
-        public boolean accept( NodeChange nodeChange ) {
-            // Only care about new nodes or nodes that have new/changed properies ...
-            return nodeChange.includesEventTypes(Event.NODE_ADDED, Event.PROPERTY_ADDED, Event.PROPERTY_CHANGED);
         }
     }
 
@@ -137,12 +111,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * @see SequencingService#setSequencerSelector(org.jboss.dna.repository.sequencer.SequencingService.Selector)
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
-    /**
-     * The default {@link NodeFilter} that accepts new nodes or nodes that have new/changed properties.
-     * 
-     * @see SequencingService#setSequencerSelector(org.jboss.dna.repository.sequencer.SequencingService.Selector)
-     */
-    public static final NodeFilter DEFAULT_NODE_FILTER = new DefaultNodeFilter();
 
     /**
      * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
@@ -201,9 +169,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     private ExecutionContext executionContext;
     private SequencerLibrary sequencerLibrary = new SequencerLibrary();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
-    private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
     private ExecutorService executorService;
     private RepositoryLibrary repositoryLibrary;
+    private ChangeObserver repositoryObserver;
     private final Statistics statistics = new Statistics();
     private final Administrator administrator = new Administrator();
 
@@ -311,11 +279,11 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     public RepositoryLibrary getRepositoryLibrary() {
         return this.repositoryLibrary;
     }
-    
-    public void setRepositoryLibrary(RepositoryLibrary repositoryLibrary) {
+
+    public void setRepositoryLibrary( RepositoryLibrary repositoryLibrary ) {
         this.repositoryLibrary = repositoryLibrary;
     }
-    
+
     /**
      * Get the executor service used to run the sequencers.
      * 
@@ -373,8 +341,11 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         }
         assert this.executorService != null;
         assert this.sequencerSelector != null;
-        assert this.nodeFilter != null;
         assert this.sequencerLibrary != null;
+        assert this.repositoryLibrary != null;
+        this.repositoryObserver = new RepositoryObserver();
+        // Register the observer ...
+        this.repositoryLibrary.register(this.repositoryObserver);
     }
 
     protected void shutdownService() {
@@ -415,79 +386,41 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     /**
-     * Get the node filter used by this system.
-     * 
-     * @return the node filter
-     */
-    public NodeFilter getNodeFilter() {
-        return this.nodeFilter;
-    }
-
-    /**
-     * Set the filter that checks which nodes are to be sequenced, or null if the {@link #DEFAULT_NODE_FILTER default node filter}
-     * should be used.
-     * 
-     * @param nodeFilter the new node filter
-     */
-    public void setNodeFilter( NodeFilter nodeFilter ) {
-        this.nodeFilter = nodeFilter != null ? nodeFilter : DEFAULT_NODE_FILTER;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void onNodeChanges( NodeChanges changes ) {
-        NodeFilter filter = this.getNodeFilter();
-        for (final NodeChange changedNode : changes) {
-            // Only care about new nodes or nodes that have new/changed properies ...
-            if (filter.accept(changedNode)) {
-                try {
-                    this.executorService.execute(new Runnable() {
-
-                        public void run() {
-                            processChangedNode(changedNode);
-                        }
-                    });
-                } catch (RejectedExecutionException e) {
-                    // The executor service has been shut down, so do nothing with this set of changes
-                }
-            }
-        }
-    }
-
-    /**
      * Do the work of processing by sequencing the node. This method is called by the {@link #executorService executor service}
      * when it performs it's work on the enqueued {@link NodeChange NodeChange runnable objects}.
      * 
-     * @param changedNode the node to be processed.
+     * @param change the change describing the node to be processed.
      */
-    protected void processChangedNode( NodeChange changedNode ) {
+    protected void processChange( NetChange change ) {
         final ExecutionContext context = this.getExecutionContext();
         final Logger logger = context.getLogger(getClass());
         assert logger != null;
-        
+
         try {
-            final String repositorySourceName = changedNode.getRepositorySourceName();
-            final String repositoryWorkspaceName = changedNode.getRepositoryWorkspaceName();
+            final String repositorySourceName = change.getRepositorySourceName();
+            final String repositoryWorkspaceName = change.getRepositoryWorkspaceName();
 
             // Figure out which sequencers accept this path,
             // and track which output nodes should be passed to each sequencer...
-            final String nodePath = changedNode.getAbsolutePath();
+            final Path nodePath = change.getPath();
+            final String nodePathStr = context.getValueFactories().getStringFactory().create(nodePath);
             Map<SequencerCall, Set<RepositoryNodePath>> sequencerCalls = new HashMap<SequencerCall, Set<RepositoryNodePath>>();
             List<Sequencer> allSequencers = this.sequencerLibrary.getInstances();
             List<Sequencer> sequencers = new ArrayList<Sequencer>(allSequencers.size());
             for (Sequencer sequencer : allSequencers) {
                 final SequencerConfig config = sequencer.getConfiguration();
                 for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
-                    for (String propertyName : changedNode.getModifiedProperties()) {
-                        String path = nodePath + "/@" + propertyName;
+                    for (Property property : change.getModifiedProperties()) {
+                        Name propertyName = property.getName();
+                        String propertyNameStr = context.getValueFactories().getStringFactory().create(propertyName);
+                        String path = nodePathStr + "/@" + propertyNameStr;
                         SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
                         if (matcher.matches()) {
                             // String selectedPath = matcher.getSelectedPath();
                             RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(),
                                                                                      repositorySourceName,
                                                                                      repositoryWorkspaceName);
-                            SequencerCall call = new SequencerCall(sequencer, propertyName);
+                            SequencerCall call = new SequencerCall(sequencer, propertyNameStr);
                             // Record the output path ...
                             Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
                             if (outputPaths == null) {
@@ -508,16 +441,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             if (!sequencers.isEmpty()) {
 
                 // Find the changed node ...
-                String relPath = changedNode.getAbsolutePath().replaceAll("^/+", "");
-                node = graph.getNodeAt(relPath);
+                node = graph.getNodeAt(nodePath);
 
                 // Figure out which sequencers should run ...
-                sequencers = this.sequencerSelector.selectSequencers(sequencers, node, changedNode);
+                sequencers = this.sequencerSelector.selectSequencers(sequencers, node, change);
             }
             if (sequencers.isEmpty()) {
                 this.statistics.recordNodeSkipped();
                 if (logger.isDebugEnabled()) {
-                    logger.trace("Skipping '{0}': no sequencers matched this condition", changedNode);
+                    logger.trace("Skipping '{0}': no sequencers matched this condition", change);
                 }
             } else {
                 // Run each of those sequencers ...
@@ -536,16 +468,16 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     final SimpleProblems problems = new SimpleProblems();
                     SequencerContext sequencerContext = new SequencerContext(context, graph);
                     try {
-                        sequencer.execute(node, propertyName, changedNode, outputPaths, sequencerContext, problems);
+                        sequencer.execute(node, propertyName, change, outputPaths, sequencerContext, problems);
                         sequencerContext.getDestination().submit();
                     } catch (SequencerException e) {
-                        logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
+                        logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
                     }
                 }
                 this.statistics.recordNodeSequenced();
             }
         } catch (Throwable e) {
-            logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, changedNode);
+            logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, change);
         }
     }
 
@@ -653,6 +585,33 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 return true;
             }
             return false;
+        }
+    }
+
+    protected class RepositoryObserver extends NetChangeObserver {
+        protected RepositoryObserver() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChange)
+         */
+        @Override
+        protected void notify( final NetChange change ) {
+            // Only care about new nodes or nodes that have new/changed properies ...
+            if (change.includes(ChangeType.NODE_ADDED, ChangeType.PROPERTY_ADDED, ChangeType.PROPERTY_CHANGED)) {
+                try {
+                    getExecutorService().execute(new Runnable() {
+
+                        public void run() {
+                            processChange(change);
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    // The executor service has been shut down, so do nothing with this set of changes
+                }
+            }
         }
     }
 }

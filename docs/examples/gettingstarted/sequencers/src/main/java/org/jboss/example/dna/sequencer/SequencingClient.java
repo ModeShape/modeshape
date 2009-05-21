@@ -44,11 +44,9 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.observation.Event;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.JcrExecutionContext;
@@ -83,7 +81,6 @@ public class SequencingClient {
     private Session keepAliveSession;
     private Repository repository;
     private SequencingService sequencingService;
-    private ObservationService observationService;
     private UserInterface userInterface;
     private JcrExecutionContext executionContext;
 
@@ -225,7 +222,7 @@ public class SequencingClient {
             // Create the sequencing service, passing in the execution context and the repository library ...
             this.sequencingService = new SequencingService();
             this.sequencingService.setExecutionContext(executionContext);
-            //this.sequencingService.setRepositoryLibrary(repositoryLibrary);
+            // this.sequencingService.setRepositoryLibrary(repositoryLibrary);
 
             // Configure the sequencers. In this example, we only two sequencers that processes image and mp3 files.
             // So create a configurations. Note that the sequencing service expects the class to be on the thread's current
@@ -264,14 +261,6 @@ public class SequencingClient {
             String[] javaPathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /java/$1"};
             SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname, classpath, javaPathExpressions);
             this.sequencingService.addSequencer(javaSequencerConfig);
-
-            // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
-            // then register the sequencing service as a listener to this observation service...
-            this.observationService = new ObservationService(this.executionContext.getSessionFactory());
-            this.observationService.getAdministrator().start();
-            this.observationService.addListener(this.sequencingService);
-            this.observationService.monitor(this.repositoryName, repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED
-                                                                     | Event.PROPERTY_CHANGED);
         }
         // Start up the sequencing service ...
         this.sequencingService.getAdministrator().start();
@@ -288,12 +277,6 @@ public class SequencingClient {
         // Shut down the service and wait until it's all shut down ...
         this.sequencingService.getAdministrator().shutdown();
         this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
-
-        if (this.observationService != null) {
-            // Shut down the observation service ...
-            this.observationService.getAdministrator().shutdown();
-            this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
-        }
     }
 
     /**
@@ -318,10 +301,10 @@ public class SequencingClient {
         String mimeType = getMimeType(url);
 
         if (mimeType == null) {
-        	System.err.println("Could not determine mime type for file.  Cancelling upload.");
-        	return;
+            System.err.println("Could not determine mime type for file.  Cancelling upload.");
+            return;
         }
-        
+
         // Now use the JCR API to upload the file ...
         Session session = createSession();
         JcrTools tools = this.executionContext.getTools();

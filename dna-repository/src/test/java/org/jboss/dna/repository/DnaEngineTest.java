@@ -31,13 +31,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.observation.Event;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.sequencer.MockSequencerA;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.junit.Before;
@@ -158,11 +156,6 @@ public class DnaEngineTest {
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
         SequencingService sequencer = engine.getSequencingService();
-        assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
-
-        NodeChanges changes = NodeChanges.create("config repo", "", Arrays.asList(new Event[] {}));
-        sequencer.onNodeChanges(changes);
-
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
 
         Event e1 = mock(Event.class);

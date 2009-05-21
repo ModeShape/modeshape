@@ -212,6 +212,16 @@ public class UpdatePropertiesRequest extends ChangeRequest {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedWorkspace()
+     */
+    @Override
+    public String changedWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
