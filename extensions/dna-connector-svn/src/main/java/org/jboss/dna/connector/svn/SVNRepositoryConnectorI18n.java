@@ -46,6 +46,17 @@ public final class SVNRepositoryConnectorI18n {
     public static I18n sourceDoesNotSupportCloningWorkspaces;
     public static I18n sourceDoesNotSupportDeletingWorkspaces;
     public static I18n connectingFailureOrUserAuthenticationProblem;
+    public static I18n pathForPredefinedWorkspaceDoesNotExist;
+    public static I18n pathForPredefinedWorkspaceIsNotDirectory;
+    public static I18n pathForPredefinedWorkspaceCannotBeRead;
+    public static I18n worspaceDoesNotExist;
+    public static I18n workspaceDoesNotExist;
+    public static I18n pathForDefaultWorkspaceDoesNotExist;
+    public static I18n pathForDefaultWorkspaceIsNotDirectory;
+    public static I18n pathForDefaultWorkspaceCannotBeRead;
+    public static I18n sameNameSiblingsAreNotAllowed;
+    public static I18n onlyTheDefaultNamespaceIsAllowed;
+    public static I18n unableToCreateWorkspaces;
 
     static {
         try {
