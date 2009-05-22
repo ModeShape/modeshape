@@ -44,6 +44,7 @@ import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +59,7 @@ public class SVNRepositorySourceTest {
     private RepositoryConnection connection;
     private String validName;
     private String validUuidPropertyName;
-    private String url;
+    private String repositoryRootURL;
     private String username;
     private String password;
     private UUID validRootNodeUuid;
@@ -66,17 +67,20 @@ public class SVNRepositorySourceTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        validName = "svn source";
-        validUuidPropertyName = "dna:uuid";
-        url = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
-        validRootNodeUuid = UUID.randomUUID();
-        source = new SVNRepositorySource();
+        repositoryRootURL = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos",
+                                                                  "target/copy_of dummy_svn_repos");
+        this.source = new SVNRepositorySource();
+        // Set the mandatory properties ...
+        this.source.setName("Test Repository");
+        this.source.setUsername("sp");
+        this.source.setPassword("");
+        this.source.setRepositoryRootURL(repositoryRootURL);
     }
 
     @After
     public void afterEach() throws Exception {
-        if (connection != null) {
-            connection.close();
+        if (this.connection != null) {
+            this.connection.close();
         }
     }
 
@@ -92,11 +96,12 @@ public class SVNRepositorySourceTest {
 
     @Test
     public void shouldSupportUpdates() {
-        assertThat(source.getCapabilities().supportsUpdates(), is(true));
+        assertThat(source.getCapabilities().supportsUpdates(), is(false));
     }
 
     @Test
     public void shouldHaveNullSourceNameUponConstruction() {
+        source = new SVNRepositorySource();
         assertThat(source.getName(), is(nullValue()));
     }
 
@@ -115,28 +120,20 @@ public class SVNRepositorySourceTest {
         assertThat(source.getName(), is(isNull()));
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullSVNUrl() {
-        source.setSVNURL(null);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowEmptySVNUrl() {
-        source.setSVNURL("");
-    }
-
-    @Test
-    public void shouldAllowSettingEmptyCredentialsForAnnonymousAccess() {
-        source.setSVNUsername("");
-        assertThat(source.getSVNUsername(), is(notNullValue()));
-        source.setSVNPassword("");
-        assertThat(source.getSVNPassword(), is(notNullValue()));
-
-    }
 
     @Test
     public void shouldHaveDefaultRetryLimit() {
         assertThat(source.getRetryLimit(), is(SVNRepositorySource.DEFAULT_RETRY_LIMIT));
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullSVNUrl() {
+        source.setRepositoryRootURL(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowEmptySVNUrl() {
+        source.setRepositoryRootURL("");
     }
 
     @Test
@@ -156,27 +153,45 @@ public class SVNRepositorySourceTest {
             assertThat(source.getRetryLimit(), is(i));
         }
     }
+    
+    @Test( expected = RepositorySourceException.class )
+    public void shouldFailToCreateConnectionIfSourceHasNoName() {
+        source.setName(null);
+        source.getConnection();
+    }
+    
+    @Test( expected = RepositorySourceException.class )
+    public void shouldFailToCreateConnectionIfSourceHasNoUsername() {
+        source.setUsername(null);
+        source.getConnection();
+    }
+    
+    @Test( expected = RepositorySourceException.class )
+    public void shouldFailToCreateConnectionIfSourceHasNoPassword() {
+        source.setPassword(null);
+        source.getConnection();
+    }
+    
+    @Test
+    public void shouldCreateConnection() throws Exception {
+        connection = source.getConnection();
+        assertThat(connection, is(notNullValue()));
+    }
+    
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference(validName,
-                                      validRootNodeUuid,
-                                      url,
-                                      username,
-                                      password,
-                                      validUuidPropertyName,
-                                      cachePolicy,
-                                      100);
+        convertToAndFromJndiReference(validName, validRootNodeUuid, repositoryRootURL, username, password, validUuidPropertyName, 100);
     }
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReferenceWithNullProperties() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference("some source", null, "url1", null, null, null, null, 100);
-        convertToAndFromJndiReference(null, null, "url2", null, null, null, null, 100);
+        convertToAndFromJndiReference("some source", null, "url1", null, null, null, 100);
+        convertToAndFromJndiReference(null, null, "url2", null, null, null, 100);
     }
 
     private void convertToAndFromJndiReference( String sourceName,
@@ -185,14 +200,12 @@ public class SVNRepositorySourceTest {
                                                 String username,
                                                 String password,
                                                 String uuidPropertyName,
-                                                BasicCachePolicy cachePolicy,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
-        source.setSVNURL(url);
-        source.setSVNUsername(username);
-        source.setSVNPassword(password);
-        source.setDefaultCachePolicy(cachePolicy);
+        source.setRepositoryRootURL(url);
+        source.setUsername(username);
+        source.setPassword(password);
 
         Reference ref = source.getReference();
 
@@ -207,11 +220,16 @@ public class SVNRepositorySourceTest {
         }
 
         assertThat((String)refAttributes.remove(SVNRepositorySource.SOURCE_NAME), is(source.getName()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_URL), is(source.getSVNURL()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_USERNAME), is(source.getSVNUsername()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_PASSWORD), is(source.getSVNPassword()));
+        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_REPOSITORY_ROOT_URL), is(source.getRepositoryRootURL()));
+        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_USERNAME), is(source.getUsername()));
+        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_PASSWORD), is(source.getPassword()));
         assertThat((String)refAttributes.remove(SVNRepositorySource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
-        refAttributes.remove(SVNRepositorySource.DEFAULT_CACHE_POLICY);
+        assertThat((String)refAttributes.remove(SVNRepositorySource.ALLOW_CREATING_WORKSPACES),
+                   is(Boolean.toString(source.isCreatingWorkspacesAllowed())));
+        assertThat((String)refAttributes.remove(SVNRepositorySource.CACHE_TIME_TO_LIVE_IN_MILLISECONDS), is(Integer.toString(source.getCacheTimeToLiveInMilliseconds())));
+        assertThat((String)refAttributes.remove(SVNRepositorySource.DEFAULT_WORKSPACE),
+                   is(source.getDirectoryForDefaultWorkspace()));
+        refAttributes.remove(SVNRepositorySource.PREDEFINED_WORKSPACE_NAMES);
         assertThat(refAttributes.isEmpty(), is(true));
 
         // Recreate the object, use a newly constructed source ...
@@ -223,31 +241,19 @@ public class SVNRepositorySourceTest {
         assertThat(recoveredSource, is(notNullValue()));
 
         assertThat(recoveredSource.getName(), is(source.getName()));
-        assertThat(recoveredSource.getSVNURL(), is(source.getSVNURL()));
-        assertThat(recoveredSource.getSVNUsername(), is(source.getSVNUsername()));
-        assertThat(recoveredSource.getSVNPassword(), is(source.getSVNPassword()));
-        assertThat(recoveredSource.getDefaultCachePolicy(), is(source.getDefaultCachePolicy()));
+        assertThat(recoveredSource.getRepositoryRootURL(), is(source.getRepositoryRootURL()));
+        assertThat(recoveredSource.getUsername(), is(source.getUsername()));
+        assertThat(recoveredSource.getPassword(), is(source.getPassword()));
 
         assertThat(recoveredSource.equals(source), is(true));
         assertThat(source.equals(recoveredSource), is(true));
     }
 
-    // Only with local file protocol
-    @Test
-    public void shouldCreateFSRepositoryIfProtocolIsOfTypeFile() throws Exception {
-        this.source.setName(validName);
-        this.source.setSVNURL(url);
-        this.connection = source.getConnection();
-        assertThat(this.connection, is(notNullValue()));
-    }
-    
     @Test
     public void shouldAllowMultipleConnectionsToBeOpenAtTheSameTime() throws Exception {
         List<RepositoryConnection> connections = new ArrayList<RepositoryConnection>();
         try {
             for (int i = 0; i != 10; ++i) {
-                this.source.setName(validName);
-                this.source.setSVNURL(url);
                 RepositoryConnection conn = source.getConnection();
                 assertThat(conn, is(notNullValue()));
                 connections.add(conn);
