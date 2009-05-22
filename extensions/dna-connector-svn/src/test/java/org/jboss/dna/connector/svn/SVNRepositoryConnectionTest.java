@@ -26,83 +26,50 @@ package org.jboss.dna.connector.svn;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
-import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.text.UrlEncoder;
-import org.jboss.dna.graph.DnaLexicon;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.JcrLexicon;
-import org.jboss.dna.graph.JcrNtLexicon;
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.DateTimeFactory;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.property.PathNotFoundException;
-import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.PropertyFactory;
-import org.jboss.dna.graph.property.ValueFactory;
-import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
-import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
  * @author Serge Pagop
  */
-@SuppressWarnings( "unused" )
 public class SVNRepositoryConnectionTest {
     private SVNRepositoryConnection connection;
-    private ExecutionContext context;
-    private PathFactory pathFactory;
-    private NameFactory nameFactory;
-    private PropertyFactory propertyFactory;
-    private SVNRepository repository;
-    private String uuidPropertyName;
+    private SVNRepository selectedRepository;
     private String sourceName;
-    private Graph graph;
-    private String svnUrl;
+    private String url;
+    String username;
+    String password;
+    private Set<String> availableWorkspaceNames;
 
     @Mock
     private CachePolicy policy;
 
-    @Mock
-    private ReadAllChildrenRequest request;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new ExecutionContext();
-        context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
-        pathFactory = context.getValueFactories().getPathFactory();
-        propertyFactory = context.getPropertyFactory();
-        nameFactory = context.getValueFactories().getNameFactory();
-        svnUrl = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
-        String username = "sp";
-        String password = "";
+        url = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+        username = "sp";
+        password = "";
         // Set up the appropriate factory for a particular protocol
-        repository = SVNConnectorTestUtil.createRepository(svnUrl, username, password);
+        selectedRepository = SVNConnectorTestUtil.createRepository(url, username, password);
         sourceName = "the source name";
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.TRUE, repository);
-        // And create the graph ...
-        graph = Graph.create(connection, context);
+        availableWorkspaceNames = new HashSet<String>();
+        availableWorkspaceNames.add(url + "trunk");
+        availableWorkspaceNames.add(url + "tags");
+        connection = new SVNRepositoryConnection(sourceName, selectedRepository, availableWorkspaceNames,
+                                                 Boolean.FALSE, policy, Boolean.TRUE, new RepositoryAccessData(url, username,password));
+
     }
 
     @After
@@ -117,13 +84,15 @@ public class SVNRepositoryConnectionTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToInstantiateIfSourceNameIsNull() {
         sourceName = null;
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
+        connection = new SVNRepositoryConnection(sourceName, selectedRepository, availableWorkspaceNames,
+                                                 Boolean.FALSE, policy, Boolean.FALSE, new RepositoryAccessData(url, username,password));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToInstantiateIfRepositoryIsNull() {
-        repository = null;
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
+        selectedRepository = null;
+        connection = new SVNRepositoryConnection(sourceName, selectedRepository, availableWorkspaceNames,
+                                                 Boolean.FALSE, policy, Boolean.FALSE, new RepositoryAccessData(url, username,password));
     }
 
     @Test
@@ -144,201 +113,9 @@ public class SVNRepositoryConnectionTest {
     @Test
     public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
         CachePolicy policy = mock(CachePolicy.class);
-        repository = SVNConnectorTestUtil.createRepository(svnUrl, "sp", "");
-        connection = new SVNRepositoryConnection("the source name", policy, false, repository);
+        selectedRepository = SVNConnectorTestUtil.createRepository(url, "sp", "");
+        connection = new SVNRepositoryConnection("the source name", selectedRepository, availableWorkspaceNames,
+                                                 Boolean.FALSE, policy, Boolean.FALSE, new RepositoryAccessData(url, username,password));
         assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
     }
-
-    @Test( expected = PathNotFoundException.class )
-    public void shouldFailToGetChildrenFromAWrongRequestedPath() {
-        List<Location> l = graph.getChildren().of(pathFactory.create("wrongRequestedPath"));
-    }
-
-    @Test
-    public void shouldReturnTheContentNodePathOfTheFile() {
-        List<Location> locations00 = graph.getChildren().of(pathFactory.create("/nodeA/itemA1.txt"));
-        assertThat(locations00.isEmpty(), is(false));
-        assertThat(containsPaths(locations00).contains("/nodeA/itemA1.txt/jcr:content"), is(true));
-
-    }
-
-    @Test
-    public void shouldListChildrenLocationPathsOfASpecificPath() {
-
-        // read children from the root node.
-        List<Location> l = graph.getChildren().of(pathFactory.create("/"));
-        assertThat(containsPaths(l).contains("/nodeA"), is(true));
-        assertThat(containsPaths(l).contains("/nodeB"), is(true));
-
-        List<Location> locations02 = graph.getChildren().of(pathFactory.create("/nodeA"));
-        assertThat(locations02.size() > 0, is(true));
-        assertThat(containsPaths(locations02).contains("/nodeA/itemA1.txt/jcr:content"), is(true));
-        assertThat(containsPaths(locations02).contains("/nodeA/itemA2.txt/jcr:content"), is(true));
-
-        List<Location> locations03 = graph.getChildren().of(pathFactory.create("/nodeB"));
-        assertThat(locations03.size() > 0, is(true));
-        assertThat(containsPaths(locations03).contains("/nodeB/JBossORG-EULA.txt/jcr:content"), is(true));
-        assertThat(containsPaths(locations03).contains("/nodeB/nodeB1"), is(true));
-    }
-
-    @Test
-    public void shouldNotHaveProperties() {
-        // Root location does not need properties.
-        Location root = Location.create(pathFactory.create("/"));
-        Collection<Property> nilProperties = graph.getProperties().on(root);
-        assertThat(nilProperties, is(notNullValue()));
-        assertThat(nilProperties.isEmpty(), is(true));
-    }
-
-    @Test
-    public void shouldJustCatchThePropertiesOnLocation() {
-        // directory nodeA has "jcr:primaryType" with value "nt:folder" and also "jcr:created" with value folder created date
-        Location nodeA = Location.create(pathFactory.create("/nodeA"));
-        Collection<Property> nodeAProperties = graph.getProperties().on(nodeA);
-        assertThat(nodeAProperties, is(notNullValue()));
-        assertThat(nodeAProperties.isEmpty(), is(false));
-        assertThat(nodeAProperties.size(), is(2));
-
-        // file itemA.txt has "jcr:primaryType" property whose value is "nt:file" and also "jcr:created" with value folder created
-        // date
-        Location itemA1 = Location.create(pathFactory.create("/nodeA/itemA1.txt"));
-        Collection<Property> itemA1Properties = graph.getProperties().on(itemA1);
-        assertThat(itemA1Properties, is(notNullValue()));
-        assertThat(itemA1Properties.isEmpty(), is(false));
-        assertThat(itemA1Properties.size(), is(2));
-
-        // content itemA1.txt/jcr:content
-        // //"jcr:primaryType" property value of "nt:resource",
-        // "jcr:data" property whose value are the contents of the file
-        // and a few other properties, like "jcr:encoding", "jcr:mimeType" and "jcr:lastModified" and
-        // also "jcr:created" property
-        Location content = Location.create(pathFactory.create("/nodeA/itemA2.txt/jcr:content"));
-        Collection<Property> itemA2ContentProperties = graph.getProperties().on(content);
-        assertThat(itemA2ContentProperties, is(notNullValue()));
-        assertThat(itemA2ContentProperties.isEmpty(), is(false));
-        // then for any causes that I do not know now mimeType of this content is null.
-        assertThat(itemA2ContentProperties.size(), is(3));
-    }
-
-    @Test
-    public void shouldAlwaysReadRootNodeByPath() {
-        Node root = graph.getNodeAt("/");
-        assertThat(root, is(notNullValue()));
-        assertThat(root.getLocation().getPath(), is(path("/")));
-    }
-
-    @Test
-    public void shouldAddAndDeleteChildUnderRootNode() throws Exception {
-        graph.batch()
-             .create("/nodeC")
-             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
-             .and(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(new Date())))
-             .execute();
-        // Now look up the root node ...
-        Node root = graph.getNodeAt("/");
-        assertThat(root, is(notNullValue()));
-        assertThat(root.getChildren(), hasChild(child("nodeC")));
-        SVNNodeKind nodeCKind = repository.checkPath("nodeC", -1);
-        assertThat(nodeCKind, is(SVNNodeKind.DIR));
-        graph.batch()
-             .create("/nodeC/nodeC_1")
-             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
-             .and(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(new Date())))
-             .execute();
-        // Now look up the root node ...
-        Node nodeC = graph.getNodeAt("/nodeC");
-        assertThat(nodeC, is(notNullValue()));
-        assertThat(nodeC.getChildren(), hasChild(child("nodeC_1")));
-        SVNNodeKind nodeC1Kind = repository.checkPath("nodeC/nodeC_1", -1);
-        assertThat(nodeC1Kind, is(SVNNodeKind.DIR));
-
-        byte[] content1 = "My content".getBytes();
-        Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, binaryFactory().create(content1));
-        graph.batch()
-             .create("/nodeC/nodeC_1/file1.txt")
-             .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE))
-             .and(propertyFactory().create(JcrLexicon.CREATED, new Date()))
-             .and(jcrDataProperty)
-             .execute();
-
-        // Look up the file
-        Node nodeC1 = graph.getNodeAt("/nodeC/nodeC_1");
-        assertThat(nodeC1, is(notNullValue()));
-        assertThat(nodeC1.getChildren().size(), is(1));
-        SVNNodeKind fileKind = repository.checkPath("/nodeC/nodeC_1/file1.txt", -1);
-        assertThat(fileKind, is(SVNNodeKind.FILE));
-
-    }
-
-    protected Collection<String> containsPaths( Collection<Location> locations ) {
-        List<String> paths = new ArrayList<String>();
-        for (Location location : locations) {
-            paths.add(location.getPath().getString(context.getNamespaceRegistry(), new UrlEncoder()));
-        }
-        return paths;
-    }
-
-    protected Path path( String path ) {
-        return context.getValueFactories().getPathFactory().create(path);
-    }
-
-    /**
-     * Factory for sample name.
-     * 
-     * @return the name factory
-     */
-    protected NameFactory nameFactory() {
-        return context.getValueFactories().getNameFactory();
-    }
-
-    /**
-     * Factory for path creation.
-     * 
-     * @return a path factory.
-     */
-    protected PathFactory pathFactory() {
-        return context.getValueFactories().getPathFactory();
-    }
-
-    /**
-     * Factory for property creation.
-     * 
-     * @return the property factory.
-     */
-    protected PropertyFactory propertyFactory() {
-        return context.getPropertyFactory();
-    }
-
-    /**
-     * Factory for date creation.
-     * 
-     * @return the date factory.
-     */
-    protected DateTimeFactory dateFactory() {
-        return context.getValueFactories().getDateFactory();
-    }
-
-    /**
-     * Factory for binary creation.
-     * 
-     * @return the binary factory..
-     */
-    protected ValueFactory<Binary> binaryFactory() {
-        return context.getValueFactories().getBinaryFactory();
-    }
-
-    protected Name name( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
-    }
-
-    protected Property property( String name,
-                                 Object... values ) {
-        Name propName = name(name);
-        return context.getPropertyFactory().create(propName, values);
-    }
-
-    protected Path.Segment child( String name ) {
-        return context.getValueFactories().getPathFactory().createSegment(name);
-    }
-
 }
