@@ -28,7 +28,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
@@ -41,6 +40,7 @@ import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.BinaryFactory;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -58,6 +58,7 @@ import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -81,133 +82,49 @@ import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
  * The {@link RequestProcessor} implementation for the file subversion repository connector. This is the class that does the bulk
  * of the work in the subversion repository connector, since it processes all requests.
  * 
- * @author Serge Emmanuel Pagop
+ * @author Serge Pagop
  */
 public class SVNRepositoryRequestProcessor extends RequestProcessor implements ScmActionFactory {
 
     protected static final String BACK_SLASH = "/";
 
+    private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+
     private final String defaultNamespaceUri;
     private final boolean updatesAllowed;
-    private SVNRepository repository;
+    private SVNRepository defaultWorkspace;
     protected final Logger logger;
+    private final Set<String> availableWorkspaceNames;
+    private final boolean creatingWorkspacesAllowed;
+    private final RepositoryAccessData accessData;
 
     /**
      * @param sourceName
      * @param context
-     * @param repository
+     * @param defaultWorkspace
+     * @param availableWorkspaceNames
+     * @param creatingWorkspacesAllowed
      * @param updatesAllowed true if this connector supports updating the subversion repository, or false if the connector is read
      *        only
+     * @param accessData
      */
     protected SVNRepositoryRequestProcessor( String sourceName,
+                                             SVNRepository defaultWorkspace,
+                                             Set<String> availableWorkspaceNames,
+                                             boolean creatingWorkspacesAllowed,
                                              ExecutionContext context,
-                                             SVNRepository repository,
-                                             boolean updatesAllowed ) {
-        super(sourceName, context, null);
+                                             boolean updatesAllowed,
+                                             RepositoryAccessData accessData ) {
+        super(sourceName, context);
+        assert defaultWorkspace != null;
+        assert availableWorkspaceNames != null;
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
         this.updatesAllowed = updatesAllowed;
-        this.repository = repository;
+        this.defaultWorkspace = defaultWorkspace;
         this.logger = getExecutionContext().getLogger(getClass());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
-     */
-    @Override
-    public void process( CopyBranchRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
-     */
-    @Override
-    public void process( CreateNodeRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
-        // get the parent location of the new node
-        Location myLocation = request.under();
-        Path parent = getPathFor(myLocation, request);
-        try {
-            String root = parent.getString(getExecutionContext().getNamespaceRegistry());
-            SVNNodeKind rootKind = repository.checkPath(root, -1);
-            if (rootKind == SVNNodeKind.UNKNOWN) {
-                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                             "path with name '{0}' is unknown in the repository",
-                                                             root);
-                SVNException ex = new SVNException(err);
-                request.setError(ex);
-            } else if (rootKind == SVNNodeKind.NONE) {
-                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                             "path with name '{0}' is missing in the repository",
-                                                             root);
-                SVNException ex = new SVNException(err);
-                request.setError(ex);
-            } else if (rootKind == SVNNodeKind.FILE) {
-                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                             "pretended root item with name '{0}' is a file",
-                                                             root);
-                SVNException ex = new SVNException(err);
-                request.setError(ex);
-            } else if (rootKind == SVNNodeKind.DIR) {
-                Collection<Property> childNodeProperties = request.properties();
-                Object[] objs = values(childNodeProperties);
-                for (Object object : objs) {
-                    if (object instanceof Name && ((Name)object).compareTo(JcrNtLexicon.FOLDER) == 0) {
-                        // process folder creation
-                        // if the node is a directory
-                        String folderName = request.named().getString(getExecutionContext().getNamespaceRegistry());
-                        if (root.length() == 1 && root.charAt(0) == '/') {
-                            // test if so a directory does not exist.
-                            mkdir("", folderName, request.toString());
-                        } else {
-                            if (root.length() > 1 && root.charAt(0) == '/') {
-                                // test if so a directory does not exist.
-                                mkdir(root.substring(1), folderName, request.toString());
-                            }
-                        }
-                    } else if (object instanceof Name && ((Name)object).compareTo(JcrNtLexicon.FILE) == 0) {
-                        String fileName = request.named().getString(getExecutionContext().getNamespaceRegistry());
-                        byte[] content = getContent(objs);
-                        // TODO: what is with the created on
-                        // Date createdOn = getCreatedOn(objs);
-                        // commit in to the repository
-                        newFile(root, fileName, content, request.toString());
-                    }
-                }
-            }
-
-        } catch (SVNException e) {
-            request.setError(e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
-     */
-    @Override
-    public void process( DeleteBranchRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
-     */
-    @Override
-    public void process( MoveBranchRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
+        this.availableWorkspaceNames = availableWorkspaceNames;
+        this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
+        this.accessData = accessData;
     }
 
     /**
@@ -215,55 +132,94 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
-    @SuppressWarnings( "unchecked" )
     @Override
     public void process( ReadAllChildrenRequest request ) {
         logger.trace(request.toString());
+
+        // Get the SVNRepository object that represents the workspace ...
+        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
+        if (workspaceRoot == null) {
+            request.setError(new InvalidWorkspaceException(
+                                                           SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(request.inWorkspace())));
+            return;
+        }
         Location myLocation = request.of();
-        Path nodePath = getPathFor(myLocation, request);
-        try {
-            SVNNodeKind kind = validateNodeKind(nodePath);
-            String requestedNodePath = nodePath.getString(getExecutionContext().getNamespaceRegistry());
-            if (kind == SVNNodeKind.FILE) { // the requested node is a file.
-                SVNDirEntry entry = getEntryInfo(requestedNodePath);
-                if (!nodePath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+        Path requestedPath = getPathFor(myLocation, request);
+        // svn connector does not support same name sibling
+        checkThePath(requestedPath, request);
+        // requested path is the root
+        if (requestedPath.isRoot()) {
+            // workspace root must be a directory
+            final Collection<SVNDirEntry> entries = SVNRepositoryUtil.getDir(workspaceRoot, "");
+            for (SVNDirEntry entry : entries) {
+                // Decide how to represent the children ...
+                if (entry.getKind() == SVNNodeKind.DIR) {
+                    // Create a Location for each file and directory contained by the parent directory ...
                     String localName = entry.getName();
                     Name childName = nameFactory().create(defaultNamespaceUri, localName);
-                    String url = entry.getURL().toString();
-                    Property idProperty = propertyFactory().create(childName, url);
-                    request.addChild(Location.create(pathFactory().create(nodePath, JcrLexicon.CONTENT), idProperty));
-                }
-            } else if (kind == SVNNodeKind.DIR) { // the requested node is a directory.
-                final Collection<SVNDirEntry> dirEntries = getRepository().getDir(requestedNodePath,
-                                                                                  -1,
-                                                                                  null,
-                                                                                  (Collection<SVNDirEntry>)null);
-                for (SVNDirEntry dirEntry : dirEntries) {
-                    if (dirEntry.getKind() == SVNNodeKind.FILE) {
-                        String localName = dirEntry.getName();
-                        Path newPath = pathFactory().create(requestedNodePath + BACK_SLASH + localName);
-                        if (!newPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                            Name childName = nameFactory().create(defaultNamespaceUri, localName);
-                            String url = dirEntry.getURL().toString();
-                            Property idProperty = propertyFactory().create(childName, url);
-                            Location location = Location.create(pathFactory().create(newPath, JcrLexicon.CONTENT), idProperty);
-                            request.addChild(location);
-                        }
-                    } else if (dirEntry.getKind() == SVNNodeKind.DIR) {
-                        String localName = dirEntry.getName();
-                        Name childName = nameFactory().create(defaultNamespaceUri, localName);
-                        Path childPath = pathFactory().create(nodePath, childName);
-                        String url = dirEntry.getURL().toString();
-                        Property idProperty = propertyFactory().create(childName, url);
-                        request.addChild(childPath, idProperty);
+                    Path childPath = pathFactory().create(requestedPath, childName);
+                    request.addChild(Location.create(childPath));
+                } else if (entry.getKind() == SVNNodeKind.FILE) {
+                    // The parent is a file, and the path may refer to the node that is either the "nt:file" parent
+                    // node, or the child "jcr:content" node...
+                    String localName = entry.getName();
+                    Path contentPath = pathFactory().create(BACK_SLASH + localName);
+                    if (!contentPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+                        Location location = Location.create(pathFactory().create(contentPath, JcrLexicon.CONTENT));
+                        request.addChild(location);
                     }
                 }
             }
-            request.setActualLocationOfNode(myLocation);
-        } catch (SVNException e) {
-            request.setError(e);
+        } else {
+            try {
+                SVNNodeKind kind = getNodeKind(workspaceRoot,
+                                               requestedPath,
+                                               accessData.getRepositoryRootUrl(),
+                                               request.inWorkspace());
+                if (kind == SVNNodeKind.DIR) {
+                    String directoryPath = getPathAsString(requestedPath);
+                    // Decide how to represent the children ...
+                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                        directoryPath = directoryPath.substring(1);
+                    }
+                    Collection<SVNDirEntry> dirEntries = SVNRepositoryUtil.getDir(workspaceRoot, directoryPath);
+                    for (SVNDirEntry entry : dirEntries) {
+                        // Decide how to represent the children ...
+                        if (entry.getKind() == SVNNodeKind.DIR) {
+                            // Create a Location for each file and directory contained by the parent directory ...
+                            String localName = entry.getName();
+                            Name childName = nameFactory().create(defaultNamespaceUri, localName);
+                            Path childPath = pathFactory().create(requestedPath, childName);
+                            request.addChild(Location.create(childPath));
+                        } else if (entry.getKind() == SVNNodeKind.FILE) {
+                            // The parent is a file, and the path may refer to the node that is either the "nt:file" parent
+                            // node, or the child "jcr:content" node...
+                            String localName = entry.getName();
+                            Path contentPath = pathFactory().create(getPathAsString(requestedPath) + BACK_SLASH + localName);
+                            Location content = Location.create(pathFactory().create(contentPath, JcrLexicon.CONTENT));
+                            request.addChild(content);
+                        }
+                    }
+                } else {
+                    if (!requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+                        // Use leading '/' on the requested path
+                        // repository root URL is exactly the same as the workspace
+                        // Get the parent path
+                        String filePath = getPathAsString(requestedPath);
+                        if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                            filePath = filePath.substring(1);
+                        }
+                        Path contentPath = pathFactory().create(requestedPath, JcrLexicon.CONTENT);
+                        Location content = Location.create(contentPath);
+                        request.addChild(content);
+                    }
+                }
+            } catch (SVNException e) {
+                request.setError(e);
+            }
         }
-
+        request.setActualLocationOfNode(myLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -274,69 +230,82 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     @Override
     public void process( ReadAllPropertiesRequest request ) {
         logger.trace(request.toString());
-        Location myLocation = request.at();
-        Path nodePath = getPathFor(myLocation, request);
-        if (nodePath.isRoot()) {
-            // There are no properties on the root ...
-            request.setActualLocationOfNode(myLocation);
+
+        // Get the SVNRepository object that represents the workspace ...
+        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
+        if (workspaceRoot == null) {
+            request.setError(new InvalidWorkspaceException(
+                                                           SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(request.inWorkspace())));
             return;
         }
+
+        // Find the existing file for the parent ...
+        Location myLocation = request.at();
+        Path requestedPath = getPathFor(myLocation, request);
+        if (requestedPath.isRoot()) {
+            // There are no properties on the root ...
+            request.setActualLocationOfNode(myLocation);
+            setCacheableInfo(request);
+            return;
+        }
+
         try {
-            // See if the path is a "jcr:content" node ...
-            if (nodePath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                // //"jcr:primaryType" property value of "nt:resource",
-                // "jcr:data" property whose value are the contents of the file
-                // and a few other properties, like "jcr:encoding", "jcr:mimeType" and "jcr:lastModified" and
-                // also "jcr:created" property
-                Path parent = nodePath.getParent();
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                SVNProperties fileProperties = new SVNProperties();
-                getData(parent.getString(getExecutionContext().getNamespaceRegistry()), fileProperties, os);
-                Property ntResourceproperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
-                request.addProperty(ntResourceproperty);
-                String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
-                if (mimeType != null) {
-                    Property jcrMimeTypeProperty = propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
-                    request.addProperty(jcrMimeTypeProperty);
+
+            SVNNodeKind kind = getNodeKind(workspaceRoot, requestedPath, accessData.getRepositoryRootUrl(), request.inWorkspace());
+            // Generate the properties for this File object ...
+            PropertyFactory factory = getExecutionContext().getPropertyFactory();
+            DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
+            // Note that we don't have 'created' timestamps, just last modified, so we'll have to use them
+            if (kind == SVNNodeKind.DIR) {
+                String directoryPath = getPathAsString(requestedPath);
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    directoryPath = directoryPath.substring(1);
                 }
-                SVNDirEntry entry = getEntryInfo(parent.getString(getExecutionContext().getNamespaceRegistry()));
-                Date lastModified = entry.getDate();
-                if (lastModified != null) {
-                    Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED,
-                                                                                dateFactory().create(lastModified));
-                    request.addProperty(jcrLastModifiedProperty);
-                }
-                if (os.toByteArray().length > 0) {
-                    Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, binaryFactory().create(os.toByteArray()));
-                    request.addProperty(jcrDataProperty);
-                }
+                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+                SVNDirEntry entry = getEntryInfo(workspaceRoot, directoryPath);
+                request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
             } else {
-                SVNNodeKind kind = validateNodeKind(nodePath);
-                if (kind == SVNNodeKind.FILE) {
-                    // "jcr:primaryType" property whose value is "nt:file".
-                    Property ntFileProperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE);
-                    request.addProperty(ntFileProperty);
+                if (requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+                    String contentPath = getPathAsString(requestedPath.getParent());
+                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                        contentPath = contentPath.substring(1);
+                    }
+                    SVNDirEntry entry = getEntryInfo(workspaceRoot, contentPath);
+                    // The request is to get properties of the "jcr:content" child node ...
+                    request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
+                    request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
+
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
                     SVNProperties fileProperties = new SVNProperties();
-                    getData(nodePath.getString(getExecutionContext().getNamespaceRegistry()), fileProperties, os);
-                    String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
-                    if (created != null) {
-                        Property jcrCreatedProperty = propertyFactory().create(JcrLexicon.CREATED, created);
-                        request.addProperty(jcrCreatedProperty);
+                    getData(contentPath, fileProperties, os);
+                    String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
+                    if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
+                    request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
+
+                    if (os.toByteArray().length > 0) {
+                        // Now put the file's content into the "jcr:data" property ...
+                        BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                        request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(os.toByteArray())));
                     }
 
-                } else if (kind == SVNNodeKind.DIR) {
-                    // A directory maps to a single node with a name that represents the name of the directory and a
-                    // "jcr:primaryType" property whose value is "nt:folder"
-                    Property jcrPrimaryTypeProp = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
-                    request.addProperty(jcrPrimaryTypeProp);
-                    SVNDirEntry dirEntry = getEntryInfo(nodePath.getString(getExecutionContext().getNamespaceRegistry()));
-                    Property jcrCreatedProp = propertyFactory().create(JcrLexicon.CREATED,
-                                                                       dateFactory().create(dirEntry.getDate()));
-                    request.addProperty(jcrCreatedProp);
+                } else {
+                    String filePath = getPathAsString(requestedPath);
+                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                        filePath = filePath.substring(1);
+                    }
+                    // The request is to get properties for the node representing the file
+                    request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    SVNProperties fileProperties = new SVNProperties();
+                    getData(filePath, fileProperties, os);
+                    String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
+                    if (created != null) {
+                        request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(created)));
+                    }
                 }
             }
             request.setActualLocationOfNode(myLocation);
+            setCacheableInfo(request);
 
         } catch (SVNException e) {
             request.setError(e);
@@ -346,13 +315,11 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RenameNodeRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
      */
     @Override
-    public void process( RenameNodeRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
-        super.process(request);
+    public void process( CreateNodeRequest request ) {
+        updatesAllowed(request);
     }
 
     /**
@@ -369,15 +336,86 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
+     */
+    @Override
+    public void process( CopyBranchRequest request ) {
+        updatesAllowed(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
+     */
+    @Override
+    public void process( DeleteBranchRequest request ) {
+        updatesAllowed(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
+     */
+    @Override
+    public void process( MoveBranchRequest request ) {
+        updatesAllowed(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RenameNodeRequest)
+     */
+    @Override
+    public void process( RenameNodeRequest request ) {
+        if (updatesAllowed(request)) super.process(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyWorkspaceRequest)
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        // This does the job of converting a null workspace name to a valid workspace
+        // If the request contains a null name, then we use the default ...
         String workspaceName = request.workspaceName();
-        if (workspaceName == null) workspaceName = "default";
-        request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
-        request.setActualWorkspaceName(workspaceName);
+        if (workspaceName == null) workspaceName = defaultWorkspace.getLocation().toDecodedString();
+
+        SVNRepository repository = null;
+        if (!this.creatingWorkspacesAllowed) {
+            // Then the workspace name must be one of the available names ...
+            boolean found = false;
+            for (String available : this.availableWorkspaceNames) {
+                if (workspaceName.equals(available)) {
+                    found = true;
+                    break;
+                }
+                repository = SVNRepositoryUtil.createRepository(available, accessData.getUsername(), accessData.getPassword());
+                // check if the workspace is conform
+                if (SVNRepositoryUtil.isDirectory(repository, "")
+                    && repository.getLocation().toDecodedString().equals(workspaceName)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                request.setError(new InvalidWorkspaceException(
+                                                               SVNRepositoryConnectorI18n.worspaceDoesNotExist.text(workspaceName)));
+                return;
+            }
+        }
+
+        // Verify that there is a repos at the path given by the workspace name ...
+        repository = SVNRepositoryUtil.createRepository(workspaceName, accessData.getUsername(), accessData.getPassword());
+        if (SVNRepositoryUtil.isDirectory(repository, "")) {
+            request.setActualWorkspaceName(repository.getLocation().toDecodedString());
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
+        } else {
+            request.setError(new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(workspaceName)));
+        }
     }
 
     /**
@@ -387,18 +425,17 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     @Override
     public void process( GetWorkspacesRequest request ) {
-        request.setAvailableWorkspaceNames(Collections.singleton("default"));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
-     */
-    @Override
-    public void process( CreateWorkspaceRequest request ) {
-        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportCreatingWorkspaces.text(getSourceName());
-        request.setError(new InvalidRequestException(msg));
+        // Return the set of available workspace names, even if new workspaces can be created ...
+        Set<String> names = new HashSet<String>();
+        for (String name : this.availableWorkspaceNames) {
+            SVNRepository repos = SVNRepositoryUtil.createRepository(name, accessData.getUsername(), accessData.getPassword());
+            if (repos != null && SVNRepositoryUtil.isDirectory(repos, "")) {
+                names.add(repos.getLocation().toDecodedString());
+            } else {
+                request.setError(new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(name)));
+            }
+        }
+        request.setAvailableWorkspaceNames(Collections.unmodifiableSet(names));
     }
 
     /**
@@ -408,8 +445,38 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     @Override
     public void process( CloneWorkspaceRequest request ) {
-        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportCloningWorkspaces.text(getSourceName());
-        request.setError(new InvalidRequestException(msg));
+        if (!updatesAllowed) {
+            request.setError(new InvalidRequestException(
+                                                         SVNRepositoryConnectorI18n.sourceDoesNotSupportCloningWorkspaces.text(getSourceName())));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
+     */
+    @Override
+    public void process( CreateWorkspaceRequest request ) {
+        final String workspaceName = request.desiredNameOfNewWorkspace();
+        if (!creatingWorkspacesAllowed) {
+            String msg = SVNRepositoryConnectorI18n.unableToCreateWorkspaces.text(getSourceName(), workspaceName);
+            request.setError(new InvalidRequestException(msg));
+            return;
+        }
+        // This doesn't create the directory representing the workspace (it must already exist), but it will add
+        // the workspace name to the available names ...
+        SVNRepository repository = SVNRepositoryUtil.createRepository(workspaceName,
+                                                                      accessData.getUsername(),
+                                                                      accessData.getPassword());
+        if (SVNRepositoryUtil.isDirectory(repository, "")) {
+            request.setActualWorkspaceName(repository.getLocation().toDecodedString());
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
+            availableWorkspaceNames.add(repository.getLocation().toDecodedString());
+        } else {
+            request.setError(new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(workspaceName)));
+        }
+
     }
 
     /**
@@ -419,8 +486,15 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportDeletingWorkspaces.text(getSourceName());
-        request.setError(new InvalidRequestException(msg));
+        final String workspaceName = request.workspaceName();
+        if (!creatingWorkspacesAllowed) {
+            String msg = SVNRepositoryConnectorI18n.unableToCreateWorkspaces.text(getSourceName(), workspaceName);
+            request.setError(new InvalidRequestException(msg));
+        }
+        // This doesn't delete the file/directory; rather, it just remove the workspace from the available set ...
+        if (!this.availableWorkspaceNames.remove(workspaceName)) {
+            request.setError(new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(workspaceName)));
+        }
     }
 
     /**
@@ -432,6 +506,13 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         if (!updatesAllowed) {
             throw new InvalidRequestException(SVNRepositoryConnectorI18n.sourceIsReadOnly.text(getSourceName()));
         }
+    }
+
+    protected boolean updatesAllowed( Request request ) {
+        if (!updatesAllowed) {
+            request.setError(new InvalidRequestException(SVNRepositoryConnectorI18n.sourceIsReadOnly.text(getSourceName())));
+        }
+        return !request.hasError();
     }
 
     /**
@@ -508,7 +589,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     protected void getData( String path,
                             SVNProperties properties,
                             OutputStream os ) throws SVNException {
-        getRepository().getFile(path, -1, properties, os);
+        getDefaultWorkspace().getFile(path, -1, properties, os);
 
     }
 
@@ -517,21 +598,33 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * 
      * @return repository
      */
-    public SVNRepository getRepository() {
-        return repository;
+    public SVNRepository getDefaultWorkspace() {
+        return defaultWorkspace;
     }
 
     /**
      * Validate the kind of node and throws an exception if necessary.
      * 
+     * @param repos
      * @param requestedPath
      * @return the kind.
      */
-    protected SVNNodeKind validateNodeKind( final Path requestedPath ) {
-        String myPath = requestedPath.getString(getExecutionContext().getNamespaceRegistry());
-        SVNNodeKind kind = null;
+    protected SVNNodeKind validateNodeKind( SVNRepository repos,
+                                            Path requestedPath ) {
+        SVNNodeKind kind;
+        String myPath;
+        if (getPathAsString(requestedPath).trim().equals("/")) {
+            myPath = getPathAsString(requestedPath);
+        } else if (requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            myPath = getPathAsString(requestedPath.getParent());
+        } else {
+            // directory and file
+            myPath = getPathAsString(requestedPath);
+        }
+
         try {
-            kind = getRepository().checkPath(myPath, -1);
+
+            kind = repos.checkPath(myPath, -1);
             if (kind == SVNNodeKind.NONE) {
                 // node does not exist or requested node is not correct.
                 throw new PathNotFoundException(Location.create(requestedPath), null,
@@ -550,17 +643,23 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return kind;
     }
 
+    private String getPathAsString( Path path ) {
+        return path.getString(getExecutionContext().getNamespaceRegistry());
+    }
+
     /**
      * Get some important informations of a path
      * 
+     * @param repos
      * @param path - the path
      * @return - the {@link SVNDirEntry}.
      */
-    protected SVNDirEntry getEntryInfo( String path ) {
+    protected SVNDirEntry getEntryInfo( SVNRepository repos,
+                                        String path ) {
         assert path != null;
         SVNDirEntry entry = null;
         try {
-            entry = getRepository().info(path, -1);
+            entry = repos.info(path, -1);
         } catch (SVNException e) {
             throw new RepositorySourceException(
                                                 getSourceName(),
@@ -610,12 +709,13 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     /**
      * Get the last revision.
      * 
+     * @param repos
      * @return the last revision number.
      * @throws Exception
      */
-    public long getLatestRevision() throws Exception {
+    public long getLatestRevision( SVNRepository repos ) throws Exception {
         try {
-            return repository.getLatestRevision();
+            return repos.getLatestRevision();
         } catch (SVNException e) {
             e.printStackTrace();
             // logger.error( "svn error: " );
@@ -656,21 +756,22 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         } else if (rootKind == SVNNodeKind.DIR) {
             ISVNEditor editor = repository.getCommitEditor(message, null, true, null);
             if (root.length() == 1 && root.charAt(0) == '/') {
-                addProcess(editor, root, "", child);
+                addProcess(repository, editor, root, "", child);
             } else {
                 String rootPath = root.substring(1);
-                addProcess(editor, rootPath, null, child);
+                addProcess(repository, editor, rootPath, null, child);
             }
         }
     }
 
-    private void addProcess( ISVNEditor editor,
+    private void addProcess( SVNRepository repos,
+                             ISVNEditor editor,
                              String rootPath,
                              String editedRoot,
                              String childSegmentName ) throws SVNException {
         openDirectories(editor, editedRoot);
         // test if so a directory does not exist.
-        SVNNodeKind childKind = repository.checkPath(childSegmentName, -1);
+        SVNNodeKind childKind = repos.checkPath(childSegmentName, -1);
         if (childKind == SVNNodeKind.NONE) {
             editor.addDir(childSegmentName, null, -1);
             closeDirectories(editor, childSegmentName);
@@ -693,18 +794,21 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     /**
      * Create a directory .
      * 
+     * @param repos
      * @param root - the root directory where the created directory will reside
      * @param childName - the name of the created directory.
      * @param message - comment for the creation.
      * @throws SVNException - if during the creation, there is an error.
      */
-    private void mkdir( String root,
+    @SuppressWarnings("unused")
+    private void mkdir( SVNRepository repos,
+                        String root,
                         String childName,
                         String message ) throws SVNException {
-        SVNNodeKind childKind = repository.checkPath(childName, -1);
+        SVNNodeKind childKind = repos.checkPath(childName, -1);
         if (childKind == SVNNodeKind.NONE) {
             ScmAction addNodeAction = addDirectory(root, childName);
-            SVNActionExecutor executor = new SVNActionExecutor(repository);
+            SVNActionExecutor executor = new SVNActionExecutor(repos);
             executor.execute(addNodeAction, message);
         } else {
             SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Item with name '{0}' can't be created", childName);
@@ -721,14 +825,15 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * @param message
      * @throws SVNException
      */
+    @SuppressWarnings("unused")
     private void newFile( String path,
                           String file,
                           byte[] content,
                           String message ) throws SVNException {
-        SVNNodeKind childKind = repository.checkPath(file, -1);
+        SVNNodeKind childKind = defaultWorkspace.checkPath(file, -1);
         if (childKind == SVNNodeKind.NONE) {
             ScmAction addFileNodeAction = addFile(path, file, content);
-            SVNActionExecutor executor = new SVNActionExecutor(repository);
+            SVNActionExecutor executor = new SVNActionExecutor(defaultWorkspace);
             executor.execute(addFileNodeAction, message);
         } else {
             SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
@@ -849,17 +954,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
 
     }
 
-    // private Date getCreatedOn( Object[] objs ) {
-    // Date createdOn = null;
-    // for (Object object : objs) {
-    // if (object instanceof Date) {
-    // createdOn = (Date)object;
-    //
-    // }
-    // }
-    // return createdOn;
-    // }
-
+    @SuppressWarnings("unused")
     private byte[] getContent( Object[] objs ) {
         byte[] content = null;
         for (Object object : objs) {
@@ -871,11 +966,72 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return content;
     }
 
+    @SuppressWarnings("unused")
     private Object[] values( Collection<Property> childNodeProperties ) {
         Set<Object> result = new HashSet<Object>();
         for (Property property : childNodeProperties) {
             result.add(property.getFirstValue());
         }
         return result.toArray();
+    }
+
+    private void checkThePath( Path path,
+                               Request request ) {
+        for (Path.Segment segment : path) {
+            // Verify the segment is valid ...
+            if (segment.getIndex() > 1) {
+                I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+            }
+            // TODO
+//             if (!segment.getName().getNamespaceUri().equals(defaultNamespaceUri)) {
+//                I18n msg = SVNRepositoryConnectorI18n.onlyTheDefaultNamespaceIsAllowed;
+//                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+//            }
+        }
+    }
+
+    protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
+        SVNRepository repository = defaultWorkspace;
+        if (workspaceName != null) {
+            SVNRepository repos = SVNRepositoryUtil.createRepository(workspaceName,
+                                                                     accessData.getUsername(),
+                                                                     accessData.getPassword());
+            if (SVNRepositoryUtil.isDirectory(repos, "")) {
+                repository = repos;
+            } else {
+                return null;
+            }
+        }
+        return repository;
+    }
+
+    protected SVNNodeKind getNodeKind( SVNRepository repository,
+                                       Path path,
+                                       String repositoryRootUrl,
+                                       String inWorkspace ) throws SVNException {
+        assert path != null;
+        assert repositoryRootUrl != null;
+        assert inWorkspace != null;
+        // See if the path is a "jcr:content" node ...
+        if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            // We only want to use the parent path to find the actual file ...
+            path = path.getParent();
+        }
+        String pathAsString = getPathAsString(path);
+        if (!repositoryRootUrl.equals(inWorkspace)) {
+            pathAsString = pathAsString.substring(1);
+        }
+        SVNNodeKind kind = repository.checkPath(pathAsString, -1);
+        if (kind == SVNNodeKind.NONE) {
+            // node does not exist or requested node is not correct.
+            throw new PathNotFoundException(Location.create(path), null,
+                                            SVNRepositoryConnectorI18n.nodeDoesNotExist.text(pathAsString));
+        } else if (kind == SVNNodeKind.UNKNOWN) {
+            // node is unknown
+            throw new PathNotFoundException(Location.create(path), null,
+                                            SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(pathAsString));
+        }
+        return kind;
     }
 }
