@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.jcr.RepositoryException;
-import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
@@ -180,7 +179,10 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         loadTestLibrary("org.jboss.example:ProjectI:1.0", "test/dependency/case1/testProjectI.xml");
     }
 
-    protected void setRepositoryContent( MavenId mavenId, ArtifactType artifactType, SignatureType signatureType, InputStream content ) throws Exception {
+    protected void setRepositoryContent( MavenId mavenId,
+                                         ArtifactType artifactType,
+                                         SignatureType signatureType,
+                                         InputStream content ) throws Exception {
         // Set the content ...
         URL url = this.urlProvider.getUrl(mavenId, artifactType, signatureType, true);
         assertThat(url, is(notNullValue()));
@@ -199,7 +201,8 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
 
     }
 
-    protected void loadTestLibrary( String mavenId, String pathToPomFile ) throws Exception {
+    protected void loadTestLibrary( String mavenId,
+                                    String pathToPomFile ) throws Exception {
         MavenId id = new MavenId(mavenId);
         setRepositoryContent(id, ArtifactType.POM, null, this.getClass().getClassLoader().getResourceAsStream(pathToPomFile));
         setRepositoryContent(id, ArtifactType.JAR, null, this.getClass().getClassLoader().getResourceAsStream(PATH_TO_EMPTY_JAR));
@@ -231,25 +234,41 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldReturnValidUrlForMavenIdAndArtifactTypeAndSignatureType() throws Exception {
-        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, null).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.MD5).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.PGP).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.SHA1).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, null).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.MD5).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.PGP).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.JAR, SignatureType.SHA1).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
 
-        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, null).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.MD5).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.PGP).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, null).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.MD5).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.PGP).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
 
-        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, null).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.MD5).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.PGP).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.SHA1).toString(), is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, null).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.MD5).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.PGP).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.POM, SignatureType.SHA1).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
 
-        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, null).toString(), is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.MD5).toString(), is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.PGP).toString(), is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
-        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.SHA1).toString(), is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, null).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.MD5).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.PGP).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
+        assertThat(maven.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.SHA1).toString(),
+                   is("jcr:/default/org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
     }
 
     @Test
@@ -422,8 +441,10 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         checkClasspath(new MavenId[] {projectE}, new MavenId[] {projectE, projectD, projectA, projectB});
         checkClasspath(new MavenId[] {projectF}, new MavenId[] {projectF, projectE, projectC, projectD, projectA, projectB});
         checkClasspath(new MavenId[] {projectG}, new MavenId[] {projectG, projectC, projectE, projectD, projectA});
-        checkClasspath(new MavenId[] {projectH}, new MavenId[] {projectH, projectG, projectB, projectC, projectE, projectD, projectA});
-        checkClasspath(new MavenId[] {projectI}, new MavenId[] {projectI, projectH, projectF, projectG, projectB, projectC, projectE, projectD, projectA});
+        checkClasspath(new MavenId[] {projectH}, new MavenId[] {projectH, projectG, projectB, projectC, projectE, projectD,
+            projectA});
+        checkClasspath(new MavenId[] {projectI}, new MavenId[] {projectI, projectH, projectF, projectG, projectB, projectC,
+            projectE, projectD, projectA});
     }
 
     @Test
@@ -439,7 +460,8 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         checkClasspath(new MavenId[] {projectG}, new MavenId[] {projectG, projectC, projectE, projectD, projectA, projectB});
     }
 
-    protected void checkClasspath( MavenId[] projectIds, MavenId[] classpathProjects ) {
+    protected void checkClasspath( MavenId[] projectIds,
+                                   MavenId[] classpathProjects ) {
         List<MavenId> idsExpectedOnClasspath = new ArrayList<MavenId>();
         for (int i = 0; i != classpathProjects.length; ++i) {
             idsExpectedOnClasspath.add(classpathProjects[i]);

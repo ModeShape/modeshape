@@ -55,7 +55,6 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.RepositoryLibrary;
-import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
 import org.jboss.dna.repository.service.AdministeredService;
 import org.jboss.dna.repository.service.ServiceAdministrator;
@@ -349,6 +348,9 @@ public class SequencingService implements AdministeredService {
     }
 
     protected void shutdownService() {
+        // Unregister our observer ...
+        if (this.repositoryObserver != null) this.repositoryObserver.unregister();
+        // And shut down the executor service ..
         if (this.executorService != null) {
             this.executorService.shutdown();
         }
@@ -387,7 +389,7 @@ public class SequencingService implements AdministeredService {
 
     /**
      * Do the work of processing by sequencing the node. This method is called by the {@link #executorService executor service}
-     * when it performs it's work on the enqueued {@link NodeChange NodeChange runnable objects}.
+     * when it performs it's work on the enqueued {@link NetChange NetChange runnable objects}.
      * 
      * @param change the change describing the node to be processed.
      */

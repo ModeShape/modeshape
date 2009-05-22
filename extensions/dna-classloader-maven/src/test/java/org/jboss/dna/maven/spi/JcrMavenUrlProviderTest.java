@@ -34,8 +34,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 import javax.jcr.SimpleCredentials;
-import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.maven.AbstractJcrRepositoryTest;
 import org.jboss.dna.maven.ArtifactType;
 import org.jboss.dna.maven.MavenId;
 import org.jboss.dna.maven.SignatureType;
@@ -124,25 +124,40 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldDetermineProperPathGivenMavenIdAndArtifactType() {
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, null), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.MD5), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.PGP), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.SHA1), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, null),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.MD5),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.PGP),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.JAR, SignatureType.SHA1),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
 
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, null), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.MD5), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.PGP), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, null),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.MD5),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.PGP),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
 
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, null), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.MD5), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.PGP), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.SHA1), is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, null),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.MD5),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.PGP),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.SHA1),
+                   is("/org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
 
         assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, null), is("/org/jboss/dna/dna-maven/maven-metadata.xml"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.MD5), is("/org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.PGP), is("/org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.SHA1), is("/org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.MD5),
+                   is("/org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.PGP),
+                   is("/org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.SHA1),
+                   is("/org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
     }
 
     @Test
@@ -152,25 +167,41 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldReturnValidUrlForMavenIdAndArtifactTypeAndSignatureType() throws Exception {
-        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, null, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.MD5, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.PGP, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.SHA1, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, null, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.MD5, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.md5"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.PGP, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.asc"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.JAR, SignatureType.SHA1, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.jar.sha1"));
 
-        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, null, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.MD5, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.PGP, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, null, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.MD5, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.md5"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.PGP, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.asc"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.SOURCE, SignatureType.SHA1, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT-sources.jar.sha1"));
 
-        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, null, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.MD5, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.PGP, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.SHA1, false).toString(), is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, null, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.MD5, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.md5"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.PGP, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.asc"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.POM, SignatureType.SHA1, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/1.0-SNAPSHOT/dna-maven-1.0-SNAPSHOT.pom.sha1"));
 
-        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, null, false).toString(), is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.MD5, false).toString(), is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.PGP, false).toString(), is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
-        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.SHA1, false).toString(), is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, null, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.MD5, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.md5"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.PGP, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.asc"));
+        assertThat(provider.getUrl(mavenId1, ArtifactType.METADATA, SignatureType.SHA1, false).toString(),
+                   is("jcr://org/jboss/dna/dna-maven/maven-metadata.xml.sha1"));
     }
 
     @Test

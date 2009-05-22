@@ -47,10 +47,9 @@ import javax.jcr.ValueFormatException;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jboss.dna.common.SystemFailureException;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.repository.sequencer.SequencerConfig;
 import org.jboss.dna.repository.sequencer.SequencingService;
-import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleSessionFactory;
 
@@ -82,7 +81,7 @@ public class SequencingClient {
     private Repository repository;
     private SequencingService sequencingService;
     private UserInterface userInterface;
-    private JcrExecutionContext executionContext;
+    private ExecutionContext executionContext;
 
     public SequencingClient() {
         setJackrabbitConfigPath(DEFAULT_JACKRABBIT_CONFIG_PATH);
@@ -217,7 +216,7 @@ public class SequencingClient {
                 Credentials credentials = new SimpleCredentials(this.username, this.password);
                 sessionFactory.registerCredentials(repositoryWorkspaceName, credentials);
             }
-            this.executionContext = new JcrExecutionContext(sessionFactory, repositoryWorkspaceName);
+            this.executionContext = new ExecutionContext();
 
             // Create the sequencing service, passing in the execution context and the repository library ...
             this.sequencingService = new SequencingService();
@@ -307,7 +306,7 @@ public class SequencingClient {
 
         // Now use the JCR API to upload the file ...
         Session session = createSession();
-        JcrTools tools = this.executionContext.getTools();
+        JcrTools tools = new JcrTools();
         try {
             // Create the node at the supplied path ...
             Node node = tools.findOrCreateNode(session, nodePath, "nt:folder", "nt:file");
@@ -539,7 +538,7 @@ public class SequencingClient {
      * @throws RepositoryException
      */
     protected Session createSession() throws RepositoryException {
-        return this.executionContext.getSessionFactory().createSession(this.repositoryName + "/" + this.workspaceName);
+        throw new UnsupportedOperationException();
     }
 
     protected String getMimeType( URL file ) {
