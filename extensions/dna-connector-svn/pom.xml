@@ -49,7 +49,7 @@
 		<dependency>
 			<groupId>org.tmatesoft.svnkit</groupId>
 			<artifactId>svnkit</artifactId>
-			<version>1.2.0.4949</version>
+			<version>1.2.3.5521</version>
 		</dependency>
 		<!-- 
 			Testing (note the scope)
