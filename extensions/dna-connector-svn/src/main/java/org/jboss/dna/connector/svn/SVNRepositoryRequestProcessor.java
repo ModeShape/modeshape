@@ -115,7 +115,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                                              ExecutionContext context,
                                              boolean updatesAllowed,
                                              RepositoryAccessData accessData ) {
-        super(sourceName, context);
+        super(sourceName, context, null);
         assert defaultWorkspace != null;
         assert availableWorkspaceNames != null;
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
