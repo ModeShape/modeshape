@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.connector.svn;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.CheckArg;
@@ -30,8 +31,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.tmatesoft.svn.core.SVNErrorCode;
@@ -41,7 +40,7 @@ import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
- * The repository connection to a SVN Repository instance.
+ * The defaultRepository connection to a SVN Repository instance.
  * 
  * @author Serge Pagop
  */
@@ -49,33 +48,54 @@ public class SVNRepositoryConnection implements RepositoryConnection {
 
     private final String sourceName;
     private final CachePolicy cachePolicy;
-    private final SVNRepository repository;
+    private final SVNRepository defaultWorkspace;
     private final boolean updatesAllowed;
-
+    private final Set<String> availableWorkspaceNames;
+    private final boolean creatingWorkspacesAllowed;
+    private final RepositoryAccessData accessData;
+    
+    /**
+     * default workspace must can be a root repository or any folders from the root directory.
+     * available workspace names must consist of URLs from repository folders.
+     * 
+     * @param sourceName
+     * @param defaultWorkspace
+     * @param availableWorkspaceNames
+     * @param creatingWorkspacesAllowed
+     * @param cachePolicy
+     * @param updatesAllowed
+     * @param accessData
+     */
     public SVNRepositoryConnection( String sourceName,
+                                    SVNRepository defaultWorkspace,
+                                    Set<String> availableWorkspaceNames,
+                                    boolean creatingWorkspacesAllowed,
                                     CachePolicy cachePolicy,
-                                    boolean updatesAllowed,
-                                    SVNRepository repository ) {
-        CheckArg.isNotNull(repository, "repository");
-        CheckArg.isNotNull(sourceName, "sourceName");
+                                    boolean updatesAllowed, RepositoryAccessData accessData ) {
 
+        CheckArg.isNotNull(defaultWorkspace, "defaultWorkspace");
+        CheckArg.isNotEmpty(sourceName, "sourceName");
+        assert availableWorkspaceNames != null;
+        assert accessData != null;
+        
+        // Check if the default workspace is a folder.
         SVNNodeKind nodeKind = null;
         try {
-            nodeKind = repository.checkPath("", -1);
+            nodeKind = defaultWorkspace.checkPath("", -1);
             if (nodeKind == SVNNodeKind.NONE) {
                 SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
                                                                "No entry at URL ''{0}''",
-                                                               repository.getLocation().getPath());
+                                                               defaultWorkspace.getLocation().getPath());
                 throw new SVNException(error);
             } else if (nodeKind == SVNNodeKind.UNKNOWN) {
                 SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
                                                                "Entry at URL ''{0}'' is a file while directory was expected",
-                                                               repository.getLocation().getPath());
+                                                               defaultWorkspace.getLocation().getPath());
                 throw new SVNException(error);
             } else if (nodeKind == SVNNodeKind.FILE) {
                 SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
                                                                "Entry at URL ''{0}'' is a file while directory was expected",
-                                                               repository.getLocation().getPath());
+                                                               defaultWorkspace.getLocation().getPath());
                 throw new SVNException(error);
             }
         } catch (SVNException e) {
@@ -85,12 +105,15 @@ public class SVNRepositoryConnection implements RepositoryConnection {
 
         this.sourceName = sourceName;
         this.cachePolicy = cachePolicy;
-        this.repository = repository;
+        this.defaultWorkspace = defaultWorkspace;
         this.updatesAllowed = updatesAllowed;
+        this.availableWorkspaceNames = availableWorkspaceNames;
+        this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
+        this.accessData = accessData;
     }
 
-    SVNRepository getRepository() {
-        return repository;
+    SVNRepository getDefaultWorkspace() {
+        return defaultWorkspace;
     }
 
     /**
@@ -120,7 +143,7 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     public boolean ping( long time,
                          TimeUnit unit ) {
         try {
-            this.repository.getRepositoryRoot(true);
+            this.defaultWorkspace.getRepositoryRoot(true);
         } catch (SVNException e) {
             return false;
         }
@@ -142,18 +165,24 @@ public class SVNRepositoryConnection implements RepositoryConnection {
      * @see org.jboss.dna.graph.connector.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
      *      org.jboss.dna.graph.request.Request)
      */
-    @SuppressWarnings( "unused" )
     public void execute( final ExecutionContext context,
                          final Request request ) throws RepositorySourceException {
 
-        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        final PropertyFactory propertyFactory = context.getPropertyFactory();
 
-        RequestProcessor processor = new SVNRepositoryRequestProcessor(getSourceName(), context, repository, updatesAllowed);
+        RequestProcessor processor = new SVNRepositoryRequestProcessor(sourceName, defaultWorkspace,
+                                                                       availableWorkspaceNames, creatingWorkspacesAllowed,
+                                                                       context, updatesAllowed, accessData);
         try {
             processor.process(request);
         } finally {
             processor.close();
         }
+    }
+
+    /**
+     * @return the accessData
+     */
+    public RepositoryAccessData getAccessData() {
+        return accessData;
     }
 }
