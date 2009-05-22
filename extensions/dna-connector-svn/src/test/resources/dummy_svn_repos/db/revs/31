@@ -1,0 +1,31 @@
+PLAIN
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 4
+tags
+V 13
+dir u.0.r30/0
+K 5
+trunk
+V 18
+dir n.0.r28/176280
+END
+ENDREP
+id: 0.0.r31/141
+type: dir
+pred: 0.0.r30/234
+count: 31
+text: 31 0 128 128 a774cc7997e4b0a9176eb1fd0993dee4
+cpath: /
+copyroot: 0 /
+
+t.0.r29/0 delete false false /branches
+
+
+141 271

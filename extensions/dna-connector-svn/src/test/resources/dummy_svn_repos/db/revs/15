@@ -1,0 +1,113 @@
+id: i.0.r15/0
+type: dir
+count: 0
+cpath: /trunk/root/a/d/i
+copyroot: 0 /
+
+PLAIN
+K 1
+i
+V 13
+dir i.0.r15/0
+END
+ENDREP
+id: g.0.r15/115
+type: dir
+pred: g.0.r13/0
+count: 1
+text: 15 73 29 29 93fac645700c9e1b23a05797500466ec
+cpath: /trunk/root/a/d
+copyroot: 0 /
+
+PLAIN
+K 1
+d
+V 15
+dir g.0.r15/115
+K 1
+e
+V 13
+dir h.0.r14/0
+END
+ENDREP
+id: d.0.r15/324
+type: dir
+pred: d.0.r14/138
+count: 3
+text: 15 255 56 56 1336eaa0c2f17478f0f745483091fc90
+cpath: /trunk/root/a
+copyroot: 0 /
+
+PLAIN
+K 1
+a
+V 15
+dir d.0.r15/324
+K 1
+b
+V 13
+dir e.0.r11/0
+K 1
+c
+V 13
+dir f.0.r12/0
+END
+ENDREP
+id: c.0.r15/559
+type: dir
+pred: c.0.r14/372
+count: 6
+text: 15 465 81 81 48bfceac6724068f89ed2b5a901f20fe
+cpath: /trunk/root
+copyroot: 0 /
+
+PLAIN
+K 4
+root
+V 15
+dir c.0.r15/559
+END
+ENDREP
+id: 9.0.r15/745
+type: dir
+pred: 9.0.r14/558
+count: 7
+text: 15 698 34 34 687e80d121d44e98b6bb5942fc7e8346
+cpath: /trunk
+copyroot: 0 /
+
+PLAIN
+K 8
+branches
+V 12
+dir a.0.r7/0
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 4
+tags
+V 12
+dir b.0.r8/0
+K 5
+trunk
+V 15
+dir 9.0.r15/745
+END
+ENDREP
+id: 0.0.r15/1047
+type: dir
+pred: 0.0.r14/860
+count: 15
+text: 15 879 155 155 6bb9d640af18b0495f6a0dc05305f867
+cpath: /
+copyroot: 0 /
+
+_0.0.t14-1 add false false /trunk/root/a/d/i
+
+
+1047 1180

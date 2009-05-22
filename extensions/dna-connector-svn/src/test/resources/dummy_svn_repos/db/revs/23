@@ -1,0 +1,33 @@
+id: n.0.r23/0
+type: dir
+count: 0
+cpath: /trunk
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 5
+trunk
+V 13
+dir n.0.r23/0
+END
+ENDREP
+id: 0.0.r23/170
+type: dir
+pred: 0.0.r22/79
+count: 23
+text: 23 62 95 95 7053fe103be9360c8600ace6a5b5b3e7
+cpath: /
+copyroot: 0 /
+
+_0.0.t22-1 add false false /trunk
+
+
+170 298

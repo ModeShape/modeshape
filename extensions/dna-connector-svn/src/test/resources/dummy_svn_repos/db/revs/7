@@ -1,0 +1,37 @@
+id: a.0.r7/0
+type: dir
+count: 0
+cpath: /branches
+copyroot: 0 /
+
+PLAIN
+K 8
+branches
+V 12
+dir a.0.r7/0
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 5
+trunk
+V 12
+dir 9.0.r6/0
+END
+ENDREP
+id: 0.0.r7/202
+type: dir
+pred: 0.0.r6/168
+count: 7
+text: 7 64 125 125 09e5a936e852d553ffffa02c94219bb6
+cpath: /
+copyroot: 0 /
+
+_0.0.t6-1 add false false /branches
+
+
+202 329

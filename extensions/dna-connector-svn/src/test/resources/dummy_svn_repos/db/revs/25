@@ -1,0 +1,63 @@
+id: p.0.r25/0
+type: dir
+count: 0
+cpath: /trunk/root/a
+copyroot: 0 /
+
+PLAIN
+K 1
+a
+V 13
+dir p.0.r25/0
+END
+ENDREP
+id: o.0.r25/111
+type: dir
+pred: o.0.r24/0
+count: 1
+text: 25 69 29 29 85fed750300d1f78aefea557e70b068e
+cpath: /trunk/root
+copyroot: 0 /
+
+PLAIN
+K 4
+root
+V 15
+dir o.0.r25/111
+END
+ENDREP
+id: n.0.r25/294
+type: dir
+pred: n.0.r24/112
+count: 2
+text: 25 247 34 34 da42c5920fcac9ef814c11e7265020c9
+cpath: /trunk
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 5
+trunk
+V 15
+dir n.0.r25/294
+END
+ENDREP
+id: 0.0.r25/538
+type: dir
+pred: 0.0.r24/353
+count: 25
+text: 25 428 97 97 2499b58f34d4725ae602738e60dec05c
+cpath: /
+copyroot: 0 /
+
+_0.0.t24-1 add false false /trunk/root/a
+
+
+538 668
