@@ -60,6 +60,7 @@ import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrRepository.Option;
+import org.jboss.dna.jcr.cache.NodeInfo;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -284,8 +285,25 @@ final class JcrWorkspace implements Workspace {
             throw new RepositoryException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
         }
 
+        // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
+        if (destAbsPath.endsWith("]")) {
+            throw new RepositoryException();
+        }
+
+        /*
+         * Make sure that the node has a definition at the new location
+         */
+        SessionCache cache = this.session.cache();
+        NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
+        NodeInfo parent = cache.findNodeInfo(null, destPath.getParent());
+        
+        // This throws a ConstraintViolationException if there is no matching definition
+        // In practice, this won't always work until we figure out how to refresh the destination parent's cache entry 
+        cache.findBestNodeDefinition(parent.getUuid(), destPath.getLastSegment().getName(), nodeInfo.getPrimaryTypeName());
+        
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
         graph.copy(srcPath).to(destPath);
+        
     }
 
     /**

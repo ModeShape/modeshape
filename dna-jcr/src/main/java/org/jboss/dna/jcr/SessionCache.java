@@ -514,7 +514,8 @@ class SessionCache {
         List<Name> mixinTypeNames = node.getMixinTypeNames();
 
         Children children = nodeInfo.getChildren();
-        int snsCount = children.getCountOfSameNameSiblingsWithName(newNodeName);
+        // Need to add one to speculate that this node will be added
+        int snsCount = children.getCountOfSameNameSiblingsWithName(newNodeName) + 1;
         JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
                                                                            mixinTypeNames,
                                                                            newNodeName,
