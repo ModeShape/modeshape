@@ -1,0 +1,9 @@
+<Call name="addUserRealm">
+  <Arg>
+    <New class="org.mortbay.jetty.plus.jaas.JAASUserRealm">
+      <Set name="name">xyzrealm</Set>
+      <Set name="LoginModuleName">dna-jcr</Set>
+    </New>
+  </Arg>
+</Call>
+
