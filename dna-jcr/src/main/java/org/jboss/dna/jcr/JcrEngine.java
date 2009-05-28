@@ -23,7 +23,10 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -44,6 +47,7 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaEngine;
+import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.RepositoryService;
 import org.jboss.dna.repository.sequencer.SequencingService;
 
@@ -100,6 +104,24 @@ public class JcrEngine {
 
     protected final SequencingService getSequencingService() {
         return dnaEngine.getSequencingService();
+    }
+
+    /**
+     * Returns a list of the names of all available JCR repositories.
+     * <p>
+     * In a {@code JcrEngine}, the available repositories are {@link RepositoryLibrary#getSourceNames() all repositories} except
+     * for the {@link RepositoryService#getConfigurationSourceName() the configuration repository}.
+     * </p>
+     * 
+     * @return a list of all repository names.
+     */
+    public final Collection<String> getJcrRepositoryNames() {
+        List<String> jcrRepositories = new ArrayList<String>();
+        jcrRepositories.addAll(getRepositoryService().getRepositoryLibrary().getSourceNames());
+        
+        jcrRepositories.remove(getRepositoryService().getConfigurationSourceName());
+        
+        return jcrRepositories;
     }
 
     /**

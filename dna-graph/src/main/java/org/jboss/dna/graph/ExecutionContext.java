@@ -42,6 +42,7 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.graph.connector.federation.FederatedLexicon;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
@@ -528,6 +529,9 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
          * @see javax.security.auth.callback.CallbackHandler#handle(javax.security.auth.callback.Callback[])
          */
         public void handle( Callback[] callbacks ) throws UnsupportedCallbackException, IOException {
+            boolean userSet = false;
+            boolean passwordSet = false;
+            
             for (int i = 0; i < callbacks.length; i++) {
                 if (callbacks[i] instanceof TextOutputCallback) {
 
@@ -563,6 +567,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                     }
 
                     nc.setName(this.userId);
+                    userSet = true;
 
                 } else if (callbacks[i] instanceof PasswordCallback) {
 
@@ -573,9 +578,32 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                         System.out.flush();
                     }
                     pc.setPassword(this.password);
+                    passwordSet = true;
 
                 } else {
-                    throw new UnsupportedCallbackException(callbacks[i], "Unrecognized Callback");
+                    /*
+                     * Jetty uses its own callback for setting the password.  Since we're using Jetty for integration
+                     * testing of the web project(s), we have to accomodate this.  Rather than introducing a direct
+                     * dependency, we'll add code to handle the case of unexpected callback handlers with a setObject method.
+                     */
+                    try {
+                        // Assume that a callback chain will ask for the user before the password
+                        if (!userSet) {
+                            new Reflection(callbacks[i].getClass()).invokeSetterMethodOnTarget("object", callbacks[i], this.userId);
+                            userSet = true;
+                        }
+                        else if (!passwordSet) {
+                            // Jetty also seems to eschew passing passwords as char arrays
+                            new Reflection(callbacks[i].getClass()).invokeSetterMethodOnTarget("object", callbacks[i], new String(this.password));
+                            passwordSet = true;
+                        }
+                        // It worked - need to continue processing the callbacks
+                        continue;
+                    } catch (Exception ex) {
+                        // If the property cannot be set, fall through to the failure
+                    }
+                    throw new UnsupportedCallbackException(callbacks[i], "Unrecognized Callback: "
+                                                           + callbacks[i].getClass().getName());
                 }
             }
 
