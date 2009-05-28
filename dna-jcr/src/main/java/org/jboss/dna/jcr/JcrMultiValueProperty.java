@@ -189,6 +189,11 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             return;
         }
 
+        for (int i = 0; i < values.length; i++) {
+            // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
+            if (values[i] != null) ((JcrValue) values[i]).asType(this.getType());
+        }
+        
         cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), values, PropertyType.UNDEFINED);
     }
 
@@ -212,7 +217,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             for (int i = 0; i != numValues; ++i) {
                 String value = values[i];
                 if (value == null) continue; // skip null values
-                valuesList.add(createValue(values[i], PropertyType.STRING));
+                valuesList.add(createValue(values[i], PropertyType.STRING).asType(this.getType()));
             }
             if (valuesList.isEmpty()) {
                 jcrValues = EMPTY_VALUES;
@@ -223,7 +228,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             jcrValues = EMPTY_VALUES;
         }
 
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues, PropertyType.STRING);
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues, this.getType());
     }
 
     /**

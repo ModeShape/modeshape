@@ -191,6 +191,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         JcrValue jcrValue = null;
         if (value instanceof JcrValue) {
             jcrValue = (JcrValue)value;
+
+            // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
+            jcrValue.asType(this.getType());
+            
             cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
             return;
         }
@@ -199,6 +203,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             cache.getEditorFor(propertyId.getNodeId()).removeProperty(propertyId.getPropertyName());
             return;
         }
+        
         // We have to convert from one Value implementation to ours ...
         switch (value.getType()) {
             case PropertyType.STRING:
@@ -250,7 +255,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
-        setValue(createValue(value, PropertyType.STRING));
+        setValue(createValue(value, PropertyType.STRING).asType(this.getType()));
     }
 
     /**
@@ -264,7 +269,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
-        setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.DATE));
+        setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.BINARY).asType(this.getType()));
     }
 
     /**
@@ -274,7 +279,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( long value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        setValue(createValue(new Long(value), PropertyType.LONG));
+        setValue(createValue(new Long(value), PropertyType.LONG).asType(this.getType()));
     }
 
     /**
@@ -284,7 +289,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( double value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        setValue(createValue(new Double(value), PropertyType.DOUBLE));
+        setValue(createValue(new Double(value), PropertyType.DOUBLE).asType(this.getType()));
     }
 
     /**
@@ -298,7 +303,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
-        setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE));
+        setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE).asType(this.getType()));
     }
 
     /**
@@ -308,7 +313,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( boolean value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        setValue(createValue(new Boolean(value), PropertyType.BOOLEAN));
+        setValue(createValue(new Boolean(value), PropertyType.BOOLEAN).asType(this.getType()));
     }
 
     /**
@@ -322,8 +327,13 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
+        
+        if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(this.context().getNamespaceRegistry()))) {
+            throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
+        }
+        
         String uuid = value.getUUID();
-        setValue(createValue(uuid, PropertyType.REFERENCE));
+        setValue(createValue(uuid, PropertyType.REFERENCE).asType(this.getType()));
     }
 
     /**

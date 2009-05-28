@@ -135,6 +135,8 @@ public final class JcrI18n {
 
     public static I18n allNodeTypeTemplatesMustComeFromSameSession;
 
+    public static I18n nodeNotReferenceable;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

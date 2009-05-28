@@ -60,6 +60,7 @@ import org.apache.jackrabbit.test.api.SetValueDoubleTest;
 import org.apache.jackrabbit.test.api.SetValueLongTest;
 import org.apache.jackrabbit.test.api.SetValueReferenceTest;
 import org.apache.jackrabbit.test.api.SetValueStringTest;
+import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
@@ -187,7 +188,7 @@ public class JcrTckTest {
             addTestSuite(SetValueReferenceTest.class);
             addTestSuite(SetValueStringTest.class);
             addTestSuite(SetValueConstraintViolationExceptionTest.class);
-            // addTestSuite(SetValueValueFormatExceptionTest.class);
+            addTestSuite(SetValueValueFormatExceptionTest.class);
             addTestSuite(SetValueVersionExceptionTest.class);
 
             addTestSuite(SetPropertyBooleanTest.class);
