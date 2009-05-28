@@ -1,0 +1,5 @@
+dna-jcr {
+        org.mortbay.jetty.plus.jaas.spi.PropertyFileLoginModule optional
+        debug="true"
+        file="target/test-classes/dna-test-users.props";
+};
