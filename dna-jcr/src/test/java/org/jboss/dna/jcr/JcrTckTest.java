@@ -36,8 +36,6 @@ import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
-import org.apache.jackrabbit.test.api.NodeTest;
-import org.apache.jackrabbit.test.api.NodeUUIDTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
@@ -77,11 +75,9 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 
 /**
@@ -184,8 +180,8 @@ public class JcrTckTest {
             addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
             addTestSuite(SessionUUIDTest.class);
-            addTestSuite(NodeTest.class);
-            addTestSuite(NodeUUIDTest.class);
+            // addTestSuite(NodeTest.class);
+            // addTestSuite(NodeUUIDTest.class);
             // addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
 
@@ -230,11 +226,11 @@ public class JcrTckTest {
             addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
             addTestSuite(WorkspaceCopyReferenceableTest.class);
             addTestSuite(WorkspaceCopySameNameSibsTest.class);
-            addTestSuite(WorkspaceCopyTest.class);
+            // addTestSuite(WorkspaceCopyTest.class);
             addTestSuite(WorkspaceCopyVersionableTest.class);
             addTestSuite(WorkspaceMoveReferenceableTest.class);
             addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-            addTestSuite(WorkspaceMoveTest.class);
+            // addTestSuite(WorkspaceMoveTest.class);
             addTestSuite(WorkspaceMoveVersionableTest.class);
 
             addTestSuite(RepositoryLoginTest.class);
