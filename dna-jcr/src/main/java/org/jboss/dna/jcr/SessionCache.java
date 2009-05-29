@@ -510,10 +510,36 @@ class SessionCache {
         NodeInfo nodeInfo = findNodeInfo(nodeUuid);
         AbstractJcrNode node = findJcrNode(nodeUuid);
 
-        Name primaryTypeName = node.getPrimaryTypeName();
-        List<Name> mixinTypeNames = node.getMixinTypeNames();
+        return findBestNodeDefinition(nodeInfo, node.getPath(), newNodeName, newNodePrimaryTypeName);
+    }
 
-        Children children = nodeInfo.getChildren();
+    /**
+     * Find the best definition for the child node with the given name on the node with the given UUID.
+     * 
+     * @param parentInfo the parent node's info; may not be null
+     * @param parentPath the path to the parent node; may not be null
+     * @param newNodeName the name of the potential new child node; may not be null
+     * @param newNodePrimaryTypeName the primary type of the potential new child node; may not be null
+     * @return the definition that best fits the new node name and type
+     * @throws ItemExistsException if there is no definition that allows same-name siblings for the name and type and the parent
+     *         node already has a child node with the given name
+     * @throws ConstraintViolationException if there is no definition for the name and type among the parent node's primary and
+     *         mixin types
+     * @throws RepositoryException if any other error occurs
+     */
+    protected JcrNodeDefinition findBestNodeDefinition( NodeInfo parentInfo,
+                                                        String parentPath,
+                                                        Name newNodeName,
+                                                        Name newNodePrimaryTypeName )
+        throws ItemExistsException, ConstraintViolationException, RepositoryException {
+        assert (parentInfo != null);
+        assert (parentPath != null);
+        assert (newNodeName != null);
+
+        Name primaryTypeName = parentInfo.getPrimaryTypeName();
+        List<Name> mixinTypeNames = parentInfo.getMixinTypeNames();
+
+        Children children = parentInfo.getChildren();
         // Need to add one to speculate that this node will be added
         int snsCount = children.getCountOfSameNameSiblingsWithName(newNodeName) + 1;
         JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
@@ -533,7 +559,7 @@ class SessionCache {
 
                 if (definition != null) {
                     throw new ItemExistsException(JcrI18n.noSnsDefinition.text(newNodeName,
-                                                                               node.getPath(),
+                                                                               parentPath,
                                                                                primaryTypeName,
                                                                                mixinTypeNames));
                 }
@@ -541,12 +567,57 @@ class SessionCache {
 
             throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
                                                                              newNodeName,
-                                                                             node.getPath(),
+                                                                             parentPath,
                                                                              primaryTypeName,
                                                                              mixinTypeNames));
         }
 
         return definition;
+    }
+
+    /**
+     * The JCR specification assumes that reading a node into the session does not imply reading the
+     * relationship between the node and its children into the session.  As a performance optimization,
+     * DNA eagerly loads the list of child names and UUIDs (but not the child nodes themselves).  This creates
+     * an issue when direct writes are performed through the workspace.  The act of modifying a node is assumed
+     * to imply loading its children, but we must load the node in order to modify it.
+     * <p>
+     * This method provides a way to signal that a child should be added to one parent and, optionally, removed
+     * from another.  The cache of loaded nodes and the cache of changed nodes are modified accordingly, but no
+     * additional graph requests are batched. 
+     * </p>
+     * @param newParentUuid the UUID of the node to which the child is to be moved; may not be null
+     * @param oldParentUuid the UUID of the parent node from which the child was moved; may not be null
+     * @param child the UUID of the child node that was moved or copied; may not be null
+     * @param childName the new name of the child node; may not be null
+     * @throws RepositoryException if an error occurs
+     */
+    public void compensateForWorkspaceChildChange( UUID newParentUuid,
+                        UUID oldParentUuid,
+                        UUID child,
+                        Name childName ) throws RepositoryException {
+        assert newParentUuid != null;
+        assert child != null;
+        assert childName != null;
+        
+        ChangedNodeInfo changedNode = this.changedNodes.get(newParentUuid);
+        if (changedNode != null) {
+            // This adds the child to the changed node, but doesn't generate a corresponding pending request
+            // avoiding a challenge later.
+            changedNode.addChild(childName, child, this.pathFactory);
+
+        } else {
+            this.cachedNodes.remove(newParentUuid);
+        }
+
+        if (oldParentUuid != null) {
+            changedNode = this.changedNodes.get(oldParentUuid);
+            if (changedNode != null) {
+                changedNode.removeChild(child, this.pathFactory);
+            } else {
+                this.cachedNodes.remove(newParentUuid);
+            }
+        }
     }
 
     /**
@@ -1310,8 +1381,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1544,10 +1615,7 @@ class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
-                                                         .nodeNamed(name)
-                                                         .with(desiredUuid)
-                                                         .with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
@@ -2302,8 +2370,8 @@ class SessionCache {
                                                                                    DnaIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                                    values,
                                                                                    false);
-        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
-                                                                                                                    .next());
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                  newSingleMultiPropertyNames.iterator().next());
         PropertyId propId = new PropertyId(uuid, dnaProp.getName());
         JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
         return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);

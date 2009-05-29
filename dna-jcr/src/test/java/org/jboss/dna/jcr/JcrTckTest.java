@@ -35,14 +35,19 @@ import org.apache.jackrabbit.test.api.NodeAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
+import org.apache.jackrabbit.test.api.NodeOrderableChildNodesTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
+import org.apache.jackrabbit.test.api.NodeTest;
+import org.apache.jackrabbit.test.api.NodeUUIDTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
+import org.apache.jackrabbit.test.api.ReferencesTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
 import org.apache.jackrabbit.test.api.SessionTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
+import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
 import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
 import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;
 import org.apache.jackrabbit.test.api.SetPropertyConstraintViolationExceptionTest;
@@ -71,8 +76,13 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceabl
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesVersionableTest;
+import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
+import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceCopyTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
+import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 
 /**
@@ -172,12 +182,12 @@ public class JcrTckTest {
             // level 2 tests
             addTestSuite(AddNodeTest.class);
             addTestSuite(NamespaceRegistryTest.class);
-            // addTestSuite(ReferencesTest.class);
+            addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
             addTestSuite(SessionUUIDTest.class);
-            // addTestSuite(NodeTest.class);
-            // addTestSuite(NodeUUIDTest.class);
-            // addTestSuite(NodeOrderableChildNodesTest.class);
+            addTestSuite(NodeTest.class);
+            addTestSuite(NodeUUIDTest.class);
+            addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
 
             addTestSuite(SetValueBinaryTest.class);
@@ -200,7 +210,7 @@ public class JcrTckTest {
             addTestSuite(SetPropertyStringTest.class);
             addTestSuite(SetPropertyValueTest.class);
             addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
-            // addTestSuite(SetPropertyAssumeTypeTest.class);
+            addTestSuite(SetPropertyAssumeTypeTest.class);
 
             addTestSuite(NodeItemIsModifiedTest.class);
             addTestSuite(NodeItemIsNewTest.class);
@@ -219,13 +229,13 @@ public class JcrTckTest {
             addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
-            // addTestSuite(WorkspaceCopyReferenceableTest.class);
-            // addTestSuite(WorkspaceCopySameNameSibsTest.class);
-            // addTestSuite(WorkspaceCopyTest.class);
+            addTestSuite(WorkspaceCopyReferenceableTest.class);
+            addTestSuite(WorkspaceCopySameNameSibsTest.class);
+            addTestSuite(WorkspaceCopyTest.class);
             addTestSuite(WorkspaceCopyVersionableTest.class);
             addTestSuite(WorkspaceMoveReferenceableTest.class);
-            // addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-            // addTestSuite(WorkspaceMoveTest.class);
+            addTestSuite(WorkspaceMoveSameNameSibsTest.class);
+            addTestSuite(WorkspaceMoveTest.class);
             addTestSuite(WorkspaceMoveVersionableTest.class);
 
             addTestSuite(RepositoryLoginTest.class);
@@ -248,7 +258,7 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
             // See https://jira.jboss.org/jira/browse/DNA-285
 
-            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
+            // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());

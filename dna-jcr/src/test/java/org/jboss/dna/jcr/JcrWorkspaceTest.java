@@ -44,7 +44,9 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -64,6 +66,19 @@ public class JcrWorkspaceTest {
     private JcrRepository repository;
     private RepositoryNodeTypeManager repoManager;
 
+    @BeforeClass
+    public static void beforeClass() {
+        // Initialize IDTrust
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+
+        try {
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     @Before
     public void beforeEach() throws Exception {
         final String repositorySourceName = "repository";
@@ -75,7 +90,8 @@ public class JcrWorkspaceTest {
         source.setDefaultWorkspaceName(workspaceName);
 
         // Set up the execution context ...
-        context = new ExecutionContext();
+
+        context = new ExecutionContext().with("dna-jcr", "superuser", "superuser".toCharArray());
 
         // Set up the initial content ...
         Graph graph = Graph.create(source, context);

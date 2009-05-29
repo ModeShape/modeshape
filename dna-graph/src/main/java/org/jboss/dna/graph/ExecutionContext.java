@@ -520,7 +520,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         protected UserPasswordCallbackHandler( String userId,
                                                char[] password ) {
             this.userId = userId;
-            this.password = password;
+            this.password = password.clone();
         }
 
         /**

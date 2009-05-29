@@ -25,6 +25,7 @@ package org.jboss.dna.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
@@ -277,12 +278,12 @@ final class JcrWorkspace implements Workspace {
         try {
             srcPath = factory.create(srcAbsPath);
         } catch (ValueFormatException e) {
-            throw new RepositoryException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
         }
         try {
             destPath = factory.create(destAbsPath);
         } catch (ValueFormatException e) {
-            throw new RepositoryException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
         }
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
@@ -290,20 +291,33 @@ final class JcrWorkspace implements Workspace {
             throw new RepositoryException();
         }
 
+        try {
+            this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
+            this.session.checkPermission(destAbsPath, "add_node");
+        }
+        catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
         /*
          * Make sure that the node has a definition at the new location
          */
         SessionCache cache = this.session.cache();
         NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
-        NodeInfo parent = cache.findNodeInfo(null, destPath.getParent());
-        
-        // This throws a ConstraintViolationException if there is no matching definition
-        // In practice, this won't always work until we figure out how to refresh the destination parent's cache entry 
-        cache.findBestNodeDefinition(parent.getUuid(), destPath.getLastSegment().getName(), nodeInfo.getPrimaryTypeName());
-        
+        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
+
+        // Skip the cache and load the latest parent info directly from the graph
+        NodeInfo parent = cache.loadFromGraph(cacheParent.getUuid(), null);
+        Name newNodeName = destPath.getLastSegment().getName();
+        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
+
+        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
+        this.session.cache().findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
+
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
         graph.copy(srcPath).to(destPath);
-        
+        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, nodeInfo.getUuid(), newNodeName);
+
     }
 
     /**
@@ -373,29 +387,56 @@ final class JcrWorkspace implements Workspace {
      */
     public void move( String srcAbsPath,
                       String destAbsPath ) throws PathNotFoundException, RepositoryException {
-        CheckArg.isNotNull(srcAbsPath, "srcAbsPath");
-        CheckArg.isNotNull(destAbsPath, "destAbsPath");
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
-        // Use the session's execution context so that we get the transient namespace mappings
-        PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
-        Path destPath = pathFactory.create(destAbsPath);
+        // Create the paths ...
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path srcPath = null;
+        Path destPath = null;
+        try {
+            srcPath = factory.create(srcAbsPath);
+        } catch (ValueFormatException e) {
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
+        }
+        try {
+            destPath = factory.create(destAbsPath);
+        } catch (ValueFormatException e) {
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+        }
 
-        Path.Segment newNodeName = destPath.getSegment(destPath.size() - 1);
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
             throw new RepositoryException();
         }
 
-        AbstractJcrNode sourceNode = session.getNode(pathFactory.create(srcAbsPath));
-        AbstractJcrNode newParentNode = session.getNode(destPath.getParent());
-
-        if (newParentNode.hasNode(newNodeName.getString(session.getExecutionContext().getNamespaceRegistry()))) {
-            throw new ItemExistsException();
+        try {
+            this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
+            this.session.checkPermission(destAbsPath, "add_node");
+        }
+        catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
         }
 
-        Graph.Batch operations = session.createBatch();
-        newParentNode.editorFor(operations).moveToBeChild(sourceNode, newNodeName.getName());
-        operations.execute();
+        /*
+         * Make sure that the node has a definition at the new location
+         */
+        SessionCache cache = this.session.cache();
+        NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
+        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
+        NodeInfo oldParent = cache.findNodeInfo(null, srcPath.getParent());
+
+        // Skip the cache and load the latest parent info directly from the graph
+        NodeInfo parent = cache.loadFromGraph(cacheParent.getUuid(), null);
+        Name newNodeName = destPath.getLastSegment().getName();
+        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
+
+        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
+        cache.findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+        graph.move(srcPath).as(newNodeName).into(destPath.getParent());
+        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), oldParent.getUuid(), nodeInfo.getUuid(), newNodeName);
     }
 
     /**
