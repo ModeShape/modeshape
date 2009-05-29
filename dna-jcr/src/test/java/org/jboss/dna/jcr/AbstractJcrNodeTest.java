@@ -688,8 +688,8 @@ public class AbstractJcrNodeTest {
         node.merge(null, false);
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowOrderBefore() throws Exception {
+    @Test( expected = NullPointerException.class )
+    public void shouldNotAllowOrderBeforeWithNullArgs() throws Exception {
         node.orderBefore(null, null);
     }
 
