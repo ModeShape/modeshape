@@ -1443,8 +1443,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final void orderBefore( String srcChildRelPath,
                                    String destChildRelPath ) throws UnsupportedRepositoryOperationException, RepositoryException {
-        if (true) throw new UnsupportedRepositoryOperationException();
-
         // This implementation is correct, except for not calling the SessionCache or graph layer to do the re-order
         if (!getPrimaryNodeType().hasOrderableChildNodes()) {
             throw new UnsupportedRepositoryOperationException();

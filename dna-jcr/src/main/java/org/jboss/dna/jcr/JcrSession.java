@@ -322,6 +322,13 @@ class JcrSession implements Session {
     public void checkPermission( String path,
                                  String actions ) {
         CheckArg.isNotEmpty(path, "path");
+
+        this.checkPermission(executionContext.getValueFactories().getPathFactory().create(path), actions);
+    }
+    
+    public void checkPermission( Path path, String actions) {
+        
+        CheckArg.isNotNull(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
 
         Set<String> entitlements = entitlements();

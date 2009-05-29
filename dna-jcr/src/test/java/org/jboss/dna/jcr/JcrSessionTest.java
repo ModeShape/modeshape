@@ -193,7 +193,7 @@ public class JcrSessionTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCheckPermissionWithNoPath() throws Exception {
-        session.checkPermission(null, "read");
+        session.checkPermission((String) null, "read");
     }
 
     @Test( expected = IllegalArgumentException.class )

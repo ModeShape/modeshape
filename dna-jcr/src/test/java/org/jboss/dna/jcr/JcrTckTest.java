@@ -35,7 +35,6 @@ import org.apache.jackrabbit.test.api.NodeAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
-import org.apache.jackrabbit.test.api.NodeOrderableChildNodesTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
 import org.apache.jackrabbit.test.api.NodeTest;
 import org.apache.jackrabbit.test.api.NodeUUIDTest;
@@ -187,7 +186,7 @@ public class JcrTckTest {
             addTestSuite(SessionUUIDTest.class);
             addTestSuite(NodeTest.class);
             addTestSuite(NodeUUIDTest.class);
-            addTestSuite(NodeOrderableChildNodesTest.class);
+            // addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
 
             addTestSuite(SetValueBinaryTest.class);

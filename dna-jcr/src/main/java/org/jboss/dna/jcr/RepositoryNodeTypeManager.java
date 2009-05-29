@@ -283,10 +283,21 @@ class RepositoryNodeTypeManager {
                                                   boolean skipProtected ) {
         boolean setToEmpty = value == null;
 
+        /*
+         * We use this flag to indicate that there was a definition encountered with the same name.  If
+         * a named definition (or definitions - for example the same node type could define a LONG and BOOLEAN
+         * version of the same property) is encountered and no match is found for the name, then processing should not
+         * proceed.  If processing did proceed, a residual definition might be found and matched.  This would 
+         * lead to a situation where a node defined a type for a named property, but contained a property with 
+         * the same name and the wrong type. 
+         */
+        boolean matchedOnName = false;
+
         // Look for a single-value property definition on the primary type that matches by name and type ...
         JcrNodeType primaryType = getNodeType(primaryTypeName);
         if (primaryType != null) {
             for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
+                matchedOnName = true;
                 // See if the definition allows the value ...
                 if (skipProtected && definition.isProtected()) return null;
                 if (setToEmpty) {
@@ -299,54 +310,19 @@ class RepositoryNodeTypeManager {
                 int type = definition.getRequiredType();
                 if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
             }
-        }
 
-        // Look for a single-value property definition on the mixin types that matches by name and type ...
-        List<JcrNodeType> mixinTypes = null;
-        if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
-            mixinTypes = new LinkedList<JcrNodeType>();
-            for (Name mixinTypeName : mixinTypeNames) {
-                JcrNodeType mixinType = getNodeType(mixinTypeName);
-                if (mixinType == null) continue;
-                mixinTypes.add(mixinType);
-                for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
-                    // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) return null;
-                    if (setToEmpty) {
-                        if (!definition.isMandatory()) return definition;
-                        // Otherwise this definition doesn't work, so continue with the next ...
-                        continue;
+            if (matchedOnName) {
+                if (value != null) {
+                    for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
+                        // See if the definition allows the value ...
+                        if (skipProtected && definition.isProtected()) return null;
+                        if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
-                    assert value != null;
-                    // We can use the definition if it matches the type and satisfies the constraints ...
-                    int type = definition.getRequiredType();
-                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                 }
-            }
-        }
 
-        if (checkMultiValuedDefinitions) {
-            // Look for a multi-value property definition on the primary type that matches by name and type ...
-            if (primaryType != null) {
-                for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
-                    // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) return null;
-                    if (setToEmpty) {
-                        if (!definition.isMandatory()) return definition;
-                        // Otherwise this definition doesn't work, so continue with the next ...
-                        continue;
-                    }
-                    assert value != null;
-                    // We can use the definition if it matches the type and satisfies the constraints ...
-                    int type = definition.getRequiredType();
-                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
-                }
-            }
-
-            // Look for a multi-value property definition on the mixin types that matches by name and type ...
-            if (mixinTypes != null) {
-                for (JcrNodeType mixinType : mixinTypes) {
-                    for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                if (checkMultiValuedDefinitions) {
+                    // Look for a multi-value property definition on the primary type that matches by name and type ...
+                    for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
                         if (skipProtected && definition.isProtected()) return null;
                         if (setToEmpty) {
@@ -359,51 +335,8 @@ class RepositoryNodeTypeManager {
                         int type = definition.getRequiredType();
                         if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                     }
-                }
-            }
-        }
-
-        if (value != null) {
-            // Nothing was found with matching name and type, so look for definitions with
-            // matching name and an undefined or castable type ...
-
-            // Look for a single-value property definition on the primary type that matches by name ...
-            if (primaryType != null) {
-                for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
-                    // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) return null;
-                    assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                    if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
-                }
-            }
-
-            // Look for a single-value property definition on the mixin types that matches by name ...
-            if (mixinTypes != null) {
-                for (JcrNodeType mixinType : mixinTypes) {
-                    for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
-                        // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) return null;
-                        assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                        if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
-                    }
-                }
-            }
-
-            if (checkMultiValuedDefinitions) {
-                // Look for a multi-value property definition on the primary type that matches by name ...
-                if (primaryType != null) {
-                    for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
-                        // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) return null;
-                        assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                        if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
-                    }
-                }
-
-                // Look for a multi-value property definition on the mixin types that matches by name ...
-                if (mixinTypes != null) {
-                    for (JcrNodeType mixinType : mixinTypes) {
-                        for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                    if (value != null) {
+                        for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                             // See if the definition allows the value ...
                             if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
@@ -411,7 +344,136 @@ class RepositoryNodeTypeManager {
                         }
                     }
                 }
+                return null;
             }
+        }
+
+        // Look for a single-value property definition on the mixin types that matches by name and type ...
+        List<JcrNodeType> mixinTypes = null;
+        if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
+            mixinTypes = new LinkedList<JcrNodeType>();
+            for (Name mixinTypeName : mixinTypeNames) {
+                JcrNodeType mixinType = getNodeType(mixinTypeName);
+                if (mixinType == null) continue;
+                mixinTypes.add(mixinType);
+                for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
+                    matchedOnName = true;
+                    // See if the definition allows the value ...
+                    if (skipProtected && definition.isProtected()) return null;
+                    if (setToEmpty) {
+                        if (!definition.isMandatory()) return definition;
+                        // Otherwise this definition doesn't work, so continue with the next ...
+                        continue;
+                    }
+                    assert value != null;
+                    // We can use the definition if it matches the type and satisfies the constraints ...
+                    int type = definition.getRequiredType();
+                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                }
+                if (matchedOnName) {
+                    if (value != null) {
+                        for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
+                            // See if the definition allows the value ...
+                            if (skipProtected && definition.isProtected()) return null;
+                            assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+                        }
+                    }
+
+                    if (checkMultiValuedDefinitions) {
+                        for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                            // See if the definition allows the value ...
+                            if (skipProtected && definition.isProtected()) return null;
+                            if (setToEmpty) {
+                                if (!definition.isMandatory()) return definition;
+                                // Otherwise this definition doesn't work, so continue with the next ...
+                                continue;
+                            }
+                            assert value != null;
+                            // We can use the definition if it matches the type and satisfies the constraints ...
+                            int type = definition.getRequiredType();
+                            if ((type == PropertyType.UNDEFINED || type == value.getType())
+                                && definition.satisfiesConstraints(value)) return definition;
+                        }
+                        if (value != null) {
+                            for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                                matchedOnName = true;
+                                // See if the definition allows the value ...
+                                if (skipProtected && definition.isProtected()) return null;
+                                assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                                if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+
+                            }
+                        }
+                    }
+
+                    return null;
+                }
+            }
+        }
+
+        if (checkMultiValuedDefinitions) {
+            // Look for a multi-value property definition on the primary type that matches by name and type ...
+            for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
+                matchedOnName = true;
+                // See if the definition allows the value ...
+                if (skipProtected && definition.isProtected()) return null;
+                if (setToEmpty) {
+                    if (!definition.isMandatory()) return definition;
+                    // Otherwise this definition doesn't work, so continue with the next ...
+                    continue;
+                }
+                assert value != null;
+                // We can use the definition if it matches the type and satisfies the constraints ...
+                int type = definition.getRequiredType();
+                if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+            }
+            if (value != null) {
+                for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
+                    matchedOnName = true;
+                    // See if the definition allows the value ...
+                    if (skipProtected && definition.isProtected()) return null;
+                    assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                    if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+                }
+            }
+
+            if (matchedOnName) return null;
+
+            if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
+                mixinTypes = new LinkedList<JcrNodeType>();
+                for (Name mixinTypeName : mixinTypeNames) {
+                    JcrNodeType mixinType = getNodeType(mixinTypeName);
+                    if (mixinType == null) continue;
+                    mixinTypes.add(mixinType);
+                    for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                        matchedOnName = true;
+                        // See if the definition allows the value ...
+                        if (skipProtected && definition.isProtected()) return null;
+                        if (setToEmpty) {
+                            if (!definition.isMandatory()) return definition;
+                            // Otherwise this definition doesn't work, so continue with the next ...
+                            continue;
+                        }
+                        assert value != null;
+                        // We can use the definition if it matches the type and satisfies the constraints ...
+                        int type = definition.getRequiredType();
+                        if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                    }
+                    if (value != null) {
+                        for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                            matchedOnName = true;
+                            // See if the definition allows the value ...
+                            if (skipProtected && definition.isProtected()) return null;
+                            assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+
+                        }
+                    }
+                }
+            }
+            if (matchedOnName) return null;
+
         }
 
         // Nothing was found, so look for residual property definitions ...
@@ -475,10 +537,21 @@ class RepositoryNodeTypeManager {
         boolean setToEmpty = values == null || values.length == 0;
         int propertyType = values == null || values.length == 0 ? PropertyType.STRING : values[0].getType();
 
+        /*
+         * We use this flag to indicate that there was a definition encountered with the same name.  If
+         * a named definition (or definitions - for example the same node type could define a LONG and BOOLEAN
+         * version of the same property) is encountered and no match is found for the name, then processing should not
+         * proceed.  If processing did proceed, a residual definition might be found and matched.  This would 
+         * lead to a situation where a node defined a type for a named property, but contained a property with 
+         * the same name and the wrong type. 
+         */
+        boolean matchedOnName = false;
+
         // Look for a multi-value property definition on the primary type that matches by name and type ...
         JcrNodeType primaryType = getNodeType(primaryTypeName);
         if (primaryType != null) {
             for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
+                matchedOnName = true;
                 // See if the definition allows the value ...
                 if (skipProtected && definition.isProtected()) return null;
                 if (setToEmpty) {
@@ -492,6 +565,23 @@ class RepositoryNodeTypeManager {
                 int type = definition.getRequiredType();
                 if ((type == PropertyType.UNDEFINED || type == propertyType) && definition.satisfiesConstraints(values)) return definition;
             }
+
+            if (matchedOnName) {
+                if (values != null && values.length != 0) {
+                    // Nothing was found with matching name and type, so look for definitions with
+                    // matching name and an undefined or castable type ...
+
+                    // Look for a multi-value property definition on the primary type that matches by name and type ...
+                    for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
+                        // See if the definition allows the value ...
+                        if (skipProtected && definition.isProtected()) return null;
+                        assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                        if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
+                    }
+                }
+
+                return null;
+            }
         }
 
         // Look for a multi-value property definition on the mixin types that matches by name and type ...
@@ -503,6 +593,7 @@ class RepositoryNodeTypeManager {
                 if (mixinType == null) continue;
                 mixinTypes.add(mixinType);
                 for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                    matchedOnName = true;
                     // See if the definition allows the value ...
                     if (skipProtected && definition.isProtected()) return null;
                     if (setToEmpty) {
@@ -516,33 +607,23 @@ class RepositoryNodeTypeManager {
                     int type = definition.getRequiredType();
                     if ((type == PropertyType.UNDEFINED || type == propertyType) && definition.satisfiesConstraints(values)) return definition;
                 }
-            }
-        }
+                if (matchedOnName) {
+                    if (values != null && values.length != 0) {
+                        // Nothing was found with matching name and type, so look for definitions with
+                        // matching name and an undefined or castable type ...
 
-        if (values != null && values.length != 0) {
-            // Nothing was found with matching name and type, so look for definitions with
-            // matching name and an undefined or castable type ...
-
-            // Look for a multi-value property definition on the primary type that matches by name and type ...
-            if (primaryType != null) {
-                for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
-                    // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) return null;
-                    assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                    if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
-                }
-            }
-
-            // Look for a multi-value property definition on the mixin types that matches by name and type ...
-            if (mixinTypes != null) {
-                for (JcrNodeType mixinType : mixinTypes) {
-                    for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
-                        // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) return null;
-                        assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                        if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
+                        // Look for a multi-value property definition on the mixin type that matches by name and type ...
+                        for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
+                            // See if the definition allows the value ...
+                            if (skipProtected && definition.isProtected()) return null;
+                            assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
+                        }
                     }
+
+                    return null;
                 }
+
             }
         }
 

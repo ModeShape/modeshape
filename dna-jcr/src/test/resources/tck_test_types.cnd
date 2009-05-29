@@ -9,7 +9,7 @@
 [dnatest:noSameNameSibs]
 + * (nt:base) = nt:unstructured
 
-[dnatest:referenceableUnstructured] > nt:unstructured, mix:referenceable
+[dnatest:referenceableUnstructured] > nt:unstructured, mix:referenceable orderable
 
 [dnatest:nodeWithMandatoryProperty] > nt:unstructured, mix:referenceable
 - dnatest:mandatoryString (*) mandatory copy
@@ -21,3 +21,8 @@
 - * (*) copy
 - * (*) multiple copy
 + * (nt:base) = dnatest:unorderableUnstructured multiple version
+
+[dnatest:setPropertyAssumeTypeTest] 
+- prop1 (PATH) copy
+- * (*) copy
+- * (*) multiple copy
