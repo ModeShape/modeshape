@@ -32,6 +32,7 @@ import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -253,11 +254,6 @@ public class AbstractJcrNodeTest {
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shoudNotAllowGetBaseVersion() throws Exception {
         node.getBaseVersion();
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowGetCorrespondingNodePath() throws Exception {
-        node.getCorrespondingNodePath(null);
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
@@ -718,8 +714,4 @@ public class AbstractJcrNodeTest {
         node.unlock();
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowUpdate() throws Exception {
-        node.update(null);
-    }
 }
