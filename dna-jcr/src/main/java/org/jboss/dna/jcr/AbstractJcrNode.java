@@ -25,6 +25,7 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +41,7 @@ import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -99,7 +101,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     final UUID internalUuid() {
         return nodeUuid;
     }
-    
+
     final Name name() throws RepositoryException {
         return cache.getNameOf(nodeUuid);
     }
@@ -711,8 +713,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 JcrNodeDefinition match = this.cache.nodeTypes().findChildNodeDefinition(mixinCandidateType.getInternalName(),
                                                                                          Collections.<Name>emptyList(),
                                                                                          nodeName,
-                                                                                         childNode.getPrimaryNodeType()
-                                                                                                  .getInternalName(),
+                                                                                         childNode.getPrimaryNodeType().getInternalName(),
                                                                                          snsCount,
                                                                                          false);
 
@@ -996,11 +997,21 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#update(java.lang.String)
      */
-    public final void update( String srcWorkspaceName ) {
-        throw new UnsupportedOperationException();
+    public final void update( String srcWorkspaceName ) throws NoSuchWorkspaceException, RepositoryException {
+        String[] workspaces = this.session().workspace().getAccessibleWorkspaceNames();
+
+        if (!Arrays.asList(workspaces).contains(srcWorkspaceName)) {
+            JcrRepository repo = session().repository();
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(srcWorkspaceName, repo.getName()));
+        }
+
+        if (session().hasPendingChanges()) {
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
+        }
+        
+        if (true) throw new UnsupportedOperationException();
     }
 
     protected final Property removeExistingValuedProperty( String name ) throws ConstraintViolationException, RepositoryException {
@@ -1363,10 +1374,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getCorrespondingNodePath(java.lang.String)
      */
-    public final String getCorrespondingNodePath( String workspaceName ) {
+    public final String getCorrespondingNodePath( String workspaceName ) throws NoSuchWorkspaceException, RepositoryException {
+        
+        String[] workspaces = this.session().workspace().getAccessibleWorkspaceNames();
+
+        if (!Arrays.asList(workspaces).contains(workspaceName)) {
+            JcrRepository repo = session().repository();
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(workspaceName, repo.getName()));
+        }
+
+        // TODO:Check permissions on workspace
+        
         throw new UnsupportedOperationException();
     }
 
@@ -1473,7 +1493,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (destPath.isAbsolute() || destPath.size() != 1) {
                 throw new ItemNotFoundException();
             }
-            
+
             destSegment = destPath.getLastSegment();
 
             // getLastSegment should return the only segment, since we verified that size() == 1
@@ -1483,7 +1503,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath, workspaceName));
             }
         }
-        
+
         this.editor().orderChildBefore(sourceSegment, destSegment);
 
     }
@@ -1565,17 +1585,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public String toString() {
-        
+
         try {
             PropertyIterator iter = this.getProperties();
             StringBuffer propertyBuff = new StringBuffer();
             while (iter.hasNext()) {
-                AbstractJcrProperty prop = (AbstractJcrProperty) iter.nextProperty();
+                AbstractJcrProperty prop = (AbstractJcrProperty)iter.nextProperty();
                 propertyBuff.append(prop.toString()).append(", ");
             }
             return this.getPath() + " {" + propertyBuff.toString() + "}";
-        }
-        catch (RepositoryException re) {
+        } catch (RepositoryException re) {
             return re.getMessage();
         }
     }

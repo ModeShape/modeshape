@@ -210,6 +210,10 @@ class JcrSession implements Session {
         return this.workspace;
     }
 
+    JcrRepository repository() {
+        return this.repository;
+    }
+
     Graph.Batch createBatch() {
         return graph.batch();
     }

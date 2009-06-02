@@ -136,6 +136,7 @@ public final class JcrI18n {
     public static I18n allNodeTypeTemplatesMustComeFromSameSession;
 
     public static I18n nodeNotReferenceable;
+    public static I18n noPendingChangesAllowed;
 
     static {
         try {

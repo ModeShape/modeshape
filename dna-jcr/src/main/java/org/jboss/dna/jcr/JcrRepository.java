@@ -415,4 +415,13 @@ public class JcrRepository implements Repository {
         JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
         return workspace.getSession();
     }
+
+    /**
+     * Returns the name of this repository
+     * @return the name of this repository
+     * @see #sourceName
+     */
+    String getName() {
+        return this.sourceName;
+    }
 }
