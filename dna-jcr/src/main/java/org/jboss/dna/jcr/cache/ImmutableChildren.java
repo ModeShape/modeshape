@@ -78,12 +78,40 @@ public class ImmutableChildren implements Children, InternalChildren {
         }
     }
 
-    protected ImmutableChildren( Children original,
+    protected ImmutableChildren( ImmutableChildren original,
                                  Name additionalChildName,
+                                 Path.Segment beforeChild,
                                  UUID childUuid,
                                  PathFactory pathFactory ) {
-        this(original);
-        add(additionalChildName, childUuid, pathFactory);
+            assert beforeChild != null;
+
+            this.parentUuid = original.getParentUuid();
+            this.childrenByUuid = new HashMap<UUID, ChildNode>();
+            this.childrenByName = new LinkedListMultimap<Name, ChildNode>();
+
+            int snsIndex = 1;
+            boolean found = false;
+            ChildNode additionalChild = null;
+            for (ChildNode child : original.childrenByName.values()) {
+                this.childrenByUuid.put(child.getUuid(), child);
+                if (beforeChild.equals(child.getSegment())) {
+                    Path.Segment segment = pathFactory.createSegment(additionalChildName, snsIndex++);
+                    additionalChild = new ChildNode(childUuid, segment);
+                    childrenByName.put(child.getName(), additionalChild);
+                    found = true;
+                }
+                
+                if (found &&(child.getName().equals(additionalChildName))) {
+                    Path.Segment newSegment = pathFactory.createSegment(additionalChildName, snsIndex++);
+                    childrenByName.put(child.getName(), child.with(newSegment));
+                }
+                else {
+                    childrenByName.put(child.getName(), child);
+                }
+            }
+            
+            assert additionalChild != null;
+            this.childrenByUuid.put(childUuid, additionalChild);
     }
 
     /**

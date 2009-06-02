@@ -437,10 +437,11 @@ public class Graph {
             @Override
             protected Conjunction<Graph> submit( Locations from,
                                                  Location into,
+                                                 Location before,
                                                  Name newName ) {
                 String workspaceName = getCurrentWorkspaceName();
                 do {
-                    requests.moveBranch(from.getLocation(), into, workspaceName, newName);
+                    requests.moveBranch(from.getLocation(), into, before, workspaceName, newName);
                 } while ((from = from.next()) != null);
                 return and();
             }
@@ -2204,10 +2205,11 @@ public class Graph {
                 @Override
                 protected BatchConjunction submit( Locations from,
                                                    Location into,
+                                                   Location before,
                                                    Name newName ) {
                     String workspaceName = getCurrentWorkspaceName();
                     do {
-                        requestQueue.moveBranch(from.getLocation(), into, workspaceName, newName);
+                        requestQueue.moveBranch(from.getLocation(), into, before, workspaceName, newName);
                     } while ((from = from.next()) != null);
                     return and();
                 }
@@ -3712,6 +3714,86 @@ public class Graph {
     }
 
     /**
+     * A component that defines the location before which a node should be copied or moved.  This is similar to an
+     * {@link Into}, but it allows for placing a node at a particular location within the new destination, rather than
+     * always placing the moved or copied node as the last child of the new parent.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     * @author Randall Hauch
+     */
+    public interface Before<Next> {
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(Location)} instead.
+         * 
+         * @param parentLocation the location of the new parent
+         * @return the interface for additional requests or actions
+         * @see To#to(Location)
+         */
+        Next before( Location parentLocation );
+
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(String)} instead.
+         * 
+         * @param parentPath the path of the new parent
+         * @return the interface for additional requests or actions
+         * @see To#to(String)
+         */
+        Next before( String parentPath );
+
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(Path)} instead.
+         * 
+         * @param parentPath the path of the new parent
+         * @return the interface for additional requests or actions
+         * @see To#to(Path)
+         */
+        Next before( Path parentPath );
+
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
+         * 
+         * @param parentUuid the UUID of the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next before( UUID parentUuid );
+
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
+         * 
+         * @param parentIdProperty the property that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next before( Property parentIdProperty );
+
+        /**
+         * Finish the request by specifying the location of the node before which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
+         * 
+         * @param firstParentIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies
+         *        the new parent
+         * @param additionalParentIdProperties the additional properties that, with the <code>additionalIdProperties</code>,
+         *        uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next before( Property firstParentIdProperty,
+                   Property... additionalParentIdProperties );
+    }
+
+    /**
      * A component that defines the location to which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
@@ -3850,7 +3932,7 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
      */
-    public interface Move<Next> extends AsName<Into<Next>>, Into<Next>, And<Move<Next>> {
+    public interface Move<Next> extends AsName<Into<Next>>, Into<Next>, Before<Next>, And<Move<Next>> {
     }
 
     /**
@@ -5508,15 +5590,31 @@ public class Graph {
          * 
          * @param from the location(s) that are being moved; never null
          * @param into the parent location
+         * @param before the location of the child of the parent before which this node should be placed
          * @param newName the new name for the node being moved; may be null
          * @return this object, for method chaining
          */
         protected abstract T submit( Locations from,
                                      Location into,
+                                     Location before,
                                      Name newName );
 
+        /**
+         * Submit any requests to move the targets into the supplied parent location
+         * 
+         * @param from the location(s) that are being moved; never null
+         * @param into the parent location
+         * @param newName the new name for the node being moved; may be null
+         * @return this object, for method chaining
+         */
+        protected T submit( Locations from,
+                                     Location into,
+                                     Name newName ) {
+            return submit(from, into, null, newName);
+        }
+
         public T into( Location into ) {
-            return submit(from, into, newName);
+            return submit(from, into, null, newName);
         }
 
         public T into( Path into ) {
@@ -5539,6 +5637,31 @@ public class Graph {
         public T into( String into ) {
             return submit(from, Location.create(createPath(into)), newName);
         }
+        
+        public T before( Location before ) {
+            return submit(from, null, before, newName);
+        }
+
+        public T before( Path before ) {
+            return submit(from, null, Location.create(before), newName);
+        }
+
+        public T before( UUID before ) {
+            return submit(from, null, Location.create(before), newName);
+        }
+
+        public T before( Property firstIdProperty,
+                       Property... additionalIdProperties ) {
+            return submit(from, null, Location.create(firstIdProperty, additionalIdProperties), newName);
+        }
+
+        public T before( Property before ) {
+            return submit(from, null, Location.create(before), newName);
+        }
+
+        public T before( String before ) {
+            return submit(from, null, Location.create(createPath(before)), newName);
+        }        
     }
 
     @NotThreadSafe

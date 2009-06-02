@@ -37,6 +37,7 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
@@ -287,6 +288,25 @@ public class ChangedNodeInfo implements NodeInfo {
         }
         return changedChildren.add(childName, childUuid, factory);
     }
+    
+    /**
+     * Add a child to the children. This method does nothing if the child is already in the children.
+     * 
+     * @param childName the name of the child that is to be added; may not be null
+     * @param childUuid the UUID of the child that is to be added; may not be null
+     * @param beforeChild the segment for the child that the new child should be added before; may not be null 
+     * @param factory the path factory that should be used to create a {@link Segment} for the new {@link ChildNode} object
+     */
+    public void addChild( Name childName,
+                               Path.Segment beforeChild,
+                               UUID childUuid,
+                               PathFactory factory ) {
+        if (changedChildren == null) {
+            // We need to capture the original children as a changed contained ...
+            changedChildren = new ChangedChildren(original.getChildren());
+        }
+        changedChildren = changedChildren.with(childName, beforeChild, childUuid, factory);
+    }    
 
     /**
      * Remove a child from the children. This method only uses the child's UUID to identify the contained ChildNode instance that

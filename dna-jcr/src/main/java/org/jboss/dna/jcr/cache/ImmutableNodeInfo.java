@@ -199,4 +199,8 @@ public class ImmutableNodeInfo implements NodeInfo {
     public boolean isModified() {
         return false;
     }
+
+    public String toString() {
+        return this.uuid + " (" + primaryTypeName + ") {" + properties + "}"; 
+    }
 }

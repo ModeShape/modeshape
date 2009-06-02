@@ -474,8 +474,27 @@ public abstract class RequestBuilder {
                                          Location into,
                                          String workspaceName,
                                          Name newNameForNode ) {
-        return process(new MoveBranchRequest(from, into, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
+        return process(new MoveBranchRequest(from, into, null, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
     }
+    
+    /**
+     * Create a request to move a branch from one location into another before the given child node of the new location.
+     * 
+     * @param from the location of the top node in the existing branch that is to be moved
+     * @param into the location of the existing node into which the branch should be moved
+     * @param before the location of the node before which the branch should be moved; may be null
+     * @param workspaceName the name of the workspace
+     * @param newNameForNode the new name for the node being moved, or null if the name of the original should be used
+     * @return the request; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public MoveBranchRequest moveBranch( Location from,
+                                         Location into,
+                                         Location before, 
+                                         String workspaceName,
+                                         Name newNameForNode ) {
+        return process(new MoveBranchRequest(from, into, before, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
+    }    
     /**
      * Create a request to move a branch from one location into another.
      * 
@@ -494,7 +513,7 @@ public abstract class RequestBuilder {
                                          Name newNameForNode,
                                          NodeConflictBehavior conflictBehavior ) {
         if (conflictBehavior == null) conflictBehavior = MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR;
-        return process(new MoveBranchRequest(from, into, workspaceName, newNameForNode, conflictBehavior));
+        return process(new MoveBranchRequest(from, into, null, workspaceName, newNameForNode, conflictBehavior));
     }
 
     /**

@@ -1343,6 +1343,32 @@ class SessionCache {
             }
         }
 
+        public void orderChildBefore(Path.Segment childToBeMoved, Path.Segment before) throws RepositoryException {
+            PathFactory pathFactory = SessionCache.this.pathFactory;
+            Path thisPath = this.currentLocation.getPath();
+            UUID fromUuid = this.node.getChildren().getChild(childToBeMoved).getUuid();
+            Location fromLocation = Location.create(pathFactory.create(thisPath, childToBeMoved), fromUuid);
+            
+            Children children = this.node.getChildren();
+            ChildNode nodeToBeMoved = children.getChild(childToBeMoved);
+            this.node.removeChild(nodeToBeMoved.getUuid(), pathFactory);
+
+            if (before == null) {
+                this.node.addChild(nodeToBeMoved.getName(), nodeToBeMoved.getUuid(), pathFactory);
+                // Moving the node into its parent will remove it from its current spot in the child list and re-add it to the end
+                operations.move(fromLocation).into(this.currentLocation);
+
+            }
+            else {
+                Path beforePath = pathFactory.create(thisPath, before);
+                UUID beforeUuid = this.node.getChildren().getChild(before).getUuid();
+                Location beforeLocation = Location.create(beforePath, beforeUuid);
+                
+                this.node.addChild(nodeToBeMoved.getName(), before, nodeToBeMoved.getUuid(), pathFactory);
+                operations.move(fromLocation).before(beforeLocation);
+            }
+        }
+        
         /**
          * Move the child specified by the supplied UUID to be a child of this node, appending the child to the end of the current
          * list of children. This method automatically disconnects the node from its current parent.

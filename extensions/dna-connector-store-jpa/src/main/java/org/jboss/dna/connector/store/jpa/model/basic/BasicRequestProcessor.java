@@ -1360,6 +1360,7 @@ public class BasicRequestProcessor extends RequestProcessor {
      * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public void process( MoveBranchRequest request ) {
         logger.trace(request.toString());
@@ -1390,6 +1391,20 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             // Find the actual new location ...
             Location toLocation = request.into();
+            Location beforeLocation = request.before();
+
+            if (beforeLocation != null) {
+                if (beforeLocation.hasPath()) {
+                    toLocation = Location.create(beforeLocation.getPath().getParent());
+                } else {
+                    ActualLocation actualBeforeLocation = getActualLocation(workspaceId, beforeLocation);
+
+                    // Ensure that the beforeLocation has a path - actualBeforeLocation has a path
+                    beforeLocation = actualBeforeLocation.location;
+                    toLocation = Location.create(actualBeforeLocation.location.getPath().getParent());
+                }
+            }
+
             String toUuidString = null;
             if (request.hasNoEffect()) {
                 actualNewLocation = actualOldLocation;
@@ -1416,28 +1431,69 @@ public class BasicRequestProcessor extends RequestProcessor {
                         ns = fromEntity.getChildNamespace();
                     }
 
-                    // Find the largest SNS index in the existing ChildEntity objects with the same name ...
-                    Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
-                    query.setParameter("workspaceId", workspaceId);
-                    query.setParameter("parentUuid", toUuidString);
-                    query.setParameter("ns", ns.getId());
-                    query.setParameter("childName", childLocalName);
                     int nextSnsIndex = 1;
-                    try {
-                        Integer index = (Integer)query.getSingleResult();
-                        if (index != null) nextSnsIndex = index.intValue() + 1;
-                    } catch (NoResultException e) {
-                    }
-
-                    // Find the largest child index in the existing ChildEntity objects ...
-                    query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
-                    query.setParameter("workspaceId", workspaceId);
-                    query.setParameter("parentUuid", toUuidString);
                     int nextIndexInParent = 1;
-                    try {
-                        Integer index = (Integer)query.getSingleResult();
-                        if (index != null) nextIndexInParent = index + 1;
-                    } catch (NoResultException e) {
+                    if (beforeLocation == null) {
+                        // Find the largest SNS index in the existing ChildEntity objects with the same name ...
+                        Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
+                        query.setParameter("workspaceId", workspaceId);
+                        query.setParameter("parentUuid", toUuidString);
+                        query.setParameter("ns", ns.getId());
+                        query.setParameter("childName", childLocalName);
+                        try {
+                            Integer index = (Integer)query.getSingleResult();
+                            if (index != null) nextSnsIndex = index.intValue() + 1;
+                        } catch (NoResultException e) {
+                        }
+
+                        // Find the largest child index in the existing ChildEntity objects ...
+                        query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
+                        query.setParameter("workspaceId", workspaceId);
+                        query.setParameter("parentUuid", toUuidString);
+                        try {
+                            Integer index = (Integer)query.getSingleResult();
+                            if (index != null) nextIndexInParent = index + 1;
+                        } catch (NoResultException e) {
+                        }
+                    } else {
+                        /*
+                         * This is a sub-optimal approach, particularly for inserts to the front
+                         * of a long list of child nodes, but it guarantees that we won't have
+                         * the JPA-cached entities and the database out of sync.
+                         */
+
+                        Query query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
+                        query.setParameter("workspaceId", workspaceId);
+                        query.setParameter("parentUuidString", toUuidString);
+                        try {
+                            List<ChildEntity> children = query.getResultList();
+                            Path beforePath = beforeLocation.getPath();
+                            Path.Segment beforeSegment = beforePath.getLastSegment();
+
+                            boolean foundBefore = false;
+                            for (ChildEntity child : children) {
+                                NamespaceEntity namespace = child.getChildNamespace();
+                                if (namespace.getUri().equals(ns.getUri())
+                                    && child.getChildName().equals(childLocalName)
+                                    && child.getSameNameSiblingIndex() == beforeSegment.getIndex()) {
+                                    foundBefore = true;
+                                    nextIndexInParent = child.getIndexInParent();
+                                    nextSnsIndex = beforeSegment.getIndex();                                    
+                                }
+
+                                if (foundBefore) {
+                                    child.setIndexInParent(child.getIndexInParent() + 1);
+                                    if (child.getChildName().equals(childLocalName)
+                                        && namespace.getUri().equals(ns.getUri())) {
+                                        child.setSameNameSiblingIndex(child.getSameNameSiblingIndex() + 1);
+                                    }
+                                    entities.persist(child);
+                                }
+                            }
+
+                        } catch (NoResultException e) {
+                        }
+
                     }
 
                     ChildId movedId = new ChildId(workspaceId, toUuidString, fromUuidString);

@@ -408,12 +408,15 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                                                                                             intoProjection.projection.getRules());
             request.setError(new UnsupportedRequestException(msg));
         }
+        SingleProjection beforeProjection = request.before() != null ? asSingleProjection(workspace, request.before(), request) : null;
 
+        
         // Push down the request ...
         Location fromLocation = Location.create(fromProjection.pathInSource);
         Location intoLocation = Location.create(intoProjection.pathInSource);
+        Location beforeLocation = beforeProjection != null ? Location.create(beforeProjection.pathInSource) : null;
         String workspaceName = fromProjection.projection.getWorkspaceName();
-        MoveBranchRequest sourceRequest = new MoveBranchRequest(fromLocation, intoLocation, workspaceName, request.desiredName(),
+        MoveBranchRequest sourceRequest = new MoveBranchRequest(fromLocation, intoLocation, beforeLocation, workspaceName, request.desiredName(),
                                                                 request.conflictBehavior());
         execute(sourceRequest, fromProjection.projection);
 

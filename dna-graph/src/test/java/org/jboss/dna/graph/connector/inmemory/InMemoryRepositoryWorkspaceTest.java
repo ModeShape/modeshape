@@ -241,7 +241,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
 
-        workspace.moveNode(context, node_b, null, workspace, node_d);
+        workspace.moveNode(context, node_b, null, workspace, node_d, null);
 
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -251,7 +251,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b)));
         assertThat(workspace.getNode(pathFactory.create("/d/b[2]/c")), is(sameInstance(node_c)));
 
-        workspace.moveNode(context, node_b, null, workspace, node_e);
+        workspace.moveNode(context, node_b, null, workspace, node_e, null);
 
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -259,6 +259,55 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/e/b")), is(sameInstance(node_b)));
         assertThat(workspace.getNode(pathFactory.create("/d/e/b/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+    }
+
+    @Test
+    public void shouldMoveNodeBeforeAnother() {
+        InMemoryNode root = workspace.getRoot();
+        InMemoryNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
+        InMemoryNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
+        InMemoryNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        InMemoryNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
+        InMemoryNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
+        InMemoryNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        Name propName = nameFactory.create("prop");
+        node_b.setProperty(propertyFactory.create(propName, "node_b"));
+        node_b2.setProperty(propertyFactory.create(propName, "node_b2"));
+        
+        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperty(propName).getFirstValue().toString(), is("node_b"));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")).getProperty(propName).getFirstValue().toString(), is("node_b2"));
+
+        // Move before a node with the same name
+        workspace.moveNode(context, node_b, null, workspace, node_d, node_b2);
+
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[1]")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[1]/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[1]")).getProperty(propName).getFirstValue().toString(), is("node_b"));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[2]")).getProperty(propName).getFirstValue().toString(), is("node_b2"));
+
+        // Move after the last node
+        workspace.moveNode(context, node_b, null, workspace, root, null);
+
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/b")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/b/c")), is(sameInstance(node_c)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
     }
 
@@ -304,7 +353,7 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(new_workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(new_node_b2)));
 
         // Move 'workspace::/a/b' into 'newWorkspace::/d'
-        workspace.moveNode(context, node_b, null, new_workspace, new_node_d);
+        workspace.moveNode(context, node_b, null, new_workspace, new_node_d, null);
 
         assertThat(workspace.getNodesByUuid().size(), is(5));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));

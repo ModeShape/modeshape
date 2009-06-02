@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 
 /**
@@ -50,6 +51,13 @@ public class ChangedChildren extends ImmutableChildren {
         super(parentUuid);
     }
 
+    protected ChangedChildren( ImmutableChildren original,
+                                 Name additionalChildName,
+                                 Path.Segment beforeChild,
+                                 UUID childUuid,
+                                 PathFactory pathFactory ) {
+        super(original, additionalChildName, beforeChild, childUuid, pathFactory);
+    }
     /**
      * {@inheritDoc}
      * 
@@ -63,6 +71,22 @@ public class ChangedChildren extends ImmutableChildren {
         // Simply add the node to this object ...
         super.add(newChildName, newChildUuid, pathFactory);
         return this;
+    }
+
+    /**
+     * Create another Children object that is equivalent to this node but with the supplied child added before the named node.
+     * 
+     * @param newChildName the name of the new child; may not be null
+     * @param beforeChild the path segment of the child before which this node should be added; may not be null
+     * @param newChildUuid the UUID of the new child; may not be null
+     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
+     * @return the new Children object; never null
+     */
+    public ChangedChildren with( Name newChildName,
+                                 Path.Segment beforeChild,
+                                 UUID newChildUuid,
+                                 PathFactory pathFactory ) {
+        return new ChangedChildren(this, newChildName, beforeChild, newChildUuid, pathFactory);
     }
 
     /**

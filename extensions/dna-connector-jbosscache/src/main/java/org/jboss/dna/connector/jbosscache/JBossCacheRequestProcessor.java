@@ -163,7 +163,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
         // the array of Path.Segment for the children (since the cache doesn't maintain order).
-        Path.Segment newSegment = updateChildList(cache, parentNode, request.named(), getExecutionContext(), true);
+        Path.Segment newSegment = updateChildList(cache, parentNode, request.named(), null, getExecutionContext(), true);
         Node<Name, Object> node = parentNode.addChild(Fqn.fromElements(newSegment));
         assert checkChildren(parentNode);
 
@@ -244,6 +244,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                                            node,
                                            newParent,
                                            desiredName,
+                                           null,
                                            true,
                                            useSameUuids,
                                            newNodeUuid,
@@ -286,13 +287,32 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Path nodePath = request.from().getPath();
         Node<Name, Object> node = getNode(request, cache, nodePath);
         if (node == null) return;
-        Path newParentPath = request.into().getPath();
+        Path newParentPath;
+
+        if (request.into() != null) {
+            newParentPath = request.into().getPath();
+        } else {
+            // into() and before() can't both be null
+            assert request.before() != null;
+            newParentPath = request.before().getPath().getParent();
+        }
+
+        Path.Segment beforeNodeName = request.before() != null ? request.before().getPath().getLastSegment() : null;
         Node<Name, Object> newParent = getNode(request, cache, newParentPath);
         if (newParent == null) return;
 
         // Copy the branch and use the same UUIDs ...
         Name desiredName = request.desiredName();
-        Path.Segment newSegment = copyNode(cache, node, newParent, desiredName, true, true, null, null, getExecutionContext());
+        Path.Segment newSegment = copyNode(cache,
+                                           node,
+                                           newParent,
+                                           desiredName,
+                                           beforeNodeName,
+                                           true,
+                                           true,
+                                           null,
+                                           null,
+                                           getExecutionContext());
 
         // Now delete the old node ...
         Node<Name, Object> oldParent = node.getParent();
@@ -415,7 +435,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         // Loop over each child and copy it ...
         for (Node<Name, Object> child : fromRoot.getChildren()) {
-            copyNode(intoCache, child, intoRoot, null, true, true, null, null, context);
+            copyNode(intoCache, child, intoRoot, null, null, true, true, null, null, context);
         }
 
         // Copy the list of child segments in the root (this maintains the order of the children) ...
@@ -518,10 +538,24 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
     }
 
+    /**
+     * @param newCache the cache into which the node is to be copied
+     * @param original the node to be copied
+     * @param newParent the new parent of the node to be copied
+     * @param desiredName the desired name of the node in the new location
+     * @param beforeNodeName the node before which the new node should be placed
+     * @param recursive if this is a deep copy
+     * @param reuseOriginalUuids indicates whether the original UUIDs should be used for the copies or new UUIDs should be used
+     * @param uuidForCopyOfOriginal pre-determined UUID for copy of node; ignored if reuseOriginalUuids is true
+     * @param count the count of nodes affected by the operation
+     * @param context the execution context that provides the path factory to be used to create the new path name
+     * @return the path segment that identifies the new node under its new parent
+     */
     protected Path.Segment copyNode( Cache<Name, Object> newCache,
                                      Node<Name, Object> original,
                                      Node<Name, Object> newParent,
                                      Name desiredName,
+                                     Path.Segment beforeNodeName,
                                      boolean recursive,
                                      boolean reuseOriginalUuids,
                                      UUID uuidForCopyOfOriginal,
@@ -530,13 +564,12 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn()
-                                                                                                                                                  .getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
         // the array of Path.Segment for the children (since the cache doesn't maintain order).
-        Path.Segment newSegment = updateChildList(newCache, newParent, name.getName(), context, true);
+        Path.Segment newSegment = updateChildList(newCache, newParent, name.getName(), beforeNodeName, context, true);
         Node<Name, Object> copy = newParent.addChild(getFullyQualifiedName(newSegment));
         assert checkChildren(newParent);
         // Copy the properties ...
@@ -553,7 +586,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node<Name, Object> child : original.getChildren()) {
-                copyNode(newCache, child, copy, null, true, reuseOriginalUuids, null, count, context);
+                copyNode(newCache, child, copy, null, null, true, reuseOriginalUuids, null, count, context);
             }
         }
         return newSegment;
@@ -569,6 +602,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @param parent the parent node; may not be null
      * @param changedName the name that should be compared to the existing node siblings to determine whether the same-name
      *        sibling indexes should be updated; may not be null
+     * @param beforeNodeName the name of the node before which this node should be placed; null indicates that this node should be
+     *        added as the last child under the node
      * @param context the execution context; may not be null
      * @param addChildWithName true if a new child with the supplied name is to be added to the children (but which does not yet
      *        exist in the node's children)
@@ -577,6 +612,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     protected Path.Segment updateChildList( Cache<Name, Object> cache,
                                             Node<Name, Object> parent,
                                             Name changedName,
+                                            Path.Segment beforeNodeName,
                                             ExecutionContext context,
                                             boolean addChildWithName ) {
         assert parent != null;
@@ -589,14 +625,25 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         List<ChildInfo> childrenWithChangedName = new LinkedList<ChildInfo>();
         Path.Segment[] childNames = (Path.Segment[])parent.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         int index = 0;
+        int snsIndex = 0;
+        boolean foundBeforeNode = false;
         if (childNames != null) {
             for (Path.Segment childName : childNames) {
-                if (childName.getName().equals(changedName)) {
-                    ChildInfo info = new ChildInfo(childName, index);
+                if (childName.equals(beforeNodeName)) {
+                    foundBeforeNode = true;
+                    // And add a child info for the new node ...
+                    ChildInfo info = new ChildInfo(null, snsIndex++);
                     childrenWithChangedName.add(info);
                 }
-                index++;
+                if (childName.getName().equals(changedName)) {
+                    ChildInfo info = new ChildInfo(childName, snsIndex);
+                    childrenWithChangedName.add(info);
+                }
+                
+                snsIndex++;
+                if (!foundBeforeNode) index++;
             }
+            
         }
         if (addChildWithName) {
             // Make room for the new child at the end of the array ...
@@ -605,15 +652,22 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             } else {
                 int numExisting = childNames.length;
                 Path.Segment[] newChildNames = new Path.Segment[numExisting + 1];
-                System.arraycopy(childNames, 0, newChildNames, 0, numExisting);
+                System.arraycopy(childNames, 0, newChildNames, 0, index);
+
+                if (index != numExisting) {
+                    System.arraycopy(childNames, index, newChildNames, index + 1, numExisting - index);
+                }
                 childNames = newChildNames;
             }
 
-            // And add a child info for the new node ...
-            ChildInfo info = new ChildInfo(null, index);
-            childrenWithChangedName.add(info);
+            if (!foundBeforeNode) {
+                // Make sure that we add a record for the new node if it hasn't previously been added
+                ChildInfo info = new ChildInfo(null, index);
+                childrenWithChangedName.add(info);
+                
+            }
             Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(changedName);
-            childNames[index++] = newSegment;
+            childNames[index] = newSegment;
         }
         assert childNames != null;
 
@@ -657,7 +711,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         if (addChildWithName) {
             // Return the segment for the new node ...
-            return childNames[childNames.length - 1];
+            return childNames[index];
         }
         return null;
     }
@@ -706,9 +760,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     // don't copy ...
                 } else {
                     // Append an updated segment ...
-                    Path.Segment newSegment = context.getValueFactories()
-                                                     .getPathFactory()
-                                                     .createSegment(childName.getName(), childName.getIndex() - 1);
+                    Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(childName.getName(),
+                                                                                                         childName.getIndex() - 1);
                     newChildNames[index] = newSegment;
                     // Replace the child with the correct FQN ...
                     changeNodeName(cache, parent, childName, newSegment, context);
@@ -752,6 +805,10 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                              int childIndex ) {
             this.segment = childSegment;
             this.childIndex = childIndex;
+        }
+        
+        public String toString() {
+            return (segment != null ? segment.getString() : "null") + "@" + childIndex; 
         }
 
     }

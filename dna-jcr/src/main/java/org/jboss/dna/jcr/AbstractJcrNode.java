@@ -1457,12 +1457,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ItemNotFoundException();
         }
         // getLastSegment should return the only segment, since we verified that size() == 1
-        source = nodeInfo().getChildren().getChild(srcPath.getLastSegment());
+        Path.Segment sourceSegment = srcPath.getLastSegment();
+        source = nodeInfo().getChildren().getChild(sourceSegment);
         if (source == null) {
-            throw new ItemNotFoundException();
+            String workspaceName = this.cache.session().getWorkspace().getName();
+            throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath, workspaceName));
         }
 
         Path destPath = null;
+        Path.Segment destSegment = null;
         ChildNode destination = null;
 
         if (destChildRelPath != null) {
@@ -1470,13 +1473,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (destPath.isAbsolute() || destPath.size() != 1) {
                 throw new ItemNotFoundException();
             }
+            
+            destSegment = destPath.getLastSegment();
 
             // getLastSegment should return the only segment, since we verified that size() == 1
-            destination = nodeInfo().getChildren().getChild(destPath.getLastSegment());
+            destination = nodeInfo().getChildren().getChild(destSegment);
             if (destination == null) {
-                throw new ItemNotFoundException();
+                String workspaceName = this.cache.session().getWorkspace().getName();
+                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath, workspaceName));
             }
         }
+        
+        this.editor().orderChildBefore(sourceSegment, destSegment);
 
     }
 

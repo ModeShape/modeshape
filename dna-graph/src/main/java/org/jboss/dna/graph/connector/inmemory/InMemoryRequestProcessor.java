@@ -217,16 +217,35 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
 
+        InMemoryNode beforeNode = request.before() != null ? getTargetNode(workspace, request, request.before()) : null;
         InMemoryNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
         // Look up the new parent, which must exist ...
-        Path newParentPath = request.into().getPath();
+        Path newParentPath;
+        
+        if (request.into() != null) {
+            newParentPath = request.into().getPath();
+        }
+        else {
+            // into or before cannot both be null
+            assert beforeNode != null;
+            
+            // Build the path from the before node to the root.
+            LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
+            InMemoryNode current = beforeNode.getParent();
+            while (current != workspace.getRoot()) {
+                segments.addFirst(current.getName());
+                current = current.getParent();
+            } 
+            newParentPath = getExecutionContext().getValueFactories().getPathFactory().createAbsolutePath(segments);
+        }
+        
         InMemoryNode newParent = workspace.getNode(newParentPath);
-        workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent);
+        workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
         assert node.getParent() == newParent;
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
-        Location newLocation = Location.create(newPath, newParent.getUuid());
+        Location newLocation = Location.create(newPath, node.getUuid());
         request.setActualLocations(oldLocation, newLocation);
         recordChange(request);
     }

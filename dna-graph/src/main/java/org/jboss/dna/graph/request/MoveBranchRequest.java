@@ -44,6 +44,7 @@ public class MoveBranchRequest extends ChangeRequest {
 
     private final Location from;
     private final Location into;
+    private final Location before;
     private final String workspaceName;
     private final Name desiredNameForNode;
     private final NodeConflictBehavior conflictBehavior;
@@ -61,7 +62,7 @@ public class MoveBranchRequest extends ChangeRequest {
     public MoveBranchRequest( Location from,
                               Location into,
                               String workspaceName ) {
-        this(from, into, workspaceName, null, DEFAULT_CONFLICT_BEHAVIOR);
+        this(from, into, null, workspaceName, null, DEFAULT_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -77,7 +78,7 @@ public class MoveBranchRequest extends ChangeRequest {
                               Location into,
                               String workspaceName,
                               Name newNameForMovedNode ) {
-        this(from, into, workspaceName, newNameForMovedNode, DEFAULT_CONFLICT_BEHAVIOR);
+        this(from, into, null, workspaceName, newNameForMovedNode, DEFAULT_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -94,7 +95,7 @@ public class MoveBranchRequest extends ChangeRequest {
                               Location into,
                               String workspaceName,
                               NodeConflictBehavior conflictBehavior ) {
-        this(from, into, workspaceName, null, conflictBehavior);
+        this(from, into, null, workspaceName, null, conflictBehavior);
     }
 
     /**
@@ -102,6 +103,8 @@ public class MoveBranchRequest extends ChangeRequest {
      * 
      * @param from the location of the top node in the existing branch that is to be moved
      * @param into the location of the existing node into which the branch should be moved
+     * @param before the location of the child of the {@code into} node that the branch should be placed before; null indicates
+     *        that the branch should be the last child of its new parent
      * @param workspaceName the name of the workspace
      * @param newNameForMovedNode the new name for the node being moved, or null if the name of the original should be used
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
@@ -110,15 +113,17 @@ public class MoveBranchRequest extends ChangeRequest {
      */
     public MoveBranchRequest( Location from,
                               Location into,
+                              Location before,
                               String workspaceName,
                               Name newNameForMovedNode,
                               NodeConflictBehavior conflictBehavior ) {
         CheckArg.isNotNull(from, "from");
-        CheckArg.isNotNull(into, "into");
+        // CheckArg.isNotNull(into, "into");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         this.from = from;
         this.into = into;
+        this.before = before;
         this.workspaceName = workspaceName;
         this.desiredNameForNode = newNameForMovedNode;
         this.conflictBehavior = conflictBehavior;
@@ -140,6 +145,15 @@ public class MoveBranchRequest extends ChangeRequest {
      */
     public Location into() {
         return into;
+    }
+
+    /**
+     * Get the location defining the node before which the branch is to be placed
+     * 
+     * @return the to location; null indicates that the branch should be the last child node of its new parent
+     */
+    public Location before() {
+        return before;
     }
 
     /**
@@ -197,9 +211,10 @@ public class MoveBranchRequest extends ChangeRequest {
      * @return true if this move request really doesn't change the parent of the node, or false if it cannot be determined
      */
     public boolean hasNoEffect() {
-        if (into.hasPath() && into.hasIdProperties() == false && from.hasPath()) {
+        if (into != null && into.hasPath() && into.hasIdProperties() == false && from.hasPath()) {
             if (!from.getPath().getParent().equals(into.getPath())) return false;
             if (desiredName() != null && !desiredName().equals(from.getPath().getLastSegment().getName())) return false;
+            if (before != null) return false;
             return true;
         }
         // Can't be determined for certain
@@ -232,7 +247,7 @@ public class MoveBranchRequest extends ChangeRequest {
         if (!newLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
         }
-        if (into().hasPath() && !newLocation.getPath().getParent().isSameAs(into.getPath())) {
+        if (into() != null && into().hasPath() && !newLocation.getPath().getParent().isSameAs(into.getPath())) {
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
         }
         Name actualNewName = newLocation.getPath().getLastSegment().getName();
@@ -270,8 +285,16 @@ public class MoveBranchRequest extends ChangeRequest {
     @Override
     public boolean changes( String workspace,
                             Path path ) {
+        if (this.into() != null) {
+            return this.workspaceName.equals(workspace)
+                   && (into.hasPath() && into.getPath().isAtOrBelow(path) || from.hasPath() && from.getPath().isAtOrBelow(path));
+        }
+        // into or before must be non-null
+        assert before() != null;
         return this.workspaceName.equals(workspace)
-               && (into.hasPath() && into.getPath().isAtOrBelow(path) || from.hasPath() && from.getPath().isAtOrBelow(path));
+               && (before.hasPath() && before.getPath().getParent().isAtOrBelow(path) || from.hasPath()
+                                                                                         && from.getPath().isAtOrBelow(path));
+
     }
 
     /**
@@ -281,7 +304,7 @@ public class MoveBranchRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return into;
+        return into != null ? into : before;
     }
 
     /**
@@ -343,9 +366,10 @@ public class MoveBranchRequest extends ChangeRequest {
     @Override
     public String toString() {
         if (desiredName() != null) {
-            return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into " + into() + " with name "
-                   + desiredName();
+            return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace "
+                   + (into() == null ? "before " + before() : "into " + into()) + " with name " + desiredName();
         }
-        return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into " + into();
+        return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into "
+               + (into() == null ? "before " + before() : "into " + into());
     }
 }
