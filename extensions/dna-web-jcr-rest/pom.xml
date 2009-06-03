@@ -9,8 +9,8 @@
 	</parent>
 	<artifactId>dna-web-jcr-rest</artifactId>
 	<packaging>jar</packaging>
-	<name>JBoss DNA JCR REST Servlet</name>
-	<description>JBoss DNA servlet that provides RESTful access to JCR items</description>
+	<name>JBoss DNA JCR REST Library</name>
+	<description>JBoss DNA REST support library</description>
 	<url>http://labs.jboss.org/dna</url>
 	<dependencies>
 		<dependency>
