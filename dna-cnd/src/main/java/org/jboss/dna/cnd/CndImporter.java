@@ -505,7 +505,7 @@ public class CndImporter {
         protected String propertyTypeNameFrom( CommonTree node,
                                                int childType ) {
             String text = stringFrom(node, childType);
-            if (text.equals("*")) text = "undefined";
+            if ("*".equals(text)) text = "undefined";
             String upperText = text.toUpperCase();
             if (!VALID_PROPERTY_TYPES.contains(upperText)) {
                 recordError(node, CndI18n.expectedValidPropertyTypeName, text, VALID_PROPERTY_TYPES);

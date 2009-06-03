@@ -36,6 +36,7 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.repository.sequencer.MockSequencerA;
+import org.jboss.dna.repository.sequencer.MockStreamSequencerA;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -74,7 +75,7 @@ public class DnaConfigurationTest {
 
     @Test
     public void shouldAllowSpecifyingConfigurationRepository() {
-        DnaConfiguration config = configuration.withConfigurationRepository()
+        DnaConfiguration config = configuration.withConfigurationSource()
                                                .usingClass("org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource")
                                                .loadedFromClasspath()
                                                .describedAs("description")
@@ -103,7 +104,7 @@ public class DnaConfigurationTest {
         newSource.setRootNodeUuid(rootUuid);
 
         // Update the configuration and save it ...
-        configuration.addRepository(newSource).save();
+        configuration.addSource(newSource).save();
 
         // Verify that the graph has been updated correctly ...
         Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
@@ -119,7 +120,7 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassNameAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
                      .describedAs("description")
@@ -141,7 +142,7 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassNameAndClasspathAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFrom("cp1", "cp2")
                      .describedAs("description")
@@ -164,7 +165,7 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassReferenceAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .with("retryLimit")
@@ -186,13 +187,13 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowOverwritingRepositorySourceByRepositoryName() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .with("retryLimit")
                      .setTo(3)
                      .and()
-                     .addRepository("Source1")
+                     .addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("new description")
                      .with("retryLimit")
@@ -215,7 +216,7 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingMimeTypeDetector() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .and()
@@ -244,13 +245,13 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingSequencer() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .named("A Source")
                      .and()
                      .addSequencer("sequencerA")
-                     .usingClass(MockSequencerA.class)
+                     .usingClass(MockStreamSequencerA.class)
                      .named("The (Main) Sequencer")
                      .describedAs("Mock Sequencer A")
                      .sequencingFrom("/foo/source")
@@ -273,7 +274,7 @@ public class DnaConfigurationTest {
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.READABLE_NAME, "The (Main) Sequencer"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.CLASSNAME,
-                                                                               MockSequencerA.class.getName()));
+                                                                               MockStreamSequencerA.class.getName()));
         System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSIONS));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSIONS,
                                                                                "/foo/source => /foo/target",
@@ -282,7 +283,7 @@ public class DnaConfigurationTest {
 
     @Test
     public void shouldAllowConfigurationInMultipleSteps() {
-        configuration.addRepository("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
+        configuration.addSource("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
         configuration.addMimeTypeDetector("detector")
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
                      .describedAs("default detector");

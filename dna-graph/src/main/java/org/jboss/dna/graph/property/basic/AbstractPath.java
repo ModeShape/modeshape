@@ -248,7 +248,7 @@ public abstract class AbstractPath implements Path {
      * {@inheritDoc}
      */
     public String getString() {
-        return doGetString(null, DEFAULT_ENCODER, null);
+        return doGetString(null, null, null);
     }
 
     /**
@@ -625,6 +625,6 @@ public abstract class AbstractPath implements Path {
      */
     @Override
     public String toString() {
-        return getString(Path.URL_ENCODER);
+        return getString(Path.NO_OP_ENCODER);
     }
 }

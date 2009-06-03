@@ -681,6 +681,21 @@ public class BatchRequestBuilder {
         return add(new DeleteBranchRequest(at, workspaceName));
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Request request : requests) {
+            sb.append(request.toString());
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
     protected class NodeChange {
         protected final Location location;
         protected final String workspaceName;

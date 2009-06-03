@@ -558,12 +558,15 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("{ ");
         boolean hasPath = this.hasPath();
+        boolean hasProps = this.hasIdProperties();
         if (hasPath) {
+            if (hasProps) {
+                sb.append("<");
+            }
             sb.append(this.getPath());
         }
-        if (this.hasIdProperties()) {
+        if (hasProps) {
             if (hasPath) sb.append(" && ");
             sb.append("[");
             boolean first = true;
@@ -573,8 +576,10 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
                 sb.append(idProperty);
             }
             sb.append("]");
+            if (hasPath) {
+                sb.append("<");
+            }
         }
-        sb.append(" }");
         return sb.toString();
     }
 

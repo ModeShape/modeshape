@@ -39,12 +39,14 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaEngine;
 import org.jboss.dna.repository.RepositoryLibrary;
@@ -138,12 +140,13 @@ public class JcrEngine {
             repositoriesLock.lock();
             JcrRepository repository = repositories.get(repositoryName);
             if (repository == null) {
-                if (getRepositorySource(repositoryName) == null) {
+                try {
+                    repository = doCreateJcrRepository(repositoryName);
+                } catch (PathNotFoundException e) {
                     // The repository name is not a valid repository ...
                     String msg = JcrI18n.repositoryDoesNotExist.text(repositoryName);
                     throw new RepositoryException(msg);
                 }
-                repository = doCreateJcrRepository(repositoryName);
                 repositories.put(repositoryName, repository);
             }
             return repository;
@@ -155,50 +158,54 @@ public class JcrEngine {
     protected JcrRepository doCreateJcrRepository( String repositoryName ) {
         RepositoryConnectionFactory connectionFactory = getRepositoryConnectionFactory();
         Map<String, String> descriptors = null;
-
-        /*
-         * Extract the JCR options from the configuration graph
-         */
-        String configurationName = dnaEngine.getRepositoryService().getConfigurationSourceName();
         Map<Option, String> options = new HashMap<Option, String>();
 
+        // Read the subgraph that represents the repository ...
         PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
+        Path repositoriesPath = pathFactory.create(DnaLexicon.REPOSITORIES);
+        Path repositoryPath = pathFactory.create(repositoriesPath, repositoryName);
+        String configurationName = dnaEngine.getRepositoryService().getConfigurationSourceName();
         Graph configuration = Graph.create(connectionFactory.createConnection(configurationName), getExecutionContext());
+        Subgraph subgraph = configuration.getSubgraphOfDepth(3).at(repositoryPath);
 
-        try {
-            Node sources = configuration.getNodeAt(pathFactory.create(DnaLexicon.SOURCES));
-
-            /*
-             * Hopefully, this can all get cleaned up when the connector layer supports queries
-             */
-            for (Location childLocation : sources.getChildren()) {
-                Node source = configuration.getNodeAt(childLocation);
-
-                Property nameProperty = source.getProperty("name");
-                if (nameProperty != null && nameProperty.getFirstValue().toString().equals(repositoryName)) {
-                    for (Location optionsLocation : source.getChildren()) {
-                        if (DnaLexicon.OPTIONS.equals(optionsLocation.getPath().getLastSegment().getName())) {
-                            Node optionsNode = configuration.getNodeAt(optionsLocation);
-
-                            for (Location optionLocation : optionsNode.getChildren()) {
-                                Path.Segment segment = optionLocation.getPath().getLastSegment();
-                                Node optionNode = configuration.getNodeAt(optionLocation);
-                                Property valueProperty = optionNode.getProperty(DnaLexicon.VALUE);
-
-                                options.put(Option.valueOf(segment.getName().getLocalName()), valueProperty.getFirstValue()
-                                                                                                           .toString());
-
-                            }
-
-                        }
-                    }
-                }
+        // Read the options ...
+        Node optionsNode = subgraph.getNode(DnaLexicon.OPTIONS);
+        if (optionsNode != null) {
+            for (Location optionLocation : optionsNode.getChildren()) {
+                Node optionNode = configuration.getNodeAt(optionLocation);
+                Path.Segment segment = optionLocation.getPath().getLastSegment();
+                Property valueProperty = optionNode.getProperty(DnaLexicon.VALUE);
+                if (valueProperty == null) continue;
+                Option option = Option.findOption(segment.getName().getLocalName());
+                if (option == null) continue;
+                options.put(option, valueProperty.getFirstValue().toString());
             }
-        } catch (PathNotFoundException pnfe) {
-            // Must not be any configuration set up
         }
 
-        return new JcrRepository(getExecutionContext(), connectionFactory, repositoryName, descriptors, options);
+        // Read the namespaces ...
+        ExecutionContext context = getExecutionContext();
+        Node namespacesNode = subgraph.getNode(DnaLexicon.NAMESPACES);
+        if (namespacesNode != null) {
+            GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
+                                                                         DnaLexicon.NAMESPACE_URI);
+            context = context.with(registry);
+        }
+
+        // Create the repository ...
+        JcrRepository repository = new JcrRepository(context, connectionFactory, repositoryName, descriptors, options);
+
+        // Register all the the node types ...
+        Node nodeTypesNode = subgraph.getNode(DnaLexicon.NODE_TYPES);
+        if (nodeTypesNode != null) {
+            try {
+                repository.getRepositoryTypeManager().registerNodeTypes(subgraph, nodeTypesNode.getLocation());
+            } catch (RepositoryException e) {
+                // Error registering the node types ...
+                getProblems().addError(e, JcrI18n.errorRegisteringNodeTypes, repositoryName);
+            }
+        }
+
+        return repository;
     }
 
     /*

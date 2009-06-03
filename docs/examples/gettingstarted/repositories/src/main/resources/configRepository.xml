@@ -24,14 +24,58 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<jcr:system xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
-    <dna:namespaces jcr:primaryType="dna:namespaces">
-    </dna:namespaces>
+<configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- Define the sources from which content is made available -->
-    <dna:sources jcr:primaryType="nt:unstructured">
-        <dna:source jcr:name="SourceA" jcr:primaryType="nt:unstructured" dna:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" defaultWorkspaceName="default"/>
-        <dna:source jcr:name="SourceB" jcr:primaryType="nt:unstructured" dna:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" defaultWorkspaceName="default"/>
-        <dna:source jcr:name="SourceC" jcr:primaryType="nt:unstructured" dna:name="Vehicles" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" defaultWorkspaceName="default"/>
-        <dna:source jcr:name="SourceD" jcr:primaryType="nt:unstructured" dna:name="Cache" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" defaultWorkspaceName="default"/>
-    </dna:sources>
-</jcr:system>
+    <sources jcr:primaryType="nt:unstructured">
+        <source jcr:name="Cars" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" retryLimit="3" defaultWorkspaceName="default"/>
+        <source jcr:name="Aircraft" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </source>
+        <source jcr:name="Vehicles">
+            <classname>org.jboss.dna.graph.connector.federated.FederatedRepositorySource</classname>
+            <workspaces>
+                <workspace jcr:name="default">
+                    <projections>
+                        <projection jcr:name="Main projection" source="Cars" workspace="default">
+                            <projectionRules>/Vehicles => /</projectionRules>
+                        </projection>
+                    </projections>
+                </workspace>
+            </workspaces>
+        </source>
+        <source jcr:name="Cache" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </source>
+    </sources>
+    <!-- Define the JCR repositories -->
+    <repositories>
+        <repository jcr:name="cars">
+            <!-- Specify the source that should be used for the repository -->
+            <source>Cars</source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <options jcr:primaryType="dna:options"/>
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
+            <nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
+            <namespaces jcr:primaryType="dna:namespaces">
+                <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
+            </namespaces>
+        </repository>
+        <repository jcr:name="vehicles">
+            <!-- Specify the source that should be used for the repository -->
+            <source>Vehicles</source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <options jcr:primaryType="dna:options">
+                <projectNodeTypes jcr:primaryType="dna:option" dna:value="false"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+            </options>
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
+            <nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <!-- Define any namespaces for this repository, other than those already defined by JCR, DNA or by imported content. -->
+            <namespaces jcr:primaryType="dna:namespaces">
+                <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
+                <air jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/aircraft/1.0"/>
+            </namespaces>
+        </repository>
+    </repositories>
+</configuration>

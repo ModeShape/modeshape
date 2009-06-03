@@ -24,6 +24,8 @@ package org.jboss.dna.repository;
 import java.util.ArrayList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.Inflector;
@@ -40,6 +42,7 @@ import org.jboss.dna.graph.property.PathExpression;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.RootPath;
+import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.repository.sequencer.Sequencer;
 
 /**
@@ -55,14 +58,22 @@ public abstract class Configurator<BuilderType> {
     public interface SequencerConfigurator<ReturnType> {
 
         /**
-         * Add a new {@link Sequencer sequencer} to this configuration. The new sequencer will have the supplied name, and if the
-         * name of an existing sequencer is used, this will replace the existing sequencer configuration.
+         * Add a new {@link StreamSequencer sequencer} to this configuration. The new sequencer will have the supplied name, and
+         * if the name of an existing sequencer is used, this will replace the existing sequencer configuration.
          * 
          * @param id the identifier of the new sequencer
          * @return the interface for choosing the class, which returns the interface used to configure the sequencer; never null
          * @throws IllegalArgumentException if the sequencer name is null, empty, or otherwise invalid
          */
-        public ChooseClass<Sequencer, SequencerDetails<ReturnType>> addSequencer( final String id );
+        public ChooseClass<StreamSequencer, SequencerDetails<ReturnType>> addSequencer( String id );
+
+        /**
+         * Get the details for the sequencer with the supplied identifier.
+         * 
+         * @param id the identifier of the sequencer that is to be added
+         * @return the details for the repository source, or null if there is no such source in this configuration
+         */
+        public SequencerDetails<ReturnType> sequencer( String id );
     }
 
     /**
@@ -76,10 +87,17 @@ public abstract class Configurator<BuilderType> {
          * default each configuration uses an internal transient repository for its configuration, but using this method will make
          * the configuration use a different repository (that is perhaps shared with other processes).
          * 
-         * @return the interface for choosing the class, which returns the interface used to configure the repository source that
-         *         will be used for the configuration repository; never null
+         * @return the interface for choosing the class, which returns the interface used to configure the source that will be
+         *         used for the configuration repository; never null
          */
-        public ChooseClass<RepositorySource, ConfigRepositoryDetails<ReturnType>> withConfigurationRepository();
+        public ChooseClass<RepositorySource, ConfigSourceDetails<ReturnType>> withConfigurationSource();
+
+        /**
+         * Get the details for the configuration repository source.
+         * 
+         * @return the details for the configuration's repository source; never null
+         */
+        public ConfigSourceDetails<ReturnType> configurationSource();
     }
 
     /**
@@ -87,7 +105,7 @@ public abstract class Configurator<BuilderType> {
      * 
      * @param <ReturnType> the type of interface to return after the repository source's configuration is completed
      */
-    public interface RepositoryConfigurator<ReturnType> {
+    public interface RepositorySourceConfigurator<ReturnType> {
         /**
          * Add a new {@link RepositorySource repository} for this configuration. The new repository will have the supplied name,
          * and if the name of an existing repository is used, this will replace the existing repository configuration.
@@ -96,9 +114,9 @@ public abstract class Configurator<BuilderType> {
          * @return the interface for choosing the class, which returns the interface used to configure the repository source;
          *         never null
          * @throws IllegalArgumentException if the repository name is null, empty, or otherwise invalid
-         * @see #addRepository(RepositorySource)
+         * @see #addSource(RepositorySource)
          */
-        public ChooseClass<RepositorySource, ? extends RepositoryDetails<ReturnType>> addRepository( final String id );
+        public ChooseClass<RepositorySource, RepositorySourceDetails<ReturnType>> addSource( final String id );
 
         /**
          * Add a new {@link RepositorySource repository} for this configuration. The new repository will have the supplied name,
@@ -107,9 +125,17 @@ public abstract class Configurator<BuilderType> {
          * @param source the {@link RepositorySource} instance that should be used
          * @return this configuration object, for method-chaining purposes
          * @throws IllegalArgumentException if the repository source reference is null
-         * @see #addRepository(String)
+         * @see #addSource(String)
          */
-        public ReturnType addRepository( RepositorySource source );
+        public ReturnType addSource( RepositorySource source );
+
+        /**
+         * Get the details for the repository source with the supplied identifier.
+         * 
+         * @param id the identifier of the repository that is to be added
+         * @return the details for the repository source, or null if there is no such source in this configuration
+         */
+        public RepositorySourceDetails<ReturnType> source( String id );
     }
 
     /**
@@ -127,6 +153,14 @@ public abstract class Configurator<BuilderType> {
          * @throws IllegalArgumentException if the detector name is null, empty, or otherwise invalid
          */
         public ChooseClass<MimeTypeDetector, MimeTypeDetectorDetails<ReturnType>> addMimeTypeDetector( final String id );
+
+        /**
+         * Get the details for the MIME type detector with the supplied identifier.
+         * 
+         * @param id the identifier of the MIME type detector that is to be added
+         * @return the details for the MIME type detector, or null if there is no such detector in this configuration
+         */
+        public MimeTypeDetectorDetails<ReturnType> mimeTypeDetector( String id );
     }
 
     /**
@@ -149,9 +183,9 @@ public abstract class Configurator<BuilderType> {
      * 
      * @param <ReturnType>
      */
-    public interface RepositoryDetails<ReturnType>
-        extends SetName<RepositoryDetails<ReturnType>>, SetDescription<RepositoryDetails<ReturnType>>,
-        SetProperties<RepositoryDetails<ReturnType>>, And<ReturnType> {
+    public interface RepositorySourceDetails<ReturnType>
+        extends SetName<RepositorySourceDetails<ReturnType>>, SetDescription<RepositorySourceDetails<ReturnType>>,
+        SetProperties<RepositorySourceDetails<ReturnType>>, And<ReturnType> {
     }
 
     /**
@@ -159,16 +193,15 @@ public abstract class Configurator<BuilderType> {
      * 
      * @param <ReturnType>
      */
-    public interface ConfigRepositoryDetails<ReturnType>
-        extends SetDescription<ConfigRepositoryDetails<ReturnType>>, SetProperties<ConfigRepositoryDetails<ReturnType>>,
-        And<ReturnType> {
+    public interface ConfigSourceDetails<ReturnType>
+        extends SetDescription<ConfigSourceDetails<ReturnType>>, SetProperties<ConfigSourceDetails<ReturnType>>, And<ReturnType> {
         /**
          * Specify the path under which the configuration content is to be found. This path is assumed to be "/" by default.
          * 
          * @param path the path to the configuration content in the configuration source; may not be null
          * @return this instance for method chaining purposes; never null
          */
-        public ConfigRepositoryDetails<ReturnType> under( String path );
+        public ConfigSourceDetails<ReturnType> under( String path );
 
         /**
          * Specify the path under which the configuration content is to be found. This path is assumed to be "/" by default.
@@ -176,7 +209,7 @@ public abstract class Configurator<BuilderType> {
          * @param workspace the name of the workspace with the configuration content in the configuration source; may not be null
          * @return this instance for method chaining purposes; never null
          */
-        public ConfigRepositoryDetails<ReturnType> inWorkspace( String workspace );
+        public ConfigSourceDetails<ReturnType> usingWorkspace( String workspace );
     }
 
     /**
@@ -242,86 +275,84 @@ public abstract class Configurator<BuilderType> {
      */
     public interface SetProperties<ReturnType> {
         /**
-         * Specify the name of the JavaBean-style property that is to be set. The value may be set using the interface returned by
-         * this method.
-         * 
-         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
-         * @return the interface used to set the value for the property; never null
-         */
-        PropertySetter<ReturnType> with( String beanPropertyName );
-    }
-
-    /**
-     * The interface used to set the value for a JavaBean-style property.
-     * 
-     * @param <ReturnType> the interface returned from these methods
-     * @author Randall Hauch
-     * @see Configurator.SetProperties#with(String)
-     */
-    public interface PropertySetter<ReturnType> {
-        /**
          * Set the property value to an integer.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( int value );
+        ReturnType setProperty( String beanPropertyName,
+                                int value );
 
         /**
          * Set the property value to a long number.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( long value );
+        ReturnType setProperty( String beanPropertyName,
+                                long value );
 
         /**
          * Set the property value to a short.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( short value );
+        ReturnType setProperty( String beanPropertyName,
+                                short value );
 
         /**
          * Set the property value to a boolean.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( boolean value );
+        ReturnType setProperty( String beanPropertyName,
+                                boolean value );
 
         /**
          * Set the property value to a float.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( float value );
+        ReturnType setProperty( String beanPropertyName,
+                                float value );
 
         /**
          * Set the property value to a double.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( double value );
+        ReturnType setProperty( String beanPropertyName,
+                                double value );
 
         /**
          * Set the property value to a string.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( String value );
+        ReturnType setProperty( String beanPropertyName,
+                                String value );
 
         /**
          * Set the property value to an object.
          * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
          * @param value the new value for the property
          * @return the next component to continue configuration; never null
          */
-        ReturnType setTo( Object value );
+        ReturnType setProperty( String beanPropertyName,
+                                Object value );
     }
 
     /**
@@ -378,10 +409,10 @@ public abstract class Configurator<BuilderType> {
         /**
          * Specify the human-readable name for this component.
          * 
-         * @param description the description; may be null or empty
+         * @param name the name; may be null or empty
          * @return the next component to continue configuration; never null
          */
-        ReturnType named( String description );
+        ReturnType named( String name );
     }
 
     /**
@@ -434,6 +465,7 @@ public abstract class Configurator<BuilderType> {
     protected ConfigurationRepository configurationSource;
     private Graph graph;
     private Graph.Batch batch;
+    private final Problems problems;
 
     /**
      * Specify a new {@link ExecutionContext} that should be used for this DNA instance.
@@ -448,9 +480,17 @@ public abstract class Configurator<BuilderType> {
         CheckArg.isNotNull(builder, "builder");
         this.context = context;
         this.builder = builder;
+        this.problems = new SimpleProblems();
 
         // Set up the default configuration repository ...
         this.configurationSource = createDefaultConfigurationSource();
+    }
+
+    /**
+     * @return problems
+     */
+    public Problems getProblems() {
+        return problems;
     }
 
     /**
@@ -522,9 +562,28 @@ public abstract class Configurator<BuilderType> {
     protected abstract Name nameFor( String name );
 
     protected Path createOrReplaceNode( Path parentPath,
+                                        String id,
+                                        Name propertyName,
+                                        Object value ) {
+        Path path = pathFactory().create(parentPath, id);
+        configuration().create(path).with(propertyName, value).and();
+        return path;
+
+    }
+
+    protected Path createOrReplaceNode( Path parentPath,
+                                        Name id,
+                                        Name propertyName,
+                                        Object value ) {
+        Path path = pathFactory().create(parentPath, id);
+        configuration().create(path).with(propertyName, value).and();
+        return path;
+    }
+
+    protected Path createOrReplaceNode( Path parentPath,
                                         String id ) {
         Path path = pathFactory().create(parentPath, id);
-        configuration().create(path).with(DnaLexicon.READABLE_NAME, id).and();
+        configuration().create(path).and();
         return path;
 
     }
@@ -532,7 +591,7 @@ public abstract class Configurator<BuilderType> {
     protected Path createOrReplaceNode( Path parentPath,
                                         Name id ) {
         Path path = pathFactory().create(parentPath, id);
-        configuration().create(path).with(DnaLexicon.READABLE_NAME, id).and();
+        configuration().create(path).and();
         return path;
     }
 
@@ -555,7 +614,7 @@ public abstract class Configurator<BuilderType> {
     }
 
     protected class ConfigurationRepositoryClassChooser<ReturnType>
-        implements ChooseClass<RepositorySource, ConfigRepositoryDetails<ReturnType>> {
+        implements ChooseClass<RepositorySource, ConfigSourceDetails<ReturnType>> {
 
         private final ReturnType returnObject;
 
@@ -564,10 +623,10 @@ public abstract class Configurator<BuilderType> {
             this.returnObject = returnObject;
         }
 
-        public LoadedFrom<ConfigRepositoryDetails<ReturnType>> usingClass( final String className ) {
-            return new LoadedFrom<ConfigRepositoryDetails<ReturnType>>() {
+        public LoadedFrom<ConfigSourceDetails<ReturnType>> usingClass( final String className ) {
+            return new LoadedFrom<ConfigSourceDetails<ReturnType>>() {
                 @SuppressWarnings( "unchecked" )
-                public ConfigRepositoryDetails loadedFrom( String... classpath ) {
+                public ConfigSourceDetails loadedFrom( String... classpath ) {
                     ClassLoader classLoader = getExecutionContext().getClassLoader(classpath);
                     Class<? extends RepositorySource> clazz = null;
                     try {
@@ -580,7 +639,7 @@ public abstract class Configurator<BuilderType> {
                 }
 
                 @SuppressWarnings( "unchecked" )
-                public ConfigRepositoryDetails loadedFromClasspath() {
+                public ConfigSourceDetails loadedFromClasspath() {
                     Class<? extends RepositorySource> clazz = null;
                     try {
                         clazz = (Class<? extends RepositorySource>)Class.forName(className);
@@ -592,7 +651,7 @@ public abstract class Configurator<BuilderType> {
             };
         }
 
-        public ConfigRepositoryDetails<ReturnType> usingClass( Class<? extends RepositorySource> repositorySource ) {
+        public ConfigSourceDetails<ReturnType> usingClass( Class<? extends RepositorySource> repositorySource ) {
             try {
                 Configurator.this.configurationSource = new ConfigurationRepository(repositorySource.newInstance());
             } catch (InstantiationException err) {
@@ -606,7 +665,7 @@ public abstract class Configurator<BuilderType> {
         }
     }
 
-    protected class ConfigurationSourceDetails<ReturnType> implements ConfigRepositoryDetails<ReturnType> {
+    protected class ConfigurationSourceDetails<ReturnType> implements ConfigSourceDetails<ReturnType> {
         private final ReturnType returnObject;
 
         protected ConfigurationSourceDetails( ReturnType returnObject ) {
@@ -619,7 +678,7 @@ public abstract class Configurator<BuilderType> {
          * 
          * @see org.jboss.dna.repository.Configurator.SetDescription#describedAs(java.lang.String)
          */
-        public ConfigRepositoryDetails<ReturnType> describedAs( String description ) {
+        public ConfigSourceDetails<ReturnType> describedAs( String description ) {
             Configurator.this.configurationSource = Configurator.this.configurationSource.withDescription(description);
             return this;
         }
@@ -627,20 +686,98 @@ public abstract class Configurator<BuilderType> {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.SetProperties#with(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, boolean)
          */
-        public PropertySetter<ConfigRepositoryDetails<ReturnType>> with( String propertyName ) {
-            return new BeanPropertySetter<ConfigRepositoryDetails<ReturnType>>(
-                                                                               Configurator.this.configurationSource.getRepositorySource(),
-                                                                               propertyName, this);
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            boolean value ) {
+            return setProperty(propertyName, (Object)value);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.ConfigRepositoryDetails#inWorkspace(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, int)
          */
-        public ConfigRepositoryDetails<ReturnType> inWorkspace( String workspace ) {
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            int value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, short)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            short value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, long)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            long value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, float)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            float value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, double)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            double value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.String)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String propertyName,
+                                                            String value ) {
+            return setProperty(propertyName, (Object)value);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.Object)
+         */
+        public ConfigSourceDetails<ReturnType> setProperty( String beanPropertyName,
+                                                            Object value ) {
+            // Set the JavaBean-style property on the RepositorySource instance ...
+            Object javaBean = Configurator.this.configurationSource.getRepositorySource();
+            Reflection reflection = new Reflection(javaBean.getClass());
+            try {
+                reflection.invokeSetterMethodOnTarget(beanPropertyName, javaBean, value);
+            } catch (Throwable err) {
+                I18n msg = RepositoryI18n.errorSettingJavaBeanPropertyOnInstanceOfClass;
+                throw new DnaConfigurationException(msg.text(beanPropertyName, javaBean.getClass(), err.getMessage()), err);
+            }
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.ConfigSourceDetails#usingWorkspace(java.lang.String)
+         */
+        public ConfigSourceDetails<ReturnType> usingWorkspace( String workspace ) {
             Configurator.this.configurationSource = Configurator.this.configurationSource.withWorkspace(workspace);
             return this;
         }
@@ -648,9 +785,9 @@ public abstract class Configurator<BuilderType> {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.ConfigRepositoryDetails#under(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.ConfigSourceDetails#under(java.lang.String)
          */
-        public ConfigRepositoryDetails<ReturnType> under( String path ) {
+        public ConfigSourceDetails<ReturnType> under( String path ) {
             CheckArg.isNotNull(path, "path");
             Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(path);
             Configurator.this.configurationSource = Configurator.this.configurationSource.with(newPath);
@@ -724,145 +861,34 @@ public abstract class Configurator<BuilderType> {
         }
     }
 
-    /**
-     * Reusable implementation of {@link Configurator.PropertySetter} that sets the JavaBean-style property using reflection.
-     * 
-     * @param <ReturnType>
-     */
-    protected class BeanPropertySetter<ReturnType> implements Configurator.PropertySetter<ReturnType> {
-        private final Object javaBean;
-        private final String beanPropertyName;
-        private final ReturnType returnObject;
-
-        protected BeanPropertySetter( Object javaBean,
-                                      String beanPropertyName,
-                                      ReturnType returnObject ) {
-            assert javaBean != null;
-            assert beanPropertyName != null;
-            assert returnObject != null;
-            this.javaBean = javaBean;
-            this.beanPropertyName = beanPropertyName;
-            this.returnObject = returnObject;
-        }
-
-        public ReturnType setTo( boolean value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( int value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( long value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( short value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( float value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( double value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( String value ) {
-            return setTo((Object)value);
-        }
-
-        public ReturnType setTo( Object value ) {
-            // Set the JavaBean-style property on the RepositorySource instance ...
-            Reflection reflection = new Reflection(javaBean.getClass());
-            try {
-                reflection.invokeSetterMethodOnTarget(beanPropertyName, javaBean, value);
-            } catch (Throwable err) {
-                I18n msg = RepositoryI18n.errorSettingJavaBeanPropertyOnInstanceOfClass;
-                throw new DnaConfigurationException(msg.text(beanPropertyName, javaBean.getClass(), err.getMessage()), err);
-            }
-            return returnObject;
-        }
+    protected <ReturnType> GraphRepositorySourceDetails<ReturnType> createRepositoryDetails( Path path,
+                                                                                             ReturnType returnObject ) {
+        return new GraphRepositorySourceDetails<ReturnType>(path, returnObject);
     }
 
-    /**
-     * Reusable implementation of {@link Configurator.PropertySetter} that sets the property on the specified node in the
-     * configuration graph.
-     * 
-     * @param <ReturnType>
-     */
-    protected class GraphPropertySetter<ReturnType> implements Configurator.PropertySetter<ReturnType> {
-        private final Path path;
-        private final String beanPropertyName;
-        private final ReturnType returnObject;
-
-        protected GraphPropertySetter( Path path,
-                                       String beanPropertyName,
-                                       ReturnType returnObject ) {
-            assert path != null;
-            assert beanPropertyName != null;
-            assert returnObject != null;
-            this.path = path;
-            this.beanPropertyName = Inflector.getInstance().lowerCamelCase(beanPropertyName);
-            this.returnObject = returnObject;
-        }
-
-        public ReturnType setTo( boolean value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( int value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( long value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( short value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( float value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( double value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( String value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-
-        public ReturnType setTo( Object value ) {
-            configuration().set(nameFor(beanPropertyName)).to(value).on(path);
-            return returnObject;
-        }
-    }
-
-    protected class GraphRepositoryDetails<ReturnType> implements RepositoryDetails<ReturnType> {
+    protected class GraphRepositorySourceDetails<ReturnType> implements RepositorySourceDetails<ReturnType> {
         private final Path path;
         private final ReturnType returnObject;
 
-        protected GraphRepositoryDetails( Path path,
-                                          ReturnType returnObject ) {
+        protected GraphRepositorySourceDetails( Path path,
+                                                ReturnType returnObject ) {
             assert path != null;
             assert returnObject != null;
             this.path = path;
             this.returnObject = returnObject;
         }
 
-        protected Path path() {
+        public Path path() {
             return this.path;
+        }
+
+        /**
+         * Get the name used for this source.
+         * 
+         * @return the source's node name
+         */
+        public Name name() {
+            return path().getLastSegment().getName();
         }
 
         /**
@@ -870,7 +896,7 @@ public abstract class Configurator<BuilderType> {
          * 
          * @see org.jboss.dna.repository.Configurator.SetName#named(java.lang.String)
          */
-        public RepositoryDetails<ReturnType> named( String name ) {
+        public RepositorySourceDetails<ReturnType> named( String name ) {
             configuration().set(DnaLexicon.READABLE_NAME).to(name).on(path);
             return this;
         }
@@ -880,7 +906,7 @@ public abstract class Configurator<BuilderType> {
          * 
          * @see org.jboss.dna.repository.Configurator.SetDescription#describedAs(java.lang.String)
          */
-        public RepositoryDetails<ReturnType> describedAs( String description ) {
+        public RepositorySourceDetails<ReturnType> describedAs( String description ) {
             configuration().set(DnaLexicon.DESCRIPTION).to(description).on(path);
             return this;
         }
@@ -888,10 +914,89 @@ public abstract class Configurator<BuilderType> {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.SetProperties#with(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, boolean)
          */
-        public PropertySetter<RepositoryDetails<ReturnType>> with( String propertyName ) {
-            return new GraphPropertySetter<RepositoryDetails<ReturnType>>(path, propertyName, this);
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                boolean value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, int)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                int value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, short)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                short value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, long)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                long value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, float)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                float value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, double)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                double value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.String)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                String value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.Object)
+         */
+        public RepositorySourceDetails<ReturnType> setProperty( String propertyName,
+                                                                Object value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
         }
 
         /**
@@ -1005,10 +1110,89 @@ public abstract class Configurator<BuilderType> {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.SetProperties#with(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, boolean)
          */
-        public PropertySetter<MimeTypeDetectorDetails<ReturnType>> with( String propertyName ) {
-            return new GraphPropertySetter<MimeTypeDetectorDetails<ReturnType>>(path, propertyName, this);
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                boolean value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, int)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                int value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, short)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                short value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, long)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                long value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, float)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                float value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, double)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                double value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.String)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                String value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.repository.Configurator.SetProperties#setProperty(java.lang.String, java.lang.Object)
+         */
+        public MimeTypeDetectorDetails<ReturnType> setProperty( String propertyName,
+                                                                Object value ) {
+            configuration().set(nameFor(propertyName)).to(value).on(path);
+            return this;
         }
 
         /**

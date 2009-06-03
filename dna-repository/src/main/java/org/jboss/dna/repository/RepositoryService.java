@@ -147,7 +147,7 @@ public class RepositoryService implements AdministeredService {
         CheckArg.isNotNull(context, "context");
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
                                                                               .getPathFactory()
-                                                                              .create("/jcr:system");
+                                                                              .create("/dna:system");
         this.sources = sources;
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSourceName;
@@ -304,6 +304,12 @@ public class RepositoryService implements AdministeredService {
                                                                     path.getLastSegment().getName().getLocalName());
         properties.put(JcrLexicon.NAME, nameProperty);
 
+        // Attempt to set the configuration information as bean properties,
+        // if they exist on the RepositorySource object and are not already set to some value ...
+        setBeanPropertyIfExistsAndNotSet(source, "configurationSourceName", getConfigurationSourceName());
+        setBeanPropertyIfExistsAndNotSet(source, "configurationWorkspaceName", getConfigurationWorkspaceName());
+        setBeanPropertyIfExistsAndNotSet(source, "configurationPath", stringFactory.create(path));
+
         // Now set all the properties that we can, ignoring any property that doesn't fit the pattern ...
         Reflection reflection = new Reflection(source.getClass());
         for (Map.Entry<Name, Property> entry : properties.entrySet()) {
@@ -415,6 +421,21 @@ public class RepositoryService implements AdministeredService {
             }
         }
         return source;
+    }
+
+    protected boolean setBeanPropertyIfExistsAndNotSet( Object target,
+                                                        String propertyName,
+                                                        Object value ) {
+        Reflection reflection = new Reflection(target.getClass());
+        try {
+            if (reflection.invokeGetterMethodOnTarget(propertyName, target) == null) {
+                reflection.invokeSetterMethodOnTarget(propertyName, target, value);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

@@ -34,6 +34,7 @@ public class DnaLexicon extends org.jboss.dna.repository.DnaLexicon {
     public static final Name BASE = new BasicName(Namespace.URI, "base");
     public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
     public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");
+    public static final Name REPOSITORIES = new BasicName(Namespace.URI, "repositories");
     public static final Name ROOT = new BasicName(Namespace.URI, "root");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name URI = new BasicName(Namespace.URI, "uri");

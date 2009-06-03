@@ -32,10 +32,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.cache.ImmutableCachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.property.Path;
@@ -88,7 +90,7 @@ public class JcrConfigurationTest {
         newSource.setRootNodeUuid(rootUuid);
 
         // Update the configuration and save it ...
-        configuration.addRepository(newSource).save();
+        configuration.addSource(newSource).save();
 
         // Verify that the graph has been updated correctly ...
         Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
@@ -102,9 +104,90 @@ public class JcrConfigurationTest {
     }
 
     @Test
+    public void shouldAllowSettingUpConfigurationRepositoryWithDifferentConfigurationSourceName() throws Exception {
+        JcrEngine engine = configuration.withConfigurationSource()
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("Configuration Repository")
+                                        .with("name")
+                                        .setTo("config")
+                                        .with("retryLimit")
+                                        .setTo(5)
+                                        .and()
+                                        .addSource("Source2")
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("description")
+                                        .and()
+                                        .addRepository("JCR Repository")
+                                        .usingSource("Source2")
+                                        .with(Option.JAAS_LOGIN_CONFIG_NAME)
+                                        .setTo("test")
+                                        .and()
+                                        .build();
+        engine.start();
+        // Get a graph to the configuration source ...
+        RepositorySource configReposSource = engine.getRepositoryService().getRepositoryLibrary().getSource("config");
+        assertThat(configReposSource, is(notNullValue()));
+        assertThat(configReposSource, is(instanceOf(InMemoryRepositorySource.class)));
+        assertThat(configReposSource.getName(), is("config"));
+        InMemoryRepositorySource configSource = (InMemoryRepositorySource)configReposSource;
+        assertThat(configSource.getDefaultWorkspaceName(), is(""));
+        Graph graph = Graph.create("config", engine.getRepositoryService().getRepositoryLibrary(), context);
+        assertThat(graph, is(notNullValue()));
+        assertThat(graph.getNodeAt("/"), is(notNullValue()));
+
+        // Get the repository ...
+        JcrRepository repository = engine.getRepository("JCR Repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAllowSettingUpConfigurationRepositoryWithDifferentWorkspaceName() throws Exception {
+        JcrEngine engine = configuration.withConfigurationSource()
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("Configuration Repository")
+                                        .usingWorkspace("workspaceXYZ")
+                                        .with("name")
+                                        .setTo("config2")
+                                        .with("defaultWorkspaceName")
+                                        .setTo("workspaceXYZ")
+                                        .with("retryLimit")
+                                        .setTo(5)
+                                        .and()
+                                        .addSource("Source2")
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("description")
+                                        .and()
+                                        .addRepository("JCR Repository")
+                                        .usingSource("Source2")
+                                        .with(Option.JAAS_LOGIN_CONFIG_NAME)
+                                        .setTo("test")
+                                        .and()
+                                        .build();
+        engine.start();
+        // Get a graph to the configuration source ...
+        RepositorySource configReposSource = engine.getRepositoryService().getRepositoryLibrary().getSource("config2");
+        assertThat(configReposSource, is(notNullValue()));
+        assertThat(configReposSource, is(instanceOf(InMemoryRepositorySource.class)));
+        assertThat(configReposSource.getName(), is("config2"));
+        InMemoryRepositorySource configSource = (InMemoryRepositorySource)configReposSource;
+        assertThat(configSource.getDefaultWorkspaceName(), is("workspaceXYZ"));
+        Graph graph = Graph.create("config2", engine.getRepositoryService().getRepositoryLibrary(), context);
+        assertThat(graph, is(notNullValue()));
+        assertThat(graph.getNodeAt("/"), is(notNullValue()));
+
+        // Get the repository ...
+        JcrRepository repository = engine.getRepository("JCR Repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
     public void shouldAllowAddingRepositorySourceByClassNameAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
                      .describedAs("description")
@@ -126,7 +209,7 @@ public class JcrConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassNameAndClasspathAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFrom("cp1", "cp2")
                      .describedAs("description")
@@ -149,7 +232,7 @@ public class JcrConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassReferenceAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .with("retryLimit")
@@ -171,13 +254,13 @@ public class JcrConfigurationTest {
     @Test
     public void shouldAllowOverwritingRepositorySourceByRepositoryName() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .with("retryLimit")
                      .setTo(3)
                      .and()
-                     .addRepository("Source1")
+                     .addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("new description")
                      .with("retryLimit")
@@ -200,7 +283,7 @@ public class JcrConfigurationTest {
     @Test
     public void shouldAllowAddingMimeTypeDetector() {
         // Update the configuration and save it ...
-        configuration.addRepository("Source1")
+        configuration.addSource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
                      .describedAs("description")
                      .and()
@@ -228,7 +311,7 @@ public class JcrConfigurationTest {
 
     @Test
     public void shouldAllowConfigurationInMultipleSteps() {
-        configuration.addRepository("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
+        configuration.addSource("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
         configuration.addMimeTypeDetector("detector")
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
                      .describedAs("default detector");
@@ -254,49 +337,59 @@ public class JcrConfigurationTest {
     public void shouldAllowSpecifyingOptions() throws Exception {
         // Update the configuration and save it ...
 
-        JcrEngine engine = configuration.withConfigurationRepository()
-                     .usingClass(InMemoryRepositorySource.class.getName())
-                     .loadedFromClasspath()
-                     .describedAs("Configuration Repository")
-                     .with("name").setTo("configuration")
-                     .with("retryLimit")
-                     .setTo(5)
-                     .and()
-                     .addRepository("Source2")
-                     .usingClass(InMemoryRepositorySource.class.getName())
-                     .loadedFromClasspath()
-                     .with(Option.JAAS_LOGIN_CONFIG_NAME).setTo("test")
-                     .describedAs("description")
-                     .with("name").setTo("JCR Repository")
-                     .and()
-                     .build();
+        JcrEngine engine = configuration.withConfigurationSource()
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("Configuration Repository")
+                                        .with("name")
+                                        .setTo("configuration")
+                                        .with("retryLimit")
+                                        .setTo(5)
+                                        .and()
+                                        .addSource("Source2")
+                                        .usingClass(InMemoryRepositorySource.class.getName())
+                                        .loadedFromClasspath()
+                                        .describedAs("description")
+                                        .and()
+                                        .addRepository("JCR Repository")
+                                        .usingSource("Source2")
+                                        .with(Option.JAAS_LOGIN_CONFIG_NAME)
+                                        .setTo("test")
+                                        .and()
+                                        .build();
         engine.start();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
+        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(6).at("/");
         assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source2"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source2"), hasProperty(DnaLexicon.READABLE_NAME, "Source2"));
         assertThat(subgraph.getNode("/dna:sources/Source2"), hasProperty(DnaLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
-        
+        assertThat(subgraph.getNode("/dna:repositories"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:repositories/JCR Repository"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:repositories/JCR Repository"), hasProperty(DnaLexicon.SOURCE_NAME, "Source2"));
+        assertThat(subgraph.getNode("/dna:repositories/JCR Repository/dna:options"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:repositories/JCR Repository/dna:options/JAAS_LOGIN_CONFIG_NAME"),
+                   hasProperty(DnaLexicon.VALUE, "test"));
+
         JcrRepository repository = engine.getRepository("JCR Repository");
-        
+
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(Option.JAAS_LOGIN_CONFIG_NAME, "test");
         options.put(Option.PROJECT_NODE_TYPES, "false");
         assertThat(repository.getOptions(), is(options));
     }
-    
+
     @Test
     public void shouldAllowCreatingWithConfigRepository() throws InterruptedException {
-        DnaEngine engine = new DnaConfiguration().withConfigurationRepository()
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Configuration Repository")
-                                       .with("name")
-                                       .setTo("config repo")
-                                       .and()
-                                       .build();
+        DnaEngine engine = new DnaConfiguration().withConfigurationSource()
+                                                 .usingClass(InMemoryRepositorySource.class)
+                                                 .describedAs("Configuration Repository")
+                                                 .with("name")
+                                                 .setTo("config repo")
+                                                 .and()
+                                                 .build();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));

@@ -41,10 +41,8 @@ public class ConsoleInput implements UserInterface {
     public ConsoleInput( final SequencingClient client ) {
         try {
             System.out.println();
-            System.out.print("Starting repository and sequencing service ... ");
+            System.out.print("Starting DNA repository and sequencing service ... ");
             client.startRepository();
-            System.out.print("done.\nStarting sequencing service ... ");
-            client.startDnaServices();
             System.out.println("done.");
             System.out.println();
 
@@ -101,9 +99,7 @@ public class ConsoleInput implements UserInterface {
                         try {
                             // Terminate ...
                             System.out.println();
-                            System.out.print("Shutting down sequencing service ... ");
-                            client.shutdownDnaServices();
-                            System.out.print("done.\nShutting down repository ... ");
+                            System.out.print("Shutting down repository ... ");
                             client.shutdownRepository();
                             System.out.print("done.");
                             System.out.println();

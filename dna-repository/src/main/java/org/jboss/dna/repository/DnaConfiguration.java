@@ -34,20 +34,20 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.repository.Configurator.ChooseClass;
-import org.jboss.dna.repository.Configurator.ConfigRepositoryDetails;
+import org.jboss.dna.repository.Configurator.ConfigSourceDetails;
 import org.jboss.dna.repository.Configurator.ConfigurationRepository;
 import org.jboss.dna.repository.Configurator.MimeTypeDetectorDetails;
-import org.jboss.dna.repository.Configurator.RepositoryDetails;
+import org.jboss.dna.repository.Configurator.RepositorySourceDetails;
 import org.jboss.dna.repository.Configurator.SequencerDetails;
-import org.jboss.dna.repository.sequencer.Sequencer;
 
 /**
  * 
  */
 public class DnaConfiguration
     implements Configurator.Initializer<DnaConfiguration>, Configurator.SequencerConfigurator<DnaConfiguration>,
-    Configurator.RepositoryConfigurator<DnaConfiguration>, Configurator.MimeDetectorConfigurator<DnaConfiguration>,
+    Configurator.RepositorySourceConfigurator<DnaConfiguration>, Configurator.MimeDetectorConfigurator<DnaConfiguration>,
     Configurator.Builder<DnaEngine> {
 
     protected static final Map<String, Name> NAMES_TO_MAP;
@@ -94,28 +94,28 @@ public class DnaConfiguration
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.Configurator.Initializer#withConfigurationRepository()
+     * @see org.jboss.dna.repository.Configurator.Initializer#withConfigurationSource()
      */
-    public ChooseClass<RepositorySource, ConfigRepositoryDetails<DnaConfiguration>> withConfigurationRepository() {
-        return builder.withConfigurationRepository();
+    public ChooseClass<RepositorySource, ConfigSourceDetails<DnaConfiguration>> withConfigurationSource() {
+        return builder.withConfigurationSource();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
+     * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(java.lang.String)
      */
-    public ChooseClass<RepositorySource, ? extends RepositoryDetails<DnaConfiguration>> addRepository( String id ) {
-        return builder.addRepository(id);
+    public ChooseClass<RepositorySource, RepositorySourceDetails<DnaConfiguration>> addSource( String id ) {
+        return builder.addSource(id);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(org.jboss.dna.graph.connector.RepositorySource)
+     * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(org.jboss.dna.graph.connector.RepositorySource)
      */
-    public DnaConfiguration addRepository( RepositorySource source ) {
-        return builder.addRepository(source);
+    public DnaConfiguration addSource( RepositorySource source ) {
+        return builder.addSource(source);
     }
 
     /**
@@ -123,7 +123,7 @@ public class DnaConfiguration
      * 
      * @see org.jboss.dna.repository.Configurator.SequencerConfigurator#addSequencer(java.lang.String)
      */
-    public ChooseClass<Sequencer, SequencerDetails<DnaConfiguration>> addSequencer( String id ) {
+    public ChooseClass<StreamSequencer, SequencerDetails<DnaConfiguration>> addSequencer( String id ) {
         return builder.addSequencer(id);
     }
 
@@ -165,7 +165,7 @@ public class DnaConfiguration
 
     public static class Builder<ReturnType> extends Configurator<ReturnType>
         implements Configurator.Initializer<ReturnType>, Configurator.SequencerConfigurator<ReturnType>,
-        Configurator.RepositoryConfigurator<ReturnType>, Configurator.MimeDetectorConfigurator<ReturnType> {
+        Configurator.RepositorySourceConfigurator<ReturnType>, Configurator.MimeDetectorConfigurator<ReturnType> {
 
         private Path sourcesPath;
         private Path sequencersPath;
@@ -185,10 +185,6 @@ public class DnaConfiguration
 
         public DnaEngine buildDnaEngine() {
             return new DnaEngine(context, configurationSource);
-        }
-
-        public ConfigurationRepository getConfigurationRepository() {
-            return configurationSource;
         }
 
         protected Path sourcesPath() {
@@ -224,10 +220,19 @@ public class DnaConfiguration
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.Initializer#withConfigurationRepository()
+         * @see org.jboss.dna.repository.Configurator.Initializer#withConfigurationSource()
          */
-        public ChooseClass<RepositorySource, ConfigRepositoryDetails<ReturnType>> withConfigurationRepository() {
+        public ChooseClass<RepositorySource, ConfigSourceDetails<ReturnType>> withConfigurationSource() {
             return new ConfigurationRepositoryClassChooser<ReturnType>(builder);
+        }
+        
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.jboss.dna.repository.Configurator.Initializer#configurationSource()
+         */
+        public ConfigSourceDetails<ReturnType> configurationSource() {
+            return configurationSource;
         }
 
         /**
@@ -235,38 +240,38 @@ public class DnaConfiguration
          * 
          * @see org.jboss.dna.repository.Configurator.SequencerConfigurator#addSequencer(java.lang.String)
          */
-        public ChooseClass<Sequencer, SequencerDetails<ReturnType>> addSequencer( String id ) {
+        public ChooseClass<StreamSequencer, SequencerDetails<ReturnType>> addSequencer( String id ) {
             CheckArg.isNotEmpty(id, "id");
             // Now create the "dna:sequencer" node with the supplied id ...
-            Path path = createOrReplaceNode(sequencersPath(), id);
+            Path path = createOrReplaceNode(sequencersPath(), id, DnaLexicon.READABLE_NAME, id);
             SequencerDetails<ReturnType> details = new GraphSequencerDetails<ReturnType>(path, builder);
-            return new ClassChooser<Sequencer, SequencerDetails<ReturnType>>(path, details);
+            return new ClassChooser<StreamSequencer, SequencerDetails<ReturnType>>(path, details);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(java.lang.String)
+         * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(java.lang.String)
          */
-        public ChooseClass<RepositorySource, ? extends RepositoryDetails<ReturnType>> addRepository( String id ) {
+        public ChooseClass<RepositorySource, RepositorySourceDetails<ReturnType>> addSource( String id ) {
             CheckArg.isNotEmpty(id, "id");
             // Now create the "dna:source" node with the supplied id ...
-            Path path = createOrReplaceNode(sourcesPath(), id);
-            RepositoryDetails<ReturnType> details = new GraphRepositoryDetails<ReturnType>(path, builder);
-            return new ClassChooser<RepositorySource, RepositoryDetails<ReturnType>>(path, details);
+            Path path = createOrReplaceNode(sourcesPath(), id, DnaLexicon.READABLE_NAME, id);
+            RepositorySourceDetails<ReturnType> details = new GraphRepositorySourceDetails<ReturnType>(path, builder);
+            return new ClassChooser<RepositorySource, RepositorySourceDetails<ReturnType>>(path, details);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.Configurator.RepositoryConfigurator#addRepository(org.jboss.dna.graph.connector.RepositorySource)
+         * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(org.jboss.dna.graph.connector.RepositorySource)
          */
-        public ReturnType addRepository( RepositorySource source ) {
+        public ReturnType addSource( RepositorySource source ) {
             CheckArg.isNotNull(source, "source");
             CheckArg.isNotEmpty(source.getName(), "source.getName()");
             String name = source.getName();
-            RepositoryDetails<ReturnType> details = addRepository(source.getName()).usingClass(source.getClass().getName())
-                                                                                   .loadedFromClasspath();
+            RepositorySourceDetails<ReturnType> details = addSource(source.getName()).usingClass(source.getClass().getName())
+                                                                                     .loadedFromClasspath();
             // Record all of the bean properties ...
             Path sourcePath = pathFactory().create(sourcesPath(), name);
             recordBeanPropertiesInGraph(sourcePath, source);
@@ -281,7 +286,7 @@ public class DnaConfiguration
         public ChooseClass<MimeTypeDetector, MimeTypeDetectorDetails<ReturnType>> addMimeTypeDetector( String id ) {
             CheckArg.isNotEmpty(id, "id");
             // Now create the "dna:sequencer" node with the supplied id ...
-            Path detectorPath = createOrReplaceNode(detectorsPath(), id);
+            Path detectorPath = createOrReplaceNode(detectorsPath(), id, DnaLexicon.READABLE_NAME, id);
             MimeTypeDetectorDetails<ReturnType> details = new GraphMimeTypeDetectorDetails<ReturnType>(detectorPath, builder);
             return new ClassChooser<MimeTypeDetector, MimeTypeDetectorDetails<ReturnType>>(detectorPath, details);
         }

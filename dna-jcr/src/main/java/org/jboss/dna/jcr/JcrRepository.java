@@ -40,6 +40,7 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -90,7 +91,32 @@ public class JcrRepository implements Repository {
          * The {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name} that specifies which
          * login modules should be used to validate credentials.
          */
-        JAAS_LOGIN_CONFIG_NAME,
+        JAAS_LOGIN_CONFIG_NAME;
+
+        /**
+         * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
+         * tries to match the supplied string to the option's {@link Option#name() name}, then the uppercase version of the
+         * supplied string to the option's name, and finally if the supplied string is a camel-case version of the name (e.g.,
+         * "projectNodeTypes").
+         * 
+         * @param option the string version of the option's name
+         * @return the matching Option instance, or null if an option could not be matched using the supplied value
+         */
+        public static Option findOption( String option ) {
+            if (option == null) return null;
+            Option result = Option.valueOf(option);
+            if (result != null) return result;
+            // Try an uppercased version ...
+            result = Option.valueOf(option.toUpperCase());
+            if (result != null) return result;
+            // Try a camel-case version ...
+            String underscored = Inflector.getInstance().underscore(option, '_');
+            if (underscored != null) {
+                result = Option.valueOf(underscored);
+            }
+
+            return result;
+        }
     }
 
     /**

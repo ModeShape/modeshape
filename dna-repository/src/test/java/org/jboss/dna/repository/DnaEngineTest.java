@@ -36,7 +36,7 @@ import javax.jcr.observation.Event;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.repository.sequencer.MockSequencerA;
+import org.jboss.dna.repository.sequencer.MockStreamSequencerA;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowCreatingWithConfigRepository() throws InterruptedException {
-        engine = new DnaConfiguration().withConfigurationRepository()
+        engine = new DnaConfiguration().withConfigurationSource()
                                        .usingClass(InMemoryRepositorySource.class)
                                        .describedAs("Configuration Repository")
                                        .with("name")
@@ -82,13 +82,13 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowCreatingMultipleRepositories() throws Exception {
-        engine = new DnaConfiguration().withConfigurationRepository()
+        engine = new DnaConfiguration().withConfigurationSource()
                                        .usingClass(InMemoryRepositorySource.class)
                                        .describedAs("Configuration Repository")
                                        .with("name")
                                        .setTo("config repo")
                                        .and()
-                                       .addRepository("JCR")
+                                       .addSource("JCR")
                                        .usingClass(InMemoryRepositorySource.class)
                                        .describedAs("Backing Repository for JCR Implementation")
                                        .with("name")
@@ -115,7 +115,7 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowAddingMimeTypeDetectors() throws Exception {
-        engine = new DnaConfiguration().withConfigurationRepository()
+        engine = new DnaConfiguration().withConfigurationSource()
                                        .usingClass(InMemoryRepositorySource.class)
                                        .describedAs("Configuration Repository")
                                        .with("name")
@@ -138,14 +138,14 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowAddingSequencers() throws Exception {
-        engine = new DnaConfiguration().withConfigurationRepository()
+        engine = new DnaConfiguration().withConfigurationSource()
                                        .usingClass(InMemoryRepositorySource.class)
                                        .describedAs("Configuration Repository")
                                        .with("name")
                                        .setTo("config repo")
                                        .and()
                                        .addSequencer("Mock Sequencer A")
-                                       .usingClass(MockSequencerA.class)
+                                       .usingClass(MockStreamSequencerA.class)
                                        .describedAs("A Mock Sequencer")
                                        .sequencingFrom("/**")
                                        .andOutputtingTo("/")

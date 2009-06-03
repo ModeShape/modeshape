@@ -446,6 +446,13 @@ public class CndImporterTest {
         assertThat(problems.size(), is(0));
     }
 
+    @Test
+    public void shouldImportCndForJavaSequencer() throws Exception {
+        importer.importFrom(openCndFile("javaSource.cnd"), problems);
+        if (problems.size() != 0) printProblems();
+        assertThat(problems.size(), is(0));
+    }
+
     public static final String[] NO_DEFAULTS = {};
     public static final String[] NO_SUPERTYPES = {};
     public static final String[] NO_VALUE_CONSTRAINTS = {};

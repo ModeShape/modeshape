@@ -23,10 +23,10 @@
  */
 package org.jboss.dna.jcr;
 
-import java.io.IOException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
@@ -72,7 +72,7 @@ public class CndNodeTypeRegistrationTest {
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullTypeSource() throws Exception {
-        repoTypeManager.registerNodeTypes(null);
+        repoTypeManager.registerNodeTypes((JcrNodeTypeSource)null);
     }
 
     @Test( expected = RepositoryException.class )

@@ -1717,13 +1717,15 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
+                                               .getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
+                                       .getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -1941,7 +1943,7 @@ public class Graph {
      */
     public ImportInto<Conjunction<Graph>> importXmlFrom( final InputStream stream ) {
         CheckArg.isNotNull(stream, "stream");
-        
+
         return new ImportInto<Conjunction<Graph>>() {
             private boolean skipRootElement = false;
 
@@ -3512,6 +3514,19 @@ public class Graph {
                 return new BatchResults(composite.getRequests());
             }
             return new BatchResults(request);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Pending requests:\n");
+            sb.append(requestQueue.toString());
+            return sb.toString();
         }
     }
 
@@ -5380,7 +5395,10 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext()
+                                  .getValueFactories()
+                                  .getPathFactory()
+                                  .create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }
