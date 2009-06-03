@@ -147,7 +147,7 @@ public class RepositoryService implements AdministeredService {
         CheckArg.isNotNull(context, "context");
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
                                                                               .getPathFactory()
-                                                                              .create("/dna:system");
+                                                                              .create("/jcr:system");
         this.sources = sources;
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSourceName;
