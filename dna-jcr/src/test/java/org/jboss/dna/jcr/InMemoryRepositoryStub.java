@@ -59,28 +59,20 @@ public class InMemoryRepositoryStub extends RepositoryStub {
         super(env);
 
         // Create the in-memory (DNA) repository
-        JcrEngine engine = new JcrConfiguration().withConfigurationSource()
-                                                 .usingClass(InMemoryRepositorySource.class.getName())
-                                                 .loadedFromClasspath()
-                                                 .describedAs("configuration repository")
-                                                 .usingWorkspace("configuration workspace")
-                                                 .with("name")
-                                                 .setTo("configuration repository")
-                                                 .with("defaultWorkspaceName")
-                                                 .setTo("configuration workspace")
-                                                 .and()
-                                                 .addSource("Store")
-                                                 .usingClass(InMemoryRepositorySource.class.getName())
-                                                 .loadedFromClasspath()
-                                                 .describedAs("JCR Repository persistent store")
-                                                 .and()
-                                                 .addRepository(REPOSITORY_SOURCE_NAME)
-                                                 .usingSource("Store")
-                                                 .withNodeTypes(getClass().getClassLoader().getResource("tck_test_types.cnd"))
-                                                 .with(Option.PROJECT_NODE_TYPES)
-                                                 .setTo(Boolean.FALSE.toString())
-                                                 .and()
-                                                 .build();
+        JcrConfiguration configuration = new JcrConfiguration();
+        // Define the single in-memory repository source ...
+        configuration.repositorySource("Store")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setDescription("JCR Repository persistent store");
+        // Define the JCR repository for the source ...
+        configuration.repository(REPOSITORY_SOURCE_NAME)
+                     .setSource("Store")
+                     .setOption(Option.PROJECT_NODE_TYPES, "false")
+                     .addNodeTypes(getClass().getClassLoader().getResource("tck_test_types.cnd"));
+        // Save and build the engine ...
+        configuration.save();
+        JcrEngine engine = configuration.build();
         engine.start();
 
         // Print all of the problems from the engine configuration ...

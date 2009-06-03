@@ -6,8 +6,8 @@
  * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
- * Unless otherwise indicated, all code in JBoss DNA is licensed
- * to you under the terms of the GNU Lesser General Public License as
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
@@ -27,192 +27,95 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.cnd.CndImporter;
+import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.io.GraphBatchDestination;
-import org.jboss.dna.graph.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.sequencer.StreamSequencer;
-import org.jboss.dna.repository.Configurator;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.NamespaceRegistry.Namespace;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaConfiguration;
 import org.jboss.dna.repository.DnaConfigurationException;
-import org.jboss.dna.repository.Configurator.And;
-import org.jboss.dna.repository.Configurator.ChooseClass;
-import org.jboss.dna.repository.Configurator.ConfigSourceDetails;
-import org.jboss.dna.repository.Configurator.MimeTypeDetectorDetails;
-import org.jboss.dna.repository.Configurator.RepositorySourceDetails;
-import org.jboss.dna.repository.Configurator.SequencerDetails;
-import org.jboss.dna.repository.Configurator.SetName;
+import org.xml.sax.SAXException;
 
 /**
  * A configuration builder for a {@link JcrEngine}. This class is an internal domain-specific language (DSL), and is designed to
  * be used in a traditional way or in a method-chained manner:
  * 
  * <pre>
- * configuration.addRepository(&quot;Source1&quot;).usingClass(InMemoryRepositorySource.class).describedAs(&quot;description&quot;);
- * configuration.addMimeTypeDetector(&quot;detector&quot;).usingClass(ExtensionBasedMimeTypeDetector.class).describedAs(&quot;default detector&quot;);
- * configuration.addSequencer(&quot;MicrosoftDocs&quot;)
- *              .usingClass(&quot;org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer&quot;)
- *              .loadedFromClasspath()
- *              .named(&quot;Microsoft Document sequencer&quot;)
- *              .describedAs(&quot;Our primary sequencer for all .doc files&quot;)
+ * configuration.repositorySource(&quot;Source1&quot;).setClass(InMemoryRepositorySource.class).setDescription(&quot;description&quot;);
+ * configuration.mimeTypeDetector(&quot;detector&quot;).setClass(ExtensionBasedMimeTypeDetector.class).setDescription(&quot;default detector&quot;);
+ * configuration.sequencer(&quot;MicrosoftDocs&quot;)
+ *              .setClass(&quot;org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer&quot;)
+ *              .setDescription(&quot;Our primary sequencer for all .doc files&quot;)
  *              .sequencingFrom(&quot;/public//(*.(doc|xml|ppt)[*]/jcr:content[@jcr:data]&quot;)
  *              .andOutputtingTo(&quot;/documents/$1&quot;);
+ * configuration.repository(&quot;MyRepository&quot;).setSource(&quot;Source1&quot;);
  * configuration.save();
  * </pre>
  */
-public class JcrConfiguration
-    implements Configurator.Initializer<JcrConfiguration>, Configurator.SequencerConfigurator<JcrConfiguration>,
-    Configurator.RepositorySourceConfigurator<JcrConfiguration>, Configurator.MimeDetectorConfigurator<JcrConfiguration>,
-    Configurator.Builder<JcrEngine> {
-
-    private final JcrConfiguration.Builder<JcrConfiguration> builder;
+@NotThreadSafe
+public class JcrConfiguration extends DnaConfiguration {
 
     /**
-     * Create a new configuration for DNA.
-     */
-    public JcrConfiguration() {
-        this(new ExecutionContext());
-    }
-
-    /**
-     * Specify a new {@link ExecutionContext} that should be used for this DNA instance.
+     * Interface used to define a JCR Repository that's accessible from the JcrEngine.
      * 
-     * @param context the new context, or null if a default-constructed execution context should be used
-     * @throws IllegalArgumentException if the supplied context reference is null
+     * @param <ReturnType>
      */
-    public JcrConfiguration( ExecutionContext context ) {
-        this.builder = new JcrConfiguration.Builder<JcrConfiguration>(context, this);
-    }
+    public interface RepositoryDefinition<ReturnType> extends Returnable<ReturnType>, Removable<ReturnType> {
 
-    /**
-     * Get the execution context used by this configurator.
-     * 
-     * @return the execution context; never null
-     */
-    public final ExecutionContext getExecutionContext() {
-        return builder.getExecutionContext();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.Initializer#withConfigurationSource()
-     */
-    public ChooseClass<RepositorySource, ConfigSourceDetails<JcrConfiguration>> withConfigurationSource() {
-        return builder.withConfigurationSource();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.SequencerConfigurator#addSequencer(java.lang.String)
-     */
-    public ChooseClass<StreamSequencer, SequencerDetails<JcrConfiguration>> addSequencer( String id ) {
-        CheckArg.isNotEmpty(id, "id");
-        return builder.addSequencer(id);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(java.lang.String)
-     */
-    public ChooseClass<RepositorySource, RepositorySourceDetails<JcrConfiguration>> addSource( String id ) {
-        CheckArg.isNotEmpty(id, "id");
-        return builder.addSource(id);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.RepositorySourceConfigurator#addSource(org.jboss.dna.graph.connector.RepositorySource)
-     */
-    public JcrConfiguration addSource( RepositorySource source ) {
-        CheckArg.isNotNull(source, "source");
-        CheckArg.isNotEmpty(source.getName(), "source.getName()");
-        return builder.addSource(source);
-    }
-
-    /**
-     * Add a JCR repository to this configuration.
-     * 
-     * @param id the identifier for this repository; may not be null or empty
-     * @return the interface used to configure the repository
-     */
-    public SourceSetter<JcrRepositoryDetails<JcrConfiguration>> addRepository( final String id ) {
-        CheckArg.isNotEmpty(id, "id");
-        final JcrConfiguration.Builder<JcrConfiguration> builder = this.builder;
-        return new SourceSetter<JcrRepositoryDetails<JcrConfiguration>>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.SourceSetter#usingSource(java.lang.String)
-             */
-            public JcrRepositoryDetails<JcrConfiguration> usingSource( String sourceId ) {
-                return builder.addRepository(id, sourceId);
-            }
-        };
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.MimeDetectorConfigurator#addMimeTypeDetector(java.lang.String)
-     */
-    public ChooseClass<MimeTypeDetector, MimeTypeDetectorDetails<JcrConfiguration>> addMimeTypeDetector( String id ) {
-        CheckArg.isNotEmpty(id, "id");
-        return builder.addMimeTypeDetector(id);
-    }
-
-    /**
-     * Save any changes that have been made so far to the configuration. This method does nothing if no changes have been made.
-     * 
-     * @return this configuration object for method chaining purposes; never null
-     */
-    public JcrConfiguration save() {
-        return builder.save();
-    }
-
-    protected Graph graph() {
-        return builder.getGraph();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.repository.Configurator.Builder#build()
-     */
-    public JcrEngine build() throws DnaConfigurationException {
-        save();
-        return new JcrEngine(builder.buildDnaEngine());
-    }
-
-    /**
-     * The interface used to set the RepositorySource that should be used.
-     * 
-     * @param <ReturnType> the interface returned from these methods
-     */
-    public interface SourceSetter<ReturnType> {
         /**
-         * Set the repository source that should be used.
+         * Specify the name of the repository source that is to be used by this JCR repository.
          * 
-         * @param sourceId that identifier of the repository source
-         * @return the next component to continue configuration; never null
+         * @param sourceName the name of the repository source that should be exposed by this JCR repository
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if the source name parameter is null
          */
-        ReturnType usingSource( String sourceId );
-    }
+        RepositoryDefinition<ReturnType> setSource( String sourceName );
 
-    public interface JcrRepositoryDetails<ReturnType>
-        extends SetOptions<JcrRepositoryDetails<ReturnType>>, SetNamespace<JcrRepositoryDetails<ReturnType>>,
-        SetName<JcrRepositoryDetails<ReturnType>>,
-        /* SetDescription<JcrRepositoryDetails<ReturnType>>, */
-        And<ReturnType> {
+        /**
+         * Get the name of the repository source that is to be used by this JCR repository.
+         * 
+         * @return the source name, or null if it has not yet been set
+         */
+        String getSource();
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    String value );
+
+        /**
+         * Get the value for the repository option.
+         * 
+         * @param option the option
+         * @return the current option value, which may be null if the option has not been set (and its default would be used)
+         * @throws IllegalArgumentException if the option parameter is null
+         */
+        String getOption( JcrRepository.Option option );
 
         /**
          * Specify that the CND in the supplied string should be loaded into the repository.
@@ -222,7 +125,7 @@ public class JcrConfiguration
          * @throws IllegalArgumentException if the string is null or empty
          * @throws DnaConfigurationException if there is an error reading the CND contents
          */
-        JcrRepositoryDetails<ReturnType> withNodeTypes( String cndContents );
+        RepositoryDefinition<ReturnType> addNodeTypes( String cndContents );
 
         /**
          * Specify that the CND file is to be loaded into the repository.
@@ -232,7 +135,7 @@ public class JcrConfiguration
          * @throws IllegalArgumentException if the file is null
          * @throws DnaConfigurationException if there is an error reading the file
          */
-        JcrRepositoryDetails<ReturnType> withNodeTypes( File cndFile );
+        RepositoryDefinition<ReturnType> addNodeTypes( File cndFile );
 
         /**
          * Specify that the CND file is to be loaded into the repository.
@@ -242,7 +145,7 @@ public class JcrConfiguration
          * @throws IllegalArgumentException if the URL is null
          * @throws DnaConfigurationException if there is an error reading the content at the URL
          */
-        JcrRepositoryDetails<ReturnType> withNodeTypes( URL urlOfCndFile );
+        RepositoryDefinition<ReturnType> addNodeTypes( URL urlOfCndFile );
 
         /**
          * Specify that the CND file is to be loaded into the repository.
@@ -252,271 +155,461 @@ public class JcrConfiguration
          * @throws IllegalArgumentException if the URL is null
          * @throws DnaConfigurationException if there is an error reading the stream at the URL
          */
-        JcrRepositoryDetails<ReturnType> withNodeTypes( InputStream cndContent );
+        RepositoryDefinition<ReturnType> addNodeTypes( InputStream cndContent );
 
-    }
-
-    /**
-     * Interface for configuring the {@link JcrRepository.Option JCR repository options} for a {@link JcrRepository JCR
-     * repository}.
-     * 
-     * @param <ReturnType> the interface returned after the option has been set.
-     */
-    public interface SetOptions<ReturnType> {
         /**
-         * Specify the repository option that is to be set. The value may be set using the interface returned by this method.
+         * Specify the namespace binding that should be made available in this repository.
          * 
-         * @param option the option to be set
+         * @param prefix the namespace prefix; may not be null or empty, and must be a valid prefix
+         * @param uri the uri for the namespace; may not be null or empty
          * @return the interface used to set the value for the property; never null
          */
-        OptionSetter<ReturnType> with( JcrRepository.Option option );
+        RepositoryDefinition<ReturnType> registerNamespace( String prefix,
+                                                            String uri );
+    }
+
+    private final Map<String, RepositoryDefinition<? extends JcrConfiguration>> repositoryDefinitions = new HashMap<String, RepositoryDefinition<? extends JcrConfiguration>>();
+
+    /**
+     * Create a new configuration, using a default-constructed {@link ExecutionContext}.
+     */
+    public JcrConfiguration() {
+        super();
     }
 
     /**
-     * The interface used to set the value for a {@link JcrRepository.Option JCR repository option}.
+     * Create a new configuration using the supplied {@link ExecutionContext}.
      * 
-     * @param <ReturnType> the interface returned from these methods
-     * @see JcrConfiguration.SetOptions#with(org.jboss.dna.jcr.JcrRepository.Option)
+     * @param context the execution context
+     * @throws IllegalArgumentException if the path is null or empty
      */
-    public interface OptionSetter<ReturnType> {
-        /**
-         * Set the property value to an integer.
-         * 
-         * @param value the new value for the property
-         * @return the next component to continue configuration; never null
-         */
-        ReturnType setTo( String value );
+    public JcrConfiguration( ExecutionContext context ) {
+        super(context);
     }
 
     /**
-     * Interface for setting a namespace for a {@link JcrRepository JCR repository}.
+     * {@inheritDoc}
      * 
-     * @param <ReturnType> the interface returned after the option has been set.
+     * @throws IOException
+     * @throws SAXException
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.lang.String)
      */
-    public interface SetNamespace<ReturnType> {
-        /**
-         * Specify the repository option that is to be set. The value may be set using the interface returned by this method.
-         * 
-         * @param uri the uri for the namespace
-         * @return the interface used to set the value for the property; never null
-         */
-        NamespaceSetter<ReturnType> withNamespace( String uri );
+    @Override
+    public JcrConfiguration loadFrom( String pathToFile ) throws IOException, SAXException {
+        super.loadFrom(pathToFile);
+        return this;
     }
 
     /**
-     * The interface used to set the prefix for a namespace.
+     * {@inheritDoc}
      * 
-     * @param <ReturnType> the interface returned from these methods
-     * @see JcrConfiguration.SetNamespace#withNamespace(String)
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.lang.String, java.lang.String)
      */
-    public interface NamespaceSetter<ReturnType> {
-        /**
-         * Set the prefix for the namespace
-         * 
-         * @param prefix the prefix for the namespace
-         * @return the next component to continue configuration; never null
-         */
-        ReturnType usingPrefix( String prefix );
+    @Override
+    public JcrConfiguration loadFrom( String pathToConfigurationFile,
+                                      String path ) throws IOException, SAXException {
+        super.loadFrom(pathToConfigurationFile, path);
+        return this;
     }
 
-    public static class Builder<ReturnType> extends DnaConfiguration.Builder<ReturnType> {
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.io.File)
+     */
+    @Override
+    public JcrConfiguration loadFrom( File configurationFile ) throws IOException, SAXException {
+        super.loadFrom(configurationFile);
+        return this;
+    }
 
-        private Path repositoriesPath;
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.io.File, java.lang.String)
+     */
+    @Override
+    public JcrConfiguration loadFrom( File configurationFile,
+                                      String path ) throws IOException, SAXException {
+        super.loadFrom(configurationFile, path);
+        return this;
+    }
 
-        /**
-         * Specify a new {@link ExecutionContext} that should be used for this DNA instance.
-         * 
-         * @param context the new context, or null if a default-constructed execution context should be used
-         * @param builder the builder object returned from all the methods
-         * @throws IllegalArgumentException if the supplied context reference is null
-         */
-        public Builder( ExecutionContext context,
-                        ReturnType builder ) {
-            super(context, builder);
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.net.URL)
+     */
+    @Override
+    public JcrConfiguration loadFrom( URL urlToConfigurationFile ) throws IOException, SAXException {
+        super.loadFrom(urlToConfigurationFile);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.net.URL, java.lang.String)
+     */
+    @Override
+    public JcrConfiguration loadFrom( URL urlToConfigurationFile,
+                                      String path ) throws IOException, SAXException {
+        super.loadFrom(urlToConfigurationFile, path);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.io.InputStream)
+     */
+    @Override
+    public JcrConfiguration loadFrom( InputStream configurationFileInputStream ) throws IOException, SAXException {
+        super.loadFrom(configurationFileInputStream);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(java.io.InputStream, java.lang.String)
+     */
+    @Override
+    public JcrConfiguration loadFrom( InputStream configurationFileInputStream,
+                                      String path ) throws IOException, SAXException {
+        super.loadFrom(configurationFileInputStream, path);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(org.jboss.dna.graph.connector.RepositorySource)
+     */
+    @Override
+    public JcrConfiguration loadFrom( RepositorySource source ) {
+        super.loadFrom(source);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(org.jboss.dna.graph.connector.RepositorySource, java.lang.String)
+     */
+    @Override
+    public JcrConfiguration loadFrom( RepositorySource source,
+                                      String workspaceName ) {
+        super.loadFrom(source, workspaceName);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#loadFrom(org.jboss.dna.graph.connector.RepositorySource, java.lang.String,
+     *      java.lang.String)
+     */
+    @Override
+    public JcrConfiguration loadFrom( RepositorySource source,
+                                      String workspaceName,
+                                      String pathInWorkspace ) {
+        super.loadFrom(source, workspaceName, pathInWorkspace);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#and()
+     */
+    @Override
+    public JcrConfiguration and() {
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#withClassLoaderFactory(org.jboss.dna.common.component.ClassLoaderFactory)
+     */
+    @Override
+    public JcrConfiguration withClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
+        super.withClassLoaderFactory(classLoaderFactory);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#mimeTypeDetector(java.lang.String)
+     */
+    @Override
+    public MimeTypeDetectorDefinition<JcrConfiguration> mimeTypeDetector( String name ) {
+        return mimeTypeDetectorDefinition(this, name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#repositorySource(java.lang.String)
+     */
+    @Override
+    public RepositorySourceDefinition<JcrConfiguration> repositorySource( String name ) {
+        return repositorySourceDefinition(this, name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#sequencer(java.lang.String)
+     */
+    @Override
+    public SequencerDefinition<JcrConfiguration> sequencer( String name ) {
+        return sequencerDefinition(this, name);
+    }
+
+    /**
+     * Obtain or create a definition for the {@link javax.jcr.Repository JCR Repository} with the supplied name or identifier. A
+     * new definition will be created if there currently is no sequencer defined with the supplied name.
+     * 
+     * @param name the name or identifier of the sequencer
+     * @return the details of the sequencer definition; never null
+     */
+    public RepositoryDefinition<JcrConfiguration> repository( String name ) {
+        return repositoryDefinition(this, name);
+    }
+
+    /**
+     * Get the list of sequencer definitions.
+     * 
+     * @return the unmodifiable set of definitions; never null but possibly empty if there are no definitions
+     */
+    public Set<RepositoryDefinition<JcrConfiguration>> repositories() {
+        // Get the children under the 'dna:mimeTypeDetectors' node ...
+        Set<String> names = getNamesOfComponentsUnder(DnaLexicon.REPOSITORIES);
+        names.addAll(this.repositoryDefinitions.keySet());
+        Set<RepositoryDefinition<JcrConfiguration>> results = new HashSet<RepositoryDefinition<JcrConfiguration>>();
+        for (String name : names) {
+            results.add(repository(name));
         }
+        return Collections.unmodifiableSet(results);
+    }
 
-        protected Graph getGraph() {
-            return graph();
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#save()
+     */
+    @Override
+    public JcrConfiguration save() {
+        super.save();
+        this.repositoryDefinitions.clear();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.repository.DnaConfiguration#build()
+     */
+    @Override
+    public JcrEngine build() {
+        save();
+        return new JcrEngine(getExecutionContext(), getConfigurationDefinition());
+    }
+
+    /**
+     * Utility method to construct a definition object for the repository with the supplied name and return type.
+     * 
+     * @param <ReturnType> the type of the return object
+     * @param returnObject the return object
+     * @param name the name of the repository
+     * @return the definition for the repository
+     */
+    @SuppressWarnings( "unchecked" )
+    protected <ReturnType extends JcrConfiguration> RepositoryDefinition<ReturnType> repositoryDefinition( ReturnType returnObject,
+                                                                                                           String name ) {
+        RepositoryDefinition<ReturnType> definition = (RepositoryDefinition<ReturnType>)repositoryDefinitions.get(name);
+        if (definition == null) {
+            definition = new RepositoryBuilder<ReturnType>(returnObject, changes(), path(), DnaLexicon.REPOSITORIES, name(name));
+            repositoryDefinitions.put(name, definition);
         }
+        return definition;
+    }
 
-        protected Path repositoriesPath() {
-            // Make sure the "dna:repositories" node is there
-            if (repositoriesPath == null) {
-                Path path = pathFactory().create(this.configurationSource.getPath(), DnaLexicon.REPOSITORIES);
-                Node node = graph().createIfMissing(path).andReturn();
-                this.repositoriesPath = node.getLocation().getPath();
-            }
-            return this.repositoriesPath;
-        }
+    protected class RepositoryBuilder<ReturnType> extends GraphReturnable<ReturnType, RepositoryDefinition<ReturnType>>
+        implements RepositoryDefinition<ReturnType> {
+        private final EnumMap<JcrRepository.Option, String> optionValues = new EnumMap<Option, String>(Option.class);
 
-        public JcrRepositoryDetails<ReturnType> addRepository( String id,
-                                                               String sourceId ) {
-            CheckArg.isNotEmpty(id, "id");
-            // Now create the "dna:repositories/id" node ...
-            Path path = createOrReplaceNode(repositoriesPath(), id);
-            configuration().set(DnaLexicon.SOURCE_NAME).to(sourceId).on(path);
-            return new JcrGraphRepositoryDetails<ReturnType>(path, builder);
-        }
-
-        public class JcrGraphRepositoryDetails<RT> implements JcrRepositoryDetails<RT> {
-            private final Path path;
-            private final RT returnObject;
-
-            protected JcrGraphRepositoryDetails( Path path,
-                                                 RT returnObject ) {
-                this.path = path;
-                this.returnObject = returnObject;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.repository.Configurator.SetName#named(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public JcrRepositoryDetails<RT> named( String name ) {
-                configuration().set(DnaLexicon.READABLE_NAME).to(name).on(name);
-                return this;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.SetNamespace#withNamespace(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public NamespaceSetter<JcrRepositoryDetails<RT>> withNamespace( final String uri ) {
-                final Path namespacesPath = createOrReplaceNode(path, DnaLexicon.NAMESPACES);
-                final JcrRepositoryDetails<RT> details = this;
-                return new NamespaceSetter<JcrRepositoryDetails<RT>>() {
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see org.jboss.dna.jcr.JcrConfiguration.NamespaceSetter#usingPrefix(java.lang.String)
-                     */
-                    public JcrRepositoryDetails<RT> usingPrefix( String prefix ) {
-                        Path nsPath = createOrReplaceNode(namespacesPath, prefix);
-                        configuration().set(DnaLexicon.URI).to(uri).on(nsPath);
-                        return details;
-                    }
-                };
-            }
-
-            @SuppressWarnings( "synthetic-access" )
-            public OptionSetter<JcrRepositoryDetails<RT>> with( final JcrRepository.Option option ) {
-                final Path optionsPath = createOrReplaceNode(path, DnaLexicon.OPTIONS);
-                final JcrRepositoryDetails<RT> details = this;
-                return new OptionSetter<JcrRepositoryDetails<RT>>() {
-                    public JcrRepositoryDetails<RT> setTo( String value ) {
-                        Path optionPath = createOrReplaceNode(optionsPath, option.name());
-                        configuration().set(DnaLexicon.VALUE).to(value).on(optionPath);
-                        return details;
-                    }
-                };
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.JcrRepositoryDetails#withNodeTypes(java.lang.String)
-             */
-            public JcrRepositoryDetails<RT> withNodeTypes( String content ) {
-                CheckArg.isNotEmpty(content, "content");
-                CndImporter importer = createCndImporter();
-                try {
-                    importer.importFrom(content, getProblems(), "stream");
-                } catch (IOException e) {
-                    throw new DnaConfigurationException(e);
-                }
-                return this;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.JcrRepositoryDetails#withNodeTypes(java.net.URL)
-             */
-            public JcrRepositoryDetails<RT> withNodeTypes( URL url ) {
-                CheckArg.isNotNull(url, "url");
-                // Obtain the stream ...
-                InputStream stream = null;
-                boolean foundError = false;
-                try {
-                    stream = url.openStream();
-                    CndImporter importer = createCndImporter();
-                    importer.importFrom(stream, getProblems(), url.toString());
-                } catch (IOException e) {
-                    foundError = true;
-                    throw new DnaConfigurationException(e);
-                } finally {
-                    if (stream != null) {
+        protected RepositoryBuilder( ReturnType returnObject,
+                                     Graph.Batch batch,
+                                     Path path,
+                                     Name... names ) {
+            super(returnObject, batch, path, names);
+            // Load the current options ...
+            try {
+                Path optionsPath = context.getValueFactories().getPathFactory().create(path, DnaLexicon.OPTIONS);
+                Subgraph options = batch.getGraph().getSubgraphOfDepth(2).at(optionsPath);
+                for (Location optionChild : options.getRoot().getChildren()) {
+                    Node option = options.getNode(optionChild);
+                    Property property = option.getProperty(DnaLexicon.VALUE);
+                    if (property != null && property.isEmpty()) {
                         try {
-                            stream.close();
-                        } catch (IOException e) {
-                            if (!foundError) {
-                                throw new DnaConfigurationException(e);
-                            }
+                            Option key = Option.findOption(optionChild.getPath()
+                                                                      .getLastSegment()
+                                                                      .getString(context.getNamespaceRegistry()));
+                            String value = context.getValueFactories().getStringFactory().create(property.getFirstValue());
+                            optionValues.put(key, value);
+                        } catch (IllegalArgumentException e) {
+                            // the key is not valid, so skip it ...
                         }
                     }
                 }
-                return this;
+            } catch (PathNotFoundException e) {
+                // No current options
             }
+        }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.JcrRepositoryDetails#withNodeTypes(java.io.File)
-             */
-            public JcrRepositoryDetails<RT> withNodeTypes( File file ) {
-                CheckArg.isNotNull(file, "file");
-                if (file.exists() && file.canRead()) {
-                    CndImporter importer = createCndImporter();
-                    try {
-                        importer.importFrom(file, getProblems());
-                    } catch (IOException e) {
-                        throw new DnaConfigurationException(e);
-                    }
-                    return this;
-                }
-                throw new DnaConfigurationException(JcrI18n.fileDoesNotExist.text(file.getPath()));
+        @Override
+        protected RepositoryDefinition<ReturnType> thisType() {
+            return this;
+        }
+
+        public RepositoryDefinition<ReturnType> setSource( String sourceName ) {
+            setProperty(DnaLexicon.SOURCE_NAME, sourceName);
+            return this;
+        }
+
+        public String getSource() {
+            Property property = getProperty(DnaLexicon.SOURCE_NAME);
+            if (property != null && !property.isEmpty()) {
+                return context.getValueFactories().getStringFactory().create(property.getFirstValue());
             }
+            return null;
+        }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.jcr.JcrConfiguration.JcrRepositoryDetails#withNodeTypes(java.io.InputStream)
-             */
-            public JcrRepositoryDetails<RT> withNodeTypes( InputStream stream ) {
+        public RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                           String value ) {
+            CheckArg.isNotNull(option, "option");
+            CheckArg.isNotNull(value, "value");
+            createIfMissing(DnaLexicon.OPTIONS, option.name()).with(DnaLexicon.VALUE, value.trim()).and();
+            optionValues.put(option, value);
+            return this;
+        }
+
+        public String getOption( Option option ) {
+            CheckArg.isNotNull(option, "option");
+            return optionValues.get(option);
+        }
+
+        public RepositoryDefinition<ReturnType> registerNamespace( String prefix,
+                                                                   String uri ) {
+            CheckArg.isNotEmpty(prefix, "prefix");
+            CheckArg.isNotEmpty(uri, "uri");
+            prefix = prefix.trim();
+            uri = uri.trim();
+            createIfMissing(DnaLexicon.NAMESPACES, prefix).with(DnaLexicon.URI, uri).and();
+            return this;
+        }
+
+        public RepositoryDefinition<ReturnType> addNodeTypes( String cndContents ) {
+            CheckArg.isNotEmpty(cndContents, "cndContents");
+            CndImporter importer = createCndImporter();
+            try {
+                Set<Namespace> namespacesBefore = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
+                importer.importFrom(cndContents, getProblems(), "stream");
+
+                // Record any new namespaces added by this import ...
+                registerNewNamespaces(namespacesBefore);
+            } catch (IOException e) {
+                throw new DnaConfigurationException(e);
+            }
+            return this;
+        }
+
+        public RepositoryDefinition<ReturnType> addNodeTypes( File file ) {
+            CheckArg.isNotNull(file, "file");
+            if (file.exists() && file.canRead()) {
                 CndImporter importer = createCndImporter();
                 try {
-                    importer.importFrom(stream, getProblems(), "stream");
+                    Set<Namespace> namespacesBefore = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
+                    importer.importFrom(file, getProblems());
+
+                    // Record any new namespaces added by this import ...
+                    registerNewNamespaces(namespacesBefore);
                 } catch (IOException e) {
                     throw new DnaConfigurationException(e);
                 }
                 return this;
             }
+            throw new DnaConfigurationException(JcrI18n.fileDoesNotExist.text(file.getPath()));
+        }
 
-            @SuppressWarnings( "synthetic-access" )
-            protected CndImporter createCndImporter() {
-                // The node types will be loaded into 'dna:repositories/{repositoryName}/dna:nodeTypes/' ...
-                Path nodeTypesPath = createOrReplaceNode(path, DnaLexicon.NODE_TYPES);
+        public RepositoryDefinition<ReturnType> addNodeTypes( URL url ) {
+            CheckArg.isNotNull(url, "url");
+            // Obtain the stream ...
+            InputStream stream = null;
+            boolean foundError = false;
+            try {
+                Set<Namespace> namespacesBefore = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
+                stream = url.openStream();
+                CndImporter importer = createCndImporter();
+                importer.importFrom(stream, getProblems(), url.toString());
 
-                // Now set up the destination ...
-                Destination destination = new GraphBatchDestination(graph().batch()); // will be executed
-
-                // And create the importer that will load the CND content into the repository ...
-                return new CndImporter(destination, nodeTypesPath);
+                // Record any new namespaces added by this import ...
+                registerNewNamespaces(namespacesBefore);
+            } catch (IOException e) {
+                foundError = true;
+                throw new DnaConfigurationException(e);
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                        if (!foundError) {
+                            throw new DnaConfigurationException(e);
+                        }
+                    }
+                }
             }
+            return this;
+        }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.repository.Configurator.And#and()
-             */
-            public RT and() {
-                return returnObject;
+        public RepositoryDefinition<ReturnType> addNodeTypes( InputStream cndContent ) {
+            CndImporter importer = createCndImporter();
+            try {
+                Set<Namespace> namespacesBefore = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
+                importer.importFrom(cndContent, getProblems(), "stream");
+
+                // Record any new namespaces added by this import ...
+                registerNewNamespaces(namespacesBefore);
+            } catch (IOException e) {
+                throw new DnaConfigurationException(e);
+            }
+            return this;
+        }
+
+        protected void registerNewNamespaces( Set<Namespace> namespacesBefore ) {
+            Set<Namespace> namespacesAfter = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
+            Set<Namespace> newNamespaces = new HashSet<Namespace>(namespacesAfter);
+            newNamespaces.removeAll(namespacesBefore);
+            for (Namespace namespace : newNamespaces) {
+                registerNamespace(namespace.getPrefix(), namespace.getNamespaceUri());
             }
         }
 
+        protected CndImporter createCndImporter() {
+            // The node types will be loaded into 'dna:repositories/{repositoryName}/dna:nodeTypes/' ...
+            Path nodeTypesPath = subpath(DnaLexicon.NODE_TYPES);
+            createIfMissing(DnaLexicon.NODE_TYPES).and();
+
+            // Now set up the destination ...
+            Destination destination = new GraphBatchDestination(batch, true); // will NOT be executed
+
+            // And create the importer that will load the CND content into the repository ...
+            return new CndImporter(destination, nodeTypesPath);
+        }
     }
+
 }

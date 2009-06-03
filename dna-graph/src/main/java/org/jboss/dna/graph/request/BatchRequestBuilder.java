@@ -467,6 +467,7 @@ public class BatchRequestBuilder {
         // Record this operation as a pending change ...
         pendingRequest = new NodeChange(on, workspaceName);
         for (Property property : properties) {
+            if (property == null) continue;
             pendingRequest.pendingProperties.put(property.getName(), property);
         }
         return this;

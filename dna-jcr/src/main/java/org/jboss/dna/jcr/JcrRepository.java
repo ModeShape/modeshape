@@ -104,18 +104,21 @@ public class JcrRepository implements Repository {
          */
         public static Option findOption( String option ) {
             if (option == null) return null;
-            Option result = Option.valueOf(option);
-            if (result != null) return result;
-            // Try an uppercased version ...
-            result = Option.valueOf(option.toUpperCase());
-            if (result != null) return result;
-            // Try a camel-case version ...
-            String underscored = Inflector.getInstance().underscore(option, '_');
-            if (underscored != null) {
-                result = Option.valueOf(underscored);
+            try {
+                return Option.valueOf(option);
+            } catch (IllegalArgumentException e) {
+                // Try an uppercased version ...
+                try {
+                    return Option.valueOf(option.toUpperCase());
+                } catch (IllegalArgumentException e2) {
+                    // Try a camel-case version ...
+                    String underscored = Inflector.getInstance().underscore(option, '_');
+                    if (underscored == null) {
+                        throw e2;
+                    }
+                    return Option.valueOf(underscored.toUpperCase());
+                }
             }
-
-            return result;
         }
     }
 

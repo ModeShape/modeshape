@@ -122,6 +122,9 @@ public final class RepositoryI18n {
     // Repository
     public static I18n errorStartingRepositoryService;
 
+    // Engine
+    public static I18n engineIsNotRunning;
+
     static {
         try {
             I18n.initialize(RepositoryI18n.class);

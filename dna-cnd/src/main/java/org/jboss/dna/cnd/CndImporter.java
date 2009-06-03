@@ -222,7 +222,7 @@ public class CndImporter {
                     String prefix = namespace.getFirstChildWithType(CndLexer.PREFIX).getChild(0).getText();
                     String uri = namespace.getFirstChildWithType(CndLexer.URI).getChild(0).getText();
                     // Register the namespace ...
-                    context.namespaces().register(removeQuotes(prefix), removeQuotes(uri));
+                    context.register(removeQuotes(prefix), removeQuotes(uri));
                 }
             }
 
@@ -346,6 +346,7 @@ public class CndImporter {
      */
     protected final class ImportContext {
         private final ExecutionContext context;
+        private final ExecutionContext originalContext;
         private final Problems problems;
         private final String resourceName;
 
@@ -354,6 +355,7 @@ public class CndImporter {
                                  String resourceName ) {
             // Create a context that has a local namespace registry
             NamespaceRegistry localNamespaces = new LocalNamespaceRegistry(context.getNamespaceRegistry());
+            this.originalContext = context;
             this.context = context.with(localNamespaces);
             this.problems = problems;
             this.resourceName = resourceName;
@@ -363,8 +365,17 @@ public class CndImporter {
             return this.context;
         }
 
-        protected NamespaceRegistry namespaces() {
-            return this.context.getNamespaceRegistry();
+        protected void register( String prefix,
+                                 String uri ) {
+            // Register it in the local registry with the supplied prefix ...
+            context.getNamespaceRegistry().register(prefix, uri);
+
+            // See if it is already registered in the original context ...
+            NamespaceRegistry registry = originalContext.getNamespaceRegistry();
+            if (!registry.isRegisteredNamespaceUri(uri)) {
+                // It is not, so register it ...
+                registry.register(prefix, uri);
+            }
         }
 
         protected NameFactory nameFactory() {

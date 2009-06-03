@@ -564,7 +564,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn()
+                                                                                                                                                  .getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
@@ -639,11 +640,11 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     ChildInfo info = new ChildInfo(childName, snsIndex);
                     childrenWithChangedName.add(info);
                 }
-                
+
                 snsIndex++;
                 if (!foundBeforeNode) index++;
             }
-            
+
         }
         if (addChildWithName) {
             // Make room for the new child at the end of the array ...
@@ -664,7 +665,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                 // Make sure that we add a record for the new node if it hasn't previously been added
                 ChildInfo info = new ChildInfo(null, index);
                 childrenWithChangedName.add(info);
-                
+
             }
             Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(changedName);
             childNames[index] = newSegment;
@@ -760,8 +761,9 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     // don't copy ...
                 } else {
                     // Append an updated segment ...
-                    Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(childName.getName(),
-                                                                                                         childName.getIndex() - 1);
+                    Path.Segment newSegment = context.getValueFactories()
+                                                     .getPathFactory()
+                                                     .createSegment(childName.getName(), childName.getIndex() - 1);
                     newChildNames[index] = newSegment;
                     // Replace the child with the correct FQN ...
                     changeNodeName(cache, parent, childName, newSegment, context);
@@ -793,7 +795,9 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     }
 
     /**
-     * Utility class used by the {@link #updateChildList(Cache, Node, Name, ExecutionContext, boolean)} method.
+     * Utility class used by the
+     * {@link JBossCacheRequestProcessor#updateChildList(Cache, Node, Name, org.jboss.dna.graph.property.Path.Segment, ExecutionContext, boolean)}
+     * method.
      * 
      * @author Randall Hauch
      */
@@ -806,9 +810,10 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             this.segment = childSegment;
             this.childIndex = childIndex;
         }
-        
+
+        @Override
         public String toString() {
-            return (segment != null ? segment.getString() : "null") + "@" + childIndex; 
+            return (segment != null ? segment.getString() : "null") + "@" + childIndex;
         }
 
     }

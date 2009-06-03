@@ -41,16 +41,16 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.security.auth.login.LoginException;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
+import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.sequencer.image.ImageMetadataSequencer;
 import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
 import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
+import org.jboss.security.config.IDTrustConfiguration;
 
 /**
  * @author Randall Hauch
@@ -63,52 +63,48 @@ public class SequencingClient {
     public static final char[] DEFAULT_PASSWORD = "secret".toCharArray();
 
     public static void main( String[] args ) {
-        // Set up an execution context in which we'll run, and authenticate using JAAS ...
-        ExecutionContext context = new ExecutionContext();
-        String jaasAppContext = "myAppContext";
-        String username = "jsmith";
-        char[] password = "secrete".toCharArray();
+        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
-            context.with(jaasAppContext, username, password);
-        } catch (LoginException err) {
-            System.err.println("Error authenticating \"" + username + "\". Check username and password and try again.");
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
 
         // Configure the DNA JCR engine ...
         String repositoryId = "content";
         String workspaceName = "default";
-        JcrConfiguration config = new JcrConfiguration(context);
-        config.withConfigurationSource().usingClass(InMemoryRepositorySource.class).usingWorkspace("default").under("/");
-        // Set up an in-memory repository where the uploaded and sequenced content will be stored ...
-        config.addSource(repositoryId)
+        JcrConfiguration config = new JcrConfiguration();
+        // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
+        config.repositorySource("store")
               .usingClass(InMemoryRepositorySource.class)
-              .withNodeTypes(ImageMetadataSequencer.class.getResource("org/jboss/dna/sequencer/image/images.cnd"))
-              .withNodeTypes(Mp3MetadataSequencer.class.getResource("org/jboss/dna/sequencer/mp3/mp3.cnd"))
-              .withNodeTypes(JavaMetadataSequencer.class.getResource("org/jboss/dna/sequencer/java/javaSource.cnd"))
-              .named("Content Repository")
-              .describedAs("The repository for our content")
-              .with("defaultWorkspaceName")
-              .setTo(workspaceName);
+              .setDescription("The repository for our content")
+              .setProperty("defaultWorkspaceName", workspaceName);
+        // Set up the JCR repository to use the source ...
+        config.repository(repositoryId)
+              .addNodeTypes(ImageMetadataSequencer.class.getResource("org/jboss/dna/sequencer/image/images.cnd"))
+              .addNodeTypes(Mp3MetadataSequencer.class.getResource("org/jboss/dna/sequencer/mp3/mp3.cnd"))
+              .addNodeTypes(JavaMetadataSequencer.class.getResource("org/jboss/dna/sequencer/java/javaSource.cnd"))
+              .setSource("store")
+              .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         // Set up the image sequencer ...
-        config.addSequencer("images")
+        config.sequencer("Image Sequencer")
               .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
               .loadedFromClasspath()
-              .describedAs("Sequences image files to extract the characteristics of the image")
-              .named("Image Sequencer")
+              .setDescription("Sequences image files to extract the characteristics of the image")
               .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/images/$1");
         // Set up the MP3 sequencer ...
-        config.addSequencer("mp3s")
+        config.sequencer("MP3 Sequencer")
               .usingClass(Mp3MetadataSequencer.class)
-              .named("MP3 Sequencer")
-              .describedAs("Sequences mp3 files to extract the id3 tags of the audio file")
+              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");
         // Set up the Java source file sequencer ...
-        config.addSequencer("javaSource")
+        config.sequencer("Java Sequencer")
               .usingClass(JavaMetadataSequencer.class)
-              .named("Java Sequencer")
-              .describedAs("Sequences mp3 files to extract the id3 tags of the audio file")
+              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");
 

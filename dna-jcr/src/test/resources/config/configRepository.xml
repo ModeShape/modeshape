@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0"
+               xmlns:jcr="http://www.jcp.org/jcr/1.0"
+               xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- Define the sources from which content is made available.  -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" defaultWorkspaceName="default"/>
+        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </dna:source>
+        <dna:source jcr:name="Cache" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </dna:source>
+    </dna:sources>
+    <!-- Define the sequencers. This is an optional section. -->
+    <dna:sequencers>
+        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+            <dna:description>Image metadata sequencer</dna:description>        
+            <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
+            <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
+        </dna:sequencer-->
+    </dna:sequencers>
+    <!-- Define the mime type detectors. This is an optional section. -->
+    <dna:mimeTypeDetectors>
+        <dna:mimeTypeDetector jcr:name="Detector">
+            <dna:description>Standard extension-based MIME type detector</dna:description>        
+            <!-- 
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <dna:classname>org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
+            <!-- 
+            Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
+            the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
+            depending upon the classpath factory being used.  If there is only one 'name' in the classpath,
+            it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
+            'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
+             -->
+            <dna:classpath></dna:classpath>
+            <dna:classpath></dna:classpath>
+        </dna:mimeTypeDetector>
+    </dna:mimeTypeDetectors>
+    <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
+    <dna:repositories>
+        <dna:repository jcr:name="Car Repository" dna:sourceName="Cars">
+            <dna:options>
+                <dna:option jcr:name="projectNodeTypes" dna:value="true"/>
+                <dna:option jcr:name="jaasLoginConfigName" dna:value="dna-jcr"/>
+            </dna:options>
+        </dna:repository>
+    </dna:repositories>
+</configuration>

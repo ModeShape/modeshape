@@ -109,6 +109,7 @@ public class Graph {
      * @param context the context in which all executions should be performed
      * @return the new graph
      * @throws IllegalArgumentException if the source or context parameters are null
+     * @throws RepositorySourceException if a source with the supplied name does not exist
      */
     public static Graph create( String sourceName,
                                 RepositoryConnectionFactory connectionFactory,
@@ -1311,6 +1312,15 @@ public class Graph {
                         return nextGraph;
                     }
 
+                    public Conjunction<Graph> to( Object[] values ) {
+                        for (int i = 0, len = values.length; i != len; ++i) {
+                            values[i] = convertReferenceValue(values[i]);
+                        }
+                        Property property = getContext().getPropertyFactory().create(propertyName, values);
+                        requests.setProperty(location, getCurrentWorkspaceName(), property);
+                        return nextGraph;
+                    }
+
                     public Conjunction<Graph> to( Iterable<?> values ) {
                         List<Object> valueList = new LinkedList<Object>();
                         for (Object value : values) {
@@ -1466,6 +1476,13 @@ public class Graph {
                     otherValues[i] = convertReferenceValue(otherValues[i]);
                 }
                 return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
+            }
+
+            public On<Conjunction<Graph>> to( Object[] values ) {
+                for (int i = 0, len = values.length; i != len; ++i) {
+                    values[i] = convertReferenceValue(values[i]);
+                }
+                return set(getContext().getPropertyFactory().create(propertyName, values));
             }
 
             public On<Conjunction<Graph>> to( Iterable<?> values ) {
@@ -2734,6 +2751,157 @@ public class Graph {
         }
 
         /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param atPath the path to the node that is to be created.
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( String atPath ) {
+            return createIfMissing(createPath(atPath));
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param atPath the path to the node that is to be created.
+         * @param property a property for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( String atPath,
+                                              Property property ) {
+            return createIfMissing(createPath(atPath)).with(property);
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param atPath the path to the node that is to be created.
+         * @param firstProperty a property for the new node
+         * @param additionalProperties additional properties for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( String atPath,
+                                              Property firstProperty,
+                                              Property... additionalProperties ) {
+            return createIfMissing(createPath(atPath)).with(firstProperty, additionalProperties);
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param at the path to the node that is to be created.
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public final Create<Batch> createIfMissing( Path at ) {
+            assertNotExecuted();
+            CheckArg.isNotNull(at, "at");
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return createIfMissing(Location.create(parent), name);
+        }
+
+        protected final CreateAction<Batch> createIfMissing( Location parent,
+                                                             Name child ) {
+            return new CreateAction<Batch>(this, parent, getCurrentWorkspaceName(), child) {
+                @Override
+                protected Batch submit( Location parent,
+                                        String workspaceName,
+                                        Name childName,
+                                        Collection<Property> properties ) {
+                    requestQueue.createNode(parent, workspaceName, childName, properties.iterator(), NodeConflictBehavior.UPDATE);
+                    return Batch.this;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.Graph.Executable#execute()
+                 */
+                public Results execute() {
+                    and();
+                    return Batch.this.execute();
+                }
+            };
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param at the path to the node that is to be created.
+         * @param properties the iterator over the properties for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( Path at,
+                                              Iterable<Property> properties ) {
+            Create<Batch> action = createIfMissing(at);
+            for (Property property : properties) {
+                action.and(property);
+            }
+            return action;
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param at the path to the node that is to be created.
+         * @param property a property for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( Path at,
+                                              Property property ) {
+            return createIfMissing(at).with(property);
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path if there is no such node already.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param at the path to the node that is to be created.
+         * @param firstProperty a property for the new node
+         * @param additionalProperties additional properties for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<Batch> createIfMissing( Path at,
+                                              Property firstProperty,
+                                              Property... additionalProperties ) {
+            return createIfMissing(at).with(firstProperty, additionalProperties);
+        }
+
+        /**
          * Begin the request to create a node under the existing parent node at the supplied location. This request is submitted
          * to the repository after the returned components are completed.
          * 
@@ -2930,6 +3098,15 @@ public class Graph {
                             return nextRequests;
                         }
 
+                        public BatchConjunction to( Object[] values ) {
+                            for (int i = 0; i != values.length; ++i) {
+                                values[i] = convertReferenceValue(values[i]);
+                            }
+                            Property property = getContext().getPropertyFactory().create(propertyName, values);
+                            requestQueue.setProperty(location, getCurrentWorkspaceName(), property);
+                            return nextRequests;
+                        }
+
                         public BatchConjunction to( Iterable<?> values ) {
                             List<Object> valueList = new LinkedList<Object>();
                             for (Object value : values) {
@@ -3085,6 +3262,13 @@ public class Graph {
                     values[0] = convertReferenceValue(firstValue);
                     for (int i = 0, len = otherValues.length; i != len; ++i) {
                         values[i + 1] = convertReferenceValue(otherValues[i]);
+                    }
+                    return set(getContext().getPropertyFactory().create(propertyName, values));
+                }
+
+                public On<BatchConjunction> to( Object[] values ) {
+                    for (int i = 0, len = values.length; i != len; ++i) {
+                        values[i] = convertReferenceValue(values[i]);
                     }
                     return set(getContext().getPropertyFactory().create(propertyName, values));
                 }
@@ -4777,6 +4961,18 @@ public class Graph {
          * @throws IllegalArgumentException if the value is a Node or Location that has no {@link Location#getUuid() UUID}
          */
         Next to( Object value );
+
+        /**
+         * Set the property values to the given object. Each of the supplied <code>values</code> should be a valid property value,
+         * or a {@link Node} (or {@link Location}) if the property value is to be a reference to that node (or location). Note
+         * that it is an error if the Node (or Location) does not have a {@link Location#getUuid() UUID}.
+         * 
+         * @param values the property values
+         * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the any of the values is a Node or Location that has no {@link Location#getUuid()
+         *         UUID}
+         */
+        Next to( Object[] values );
 
         /**
          * Set the property value to the given objects. Each of the supplied values should be a valid property value, or a

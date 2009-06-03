@@ -181,8 +181,8 @@ public class ImmutableNodeInfo implements NodeInfo {
     }
 
     /**
-     * 
      * {@inheritDoc}
+     * 
      * @return {@code false} always as this object represents unmodified nodes only
      * @see org.jboss.dna.jcr.cache.NodeInfo#isNew()
      */
@@ -191,8 +191,8 @@ public class ImmutableNodeInfo implements NodeInfo {
     }
 
     /**
-     * 
      * {@inheritDoc}
+     * 
      * @return {@code false} always as this object represents unmodified nodes only
      * @see org.jboss.dna.jcr.cache.NodeInfo#isModified()
      */
@@ -200,7 +200,8 @@ public class ImmutableNodeInfo implements NodeInfo {
         return false;
     }
 
+    @Override
     public String toString() {
-        return this.uuid + " (" + primaryTypeName + ") {" + properties + "}"; 
+        return this.uuid + " (" + primaryTypeName + ") {" + properties + "}";
     }
 }

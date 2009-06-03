@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -67,10 +68,10 @@ public class DnaEngine {
 
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
 
-    private final Configurator.ConfigurationRepository configuration;
+    protected final DnaConfiguration.ConfigurationDefinition configuration;
     private final ConfigurationScanner scanner;
     private final Problems problems;
-    private final ExecutionContext context;
+    protected final ExecutionContext context;
 
     private final RepositoryService repositoryService;
     private final SequencingService sequencingService;
@@ -79,8 +80,8 @@ public class DnaEngine {
 
     private final RepositoryConnectionFactory connectionFactory;
 
-    DnaEngine( ExecutionContext context,
-               Configurator.ConfigurationRepository configuration ) {
+    protected DnaEngine( ExecutionContext context,
+                         DnaConfiguration.ConfigurationDefinition configuration ) {
         this.problems = new SimpleProblems();
 
         // Use the configuration's context ...
@@ -119,7 +120,7 @@ public class DnaEngine {
         connectionFactory = new RepositoryConnectionFactory() {
             public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                 RepositorySource source = DnaEngine.this.getRepositorySource(sourceName);
-                if (sourceName == null) {
+                if (source == null) {
                     throw new RepositorySourceException(sourceName);
                 }
 
@@ -151,8 +152,10 @@ public class DnaEngine {
      * 
      * @param repositoryName the name of the repository source
      * @return the source, or null if no source with the given name exists
+     * @throws IllegalStateException if this engine was not {@link #start() started}
      */
     public final RepositorySource getRepositorySource( String repositoryName ) {
+        checkRunning();
         return repositoryService.getRepositoryLibrary().getSource(repositoryName);
     }
 
@@ -160,8 +163,10 @@ public class DnaEngine {
      * Get a factory of connections, backed by the RepositorySor
      * 
      * @return the connection factory; never null
+     * @throws IllegalStateException if this engine was not {@link #start() started}
      */
     public final RepositoryConnectionFactory getRepositoryConnectionFactory() {
+        checkRunning();
         return connectionFactory;
     }
 
@@ -169,17 +174,41 @@ public class DnaEngine {
      * Get the repository service.
      * 
      * @return the repository service owned by this engine; never null
+     * @throws IllegalStateException if this engine was not {@link #start() started}
      */
     public final RepositoryService getRepositoryService() {
+        checkRunning();
         return repositoryService;
+    }
+
+    /**
+     * Get a graph to the underlying source.
+     * 
+     * @param sourceName the name of the source
+     * @return the graph
+     * @throws IllegalArgumentException if the source name is null
+     * @throws RepositorySourceException if a source with the supplied name does not exist
+     * @throws IllegalStateException if this engine was not {@link #start() started}
+     */
+    public final Graph getGraph( String sourceName ) {
+        CheckArg.isNotNull(sourceName, "sourceName");
+        checkRunning();
+        Graph graph = Graph.create(sourceName, getRepositoryService().getRepositoryLibrary(), getExecutionContext());
+        if (configuration.getRepositorySource().getName().equals(sourceName) && configuration.getWorkspace() != null) {
+            // set the workspace ...
+            graph.useWorkspace(configuration.getWorkspace());
+        }
+        return graph;
     }
 
     /**
      * Get the sequencing service.
      * 
      * @return the sequencing service owned by this engine; never null
+     * @throws IllegalStateException if this engine was not {@link #start() started}
      */
     public final SequencingService getSequencingService() {
+        checkRunning();
         return sequencingService;
     }
 
@@ -187,9 +216,18 @@ public class DnaEngine {
      * Return the component that is able to detect MIME types given the name of a stream and a stream.
      * 
      * @return the MIME type detector used by this engine; never null
+     * @throws IllegalStateException if this engine was not {@link #start() started}
      */
     protected final MimeTypeDetector getMimeTypeDetector() {
+        checkRunning();
         return detectors;
+    }
+
+    protected final boolean checkRunning() {
+        if (repositoryService.getAdministrator().isStarted() && sequencingService.getAdministrator().isStarted()) {
+            return true;
+        }
+        throw new IllegalStateException(RepositoryI18n.engineIsNotRunning.text());
     }
 
     /*
@@ -249,17 +287,30 @@ public class DnaEngine {
     }
 
     /**
+     * Get a graph to the configuration content.
+     * 
+     * @return a graph to the configuration content
+     */
+    protected Graph getConfigurationGraph() {
+        Graph result = Graph.create(configuration.getRepositorySource(), context);
+        if (configuration.getWorkspace() != null) {
+            result.useWorkspace(configuration.getWorkspace());
+        }
+        return result;
+    }
+
+    /**
      * The component responsible for reading the configuration repository and (eventually) for propagating changes in the
      * configuration repository into the services.
      */
     protected class ConfigurationScanner {
         private final Problems problems;
         private final ExecutionContext context;
-        private final Configurator.ConfigurationRepository configurationRepository;
+        private final DnaConfiguration.ConfigurationDefinition configurationRepository;
 
         protected ConfigurationScanner( Problems problems,
                                         ExecutionContext context,
-                                        Configurator.ConfigurationRepository configurationRepository ) {
+                                        DnaConfiguration.ConfigurationDefinition configurationRepository ) {
             this.problems = problems;
             this.context = context;
             this.configurationRepository = configurationRepository;
@@ -278,7 +329,7 @@ public class DnaEngine {
                 skipProperties.add(DnaLexicon.DESCRIPTION);
                 skipProperties.add(DnaLexicon.CLASSNAME);
                 skipProperties.add(DnaLexicon.CLASSPATH);
-                skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
+                skipProperties.add(DnaLexicon.PATH_EXPRESSION);
                 Set<String> skipNamespaces = new HashSet<String>();
                 skipNamespaces.add(JcrLexicon.Namespace.URI);
                 skipNamespaces.add(JcrNtLexicon.Namespace.URI);
@@ -287,6 +338,7 @@ public class DnaEngine {
                 for (Location detectorLocation : subgraph.getRoot().getChildren()) {
                     Node node = subgraph.getNode(detectorLocation);
                     String name = stringValueOf(node, DnaLexicon.READABLE_NAME);
+                    if (name == null) name = stringValueOf(node);
                     String desc = stringValueOf(node, DnaLexicon.DESCRIPTION);
                     String classname = stringValueOf(node, DnaLexicon.CLASSNAME);
                     String[] classpath = stringValuesOf(node, DnaLexicon.CLASSPATH);
@@ -323,7 +375,7 @@ public class DnaEngine {
                 skipProperties.add(DnaLexicon.DESCRIPTION);
                 skipProperties.add(DnaLexicon.CLASSNAME);
                 skipProperties.add(DnaLexicon.CLASSPATH);
-                skipProperties.add(DnaLexicon.PATH_EXPRESSIONS);
+                skipProperties.add(DnaLexicon.PATH_EXPRESSION);
                 Set<String> skipNamespaces = new HashSet<String>();
                 skipNamespaces.add(JcrLexicon.Namespace.URI);
                 skipNamespaces.add(JcrNtLexicon.Namespace.URI);
@@ -332,10 +384,11 @@ public class DnaEngine {
                 for (Location sequencerLocation : subgraph.getRoot().getChildren()) {
                     Node sequencerNode = subgraph.getNode(sequencerLocation);
                     String name = stringValueOf(sequencerNode, DnaLexicon.READABLE_NAME);
+                    if (name == null) name = stringValueOf(sequencerNode);
                     String desc = stringValueOf(sequencerNode, DnaLexicon.DESCRIPTION);
                     String classname = stringValueOf(sequencerNode, DnaLexicon.CLASSNAME);
                     String[] classpath = stringValuesOf(sequencerNode, DnaLexicon.CLASSPATH);
-                    String[] expressionStrings = stringValuesOf(sequencerNode, DnaLexicon.PATH_EXPRESSIONS);
+                    String[] expressionStrings = stringValuesOf(sequencerNode, DnaLexicon.PATH_EXPRESSION);
                     List<PathExpression> pathExpressions = new ArrayList<PathExpression>();
                     if (expressionStrings != null) {
                         for (String expressionString : expressionStrings) {
@@ -374,6 +427,10 @@ public class DnaEngine {
                 // no detectors registered ...
             }
             return configs;
+        }
+
+        private String stringValueOf( Node node ) {
+            return node.getLocation().getPath().getLastSegment().getString(context.getNamespaceRegistry());
         }
 
         private String stringValueOf( Node node,

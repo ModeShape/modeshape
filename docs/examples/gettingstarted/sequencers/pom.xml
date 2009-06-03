@@ -24,12 +24,6 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-common</artifactId>
-      <version>${pom.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-images</artifactId>
       <version>${pom.version}</version>
       <scope>runtime</scope>
@@ -69,22 +63,42 @@
       <artifactId>jcr</artifactId>
     </dependency>
     <!-- 
-      Apache Jackrabbit (JCR Implementation) for repository implementation
-    -->
-    <dependency>
-      <groupId>org.apache.jackrabbit</groupId>
-      <artifactId>jackrabbit-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jackrabbit</groupId>
-      <artifactId>jackrabbit-core</artifactId>
-    </dependency>
-    <!-- 
       Test cases use JUnit
     -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- 
+      JAAS implementation (and dependencies)
+    -->
+    <dependency>
+        <groupId>org.jboss.security</groupId>
+        <artifactId>jboss-idtrust</artifactId>
+        <version>2.0.2.CR1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.security</groupId>
+        <artifactId>jboss-security-spi-bare</artifactId>
+        <version>2.0.2.SP6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.security</groupId>
+        <artifactId>jbosssx-bare</artifactId>
+        <version>2.0.2.SP6</version>
+        <exclusions>
+            <exclusion>
+                <groupId>apache-xalan</groupId>
+                <artifactId>xalan</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>apache-xalan</groupId>
+                <artifactId>serializer</artifactId>
+            </exclusion>
+        </exclusions>
       <scope>test</scope>
     </dependency>
   </dependencies>

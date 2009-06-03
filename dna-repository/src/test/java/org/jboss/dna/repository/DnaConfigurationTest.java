@@ -27,15 +27,15 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
-import java.util.UUID;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.cache.ImmutableCachePolicy;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.repository.sequencer.MockSequencerA;
 import org.jboss.dna.repository.sequencer.MockStreamSequencerA;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,92 +70,247 @@ public class DnaConfigurationTest {
 
     @Test
     public void shouldHaveDefaultConfigurationSourceIfNotSpecified() {
-        assertThat(configuration.graph(), is(notNullValue()));
+        assertThat(configuration.getConfigurationDefinition(), is(notNullValue()));
     }
 
     @Test
-    public void shouldAllowSpecifyingConfigurationRepository() {
-        DnaConfiguration config = configuration.withConfigurationSource()
-                                               .usingClass("org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource")
-                                               .loadedFromClasspath()
-                                               .describedAs("description")
-                                               .with("retryLimit")
-                                               .setTo(5)
-                                               .with("name")
-                                               .setTo("repository name")
-                                               .and()
-                                               .save();
-        assertThat(config, is(notNullValue()));
-        assertThat(config.configurationRepository().getRepositorySource(), is(instanceOf(InMemoryRepositorySource.class)));
-        InMemoryRepositorySource source = (InMemoryRepositorySource)config.configurationRepository().getRepositorySource();
-        assertThat(source.getName(), is("repository name"));
-        assertThat(source.getRetryLimit(), is(5));
-    }
+    public void shouldLoadConfigurationFromFilePath() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
 
-    @Test
-    public void shouldAllowAddingRepositorySourceInstance() {
-        UUID rootUuid = UUID.randomUUID();
-        CachePolicy cachePolicy = new ImmutableCachePolicy(100);
-        InMemoryRepositorySource newSource = new InMemoryRepositorySource();
-        newSource.setName("name");
-        newSource.setDefaultCachePolicy(cachePolicy);
-        newSource.setDefaultWorkspaceName("default workspace name");
-        newSource.setRetryLimit(100);
-        newSource.setRootNodeUuid(rootUuid);
+        configuration.loadFrom("src/test/resources/config/configRepository.xml");
 
-        // Update the configuration and save it ...
-        configuration.addSource(newSource).save();
+        assertThat(configuration.getProblems().isEmpty(), is(true));
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+
         assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/name"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty(DnaLexicon.READABLE_NAME, "name"));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty(DnaLexicon.RETRY_LIMIT, 100));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty(DnaLexicon.DEFAULT_CACHE_POLICY, cachePolicy));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty("defaultWorkspaceName", "default workspace name"));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty("rootNodeUuid", rootUuid));
+        assertThat(subgraph.getNode("/dna:sources/Cars"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(DnaLexicon.RETRY_LIMIT, "3"));
+        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(DnaLexicon.CLASSNAME,
+                                                                      InMemoryRepositorySource.class.getName()));
+        assertThat(subgraph.getNode("/dna:sources/Aircraft"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
+        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty(DnaLexicon.CLASSNAME,
+                                                                          InMemoryRepositorySource.class.getName()));
+        assertThat(subgraph.getNode("/dna:sources/Cache"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Cache"), hasProperty("defaultWorkspaceName", "default"));
+        assertThat(subgraph.getNode("/dna:sources/Cache"), hasProperty(DnaLexicon.CLASSNAME,
+                                                                       InMemoryRepositorySource.class.getName()));
+
+        assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
+        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+                   hasProperty(DnaLexicon.DESCRIPTION, "Standard extension-based MIME type detector"));
+        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+                   hasProperty(DnaLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
+
+        assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("Image Sequencer")));
+        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), hasProperty(DnaLexicon.DESCRIPTION,
+                                                                                    "Image metadata sequencer"));
+        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"),
+                   hasProperty(DnaLexicon.CLASSNAME, "org.jboss.dna.sequencer.image.ImageMetadataSequencer"));
+        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), hasProperty(DnaLexicon.PATH_EXPRESSION,
+                                                                                    "/foo/source => /foo/target",
+                                                                                    "/bar/source => /bar/target"));
+    }
+
+    @Test
+    public void shoulLoadConfigurationFromFileObject() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(new File("src/test/resources/config/configRepository.xml"));
+
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shoulLoadConfigurationFromURL() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+        URL fileUrl = file.toURL();
+        assertThat(fileUrl, is(notNullValue()));
+
+        configuration.loadFrom(fileUrl);
+
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shoulLoadConfigurationFromInputStream() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+        InputStream stream = new FileInputStream(file);
+        try {
+            configuration.loadFrom(stream);
+        } finally {
+            stream.close();
+        }
+
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shoulLoadConfigurationFromRepositorySource() throws Exception {
+        InMemoryRepositorySource source = new InMemoryRepositorySource();
+        source.setName("name");
+        configuration.loadFrom(source);
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+        DnaEngine engine = configuration.build();
+        assertThat(engine, is(notNullValue()));
+        assertThat(engine.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadConfigurationEvenAfterAlreadyHavingLoadedConfiguration() throws Exception {
+        configuration.loadFrom("src/test/resources/config/configRepository.xml");
+        configuration.loadFrom(new File("src/test/resources/config/configRepository.xml"));
+        configuration.loadFrom(new File("src/test/resources/config/configRepository.xml").toURL());
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldBuildEngineWithDefaultConfiguration() throws Exception {
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+        DnaEngine engine = configuration.build();
+        assertThat(engine, is(notNullValue()));
+        assertThat(engine.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadConfigurationFromInMemoryRepositorySource() {
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config repo");
+        configuration.loadFrom(configSource).and().save();
+        assertThat(configuration, is(notNullValue()));
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        assertThat(content.getRepositorySource(), is(instanceOf(InMemoryRepositorySource.class)));
+        InMemoryRepositorySource source = (InMemoryRepositorySource)content.getRepositorySource();
+        assertThat(source.getName(), is(configSource.getName()));
+        assertThat(source.getRetryLimit(), is(configSource.getRetryLimit()));
     }
 
     @Test
     public void shouldAllowAddingRepositorySourceByClassNameAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addSource("Source1")
+        configuration.repositorySource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
-                     .describedAs("description")
-                     .with("retryLimit")
-                     .setTo(5)
+                     .setDescription("description")
+                     .setRetryLimit(5)
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "description"));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
     }
 
     @Test
-    public void shouldAllowAddingRepositorySourceByClassNameAndClasspathAndSettingProperties() {
+    public void shouldAllowSettingDescriptionOnRepositorySourceUsingPrefixedPropertyName() {
         // Update the configuration and save it ...
-        configuration.addSource("Source1")
+        configuration.repositorySource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
-                     .loadedFrom("cp1", "cp2")
-                     .describedAs("description")
-                     .with("retryLimit")
-                     .setTo(5)
+                     .loadedFromClasspath()
+                     .setProperty("dna:description", "desc")
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "desc"));
+    }
+
+    @Test
+    public void shouldAllowSettingDescriptionOnRepositorySourceUsingNonPrefixedPropertyName() {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setProperty("description", "desc")
+                     .and()
+                     .save();
+
+        // Verify that the graph has been updated correctly ...
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "desc"));
+    }
+
+    @Test
+    public void shouldAllowSettingRetryLimitOnRepositorySourceUsingPrefixedPropertyName() {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setProperty("dna:retryLimit", 5)
+                     .and()
+                     .save();
+
+        // Verify that the graph has been updated correctly ...
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
+    }
+
+    @Test
+    public void shouldAllowSettingRetryLimitOnRepositorySourceUsingNonPrefixedPropertyName() {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setProperty("retryLimit", 5)
+                     .and()
+                     .save();
+
+        // Verify that the graph has been updated correctly ...
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
+    }
+
+    @Test
+    public void shouldAllowAddingRepositorySourceByClassNameAndClasspathAndSettingProperties() {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFrom("cp1", "cp2")
+                     .setProperty("retryLimit", 5)
+                     .and()
+                     .save();
+
+        // Verify that the graph has been updated correctly ...
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
@@ -165,50 +320,18 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingRepositorySourceByClassReferenceAndSettingProperties() {
         // Update the configuration and save it ...
-        configuration.addSource("Source1")
+        configuration.repositorySource("Source1")
                      .usingClass(InMemoryRepositorySource.class)
-                     .describedAs("description")
-                     .with("retryLimit")
-                     .setTo(5)
+                     .setProperty("retryLimit", 5)
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "description"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
-    }
-
-    @Test
-    public void shouldAllowOverwritingRepositorySourceByRepositoryName() {
-        // Update the configuration and save it ...
-        configuration.addSource("Source1")
-                     .usingClass(InMemoryRepositorySource.class)
-                     .describedAs("description")
-                     .with("retryLimit")
-                     .setTo(3)
-                     .and()
-                     .addSource("Source1")
-                     .usingClass(InMemoryRepositorySource.class)
-                     .describedAs("new description")
-                     .with("retryLimit")
-                     .setTo(6)
-                     .and()
-                     .save();
-
-        // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources").getChildren(), hasChild(segment("Source1")));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 6));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "new description"));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
     }
@@ -216,27 +339,17 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingMimeTypeDetector() {
         // Update the configuration and save it ...
-        configuration.addSource("Source1")
-                     .usingClass(InMemoryRepositorySource.class)
-                     .describedAs("description")
-                     .and()
-                     .addMimeTypeDetector("detector")
+        configuration.mimeTypeDetector("detector")
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
-                     .describedAs("default detector")
+                     .setDescription("default detector")
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources").getChildren(), hasChild(segment("Source1")));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "description"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(DnaLexicon.READABLE_NAME, "detector"));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(DnaLexicon.DESCRIPTION, "default detector"));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"),
                    hasProperty(DnaLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
@@ -245,15 +358,9 @@ public class DnaConfigurationTest {
     @Test
     public void shouldAllowAddingSequencer() {
         // Update the configuration and save it ...
-        configuration.addSource("Source1")
-                     .usingClass(InMemoryRepositorySource.class)
-                     .describedAs("description")
-                     .named("A Source")
-                     .and()
-                     .addSequencer("sequencerA")
+        configuration.sequencer("sequencerA")
                      .usingClass(MockStreamSequencerA.class)
-                     .named("The (Main) Sequencer")
-                     .describedAs("Mock Sequencer A")
+                     .setDescription("Mock Sequencer A")
                      .sequencingFrom("/foo/source")
                      .andOutputtingTo("/foo/target")
                      .sequencingFrom("/bar/source")
@@ -262,36 +369,32 @@ public class DnaConfigurationTest {
                      .save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources").getChildren(), hasChild(segment("Source1")));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "A Source"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "description"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("sequencerA")));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.READABLE_NAME, "The (Main) Sequencer"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.CLASSNAME,
                                                                                MockStreamSequencerA.class.getName()));
-        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSIONS));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSIONS,
+        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSION));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSION,
                                                                                "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
     }
 
     @Test
     public void shouldAllowConfigurationInMultipleSteps() {
-        configuration.addSource("Source1").usingClass(InMemoryRepositorySource.class).describedAs("description");
-        configuration.addMimeTypeDetector("detector")
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFrom("cp1", "cp2")
+                     .setProperty("retryLimit", 5);
+        configuration.mimeTypeDetector("detector")
                      .usingClass(ExtensionBasedMimeTypeDetector.class)
-                     .describedAs("default detector");
-        configuration.addSequencer("sequencerA")
-                     .usingClass(MockSequencerA.class.getName())
-                     .loadedFromClasspath()
-                     .named("The (Main) Sequencer")
-                     .describedAs("Mock Sequencer A")
+                     .setDescription("default detector");
+        configuration.sequencer("sequencerA")
+                     .usingClass(MockStreamSequencerA.class)
+                     .setDescription("Mock Sequencer A")
                      .sequencingFrom("/foo/source")
                      .andOutputtingTo("/foo/target")
                      .sequencingFrom("/bar/source")
@@ -299,27 +402,29 @@ public class DnaConfigurationTest {
         configuration.save();
 
         // Verify that the graph has been updated correctly ...
-        Subgraph subgraph = configuration.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources").getChildren(), hasChild(segment("Source1")));
+        DnaConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+
+        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.READABLE_NAME, "Source1"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.DESCRIPTION, "description"));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
+        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(DnaLexicon.CLASSPATH, "cp1", "cp2"));
+
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(DnaLexicon.READABLE_NAME, "detector"));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(DnaLexicon.DESCRIPTION, "default detector"));
         assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"),
                    hasProperty(DnaLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
+
         assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("sequencerA")));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.READABLE_NAME, "The (Main) Sequencer"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.CLASSNAME,
-                                                                               MockSequencerA.class.getName()));
-        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSIONS));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSIONS,
+                                                                               MockStreamSequencerA.class.getName()));
+        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(DnaLexicon.PATH_EXPRESSION));
+        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(DnaLexicon.PATH_EXPRESSION,
                                                                                "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
     }

@@ -413,28 +413,30 @@ class RepositoryNodeTypeManager {
         }
 
         if (checkMultiValuedDefinitions) {
-            // Look for a multi-value property definition on the primary type that matches by name and type ...
-            for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
-                matchedOnName = true;
-                // See if the definition allows the value ...
-                if (skipProtected && definition.isProtected()) return null;
-                if (setToEmpty) {
-                    if (!definition.isMandatory()) return definition;
-                    // Otherwise this definition doesn't work, so continue with the next ...
-                    continue;
-                }
-                assert value != null;
-                // We can use the definition if it matches the type and satisfies the constraints ...
-                int type = definition.getRequiredType();
-                if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
-            }
-            if (value != null) {
+            if (primaryType != null) {
+                // Look for a multi-value property definition on the primary type that matches by name and type ...
                 for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                     matchedOnName = true;
                     // See if the definition allows the value ...
                     if (skipProtected && definition.isProtected()) return null;
-                    assert definition.getRequiredType() != PropertyType.UNDEFINED;
-                    if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+                    if (setToEmpty) {
+                        if (!definition.isMandatory()) return definition;
+                        // Otherwise this definition doesn't work, so continue with the next ...
+                        continue;
+                    }
+                    assert value != null;
+                    // We can use the definition if it matches the type and satisfies the constraints ...
+                    int type = definition.getRequiredType();
+                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                }
+                if (value != null) {
+                    for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
+                        matchedOnName = true;
+                        // See if the definition allows the value ...
+                        if (skipProtected && definition.isProtected()) return null;
+                        assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                        if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
+                    }
                 }
             }
 

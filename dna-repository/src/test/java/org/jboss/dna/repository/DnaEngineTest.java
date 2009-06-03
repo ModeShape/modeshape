@@ -35,9 +35,11 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.observation.Event;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.repository.sequencer.MockStreamSequencerA;
 import org.jboss.dna.repository.sequencer.SequencingService;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,6 +55,18 @@ public class DnaEngineTest {
     public void beforeEach() {
     }
 
+    @After
+    public void afterEach() throws Exception {
+        if (engine != null) {
+            try {
+                engine.shutdown();
+                engine.awaitTermination(3, TimeUnit.SECONDS);
+            } finally {
+                engine = null;
+            }
+        }
+    }
+
     @Test
     public void shouldAllowCreatingWithEmptyConfig() {
         engine = new DnaConfiguration().build();
@@ -60,13 +74,10 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowCreatingWithConfigRepository() throws InterruptedException {
-        engine = new DnaConfiguration().withConfigurationSource()
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Configuration Repository")
-                                       .with("name")
-                                       .setTo("config repo")
-                                       .and()
-                                       .build();
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config repo");
+        engine = new DnaConfiguration().loadFrom(configSource).build();
+        engine.start();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
@@ -81,19 +92,17 @@ public class DnaEngineTest {
     }
 
     @Test
-    public void shouldAllowCreatingMultipleRepositories() throws Exception {
-        engine = new DnaConfiguration().withConfigurationSource()
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Configuration Repository")
-                                       .with("name")
-                                       .setTo("config repo")
+    public void shouldAllowCreatingMultipleRepositorySources() throws Exception {
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config repo");
+        engine = new DnaConfiguration().loadFrom(configSource)
                                        .and()
-                                       .addSource("JCR")
+                                       .repositorySource("JCR")
                                        .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Backing Repository for JCR Implementation")
-                                       .with("name")
-                                       .setTo("JCR")
+                                       .setDescription("Backing Repository for JCR Implementation")
+                                       .setProperty("name", "JCR")
                                        .and()
+                                       .save()
                                        .build();
         // Start the engine ...
         engine.start();
@@ -115,42 +124,48 @@ public class DnaEngineTest {
 
     @Test
     public void shouldAllowAddingMimeTypeDetectors() throws Exception {
-        engine = new DnaConfiguration().withConfigurationSource()
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Configuration Repository")
-                                       .with("name")
-                                       .setTo("config repo")
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config repo");
+        engine = new DnaConfiguration().loadFrom(configSource)
                                        .and()
-                                       .addMimeTypeDetector("default")
-                                       .usingClass(MockMimeTypeDetector.class)
-                                       .describedAs("Default MimeTypeDetector")
-                                       .with("mimeType")
-                                       .setTo("mock")
+                                       .repositorySource("JCR")
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .setDescription("Backing Repository for JCR Implementation")
+                                       .setProperty("name", "JCR")
+                                       .and()
+                                       .mimeTypeDetector("default")
+                                       .usingClass(ExtensionBasedMimeTypeDetector.class)
+                                       .setDescription("Default MimeTypeDetector")
                                        .and()
                                        .build();
+        engine.start();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));
 
         MimeTypeDetector detector = engine.getExecutionContext().getMimeTypeDetector();
-        assertThat(detector.mimeTypeOf("test", new ByteArrayInputStream("This is useless data".getBytes())), is("mock"));
+        assertThat(detector.mimeTypeOf("test", new ByteArrayInputStream("This is useless data".getBytes())), is("text/plain"));
     }
 
     @Test
     public void shouldAllowAddingSequencers() throws Exception {
-        engine = new DnaConfiguration().withConfigurationSource()
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .describedAs("Configuration Repository")
-                                       .with("name")
-                                       .setTo("config repo")
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config repo");
+        engine = new DnaConfiguration().loadFrom(configSource)
                                        .and()
-                                       .addSequencer("Mock Sequencer A")
+                                       .repositorySource("JCR")
+                                       .usingClass(InMemoryRepositorySource.class)
+                                       .setDescription("Backing Repository for JCR Implementation")
+                                       .setProperty("name", "JCR")
+                                       .and()
+                                       .sequencer("Mock Sequencer A")
                                        .usingClass(MockStreamSequencerA.class)
-                                       .describedAs("A Mock Sequencer")
+                                       .setDescription("A Mock Sequencer")
                                        .sequencingFrom("/**")
                                        .andOutputtingTo("/")
                                        .and()
                                        .build();
+        engine.start();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
         assertThat(engine.getRepositorySource("config repo"), is(instanceOf(InMemoryRepositorySource.class)));

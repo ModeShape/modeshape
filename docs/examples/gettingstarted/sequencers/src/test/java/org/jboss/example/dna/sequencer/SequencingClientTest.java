@@ -31,6 +31,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.jboss.dna.common.util.FileUtil;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.jcr.JcrConfiguration;
+import org.jboss.dna.jcr.JcrRepository;
+import org.jboss.dna.sequencer.image.ImageMetadataSequencer;
+import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
+import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -57,23 +63,49 @@ public class SequencingClientTest {
         // Get the URL of source (MySource.java), that have to be sequencing
         this.javaSourceUrl = FileUtil.convertFileToURL("workspace/project1/src/org/acme/MySource.java");
 
-        client = new SequencingClient();
-        client.setWorkingDirectory("target/repositoryData");
-        client.setJackrabbitConfigPath("src/main/resources/jackrabbitConfig.xml");
-        FileUtil.delete("target/repositoryData");
+        String repositoryId = "content";
+        String workspaceName = "default";
+        JcrConfiguration config = new JcrConfiguration();
+        // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
+        config.repositorySource("store")
+              .usingClass(InMemoryRepositorySource.class)
+              .setDescription("The repository for our content")
+              .setProperty("defaultWorkspaceName", workspaceName);
+        // Set up the JCR repository to use the source ...
+        config.repository(repositoryId)
+              .addNodeTypes(ImageMetadataSequencer.class.getClassLoader().getResource("org/jboss/dna/sequencer/image/images.cnd"))
+              .addNodeTypes(Mp3MetadataSequencer.class.getClassLoader().getResource("org/jboss/dna/sequencer/mp3/mp3.cnd"))
+              .addNodeTypes(JavaMetadataSequencer.class.getClassLoader()
+                                                       .getResource("org/jboss/dna/sequencer/java/javaSource.cnd"))
+              .setSource("store")
+              .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+        // Set up the image sequencer ...
+        config.sequencer("Image Sequencer")
+              .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences image files to extract the characteristics of the image")
+              .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/images/$1");
+        // Set up the MP3 sequencer ...
+        config.sequencer("MP3 Sequencer")
+              .usingClass(Mp3MetadataSequencer.class)
+              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
+              .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/mp3s/$1");
+        // Set up the Java source file sequencer ...
+        config.sequencer("Java Sequencer")
+              .usingClass(JavaMetadataSequencer.class)
+              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
+              .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/mp3s/$1");
+
+        // Now start the client and tell it which repository and workspace to use ...
+        client = new SequencingClient(config, repositoryId, workspaceName);
     }
 
     @After
     public void afterEach() throws Exception {
-        try {
-            client.shutdownDnaServices();
-        } finally {
-            try {
-                client.shutdownRepository();
-            } finally {
-                FileUtil.delete("target/repositoryData");
-            }
-        }
+        if (client != null) client.shutdownRepository();
     }
 
     @Test
@@ -93,25 +125,14 @@ public class SequencingClientTest {
 
     @Ignore
     @Test
-    public void shouldStartupAndShutdownRepositoryAndSequencingService() throws Exception {
-        client.startRepository();
-        client.startDnaServices();
-        client.shutdownDnaServices();
-        client.shutdownRepository();
-    }
-
-    @Ignore
-    @Test
     public void shouldUploadAndSequencePngFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.pngImageUrl, "/a/b/caution.png", 1));
         client.startRepository();
-        client.startDnaServices();
         client.uploadFile();
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices();
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
@@ -125,13 +146,11 @@ public class SequencingClientTest {
     public void shouldUploadAndSequenceJpegFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.jpegImageUrl, "/a/b/caution.jpeg", 1));
         client.startRepository();
-        client.startDnaServices();
         client.uploadFile();
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices();
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
@@ -145,13 +164,11 @@ public class SequencingClientTest {
     public void shouldUploadAndNotSequencePictFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.pictImageUrl, "/a/b/caution.pict", 0));
         client.startRepository();
-        client.startDnaServices();
         client.uploadFile();
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices();
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
@@ -165,13 +182,11 @@ public class SequencingClientTest {
     public void shouldUploadAndSequenceMp3File() throws Exception {
         client.setUserInterface(new MockUserInterface(this.mp3Url, "/a/b/test.mp3", 1));
         client.startRepository();
-        client.startDnaServices();
         client.uploadFile();
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices();
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
@@ -198,13 +213,11 @@ public class SequencingClientTest {
     public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
         client.startRepository();
-        client.startDnaServices();
         client.uploadFile();
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices();
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.

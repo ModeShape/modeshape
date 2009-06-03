@@ -37,7 +37,7 @@ public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
     public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");
     public static final Name SEQUENCERS = new BasicName(Namespace.URI, "sequencers");
     public static final Name SEQUENCER = new BasicName(Namespace.URI, "sequencer");
-    public static final Name PATH_EXPRESSIONS = new BasicName(Namespace.URI, "pathExpressions");
+    public static final Name PATH_EXPRESSION = new BasicName(Namespace.URI, "pathExpression");
     public static final Name JNDI_NAME = new BasicName(Namespace.URI, "jndiName");
     public static final Name MIME_TYPE_DETECTORS = new BasicName(Namespace.URI, "mimeTypeDetectors");
     public static final Name MIME_TYPE_DETECTOR = new BasicName(Namespace.URI, "mimeTypeDetector");

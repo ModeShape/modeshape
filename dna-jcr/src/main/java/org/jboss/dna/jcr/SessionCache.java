@@ -576,16 +576,16 @@ class SessionCache {
     }
 
     /**
-     * The JCR specification assumes that reading a node into the session does not imply reading the
-     * relationship between the node and its children into the session.  As a performance optimization,
-     * DNA eagerly loads the list of child names and UUIDs (but not the child nodes themselves).  This creates
-     * an issue when direct writes are performed through the workspace.  The act of modifying a node is assumed
-     * to imply loading its children, but we must load the node in order to modify it.
+     * The JCR specification assumes that reading a node into the session does not imply reading the relationship between the node
+     * and its children into the session. As a performance optimization, DNA eagerly loads the list of child names and UUIDs (but
+     * not the child nodes themselves). This creates an issue when direct writes are performed through the workspace. The act of
+     * modifying a node is assumed to imply loading its children, but we must load the node in order to modify it.
      * <p>
-     * This method provides a way to signal that a child should be added to one parent and, optionally, removed
-     * from another.  The cache of loaded nodes and the cache of changed nodes are modified accordingly, but no
-     * additional graph requests are batched. 
+     * This method provides a way to signal that a child should be added to one parent and, optionally, removed from another. The
+     * cache of loaded nodes and the cache of changed nodes are modified accordingly, but no additional graph requests are
+     * batched.
      * </p>
+     * 
      * @param newParentUuid the UUID of the node to which the child is to be moved; may not be null
      * @param oldParentUuid the UUID of the parent node from which the child was moved; may not be null
      * @param child the UUID of the child node that was moved or copied; may not be null
@@ -593,13 +593,13 @@ class SessionCache {
      * @throws RepositoryException if an error occurs
      */
     public void compensateForWorkspaceChildChange( UUID newParentUuid,
-                        UUID oldParentUuid,
-                        UUID child,
-                        Name childName ) throws RepositoryException {
+                                                   UUID oldParentUuid,
+                                                   UUID child,
+                                                   Name childName ) throws RepositoryException {
         assert newParentUuid != null;
         assert child != null;
         assert childName != null;
-        
+
         ChangedNodeInfo changedNode = this.changedNodes.get(newParentUuid);
         if (changedNode != null) {
             // This adds the child to the changed node, but doesn't generate a corresponding pending request
@@ -1343,12 +1343,13 @@ class SessionCache {
             }
         }
 
-        public void orderChildBefore(Path.Segment childToBeMoved, Path.Segment before) throws RepositoryException {
+        public void orderChildBefore( Path.Segment childToBeMoved,
+                                      Path.Segment before ) {
             PathFactory pathFactory = SessionCache.this.pathFactory;
             Path thisPath = this.currentLocation.getPath();
             UUID fromUuid = this.node.getChildren().getChild(childToBeMoved).getUuid();
             Location fromLocation = Location.create(pathFactory.create(thisPath, childToBeMoved), fromUuid);
-            
+
             Children children = this.node.getChildren();
             ChildNode nodeToBeMoved = children.getChild(childToBeMoved);
             this.node.removeChild(nodeToBeMoved.getUuid(), pathFactory);
@@ -1358,17 +1359,16 @@ class SessionCache {
                 // Moving the node into its parent will remove it from its current spot in the child list and re-add it to the end
                 operations.move(fromLocation).into(this.currentLocation);
 
-            }
-            else {
+            } else {
                 Path beforePath = pathFactory.create(thisPath, before);
                 UUID beforeUuid = this.node.getChildren().getChild(before).getUuid();
                 Location beforeLocation = Location.create(beforePath, beforeUuid);
-                
+
                 this.node.addChild(nodeToBeMoved.getName(), before, nodeToBeMoved.getUuid(), pathFactory);
                 operations.move(fromLocation).before(beforeLocation);
             }
         }
-        
+
         /**
          * Move the child specified by the supplied UUID to be a child of this node, appending the child to the end of the current
          * list of children. This method automatically disconnects the node from its current parent.
@@ -1407,8 +1407,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1641,7 +1641,10 @@ class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
+                                                         .nodeNamed(name)
+                                                         .with(desiredUuid)
+                                                         .with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
@@ -2396,8 +2399,8 @@ class SessionCache {
                                                                                    DnaIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                                    values,
                                                                                    false);
-        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES,
-                                                  newSingleMultiPropertyNames.iterator().next());
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
+                                                                                                                    .next());
         PropertyId propId = new PropertyId(uuid, dnaProp.getName());
         JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
         return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);
