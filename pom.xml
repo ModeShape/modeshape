@@ -143,6 +143,8 @@
 		<module>extensions/dna-mimetype-detector-aperture</module>
 		<module>extensions/dna-common-jdbc</module> 
 		<module>extensions/dna-connector-jdbc-metadata</module> 
+		<module>extensions/dna-web-jcr-rest</module> 
+		<module>extensions/dna-web-jcr-rest-war</module> 
 		<module>dna-integration-tests</module>
 		<!--module>docs/examples/gettingstarted</module-->
 	</modules>
