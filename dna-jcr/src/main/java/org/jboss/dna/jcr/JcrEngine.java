@@ -103,7 +103,7 @@ public class JcrEngine extends DnaEngine {
         Path repositoriesPath = pathFactory.create(configuration.getPath(), DnaLexicon.REPOSITORIES);
         Path repositoryPath = pathFactory.create(repositoriesPath, repositoryName);
         Graph configuration = getConfigurationGraph();
-        Subgraph subgraph = configuration.getSubgraphOfDepth(3).at(repositoryPath);
+        Subgraph subgraph = configuration.getSubgraphOfDepth(6).at(repositoryPath);
 
         // Read the options ...
         Node optionsNode = subgraph.getNode(DnaLexicon.OPTIONS);
