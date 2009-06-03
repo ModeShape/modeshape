@@ -101,10 +101,12 @@ public class CndImporterTest {
         }
     }
 
-    protected Node node( String pathToNode, String childNodeName, String nameValue ) {
+    protected Node node( String pathToNode,
+                         String childNodeName,
+                         String nameValue ) {
         Node a = graph.getNodeAt("/a/" + pathToNode);
         List<Location> children = a.getChildren();
-        
+
         for (Location childLocation : a.getChildren()) {
             if (!childLocation.getPath().getLastSegment().getName().equals(name(childNodeName))) continue;
             Node child = graph.getNodeAt(childLocation);
@@ -113,7 +115,7 @@ public class CndImporterTest {
                 return child;
             }
         }
-        
+
         return null;
     }
 
@@ -245,7 +247,8 @@ public class CndImporterTest {
         // + * (nt:base) = nt:unstructured multiple version
         assertNodeType("nt:unstructured", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Ordered);
         assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS, PropertyOptions.Multiple);
-        // We should test for this, but we'd have to rewrite node() to look more like RepositoryNodeTypeManager.findChildNodeDefinition
+        // We should test for this, but we'd have to rewrite node() to look more like
+        // RepositoryNodeTypeManager.findChildNodeDefinition
         // assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS);
         assertChild("nt:unstructured", "*", "nt:base", "nt:unstructured", OnParentVersion.Version, ChildOptions.Multiple);
 
@@ -334,8 +337,9 @@ public class CndImporterTest {
         // + * (nt:base) = nt:unstructured multiple version
         assertNodeType("nt:unstructured", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Ordered);
         assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS, PropertyOptions.Multiple);
-        // We should test for this, but we'd have to rewrite node() to look more like RepositoryNodeTypeManager.findChildNodeDefinition
-        //assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS);
+        // We should test for this, but we'd have to rewrite node() to look more like
+        // RepositoryNodeTypeManager.findChildNodeDefinition
+        // assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS);
         assertChild("nt:unstructured", "*", "nt:base", "nt:unstructured", OnParentVersion.Version, ChildOptions.Multiple);
 
         // [mix:referenceable]
@@ -426,6 +430,20 @@ public class CndImporterTest {
     public void shouldNotImportFileThatIsNotAValidCnd() throws Exception {
         importer.importFrom(openCndFile("invalid.cnd"), problems);
         assertThat(problems.size(), is(1));
+    }
+
+    @Test
+    public void shouldImportCndForAircraft() throws Exception {
+        importer.importFrom(openCndFile("aircraft.cnd"), problems);
+        if (problems.size() != 0) printProblems();
+        assertThat(problems.size(), is(0));
+    }
+
+    @Test
+    public void shouldImportCndForCars() throws Exception {
+        importer.importFrom(openCndFile("cars.cnd"), problems);
+        if (problems.size() != 0) printProblems();
+        assertThat(problems.size(), is(0));
     }
 
     public static final String[] NO_DEFAULTS = {};

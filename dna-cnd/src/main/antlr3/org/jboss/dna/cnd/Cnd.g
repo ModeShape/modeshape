@@ -348,8 +348,8 @@ STRING : QUOTED_STRING | UNQUOTED_STRING;
 
 // Quoted strings may contain escaped characters.
 fragment QUOTED_STRING
-    : '"' ( EscapeSequence | ~('\\'|'"'))* '"'
-    | '\'' ( EscapeSequence | ~('\\'|'\''))* '\'' 
+    : '"' ( EscapeSequence | ~('"'))* '"'
+    | '\'' ( EscapeSequence | ~('\''))* '\'' 
     ;
 
 fragment EscapeSequence 
