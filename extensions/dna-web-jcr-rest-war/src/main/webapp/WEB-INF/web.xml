@@ -36,7 +36,7 @@
 	</context-param>
 
 	<context-param>
-		<param-name>javax.ws.rs.core.Application</param-name>
+		<param-name>javax.ws.rs.Application</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
 	</context-param>
 
