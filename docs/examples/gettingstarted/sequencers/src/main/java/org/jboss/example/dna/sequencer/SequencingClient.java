@@ -103,9 +103,9 @@ public class SequencingClient {
         config.sequencer("Java Sequencer")
               .usingClass("org.jboss.dna.sequencer.java.JavaMetadataSequencer")
               .loadedFromClasspath()
-              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
-              .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
-              .andOutputtingTo("/mp3s/$1");
+              .setDescription("Sequences Java files to extract the AST structure of the Java source code")
+              .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/java/$1");
 
         // Now start the client and tell it which repository and workspace to use ...
         SequencingClient client = new SequencingClient(config, repositoryId, workspaceName);

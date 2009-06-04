@@ -308,6 +308,11 @@ public class ValueComparators {
             if (o2 == null) return 1;
             PropertyType type1 = PropertyType.discoverType(o1);
             PropertyType type2 = PropertyType.discoverType(o2);
+
+            // Canonicalize the values ...
+            o1 = type1.getCanonicalValue(o1);
+            o2 = type2.getCanonicalValue(o2);
+
             if (type1 != PropertyType.OBJECT && type2 != PropertyType.OBJECT) {
                 if (type1 == type2) return ((Comparator<Object>)type1.getComparator()).compare(o1, o2);
 

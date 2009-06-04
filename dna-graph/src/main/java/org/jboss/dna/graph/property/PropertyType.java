@@ -26,10 +26,13 @@ package org.jboss.dna.graph.property;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
@@ -42,19 +45,44 @@ import org.jboss.dna.graph.GraphI18n;
 @Immutable
 public enum PropertyType {
 
-    STRING("String", ValueComparators.STRING_COMPARATOR, String.class),
-    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, Binary.class),
-    LONG("Long", ValueComparators.LONG_COMPARATOR, Long.class),
-    DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, Double.class),
-    DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, BigDecimal.class),
-    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, DateTime.class),
-    BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, Boolean.class),
-    NAME("Name", ValueComparators.NAME_COMPARATOR, Name.class),
-    PATH("Path", ValueComparators.PATH_COMPARATOR, Path.class),
-    UUID("UUID", ValueComparators.UUID_COMPARATOR, UUID.class),
-    REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, Reference.class),
-    URI("URI", ValueComparators.URI_COMPARATOR, URI.class),
-    OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, Object.class);
+    STRING("String", ValueComparators.STRING_COMPARATOR, new ObjectCanonicalizer(), String.class),
+    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, new ObjectCanonicalizer(), Binary.class),
+    LONG("Long", ValueComparators.LONG_COMPARATOR, new LongCanonicalizer(), Long.class, Integer.class, Short.class),
+    DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, new DoubleCanonicalizer(), Double.class, Float.class),
+    DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class),
+    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new ObjectCanonicalizer(), DateTime.class),
+    BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, new ObjectCanonicalizer(), Boolean.class),
+    NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class),
+    PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class),
+    UUID("UUID", ValueComparators.UUID_COMPARATOR, new ObjectCanonicalizer(), UUID.class),
+    REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class),
+    URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
+    OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
+
+    private static interface Canonicalizer {
+        Object canonicalizeValue( Object value );
+    }
+
+    protected final static class ObjectCanonicalizer implements Canonicalizer {
+        public Object canonicalizeValue( Object value ) {
+            return value;
+        }
+    }
+
+    protected final static class LongCanonicalizer implements Canonicalizer {
+        public Object canonicalizeValue( Object value ) {
+            if (value instanceof Integer) return new Long((Integer)value);
+            if (value instanceof Short) return new Long((Short)value);
+            return value;
+        }
+    }
+
+    protected final static class DoubleCanonicalizer implements Canonicalizer {
+        public Object canonicalizeValue( Object value ) {
+            if (value instanceof Float) return new Double((Float)value);
+            return value;
+        }
+    }
 
     private static final List<PropertyType> ALL_PROPERTY_TYPES;
     static {
@@ -67,14 +95,24 @@ public enum PropertyType {
 
     private final String name;
     private final Comparator<?> comparator;
+    private final Canonicalizer canonicalizer;
     private final Class<?> valueClass;
+    private final Set<Class<?>> castableValueClasses;
 
     private PropertyType( String name,
                           Comparator<?> comparator,
-                          Class<?> valueClass ) {
+                          Canonicalizer canonicalizer,
+                          Class<?> valueClass,
+                          Class<?>... castableClasses ) {
         this.name = name;
         this.comparator = comparator;
+        this.canonicalizer = canonicalizer;
         this.valueClass = valueClass;
+        if (castableClasses != null && castableClasses.length != 0) {
+            castableValueClasses = Collections.unmodifiableSet(new HashSet<Class<?>>(Arrays.asList(castableClasses)));
+        } else {
+            castableValueClasses = Collections.emptySet();
+        }
     }
 
     public Class<?> getValueClass() {
@@ -89,21 +127,39 @@ public enum PropertyType {
         return this.comparator;
     }
 
-    public boolean isTypeFor( Object value ) {
-        return this.valueClass.isInstance(value);
+    /**
+     * Obtain a value of this type in its canonical form. Some property types allow values to be instances of the canonical class
+     * or an alternative class. This method ensures that the value is always an instance of the canonical class.
+     * <p>
+     * Note that this method does <i>not</i> cast from one property type to another.
+     * </p>
+     * 
+     * @param value the property value
+     * @return the value in canonical form
+     */
+    public Object getCanonicalValue( Object value ) {
+        return this.canonicalizer.canonicalizeValue(value);
     }
 
-    public boolean isTypeForEach( Iterable<?> values ) {
+    public final boolean isTypeFor( Object value ) {
+        if (this.valueClass.isInstance(value)) return true;
+        for (Class<?> valueClass : castableValueClasses) {
+            if (valueClass.isInstance(value)) return true;
+        }
+        return false;
+    }
+
+    public final boolean isTypeForEach( Iterable<?> values ) {
         for (Object value : values) {
-            if (!this.valueClass.isInstance(value)) return false;
+            if (!isTypeFor(value)) return false;
         }
         return true;
     }
 
-    public boolean isTypeForEach( Iterator<?> values ) {
+    public final boolean isTypeForEach( Iterator<?> values ) {
         while (values.hasNext()) {
             Object value = values.next();
-            if (!this.valueClass.isInstance(value)) return false;
+            if (!isTypeFor(value)) return false;
         }
         return true;
     }

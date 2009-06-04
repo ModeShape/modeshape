@@ -178,13 +178,18 @@ public class StreamSequencerAdapter implements Sequencer {
                               SequencerContext context ) {
         PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
 
+        if (targetPath.isRoot()) return;
         Path workingPath = pathFactory.createRootPath();
         Path.Segment[] segments = targetPath.getSegmentsArray();
-        for (int i = 0; i < segments.length; i++) {
-            workingPath = pathFactory.create(workingPath, segments[i]);
-
-            context.graph().createIfMissing(workingPath);
+        int i = 0;
+        if (segments.length > 1) {
+            for (int max = segments.length - 1; i < max; i++) {
+                workingPath = pathFactory.create(workingPath, segments[i]);
+                context.graph().createIfMissing(workingPath);
+            }
         }
+        workingPath = pathFactory.create(workingPath, segments[i]);
+        context.graph().create(workingPath);
     }
 
     /**

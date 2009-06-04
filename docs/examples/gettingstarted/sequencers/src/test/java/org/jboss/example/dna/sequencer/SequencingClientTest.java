@@ -26,6 +26,7 @@ package org.jboss.example.dna.sequencer;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -91,9 +92,9 @@ public class SequencingClientTest {
         // Set up the Java source file sequencer ...
         config.sequencer("Java Sequencer")
               .usingClass(JavaMetadataSequencer.class)
-              .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
-              .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
-              .andOutputtingTo("/mp3s/$1");
+              .setDescription("Sequences Java files to extract the AST structure of the Java source code")
+              .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/java/$1");
 
         // Now start the client and tell it which repository and workspace to use ...
         client = new SequencingClient(config, repositoryId, workspaceName);
@@ -125,69 +126,64 @@ public class SequencingClientTest {
         client.startRepository();
         client.uploadFile();
 
-        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
-        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(4000);
-
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
+        waitUntilSequencedNodesIs(1);
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
         client.search();
     }
 
-    @Ignore
     @Test
     public void shouldUploadAndSequenceJpegFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.jpegImageUrl, "/a/b/caution.jpeg", 1));
         client.startRepository();
         client.uploadFile();
 
-        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
-        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(1000);
+        waitUntilSequencedNodesIs(1);
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
         client.search();
-
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
-    @Ignore
-    @Test
-    public void shouldUploadAndNotSequencePictFile() throws Exception {
-        client.setUserInterface(new MockUserInterface(this.pictImageUrl, "/a/b/caution.pict", 0));
-        client.startRepository();
-        client.uploadFile();
-
-        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
-        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(1000);
-
-        // The sequencers should have run, so perform the search.
-        // The mock user interface checks the results.
-        client.search();
-
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(0l));
-    }
-
-    @Ignore
     @Test
     public void shouldUploadAndSequenceMp3File() throws Exception {
         client.setUserInterface(new MockUserInterface(this.mp3Url, "/a/b/test.mp3", 1));
         client.startRepository();
         client.uploadFile();
 
-        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
-        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(1000);
+        waitUntilSequencedNodesIs(1);
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
         client.search();
+    }
 
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
+    @Ignore
+    @Test
+    public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
+        client.startRepository();
+        client.uploadFile();
+
+        waitUntilSequencedNodesIs(1);
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+    }
+
+    protected void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced ) throws InterruptedException {
+        // check 50 times, waiting 0.1 seconds between (for a total of 5 seconds max) ...
+        long numFound = 0;
+        for (int i = 0; i != 50; i++) {
+            numFound = client.getStatistics().getNumberOfNodesSequenced();
+            if (numFound >= totalNumberOfNodesSequenced) {
+                return;
+            }
+            Thread.sleep(100);
+        }
+        fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
     }
 
     @Test
@@ -201,23 +197,6 @@ public class SequencingClientTest {
         } finally {
             stream.close();
         }
-    }
-
-    @Ignore
-    @Test
-    public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
-        client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
-        client.startRepository();
-        client.uploadFile();
-
-        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
-        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(1000);
-
-        // The sequencers should have run, so perform the search.
-        // The mock user interface checks the results.
-        client.search();
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1L));
     }
 
 }
