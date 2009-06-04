@@ -1413,10 +1413,21 @@ class RepositoryNodeTypeManager {
 
                 List<JcrNodeDefinition> nodeDefs = new ArrayList<JcrNodeDefinition>(
                                                                                     nodeType.getDeclaredChildNodeDefinitions().length);
+                for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
+                    nodeDefs.add(nodeDef.with(this.context).with(this));
+                }
 
+                // Create a new node type that also has the correct property and child node definitions associated
+                JcrNodeType newNodeType = new JcrNodeType(this.context, this, nodeType.getInternalName(), supertypes,
+                                                          nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
+                                                          nodeType.isMixin(), nodeType.hasOrderableChildNodes());
+                typesPendingRegistration.add(newNodeType);
+            }
+
+            // Make sure the nodes have primary types that are either already registered, or pending registration ...
+            for (JcrNodeType nodeType : typesPendingRegistration) {
                 for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
                     JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
-
                     int i = 0;
                     for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
                         requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
@@ -1427,15 +1438,7 @@ class RepositoryNodeTypeManager {
                         }
                         i++;
                     }
-
-                    nodeDefs.add(nodeDef.with(this.context).with(this));
                 }
-
-                // Create a new node type that also has the correct property and child node definitions associated
-                JcrNodeType newNodeType = new JcrNodeType(this.context, this, nodeType.getInternalName(), supertypes,
-                                                          nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
-                                                          nodeType.isMixin(), nodeType.hasOrderableChildNodes());
-                typesPendingRegistration.add(newNodeType);
             }
 
             // Graph.Batch batch = graph.batch();
