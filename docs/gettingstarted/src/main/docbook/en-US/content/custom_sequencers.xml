@@ -73,12 +73,7 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.4</version>
-</dependency>
-<dependency>
-  <groupId>org.jboss.dna</groupId>
-  <artifactId>dna-graph</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
 </dependency>
 <dependency>
   <groupId>org.slf4j</groupId>
@@ -119,10 +114,11 @@
   		see the <link linkend="testing_custom_sequencers">testing section</link>.)  However, if you want to do
   		integration testing with a JCR repository and the JBoss DNA services, you'll need additional dependencies for these libraries.</para>
 		<programlisting role="XML"><![CDATA[
+<!-- JBoss DNA JCR Repository -->
 <dependency>
   <groupId>org.jboss.dna</groupId>
-  <artifactId>dna-repository</artifactId>
-  <version>0.4</version>
+  <artifactId>dna-jcr</artifactId>
+  <version>0.5</version>
   <scope>test</scope>
 </dependency>
 <!-- Java Content Repository API -->
@@ -131,41 +127,6 @@
   <artifactId>jcr</artifactId>
   <version>1.0.1</version>
   <scope>test</scope>
-</dependency>
-<!-- Apache Jackrabbit (JCR Implementation) -->
-<dependency>
-  <groupId>org.apache.jackrabbit</groupId>
-  <artifactId>jackrabbit-api</artifactId>
-  <version>1.4</version>
-  <scope>test</scope>
-  <!-- Exclude these since they are included in JDK 1.5 -->
-  <exclusions>
-    <exclusion>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-    </exclusion>
-    <exclusion>
-      <groupId>xerces</groupId>
-      <artifactId>xercesImpl</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
-<dependency>
-  <groupId>org.apache.jackrabbit</groupId>
-  <artifactId>jackrabbit-core</artifactId>
-  <version>1.4.5</version>
-  <scope>test</scope>
-  <!-- Exclude these since they are included in JDK 1.5 -->
-  <exclusions>
-    <exclusion>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-    </exclusion>
-    <exclusion>
-      <groupId>xerces</groupId>
-      <artifactId>xercesImpl</artifactId>
-    </exclusion>
-  </exclusions>
 </dependency>
  ]]></programlisting>
   <para>At this point, your project should be set up correctly, and you're ready to move on to 

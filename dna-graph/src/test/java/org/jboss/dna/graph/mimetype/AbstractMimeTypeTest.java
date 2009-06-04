@@ -29,7 +29,6 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collections;
-import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,9 +63,12 @@ public abstract class AbstractMimeTypeTest {
 
     protected void testMimeType( String name,
                                  String mimeType ) throws Exception {
-        InputStream content = new File("../../dna-repository/src/test/resources/" + name).toURI().toURL().openStream();
+        File file = getFile(name);
+        InputStream content = file.toURI().toURL().openStream();
         assertThat(detectors.mimeTypeOf(name, content), is(mimeType));
     }
+
+    protected abstract File getFile( String name );
 
     protected abstract String expectedMimeTypeForText_test_txt();
 

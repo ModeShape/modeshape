@@ -562,45 +562,10 @@
 				<version>1.0.1</version>
 				<scope>compile</scope>
 			</dependency>
-			<!-- Apache Jackrabbit (JCR Implementation) -->
-			<dependency>
-				<groupId>org.apache.jackrabbit</groupId>
-				<artifactId>jackrabbit-api</artifactId>
-				<version>1.4</version>
-				<scope>test</scope>
-				<!-- Exclude these since they are included in JDK 1.5 -->
-				<exclusions>
-					<exclusion>
-						<groupId>xml-apis</groupId>
-						<artifactId>xml-apis</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>xerces</groupId>
-						<artifactId>xercesImpl</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.jackrabbit</groupId>
-				<artifactId>jackrabbit-core</artifactId>
-				<version>1.4.5</version>
-				<scope>test</scope>
-				<!-- Exclude these since they are included in JDK 1.5 -->
-				<exclusions>
-					<exclusion>
-						<groupId>xml-apis</groupId>
-						<artifactId>xml-apis</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>xerces</groupId>
-						<artifactId>xercesImpl</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
 		    <!-- 
 		      Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
 		    -->
-		    <dependency>
+	    <dependency>
 				<groupId>org.apache.jackrabbit</groupId>
 				<artifactId>jackrabbit-jcr-tests</artifactId>
 				<version>1.4</version>

@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.mimetype.aperture;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import org.jboss.dna.graph.mimetype.AbstractMimeTypeTest;
 import org.junit.Test;
@@ -32,6 +33,16 @@ public class MimeTypeTest extends AbstractMimeTypeTest {
 
     public MimeTypeTest() {
         super(ApertureMimeTypeDetector.class);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.mimetype.AbstractMimeTypeTest#getFile(java.lang.String)
+     */
+    @Override
+    protected File getFile( String name ) {
+        return new File("src/test/resources/" + name);
     }
 
     @Override
