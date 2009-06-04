@@ -30,7 +30,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import static org.mockito.Mockito.mock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -99,17 +98,6 @@ public class InMemoryRepositoryWorkspaceTest {
         workspace.removeNode(context, workspace.getRoot());
         assertThat(workspace.getRoot().getChildren().size(), is(0));
         assertThat(workspace.getRoot().getProperties().size(), is(0));
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNodeToBeRemovedUsingNullEnvironment() {
-        InMemoryNode node = mock(InMemoryNode.class);
-        workspace.removeNode(null, node);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullNodeToBeRemoved() {
-        workspace.removeNode(context, null);
     }
 
     @Test
@@ -274,7 +262,7 @@ public class InMemoryRepositoryWorkspaceTest {
         Name propName = nameFactory.create("prop");
         node_b.setProperty(propertyFactory.create(propName, "node_b"));
         node_b2.setProperty(propertyFactory.create(propName, "node_b2"));
-        
+
         assertThat(workspace.getNodesByUuid().size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -296,8 +284,10 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(workspace.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b2)));
         assertThat(workspace.getNode(pathFactory.create("/d/b[1]")), is(sameInstance(node_b)));
         assertThat(workspace.getNode(pathFactory.create("/d/b[1]/c")), is(sameInstance(node_c)));
-        assertThat(workspace.getNode(pathFactory.create("/d/b[1]")).getProperty(propName).getFirstValue().toString(), is("node_b"));
-        assertThat(workspace.getNode(pathFactory.create("/d/b[2]")).getProperty(propName).getFirstValue().toString(), is("node_b2"));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[1]")).getProperty(propName).getFirstValue().toString(),
+                   is("node_b"));
+        assertThat(workspace.getNode(pathFactory.create("/d/b[2]")).getProperty(propName).getFirstValue().toString(),
+                   is("node_b2"));
 
         // Move after the last node
         workspace.moveNode(context, node_b, null, workspace, root, null);

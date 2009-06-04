@@ -218,6 +218,10 @@ class JcrSession implements Session {
         return graph.batch();
     }
 
+    String sourceName() {
+        return this.repository.getRepositorySourceName();
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -329,9 +333,10 @@ class JcrSession implements Session {
 
         this.checkPermission(executionContext.getValueFactories().getPathFactory().create(path), actions);
     }
-    
-    public void checkPermission( Path path, String actions) {
-        
+
+    public void checkPermission( Path path,
+                                 String actions ) {
+
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
 

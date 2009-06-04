@@ -63,27 +63,17 @@
       <artifactId>jcr</artifactId>
     </dependency>
     <!-- 
-      Test cases use JUnit
-    -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- 
       JAAS implementation (and dependencies)
     -->
     <dependency>
         <groupId>org.jboss.security</groupId>
         <artifactId>jboss-idtrust</artifactId>
         <version>2.0.2.CR1</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>org.jboss.security</groupId>
         <artifactId>jboss-security-spi-bare</artifactId>
         <version>2.0.2.SP6</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>org.jboss.security</groupId>
@@ -99,6 +89,13 @@
                 <artifactId>serializer</artifactId>
             </exclusion>
         </exclusions>
+    </dependency>
+    <!-- 
+      Test cases use JUnit
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

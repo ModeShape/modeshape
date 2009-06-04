@@ -976,11 +976,11 @@ public class DnaConfiguration {
         protected Graph.Create<Graph.Batch> createIfMissing( Name child,
                                                              String... segments ) {
             Path nodePath = context.getValueFactories().getPathFactory().create(path, child);
-            Graph.Create<Graph.Batch> result = batch.createIfMissing(nodePath);
+            Graph.Create<Graph.Batch> result = batch.create(nodePath).orUpdate();
             for (String name : segments) {
                 result.and();
                 nodePath = context.getValueFactories().getPathFactory().create(nodePath, name);
-                result = batch.createIfMissing(nodePath);
+                result = batch.create(nodePath).orUpdate();
             }
             return result;
         }
@@ -994,7 +994,7 @@ public class DnaConfiguration {
          */
         protected Graph.Create<Graph.Batch> createIfMissing( Name segment ) {
             Path nodePath = context.getValueFactories().getPathFactory().create(path, segment);
-            Graph.Create<Graph.Batch> result = batch.createIfMissing(nodePath);
+            Graph.Create<Graph.Batch> result = batch.create(nodePath).orUpdate();
             return result;
         }
 
@@ -1013,7 +1013,7 @@ public class DnaConfiguration {
             for (Name name : segments) {
                 if (result != null) result.and();
                 nodePath = context.getValueFactories().getPathFactory().create(nodePath, name);
-                result = batch.createIfMissing(nodePath);
+                result = batch.create(nodePath).orUpdate();
             }
             return result;
         }

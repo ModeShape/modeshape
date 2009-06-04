@@ -31,9 +31,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -240,6 +242,16 @@ public class DnaEngine {
      * @see #shutdown()
      */
     public void start() {
+        if (getProblems().hasErrors()) {
+            // First log the messages ...
+            Logger log = Logger.getLogger(getClass());
+            log.error(RepositoryI18n.errorsPreventStarting);
+            for (Problem problem : getProblems()) {
+                log.error(problem.getMessage(), problem.getParameters());
+            }
+            // Then throw an exception ...
+            throw new IllegalStateException(RepositoryI18n.errorsPreventStarting.text());
+        }
         repositoryService.getAdministrator().start();
         sequencingService.getAdministrator().start();
     }

@@ -47,9 +47,6 @@ import org.jboss.dna.jcr.JcrEngine;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.sequencer.image.ImageMetadataSequencer;
-import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
-import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
 import org.jboss.security.config.IDTrustConfiguration;
 
 /**
@@ -72,7 +69,9 @@ public class SequencingClient {
             throw new IllegalStateException(ex);
         }
 
-        // Configure the DNA JCR engine ...
+        // Configure the DNA JCR engine. This could be done by loading a configuration from a file, or by
+        // using a (local or remote) configuration repository, or by setting up the configuration programmatically.
+        // This example uses the programmatic approach...
         String repositoryId = "content";
         String workspaceName = "default";
         JcrConfiguration config = new JcrConfiguration();
@@ -83,9 +82,7 @@ public class SequencingClient {
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
         config.repository(repositoryId)
-              .addNodeTypes(ImageMetadataSequencer.class.getResource("org/jboss/dna/sequencer/image/images.cnd"))
-              .addNodeTypes(Mp3MetadataSequencer.class.getResource("org/jboss/dna/sequencer/mp3/mp3.cnd"))
-              .addNodeTypes(JavaMetadataSequencer.class.getResource("org/jboss/dna/sequencer/java/javaSource.cnd"))
+              .addNodeTypes("sequencing.cnd")
               .setSource("store")
               .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         // Set up the image sequencer ...
@@ -97,13 +94,15 @@ public class SequencingClient {
               .andOutputtingTo("/images/$1");
         // Set up the MP3 sequencer ...
         config.sequencer("MP3 Sequencer")
-              .usingClass(Mp3MetadataSequencer.class)
+              .usingClass("org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer")
+              .loadedFromClasspath()
               .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");
         // Set up the Java source file sequencer ...
         config.sequencer("Java Sequencer")
-              .usingClass(JavaMetadataSequencer.class)
+              .usingClass("org.jboss.dna.sequencer.java.JavaMetadataSequencer")
+              .loadedFromClasspath()
               .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");

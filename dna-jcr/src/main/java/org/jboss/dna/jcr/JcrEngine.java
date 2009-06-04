@@ -144,12 +144,7 @@ public class JcrEngine extends DnaEngine {
         // Register all the the node types ...
         Node nodeTypesNode = subgraph.getNode(DnaLexicon.NODE_TYPES);
         if (nodeTypesNode != null) {
-            try {
-                repository.getRepositoryTypeManager().registerNodeTypes(subgraph, nodeTypesNode.getLocation());
-            } catch (RepositoryException e) {
-                // Error registering the node types ...
-                getProblems().addError(e, JcrI18n.errorRegisteringNodeTypes, repositoryName);
-            }
+            repository.getRepositoryTypeManager().registerNodeTypes(subgraph, nodeTypesNode.getLocation());// throws exception
         }
 
         return repository;

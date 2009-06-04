@@ -52,9 +52,10 @@
 // DNA Java Sequencer
 // -------------------
 
-/**
- * Node types that define metadata for a Java source file
- */
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
 /**
  * Element-value
  */
@@ -115,7 +116,7 @@
  * Single element annotation  e.g. @Path("/book")
  */
 [java:singleElementAnnotation] > nt:unstructured
- - java:singleElementAnnotationNam
+ - java:singleElementAnnotationName (string) mandatory
  + java:value (java:elementValue) = java:elementValue mandatory
 
 /** 
@@ -261,4 +262,5 @@
 [java:compilationUnit] > nt:unstructured
  + java:package (java:packageDeclaration) = java:packageDeclaration
  + java:import (java:importDeclaration) = java:importDeclaration
- + java:unitType (java:classDeclaration, java:interfaceDeclaration) 
+ + java:unitType (java:classDeclaration, java:interfaceDeclaration)
+ 

@@ -60,7 +60,6 @@ public final class JcrI18n {
     public static I18n unableToRemapUriNotRegisteredInNamespaceRegistry;
     public static I18n unableToRemapUriUsingPrefixUsedInNamespaceRegistry;
 
-    public static I18n errorRegisteringNodeTypes;
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;

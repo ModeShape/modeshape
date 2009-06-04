@@ -2676,8 +2676,9 @@ public class Graph {
                 protected Batch submit( Location parent,
                                         String workspaceName,
                                         Name childName,
-                                        Collection<Property> properties ) {
-                    requestQueue.createNode(parent, workspaceName, childName, properties.iterator());
+                                        Collection<Property> properties,
+                                        NodeConflictBehavior behavior ) {
+                    requestQueue.createNode(parent, workspaceName, childName, properties.iterator(), behavior);
                     return Batch.this;
                 }
 
@@ -2748,157 +2749,6 @@ public class Graph {
                                      Property firstProperty,
                                      Property... additionalProperties ) {
             return create(at).with(firstProperty, additionalProperties);
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param atPath the path to the node that is to be created.
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( String atPath ) {
-            return createIfMissing(createPath(atPath));
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param atPath the path to the node that is to be created.
-         * @param property a property for the new node
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( String atPath,
-                                              Property property ) {
-            return createIfMissing(createPath(atPath)).with(property);
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param atPath the path to the node that is to be created.
-         * @param firstProperty a property for the new node
-         * @param additionalProperties additional properties for the new node
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( String atPath,
-                                              Property firstProperty,
-                                              Property... additionalProperties ) {
-            return createIfMissing(createPath(atPath)).with(firstProperty, additionalProperties);
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param at the path to the node that is to be created.
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public final Create<Batch> createIfMissing( Path at ) {
-            assertNotExecuted();
-            CheckArg.isNotNull(at, "at");
-            Path parent = at.getParent();
-            Name name = at.getLastSegment().getName();
-            return createIfMissing(Location.create(parent), name);
-        }
-
-        protected final CreateAction<Batch> createIfMissing( Location parent,
-                                                             Name child ) {
-            return new CreateAction<Batch>(this, parent, getCurrentWorkspaceName(), child) {
-                @Override
-                protected Batch submit( Location parent,
-                                        String workspaceName,
-                                        Name childName,
-                                        Collection<Property> properties ) {
-                    requestQueue.createNode(parent, workspaceName, childName, properties.iterator(), NodeConflictBehavior.UPDATE);
-                    return Batch.this;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.Graph.Executable#execute()
-                 */
-                public Results execute() {
-                    and();
-                    return Batch.this.execute();
-                }
-            };
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param at the path to the node that is to be created.
-         * @param properties the iterator over the properties for the new node
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( Path at,
-                                              Iterable<Property> properties ) {
-            Create<Batch> action = createIfMissing(at);
-            for (Property property : properties) {
-                action.and(property);
-            }
-            return action;
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param at the path to the node that is to be created.
-         * @param property a property for the new node
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( Path at,
-                                              Property property ) {
-            return createIfMissing(at).with(property);
-        }
-
-        /**
-         * Begin the request to create a node located at the supplied path if there is no such node already.
-         * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
-         * called.
-         * </p>
-         * 
-         * @param at the path to the node that is to be created.
-         * @param firstProperty a property for the new node
-         * @param additionalProperties additional properties for the new node
-         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-         *         node where the node is to be created
-         */
-        public Create<Batch> createIfMissing( Path at,
-                                              Property firstProperty,
-                                              Property... additionalProperties ) {
-            return createIfMissing(at).with(firstProperty, additionalProperties);
         }
 
         /**
@@ -3913,9 +3763,9 @@ public class Graph {
     }
 
     /**
-     * A component that defines the location before which a node should be copied or moved.  This is similar to an
-     * {@link Into}, but it allows for placing a node at a particular location within the new destination, rather than
-     * always placing the moved or copied node as the last child of the new parent.
+     * A component that defines the location before which a node should be copied or moved. This is similar to an {@link Into},
+     * but it allows for placing a node at a particular location within the new destination, rather than always placing the moved
+     * or copied node as the last child of the new parent.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
@@ -3989,7 +3839,7 @@ public class Graph {
          * @return the interface for additional requests or actions
          */
         Next before( Property firstParentIdProperty,
-                   Property... additionalParentIdProperties );
+                     Property... additionalParentIdProperties );
     }
 
     /**
@@ -4153,6 +4003,38 @@ public class Graph {
      * @author Randall Hauch
      */
     public interface Create<Next> extends Conjunction<Next>, Executable<Node> {
+        /**
+         * Create the node only if there is no existing node with the same {@link Path.Segment#getName() name} (ignoring
+         * {@link Path.Segment#getIndex() same-name-sibling indexes}).
+         * 
+         * @return this interface for continued specification of the request
+         */
+        Create<Next> ifAbsent();
+
+        /**
+         * Create the node if it does not exist, or update any existing node that has the same {@link Path.Segment#getName() name}
+         * (ignoring {@link Path.Segment#getIndex() same-name-sibling indexes}).
+         * 
+         * @return this interface for continued specification of the request
+         */
+        Create<Next> orUpdate();
+
+        /**
+         * Create the node if it does not exist, or replace any existing node that has the same {@link Path.Segment#getName()
+         * name} (ignoring {@link Path.Segment#getIndex() same-name-sibling indexes}).
+         * 
+         * @return this interface for continued specification of the request
+         */
+        Create<Next> orReplace();
+
+        /**
+         * Create the node if it does not exist by appending or adjusting the {@link Path.Segment#getIndex() same-name-sibling
+         * index}). This is the default behavior.
+         * 
+         * @return this interface for continued specification of the request
+         */
+        Create<Next> byAppending();
+
         /**
          * Specify the UUID that should the new node should have. This is an alias for {@link #and(UUID)}.
          * 
@@ -5822,8 +5704,8 @@ public class Graph {
          * @return this object, for method chaining
          */
         protected T submit( Locations from,
-                                     Location into,
-                                     Name newName ) {
+                            Location into,
+                            Name newName ) {
             return submit(from, into, null, newName);
         }
 
@@ -5851,7 +5733,7 @@ public class Graph {
         public T into( String into ) {
             return submit(from, Location.create(createPath(into)), newName);
         }
-        
+
         public T before( Location before ) {
             return submit(from, null, before, newName);
         }
@@ -5865,7 +5747,7 @@ public class Graph {
         }
 
         public T before( Property firstIdProperty,
-                       Property... additionalIdProperties ) {
+                         Property... additionalIdProperties ) {
             return submit(from, null, Location.create(firstIdProperty, additionalIdProperties), newName);
         }
 
@@ -5875,7 +5757,7 @@ public class Graph {
 
         public T before( String before ) {
             return submit(from, null, Location.create(createPath(before)), newName);
-        }        
+        }
     }
 
     @NotThreadSafe
@@ -5993,6 +5875,7 @@ public class Graph {
         private final Name childName;
         private final Map<Name, Property> properties = new HashMap<Name, Property>();
         private boolean submitted = false;
+        private NodeConflictBehavior conflictBehavior = NodeConflictBehavior.APPEND;
 
         /*package*/CreateAction( T afterConjunction,
                                   Location parent,
@@ -6002,6 +5885,46 @@ public class Graph {
             this.parent = parent;
             this.workspaceName = workspaceName;
             this.childName = childName;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Create#ifAbsent()
+         */
+        public Create<T> ifAbsent() {
+            conflictBehavior = NodeConflictBehavior.DO_NOT_REPLACE;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Create#orReplace()
+         */
+        public Create<T> orReplace() {
+            conflictBehavior = NodeConflictBehavior.REPLACE;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Create#orUpdate()
+         */
+        public Create<T> orUpdate() {
+            conflictBehavior = NodeConflictBehavior.UPDATE;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Create#byAppending()
+         */
+        public Create<T> byAppending() {
+            conflictBehavior = NodeConflictBehavior.APPEND;
+            return this;
         }
 
         public Create<T> and( UUID uuid ) {
@@ -6078,12 +6001,13 @@ public class Graph {
         protected abstract T submit( Location parent,
                                      String workspaceName,
                                      Name childName,
-                                     Collection<Property> properties );
+                                     Collection<Property> properties,
+                                     NodeConflictBehavior conflictBehavior );
 
         @Override
         public T and() {
             if (!submitted) {
-                submit(parent, workspaceName, childName, this.properties.values());
+                submit(parent, workspaceName, childName, this.properties.values(), this.conflictBehavior);
                 submitted = true;
             }
             return super.and();

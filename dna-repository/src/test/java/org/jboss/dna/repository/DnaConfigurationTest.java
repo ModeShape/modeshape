@@ -138,7 +138,7 @@ public class DnaConfigurationTest {
         assertThat(file.exists(), is(true));
         assertThat(file.canRead(), is(true));
         assertThat(file.isFile(), is(true));
-        URL fileUrl = file.toURL();
+        URL fileUrl = file.toURI().toURL();
         assertThat(fileUrl, is(notNullValue()));
 
         configuration.loadFrom(fileUrl);
@@ -177,7 +177,7 @@ public class DnaConfigurationTest {
     public void shouldLoadConfigurationEvenAfterAlreadyHavingLoadedConfiguration() throws Exception {
         configuration.loadFrom("src/test/resources/config/configRepository.xml");
         configuration.loadFrom(new File("src/test/resources/config/configRepository.xml"));
-        configuration.loadFrom(new File("src/test/resources/config/configRepository.xml").toURL());
+        configuration.loadFrom(new File("src/test/resources/config/configRepository.xml").toURI().toURL());
         assertThat(configuration.getProblems().isEmpty(), is(true));
     }
 

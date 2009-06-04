@@ -34,7 +34,6 @@ import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrRepository;
-import org.jboss.dna.sequencer.image.ImageMetadataSequencer;
 import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
 import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
 import org.junit.After;
@@ -73,10 +72,7 @@ public class SequencingClientTest {
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
         config.repository(repositoryId)
-              .addNodeTypes(ImageMetadataSequencer.class.getClassLoader().getResource("org/jboss/dna/sequencer/image/images.cnd"))
-              .addNodeTypes(Mp3MetadataSequencer.class.getClassLoader().getResource("org/jboss/dna/sequencer/mp3/mp3.cnd"))
-              .addNodeTypes(JavaMetadataSequencer.class.getClassLoader()
-                                                       .getResource("org/jboss/dna/sequencer/java/javaSource.cnd"))
+              .addNodeTypes(getClass().getClassLoader().getResource("sequencing.cnd"))
               .setSource("store")
               .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         // Set up the image sequencer ...
@@ -123,7 +119,6 @@ public class SequencingClientTest {
 
     }
 
-    @Ignore
     @Test
     public void shouldUploadAndSequencePngFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.pngImageUrl, "/a/b/caution.png", 1));
@@ -132,13 +127,13 @@ public class SequencingClientTest {
 
         // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
         // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
-        Thread.sleep(1000);
+        Thread.sleep(4000);
+
+        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
 
         // The sequencers should have run, so perform the search.
         // The mock user interface checks the results.
         client.search();
-
-        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
     @Ignore

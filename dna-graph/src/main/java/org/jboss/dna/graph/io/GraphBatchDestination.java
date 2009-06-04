@@ -27,7 +27,9 @@ import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.Graph.Batch;
+import org.jboss.dna.graph.Graph.Create;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
@@ -92,11 +94,31 @@ public class GraphBatchDestination implements Destination {
     public void create( Path path,
                         List<Property> properties ) {
         assert properties != null;
+        Create<Batch> create = null;
         if (properties.isEmpty()) {
-            batch.create(path).and();
+            create = batch.create(path);
         } else {
-            batch.create(path, properties).and();
+            create = batch.create(path, properties);
         }
+        assert create != null;
+        NodeConflictBehavior behavior = createBehaviorFor(path);
+        if (behavior != null) {
+            switch (behavior) {
+                case APPEND:
+                    create.byAppending();
+                    break;
+                case REPLACE:
+                    create.orReplace();
+                    break;
+                case UPDATE:
+                    create.byAppending();
+                    break;
+                case DO_NOT_REPLACE:
+                    create.byAppending();
+                    break;
+            }
+        }
+        create.and();
     }
 
     /**
@@ -108,22 +130,43 @@ public class GraphBatchDestination implements Destination {
     public void create( Path path,
                         Property firstProperty,
                         Property... additionalProperties ) {
+        Create<Batch> create = null;
         if (firstProperty == null) {
-            batch.create(path).and();
+            create = batch.create(path);
         } else {
-            batch.create(path, firstProperty, additionalProperties).and();
+            create = batch.create(path, firstProperty, additionalProperties);
         }
+        assert create != null;
+        NodeConflictBehavior behavior = createBehaviorFor(path);
+        if (behavior != null) {
+            switch (behavior) {
+                case APPEND:
+                    create.byAppending();
+                    break;
+                case REPLACE:
+                    create.orReplace();
+                    break;
+                case UPDATE:
+                    create.byAppending();
+                    break;
+                case DO_NOT_REPLACE:
+                    create.byAppending();
+                    break;
+            }
+        }
+        create.and();
     }
 
     /**
      * {@inheritDoc}
-     *
-     * @see org.jboss.dna.graph.io.Destination#setProperties(org.jboss.dna.graph.property.Path, org.jboss.dna.graph.property.Property[])
+     * 
+     * @see org.jboss.dna.graph.io.Destination#setProperties(org.jboss.dna.graph.property.Path,
+     *      org.jboss.dna.graph.property.Property[])
      */
-    public void setProperties( Path path, 
+    public void setProperties( Path path,
                                Property... properties ) {
         if (properties == null) return;
-        
+
         batch.set(properties).on(path);
     }
 
@@ -135,6 +178,16 @@ public class GraphBatchDestination implements Destination {
     public void submit() {
         // Execute only if we're not ignoring submits ...
         if (!this.ignoreSubmit && !batch.hasExecuted()) batch.execute();
+    }
 
+    /**
+     * Override this method in a subclass to control the {@link NodeConflictBehavior} that should be used when creating the node
+     * at the supplied path. By default, this method returns null.
+     * 
+     * @param path the path of the new node
+     * @return the conflict behavior, or null if {@link NodeConflictBehavior#UPDATE} should be used
+     */
+    protected NodeConflictBehavior createBehaviorFor( Path path ) {
+        return null;
     }
 }

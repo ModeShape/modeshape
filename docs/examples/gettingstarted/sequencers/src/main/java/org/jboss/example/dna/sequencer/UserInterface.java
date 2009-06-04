@@ -37,4 +37,6 @@ public interface UserInterface {
     public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException;
 
     public void displaySearchResults( List<ContentInfo> contentInfo ) throws IOException;
+
+    public void displayError( Exception e );
 }

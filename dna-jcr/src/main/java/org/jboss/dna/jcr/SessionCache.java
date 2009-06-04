@@ -204,6 +204,10 @@ class SessionCache {
         return workspaceName;
     }
 
+    String sourceName() {
+        return session.sourceName();
+    }
+
     ExecutionContext context() {
         return context;
     }
@@ -2085,7 +2089,8 @@ class SessionCache {
             throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(uuid, workspaceName, e.getLocalizedMessage()));
         } catch (RepositorySourceException e) {
             throw new RepositoryException(
-                                          JcrI18n.errorWhileFindingNodeWithUuid.text(uuid, workspaceName, e.getLocalizedMessage()));
+                                          JcrI18n.errorWhileFindingNodeWithUuid.text(uuid, workspaceName, e.getLocalizedMessage()),
+                                          e);
         }
     }
 
@@ -2234,7 +2239,7 @@ class SessionCache {
             }
             if (definition == null) {
                 String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(path, workspaceName);
-                throw new RepositorySourceException(msg);
+                throw new RepositorySourceException(sourceName(), msg);
             }
         }
 
@@ -2248,7 +2253,7 @@ class SessionCache {
         if (primaryType == null) {
             Path path = location.getPath();
             String msg = JcrI18n.missingNodeTypeForExistingNode.text(primaryTypeName.getString(namespaces), path, workspaceName);
-            throw new RepositorySourceException(msg);
+            throw new RepositorySourceException(sourceName(), msg);
         }
         if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
 

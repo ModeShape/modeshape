@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
 import java.util.List;
-import org.jboss.example.dna.sequencer.ContentInfo;
-import org.jboss.example.dna.sequencer.UserInterface;
 
 /**
  * @author Randall Hauch
@@ -70,6 +68,15 @@ public class MockUserInterface implements UserInterface {
      */
     public String getRepositoryPath( String defaultPath ) {
         return this.repositoryPath != null ? this.repositoryPath : defaultPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.example.dna.sequencer.UserInterface#displayError(java.lang.Exception)
+     */
+    public void displayError( Exception e ) {
+        // Do nothing
     }
 
 }

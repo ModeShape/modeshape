@@ -575,8 +575,8 @@ public class Projection implements Comparable<Projection>, Serializable {
         public PathRule( Path repositoryPath,
                          Path sourcePath,
                          Path... exceptions ) {
-            assert sourcePath != null;
-            assert repositoryPath != null;
+            CheckArg.isNotNull(sourcePath, "sourcePath");
+            CheckArg.isNotNull(repositoryPath, "repositoryPath");
             this.sourcePath = sourcePath;
             this.repositoryPath = repositoryPath;
             if (exceptions == null || exceptions.length == 0) {
@@ -589,15 +589,21 @@ public class Projection implements Comparable<Projection>, Serializable {
                 this.exceptions = Collections.unmodifiableList(exceptionList);
             }
             this.hc = HashCode.compute(sourcePath, repositoryPath, exceptions);
-            assert exceptionPathsAreRelative();
+            if (this.exceptions != null) {
+                for (Path path : this.exceptions) {
+                    if (path.isAbsolute()) {
+                        throw new IllegalArgumentException(GraphI18n.pathIsNotRelative.text(path));
+                    }
+                }
+            }
             this.topLevelRepositoryPaths = Collections.singletonList(getPathInRepository());
         }
 
         public PathRule( Path repositoryPath,
                          Path sourcePath,
                          List<Path> exceptions ) {
-            assert sourcePath != null;
-            assert repositoryPath != null;
+            CheckArg.isNotNull(sourcePath, "sourcePath");
+            CheckArg.isNotNull(repositoryPath, "repositoryPath");
             this.sourcePath = sourcePath;
             this.repositoryPath = repositoryPath;
             if (exceptions == null || exceptions.isEmpty()) {
@@ -606,17 +612,14 @@ public class Projection implements Comparable<Projection>, Serializable {
                 this.exceptions = Collections.unmodifiableList(new ArrayList<Path>(exceptions));
             }
             this.hc = HashCode.compute(sourcePath, repositoryPath, exceptions);
-            assert exceptionPathsAreRelative();
-            this.topLevelRepositoryPaths = Collections.singletonList(getPathInRepository());
-        }
-
-        private boolean exceptionPathsAreRelative() {
             if (this.exceptions != null) {
                 for (Path path : this.exceptions) {
-                    if (path.isAbsolute()) return false;
+                    if (path.isAbsolute()) {
+                        throw new IllegalArgumentException(GraphI18n.pathIsNotRelative.text(path));
+                    }
                 }
             }
-            return true;
+            this.topLevelRepositoryPaths = Collections.singletonList(getPathInRepository());
         }
 
         /**

@@ -80,19 +80,19 @@ public class ProjectionPathRuleTest {
         assertThat(rule.getExceptionsToRule(), hasItems(validExceptions));
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithNullRepositoryPathAndValidSourcePathAndNoExceptions() {
         repositoryPath = null;
         new Projection.PathRule(repositoryPath, sourcePath);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithValidRepositoryPathAndNullSourcePathAndNoExceptions() {
         sourcePath = null;
         new Projection.PathRule(repositoryPath, sourcePath);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithValidRepositoryPathAndValidSourcePathAndAbsoluteExceptions() {
         Path relativePath = validExceptions[0];
         Path absolutePath = pathFactory.create("/j/k/l/m");

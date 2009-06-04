@@ -34,6 +34,7 @@ import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
+import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
@@ -90,18 +91,21 @@ public class StreamSequencerAdapter implements Sequencer {
         // Get the property that contains the data, given by 'propertyName' ...
         Property sequencedProperty = input.getProperty(sequencedPropertyName);
 
-        if (sequencedProperty == null) {
+        if (sequencedProperty == null || sequencedProperty.isEmpty()) {
             String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getLocation());
             throw new SequencerException(msg);
         }
 
         // Get the binary property with the image content, and build the image metadata from the image ...
-        SequencerOutputMap output = new SequencerOutputMap(context.getExecutionContext().getValueFactories());
+        ValueFactories factories = context.getExecutionContext().getValueFactories();
+        SequencerOutputMap output = new SequencerOutputMap(factories);
         InputStream stream = null;
         Throwable firstError = null;
+        Binary binary = factories.getBinaryFactory().create(sequencedProperty.getFirstValue());
+        binary.acquire();
         try {
             // Parallel the JCR lemma for converting objects into streams
-            stream = new ByteArrayInputStream(sequencedProperty.toString().getBytes());
+            stream = binary.getStream();
             StreamSequencerContext StreamSequencerContext = createStreamSequencerContext(input,
                                                                                          sequencedProperty,
                                                                                          context,
@@ -111,19 +115,23 @@ public class StreamSequencerAdapter implements Sequencer {
             // Record the error ...
             firstError = t;
         } finally {
-            if (stream != null) {
-                // Always close the stream, recording the error if we've not yet seen an error
-                try {
-                    stream.close();
-                } catch (Throwable t) {
-                    if (firstError == null) firstError = t;
-                } finally {
-                    stream = null;
+            try {
+                if (stream != null) {
+                    // Always close the stream, recording the error if we've not yet seen an error
+                    try {
+                        stream.close();
+                    } catch (Throwable t) {
+                        if (firstError == null) firstError = t;
+                    } finally {
+                        stream = null;
+                    }
                 }
-            }
-            if (firstError != null) {
-                // Wrap and throw the first error that we saw ...
-                throw new SequencerException(firstError);
+                if (firstError != null) {
+                    // Wrap and throw the first error that we saw ...
+                    throw new SequencerException(firstError);
+                }
+            } finally {
+                binary.release();
             }
         }
 

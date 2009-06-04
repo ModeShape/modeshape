@@ -198,4 +198,8 @@ public class ConsoleInput implements UserInterface {
         sb.append("\n");
         return sb.toString();
     }
+
+    public void displayError( Exception e ) {
+        System.err.println(e.getMessage());
+    }
 }
