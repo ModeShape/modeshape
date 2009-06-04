@@ -12,8 +12,8 @@ import org.junit.Test;
 
 public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnectorTest {
 
-    
     private String repositoryRootURL;
+
     /**
      * {@inheritDoc}
      * 
@@ -22,7 +22,7 @@ public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnector
     @Override
     protected RepositorySource setUpSource() throws Exception {
         repositoryRootURL = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
-        String[] predefinedWorkspaceNames = new String[]{repositoryRootURL + "trunk", repositoryRootURL + "tags"};
+        String[] predefinedWorkspaceNames = new String[] {repositoryRootURL + "trunk", repositoryRootURL + "tags"};
         SVNRepositorySource source = new SVNRepositorySource();
         source.setName("Test Repository");
         source.setUsername("sp");
@@ -31,10 +31,10 @@ public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnector
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
-        
+
         return source;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -62,9 +62,9 @@ public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnector
      */
     @Override
     protected String[] generateValidNamesForNewWorkspaces() {
-        return new String[] { repositoryRootURL + "branches"};
+        return new String[] {repositoryRootURL + "branches"};
     }
-    
+
     @Test
     public void shouldReturnListOfWorkspacesMatchingRepositoryURLs() throws Exception {
         // The the actual names of the workspaces ...
@@ -73,7 +73,7 @@ public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnector
             Workspace workspace = graph.useWorkspace(workspaceName);
             workspaceNames.add(workspace.getName());
         }
-        
+
         assertThat(workspaceNames.remove(repositoryRootURL + "trunk"), is(true));
         assertThat(workspaceNames.remove(repositoryRootURL + "tags"), is(true));
         assertThat(workspaceNames.isEmpty(), is(true));

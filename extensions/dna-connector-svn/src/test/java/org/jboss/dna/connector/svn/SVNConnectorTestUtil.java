@@ -127,7 +127,7 @@ public class SVNConnectorTestUtil {
     }
 
     public static String createURL( String src,
-                                    String dst ) throws IOException {
+                                    String dst ) throws IOException, SVNException {
         // First we need to find the absolute path. Note that Maven always runs the tests from the project's directory,
         // so use new File to create an instance at the current location ...
         File mySrc = new File(src);
@@ -138,8 +138,16 @@ public class SVNConnectorTestUtil {
         FileUtil.copy(mySrc, myDst);
 
         // Now set the two path roots
-        String url = myDst.getCanonicalFile().toURI().toURL().toString();
-        return url.replaceFirst("file:/", "file://localhost/");
+        String url = myDst.getCanonicalFile().toURI().toURL().toExternalForm();
+
+        url = url.replaceFirst("file:/", "file://localhost/");
+
+        // Have to decode the URL ...
+        SVNURL encodedUrl = SVNURL.parseURIEncoded(url);
+        url = encodedUrl.toDecodedString();
+
+        if (!url.endsWith("/")) url = url + "/";
+        return url;
     }
 
     @SuppressWarnings( "unchecked" )

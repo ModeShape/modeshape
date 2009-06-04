@@ -403,7 +403,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             }
             if (!found) {
                 request.setError(new InvalidWorkspaceException(
-                                                               SVNRepositoryConnectorI18n.worspaceDoesNotExist.text(workspaceName)));
+                                                               SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(workspaceName)));
                 return;
             }
         }
@@ -800,7 +800,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * @param message - comment for the creation.
      * @throws SVNException - if during the creation, there is an error.
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings( "unused" )
     private void mkdir( SVNRepository repos,
                         String root,
                         String childName,
@@ -825,7 +825,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * @param message
      * @throws SVNException
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings( "unused" )
     private void newFile( String path,
                           String file,
                           byte[] content,
@@ -954,7 +954,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
 
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings( "unused" )
     private byte[] getContent( Object[] objs ) {
         byte[] content = null;
         for (Object object : objs) {
@@ -966,7 +966,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return content;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings( "unused" )
     private Object[] values( Collection<Property> childNodeProperties ) {
         Set<Object> result = new HashSet<Object>();
         for (Property property : childNodeProperties) {
@@ -984,10 +984,10 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                 throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
             }
             // TODO
-//             if (!segment.getName().getNamespaceUri().equals(defaultNamespaceUri)) {
-//                I18n msg = SVNRepositoryConnectorI18n.onlyTheDefaultNamespaceIsAllowed;
-//                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
-//            }
+            // if (!segment.getName().getNamespaceUri().equals(defaultNamespaceUri)) {
+            // I18n msg = SVNRepositoryConnectorI18n.onlyTheDefaultNamespaceIsAllowed;
+            // throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+            // }
         }
     }
 

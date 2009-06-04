@@ -16,9 +16,7 @@ import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 /**
- * 
  * @author Serge Pagop
- *
  */
 public class SVNRepositoryUtil {
 
@@ -73,7 +71,6 @@ public class SVNRepositoryUtil {
         return kind;
     }
 
-
     /**
      * Create a {@link SVNRepository} from a http protocol.
      * 
@@ -84,8 +81,7 @@ public class SVNRepositoryUtil {
      */
     public static SVNRepository createRepository( String url,
                                                   String username,
-                                                  String password
-                                                  ) {
+                                                  String password ) {
         // for DAV (over http and https)
         DAVRepositoryFactory.setup();
         // For File
@@ -196,7 +192,6 @@ public class SVNRepositoryUtil {
         return false;
     }
 
-    
     public static boolean exists( SVNRepository repository,
                                   String path ) {
         try {
