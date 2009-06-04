@@ -1177,8 +1177,6 @@ class RepositoryNodeTypeManager {
      * <ol>
      * <li>Residual child node definitions cannot be mandatory</li>
      * <li>If the child node is auto-created, it must specify a default primary type name</li>
-     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
-     * the batch. <i>This requirement may be relaxed in a future version of DNA.</i></li>
      * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
      * the old definition was mandatory</li>
      * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
@@ -1268,8 +1266,6 @@ class RepositoryNodeTypeManager {
      * <ol>
      * <li>Residual child node definitions cannot be mandatory</li>
      * <li>If the child node is auto-created, it must specify a default primary type name</li>
-     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
-     * the batch. <i>This requirement may be relaxed in a future version of DNA.</i></li>
      * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
      * the old definition was mandatory</li>
      * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
@@ -1346,8 +1342,6 @@ class RepositoryNodeTypeManager {
      * <ol>
      * <li>Residual child node definitions cannot be mandatory</li>
      * <li>If the child node is auto-created, it must specify a default primary type name</li>
-     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
-     * the batch. <i>This requirement may be relaxed in a future version of DNA.</i></li>
      * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
      * the old definition was mandatory</li>
      * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
@@ -1774,8 +1768,6 @@ class RepositoryNodeTypeManager {
      * <ol>
      * <li>Residual child node definitions cannot be mandatory</li>
      * <li>If the child node is auto-created, it must specify a default primary type name</li>
-     * <li>All required primary types must already be fully registered with the type manager or must have been defined earlier in
-     * the batch. This requirement may be relaxed in a future version of DNA.</li>
      * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
      * the old definition was mandatory</li>
      * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
