@@ -45,11 +45,8 @@ public class XmlSequencerTest {
 
     private static final String CDATA = "dnaxml:cData";
     private static final String CDATA_CONTENT = "dnaxml:cDataContent";
-    private static final String COMMENT = "dnaxml:comment";
-    private static final String COMMENT_CONTENT = "dnaxml:commentContent";
     private static final String DOCUMENT = "dnaxml:document";
     private static final String DTD_NAME = "dnadtd:name";
-    private static final String DTD_PUBLIC_ID = "dnadtd:publicId";
     private static final String DTD_SYSTEM_ID = "dnadtd:systemId";
     private static final String DTD_VALUE = "dnadtd:value";
     private static final String ELEMENT_CONTENT = "dnaxml:elementContent";
@@ -61,7 +58,6 @@ public class XmlSequencerTest {
     private XmlSequencer sequencer;
     private InputStream stream;
     private MockSequencerOutput output;
-    private URL xml1;
     private URL xml2;
     private URL xml3;
     private URL xml4;
@@ -73,8 +69,6 @@ public class XmlSequencerTest {
         sequencer = new XmlSequencer();
         context = new MockSequencerContext();
         output = new MockSequencerOutput(context);
-        xml1 = this.getClass().getClassLoader().getResource("jackrabbitInMemoryTestRepositoryConfig.xml");
-        assertThat(xml1, is(notNullValue()));
         xml2 = this.getClass().getClassLoader().getResource("master.xml");
         assertThat(xml2, is(notNullValue()));
         xml3 = this.getClass().getClassLoader().getResource("CurrencyFormatterExample.mxml");
@@ -94,23 +88,6 @@ public class XmlSequencerTest {
                 stream = null;
             }
         }
-    }
-
-    @Test
-    public void shouldSequenceXml() throws IOException {
-        verifyDocument(xml1);
-        verifyName(COMMENT + "[1]", "jcr:primaryType", COMMENT);
-        String text = verify(COMMENT + "[1]", COMMENT_CONTENT, String.class);
-        assertThat(text.startsWith("Licensed to the Apache Software Foundation (ASF)"), is(true));
-        assertThat(text.indexOf('\n') > 0, is(true));
-        assertThat(text.endsWith("   limitations under the License."), is(true));
-        verifyString("", DTD_NAME, "Repository");
-        verifyString("", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
-        verifyString("", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
-        verifyName(COMMENT + "[2]", "jcr:primaryType", COMMENT);
-        verifyString(COMMENT + "[2]", COMMENT_CONTENT, "Example Repository Configuration File");
-        verifyName("Repository[1]", "jcr:primaryType", "nt:unstructured");
-        verifyName("Repository[1]/" + COMMENT + "[1]", "jcr:primaryType", COMMENT);
     }
 
     @Test
@@ -139,15 +116,12 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceElementContent() throws IOException {
         verifyDocument(xml2);
-        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/" + ELEMENT_CONTENT + "[1]",
+        verifyString("book[1]/chapter[1]/para[8]/" + ELEMENT_CONTENT + "[1]",
                      ELEMENT_CONTENT,
-                     "The path expression is more complicated."
-                     + " Sequencer path expressions are used by the sequencing service to determine whether a particular changed node should be sequenced."
-                     + " The expressions consist of two parts: a selection criteria and an output expression."
-                     + " Here's a simple example:");
-        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/programlisting[1]/" + ELEMENT_CONTENT + "[1]",
-                     ELEMENT_CONTENT,
-                     "/a/b/c@title =&gt; /d/e/f");
+                     "JBoss DNA is building other features as well. One goal of JBoss DNA is to create federated repositories that "
+                     + "dynamically merge the information from multiple databases, services, applications, and other JCR repositories. Another is to "
+                     + "create customized views based upon the type of data and the role of the user that is accessing the data. And yet another is "
+                     + "to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.");
     }
 
     @Test

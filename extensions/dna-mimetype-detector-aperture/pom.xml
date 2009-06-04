@@ -236,9 +236,6 @@
 	  <groupId>net.jcip</groupId>
 	  <artifactId>jcip-annotations</artifactId>
 	</dependency>
-    <!-- 
-      Java Content Repository API and Apache Jackrabbit for the JCR unit test infrastructure
-    -->
   </dependencies>
   <reporting>
     <plugins>

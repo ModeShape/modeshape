@@ -137,7 +137,7 @@ public class SequencingClient {
     }
 
     /**
-     * Start up the JCR repository. This method only operates using the JCR API and Jackrabbit-specific API.
+     * Start up the JCR repository, using an implementation-specific API.
      * 
      * @throws Exception
      */

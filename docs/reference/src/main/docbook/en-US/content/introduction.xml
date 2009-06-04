@@ -306,7 +306,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-jcr-tck</emphasis>
-            provides a separate testing project that executes all JackRabbit JCR TCK tests on a nightly basis to track implementation
+            provides a separate testing project that executes all Jackrabbit JCR TCK tests on a nightly basis to track implementation
             progress against the JCR 1.0 specification.  This module will likely be retired when the <code>dna-jcr</code> implementation
             is complete.
           </para>
