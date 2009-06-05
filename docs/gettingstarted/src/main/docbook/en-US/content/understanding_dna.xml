@@ -75,8 +75,8 @@
         <listitem>
           <para>
             <emphasis role="strong">DNA Federation</emphasis>
-            is actually special repository connector that accesses information from multiple other sources via connectors,
- 						making all this information look like it is part of a single, unified graph.  Because it is a connector,
+            is actually a special repository connector that accesses information from multiple other sources via connectors,
+ 						making all this information look like it is part of a single, unified repository.  Because it is a connector,
  						it can be used wherever connectors can be used.  And because it uses connectors, the federation connector
 						makes it possible to integrate a wide variety of external systems, like other JCR
             repositories, databases, applications, and services.
@@ -86,7 +86,7 @@
           <para>
             <emphasis role="strong">DNA JCR</emphasis>
             is an implementation of the JCR API that accesses the content from a single connector.  Our implementation has come a long
-						with in the 0.4 release, and is nearly Level 1 and Level 2 compliant.  Finishing the remaining features, including search
+						way, and is nearly Level 1 and Level 2 compliant.  Finishing the remaining features, including search
 						and query, are major objectives of our next release.
           </para>
         </listitem>
@@ -375,10 +375,9 @@
 			would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
 			This not only is a lot of work, but it often creates issues with knowing which information is accurate.
 		</para>
-    <para>The JBoss DNA allows lets us leave the information where it is, yet provide access to that information through
-			the JCR API.  The first benefit is that any existing applications that already use that information can keep using it.
-			Plus, if the underlying information changes, all the client applications see the correct information.  JCR clients
-			even get the benefit of using JCR observation to be notified of the changes.  And if a JBoss DNA repository is
+    <para>The JBoss DNA allows lets us leave the information where it is, yet provide access to that information to new applications through
+			the JCR API.  As the existing applications update the information in the original systems, applications using JBoss DNA also see
+			these updates.  JCR clients	even get the benefit of using JCR observation to be notified of the changes.  And if a JBoss DNA repository is
       configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
       those changes down to the original source.</para>
     <sect2 id="repository-connectors">
@@ -415,7 +414,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">JDBC Storage Connector</emphasis>
+            <emphasis role="strong">JPA-based Storage Connector</emphasis>
             - Store and access information in a relational database through JPA. Also useful for persisting information in the federated
             repository not stored elsewhere.
           </para>

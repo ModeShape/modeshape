@@ -16,8 +16,13 @@
       <directory>src/main/resources/</directory>
       <outputDirectory/>
       <includes>
+        <include>*.cnd</include>
         <include>*.xml</include>
       </includes>
+    </fileSet>
+    <fileSet>
+      <directory>src/main/resources/security/</directory>
+      <outputDirectory/>
     </fileSet>
   </fileSets>
   <files>

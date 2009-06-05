@@ -26,6 +26,10 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>src/main/resources/security/</directory>
+      <outputDirectory/>
+    </fileSet>
+    <fileSet>
       <directory>workspace/</directory>
       <outputDirectory/>
       <useDefaultExcludes>true</useDefaultExcludes>

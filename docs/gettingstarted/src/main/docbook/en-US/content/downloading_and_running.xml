@@ -168,24 +168,25 @@ $ ]]></programlisting>
 			      </para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>jackrabbitConfig.xml</code></emphasis>
-			        is the Jackrabbit configuration file, which is set up to use a transient in-memory repository.
-			      </para>
-				</listitem>
-				<listitem>
-					<para><emphasis role="strong"><code>jackrabbitNodeTypes.cnd</code></emphasis>
-			        defines the additional JCR node types used by this example.
-			      </para>
-				</listitem>
-				<listitem>
 					<para><emphasis role="strong"><code>sample1.mp3</code></emphasis>
 			        is a sample MP3 audio file you'll use later to upload into the repository.
 			      </para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>caution.gif</code></emphasis>, <emphasis role="strong"><code>caution.png</code></emphasis>, and <emphasis role="strong"><code>caution.jpg</code></emphasis>
+					<para><emphasis role="strong"><code>caution.gif</code></emphasis>, <emphasis role="strong"><code>caution.png</code></emphasis>, 
+					<emphasis role="strong"><code>caution.jpg</code></emphasis>, and <emphasis role="strong"><code>caution.pict</code></emphasis>
 			        are images that you'll use later and upload into the repository.
 			      </para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>sequencing.cnd</code></emphasis>
+			        is a Compact Node Definition (CND) file that defines the node types used in the output from the sequencers.
+			      </para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>security</code></emphasis> subdirectory containing several files related to the
+				  JAAS implementation used for authentication.
+				  </para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>project1</code></emphasis> subdirectory contains some Java source that can be loaded
@@ -199,14 +200,6 @@ $ ]]></programlisting>
 				</listitem>
 			</itemizedlist>
 		</para>
-    <note>
-			<para>JBoss DNA &versionNumber; and the sequencer example uses <ulink url="http://jackrabbit.apache.org/">Apache Jackrabbit</ulink> version 1.4.5.  
-      	This version is stable and used by a number of other projects and applications.  However, you should be able to use any
-      	version of Jackrabbit, as long as that version uses the same JCR API.</para>
-			<para>Just remember, if the version of Jackrabbit you want to use for these examples is not in the Maven repository,
-      	you'll have to either add it or add it locally.  For more information, see the <ulink url="http://maven.apache.org/">Maven documentation</ulink>.
-      </para>
-		</note>
 		<para>Similarly, the <code>examples/repository/target/</code> directory contains all of the generated output for the repository example, including
 			a <code>dna-example-repository-basic.dir/</code> subdirectory that contains the following:
 			<itemizedlist>
@@ -227,10 +220,21 @@ $ ]]></programlisting>
 					</para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
-					  example application imports into its "Configuration" repository and which defines how the application sets up access
-					  to the other example repositories.
+					<para><emphasis role="strong"><code>aircraft.cnd</code></emphasis>, <emphasis role="strong"><code>cars.cnd</code></emphasis>,
+					and <emphasis role="strong"><code>virtual.cnd</code></emphasis> are the CND files used for the three different JCR Repositories
+					set up in the example.  The <emphasis role="strong"><code>virtual.cnd</code></emphasis> is just a combination of the other two.
 					</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
+					  example application loads as its configuration and which defines the sources, repositories, sequencers (if used), and other
+					  components that make up the DNA JCR engine.
+					</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>security</code></emphasis> subdirectory containing several files related to the
+					  JAAS implementation used for authentication.
+				  </para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts
@@ -327,9 +331,8 @@ $ ]]></programlisting>
 	</sect1>
 	<sect1 id="running_repository_example">
 		<title>Running the repository example</title>
-		<para>The repository example consists of a client application that sets up three DNA repositories (named "Cars", "Airplanes", and 
-			"Configuration") as well as a federated repository ("Vehicles") that dynamically federates the information from the three other 
-			repositories and a cache repository (named "Cache") in which the federated content is stored.  
+		<para>The repository example consists of a client application that sets up two DNA repositories (named "Cars" and "Airplanes") and 
+			a federated repository ("Vehicles") that dynamically federates the information from the other two repositories.
 			The client application allows you to interactively navigate each of these repositories just as you would navigate the
 			directory structure on a file system.</para>
 		<para>This collection of repositories is shown in the following figure:
