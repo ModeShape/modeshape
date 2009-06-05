@@ -23,6 +23,7 @@
  */
 package org.jboss.example.dna.repository;
 
+import java.io.File;
 import javax.security.auth.callback.CallbackHandler;
 
 /**
@@ -32,6 +33,13 @@ public interface UserInterface {
 
     String getLocationOfRepositoryFiles();
 
+    File getRepositoryConfiguration();
+
+    String getLocationOfCndFiles();
+
     CallbackHandler getCallbackHandler();
+
+    void displayError( String activity,
+                       Throwable t );
 
 }

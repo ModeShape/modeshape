@@ -25,43 +25,127 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
-    <!-- Define the sources from which content is made available -->
-    <sources jcr:primaryType="nt:unstructured">
-        <source jcr:name="Cars" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" retryLimit="3" defaultWorkspaceName="default"/>
-        <source jcr:name="Aircraft" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
-            <defaultWorkspaceName>default</defaultWorkspaceName>
-        </source>
-        <source jcr:name="Vehicles">
-            <classname>org.jboss.dna.graph.connector.federated.FederatedRepositorySource</classname>
-            <workspaces>
-                <workspace jcr:name="default">
-                    <projections>
-                        <projection jcr:name="Main projection" source="Cars" workspace="default">
-                            <projectionRules>/Vehicles => /</projectionRules>
-                        </projection>
-                    </projections>
-                </workspace>
-            </workspaces>
-        </source>
-        <source jcr:name="Cache" classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
-            <defaultWorkspaceName>default</defaultWorkspaceName>
-        </source>
-    </sources>
-    <!-- Define the JCR repositories -->
-    <repositories>
-        <repository jcr:name="cars">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the DNA-specific Graph API.
+    In fact, this is how the DNA JCR implementation works.  You can think of these as being similar to
+    JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'Cars' repository is an in-memory source with a single default workspace (though others could be created, too).
+        -->
+        <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
+        <!-- 
+        The 'Aircraft' repository is also an in-memory source with a single default workspace.
+        By defining a default workspace, the clients using the Graph API will by default use that workspace,
+        but can easily say to use other workspaces (or create, clone, or destroy workspaces).
+        -->
+        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
+            <defaultWorkspaceName>workspace2</defaultWorkspaceName>
+        </dna:source>
+        <!-- 
+        The 'Vehicles' repository is a federated source that owns none of its own content, but instead
+        projects (in this case) all of the content from the 'Cars' source as if it appears
+        under '/Vehicles/Cars', while all the 'Aircraft' content appears under '/Vehicles/Aircraft'.
+        -->
+        <dna:source jcr:name="Vehicles">
+            <dna:classname>org.jboss.dna.graph.connector.federated.FederatedRepositorySource</dna:classname>
+            <dna:workspaces>
+                <!-- 
+                Unlike some other repository sources, federated sources have to define all of their workspaces,
+                including how and where the content is projected.  So, we only need a single workspace,
+                but we could actually define additional workspaces that expose various combinations or portions
+                of 'Cars' and/or 'Aircraft' content.
+                -->
+                <dna:workspace jcr:name="virtual">
+                    <dna:projections>
+                        <!-- Project the 'Cars' content, starting with the '/Cars' node. -->
+                        <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspace="workspace1">
+                            <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
+                        </dna:projection>
+                        <!-- Project the 'Aicraft' content, starting with the '/Aircraft' node. -->
+                        <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspace="workspace2">
+                            <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
+                        </dna:projection>
+                    </dna:projections>
+                </dna:workspace>
+            </dna:workspaces>
+        </dna:source>
+    </dna:sources>
+    <!-- 
+    Define the sequencers. This is an optional section. For this example, we're not using any sequencers. 
+    -->
+    <dna:sequencers>
+        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+            <dna:description>Image metadata sequencer</dna:description>        
+            <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
+            <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
+        </dna:sequencer-->
+    </dna:sequencers>
+    <!-- 
+    Define the mime type detectors. This is an optional section.  By default, each engine will use the 
+    MIME type detector that uses filename extensions.  So we wouldn't need to define the same detector again,
+    but this is how you'd define another extension.
+    -->
+    <dna:mimeTypeDetectors>
+        <dna:mimeTypeDetector jcr:name="Detector">
+            <dna:description>Standard extension-based MIME type detector</dna:description>        
+            <!-- 
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <dna:classname>org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
+            <!-- 
+            Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
+            the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
+            depending upon the classpath factory being used.  If there is only one 'name' in the classpath,
+            it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
+            'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
+             -->
+            <dna:classpath></dna:classpath>
+            <dna:classpath></dna:classpath>
+        </dna:mimeTypeDetector>
+    </dna:mimeTypeDetectors>
+    <!-- 
+    Define the JCR repositories 
+    -->
+    <dna:repositories>
+        <!-- 
+        Define a JCR repository that accesses the 'Cars' source directly.
+        This of course is optional, since we could access the same content through 'vehicles'.
+        -->
+        <dna:repository jcr:name="car repository">
             <!-- Specify the source that should be used for the repository -->
             <source>Cars</source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <options jcr:primaryType="dna:options"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+            </options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <nodeTypes jcr:primaryType="dna:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
             <namespaces jcr:primaryType="dna:namespaces">
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
             </namespaces>
-        </repository>
-        <repository jcr:name="vehicles">
+        </dna:repository>
+        <!-- 
+        Define a JCR repository that accesses the 'Aircraft' source directly.
+        This of course isn't really necessary for this example, since we could access the same content through 'vehicles'.
+        -->
+        <dna:repository jcr:name="aircraft repository">
+            <!-- Specify the source that should be used for the repository -->
+            <source>Aircraft</source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <options jcr:primaryType="dna:options"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+            </options>
+        </dna:repository>
+        <!-- 
+        Define a JCR repository that accesses the 'Vehicles' federated source directly,
+        which is defined in the sources to be a projection of the 'Cars' and 'Vehicles' content.
+        -->
+        <!-- Define a JCR repository that accesses the 'Vehicles' federated source directly -->
+        <dna:repository jcr:name="vehicles">
             <!-- Specify the source that should be used for the repository -->
             <source>Vehicles</source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
@@ -76,6 +160,6 @@
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
                 <air jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/aircraft/1.0"/>
             </namespaces>
-        </repository>
-    </repositories>
+        </dna:repository>
+    </dna:repositories>
 </configuration>

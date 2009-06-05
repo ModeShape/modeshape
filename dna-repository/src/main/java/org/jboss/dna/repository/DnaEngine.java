@@ -194,8 +194,26 @@ public class DnaEngine {
      */
     public final Graph getGraph( String sourceName ) {
         CheckArg.isNotNull(sourceName, "sourceName");
+        return getGraph(getExecutionContext(), sourceName);
+    }
+
+    /**
+     * Get a graph to the underlying source, using the supplied context. Note that the supplied context should be a derivative of
+     * the engine's {@link #getExecutionContext() context}.
+     * 
+     * @param context the context of execution for this graph; may not be null
+     * @param sourceName the name of the source
+     * @return the graph
+     * @throws IllegalArgumentException if the context or source name are null
+     * @throws RepositorySourceException if a source with the supplied name does not exist
+     * @throws IllegalStateException if this engine was not {@link #start() started}
+     */
+    public final Graph getGraph( ExecutionContext context,
+                                 String sourceName ) {
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(sourceName, "sourceName");
         checkRunning();
-        Graph graph = Graph.create(sourceName, getRepositoryService().getRepositoryLibrary(), getExecutionContext());
+        Graph graph = Graph.create(sourceName, getRepositoryService().getRepositoryLibrary(), context);
         if (configuration.getRepositorySource().getName().equals(sourceName) && configuration.getWorkspace() != null) {
             // set the workspace ...
             graph.useWorkspace(configuration.getWorkspace());

@@ -37,7 +37,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
 import javax.jcr.Value;
-import javax.naming.NamingException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
@@ -46,14 +45,14 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.jcr.JcrConfiguration;
+import org.jboss.dna.jcr.JcrEngine;
 import org.jboss.dna.jcr.JcrRepository;
-import org.jboss.dna.repository.RepositoryLibrary;
-import org.jboss.dna.repository.RepositoryService;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.xml.sax.SAXException;
 
 /**
@@ -68,6 +67,15 @@ public class RepositoryClient {
      * @param args
      */
     public static void main( String[] args ) {
+        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+        try {
+            idtrustConfig.config("security/jaas.conf.xml");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        // Now configure the repository client component ...
         RepositoryClient client = new RepositoryClient();
         for (String arg : args) {
             arg = arg.trim();
@@ -76,6 +84,8 @@ public class RepositoryClient {
             if (arg.equals("--jaas")) client.setJaasContextName(JAAS_LOGIN_CONTEXT_NAME);
             if (arg.startsWith("--jaas=") && arg.length() > 7) client.setJaasContextName(arg.substring(7).trim());
         }
+
+        // And have it use a ConsoleInput user interface ...
         client.setUserInterface(new ConsoleInput(client, args));
     }
 
@@ -84,13 +94,12 @@ public class RepositoryClient {
         DNA;
     }
 
-    private RepositoryLibrary sources;
-    private RepositoryService repositoryService;
     private Api api = Api.JCR;
     private String jaasContextName;
     private UserInterface userInterface;
     private LoginContext loginContext;
     private ExecutionContext context;
+    private JcrEngine engine;
 
     /**
      * @param userInterface Sets userInterface to the specified value.
@@ -118,65 +127,51 @@ public class RepositoryClient {
     }
 
     /**
-     * Start up the repositories. This method creates the necessary components and services, and initializes the in-memory
-     * repositories.
+     * Start up the repositories. This method loads the configuration, then creates the engine and starts it.
      * 
      * @throws IOException if there is a problem initializing the repositories from the files.
      * @throws SAXException if there is a problem with the SAX Parser
-     * @throws NamingException if there is a problem registering or looking up objects in JNDI
      */
-    public void startRepositories() throws IOException, SAXException, NamingException {
-        if (repositoryService != null) return; // already started
+    public void startRepositories() throws IOException, SAXException {
+        if (engine != null) return; // already started
 
-        // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd create the context
-        // by supplying LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
-        context = new ExecutionContext();
+        // Load the configuration from a file, as provided by the user interface ...
+        JcrConfiguration configuration = new JcrConfiguration();
+        configuration.loadFrom(userInterface.getRepositoryConfiguration());
 
-        // Create the library for the RepositorySource instances ...
-        sources = new RepositoryLibrary(context);
+        // Load the node types for each JCR repository, via a CND file. These could have been defined
+        // in the configuration file, but this approach is easy and allows us to define the node types
+        // using the CND format in one or multiple files.
+        String locationOfCndFiles = userInterface.getLocationOfCndFiles();
+        configuration.repository("aircraft repository").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
+        configuration.repository("car repository").addNodeTypes(locationOfCndFiles + "/cars.cnd");
+        configuration.repository("virtual").addNodeTypes(locationOfCndFiles + "/virtual.cnd");
 
-        // Load into the source manager the repository source for the configuration repository ...
-        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
-        configSource.setName("Configuration");
-        configSource.setDefaultWorkspaceName("default");
-        sources.addSource(configSource);
+        // Now create the JCR engine ...
+        engine = configuration.build();
+        engine.start();
 
         // For this example, we're using a couple of in-memory repositories (including one for the configuration repository).
         // Normally, these would exist already and would simply be accessed. But in this example, we're going to
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
-        Graph config = Graph.create("Configuration", sources, context);
-        config.useWorkspace("default");
-        config.importXmlFrom(location + "/configRepository.xml").into("/");
 
-        // Now instantiate the Repository Service ...
-        Path configRoot = context.getValueFactories().getPathFactory().create("/jcr:system");
-        repositoryService = new RepositoryService(sources, configSource.getName(), "default", configRoot, context);
-        repositoryService.getAdministrator().start();
-
-        // Now import the conten for two of the other in-memory repositories ...
-        Graph cars = Graph.create("Cars", sources, context);
+        // Now import the content for the two in-memory repositories ...
+        Graph cars = engine.getGraph("Cars");
         cars.importXmlFrom(location + "/cars.xml").into("/");
-
-        Graph aircraft = Graph.create("Aircraft", sources, context);
+        Graph aircraft = engine.getGraph("Aircraft");
         aircraft.importXmlFrom(location + "/aircraft.xml").into("/");
-
-        Graph vehicles = Graph.create("Vehicles", sources, context);
-        vehicles.create("/Vehicles");
-        vehicles.importXmlFrom(location + "/cars.xml").into("/Vehicles");
-        vehicles.importXmlFrom(location + "/aircraft.xml").into("/Vehicles");
-    
     }
 
     /**
      * Get the names of the repositories.
      * 
-     * @return the repository names
+     * @return the sorted but immutable list of repository names; never null
      */
     public List<String> getNamesOfRepositories() {
-        List<String> names = new ArrayList<String>(sources.getSourceNames());
+        List<String> names = new ArrayList<String>(engine.getRepositoryNames());
         Collections.sort(names);
-        return names;
+        return Collections.unmodifiableList(names);
     }
 
     /**
@@ -187,17 +182,13 @@ public class RepositoryClient {
      */
     public void shutdown() throws InterruptedException, LoginException {
         logout();
-        if (repositoryService == null) return;
+        if (engine == null) return;
         try {
-            // Shut down the various services ...
-            repositoryService.getAdministrator().shutdown();
-
-            // Shut down the manager of the RepositorySource instances, waiting until all connections are closed
-            sources.getAdministrator().shutdown();
-            sources.getAdministrator().awaitTermination(1, TimeUnit.SECONDS);
+            // Tell the engine to shut down, and then wait up to 5 seconds for it to complete...
+            engine.shutdown();
+            engine.awaitTermination(5, TimeUnit.SECONDS);
         } finally {
-            repositoryService = null;
-            sources = null;
+            engine = null;
         }
     }
 
@@ -251,13 +242,14 @@ public class RepositoryClient {
         LoginContext loginContext = getLoginContext(); // will ask user to authenticate if needed
         switch (api) {
             case JCR: {
-                JcrRepository jcrRepository = new JcrRepository(context, sources, sourceName);
+                JcrRepository jcrRepository = engine.getRepository(sourceName);
                 Session session = null;
                 if (loginContext != null) {
+                    // Could also use SimpleCredentials(username,password) too
                     Credentials credentials = new JaasCredentials(loginContext);
-                    session = jcrRepository.login(credentials, "default");
+                    session = jcrRepository.login(credentials);
                 } else {
-                    session = jcrRepository.login("default");
+                    session = jcrRepository.login();
                 }
                 try {
                     // Make the path relative to the root by removing the leading slash(es) ...
@@ -315,7 +307,7 @@ public class RepositoryClient {
                 try {
                     // Use the DNA Graph API to read the properties and children of the node ...
                     ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
-                    Graph graph = Graph.create(sourceName, sources, context);
+                    Graph graph = engine.getGraph(context, sourceName);
                     graph.useWorkspace("default");
                     org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
 
@@ -350,8 +342,8 @@ public class RepositoryClient {
      * @param input the input path
      * @return the resulting full and normalized path
      */
-    protected String buildPath( String current,
-                                String input ) {
+    public String buildPath( String current,
+                             String input ) {
         if (current == null) current = "/";
         if (input == null || input.length() == 0) return current;
         PathFactory factory = context.getValueFactories().getPathFactory();

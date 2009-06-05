@@ -274,8 +274,8 @@ public class ConsoleInput implements UserInterface {
      * @param activity the activity; may not be null but may be empty
      * @param t the exception; may not be null
      */
-    protected void displayError( String activity,
-                                 Throwable t ) {
+    public void displayError( String activity,
+                              Throwable t ) {
         assert activity != null;
         assert t != null;
         System.err.println();
@@ -297,6 +297,24 @@ public class ConsoleInput implements UserInterface {
      * @see org.jboss.example.dna.repository.UserInterface#getLocationOfRepositoryFiles()
      */
     public String getLocationOfRepositoryFiles() {
+        return new File("").getAbsolutePath();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.example.dna.repository.UserInterface#getRepositoryConfiguration()
+     */
+    public File getRepositoryConfiguration() {
+        return new File("configRepository.xml");
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.example.dna.repository.UserInterface#getLocationOfCndFiles()
+     */
+    public String getLocationOfCndFiles() {
         return new File("").getAbsolutePath();
     }
 

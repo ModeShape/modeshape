@@ -23,8 +23,11 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Repository;
@@ -88,6 +91,21 @@ public class JcrEngine extends DnaEngine {
                 repositories.put(repositoryName, repository);
             }
             return repository;
+        } finally {
+            repositoriesLock.unlock();
+        }
+    }
+
+    /**
+     * Get the names of the JCR repositories.
+     * 
+     * @return the immutable names of the repositories that exist at the time this method is called
+     */
+    public Set<String> getRepositoryNames() {
+        checkRunning();
+        try {
+            repositoriesLock.lock();
+            return Collections.unmodifiableSet(new HashSet<String>(repositories.keySet()));
         } finally {
             repositoriesLock.unlock();
         }

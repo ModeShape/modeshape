@@ -61,10 +61,9 @@ public class SequencingClient {
 
     public static void main( String[] args ) {
         // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
-        String configFile = "security/jaas.conf.xml";
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
-            idtrustConfig.config(configFile);
+            idtrustConfig.config("security/jaas.conf.xml");
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
