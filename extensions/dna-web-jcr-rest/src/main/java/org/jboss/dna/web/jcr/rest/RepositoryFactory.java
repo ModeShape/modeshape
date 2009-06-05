@@ -22,9 +22,12 @@ public class RepositoryFactory {
         try {
             Class<? extends RepositoryProvider> providerClass = Class.forName(className).asSubclass(RepositoryProvider.class);
             provider = providerClass.newInstance();
+            
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
+
+        provider.startup(context);
     }
 
     public static Repository getRepository( String repositoryName ) throws RepositoryException {

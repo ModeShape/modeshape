@@ -24,8 +24,8 @@
 package org.jboss.dna.web.jcr.rest;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
@@ -37,6 +37,7 @@ import java.util.Set;
 import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 
 public class JcrResourcesTest {
@@ -44,6 +45,19 @@ public class JcrResourcesTest {
     private static final String SERVER_CONTEXT = "/resources";
     private static final String SERVER_URL = "http://localhost:8080" + SERVER_CONTEXT;
 
+    @Before
+    public void beforeEach() {
+
+//        final String login ="dnauser";
+//        final String password ="password";
+//
+//        Authenticator.setDefault(new Authenticator() {
+//            protected PasswordAuthentication getPasswordAuthentication() {
+//                return new PasswordAuthentication (login, password.toCharArray());
+//            }
+//        });
+    }
+    
     private String getResponseFor( HttpURLConnection connection ) throws IOException {
         StringBuffer buff = new StringBuffer();
 
@@ -69,7 +83,7 @@ public class JcrResourcesTest {
 
         JSONObject objFromResponse = new JSONObject(body);
         JSONObject expected = new JSONObject(
-                                             "{\"JCR%20Repository\":{\"repository\":{\"name\":\"JCR%20Repository\",\"resources\":{\"workspaces\":\"/resources/JCR%20Repository\"}}}}");
+                                             "{\"dna%3arepository\":{\"repository\":{\"name\":\"dna%3arepository\",\"resources\":{\"workspaces\":\"/resources/dna%3arepository\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         assertThat(objFromResponse.toString(), is(expected.toString()));
@@ -78,7 +92,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldServeListOfWorkspacesForValidRepository() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -88,7 +102,7 @@ public class JcrResourcesTest {
 
         JSONObject objFromResponse = new JSONObject(body);
         JSONObject expected = new JSONObject(
-                                             "{\"%3cdefault%3e\":{\"workspace\":{\"name\":\"%3cdefault%3e\",\"resources\":{\"items\":\"/resources/JCR%20Repository/%3cdefault%3e/items\"}}}}");
+                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"items\":\"/resources/dna%3arepository/default/items\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         assertThat(objFromResponse.toString(), is(expected.toString()));
@@ -110,7 +124,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldRetrieveRootNodeForValidRepository() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -136,7 +150,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldRetrieveRootNodeAndChildrenWhenDepthSet() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items?dna:depth=1");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items?dna:depth=1");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -171,7 +185,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldRetrieveNodeAndChildrenWhenDepthSet() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/jcr:system?dna:depth=1");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/jcr:system?dna:depth=1");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -214,7 +228,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldNotRetrieveNonExistentNode() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/foo");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/foo");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -227,7 +241,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldNotRetrieveNonExistentProperty() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/jcr:system/foobar");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/jcr:system/foobar");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -240,7 +254,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldRetrieveProperty() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/jcr:system/jcr:primaryType");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/jcr:system/jcr:primaryType");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -255,7 +269,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeA");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeA");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -287,7 +301,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/noPrimaryType");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/noPrimaryType");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -311,7 +325,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/withMixinType");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/withMixinType");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -338,7 +352,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/withMixinType");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/withMixinType");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         // Make sure that we can retrieve the node with a GET
@@ -367,7 +381,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldNotPostNodeAtInvalidParentPath() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/foo/bar");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/foo/bar");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -381,7 +395,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldNotPostNodeWithInvalidPrimaryType() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/invalidPrimaryType");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidPrimaryType");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -394,7 +408,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/invalidPrimaryType");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidPrimaryType");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -408,7 +422,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldPostNodeHierarchy() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nestedPost");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nestedPost");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -423,7 +437,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nestedPost?dna:depth=1");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nestedPost?dna:depth=1");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         // Make sure that we can retrieve the node with a GET
@@ -469,7 +483,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldFailWholeTransactionIfOneNodeIsBad() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/invalidNestedPost");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidNestedPost");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -483,7 +497,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/invalidNestedPost?dna:depth=1");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidNestedPost?dna:depth=1");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         // Make sure that we can retrieve the node with a GET
@@ -498,7 +512,7 @@ public class JcrResourcesTest {
 
     @Test 
     public void shouldNotDeleteNonExistentItem() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/invalidItemForDelete");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidItemForDelete");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -513,7 +527,7 @@ public class JcrResourcesTest {
     public void shouldDeleteExtantNode() throws Exception {
 
         // Create the node
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForDeletion");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForDeletion");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -543,7 +557,7 @@ public class JcrResourcesTest {
         connection.disconnect();
 
         // Confirm that it exists
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForDeletion");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -554,7 +568,7 @@ public class JcrResourcesTest {
         connection.disconnect();
 
         // Delete the node
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForDeletion");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -565,7 +579,7 @@ public class JcrResourcesTest {
         connection.disconnect();
 
         // Confirm that it no longer exists
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForDeletion");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -578,7 +592,7 @@ public class JcrResourcesTest {
 
     @Test 
     public void shouldDeleteExtantProperty() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/propertyForDeletion");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -592,7 +606,7 @@ public class JcrResourcesTest {
         connection.disconnect();
         
         // Confirm that it exists
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/propertyForDeletion");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -619,7 +633,7 @@ public class JcrResourcesTest {
         connection.disconnect();
 
         // Delete the property
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/propertyForDeletion/multiValuedProperty");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion/multiValuedProperty");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -630,7 +644,7 @@ public class JcrResourcesTest {
         connection.disconnect();
 
         // Confirm that it no longer exists
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/propertyForDeletion");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -654,7 +668,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldNotBeAbleToPutAtInvalidPath() throws Exception {
 
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nonexistantNode");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nonexistantNode");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -670,7 +684,7 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldBeAbleToPutValueToProperty() throws Exception {
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForPutProperty");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutProperty");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -683,7 +697,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForPutProperty/testProperty");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutProperty/testProperty");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -710,7 +724,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldNotBeAbleToPutPropertiesToNode() throws Exception {
 
-        URL postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForPutProperties");
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutProperties");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -723,7 +737,7 @@ public class JcrResourcesTest {
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
-        postUrl = new URL(SERVER_URL + "/JCR%20Repository/%3cdefault%3e/items/nodeForPutProperties");
+        postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutProperties");
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);

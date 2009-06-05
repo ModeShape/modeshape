@@ -3,6 +3,7 @@ package org.jboss.dna.web.jcr.rest.spi;
 import java.util.Set;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.servlet.ServletContext;
 
 /**
  * Interface for any class that provides access to one or more local JCR repositories. Repository providers must provide a public,
@@ -27,6 +28,13 @@ public interface RepositoryProvider {
      */
     Set<String> getJcrRepositoryNames();
 
+    /**
+     * Signals the repository provider that it should initialize itself based on the provided {@link ServletContext servlet context}
+     * and begin accepting connections.
+     * 
+     * @param context the servlet context for the REST servlet
+     */
+    void startup(ServletContext context);
     /**
      * Signals the repository provider that it should complete any pending transactions, shutdown, and release
      * any external resource held.

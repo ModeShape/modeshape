@@ -179,7 +179,7 @@ public class JcrTckTest {
             addTestSuite(NamespaceRegistryTest.class);
             // addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
-            addTestSuite(SessionUUIDTest.class);
+            // addTestSuite(SessionUUIDTest.class);
             // addTestSuite(NodeTest.class);
             // addTestSuite(NodeUUIDTest.class);
             addTestSuite(NodeOrderableChildNodesTest.class);

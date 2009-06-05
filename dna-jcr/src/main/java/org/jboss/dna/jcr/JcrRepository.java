@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -358,7 +359,7 @@ public class JcrRepository implements Repository {
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext = null;
         if (credentials == null) {
-            execContext = executionContext;
+            execContext = executionContext.create(AccessController.getContext());
         } else {
             try {
                 // Check if credentials provide a login context

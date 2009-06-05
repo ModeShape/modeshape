@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
-        "http://java.sun.com/dtd/web-app_2_3.dtd">
+                         "http://java.sun.com/dtd/web-app_2_3.dtd">
 	<!--
 		JBoss DNA (http://www.jboss.org/dna) See the COPYRIGHT.txt file
 		distributed with this work for information regarding copyright
@@ -21,45 +21,55 @@
 	-->
 <web-app>
 	<display-name>JBoss DNA JCR RESTful Interface</display-name>
-
 	<context-param>
 		<param-name>org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
 	</context-param>
-
+	<context-param>
+		<param-name>org.jboss.dna.web.jcr.rest.CONFIG_FILE</param-name>
+		<param-value>/configRepository.xml</param-value>
+	</context-param>
 	<context-param>
 		<param-name>resteasy.providers</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.JcrResources$NotFoundExceptionMapper,
-					 org.jboss.dna.web.jcr.rest.JcrResources$JSONExceptionMapper,
-					 org.jboss.dna.web.jcr.rest.JcrResources$RepositoryExceptionMapper
-		</param-value>
+			org.jboss.dna.web.jcr.rest.JcrResources$JSONExceptionMapper,
+			org.jboss.dna.web.jcr.rest.JcrResources$RepositoryExceptionMapper</param-value>
 	</context-param>
-
 	<context-param>
 		<param-name>javax.ws.rs.Application</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
 	</context-param>
-
 	<listener>
-		<listener-class>
-			org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
-      </listener-class>
+		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
 	</listener>
-
 	<listener>
 		<listener-class>org.jboss.dna.web.jcr.rest.DnaJcrDeployer</listener-class>
 	</listener>
-
 	<servlet>
 		<servlet-name>Resteasy</servlet-name>
-		<servlet-class>
-			org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher
-      </servlet-class>
+		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>Resteasy</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
-
+<!-- 	
+	<security-constraint>
+		<display-name>DNA REST</display-name>
+		<web-resource-collection>
+			<web-resource-name>RestEasy</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>connect</role-name>
+		</auth-constraint>
+	</security-constraint>
+	<login-config>
+		<auth-method>BASIC</auth-method>
+		<realm-name>MyRealm</realm-name>
+	</login-config>
+	<security-role>
+		<role-name>connect</role-name>
+	</security-role>
+ -->	
 </web-app>

@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.jcr.Credentials;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -39,7 +38,6 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.servlet.http.HttpServletRequest;
@@ -152,13 +150,12 @@ public class JcrResources {
         Repository repository;
         try {
             repository = getRepository(repositoryNameFor(rawRepositoryName));
+            
         } catch (RepositoryException re) {
             throw new NotFoundException(re.getMessage(), re);
         }
-
-        Credentials credentials = new SimpleCredentials("dnauser", "password".toCharArray());
-
-        return repository.login(credentials, workspaceNameFor(rawWorkspaceName));
+        
+        return repository.login(null, workspaceNameFor(rawWorkspaceName));
     }
 
     /**
@@ -202,7 +199,7 @@ public class JcrResources {
     public Map<String, WorkspaceEntry> getWorkspaces( @Context HttpServletRequest request,
                                                       @PathParam( "repositoryName" ) String rawRepositoryName )
         throws RepositoryException, IOException {
-
+        
         assert request != null;
         assert rawRepositoryName != null;
 
