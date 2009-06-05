@@ -97,18 +97,22 @@ public class JcrEngine extends DnaEngine {
     }
 
     /**
-     * Get the names of the JCR repositories.
+     * Get the names of each of the JCR repositories.
      * 
      * @return the immutable names of the repositories that exist at the time this method is called
      */
     public Set<String> getRepositoryNames() {
         checkRunning();
-        try {
-            repositoriesLock.lock();
-            return Collections.unmodifiableSet(new HashSet<String>(repositories.keySet()));
-        } finally {
-            repositoriesLock.unlock();
+        Set<String> results = new HashSet<String>();
+        // Read the names of the JCR repositories from the configuration (not from the Repository objects used so far) ...
+        PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
+        Path repositoriesPath = pathFactory.create(configuration.getPath(), DnaLexicon.REPOSITORIES);
+        Graph configuration = getConfigurationGraph();
+        for (Location child : configuration.getChildren().of(repositoriesPath)) {
+            Name repositoryName = child.getPath().getLastSegment().getName();
+            results.add(readable(repositoryName));
         }
+        return Collections.unmodifiableSet(results);
     }
 
     protected JcrRepository doCreateJcrRepository( String repositoryName ) throws RepositoryException, PathNotFoundException {
