@@ -23,26 +23,14 @@
  */
 package org.jboss.dna.graph;
 
-import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.TextOutputCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.spi.LoginModule;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.graph.connector.federation.FederatedLexicon;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
@@ -64,7 +52,7 @@ import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
  * ExecutionContext instances are {@link Immutable immutable}, so components may hold onto references to them without concern of
  * those contexts changing. Contexts may be used to create other contexts that vary the environment and/or security context. For
  * example, an ExecutionContext could be used to create another context that references the same {@link #getNamespaceRegistry()
- * namespace registry} but which has a different {@link #getSubject() JAAS subject}.
+ * namespace registry} but which has a different {@link #getSecurityContext() security context}.
  * </p>
  * 
  * @author Randall Hauch
@@ -74,13 +62,11 @@ import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
 public class ExecutionContext implements ClassLoaderFactory, Cloneable {
 
     private final ClassLoaderFactory classLoaderFactory;
-    private final LoginContext loginContext;
-    private final AccessControlContext accessControlContext;
-    private final Subject subject;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
     private final MimeTypeDetector mimeTypeDetector;
+    private final SecurityContext securityContext;
 
     /**
      * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
@@ -88,8 +74,10 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * {@link #getNamespaceRegistry() namespace registry}.
      */
     public ExecutionContext() {
-        this(null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
+        assert securityContext != null;
+
     }
 
     /**
@@ -100,9 +88,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     protected ExecutionContext( ExecutionContext original ) {
         CheckArg.isNotNull(original, "original");
-        this.loginContext = original.getLoginContext();
-        this.accessControlContext = original.getAccessControlContext();
-        this.subject = original.getSubject();
+        this.securityContext = original.getSecurityContext();
         this.namespaceRegistry = original.getNamespaceRegistry();
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
@@ -114,37 +100,14 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * Create a copy of the supplied execution context, but use the supplied {@link AccessControlContext} instead.
      * 
      * @param original the original
-     * @param accessControlContext the access control context
+     * @param securityContext the security context
      * @throws IllegalArgumentException if the original or access control context are is null
      */
     protected ExecutionContext( ExecutionContext original,
-                                AccessControlContext accessControlContext ) {
+                                SecurityContext securityContext ) {
         CheckArg.isNotNull(original, "original");
-        CheckArg.isNotNull(accessControlContext, "accessControlContext");
-        this.loginContext = null;
-        this.accessControlContext = accessControlContext;
-        this.subject = Subject.getSubject(this.accessControlContext);
-        this.namespaceRegistry = original.getNamespaceRegistry();
-        this.valueFactories = original.getValueFactories();
-        this.propertyFactory = original.getPropertyFactory();
-        this.classLoaderFactory = original.getClassLoaderFactory();
-        this.mimeTypeDetector = original.getMimeTypeDetector();
-    }
-
-    /**
-     * Create a copy of the supplied execution context, but use the supplied {@link LoginContext} instead.
-     * 
-     * @param original the original
-     * @param loginContext the login context
-     * @throws IllegalArgumentException if the original or login context are is null
-     */
-    protected ExecutionContext( ExecutionContext original,
-                                LoginContext loginContext ) {
-        CheckArg.isNotNull(original, "original");
-        CheckArg.isNotNull(loginContext, "loginContext");
-        this.loginContext = loginContext;
-        this.accessControlContext = null;
-        this.subject = this.loginContext.getSubject();
+        CheckArg.isNotNull(securityContext, "securityContext");
+        this.securityContext = securityContext;
         this.namespaceRegistry = original.getNamespaceRegistry();
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
@@ -155,10 +118,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     /**
      * Create an instance of the execution context by supplying all parameters.
      * 
-     * @param loginContext the login context, or null if the {@link #getSubject() subject} is to be retrieved from the
-     *        {@link AccessController#getContext() current calling context}.
-     * @param accessControlContext the access control context, or null if a {@link LoginContext} is provided or if the
-     *        {@link AccessController#getContext() current calling context} should be used
+     * @param securityContext the security context, or null if there is no associated authenticated user
      * @param namespaceRegistry the namespace registry implementation, or null if a thread-safe version of
      *        {@link SimpleNamespaceRegistry} instance should be used
      * @param valueFactories the {@link ValueFactories} implementation, or null if a {@link StandardValueFactories} instance
@@ -170,20 +130,14 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
      */
-    protected ExecutionContext( LoginContext loginContext,
-                                AccessControlContext accessControlContext,
+    protected ExecutionContext( SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
                                 ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
                                 MimeTypeDetector mimeTypeDetector,
                                 ClassLoaderFactory classLoaderFactory ) {
-        this.loginContext = loginContext;
-        this.accessControlContext = accessControlContext;
-        if (loginContext == null) {
-            this.subject = Subject.getSubject(accessControlContext == null ? AccessController.getContext() : accessControlContext);
-        } else {
-            this.subject = loginContext.getSubject();
-        }
+        assert securityContext != null;
+        this.securityContext = securityContext;
         this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
                                                                                                                  new SimpleNamespaceRegistry());
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
@@ -237,21 +191,12 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     /**
-     * Get the {@link AccessControlContext JAAS access control context} for this context.
+     * Get the {@link SecurityContext security context} for this context.
      * 
-     * @return the access control context; may be <code>null</code>
+     * @return the security context; may be <code>null</code>
      */
-    public AccessControlContext getAccessControlContext() {
-        return this.accessControlContext;
-    }
-
-    /**
-     * Get the {@link LoginContext JAAS login context} for this context.
-     * 
-     * @return the login context; may be <code>null</code>
-     */
-    public LoginContext getLoginContext() {
-        return this.loginContext;
+    public SecurityContext getSecurityContext() {
+        return this.securityContext;
     }
 
     /**
@@ -270,16 +215,6 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public PropertyFactory getPropertyFactory() {
         return this.propertyFactory;
-    }
-
-    /**
-     * Get the JAAS subject for which this context was created.
-     * 
-     * @return the subject; should never be null if JAAS is used, but will be null if there is no
-     *         {@link #getAccessControlContext() access control context} or {@link #getLoginContext() login context}.
-     */
-    public Subject getSubject() {
-        return this.subject;
     }
 
     /**
@@ -312,8 +247,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(this.getLoginContext(), this.getAccessControlContext(), namespaceRegistry, null, null,
-                                    this.getMimeTypeDetector(), this.getClassLoaderFactory());
+        return new ExecutionContext(this.getSecurityContext(), namespaceRegistry, null, null, this.getMimeTypeDetector(),
+                                    this.getClassLoaderFactory());
     }
 
     /**
@@ -327,8 +262,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(getLoginContext(), getAccessControlContext(), getNamespaceRegistry(), getValueFactories(),
-                                    getPropertyFactory(), mimeTypeDetector, getClassLoaderFactory());
+        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    mimeTypeDetector, getClassLoaderFactory());
     }
 
     /**
@@ -342,132 +277,23 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(getLoginContext(), getAccessControlContext(), getNamespaceRegistry(), getValueFactories(),
-                                    getPropertyFactory(), getMimeTypeDetector(), classLoaderFactory);
+        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), classLoaderFactory);
     }
 
     /**
-     * Creates an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link AccessControlContext access control context}.
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied {@link SecurityContext
+     * security context}.
      * 
-     * @param accessControlContext the JAAS access control context that should be used
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws IllegalArgumentException if <code>accessControlContext</code> is <code>null</code>.
-     */
-    public ExecutionContext create( AccessControlContext accessControlContext ) {
-        return new ExecutionContext(this, accessControlContext);
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied {@link LoginContext}. A
-     * LoginContext has a variety of constructors, including contructors that take combinations of
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}, {@link Subject subject},
-     * {@link CallbackHandler callback handlers}, and a {@link Configuration JAAS configuration}.
-     * 
-     * @param loginContext the JAAS login context
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws IllegalArgumentException if the <code>loginContext</code> is null
-     */
-    public ExecutionContext create( LoginContext loginContext ) {
-        return new ExecutionContext(this, loginContext);
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}.
-     * 
-     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
+     * @param securityContext the new security context to use; may be null
      * @return the execution context that is identical with this execution context, but with a different security context; never
      *         null
      * @throws IllegalArgumentException if the <code>name</code> is null
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
      *         default callback handler JAAS property was not set or could not be loaded
      */
-    public ExecutionContext with( String name ) throws LoginException {
-        return new ExecutionContext(this, new LoginContext(name));
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link Subject JAAS subject}.
-     * 
-     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
-     * @param subject the subject to authenticate
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), if the default
-     *         callback handler JAAS property was not set or could not be loaded, or if the <code>subject</code> is null or
-     *         unknown
-     */
-    public ExecutionContext with( String name,
-                                  Subject subject ) throws LoginException {
-        return new ExecutionContext(this, new LoginContext(name, subject));
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link CallbackHandler JAAS
-     * callback handler} (used to handle authentication callbacks).
-     * 
-     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
-     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user to
-     *        authenticate
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
-     *         <code>callbackHandler</code> is null
-     */
-    public ExecutionContext with( String name,
-                                  CallbackHandler callbackHandler ) throws LoginException {
-        LoginContext loginContext = new LoginContext(name, callbackHandler);
-        loginContext.login();
-
-        return new ExecutionContext(this, loginContext);
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link CallbackHandler JAAS
-     * callback handler} to create a new {@link LoginContext login context} with the given user ID and password.
-     * 
-     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
-     * @param userId the user ID to use for authentication
-     * @param password the password to use for authentication
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
-     *         <code>callbackHandler</code> is null
-     */
-    public ExecutionContext with( String name,
-                                  String userId,
-                                  char[] password ) throws LoginException {
-        return this.with(name, new UserPasswordCallbackHandler(userId, password));
-    }
-
-    /**
-     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
-     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}, a {@link Subject JAAS subject}, and
-     * a {@link CallbackHandler JAAS callback handler} (used to handle authentication callbacks).
-     * 
-     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
-     * @param subject the subject to authenticate
-     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user to
-     *        authenticate
-     * @return the execution context that is identical with this execution context, but with a different security context; never
-     *         null
-     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), if the default
-     *         callback handler JAAS property was not set or could not be loaded, if the <code>subject</code> is null or unknown,
-     *         or if the <code>callbackHandler</code> is null
-     */
-    public ExecutionContext with( String name,
-                                  Subject subject,
-                                  CallbackHandler callbackHandler ) throws LoginException {
-        LoginContext loginContext = new LoginContext(name, subject, callbackHandler);
-        loginContext.login();
-
-        return new ExecutionContext(this, loginContext);
+    public ExecutionContext with( SecurityContext securityContext ) throws LoginException {
+        return new ExecutionContext(this, securityContext);
     }
 
     /**
@@ -487,7 +313,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @Override
     public String toString() {
-        return "Execution context for " + getSubject();
+        return "Execution context for " + getSecurityContext() == null ? "null" : getSecurityContext().getUserName();
     }
 
     /**
@@ -507,106 +333,23 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     /**
-     * A simple {@link CallbackHandler callback handler} implementation that attempts to provide a user ID and password to any
-     * callbacks that it handles.
+     * Default security context that confers no roles.
      */
-    protected final class UserPasswordCallbackHandler implements CallbackHandler {
+    private static class NullSecurityContext implements SecurityContext {
 
-        private static final boolean LOG_TO_CONSOLE = false;
-
-        private final String userId;
-        private final char[] password;
-
-        protected UserPasswordCallbackHandler( String userId,
-                                               char[] password ) {
-            this.userId = userId;
-            this.password = password.clone();
+        @Override
+        public String getUserName() {
+            return null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.security.auth.callback.CallbackHandler#handle(javax.security.auth.callback.Callback[])
-         */
-        public void handle( Callback[] callbacks ) throws UnsupportedCallbackException, IOException {
-            boolean userSet = false;
-            boolean passwordSet = false;
-            
-            for (int i = 0; i < callbacks.length; i++) {
-                if (callbacks[i] instanceof TextOutputCallback) {
-
-                    // display the message according to the specified type
-                    TextOutputCallback toc = (TextOutputCallback)callbacks[i];
-                    if (!LOG_TO_CONSOLE) {
-                        continue;
-                    }
-
-                    switch (toc.getMessageType()) {
-                        case TextOutputCallback.INFORMATION:
-                            System.out.println(toc.getMessage());
-                            break;
-                        case TextOutputCallback.ERROR:
-                            System.out.println("ERROR: " + toc.getMessage());
-                            break;
-                        case TextOutputCallback.WARNING:
-                            System.out.println("WARNING: " + toc.getMessage());
-                            break;
-                        default:
-                            throw new IOException("Unsupported message type: " + toc.getMessageType());
-                    }
-
-                } else if (callbacks[i] instanceof NameCallback) {
-
-                    // prompt the user for a username
-                    NameCallback nc = (NameCallback)callbacks[i];
-
-                    if (LOG_TO_CONSOLE) {
-                        // ignore the provided defaultName
-                        System.out.print(nc.getPrompt());
-                        System.out.flush();
-                    }
-
-                    nc.setName(this.userId);
-                    userSet = true;
-
-                } else if (callbacks[i] instanceof PasswordCallback) {
-
-                    // prompt the user for sensitive information
-                    PasswordCallback pc = (PasswordCallback)callbacks[i];
-                    if (LOG_TO_CONSOLE) {
-                        System.out.print(pc.getPrompt());
-                        System.out.flush();
-                    }
-                    pc.setPassword(this.password);
-                    passwordSet = true;
-
-                } else {
-                    /*
-                     * Jetty uses its own callback for setting the password.  Since we're using Jetty for integration
-                     * testing of the web project(s), we have to accomodate this.  Rather than introducing a direct
-                     * dependency, we'll add code to handle the case of unexpected callback handlers with a setObject method.
-                     */
-                    try {
-                        // Assume that a callback chain will ask for the user before the password
-                        if (!userSet) {
-                            new Reflection(callbacks[i].getClass()).invokeSetterMethodOnTarget("object", callbacks[i], this.userId);
-                            userSet = true;
-                        }
-                        else if (!passwordSet) {
-                            // Jetty also seems to eschew passing passwords as char arrays
-                            new Reflection(callbacks[i].getClass()).invokeSetterMethodOnTarget("object", callbacks[i], new String(this.password));
-                            passwordSet = true;
-                        }
-                        // It worked - need to continue processing the callbacks
-                        continue;
-                    } catch (Exception ex) {
-                        // If the property cannot be set, fall through to the failure
-                    }
-                    throw new UnsupportedCallbackException(callbacks[i], "Unrecognized Callback: "
-                                                           + callbacks[i].getClass().getName());
-                }
-            }
-
+        @Override
+        public boolean hasRole( String roleName ) {
+            return false;
         }
+
+        @Override
+        public void logout() {
+        }
+        
     }
 }

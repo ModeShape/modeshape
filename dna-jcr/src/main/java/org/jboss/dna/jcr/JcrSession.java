@@ -27,11 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
-import java.security.Principal;
-import java.security.acl.Group;
 import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -53,13 +49,11 @@ import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
@@ -121,11 +115,6 @@ class JcrSession implements Session {
      */
     private final Graph graph;
 
-    /**
-     * The set of assigned entitlements for the logged-in subject
-     */
-    private Set<String> entitlements;
-
     private final SessionCache cache;
 
     /**
@@ -164,29 +153,13 @@ class JcrSession implements Session {
                                       this.graph);
         this.isLive = true;
 
-        Subject subject = this.executionContext.getSubject();
-        this.entitlements = new HashSet<String>();
-
-        if (subject != null) {
-            for (Principal principal : subject.getPrincipals()) {
-                if (principal instanceof Group) {
-                    Group group = (Group)principal;
-                    Enumeration<? extends Principal> roles = group.members();
-
-                    while (roles.hasMoreElements()) {
-                        Principal role = roles.nextElement();
-                        entitlements.add(role.getName());
-                    }
-                }
-            }
-        }
-        assert this.repository != null;
         assert this.sessionAttributes != null;
         assert this.workspace != null;
+        assert this.repository != null;
         assert this.executionContext != null;
         assert this.sessionRegistry != null;
         assert this.graph != null;
-        assert this.entitlements != null;
+        assert this.executionContext.getSecurityContext() != null;
     }
 
     // Added to facilitate mock testing of items without necessarily requiring an entire repository structure to be built
@@ -310,15 +283,13 @@ class JcrSession implements Session {
     }
 
     /**
-     * Returns the entitlements (permissions) available to the {@link ExecutionContext#getSubject() subject} for this session.
-     * <p>
-     * Entitlements are exposed through this method to allow for easier mock testing.
-     * </p>
+     * Returns whether the authenticated user has the given role.
      * 
-     * @return the entitlements (permissions) available to the {@link ExecutionContext#getSubject() subject} for this session.
+     * @param roleName the name of the role to check
+     * @return true if the user has the role and is logged in; false otherwise
      */
-    Set<String> entitlements() {
-        return this.entitlements;
+    final boolean hasRole( String roleName ) {
+        return getExecutionContext().getSecurityContext().hasRole(roleName);
     }
 
     /**
@@ -334,22 +305,21 @@ class JcrSession implements Session {
         this.checkPermission(executionContext.getValueFactories().getPathFactory().create(path), actions);
     }
 
-    public void checkPermission( Path path,
+    void checkPermission( Path path,
                                  String actions ) {
 
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
 
-        Set<String> entitlements = entitlements();
         if ("read".equals(actions)) {
             // readonly access is sufficient
-            if (entitlements.contains(READ_PERMISSION) || entitlements.contains(READ_PERMISSION + "." + this.workspace.getName())) {
+            if (hasRole(READ_PERMISSION) || hasRole(READ_PERMISSION + "." + this.workspace.getName())) {
                 return;
             }
         }
 
         // need readwrite access
-        if (entitlements.contains(WRITE_PERMISSION) || entitlements.contains(WRITE_PERMISSION + "." + this.workspace.getName())) {
+        if (hasRole(WRITE_PERMISSION) || hasRole(WRITE_PERMISSION + "." + this.workspace.getName())) {
             return;
         }
 
@@ -522,13 +492,10 @@ class JcrSession implements Session {
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#getUserID()
+     * @see SecurityContext#getUserName()
      */
     public String getUserID() {
-        Subject subject = executionContext.getSubject();
-        if (subject == null) return null;
-        Set<Principal> principals = subject.getPrincipals();
-        if (principals == null || principals.isEmpty()) return null;
-        return principals.iterator().next().getName();
+        return executionContext.getSecurityContext().getUserName();
     }
 
     /**
@@ -736,15 +703,8 @@ class JcrSession implements Session {
         if (!isLive()) {
             return;
         }
-        LoginContext loginContext = executionContext.getLoginContext();
-        if (loginContext != null) {
-            try {
-                loginContext.logout();
-            } catch (LoginException error) {
-                // TODO: Change to DnaException once DNA-180 is addressed
-                throw new RuntimeException(error);
-            }
-        }
+
+        this.executionContext.getSecurityContext().logout();
         isLive = false;
     }
 

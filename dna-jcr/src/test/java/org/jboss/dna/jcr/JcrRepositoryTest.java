@@ -29,24 +29,29 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
@@ -59,19 +64,23 @@ public class JcrRepositoryTest {
     private InMemoryRepositorySource source;
     private Map<String, String> descriptors;
     private RepositoryConnectionFactory connectionFactory;
-    protected AccessControlContext accessControlContext = AccessController.getContext();
-    @Mock
-    LoginContext loginContext;
-    private Credentials credentials = new Credentials() {
+    private Credentials credentials;
 
-        private static final long serialVersionUID = 1L;
+    @BeforeClass
+    public static void beforeClass() {
+        // Initialize IDTrust
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 
-        @SuppressWarnings( "unused" )
-        public AccessControlContext getAccessControlContext() {
-            return accessControlContext;
+        try {
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
-    };
+    }
 
+
+    
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -83,7 +92,8 @@ public class JcrRepositoryTest {
 
         // Set up the execution context ...
         context = new ExecutionContext();
-
+        credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
+        
         // Stub out the connection factory ...
         connectionFactory = new RepositoryConnectionFactory() {
             /**
@@ -170,38 +180,45 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor("property"), is("value"));
     }
 
+    @Test(expected=javax.jcr.LoginException.class)
+    public void shouldNotAllowLoginWithNoCredentials() throws Exception {
+        // This would work iff this code was executing in a privileged block, but it's not
+        repository.login();
+    }
+    
     @Test
-    public void shouldAllowLoginWithNoCredentials() throws Exception {
-        Session session = repository.login();
-        assertThat(session, notNullValue());
-        session.logout();
-        session = repository.login((Credentials)null);
-        assertThat(session, notNullValue());
-        session.logout();
-        session = repository.login(null, JcrI18n.defaultWorkspaceName.text());
-        assertThat(session, notNullValue());
+    public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
+        LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        login.login();
+        
+        Subject subject = login.getSubject();
+        
+        Session session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+
+            @Override
+            public Session run() throws Exception {
+                return repository.login();
+            }
+        
+        }, AccessController.getContext());
+        
+        assertThat(session, is(notNullValue()));
+        assertThat(session.getUserID(), is("superuser"));
+        login.logout();
     }
 
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        repository.login(new Credentials() {
-
-            private static final long serialVersionUID = 1L;
-
-            @SuppressWarnings( "unused" )
-            public LoginContext getLoginContext() throws LoginException {
-                return loginContext;
-            }
-        });
+        repository.login(new SecurityContextCredentials(new MockSecurityContext(null)));
     }
 
     @Test
     public void shouldAllowLoginWithNoWorkspaceName() throws Exception {
-        Session session = repository.login((String)null);
+        Session session = repository.login(credentials, null);
         assertThat(session, notNullValue());
         session.logout();
-        session = repository.login(credentials, null);
+        session = repository.login(new SecurityContextCredentials(new MockSecurityContext(null)), (String)null);
         assertThat(session, notNullValue());
         session.logout();
     }

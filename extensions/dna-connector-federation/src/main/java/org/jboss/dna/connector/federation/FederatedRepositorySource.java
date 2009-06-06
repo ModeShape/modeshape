@@ -48,6 +48,7 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
@@ -495,7 +496,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         try {
             String securityDomain = getSecurityDomain();
             if (securityDomain != null || getUsername() != null) {
-                return factory.with(securityDomain, handler);
+                return factory.with(new JaasSecurityContext(securityDomain, handler));
             }
             return factory;
         } catch (LoginException e) {

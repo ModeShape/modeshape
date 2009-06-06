@@ -32,6 +32,7 @@ import javax.jcr.NodeIterator;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.MockSecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -89,7 +90,7 @@ public abstract class AbstractJcrAccessTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused");
 
-        session = (JcrSession) repository.login();
+        session = (JcrSession) repository.login(new SecurityContextCredentials(new MockSecurityContext(null)));
     }
 
     @After

@@ -60,6 +60,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -291,7 +292,7 @@ public class JcrSessionTest {
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
         LoginContext loginContext = mock(LoginContext.class);
         stub(loginContext.getSubject()).toReturn(subject);
-        Session session = new JcrSession(repository, workspace, context.create(loginContext), sessionAttributes);
+        Session session = new JcrSession(repository, workspace, context.with(new JaasSecurityContext(loginContext)), sessionAttributes);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {

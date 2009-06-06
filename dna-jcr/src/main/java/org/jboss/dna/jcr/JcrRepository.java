@@ -38,13 +38,16 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
@@ -359,58 +362,52 @@ public class JcrRepository implements Repository {
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext = null;
         if (credentials == null) {
-            execContext = executionContext.create(AccessController.getContext());
+            try {
+                Subject subject = Subject.getSubject(AccessController.getContext());
+                if (subject == null) {
+                    throw new javax.jcr.LoginException(JcrI18n.mustBeInPrivilegedAction.text());
+                }
+                execContext = executionContext.with(new JaasSecurityContext(subject));
+            } catch (LoginException le) {
+                // This really can't happen if you're creating the JAAS security context with an existing subject
+                throw new IllegalStateException(le);
+            }
         } else {
             try {
-                // Check if credentials provide a login context
-                try {
-                    Method method = credentials.getClass().getMethod("getLoginContext");
-                    if (method.getReturnType() != LoginContext.class) {
-                        throw new IllegalArgumentException(JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
+                if (credentials instanceof SimpleCredentials) {
+                    SimpleCredentials simple = (SimpleCredentials)credentials;
+                    execContext = executionContext.with(new JaasSecurityContext(options.get(Option.JAAS_LOGIN_CONFIG_NAME),
+                                                                                simple.getUserID(), simple.getPassword()));
+                    for (String attributeName : simple.getAttributeNames()) {
+                        Object attributeValue = simple.getAttribute(attributeName);
+                        sessionAttributes.put(attributeName, attributeValue);
                     }
-                    LoginContext loginContext = (LoginContext)method.invoke(credentials);
-                    if (loginContext == null) {
-                        throw new IllegalArgumentException(JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
-                    }
-                    execContext = executionContext.create(loginContext);
-                } catch (NoSuchMethodException error) {
-                    // Check if credentials provide an access control context
+
+                } else if (credentials instanceof SecurityContextCredentials) {
+                    execContext = executionContext.with(((SecurityContextCredentials)credentials).getSecurityContext());
+                } else {
+                    // Check if credentials provide a login context
                     try {
-                        Method method = credentials.getClass().getMethod("getAccessControlContext");
-                        if (method.getReturnType() != AccessControlContext.class) {
+                        Method method = credentials.getClass().getMethod("getLoginContext");
+                        if (method.getReturnType() != LoginContext.class) {
                             throw new IllegalArgumentException(
-                                                               JcrI18n.credentialsMustReturnAccessControlContext.text(credentials.getClass()));
+                                                               JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
                         }
-                        AccessControlContext accessControlContext = (AccessControlContext)method.invoke(credentials);
-                        if (accessControlContext == null) {
+                        LoginContext loginContext = (LoginContext)method.invoke(credentials);
+                        if (loginContext == null) {
                             throw new IllegalArgumentException(
-                                                               JcrI18n.credentialsMustReturnAccessControlContext.text(credentials.getClass()));
+                                                               JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
                         }
-                        execContext = executionContext.create(accessControlContext);
-                    } catch (NoSuchMethodException error2) {
-                        if (credentials instanceof SimpleCredentials) {
-                            SimpleCredentials simple = (SimpleCredentials)credentials;
-                            execContext = executionContext.with(options.get(Option.JAAS_LOGIN_CONFIG_NAME),
-                                                                simple.getUserID(),
-                                                                simple.getPassword());
-                        } else {
-                            throw new IllegalArgumentException(
-                                                               JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
-                                                               error2);
-                        }
+                        execContext = executionContext.with(new JaasSecurityContext(loginContext));
+                    } catch (NoSuchMethodException error) {
+                        throw new IllegalArgumentException(JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
+                                                           error);
                     }
                 }
             } catch (RuntimeException error) {
                 throw error;
             } catch (Exception error) {
-                throw new RepositoryException(error);
-            }
-            if (credentials instanceof SimpleCredentials) {
-                SimpleCredentials simple = (SimpleCredentials)credentials;
-                for (String attributeName : simple.getAttributeNames()) {
-                    Object attributeValue = simple.getAttribute(attributeName);
-                    sessionAttributes.put(attributeName, attributeValue);
-                }
+                throw new javax.jcr.LoginException(error);
             }
         }
 
@@ -448,6 +445,7 @@ public class JcrRepository implements Repository {
 
     /**
      * Returns the name of this repository
+     * 
      * @return the name of this repository
      * @see #sourceName
      */

@@ -26,8 +26,8 @@ package org.jboss.dna.graph.observe;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
-import javax.security.auth.Subject;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.request.ChangeRequest;
 
@@ -40,24 +40,24 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
     private static final long serialVersionUID = 1L;
 
     private final String processId;
-    private final Subject subject;
+    private final String userName;
     private final String sourceName;
     private final DateTime timestamp;
     private final List<ChangeRequest> changeRequests;
 
-    public Changes( Subject subject,
+    public Changes( String userName,
                     String sourceName,
                     DateTime timestamp,
                     List<ChangeRequest> requests ) {
-        this("", subject, sourceName, timestamp, requests);
+        this("", userName, sourceName, timestamp, requests);
     }
 
     public Changes( String processId,
-                    Subject subject,
+                    String userName,
                     String sourceName,
                     DateTime timestamp,
                     List<ChangeRequest> requests ) {
-        this.subject = subject;
+        this.userName = userName;
         this.sourceName = sourceName;
         this.timestamp = timestamp;
         this.changeRequests = requests;
@@ -68,9 +68,10 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
      * Get the user that made these changes.
      * 
      * @return the user; never null
+     * @see SecurityContext#getUserName()
      */
-    public Subject getSubject() {
-        return this.subject;
+    public String getUserName() {
+        return this.userName;
     }
 
     /**
@@ -142,7 +143,7 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
             if (!this.getProcessId().equals(that.getProcessId())) return false;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
             if (!this.getTimestamp().equals(that.getTimestamp())) return false;
-            if (!this.getSubject().equals(that.getSubject())) return false;
+            if (!this.getUserName().equals(that.getUserName())) return false;
             return true;
         }
         return false;

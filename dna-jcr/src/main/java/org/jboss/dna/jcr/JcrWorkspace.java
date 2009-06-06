@@ -131,6 +131,7 @@ final class JcrWorkspace implements Workspace {
 
         assert workspaceName != null;
         assert context != null;
+        assert context.getSecurityContext() != null;
         assert repository != null;
         this.name = workspaceName;
         this.repository = repository;
@@ -292,7 +293,7 @@ final class JcrWorkspace implements Workspace {
         }
 
         try {
-            this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
+            // this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
             this.session.checkPermission(destAbsPath, "add_node");
         }
         catch (AccessControlException ace) {

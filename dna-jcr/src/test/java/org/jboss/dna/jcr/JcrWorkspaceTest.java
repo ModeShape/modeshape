@@ -39,6 +39,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -91,7 +92,7 @@ public class JcrWorkspaceTest {
 
         // Set up the execution context ...
 
-        context = new ExecutionContext().with("dna-jcr", "superuser", "superuser".toCharArray());
+        context = new ExecutionContext().with(new JaasSecurityContext("dna-jcr", "superuser", "superuser".toCharArray()));
 
         // Set up the initial content ...
         Graph graph = Graph.create(source, context);
