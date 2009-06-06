@@ -24,13 +24,15 @@
 package org.jboss.dna.web.jcr.rest;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,14 +50,15 @@ public class JcrResourcesTest {
     @Before
     public void beforeEach() {
 
-//        final String login ="dnauser";
-//        final String password ="password";
-//
-//        Authenticator.setDefault(new Authenticator() {
-//            protected PasswordAuthentication getPasswordAuthentication() {
-//                return new PasswordAuthentication (login, password.toCharArray());
-//            }
-//        });
+        // Configured in pom
+        final String login ="dnauser";
+        final String password ="password";
+
+        Authenticator.setDefault(new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication (login, password.toCharArray());
+            }
+        });
     }
     
     private String getResponseFor( HttpURLConnection connection ) throws IOException {
@@ -69,6 +72,55 @@ public class JcrResourcesTest {
         }
 
         return buff.toString();
+    }
+
+    @Test
+    public void shouldNotServeContentToUnauthorizedUser() throws Exception {
+
+        final String login ="dnauser";
+        final String password ="invalidpassword";
+
+        Authenticator.setDefault(new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication (login, password.toCharArray());
+            }
+        });
+
+        URL postUrl = new URL(SERVER_URL + "/");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_UNAUTHORIZED));
+        connection.disconnect();
+
+    }
+
+    @Test
+    public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
+
+        // Configured in pom
+        final String login ="unauthorizeduser";
+        final String password ="password";
+
+        Authenticator.setDefault(new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication (login, password.toCharArray());
+            }
+        });
+
+        URL postUrl = new URL(SERVER_URL + "/");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_UNAUTHORIZED));
+        connection.disconnect();
+
     }
 
     @Test

@@ -20,17 +20,14 @@ public class MockSecurityContext implements SecurityContext {
         this.entitlements = entitlements != null ? entitlements : Collections.<String>emptySet();
     }
     
-    @Override
     public String getUserName() {
         return userName;
     }
 
-    @Override
     public boolean hasRole( String roleName ) {
         return entitlements.contains(roleName);
     }
 
-    @Override
     public void logout() {
 
     }

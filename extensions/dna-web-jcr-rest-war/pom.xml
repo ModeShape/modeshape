@@ -42,16 +42,11 @@
 	</dependencies>
 	<build>
 		<finalName>resources</finalName>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
+				<!-- >version>1.0.1-SNAPSHOT</version  -->
 				<executions>
 					<execution>
 						<id>start-container</id>
@@ -71,14 +66,10 @@
 				<configuration>
 					<configuration>
 						<properties>
-							<cargo.logging>high</cargo.logging>
+							<cargo.logging>low</cargo.logging>
+							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
 						</properties>
 					</configuration>
-					<container>
-						<systemProperties>
-							<java.security.auth.login.config>${project.build.directory}/test-classes/jetty-dna.policy</java.security.auth.login.config>
-						</systemProperties>
-					</container>
 					<wait>false</wait>
 				</configuration>
 			</plugin>
@@ -106,6 +97,7 @@
 				</executions>
 			</plugin>
 		</plugins>
+
 	</build>
 
 </project>

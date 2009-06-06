@@ -35,7 +35,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -126,36 +125,26 @@ public class JcrResources {
     public static final String EMPTY_WORKSPACE_NAME = "<default>";
 
     /**
-     * Returns a reference to the named repository, if it exists.
-     * 
-     * @param repositoryName the name of the repository to load
-     * @return the repository
-     * @throws RepositoryException if any other error occurs
-     */
-    private Repository getRepository( String repositoryName ) throws RepositoryException {
-        return RepositoryFactory.getRepository(repositoryName);
-    }
-
-    /**
      * Returns an active session for the given workspace name in the named repository.
      * 
+     * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded name of the repository in which the session is created
-     * @param rawWorkspaceName the URL-endecoded name of the workspace to which the session should be connected
+     * @param rawWorkspaceName the URL-encoded name of the workspace to which the session should be connected
      * @return an active session with the given workspace in the named repository
      * @throws RepositoryException if any other error occurs
      */
-    private Session getSession( String rawRepositoryName,
+    private Session getSession( HttpServletRequest request, 
+                                String rawRepositoryName,
                                 String rawWorkspaceName ) throws NotFoundException, RepositoryException {
+        assert request != null;
+        assert request.getUserPrincipal() != null: "Request must be authorized";
 
-        Repository repository;
-        try {
-            repository = getRepository(repositoryNameFor(rawRepositoryName));
-            
-        } catch (RepositoryException re) {
-            throw new NotFoundException(re.getMessage(), re);
+        // Sanity check
+        if (request.getUserPrincipal() == null) {
+            throw new UnauthorizedException("Client is not authorized");
         }
         
-        return repository.login(null, workspaceNameFor(rawWorkspaceName));
+        return RepositoryFactory.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
     }
 
     /**
@@ -205,7 +194,7 @@ public class JcrResources {
 
         Map<String, WorkspaceEntry> workspaces = new HashMap<String, WorkspaceEntry>();
 
-        Session session = getSession(rawRepositoryName, null);
+        Session session = getSession(request, rawRepositoryName, null);
         rawRepositoryName = URL_ENCODER.encode(rawRepositoryName);
         
         for (String name : session.getWorkspace().getAccessibleWorkspaceNames()) {
@@ -222,6 +211,7 @@ public class JcrResources {
     /**
      * Handles GET requests for an item in a workspace.
      * 
+     * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
@@ -242,7 +232,8 @@ public class JcrResources {
     @GET
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
     @Produces( "application/json" )
-    public String getItem( @PathParam( "repositoryName" ) String rawRepositoryName,
+    public String getItem( @Context HttpServletRequest request, 
+                           @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
                            @QueryParam( "dna:depth" ) @DefaultValue( "0" ) int depth )
@@ -251,7 +242,7 @@ public class JcrResources {
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
 
-        Session session = getSession(rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
         Item item;
 
         if ("/".equals(path) || "".equals(path)) {
@@ -365,6 +356,7 @@ public class JcrResources {
      * jcr:mixinTypes} properties.
      * </p>
      * 
+     * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
@@ -379,7 +371,8 @@ public class JcrResources {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/items/{path:.*}" )
     @Consumes( "application/json" )
-    public Response postItem( @PathParam( "repositoryName" ) String rawRepositoryName,
+    public Response postItem( @Context HttpServletRequest request,
+                              @PathParam( "repositoryName" ) String rawRepositoryName,
                               @PathParam( "workspaceName" ) String rawWorkspaceName,
                               @PathParam( "path" ) String path,
                               String requestContent )
@@ -394,7 +387,7 @@ public class JcrResources {
         String parentPath = lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);
         String newNodeName = lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
 
-        Session session = getSession(rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
 
         Node parentNode = (Node)session.getItem(parentPath);
 
@@ -499,6 +492,7 @@ public class JcrResources {
     /**
      * Deletes the item at {@code path}.
      * 
+     * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
@@ -509,7 +503,8 @@ public class JcrResources {
     @DELETE
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
     @Consumes( "application/json" )
-    public void deleteItem( @PathParam( "repositoryName" ) String rawRepositoryName,
+    public void deleteItem( @Context HttpServletRequest request,
+                            @PathParam( "repositoryName" ) String rawRepositoryName,
                             @PathParam( "workspaceName" ) String rawWorkspaceName,
                             @PathParam( "path" ) String path )
         throws NotFoundException, UnauthorizedException, RepositoryException {
@@ -518,7 +513,7 @@ public class JcrResources {
         assert rawWorkspaceName != null;
         assert path != null;
 
-        Session session = getSession(rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
 
         Item item;
         try {
@@ -539,6 +534,7 @@ public class JcrResources {
      * keys correspond to the values that will be set on the properties.
      * </p>
      * 
+     * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
@@ -552,7 +548,8 @@ public class JcrResources {
     @PUT
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
     @Consumes( "application/json" )
-    public String putItem( @PathParam( "repositoryName" ) String rawRepositoryName,
+    public String putItem( @Context HttpServletRequest request,
+                           @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
                            String requestContent ) throws UnauthorizedException, JSONException, RepositoryException {
@@ -561,7 +558,7 @@ public class JcrResources {
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
 
-        Session session = getSession(rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
         Node node;
         Item item;
         if ("".equals(path) || "/".equals(path)) {

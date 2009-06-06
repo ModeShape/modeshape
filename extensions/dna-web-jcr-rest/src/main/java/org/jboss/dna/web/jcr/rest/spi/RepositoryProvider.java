@@ -1,9 +1,10 @@
 package org.jboss.dna.web.jcr.rest.spi;
 
 import java.util.Set;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Interface for any class that provides access to one or more local JCR repositories. Repository providers must provide a public,
@@ -12,15 +13,18 @@ import javax.servlet.ServletContext;
 public interface RepositoryProvider {
 
     /**
-     * Returns a reference to the named repository
+     * Returns an active session for the given workspace name in the named repository.
      * 
-     * @param repositoryName the name of the repository to retrieve; may be null
-     * @return the repository with the given name; may not be null
-     * @throws RepositoryException if no repository with the given name exists or there is an error obtaining a reference to the
-     *         named repository
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param repositoryName the name of the repository in which the session is created
+     * @param workspaceName the name of the workspace to which the session should be connected
+     * @return an active session with the given workspace in the named repository
+     * @throws RepositoryException if any other error occurs
      */
-    Repository getRepository( String repositoryName ) throws RepositoryException;
-
+    public Session getSession( HttpServletRequest request, 
+                                String repositoryName,
+                                String workspaceName ) throws RepositoryException;
+    
     /**
      * Returns the available repository names
      * 
@@ -40,4 +44,5 @@ public interface RepositoryProvider {
      * any external resource held.
      */
     void shutdown();
+
 }

@@ -1,9 +1,10 @@
 package org.jboss.dna.web.jcr.rest;
 
 import java.util.Collection;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import org.jboss.dna.web.jcr.rest.spi.RepositoryProvider;
 
 public class RepositoryFactory {
@@ -30,8 +31,8 @@ public class RepositoryFactory {
         provider.startup(context);
     }
 
-    public static Repository getRepository( String repositoryName ) throws RepositoryException {
-        return provider.getRepository(repositoryName);
+    public static Session getSession( HttpServletRequest request, String repositoryName, String workspaceName) throws RepositoryException {
+        return provider.getSession(request, repositoryName, workspaceName);
     }
 
     public static Collection<String> getJcrRepositoryNames() {
