@@ -157,7 +157,6 @@ public final class JaasSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#getUserName()
      */
-    @Override
     public String getUserName() {
         return loggedIn ? userName : null;
     }
@@ -167,8 +166,6 @@ public final class JaasSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#hasRole(String)
      */
-
-    @Override
     public boolean hasRole( String roleName ) {
         return loggedIn ? entitlements.contains(roleName) : false;
     }
@@ -178,7 +175,6 @@ public final class JaasSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#logout()
      */
-    @Override
     public void logout() {
         try {
             loggedIn = false;

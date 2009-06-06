@@ -337,17 +337,14 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     private static class NullSecurityContext implements SecurityContext {
 
-        @Override
         public String getUserName() {
             return null;
         }
 
-        @Override
         public boolean hasRole( String roleName ) {
             return false;
         }
 
-        @Override
         public void logout() {
         }
         
