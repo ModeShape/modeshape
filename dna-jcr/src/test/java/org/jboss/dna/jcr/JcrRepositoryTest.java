@@ -195,9 +195,9 @@ public class JcrRepositoryTest {
         
         Session session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
 
-            @Override
+            @SuppressWarnings("cast")
             public Session run() throws Exception {
-                return repository.login();
+                return (Session) repository.login();
             }
         
         }, AccessController.getContext());
