@@ -68,7 +68,7 @@ public class SequencingClient {
             throw new IllegalStateException(ex);
         }
 
-        // Configure the DNA JCR engine. This could be done by loading a configuration from a file, or by
+        // Configure the DNA configuration. This could be done by loading a configuration from a file, or by
         // using a (local or remote) configuration repository, or by setting up the configuration programmatically.
         // This example uses the programmatic approach...
         String repositoryId = "content";

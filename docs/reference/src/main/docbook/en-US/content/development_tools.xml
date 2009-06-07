@@ -225,14 +225,20 @@
 		<para>This profile informs Maven of the two JBoss repositories (<ulink url="http://repository.jboss.org/maven2">snapshots</ulink> 
 		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for JBoss DNA and all dependent libraries.
 		</para>
+		<para>While you're adding <code>$MAVEN_HOME/bin</code> to your path, you should also set the <code>$MAVEN_OPTS</code> environment variable
+		  to "<code>-Xmx256m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
+		  build.
 		<note>
 			<para>
-		    It is a policy of the project that the <emphasis>source code and JARs</emphasis> for <emphasis>all</emphasis> dependencies 
-		    <emphasis>must</emphasis> be loaded into the JBoss repository.  This is so that the project can always be built
-				and that all source code is always available.
+				The JBoss Maven repository provides a central location for not only the artifacts produced by the JBoss.org projects (well, at least those
+				that use Maven), but also is where those projects can place the artifacts that they depend on.  JBoss DNA has a policy that
+				the <emphasis>source code and JARs</emphasis> for <emphasis>all</emphasis> dependencies <emphasis>must</emphasis> be loaded into the 
+				JBoss Maven repository.  It may be a little bit more work for the developers, but it does help ensure that developers have easy
+				access to the source and that the project (and dependencies) can always be rebuilt when needed.
 			</para>
 			<para>
-				For more information about the JBoss Maven repository, see the <ulink url="http://wiki.jboss.org/wiki/Maven">JBoss.org Wiki</ulink>.
+				For more information about the JBoss Maven repository, including instructions for adding source and JAR artifacts, 
+				see the <ulink url="http://wiki.jboss.org/wiki/Maven">JBoss.org Wiki</ulink>.
 			</para>
 		</note>
 		<para>

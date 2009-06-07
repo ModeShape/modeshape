@@ -24,7 +24,10 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <preface id="preface" revision="1">
   <title>What this book covers</title>
   <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the

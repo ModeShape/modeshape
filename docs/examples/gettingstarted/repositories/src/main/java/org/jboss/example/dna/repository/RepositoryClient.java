@@ -202,7 +202,7 @@ public class RepositoryClient {
         if (loginContext == null) {
             if (jaasContextName != null) {
                 loginContext = new LoginContext(jaasContextName, this.userInterface.getCallbackHandler());
-                loginContext.login();
+                loginContext.login(); // This authenticates the user
             }
         }
         return loginContext;

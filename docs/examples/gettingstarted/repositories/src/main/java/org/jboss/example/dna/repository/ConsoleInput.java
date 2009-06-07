@@ -125,14 +125,13 @@ public class ConsoleInput implements UserInterface {
                         try {
                             // Terminate ...
                             System.out.println();
-                            System.out.print("done.\nShutting down repositories and services ... ");
+                            System.out.print("done.\nShutting down repositories ... ");
                             client.shutdown();
                             System.out.print("done.");
                             System.out.println();
                             System.out.println();
                         } catch (Exception err) {
-                            System.out.println("Error shutting down sequencing service and repository: "
-                                               + err.getLocalizedMessage());
+                            System.out.println("Error shutting down repository: " + err.getLocalizedMessage());
                             err.printStackTrace(System.err);
                         }
                     }

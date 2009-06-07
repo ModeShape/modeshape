@@ -25,9 +25,8 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY versionNumber "0.4">
-<!ENTITY copyrightYear "2008-2009">
-<!ENTITY copyrightHolder "Red Hat, Inc.">
+<!ENTITY % CustomDTD SYSTEM "custom.dtd">
+%CustomDTD;
 ]>
 <book lang="en">
 	<bookinfo>
@@ -35,7 +34,7 @@
 		<subtitle>Getting Started Guide</subtitle>
 		<releaseinfo>&versionNumber;</releaseinfo>
 		<productnumber>&versionNumber;</productnumber>
-		<issuenum>4</issuenum>
+		<issuenum>5</issuenum>
 		<mediaobject>
 			<imageobject role="fo">
 				<imagedata fileref="dna-logo.png" align="center"/>
@@ -53,10 +52,10 @@
 	</bookinfo>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/understanding_dna.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/use_cases.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/downloading_and_running.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna_for_sequencing.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna_repositories.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/custom_sequencers.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencer_example.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/repository_example.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/conclusion.xml"/>
 </book>

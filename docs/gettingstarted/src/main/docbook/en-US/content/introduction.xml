@@ -24,7 +24,10 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="introduction">
   <title>Introduction</title>
   <para>There are a lot of ways for applications to store information persistently so that it can be accessed at a
@@ -85,26 +88,48 @@
     and is being revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
   </para>
   <para>
-    The <emphasis>JBoss DNA project</emphasis>
-    is building unified metadata repository system that is compliant with JCR.  Nearly all of these capabilities are to be hidden
-    below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
-    existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
-    have the file content indexed for search purposes. JBoss DNA also defines a library for "sequencing" content - to extract
-    meaningful information from that content and store it in the repository, where it can then be searched, accessed, and
-    analyzed using the JCR API.
-  </para>
-  <para> JBoss DNA has other features as well.  You can create federated repositories that dynamically merge the information 
-	  from multiple databases, services, applications, and other JCR repositories.  JBoss DNA also will allow you to 
-    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another goal is
-    to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
-  </para>
-  <para>
-    The <link linkend="understanding_dna">next chapter</link> in this book goes into more detail about JBoss DNA and its architecture, 
-		the different components, what's available now, and what's coming in future releases.
-    <link linkend="downloading_and_running">Chapter 3</link> then provides instructions for downloading and running the sequencer 
-		examples for the current release. <link linkend="using_dna">Chapter 4</link> walks through how to use JBoss DNA sequencers 
-		in your applications, while <link linkend="custom_sequencers">Chapter 5</link> shows how to use JBoss DNA repositories.
-		<link linkend="custom_sequencers">Chapter 6</link> goes over how to create custom sequencers, and finally,
-    <link linkend="future">Chapter 7</link> wraps things up with a discussion about the future of JBoss DNA.
-  </para>
+	  The JCR API provides a number of information services that are needed by many applications,
+	  including: read and write access to information; the ability to structure information in a hierarchical and flexible manner that can adapt
+	  and evolve over time; ability to work with unstructured content; ability to (transparently) handle large strings; 
+	  notifications of changes in the information; search and query; versioning of information; access control; integrity constraints;
+	  participation within distributed transactions; explicit locking of content; and of course persistence.
+	</para>
+	<sect1 id="what_is_jboss_dna">
+		<title>JBoss DNA</title>
+		<para>
+			What makes JCR interesting, however, is that a JCR implementation provides all these features and capabilities regardless
+			of where or how that information is persisted or stored.  <emphasis>This is in fact the main purpose of JBoss DNA:
+			provide a JCR implementation that provides access to content stored in many different kinds of systems.</emphasis>
+			A JBoss DNA repository isn't yet another silo of information, but rather it's a JCR view of the information you already have
+			in your environment: files systems, databases, other repositories, services, applications, etc.  JBoss DNA can 
+			help you understand the systems and information you already have.
+		</para>
+		<para>
+			Of course when you start providing a unified view of all this information, you start recognizing the need to store more
+			information, including metadata about and relationships between the existing content.  JBoss DNA lets you do this, too.
+			And JBoss DNA even tries to help you discover more about the information you already have, especially the
+			information wrapped up in the kinds of files often found in enterprise systems: service definitions, policy files,
+			images, media, documents, presentations, application components, reusable libraries, configuration files,
+			application installations, databases schemas, management scripts, and so on.  As files are loaded into the repository,
+			JBoss DNA can <emphasis>sequence</emphasis> these files to extract from their content meaningful information that
+			can be stored in the repository, where it can then be searched, accessed, and analyzed using the JCR API.
+		</para>
+	</sect1>
+	<sect1 id="introduction_whats_next">
+		<title>What's next</title>
+		<para>
+			As we'll see in the <link linkend="use_cases">next chapter</link>, the ability of JBoss DNA to 
+			federate, integrate, and sequence information make JBoss DNA a powerful asset and tool.  
+			Then <link linkend="using_dna">Chapter 3</link> will show that once a JBoss DNA repository is set up, application see
+			JBoss DNA just as another JCR <code>javax.jcr.Repository</code> instance and uses the standard JCR API to obtain a <code>javax.jcr.Session</code>
+			and work with the content.
+		</para>
+		<para>
+			<link linkend="downloading_and_running">Chapter 4</link> walks you through downloading
+			and building the JBoss DNA examples, while <link linkend="sequencer_example">Chapter 5</link>
+			and <link linkend="repository_example">Chapter 6</link> will run these very simple examples and walking through code.  
+			<link linkend="conclusion">Chapter 7</link> wraps things up with a discussion about the future of JBoss DNA
+			and what you can do next to start using JBoss DNA in your own applications.
+	  </para>
+	</sect1>
 </chapter>
