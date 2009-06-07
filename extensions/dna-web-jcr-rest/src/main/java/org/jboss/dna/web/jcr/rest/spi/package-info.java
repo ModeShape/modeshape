@@ -21,35 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.web.jcr.rest.model;
+/**
+ * Service provider interface (SPI) for the JCR implementation that backs the DNA JCR REST server.
+ * <p>
+ * Service providers must provide a thread-safe implementation of the {@link RepositoryProvider} interface
+ * which is then bundled in the server WAR.  The REST server can be configured to use the provider by specifying
+ * the fully-qualified name (FQN) of the custom repository provider class in the {@code org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER} context parameter
+ * in the web configuration file (web.xml).   
+ * </p>
+ * <p>
+ * Custom repository providers for JCR implementations that do not support hosting multiple repositories in the same server
+ * can context can ignore the {@code repositoryName} parameter for {@link RepositoryProvider#getSession(javax.servlet.http.HttpServletRequest, String, String)},
+ * but must always return a non-empty, non-null set containing some default repository name from {@link RepositoryProvider#getJcrRepositoryNames()}.
+ * </p>
+ * 
+ * @see org.jboss.dna.web.jcr.rest.RepositoryFactory
+ * @see org.jboss.dna.web.jcr.rest.spi.RepositoryProvider
+ */
+package org.jboss.dna.web.jcr.rest.spi;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
-@XmlRootElement( name = "repository" )
-public class RepositoryEntry {
-
-    private String name;
-    private RepositoryResources resources;
-
-    public RepositoryEntry() {
-        resources = new RepositoryResources();
-    }
-
-    public RepositoryEntry( String contextName,
-                            String repositoryName ) {
-        this.name = repositoryName;
-
-        resources = new RepositoryResources(contextName, repositoryName);
-    }
-
-    @XmlElement
-    public String getName() {
-        return name;
-    }
-
-    @XmlElement
-    public RepositoryResources getResources() {
-        return resources;
-    }
-}

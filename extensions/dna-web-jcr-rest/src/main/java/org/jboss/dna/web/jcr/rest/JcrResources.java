@@ -55,6 +55,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -108,6 +109,7 @@ import org.jboss.resteasy.spi.UnauthorizedException;
  * </tr>
  * </table>
  */
+@Immutable
 @Path( "/" )
 public class JcrResources {
 

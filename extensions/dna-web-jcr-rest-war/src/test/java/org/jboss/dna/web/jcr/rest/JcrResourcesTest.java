@@ -42,6 +42,12 @@ import org.codehaus.jettison.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Test of the DNA JCR REST resource.  Note that this test case uses a very low-level API to construct
+ * requests and deconstruct the responses.  Users are encouraged to use a higher-level library to communicate
+ * with the REST server (e.g., Apache HTTP Commons).
+ *
+ */
 public class JcrResourcesTest {
 
     private static final String SERVER_CONTEXT = "/resources";

@@ -21,35 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.web.jcr.rest.model;
+/**
+ * This package contains the core components for the DNA REST server implementation.
+ * <p>
+ * The key classes are:
+ * <ul>
+ * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
+ * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
+ * <li>{@link RepositoryFactory} - the interface to the DNA JCR SPI</li> 
+ * </ul>
+ * </p>
+ */
+package org.jboss.dna.web.jcr.rest;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
-@XmlRootElement( name = "repository" )
-public class RepositoryEntry {
-
-    private String name;
-    private RepositoryResources resources;
-
-    public RepositoryEntry() {
-        resources = new RepositoryResources();
-    }
-
-    public RepositoryEntry( String contextName,
-                            String repositoryName ) {
-        this.name = repositoryName;
-
-        resources = new RepositoryResources(contextName, repositoryName);
-    }
-
-    @XmlElement
-    public String getName() {
-        return name;
-    }
-
-    @XmlElement
-    public RepositoryResources getResources() {
-        return resources;
-    }
-}
