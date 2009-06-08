@@ -181,7 +181,7 @@ public interface &SecurityContext; {
 		<para>
 			As noted below, this security context is made available through the &ExecutionContext; described above.
 		</para>
-		<sect1 id="jaas_security">
+		<sect2 id="jaas_security">
 			<title>JAAS</title>
 			<para>
 				One such implementation is the &JaasSecurityContext;, which delegates any authentication or authorization requests to a
