@@ -52,14 +52,32 @@
 	</bookinfo>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/development_tools.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/classloaders.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/environment.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/repositories.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencing.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/mimetypes.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/configuration.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/testing.xml"/>
+	<part>
+		<title>Developers and Contributors</title>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/tools.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/testing.xml"/>
+	</part>
+	<part>
+		<title>JBoss DNA Core</title>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/classloaders.xml"/>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/environment.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/repositories.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/mimetypes.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/configuration.xml"/>
+	</part>
+	<part>
+		<title>JBoss DNA JCR</title>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
+  </part>
+	<part>
+		<title>Provided Connectors</title>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/in_memory.xml"/>
+	</part>
+	<part>
+		<title>Provided Sequencers</title>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/zip.xml"/>
+	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>

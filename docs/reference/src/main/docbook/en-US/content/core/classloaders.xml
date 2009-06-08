@@ -25,7 +25,7 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
-<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
 <chapter id="classloaders">
@@ -74,13 +74,13 @@
 		</para>
 		<programlisting>
 public interface &ClassLoaderFactory; {
-
     /**
-     * Get a class loader given the supplied classpath.  The meaning of the classpath is implementation-dependent.
+     * Get a class loader given the supplied classpath.  The meaning of the classpath 
+     * is implementation-dependent.
      * @param classpath the classpath to use
      * @return the class loader; may not be null
      */
-    &ClassLoader; getClassLoader( String... classpath );
+    &ClassLoader; getClassLoader( &String;... classpath );
 }
 </programlisting>
     <para>In the <link linkend="environment">next chapter</link> we'll describe an &ExecutionContext; interface that is
