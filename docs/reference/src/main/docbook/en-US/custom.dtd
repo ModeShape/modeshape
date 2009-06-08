@@ -78,6 +78,7 @@
 <!ENTITY Property						       		"<ulink url='&API;graph/property/Property.html'><interface>Property</interface></ulink>">
 <!ENTITY ValueFactories       				"<ulink url='&API;graph/property/ValueFactories.html'><interface>ValueFactories</interface></ulink>">
 <!ENTITY NamespaceRegistry       			"<ulink url='&API;graph/property/NamespaceRegistry.html'><interface>NamespaceRegistry</interface></ulink>">
+<!ENTITY Namespace				       			"<ulink url='&API;graph/property/NamespaceRegistry.Namespaces.html'><interface>Namespace</interface></ulink>">
 <!ENTITY PropertyFactory       				"<ulink url='&API;graph/property/PropertyFactory.html'><interface>PropertyFactory</interface></ulink>">
 <!ENTITY PathNotFoundException				"<ulink url='&API;graph/property/PathNotFoundException.html'><classname>PathNotFoundException</classname></ulink>">
 <!ENTITY RepositorySource       			"<ulink url='&API;graph/connector/RepositorySource.html'><interface>RepositorySource</interface></ulink>">

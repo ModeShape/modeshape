@@ -81,11 +81,9 @@
 			  JCR-related components are covered in the <link linkend="jcr-part">next part</link>.
 			</para>
 		</partintro>
-		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/classloaders.xml"/>
-		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/environment.xml"/>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/execution_context.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/connector.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/mimetypes.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/configuration.xml"/>
 	</part>
 	<part id="jcr-part">
@@ -134,6 +132,18 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/java_source.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/image.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/mp3.xml"/>
+	</part>
+	<part id="provied-mime-type-detectors-part">
+		<title>Provided MIME type detectors</title>
+		<partintro>
+			<para>
+			  The JBoss DNA project provides a number of <link linkend="mime-type-detectors">MIME type detectors</link> out-of-the-box.
+			  These are ready to be used by simply including them in the classpath and 
+			  <link linkend="mime-type-detectors">setting up the &ExecutionContext;</link> appropriately.
+			</para>
+		</partintro>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/mime_type_detectors/aperture.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/mime_type_detectors/custom_detectors.xml"/>
 	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>
