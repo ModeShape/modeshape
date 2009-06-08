@@ -84,12 +84,6 @@ public class &ExecutionContext; implements &ClassLoaderFactory; {
     public &SecurityContext; getSecurityContext() {...}
 
     /**
-     * Get the JAAS subject for which this context was created.
-     * @return the subject; never null
-     */
-    public &Subject; getSubject() {...}
-
-    /**
      * Return a logger associated with this context. This logger records only those activities within the 
      * context and provide a way to capture the context-specific activities. All log messages are also
      * sent to the system logger, so classes that log via this mechanism should <i>not</i> also 
@@ -256,7 +250,8 @@ public class ServletSecurityContext implements &SecurityContext; {
     private final HttpServletRequest request;
 
     /**
-     * Create a {@link ServletSecurityContext} with the supplied {@link HttpServletRequest servlet information}.
+     * Create a {@link ServletSecurityContext} with the supplied 
+     * {@link HttpServletRequest servlet information}.
      * 
      * @param request the servlet request; may not be null
      */
@@ -270,8 +265,8 @@ public class ServletSecurityContext implements &SecurityContext; {
      * @return the authenticated user's name
      */
     public &String; getUserName() {
-			return userName;
-		}
+        return userName;
+    }
 
     /**
      * Determine whether the authenticated user has the given role.
@@ -279,15 +274,15 @@ public class ServletSecurityContext implements &SecurityContext; {
      * @return true if the user has the role and is logged in; false otherwise
      */
     boolean hasRole( String roleName ) {
-			request.isUserInRole(roleName);
-		}
+        request.isUserInRole(roleName);
+    }
 
     /**
      * Logs the user out of the authentication mechanism.
      * For some authentication mechanisms, this will be implemented as a no-op.
      */
     public void logout() {
-		}
+    }
 }</programlisting>
 			<para>
 				Then use this to create a &Session;:
