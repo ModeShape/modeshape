@@ -28,8 +28,8 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="repositories">
-  <title>Repositories</title>
+<chapter id="connector_framework">
+  <title>Connector Framework</title>
   <para></para>
   <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
     registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API

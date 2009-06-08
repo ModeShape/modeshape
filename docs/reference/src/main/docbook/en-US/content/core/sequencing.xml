@@ -28,7 +28,7 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="sequencing">
+<chapter id="sequencing_framework">
   <title>Sequencing content</title>
 	<para>As we've mentioned before, JBoss DNA is able to work with existing JCR repositories.  Your client applications
   	make changes to the information in those repositories, and JBoss DNA automatically uses its sequencers to extract

@@ -52,32 +52,71 @@
 	</bookinfo>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
-	<part>
+	<part id="developers-part">
 		<title>Developers and Contributors</title>
+		<partintro>
+			<para>
+			  The JBoss DNA project uses a number of process, tools, and procedures to assist in the development of
+			  the software.  This portion of the document focuses on these aspects and will help developers and contributors
+			  obtain the source code, build locally, and contribute to the project.
+			</para>
+			<para>If you're not contributing to the project but are still developing 
+				custom <link linkend="connector_framework">connectors</link> or <link linkend="sequencing_framework">sequencers</link>. 
+			  this information may be helpful in establishing your own environment.
+			</para>
+		</partintro>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/tools.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/testing.xml"/>
 	</part>
-	<part>
+	<part id="core-part">
 		<title>JBoss DNA Core</title>
+		<partintro>
+			<para>
+			  The JBoss DNA project organizes the codebase into a number of subprojects.  The most fundamental are those 
+			  <emphasis>core libraries</emphasis>, including the graph API, connector framework, sequencing framework,
+			  as well as the configuration and engine in which all the components run.  These are all topics covered
+			  in this part of the document.
+			</para>
+			<para>The JBoss DNA implementation of the <ulink url="&JSR170;">JCR API</ulink> as well as some other
+			  JCR-related components are covered in the <link linkend="jcr-part">next part</link>.
+			</para>
+		</partintro>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/classloaders.xml"/>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/environment.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/repositories.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/connector.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/mimetypes.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/configuration.xml"/>
 	</part>
-	<part>
+	<part id="jcr-part">
 		<title>JBoss DNA JCR</title>
+		<partintro>
+			<para>
+			  The JBoss DNA project provides an implementation of the <ulink url="&JSR170;">JCR API</ulink>, which is
+			  built on top of the <link linkend="core-part">core libraries</link> discussed earlier.  This implementation
+			  as well as a number of JCR-related components are described in this part of the document.
+			</para>
+		</partintro>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
-	<part>
+	<part id="provied-connectors-part">
 		<title>Provided Connectors</title>
+		<para>
+		  The JBoss DNA project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
+		  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
+		  them as a repository source.
+		</para>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/in_memory.xml"/>
 	</part>
-	<part>
+	<part id="provied-sequencers-part">
 		<title>Provided Sequencers</title>
+		<para>
+		  The JBoss DNA project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
+		  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
+		  them appropriately.
+		</para>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/zip.xml"/>
 	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
