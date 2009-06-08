@@ -68,14 +68,6 @@
 			resource declarations, documentation, presentations, ontologies, etc.
 		</para>
 		<para>
-			It is also desirable that the service registry can provide accurate and up-to-date information about where the services are deployed
-			and their current health.  The best way to do this would be to access this information directly from the other components of the SOA, 
-			such as the Enterprise Service Bus and the management/monitoring system. JBoss DNA connectors might allow the service registry
-			to access an ESB to discover which services are deployed, which are running, and automatically annotate the services in the registry
-			with this dynamic information.  In fact, the service registry could cache this information to provide a safe and low-impact mechanism
-			for obtaining this information to other applications without having each application hit the ESB.
-		</para>
-		<para>
 			Integration with a management system can be done in a similar manner.  A JBoss DNA connector could access the management system
 			to discover the servers and enable auto-discovery of the services, and "tag" the services deployments with the lifecycle phase 
 			(dev, test, production, etc.).
