@@ -29,12 +29,343 @@
 %CustomDTD;
 ]>
 <chapter id="configuration">
-  <title>Configuration</title>
-	<para>
-		Configuring JBoss DNA services is a bit more manual than is ideal. JBoss DNA currently consists of classes that uses dependency
-    injection to allow a great deal of flexibility in how it can be configured and customized. But this flexibility
-    makes it more difficult for you to configure.  We understand this, and will soon provide a much easier way to set up 
-		and manage JBoss DNA.  Current plans are to use the <ulink url="http://www.jboss.org/jbossmc">JBoss Microcontainer</ulink>
-		along with a configuration repository.
+  <title>Configuring and Using JBoss DNA</title>
+	<para>Using JBoss DNA within your application is actually quite straightforward.  As you'll see in this chapter,
+		the first step is setting up JBoss DNA and starting the <code>JcrEngine</code>.  After that, you obtain the
+		<code>javax.jcr.Repository</code> instance for a named repository and just use the standard JCR API throughout your
+		application.
 	</para>
+	<sect1 id="jcr_engine">
+		<title>JBoss DNA's JcrEngine</title>
+		<para>
+			JBoss DNA encapsulates everything necessary to run one or more JCR repositories into a single &JcrEngine; instance.
+			This includes all underlying repository sources, the pools of connections to the sources, the sequencers,
+			the MIME type detector(s), and the &Repository; implementations.
+		</para>
+		<para>
+			Obtaining a &JcrEngine; instance is very easy - assuming that you have a valid &JcrConfiguration; instance.  We'll see
+			how to get one of those in a little bit, but if you have one then all you have to do is build and start the engine:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+JcrEngine engine = config.build();
+engine.start();
+ ]]></programlisting>
+		<para>
+			Obtaining a JCR &Repository; instance is a matter of simply asking the engine for it by the name defined in the configuration:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+javax.jcr.Repository repository = engine.getRepository("Name of repository");
+ ]]></programlisting>
+		<para>
+			At this point, your application can proceed by working with the JCR API.
+		</para>
+		<para>
+			And, once you're finished with the &JcrEngine;, you should shut it down:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+engine.shutdown();
+engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
+ ]]></programlisting>
+		<para>
+			When the <code>shutdown()</code> method is called, the &Repository; instances managed by the engine are marked as being shut down,
+			and they will not be able to create new &Session;s.  However, any existing &Session;s or ongoing operations (e.g., event notifications)
+			present at the time of the <code>shutdown()</code> call will be allowed to finish.  
+			In essence, <code>shutdown()</code> is a <emphasis>graceful</emphasis> request, and since it may take some time to complete,
+			you can wait until the shutdown has completed by simply calling <code>awaitTermination(...)</code> as shown above.
+			This method will block until the engine has indeed shutdown or until the supplied time duration has passed (whichever comes first).
+			And, yes, you can call the <code>awaitTermination(...)</code> method repeatedly if needed.
+		</para>
+	</sect1>
+	<sect1 id="jcr_configuration">
+		<title>JcrConfiguration</title>
+		<para>
+			The previous section assumed the existence of a &JcrConfiguration;.  It's not really that creating an instance is all that difficult.
+			In fact, there's only one no-argument constructor, so actually creating the instance is a piece of cake.  What can be a little more challenging,
+			though, is setting up the &JcrConfiguration; instance, which must define the following components:
+			<itemizedlist>
+				<listitem>
+					<para><emphasis role="strong"><code>Repository sources</code></emphasis> are the POJO objects that each describe a particular
+					location where content is stored.  Each repository source object is an instance of a JBoss DNA connector, and is configured
+					with the properties that particular source.  JBoss DNA's &RepositorySource; classes are analogous to JDBC's &DataSource; classes -
+					they are implemented by specific connectors (aka, "drivers") for specific kinds of repository sources (aka, "databases").
+					Similarly, a &RepositorySource; instance is analogous to a &DataSource; instance, with bean properties for each configurable
+					parameter.  Therefore, each repository source definition must supply the name of the &RepositorySource; class, any
+					bean properties, and, optionally, the classpath that should be used to load the class. </para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>Repositories</code></emphasis> define the JCR repositories that are available.  Each
+					repository has a unique name that is used to obtain the &Repository; instance from the &JcrEngine;'s <code>getRepository(String)</code>
+					method, but each repository definition also can include the predefined namespaces (other than those automatically defined by
+					JBoss DNA), various options, and the node types that are to be available in the repository without explicit registration
+					through the JCR API.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>Sequencers</code></emphasis> define the particular sequencers that are available for use.
+					Each sequencer definition provides the path expressions governing which nodes in the repository should be sequenced when those nodes change,
+					and where the resulting output generated by the sequencer should be placed.  The definition also must state the name of 
+					the sequencer class, any bean properties and, optionally, the classpath that should be used to load the class.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>MIME type detectors</code></emphasis> define the particular MIME type detector(s) that should
+					be made available.  A MIME type detector does exactly what the name implies: it attempts to determine the MIME type given a
+					"filename" and contents.  JBoss DNA automatically uses a detector that uses the file extension to identify the MIME type,
+					but also provides an implementation that uses an external library to identify the MIME type based upon the contents.
+					The definition must state the name of the detector class, any bean properties and, optionally, the classpath that should 
+					be used to load the class.</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+		<para>
+			There really are three options:
+			<itemizedlist>
+				<listitem>
+					<para><emphasis role="strong"><code>Load from a file</code></emphasis> is conceptually the easiest and requires the least amount
+					of Java code, but it now requires a configuration file.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>Load from a configuration repository</code></emphasis> is not much more complicated than loading
+					from a file, but it does allow multiple &JcrEngine; instances (usually in different processes perhaps on different machines)
+					to easily access their (shared) configuration.  And technically, loading the configuration from a file really just creates an
+					&InMemoryRepositorySource;, imports the configuration file into that source, and then proceeds with this approach.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>Programmatic configuration</code></emphasis> is always possible, even if the configuration is loaded
+					from a file or repository.  Using the &JcrConfiguration;'s API, you can define (or update or remove) all of the definitions that make
+					up a configuration.</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+		<para>
+			Each of these approaches has their obvious advantages, so the choice of which one to use is entirely up to you.
+		</para>
+		<sect2 id="loading_from_file">
+			<title>Loading from a configuration file</title>
+			<para>
+				Loading the JBoss DNA configuration from a file is actually very simple:
+			</para>
+    	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration();
+configuration.loadFrom(file);
+ ]]></programlisting>
+			<para>
+				where the <code>file</code> parameter can actually be a &File; instance, a &URL; to the file, an &InputStream; 
+				containing the contents of the file, or even a &String; containing the contents of the file.  
+			</para>
+			<note>
+				<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
+				  out any current notion of the configuration and replaces it with the configuration found in the file.
+				</para>
+			</note>
+			<para>
+				There is an optional second parameter that defines the &Path; within the configuration file identifying the parent node of the various
+				configuration nodes.  If not specified, it assumes "/".  This makes it possible for the configuration content to be
+				located at a different location in the hierarchical structure.  (This is not often required, but when it is required
+				this second parameter is very useful.)
+			</para>
+			<para>
+				Here is the configuration file that is used in the repository example, though it has been simplified a bit and most comments 
+				have been removed for clarity):
+			</para>
+    	<programlisting role="JAVA"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+	  <!-- 
+	  Define the JCR repositories 
+	  -->
+	  <dna:repositories>
+	      <!-- 
+	      Define a JCR repository that accesses the 'Cars' source directly.
+	      This of course is optional, since we could access the same content through 'vehicles'.
+	      -->
+	      <dna:repository jcr:name="car repository" dna:source="Cars">
+	          <options jcr:primaryType="dna:options"/>
+	              <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+	          </options>
+	      </dna:repository>
+	  </dna:repositories>
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the DNA-specific Graph API.
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
+        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+            <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
+            <defaultWorkspaceName>workspace2</defaultWorkspaceName>
+        </dna:source>
+    </dna:sources>
+    <!-- 
+    Define the sequencers. This is an optional section. For this example, we're not using any sequencers. 
+    -->
+    <dna:sequencers>
+        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+            <dna:description>Image metadata sequencer</dna:description>        
+            <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
+            <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
+        </dna:sequencer-->
+    </dna:sequencers>
+    <dna:mimeTypeDetectors>
+        <dna:mimeTypeDetector jcr:name="Detector" dna:description="Standard extension-based MIME type detector"/>
+    </dna:mimeTypeDetectors>
+</configuration>
+ ]]></programlisting>
+		</sect2>
+		<sect2 id="loading_from_repository">
+			<title>Loading from a configuration repository</title>
+			<para>
+				Loading the JBoss DNA configuration from an existing repository is also pretty straightforward.  Simply create and configure the
+				&RepositorySource; instance to point to the desired repository, and then call the <code>loadFrom(&RepositorySource; source)</code>
+				method:
+			</para>
+    	<programlisting role="JAVA"><![CDATA[
+RepositorySource configSource = ...
+JcrConfiguration config = new JcrConfiguration();
+configuration.loadFrom(configSource);
+ ]]></programlisting>
+			<para>
+				This really is a more advanced way to define your configuration, so we won't go into how you configure a &RepositorySource;.
+				For more information, consult the &ReferenceGuide;.
+			</para>
+			<note>
+				<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
+				  out any current notion of the configuration and replaces it with the configuration found in the file.
+				</para>
+			</note>
+			<para>
+				There is an optional second parameter that defines the name of the workspace in the supplied source where the configuration content
+				can be found.  It is not needed if the workspace is the source's default workspace. 
+				There is an optional third parameter that defines the &Path; within the configuration repository identifying the parent node of the various
+				configuration nodes.  If not specified, it assumes "/".  This makes it possible for the configuration content to be
+				located at a different location in the hierarchical structure.  (This is not often required, but when it is required
+				this second parameter is very useful.)
+			</para>
+		</sect2>
+		<sect2 id="programmatic_configuration">
+			<title>Programmatic configuration</title>
+			<para>
+				Defining the configuration programmatically is not terribly complicated, and it for obvious reasons results in more verbose Java code.
+				But this approach is very useful and often the easiest approach when the configuration must change or is a reflection of other
+				dynamic information.
+			</para>
+			<para>
+				The &JcrConfiguration; class was designed to have an easy-to-use API that makes it easy to configure each of the different kinds of
+				components, especially when using an IDE with code completion.  Here are several examples:
+			</para>
+			<sect3 id="programmatically_configuring_sources">
+				<title>Repository sources</title>
+				<para>Each repository source definition must include the name of the &RepositorySource; class as well as each bean property
+					that should be set on the object:
+				</para>
+    		<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("source A")
+      .usingClass(InMemoryRepositorySource.class)
+      .setDescription("The repository for our content")
+      .setProperty("defaultWorkspaceName", workspaceName);
+ ]]></programlisting>
+				<para>
+					This example defines an in-memory source with the name "source A", a description, and a single "defaultWorkspaceName" bean property.
+					Different &RepositorySource; implementations will the bean properties that are required and optional.
+					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
+					the classpath or from a specific classpath).
+				</para>
+				<note>
+					<para>Each time <code>repositorySource(String)</code> is called, it will either load the existing definition with the supplied
+					name or will create a new definition if one does not already exist.  To remove a definition, simply call <code>remove()</code>
+					on the result of <code>repositorySource(String)</code>.
+					The set of existing definitions can be accessed with the <code>repositorySources()</code> method.
+					</para>
+				</note>
+			</sect3>
+			<sect3 id="programmatically_configuring_repositories">
+				<title>Repositories</title>
+				<para>Each repository must be defined to use a named repository source, but all other aspects (e.g., namespaces, node types, options) 
+					are optional.</para> 
+    		<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repository("repository A")
+      .addNodeTypes("myCustomNodeTypes.cnd")
+      .setSource("source 1")
+      .registerNamespace("acme","http://www.example.com/acme")
+      .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+ ]]></programlisting>
+				<para>
+					This example defines a repository that uses the "source 1" repository source (which could be a federated source, an in-memory source,
+					a database store, or any other source).  Additionally, this example adds the node types in the "myCustomNodeTypes.cnd" file as those
+					that will be made available when the repository is accessed.  It also defines the "http://www.example.com/acme" namespace,
+					and finally sets the "JAAS_LOGIN_CONFIG_NAME" option to define the name	of the JAAS login configuration that should be used by 
+					the JBoss DNA repository.
+				</para>
+				<note>
+					<para>Each time <code>repository(String)</code> is called, it will either load the existing definition with the supplied
+					name or will create a new definition if one does not already exist.  To remove a definition, simply call <code>remove()</code>
+					on the result of <code>repository(String)</code>.
+					The set of existing definitions can be accessed with the <code>repositories()</code> method.
+					</para>
+				</note>
+			</sect3>
+			<sect3 id="programmatically_configuring_sequencers">
+				<title>Sequencers</title>
+				<para>Each defined sequencer must specify the name of the &StreamSequencer; implementation class as well as the path expressions
+					defining which nodes should be sequenced and the output paths defining where the sequencer output should be placed (often as a function
+					of the input path expression).</para> 
+    		<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.sequencer("Image Sequencer")
+      .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences image files to extract the characteristics of the image")
+      .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/images/$1");
+ ]]></programlisting>
+				<para>
+					This shows an example of a sequencer definition named "Image Sequencer" that uses the &ImageMetadataSequencer; class 
+					(loaded from the classpath), that is to sequence the "jcr:data" property on any new or changed nodes that are named 
+					"jcr:content" below a parent node	with a name ending in ".jpg", ".jpeg", ".gif", ".bmp", ".pcx", ".iff", ".ras", 
+					".pbm", ".pgm", ".ppm" or ".psd".  The output of the sequencing operation should be placed at the "/images/$1" node,
+					where the "$1" value is captured as the name of the parent node.  (The capture groups work the same was as regular expressions;
+					see the &ReferenceGuide; for more details.)
+					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
+					the classpath or from a specific classpath).
+				</para>
+				<note>
+					<para>Each time <code>sequencer(String)</code> is called, it will either load the existing definition with the supplied
+					name or will create a new definition if one does not already exist.  To remove a definition, simply call <code>remove()</code>
+					on the result of <code>sequencer(String)</code>.
+					The set of existing definitions can be accessed with the <code>sequencers()</code> method.
+					</para>
+				</note>
+			</sect3>
+			<sect3 id="programmatically_configuring_mime_type_detectors">
+				<title>MIME type detectors</title>
+				<para>Each defined MIME type detector must specify the name of the &MimeTypeDetector; implementation class as well as any
+					other bean properties required by the implementation.</para> 
+    		<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.mimeTypeDetector("Extension Detector")
+      .usingClass(org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector.class);
+ ]]></programlisting>
+				<para>
+					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
+					the classpath or from a specific classpath).
+				</para>
+				<note>
+					<para>Each time <code>mimeTypeDetector(String)</code> is called, it will either load the existing definition with the supplied
+					name or will create a new definition if one does not already exist.  To remove a definition, simply call <code>remove()</code>
+					on the result of <code>mimeTypeDetector(String)</code>.  
+					The set of existing definitions can be accessed with the <code>mimeTypeDetectors()</code> method.
+					</para>
+				</note>
+			</sect3>
+		</sect2>
+	</sect1>
+	<sect1 id="using_dna_whats_next">
+		<title>What's next</title>
+		<para>
+			This chapter outline how you configure JBoss DNA, how you then access a <code>javax.jcr.Repository</code> instance,
+			and use the standard JCR API to interact with the repository. The
+			<link linkend="downloading_and_running">next chapter </link> walks you through downloading
+			and running the JBoss DNA examples. 
+		</para>
+	</sect1>
 </chapter>

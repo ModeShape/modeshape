@@ -79,8 +79,6 @@ public class JcrRepositoryTest {
         }
     }
 
-
-    
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -93,7 +91,7 @@ public class JcrRepositoryTest {
         // Set up the execution context ...
         context = new ExecutionContext();
         credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
-        
+
         // Stub out the connection factory ...
         connectionFactory = new RepositoryConnectionFactory() {
             /**
@@ -180,28 +178,28 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor("property"), is("value"));
     }
 
-    @Test(expected=javax.jcr.LoginException.class)
+    @Test( expected = javax.jcr.LoginException.class )
     public void shouldNotAllowLoginWithNoCredentials() throws Exception {
         // This would work iff this code was executing in a privileged block, but it's not
         repository.login();
     }
-    
-    @SuppressWarnings("cast")
+
     @Test
     public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
         LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
         login.login();
-        
-        Subject subject = login.getSubject();
-        
-        Session session = (Session) Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
 
+        Subject subject = login.getSubject();
+
+        Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+
+            @SuppressWarnings( "synthetic-access" )
             public Session run() throws Exception {
                 return repository.login();
             }
-        
+
         }, AccessController.getContext());
-        
+
         assertThat(session, is(notNullValue()));
         assertThat(session.getUserID(), is("superuser"));
         login.logout();

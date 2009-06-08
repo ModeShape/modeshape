@@ -44,6 +44,7 @@ import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -306,7 +307,11 @@ public class RepositoryClient {
             case DNA: {
                 try {
                     // Use the DNA Graph API to read the properties and children of the node ...
-                    ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
+                    ExecutionContext context = this.context;
+                    if (loginContext != null) {
+                        JaasSecurityContext security = new JaasSecurityContext(loginContext);
+                        context = this.context.with(security);
+                    }
                     Graph graph = engine.getGraph(context, sourceName);
                     graph.useWorkspace("default");
                     org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);

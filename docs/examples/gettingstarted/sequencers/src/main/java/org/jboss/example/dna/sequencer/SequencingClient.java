@@ -41,13 +41,13 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
-import org.jboss.dna.jcr.JcrRepository;
+import org.jboss.dna.jcr.SecurityContextCredentials;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.security.config.IDTrustConfiguration;
 
 /**
  * @author Randall Hauch
@@ -60,14 +60,6 @@ public class SequencingClient {
     public static final char[] DEFAULT_PASSWORD = "secret".toCharArray();
 
     public static void main( String[] args ) {
-        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-        try {
-            idtrustConfig.config("security/jaas.conf.xml");
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-
         // Configure the DNA configuration. This could be done by loading a configuration from a file, or by
         // using a (local or remote) configuration repository, or by setting up the configuration programmatically.
         // This example uses the programmatic approach...
@@ -80,10 +72,7 @@ public class SequencingClient {
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryId)
-              .addNodeTypes("sequencing.cnd")
-              .setSource("store")
-              .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+        config.repository(repositoryId).addNodeTypes("sequencing.cnd").setSource("store");
         // Set up the image sequencer ...
         config.sequencer("Image Sequencer")
               .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
@@ -433,7 +422,14 @@ public class SequencingClient {
      * @throws RepositoryException
      */
     protected Session createSession() throws RepositoryException {
-        return this.repository.login(workspaceName);
+        // Normally we'd just use SimpleCredentials or some other custom Credentials implementation,
+        // but that would require JAAS (since JBoss DNA uses that used by default). Since we don't
+        // have a JAAS implementation, we will use the SecurityContextCredentials to wrap
+        // another SecurityContext implementation. This is how you might integrate a non-JAAS security
+        // system into JBoss DNA. See the repository example for how to set up with JAAS.
+        SecurityContext securityContext = new MyCustomSecurityContext();
+        SecurityContextCredentials credentials = new SecurityContextCredentials(securityContext);
+        return this.repository.login(credentials, workspaceName);
     }
 
     protected String getMimeType( URL file ) {
@@ -449,6 +445,35 @@ public class SequencingClient {
         if (filename.endsWith(".mp3")) return "audio/mpeg";
         if (filename.endsWith(".java")) return "text/x-java-source";
         return null;
+    }
+
+    protected class MyCustomSecurityContext implements SecurityContext {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.SecurityContext#getUserName()
+         */
+        public String getUserName() {
+            return "Fred";
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.SecurityContext#hasRole(java.lang.String)
+         */
+        public boolean hasRole( String roleName ) {
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.SecurityContext#logout()
+         */
+        public void logout() {
+            // do something
+        }
     }
 
 }

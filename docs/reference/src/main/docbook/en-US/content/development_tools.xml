@@ -228,6 +228,7 @@
 		<para>While you're adding <code>$MAVEN_HOME/bin</code> to your path, you should also set the <code>$MAVEN_OPTS</code> environment variable
 		  to "<code>-Xmx256m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
 		  build.
+		</para>
 		<note>
 			<para>
 				The JBoss Maven repository provides a central location for not only the artifacts produced by the JBoss.org projects (well, at least those

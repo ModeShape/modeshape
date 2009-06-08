@@ -49,6 +49,12 @@
 # /docs/reference/
 /docs/reference/target
 
+# /extensions/dna-web-jcr-rest/
+/extensions/dna-web-jcr-rest/target/
+
+# /extensions/dna-web-jcr-rest-war/
+/extensions/dna-web-jcr-rest-war/target/
+
 # /extensions/dna-classloader-maven/
 /extensions/dna-classloader-maven/target
 

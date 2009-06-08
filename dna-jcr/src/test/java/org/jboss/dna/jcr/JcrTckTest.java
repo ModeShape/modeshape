@@ -43,7 +43,6 @@ import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
 import org.apache.jackrabbit.test.api.SessionTest;
-import org.apache.jackrabbit.test.api.SessionUUIDTest;
 import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
 import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
 import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;

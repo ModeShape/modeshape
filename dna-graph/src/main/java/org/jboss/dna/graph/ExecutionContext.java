@@ -73,6 +73,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * , with default implementations for all other components (including default namespaces in the
      * {@link #getNamespaceRegistry() namespace registry}.
      */
+    @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
         this(new NullSecurityContext(), null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
@@ -193,7 +194,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     /**
      * Get the {@link SecurityContext security context} for this context.
      * 
-     * @return the security context; may be <code>null</code>
+     * @return the security context; never <code>null</code>
      */
     public SecurityContext getSecurityContext() {
         return this.securityContext;
@@ -347,6 +348,6 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
 
         public void logout() {
         }
-        
+
     }
 }
