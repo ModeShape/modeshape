@@ -163,6 +163,16 @@
 			by the patch.
 		</para>
 	</sect1>
+	<sect1 id="git">
+		<title>Git</title>
+		<para>
+			Several contributors are using <ulink url="&Git;">Git</ulink> on their local development machines.  This allows
+			the developer to use Git branches, commits, merges, and other Git tools, but still using 
+			the JBoss DNA <link linkend="svn">Subversion</link> repository.  For more information, see our 
+			<ulink url="http://jbossdna.blogspot.com/2009/05/git-and-svn-beginning.html">blog</ulink>
+			<ulink url="http://jbossdna.blogspot.com/2009/05/git-it-together-with-subversion.html">posts</ulink> on the topic.
+		</para>
+	</sect1>
 	<sect1 id="maven">
 		<title>Maven</title>
 		<para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including

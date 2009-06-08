@@ -103,21 +103,37 @@
   </part>
 	<part id="provied-connectors-part">
 		<title>Provided Connectors</title>
-		<para>
-		  The JBoss DNA project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
-		  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
-		  them as a repository source.
-		</para>
+		<partintro>
+			<para>
+			  The JBoss DNA project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
+			  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
+			  them as a repository source.
+			</para>
+		</partintro>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/in_memory.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/file_system.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_storage.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/federation.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/subversion.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jboss_cache.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_metadata.xml"/>
 	</part>
 	<part id="provied-sequencers-part">
 		<title>Provided Sequencers</title>
-		<para>
-		  The JBoss DNA project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
-		  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
-		  them appropriately.
-		</para>
+		<partintro>
+			<para>
+			  The JBoss DNA project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
+			  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
+			  them appropriately.
+			</para>
+		</partintro>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/compact_node_types.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/xml.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/zip.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/microsoft_office.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/java_source.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/image.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/mp3.xml"/>
 	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>
