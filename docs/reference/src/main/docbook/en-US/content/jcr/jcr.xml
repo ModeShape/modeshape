@@ -40,88 +40,222 @@
   </para>
   <sect1 id="jcr-repositories">
     <title>Obtaining JCR repositories</title>
-		<para>The JCR API doesn't define how your application first obtains a reference to a &Repository; implementation.
-			With JBoss DNA, you simply creating a &JcrRepository; object and supply
-			an &ExecutionContextFactory; and a &RepositoryConnectionFactory; (such as a &RepositoryLibrary; or &RepositoryService;).
-			Since &JcrRepository; implements the JCR &Repository; interface, from this point forward you can just use the
-			standard JCR API.
+		<para>Add reference to how to use JcrConfiguration to obtain a JcrEngine.
 		</para>
-		<note>
-			<para>
-				For more information about the &ExecutionContextFactory; and &RepositoryConnectionFactory; classes, see
-				the chapter on <link linkend="environment">setting up a JBoss DNA environment</link> and
-				<link linkend="repositories">setting up the &RepositoryService;</link>.
-			</para>
-		</note>
   </sect1>
   <sect1 id="jcr-sessions">
     <title>Creating JCR sessions</title>
-		<para>Creating sessions is done using a &Repository; one of its <code>login(...)</code> methods, where the
-			name of the workspace corresponds to the name of the &RepositorySource;:
+		<para>Once you have obtained a reference to the JCR &Repository;, you can create a JCR session using one of its
+			<code>login(...)</code> methods.  The <ulink url="&JSR170;">JSR-170</ulink> specification provides four login methods.
 		</para>
+		<para>The first method allows the implementation to choose its own security context to create a session in the default workspace
+		for the repository.  The JBoss DNA JCR implementation uses the security context from the current &AccessControlContext;.  This implies
+		that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction;.  Here is one example of how this might  
+		work:
     <programlisting>
-&JcrRepository; jcrRepository = new &JcrRepository;(contextFactory, sources);
-&Session; session = jcrRepository.login(sourceName);
-</programlisting>
-		<para>
-			Now, this code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
-			Normally, your application will need to authenticate the user, so let's look at how that's done.
-		</para>
-		<para>
-			As we mentioned in the <link linkend="security">security section</link>, JBoss DNA uses JAAS for authentication
-			and authorization.  So how does this work with the JCR API?
-		</para>
-		<para>The JCR API defines a &Credentials; marker interface, an instance of which can be passed to the
-		  <code>&Session;.login(...)</code> method.  Rather than provide a concrete implementation of this interface, JBoss DNA
-		  allows you to pass any implementation of &Credentials; that also has one of the following methods:
-		  <itemizedlist>
-			  <listitem>
-					<para><code>getLoginContext()</code> that returns a &LoginContext; instance.</para>
-				</listitem>
-			  <listitem>
-					<para><code>getAccessControlContext()</code> that returns a &AccessControlContext; instance.</para>
-				</listitem>
-			</itemizedlist>
-			This way, your application can obtain the JAAS &LoginContext; or &AccessControlContext; however it wants,
-			and then merely passes that into DNA through the JCR &Credentials;.  No interfaces or classes specific to JBoss DNA are required.
-		</para>
-		<para>
-			The following code shows how this is done, using an anonymous inner class for the &Credentials; implementation.
-		</para>
+Subject subject = ...;
+&Session; session = (&Session;) Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
+    public Session run() throws Exception {
+        return repository.login();
+    }}, AccessController.getContext());
+</programlisting>	
+		This approach will yield a session with the same user name and roles as <code>subject</code>.  There is a comparable
+		version of <code>login(...)</code> that allows the workspace to be specified by name.
     <programlisting>
-&CallbackHandler; callbackHandler = // as needed by your app, according to JAAS
-final &LoginContext; loginContext = new &LoginContext;("MyAppContextName",callbackHandler);
-
-// Now pass to JBoss DNA to create a JCR Session ...
-&Credentials; credentials = new &Credentials;() {
-public &LoginContext; getLoginContext() { return loginContext; }
-};
-&JcrRepository; jcrRepository = new &JcrRepository;(contextFactory, sources);
-&Session; session = jcrRepository.login(credentials, sourceName);
-</programlisting>
-  </sect1>
+Subject subject = ...;
+final &String; workspaceName = ...;
+&Session; session = (&Session;) Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
+    public Session run() throws Exception {
+        return repository.login(workspaceName);
+    }}, AccessController.getContext());
+</programlisting>	
+		</para>
+		<para>It is also possible to supply the &Credentials; directly as part of the login process, although JBoss DNA imposes
+		some requirements on what types of &Credentials; may be supplied.  The simplest way is to provide a &SimpleCredentials; object.
+		These credentials will be validated against the JAAS realm named "dna-jcr" unless another realm name is provided as an option 
+		during the JCR repository configuration.  For example:
+	    <programlisting>
+&String; userName = ...;
+char[] password = ...;
+&Session; session = repository.login(new &SimpleCredentials;(userName, password));
+</programlisting>	
+		The credentials-based <code>login(...)</code> method also supports an optional workspace name.
+	    <programlisting>
+&String; userName = ...;
+char[] password = ...;
+&String; workspaceName = ...;
+&Session; session = repository.login(new &SimpleCredentials;(userName, password), workspaceName);
+</programlisting>	
+		If a &LoginContext; is available for the user, that can be used as part of the credentials to authenticate the user with
+		JBoss DNA instead.  This snippet uses an anonymous class to provide the login context, but any class with a <code>&LoginContext; getLoginContext()</code>
+		method can be used as well.
+	    <programlisting>
+final &LoginContext; loginContext = ...;
+&Session; session = repository.login(new &Credentials;() {
+	&LoginContext; loginContext getLoginContext() {
+		return loginContext;
+	}
+}, workspaceName);
+</programlisting>			
+		Servlet-based applications may wish to reuse the authentication information from &HttpServletRequest; instead.  Please note that 
+		the example below assumes that the servlet has a security constraint that prevents unauthenticated access.
+	    <programlisting>
+&HttpServletRequest; request = ...;
+&ServletSecurityContext; securityContext = new ServletSecurityContext(request);
+&Session; session = repository.login(new &SecurityContextCredentials;(securityContext);
+</programlisting>			
+		Once the &Session; is obtained, the repository content can be access and modified like any other JCR repository.  No roles are required to connect
+		to any workspace at this time.  Restrictions on workspace connections will likely be added to JBoss DNA in the near future.  The roles from the JAAS
+		information or the &HttpServletRequest; are used to control read and write access to the repository.  Please see the <ulink linkend="dna_jcr_security">JCR Security section</ulink>
+		for more details on how access is controlled.
+		</para>
+	</sect1>
 	<sect1>
-		<title>JCR Support</title>
+		<title>JCR Specification Support</title>
 		<para>
-			JBoss DNA currently supports most of the Level 1 and Level 2 feature set defined by the <ulink url="&JSR170;">JSR-170</ulink> specification.
-			Queries, which are part of Level 1, are not implemented, nor are all of the update methods that make up Level 2.
-			So while the current implementation provides many of the features that may be needed by an application, we really hope
-			that this release will allow you to give us some feedback on what we have so far.
-		</para>
+		The JBoss DNA JCR implementation will not be JCR-compliant prior to the 1.0 release.  Additionally, the JCR 
+		specification allows some latitude to implementors for some implementation details.  The sections below
+		clarify JBoss DNA's current and planned behavior.
+		</para> 
+		<sect2>
+			<title>L1 and L2 Features</title>
+			<para>
+				JBoss DNA currently supports most of the Level 1 and Level 2 feature set defined by the <ulink url="&JSR170;">JSR-170</ulink> specification.
+				Queries, which are part of Level 1, are not implemented.  Some of the L2 features such as workspace cloning and updating, corresponding nodes, 
+				and referential integrity for <code>REFERENCE</code> properties are also not yet implemented.  As the current implementation does provide many 
+				of the features that may be needed by an application, we really hope that this release will allow you to give us some feedback on what we have so far.
+			</para>
+		</sect2>
 		<sect2>
 			<title>Optional Features</title>
+			<para>
+				JBoss DNA does not currently support any of the optional JCR features.  Currently, the observation optional feature is planned to be complete prior
+				to the 1.0 release.  The locking optional feature <emphasis>may</emphasis> be implemented in this timeframe as well.  
+				<note>
+					<para>The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
+					</para>
+				</note>
+			</para>
 		</sect2>
-		<sect2>
+		<sect2 id="dna_jcr_security">
 			<title>JCR Security</title>
+			<para>
+				Although the <ulink url="&JSR170;">JSR-170</ulink> specification requires implementation of the <code>Session.checkPermission(String, String)</code> method,
+				it allows implementors to choose the granularity of their access controls.  JBoss DNA supports coarse-grained, role-based access control at the repository 
+				and workspace level.
+			</para>
+			<para>
+				JBoss DNA currently defines two permissions: <code>READONLY</code> and <code>READWRITE</code>.  If the &Credentials; passed into <code>Session.login(...)</code>
+				(or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) has either role, the session will have
+				the corresponding access to all workspaces within the repository.  That is, having the <code>READONLY</code> role implies that <code>Session.checkPermission(path, "read")</code>
+				will not throw an &AccessDeniedException;  for any value of <code>path</code> in any workspace in the repository.  Similarly, having the <code>READWRITE</code> 
+				role implies that <code>Session.checkPermission(path, actions)</code> will not throw an &AccessDeniedException; for any values of <code>path</code> and 
+				<code>actions</code>.
+				  
+				<note>
+					<para> In this release, JBoss DNA does not properly check for actions or even check that the <code>actions</code> parameter passed into 
+						<code>Session.checkPermission(...)</code> is even valid.  This will be corrected prior to the 1.0 release.
+					</para>
+				</note> 
+				
+				It is also possible to grant access only to one or more named workspaces.  For a workspace named "staging", this can be done by assigning a role named 
+				<code>READONLY.staging</code>.  Appending <code>"." + workspaceName</code> to the <code>READWRITE</code> role works as well.
+			</para>
+			<para>
+				As a final note, the JBoss DNA JCR implementation will likely have additional security roles added prior to the 1.0 release.  A <code>CONNECT</code> role
+				is already being used by the DNA REST Server to control whether users have access to the repository through that means.   
+			</para>
 		</sect2>
 		<sect2>
-			<title>Node Type Registration</title>
+			<title>Built-In Node Types</title>
+			<para>Add description of the DNA built-in node types.</para>
+		</sect2>
+		<sect2>
+			<title>Custom Node Type Registration</title>
+			<para>
+				Although the <ulink url="&JSR170;">JSR-170</ulink> specification does not require support for registration of custom types, JBoss DNA supports this extremely
+				useful feature.  Custom node types can be added at startup, as noted above or at runtime through a DNA-specific interface.  JBoss DNA supports defining node
+				types either through a <ulink url="&JSR283;">JSR-283</ulink>-like template approach or through the use of &CND; (CND) files.
+				Both type registration mechanisms are supported equally within JBoss DNA, although the CND approach for defining node types is recommended.
+				<note>
+					<para>JBoss DNA also supports defining custom node types to load at startup.  This is discussed in more detail
+					in the next chapter.
+					</para>
+				</note>
+			</para>
+			<para>
+				Although the JSR-283 specification is not yet final, it does provide a useful means of programatically defining JCR node types.  JBoss DNA supports a comparable
+				node type definition API that implements the functionality from the specification, albeit with classes in an <code>org.jboss.dna.jcr</code> package.  The intent
+				is to deprecate these classes and replace their usage with the JSR-283 equivalents after JBoss DNA fully supports in the JSR-283 specification in a future release.
+				Node types can be defined like so:
+	    <programlisting>
+&Session; session = ... ;
+NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+// Declare a mixin node type named "searchable" (with no namespace)
+NodeTypeTemplate nodeType = nodeTypeManager.createNodeTypeTemplate();
+nodeType.setName("searchable");
+nodeType.setMixin(true);
+nodeType.getNodeDefinitionTemplates().add(childNode);
+
+// Add a mandatory child named "source" with a required primary type of "nt:file" 
+NodeDefinitionTemplate childNode = nodeTypeManager.createNodeDefinitionTemplate();
+childNode.setName("source");
+childNode.setMandatory(true);
+childNode.setRequiredPrimaryTypeNames(new String[] { "nt:file" });
+childNode.setDefaultPrimaryType("nt:file");
+
+// Add a multi-valued STRING property named "keywords"
+PropertyDefinitionTemplate property = nodeTypeManager.createPropertyDefinitionTemplate();
+property.setName("keywords");
+property.setMultiple(true);
+property.setRequiredType(PropertyType.STRING);
+nodeType.getPropertyDefinitionTemplates().add(property);
+
+// Register the custom node type
+nodeTypeManager.registerNodeType(nodeType);
+</programlisting>	
+			Residual properties and child node definitions can also be defined simply by not calling <code>setName</code> on 
+			the template.
+			</para>
+			<para>
+			Custom node types can be defined more succinctly through the &CND; file format.  In fact, this is how JBoss
+			DNA defines its built-in node types.  An example CND file that declares the same node type as above would be:
+<programlisting>
+[searchable] mixin
+- keywords (string) multiple
++ source (nt:file) = nt:file
+</programlisting>	
+			This definition could then be registered with the following code snippet.
+<programlisting>
+
+String pathToCndFileInClassLoader = ...;
+CndNodeTypeSource nodeTypeSource = new CndNodeTypeSource(pathToCndFileInClassLoader);
+
+for (Problem problem : nodeTypeSource.getProblems()) {
+    System.err.println(problem);
+}
+if (!nodeTypeSource.isValid()) {
+    throw new IllegalStateException("Problems loading node types");
+}
+
+&Session; session = ... ;
+NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+nodeTypeManager.registerNodeTypes(nodeTypeSource);
+</programlisting>
+				<note>
+					<para> JBoss DNA does not yet support a simple means on unregistering types at this time, so be careful before registering types outside of a 
+					sandboxed environment.
+					</para>
+				</note> 	
+
+			</para>
 		</sect2>
 	</sect1>
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we covered how to use JCR with JBoss DNA.  Now that you know how JBoss DNA repositories work,
+			In this chapter, we covered how to use JCR with JBoss DNA and learned about how it implements the JCR specification.  Now that you know how JBoss DNA repositories work,
 			and how to use JCR to work with DNA repositories, we'll move on in 
 			the <link linkend="sequencing">next chapter</link> to describing in detail how the sequencing of file content works.
 		</para>

@@ -28,6 +28,8 @@
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/reference/html/index.html'>Getting Started</ulink>">
 
+<!ENTITY CND			      		"<ulink url='http://jackrabbit.apache.org/node-type-notation.html'>Compact Node Definition</ulink>">
+
 <!-- Types in JRE -->
 
 <!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">
@@ -38,6 +40,7 @@
 <!ENTITY IOException				      		"<ulink url='&Java;java/io/IOException.html'><classname>IOException</classname></ulink>">
 <!ENTITY ClassLoader				      		"<ulink url='&Java;java/lang/ClassLoader.html'><interface>ClassLoader</interface></ulink>">
 <!ENTITY AccessControlContext      		"<ulink url='&Java;java/security/AccessController.html'><classname>AccessControlContext</classname></ulink>">
+<!ENTITY PrivilegedAction			      		"<ulink url='&Java;java/security/PrivilegedAction.html'><classname>PrivilegedAction</classname></ulink>">
 <!ENTITY LoginContext				      		"<ulink url='&Java;javax/security/auth/login/LoginContext.html'><classname>LoginContext</classname></ulink>">
 <!ENTITY Subject						      		"<ulink url='&Java;javax/security/auth/Subject.html'><classname>Subject</classname></ulink>">
 <!ENTITY CallbackHandler		      		"<ulink url='&Java;javax/security/auth/callback/CallbackHandler.html'><interface>CallbackHandler</interface></ulink>">
@@ -45,6 +48,7 @@
 <!ENTITY TimeUnit						      		"<ulink url='&Java;java/util/concurrent/TimeUnit.html'><interface>TimeUnit</interface></ulink>">
 <!ENTITY UUID						      				"<ulink url='&Java;java/util/UUID.html'><classname>UUID</classname></ulink>">
 <!ENTITY DataSource			      				"<ulink url='&Java;javax/sql/DataSource.html'><classname>DataSource</classname></ulink>">
+<!ENTITY HttpServletRequest			      		"<ulink url='&Java;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
 
 
 <!-- Types in JCR API -->
@@ -53,6 +57,8 @@
 <!ENTITY Session						       		"<interface>Session</interface>">
 <!ENTITY Credentials					       	"<interface>Credentials</interface>">
 <!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
+<!ENTITY LoginException						  "<interface>LoginException</interface>">
+<!ENTITY AccessDeniedException						  "<interface>AccessDeniedException</interface>">
 
 <!-- Types in dna-common -->
 
@@ -72,6 +78,7 @@
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><classname>ExecutionContext</classname></ulink>">
 <!ENTITY SecurityContext		       		"<ulink url='&API;graph/SecurityContext.html'><interface>SecurityContext</interface></ulink>">
 <!ENTITY JaasSecurityContext		      "<ulink url='&API;graph/JaasSecurityContext.html'><classname>JaasSecurityContext</classname></ulink>">
+<!ENTITY ServletSecurityContext		       		"<ulink url='&API;graph/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
 <!ENTITY Name								       		"<ulink url='&API;graph/property/Name.html'><interface>Name</interface></ulink>">
 <!ENTITY Path								       		"<ulink url='&API;graph/property/Path.html'><interface>Path</interface></ulink>">
 <!ENTITY PathSegment				       		"<ulink url='&API;graph/property/Path.Segment.html'><interface>Path.Segment</interface></ulink>">
