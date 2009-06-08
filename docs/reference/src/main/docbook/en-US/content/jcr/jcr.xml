@@ -29,7 +29,7 @@
 %CustomDTD;
 ]>
 <chapter id="jcr">
-  <title>Content Repositories for Java (JCR)</title>
+  <title>The JBoss DNA Content Repository for Java (JCR) Implementation</title>
   <para>
   	The
     <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
@@ -108,6 +108,15 @@ public &LoginContext; getLoginContext() { return loginContext; }
 			So while the current implementation provides many of the features that may be needed by an application, we really hope
 			that this release will allow you to give us some feedback on what we have so far.
 		</para>
+		<sect2>
+			<title>Optional Features</title>
+		</sect2>
+		<sect2>
+			<title>JCR Security</title>
+		</sect2>
+		<sect2>
+			<title>Node Type Registration</title>
+		</sect2>
 	</sect1>
 	<sect1>
 		<title>Summary</title>

@@ -28,13 +28,13 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="rest_service">
-  <title>The JBoss DNA REST Server</title>
+<chapter id="deploying_dna_jcr">
+  <title>Deploying the JBoss DNA JCR Implementation</title>
   <para>
 		Placeholder for the JBoss DNA REST Server documentation
   </para>
-	<sect1 id="supported_rest_resources">
-		<title>Supported Resources and URIs</title>
+	<sect1 id="jcr_deployment_models">
+		<title>JBoss DNA JCR Deployment Models</title>
 		<para>
 			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
 			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
@@ -42,8 +42,8 @@
 			(until it is given a different one).
 		</para>
 	</sect1>
-	<sect1 id="jcr_rest_spi">
-		<title>Repository Providers</title>
+	<sect1 id="jcr_security">
+		<title>Understanding JCR Security in JBoss DNA</title>
 		<para>
 			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
 			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
@@ -51,8 +51,8 @@
 			(until it is given a different one).
 		</para>
 	</sect1>
-	<sect1 id="dna_rest_server_configuration">
-		<title>Configuring the DNA REST Server</title>
+	<sect1 id="jcr_configuring_security">
+		<title>Configuring Security</title>
 		<para>
 			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
 			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
@@ -60,8 +60,35 @@
 			(until it is given a different one).
 		</para>
 	</sect1>
-	<sect1 id="dna_rest_server_deployment">
-		<title>Deploying the DNA REST Server</title>
+	<sect1 id="jcr_repository_configuration">
+		<title>Configuring the Repositories</title>
+		<para>
+			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
+			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
+			Other components require the context to be provided before it's used, and will use that context for all its operations
+			(until it is given a different one).
+		</para>
+		<sect2 id="jcr_choosing_connectors">
+			<title>Choosing the Correct Connectors</title>
+			<para>
+				One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
+				require this context to be passed into individual methods, allowing the context to vary with each method invocation.
+				Other components require the context to be provided before it's used, and will use that context for all its operations
+				(until it is given a different one).
+			</para>
+		</sect2>
+	</sect1>
+	<sect1 id="jcr_dna_core_configuration">
+		<title>Configuring JBoss DNA Core</title>
+		<para>
+			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
+			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
+			Other components require the context to be provided before it's used, and will use that context for all its operations
+			(until it is given a different one).
+		</para>
+	</sect1>
+	<sect1 id="jcr_smoke_test">
+		<title>Smoke Testing the Installation</title>
 		<para>
 			One such implementation is the &JaasSecurityContext;, which delegates any authentication or authorization requests to a
 	    <ulink url="http://java.sun.com/javase/technologies/security/">Java Authentication and Authorization Service (JAAS)</ulink>
