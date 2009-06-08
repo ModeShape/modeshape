@@ -457,6 +457,22 @@
             library to determine the best MIME type from the filename and file contents.
           </para>
         </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-web-jcr-rest</emphasis>
+            provides a set of JSR-311 (JAX-RS) objects that form the basis of a RESTful server for Java Content Repositories.  This project 
+            provides integration with DNA's JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
+            used to integrate other JCR implementations with these RESTful services in the future.  For ease of packaging, these classes are
+            provided as a JAR that can be placed in the WEB-INF/lib of a deployed RESTful server WAR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-web-jcr-rest-war</emphasis>
+            wraps the RESTful services from the dna-web-jcr-rest JAR into a WAR and provides in-container integration tests.  This project
+            can be consulted as a template for how to deploy the RESTful services in a custom implementation. 
+          </para>
+        </listitem>
       </itemizedlist>
       There are also documentation modules (located in the source under the
       <code>docs/</code>

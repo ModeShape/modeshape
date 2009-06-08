@@ -125,15 +125,16 @@ public class &ExecutionContext; implements &ClassLoaderFactory; {
 		</para>
 	  <programlisting>
 &ExecutionContext; context1 = new &ExecutionContext;();
+String jaasRealm = ...;
 
-// Create a context for a user, authenticating using JAAS ...
-&LoginContext; loginContext = new LoginContext("username",callbackHandler);
-&ExecutionContext; context2 = context1.with(new LoginContext("username"));
+// Create a context for a user, authenticating using a JAAS LoginContext...
+char[] password = "password".toCharArray();
+&SecurityContext; securityContext = new JaasSecurityContext(jaasRealm, "username", password);
+&ExecutionContext; context2 = context1.with(securityContext);
 
 // Create a context for the same user, authenticating using JAAS, and using a different callback handler ...
 &CallbackHandler; callbackHandler = ...
-&LoginContext; loginContext = new LoginContext("username",callbackHandler);
-&ExecutionContext; context3 = context1.with(loginContext);
+&ExecutionContext; context3 = context1.with(new JaasSecurityContext(jaasRealm, callbackHandler);
 
 // Create a context that uses a provided &SecurityContext; (see the <link linkend="security">next section</link>)...
 &SecurityContext; mySecurityContext = ...
@@ -185,7 +186,7 @@ public interface &SecurityContext; {
 		  </para>
 		  <para>
 				There are quite a few JAAS providers available, but one of the best and most powerful providers is
-		    <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>, which is the open source
+		    <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>, the open source
 				security framework used by JBoss.  JBoss Security offers a number of JAAS login modules, including:
 		    <itemizedlist>
 		      <listitem>
