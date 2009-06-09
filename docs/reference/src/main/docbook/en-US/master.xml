@@ -97,7 +97,7 @@
 			</para>
 		</partintro>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
-  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/>
+  	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
 	<part id="provied-connectors-part">
