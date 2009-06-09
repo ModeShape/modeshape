@@ -28,8 +28,8 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="graph_api">
-  <title>Graph API</title>
+<chapter id="graph-model">
+  <title>Graph Model</title>
   <para>
 		One of the central concepts within JBoss DNA is that of its <emphasis>graph model</emphasis>.
 		Information is structured into a hierarchy of nodes with properties, where nodes in the hierarchy

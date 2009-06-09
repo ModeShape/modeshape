@@ -570,7 +570,7 @@ public interface &MimeTypeDetector; {
 			facilities throughout the system.
 		</para>
 		<para>
-			In the <link linkend="graph-api">next chapter</link>, we'll dive into Graph API and will introduce the notion of
+			In the <link linkend="graph-model">next chapter</link>, we'll dive into Graph API and will introduce the notion of
 			nodes, paths, names, and properties, that are so essential and used throughout JBoss DNA.
 		</para>
 	</sect1>

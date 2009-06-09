@@ -101,7 +101,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
 	<part id="provied-connectors-part">
-		<title>Provided Connectors</title>
+		<title>Connector Library</title>
 		<partintro>
 			<para>
 			  The JBoss DNA project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
@@ -118,7 +118,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_metadata.xml"/>
 	</part>
 	<part id="provied-sequencers-part">
-		<title>Provided Sequencers</title>
+		<title>Sequencer Library</title>
 		<partintro>
 			<para>
 			  The JBoss DNA project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
@@ -135,7 +135,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/mp3.xml"/>
 	</part>
 	<part id="provied-mime-type-detectors-part">
-		<title>Provided MIME type detectors</title>
+		<title>MIME Type Detector Library</title>
 		<partintro>
 			<para>
 			  The JBoss DNA project provides a number of <link linkend="mime-type-detectors">MIME type detectors</link> out-of-the-box.

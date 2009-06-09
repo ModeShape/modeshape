@@ -268,41 +268,49 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-common</emphasis>
-            is a low-level library of common utilities and frameworks, including logging, progress monitoring,
-            internationalization/localization, text translators, component management, and class loader factories.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-graph</emphasis>
-            defines the graph Application Programming Interface (API) and Service Provider Interface (SPI) for DNA, 
-						including the repository connectors, sequencers, graph interfaces, and MIME type detectors.
+            <emphasis role="strong">dna-jcr</emphasis>
+            contains JBoss DNA's implementation of the JCR API. If you're using JBoss DNA as a JCR repository, this is the
+ 						top-level dependency that you'll want to use.  The module defines all required dependencies, except for
+ 						the repository connector(s) and any sequencer implementations needed by your configuration.
+						As we'll see later on, using JBoss DNA as a JCR repository is easy: simply create a configuration, start the JCR engine,
+						get the JCR &Repository; object for your repository, and then use the JCR API.
+						This module also contains the Jackrabbit JCR API unit tests that verify the behavior of the JBoss DNA implementation.
+						As DNA does not fully implement the JCR 1.0.1 specification, there are a series of tests that are currently commented 
+            out in this module.  The <code>dna-jcr-tck</code> module contains all of these tests.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-repository</emphasis>
-            is the main module and provides the repository-oriented services, including the Repository Service, Sequencing
-            Service, Observation Service, and Rules Service.
+            provides the core DNA graph engine and services for managing repository connections, sequencers, MIME type detectors,
+						and observation. If you're using JBoss DNA repositories via our graph API rather than JCR, then this is where you'd start.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-graph</emphasis>
+            defines the Application Programming Interface (API) for JBoss DNA's low-level graph model,
+						including a DSL-like API for working with graph content.  This module also defines the
+ 						APIs necessary to implement custom connectors, sequencers, and MIME type detectors.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-cnd</emphasis>
-            provides a utilities for reading and writing files in the CND (Compact Node Definition) format.
+            provides a self-contained utility for parsing CND (Compact Node Definition) files and transforming
+						the node definitions into a graph notation compatible with JBoss DNA's JCR implementation.
           </para>
         </listitem>        
         <listitem>
           <para>
-            <emphasis role="strong">dna-jcr</emphasis>
-            provides the JBoss DNA implementation of the JCR API, which relies upon a repository connector, such as the
-            Federation Connector (see
-            <code>dna-connector-federation</code>
-            ).  As DNA does not fully implement the JCR 1.0.1 specification, there are a series of tests that are currently commented 
-            out in this module.  The <code>dna-jcr-tck</code> module contains all of these tests.
+            <emphasis role="strong">dna-common</emphasis>
+            is a small low-level library of common utilities and frameworks, including logging, progress monitoring,
+            internationalization/localization, text translators, component management, and class loader factories.
           </para>
         </listitem>
+      </itemizedlist>
+				There are several modules that provide system- and integration-level tests:
+      <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">dna-jcr-tck</emphasis>
@@ -315,9 +323,9 @@
           <para>
             <emphasis role="strong">dna-integration-tests</emphasis>
             provides a home for all of the integration tests that involve more components that just unit tests. Integration
-            tests are often more complicated, take longer, and involve testing the integration and functionality of many
-            components (whereas unit tests focus on testing a single class or component and may use stubs or mock objects for
-            other components).
+            tests are often more complicated, take longer, and involve testing the integration and functionality of multiple
+            components (whereas unit tests focus on testing a single class or component and may use stubs or mock objects
+            to isolate the code being tested from other related components).
           </para>
         </listitem>
       </itemizedlist>
