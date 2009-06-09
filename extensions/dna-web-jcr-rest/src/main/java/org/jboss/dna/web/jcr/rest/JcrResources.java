@@ -97,16 +97,6 @@ import org.jboss.resteasy.spi.UnauthorizedException;
  * <td>/resources/{repositoryName}/{workspaceName}/node/{uuid}</td>
  * <td>accesses the node with the given UUID</td>
  * <td>ALL</td> </tr>
- * <tr>
- * <td>/resources/{repositoryName}/{workspaceName}/lock/{path}</td>
- * <td>locks the node at the path</td>
- * <td>GET</td>
- * </tr>
- * <tr>
- * <td>/resources/{repositoryName}/{workspaceName}/lock/{path}</td>
- * <td>unlocks the node at the path</td>
- * <td>PUT</td>
- * </tr>
  * </table>
  */
 @Immutable
