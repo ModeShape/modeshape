@@ -46,9 +46,9 @@
 			<title>Projections</title>
       <para>
 			 Each federated repository source provides a unified repository consisting of information that is dynamically federated
-			 from multiple other &RepositorySource; instances. The connector is configured with a number of <strong>projections</strong>
+			 from multiple other &RepositorySource; instances. The connector is configured with a number of <emphasis role="bold">projections</emphasis>
 			 that each describe where in the unified repository the federated connector should place the content from another source.
-			 Projections consist of the name of the source containing the content and a number of <strong>rules</strong> that
+			 Projections consist of the name of the source containing the content and a number of <emphasis role="bold">rules</emphasis> that
 			 define the path mappings, where each rule is defined as a string with this format:
       </para>
 			<programlisting>pathInFederatedRepository => pathInSourceRepository</programlisting>
@@ -61,11 +61,11 @@
      	<para>
 			  is a trivial rule that states that all of the content in the underlying source should be mapped into the unified
 			  repository such that the locations are the same.  Therefore, a node at <code>/a/b/c</code> in the source would
-			  appear in the unified repository at <code>/a/b/c</code>.  This is called a <strong>mirror projection</strong>,
+			  appear in the unified repository at <code>/a/b/c</code>.  This is called a <emphasis role="bold">mirror projection</emphasis>,
 			  since the unified repository mirrors the underlying source repository.
     	</para>
      	<para>
-			  Another example is an <strong>offset projection</strong>, which is similar to the mirror projection except that
+			  Another example is an <emphasis role="bold">offset projection</emphasis>, which is similar to the mirror projection except that
 			  the federated path includes an offset not found in the source:
     	</para>
 			<programlisting>/alpha/beta => /</programlisting>
@@ -87,7 +87,6 @@
 		</sect1>
 		<sect1>
 			<title>Multiple Projections</title>
-		  <h3>Multiple Projections</h3>
 		  <para>
 		  Federated repositories that use a single projection are useful, but they aren't as interesting or powerful as
 		  those that use multiple projections.  Consider a federated repository that is defined by two projections:
@@ -141,14 +140,14 @@
 		  <para>
 		  Note how the <code>/foo/bum</code> branch does not even appear in the unified repository, since it is outside of the
 		  branch being projected. Also, the <code>/alpha</code> node doesn't exist in S1 or S2; it's what is called a
-		  <strong>placeholder</strong> node that exists purely so that the nodes below it have a place to exist.
+		  <emphasis role="bold">placeholder</emphasis> node that exists purely so that the nodes below it have a place to exist.
 		  Placeholders are somewhat special: they allow any structure below them (including other placeholder nodes or real
 		  projected nodes), but they cannot be modified.
 		  </para>
 		  <para>
 		  Even more interesting are cases that involve more projections.  Consider a federated repository that contains
 		  information about different kinds of automobiles, aircraft, and spacecraft, except that the information
-		  about each kind of vehicle exists in a different source (and possibly a different <i>kind</i> of source, such as
+		  about each kind of vehicle exists in a different source (and possibly a different <emphasis>kind</emphasis> of source, such as
 		  a database, or file, or web service).
 			</para>
 		  <para>
@@ -336,7 +335,7 @@
 				<listitem>
 					<para>
 		  			Process the incoming requests and for each generate the appropriate request(s) against the sources
-		  			(dictated by the {@link FederatedWorkspace workspace's} {@link FederatedWorkspace#getProjections() projections}). These
+		  			(dictated by the workspace's projections). These
 		  			"projected requests" are then enqueued for each source.
 					</para>
 				</listitem>
@@ -354,7 +353,7 @@
 				</listitem>
 			</orderedlist>
 		  <para>
-		  This process is a form of the <i>fork-join</i> divide-and-conquer algorithm, which involves splitting a problem into smaller
+		  This process is a form of the <emphasis>fork-join</emphasis> divide-and-conquer algorithm, which involves splitting a problem into smaller
 		  parts, forking new subtasks to execute each smaller part, joining on the subtasks (waiting until all have finished), and then
 		  composing the results. Technically, Step 2 performs the fork and join operations, but this class uses &RequestProcessor;
 		  implementations to do Step 1 and 3 (called &ForkRequestProcessor; and &JoinRequestProcessor;, respectively).
@@ -369,7 +368,7 @@
 				the path to the "<code>dna:federation</code>" node in that configuration repository containing the information about the 
 				cache and federated sources.  This graph structure that is expected at this location is as follows:
 			</para>
-			<programlisting><![CDATA[<!-- Define the federation configuration. -->
+			<programlisting role='xml'><![CDATA[<!-- Define the federation configuration. -->
 <dna:federatedRepository xmlns:dna="http://www.jboss.org/dna" 
 	                   xmlns:jcr="http://www.jcp.org/jcr/1.0"
                      dna:timeToCache="100000" >
