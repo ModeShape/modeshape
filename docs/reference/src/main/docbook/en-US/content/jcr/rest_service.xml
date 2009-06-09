@@ -29,10 +29,10 @@
 %CustomDTD;
 ]>
 <chapter id="rest_service">
-  <title>The JBoss DNA REST Server</title>
+  <title>The JBoss DNA RESTful Web Service</title>
   <para>
-		JBoss DNA now provides a RESTful interface to its JCR implementation that allows HTTP-based publishing
-		and unpublishing of content.  Although the initial version of this REST server only supports the JBoss DNA
+		JBoss DNA now provides a RESTful interface to its JCR implementation that allows HTTP-based 
+		access and updating of content.  Although the initial version of this REST server only supports the JBoss DNA
 		JCR implementation, it has been designed to make integration with other JCR implementors easy.  This
 		chapter describes how to configure and deploy the REST server. 
   </para>
@@ -240,7 +240,7 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
                          "http://java.sun.com/dtd/web-app_2_3.dtd">
 <web-app>
-	<display-name>JBoss DNA JCR RESTful Interface</display-name>
+  <display-name>JBoss DNA JCR RESTful Interface</display-name>
 ]]></programlisting>			 
 		This first section is largely boilerplate and should look familiar to anyone who has deployed a servlet-based
 		application before.  The display-name can be customized, of course.
@@ -248,15 +248,15 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<para>
 			The next stanza configures the <link linkend="jcr_rest_spi">repository provider</link>.
 <programlisting role="xml"><![CDATA[
-	<!--
-		This parameter provides the fully-qualified name of a class that implements
-		the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
-		by the DnaJcrDeployer that controls the lifecycle for the DNA REST server.
-	-->
-	<context-param>
-		<param-name>org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
-		<param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
-	</context-param>
+  <!--
+    This parameter provides the fully-qualified name of a class that implements
+    the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
+    by the DnaJcrDeployer that controls the lifecycle for the DNA REST server.
+  -->
+  <context-param>
+    <param-name>org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
+    <param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
+  </context-param>
 ]]></programlisting>			 
 		As noted above, this parameter informs the &DnaJcrDeployer; of the specific repository provider in use.
 		Unless you are using the JBoss DNA REST server to connect to a different JCR implementation, this should
@@ -266,16 +266,16 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<para>
 			Next we configure the DNA &JcrEngine; itself.
 <programlisting role="xml"><![CDATA[
-	<!--
-		This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
-		the name of the configuration file to initialize the repository or repositories.
-		This configuration file must be on the classpath and is given as a classpath-relative
-		directory.
-	-->
-	<context-param>
-		<param-name>org.jboss.dna.web.jcr.rest.CONFIG_FILE</param-name>
-		<param-value>/configRepository.xml</param-value>
-	</context-param>
+  <!--
+    This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
+    the name of the configuration file to initialize the repository or repositories.
+    This configuration file must be on the classpath and is given as a classpath-relative
+    directory.
+  -->
+  <context-param>
+    <param-name>org.jboss.dna.web.jcr.rest.CONFIG_FILE</param-name>
+    <param-value>/configRepository.xml</param-value>
+  </context-param>
 ]]></programlisting>			 
 		If you are not familiar with the file format for a &JcrEngine; configuration file, you can build one 
 		programatically with the &JcrConfiguration; class and call <code>save(...)</code> instead of <code>build()</code>
@@ -285,40 +285,39 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<para>
 			This is followed by a bit of RESTEasy and JAX-RS boilerplate.
 <programlisting role="xml"><![CDATA[
-	<!--
-		This parameter defines the JAX-RS application class, which is really just a metadata class
-		that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
-		of the JAX-RS specification like exception handling and resource serving.
+  <!--
+    This parameter defines the JAX-RS application class, which is really just a metadata class
+    that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
+    of the JAX-RS specification like exception handling and resource serving.
 		
-		This should not be modified. 
-	 -->
-	<context-param>
-		<param-name>javax.ws.rs.Application</param-name>
-		<param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
-	</context-param>
+    This should not be modified. 
+  -->
+  <context-param>
+    <param-name>javax.ws.rs.Application</param-name>
+    <param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
+  </context-param>
 
-	<!-- Required parameter for RESTEasy - should not be modified -->
-	<listener>
-		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
-	</listener>
+  <!-- Required parameter for RESTEasy - should not be modified -->
+  <listener>
+    <listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
+  </listener>
 
-	<!-- Required parameter for JBoss DNA REST - should not be modified -->
-	<listener>
-		<listener-class>org.jboss.dna.web.jcr.rest.DnaJcrDeployer</listener-class>
-	</listener>
+  <!-- Required parameter for JBoss DNA REST - should not be modified -->
+  <listener>
+    <listener-class>org.jboss.dna.web.jcr.rest.DnaJcrDeployer</listener-class>
+  </listener>
 
-	<!-- Required parameter for RESTEasy - should not be modified -->
-	<servlet>
-		<servlet-name>Resteasy</servlet-name>
-		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
-	</servlet>
+  <!-- Required parameter for RESTEasy - should not be modified -->
+  <servlet>
+    <servlet-name>Resteasy</servlet-name>
+    <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
+  </servlet>
 
-	<!-- Required parameter for JBoss DNA REST - should not be modified -->
-	<servlet-mapping>
-		<servlet-name>Resteasy</servlet-name>
-		<url-pattern>/*</url-pattern>
-	</servlet-mapping>
-
+  <!-- Required parameter for JBoss DNA REST - should not be modified -->
+  <servlet-mapping>
+    <servlet-name>Resteasy</servlet-name>
+    <url-pattern>/*</url-pattern>
+  </servlet-mapping>
 
 ]]></programlisting>			 
 		In general, this part of the web configuration file should not be modified.
@@ -327,42 +326,42 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<para>
 			Finally, security must be configured for the REST server.
 <programlisting role="xml"><![CDATA[
-	<!-- 
-		The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
-		within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
-		so this constraint helps lock down the repository.
+  <!-- 
+    The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
+    within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
+    so this constraint helps lock down the repository.
 		
-		This should generally not be modified. 
-	-->
-	<security-constraint>
-		<display-name>DNA REST</display-name>
-		<web-resource-collection>
-			<web-resource-name>RestEasy</web-resource-name>
-			<url-pattern>/*</url-pattern>
-		</web-resource-collection>
-		<auth-constraint>
+    This should generally not be modified. 
+  -->
+  <security-constraint>
+    <display-name>DNA REST</display-name>
+    <web-resource-collection>
+      <web-resource-name>RestEasy</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
 			<!--  
-				A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
-				or READWRITE roles to actually read or modify the data.  This is not used internally, so another
-				role could be substituted here.
-			-->
-			<role-name>connect</role-name>
-		</auth-constraint>
-	</security-constraint>
+        A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
+        or READWRITE roles to actually read or modify the data.  This is not used internally, so another
+        role could be substituted here.
+      -->
+      <role-name>connect</role-name>
+    </auth-constraint>
+  </security-constraint>
 
-	<!--  
-		Any auth-method will work for JBoss DNA.  BASIC is used this example for simplicity.
-	 -->
-	<login-config>
-		<auth-method>BASIC</auth-method>
-	</login-config>
+  <!--  
+    Any auth-method will work for JBoss DNA.  BASIC is used this example for simplicity.
+  -->
+  <login-config>
+    <auth-method>BASIC</auth-method>
+  </login-config>
 
-	<!-- 
-		This must match the role-name in the auth-constraint above. 
-	 -->
-	<security-role>
-		<role-name>connect</role-name>
-	</security-role>
+  <!-- 
+    This must match the role-name in the auth-constraint above. 
+  -->
+  <security-role>
+    <role-name>connect</role-name>
+  </security-role>
 </web-app>
 
 ]]></programlisting>			 
@@ -384,8 +383,9 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 	  		If you are using Maven to build your projects, the WAR can be built from a POM.  Here is a portion of the 
 	  		POM used to build the JBoss DNA REST Server integration subproject.
 <programlisting role='xml'>	<![CDATA[
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>dna</artifactId>
@@ -502,7 +502,6 @@ public void startup( ServletContext context ) {
      InputStream configFileInputStream = getClass().getResourceAsStream(configFile);
      jcrEngine = new JcrConfiguration().loadFrom(configFileInputStream).build();
      jcrEngine.start();
-
 }
 ]]></programlisting>
 			As you can see, the name of configuration file for the &JcrEngine; is read from the servlet context and used
@@ -533,7 +532,6 @@ public Session getSession( HttpServletRequest request,
 	SecurityContext context = new ServletSecurityContext(request);
 	Credentials credentials = new SecurityContextCredentials(context);
     return repository.login(credentials, workspaceName);
-
 }
 ]]></programlisting>
 			The <code>getSession(...)</code> method is used by most of the REST server methods to access the JCR 

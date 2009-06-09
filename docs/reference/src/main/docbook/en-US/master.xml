@@ -93,10 +93,12 @@
 			  The JBoss DNA project provides an implementation of the <ulink url="&JSR170;">JCR API</ulink>, which is
 			  built on top of the <link linkend="core-part">core libraries</link> discussed earlier.  This implementation
 			  as well as a number of JCR-related components are described in this part of the document.
+				But before talking about how to use the JCR API with a JBoss DNA repository, first we need to
+				show how to set up a JBoss DNA engine.
 			</para>
 		</partintro>
-  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
   	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>

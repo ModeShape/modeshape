@@ -637,9 +637,9 @@ public void execute( final &ExecutionContext; context,
 			In this chapter, we covered all the aspects of JBoss DNA connectors, including the connector API,
 			how DNA's JCR implementation works with connectors, what connectors are available (and how to use them),
 			and how to write your own connector.  So now that you know how to set up and use JBoss DNA repositories,
-			the <link linkend="sequencing-framework">next chapter</link> describes the sequencing framework and how
-			to build your own custom sequencers.  After that, we'll get into <link linkend="configuration">how to configure
-			JBoss DNA</link> to use the connectors and sequencers.
+			the <link linkend="sequencing_framework">next chapter</link> describes the sequencing framework and how
+			to build your own custom sequencers.  After that, we'll get into <link linkend="jcr-part">how to configure
+			JBoss DNA and use JCR</link>.
 		</para>
 	</sect1>
 </chapter>

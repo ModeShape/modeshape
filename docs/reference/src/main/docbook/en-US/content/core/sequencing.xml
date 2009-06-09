@@ -521,7 +521,7 @@ try {
 			In this chapter, we described how JBoss DNA sequences files as they're uploaded into a repository.  We've also learned 
 			in previous chapters about the JBoss DNA <link linkend="execution-context">execution contexts</link>, 
 			<link linkend="graph-model">graph model</link>, and <link linkend="connector-framework">connectors</link>.
-			In the <link linkend="jcr">next part</link> we'll put all these pieces together to learn how
+			In the <link linkend="jcr-part">next part</link> we'll put all these pieces together to learn how
 			to set up a JBoss DNA repository and access it using the JCR API.
 		</para>
 	</sect1>

@@ -29,7 +29,7 @@
 %CustomDTD;
 ]>
 <chapter id="jcr">
-  <title>The JBoss DNA Content Repository for Java (JCR) Implementation</title>
+  <title>Using the JCR API with JBoss DNA</title>
   <para>
   	The
     <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
@@ -38,7 +38,7 @@
 		JBoss DNA provides a partial JCR 1.0 implementation that allows you to work with the contents of a repository using the
 		JCR API.  For information about how to use the JCR API, please see the <ulink url="&JSR170;">JSR-170</ulink> specification.
 	<note>
-		<para>In the interests of brevity, this chapter does not attempt to reproduce the JSR-170 specification in order to provide
+		<para>In the interests of brevity, this chapter does not attempt to reproduce the JSR-170 specification nor provide
 		an exhaustive definition of JBoss DNA JCR capabilities.  Rather, this chapter will describe any deviations from the
 		specification as well as any DNA-specific public APIs and configuration.
 		</para>
@@ -282,9 +282,10 @@ nodeTypeManager.registerNodeTypes(nodeTypeSource);
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we covered how to use JCR with JBoss DNA and learned about how it implements the JCR specification.  Now that you know how JBoss DNA repositories work,
-			and how to use JCR to work with DNA repositories, we'll move on in 
-			the <link linkend="deploying_dna_jcr">next chapter</link> to describing in detail how the sequencing of file content works.
+			In this chapter, we covered how to use JCR with JBoss DNA and learned about how it implements the JCR specification.  
+			Now that you know how JBoss DNA repositories work and how to use JCR to work with DNA repositories, we'll move on in 
+			the <link linkend="rest_service">next chapter</link> to show how you can use the RESTful web service to
+			provide access to the content in a JCR repository to clients.
 		</para>
 	</sect1>
 </chapter>
