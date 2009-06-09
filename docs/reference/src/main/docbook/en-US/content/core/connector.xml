@@ -579,6 +579,12 @@ public interface &RepositoryConnection; {
 				</para>
 			</note>
 			<para>
+				Also, make sure your &RequestProcessor; is properly <link linkend="connector_events">broadcasting the changes</link> made during execution.
+				The &RequestProcessor; class has a <code>recordChange(&ChangeRequest;)</code> that can be called from each of the <code>process(...)</code>
+				methods that take a &ChangeRequest;.  The &RequestProcessor; enqueues these requests, and when the &RequestProcessor; is
+				closed, the default implementation is to send a &Change; to the &Observer; supplied into the constructor.
+			</para>
+			<para>
 				Then, in your connector's <code>execute(&ExecutionContext;, &Request;)</code> method, instantiate your &RequestProcessor; subclass
 				and call its <code>process(&Request;) method, passing in the <code>execute(...)</code> method's &Request; parameter.</code>
 				The &RequestProcessor; will determine the appropriate method given the actual &Request; object and will then invoke that method:
@@ -586,11 +592,13 @@ public interface &RepositoryConnection; {
 	    <programlisting>
 public void execute( final &ExecutionContext; context,
                      final &Request; request ) throws RepositorySourceException {
-    RequestProcessor processor = new RequestProcessor(context);
+    String sourceName = // from the &RepositorySource;
+    &Observer; observer = // from the &RepositoryContext;
+    &RequestProcessor; processor = new CustomRequestProcessor(sourceName,context,observer);
     try {
         processor.process(request);
     } finally {
-        processor.close();
+        processor.close();	// sends the accumulated &ChangeRequest;s as a &Changes; to the &Observer;
     }
 }</programlisting>
 			<para>
