@@ -85,7 +85,6 @@
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/graph.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/connector.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
 	</part>
 	<part id="jcr-part">
 		<title>JBoss DNA JCR</title>
@@ -97,6 +96,7 @@
 			</para>
 		</partintro>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
   	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
