@@ -94,9 +94,6 @@ import org.jboss.resteasy.spi.UnauthorizedException;
  * <td>accesses the item (node or property) at the path</td>
  * <td>ALL</td>
  * </tr>
- * <td>/resources/{repositoryName}/{workspaceName}/node/{uuid}</td>
- * <td>accesses the node with the given UUID</td>
- * <td>ALL</td> </tr>
  * </table>
  */
 @Immutable
