@@ -31,15 +31,202 @@
 <chapter id="rest_service">
   <title>The JBoss DNA REST Server</title>
   <para>
-		Placeholder for the JBoss DNA REST Server documentation
+		JBoss DNA now provides a RESTful interface to its JCR implementation that allows HTTP-based publishing
+		and unpublishing of content.  Although the initial version of this REST server only supports the JBoss DNA
+		JCR implementation, it has been designed to make integration with other JCR implementors easy.  This
+		chapter describes how to configure and deploy the REST server. 
   </para>
 	<sect1 id="supported_rest_resources">
-		<title>Supported Resources and URIs</title>
+		<title>Supported Resources and Methods</title>
 		<para>
-			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
-			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
-			Other components require the context to be provided before it's used, and will use that context for all its operations
-			(until it is given a different one).
+			The REST Server currently supports the URIs and HTTP methods described below.  The URI patterns assume
+			that the REST server is deployed at its conventional location of "/resources".  These URI patterns would
+			change if the REST server were deployed under a different web context and URI patterns below would
+			change accordingly.  Currently, only JSON-encoded responses are provided.
+		</para>
+				<table frame='all'>
+			<title>Supported URIs for the JBoss DNA REST Server</title>
+			<tgroup cols='3' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='URI' colwidth="3*"/>
+	      <colspec colname='methods' colwidth="1*"/>
+	      <colspec colname='description' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>URI Pattern</entry>
+			  		<entry>HTTP Method(s)</entry>
+			  		<entry>HTTP Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>/resources</entry>
+						<entry>Returns a list of accessible repositories</entry>
+						<entry>GET</entry>
+					</row>
+					<row>
+						<entry>/resources/{repositoryName}</entry>
+						<entry>Returns a list of accessible workspaces within that repository</entry>
+						<entry>GET</entry>
+					</row>
+					<row>
+						<entry>/resources/{repositoryName}/{workspaceName}</entry>
+						<entry>Returns a list of available operations within the workspace</entry>
+						<entry>GET</entry>
+					</row>
+					<row>
+						<entry>/resources/{repositoryName}/{workspaceName}/item/{path}</entry>
+						<entry>Accesses the item (node or property) at the path</entry>
+						<entry>ALL</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>
+		Note that this approach supports dynamic discovery of the available repositories on the server.  A typical
+		conversation might start with a request to the server to check the available repositories.
+<programlisting>
+GET http://www.example.com/resources
+</programlisting>		 
+		This request would generate a response that mapped the names of the available repositories to metadata information
+		about the repositories like so:
+<programlisting>
+{
+	"dna%3arepository" : { 
+		"repository" : {
+			"name" : "dna%3arepository",
+			"resources" : { "workspaces":"/resources/dna%3arepository" }
+		}
+	}
+}
+</programlisting>		 
+		The actual response wouldn't be pretty-printed like the example, but the format would be the same.  The name
+		of the repository ("dna:repository" URL-encoded) is mapped to a repository object that contains a name
+		(the redundant "dna:repository") and a list of available resources within the repository and their respective
+		URIs.  Note that JBoss DNA supports deploying multiple JCR repositories side-by-side on the same server,
+		so this response could easily contain multiple repositories in a real deployment.  
+	</para>
+	<para>		
+		The only thing that you can do with a repository through the REST interface at this time is to
+		get a list of its workspaces.  A request to do so can be built up from the previous response like this:
+<programlisting>
+GET http://www.example.com/resources/dna%3arepository
+</programlisting>		 
+		This request (and all of the following requests) actually create a JCR &Session; to service the request and
+		require that security be configured.  This process is described in more detail in 
+		<link linkend="dna_rest_server_configuration">a later section</link>.  Assuming that security has been properly
+		configured, the response would look something like this:
+<programlisting>
+{
+	"default" : {
+		"workspace" : {
+			"name" : "default",
+			"resources" : { "items":"/resources/dna%3arepository/default/items" }
+		}
+	}
+}
+</programlisting>	
+		Like the first response, this response consists of a list of workspace names mapped to metadata about the
+		workspaces.  The example above only lists one workspace for simplicity, but there could be many different
+		workspaces returned in a real deployment.  Note that the "items" resource builds the full URI to the root
+		of the items hierarchy, including the encoding of the repository name and the workspace name.
+		</para>
+		<para>
+		Now a request can be built to retrieve the root item of the repository.
+<programlisting>
+GET http://www.example.com/resources/dna%3arepository/default/items
+</programlisting>		 
+		Any other item in the repository could be accessed by appending its path to the URI above.  In a default
+		repository with no content, this would return the following response:  
+<programlisting>
+{
+	"properties": {
+		"jcr:primaryType": "dna:root",
+		"jcr:uuid": "97d7e2ef-996e-4d99-8ec2-dc623e6c2239"
+	},
+	"children": ["jcr:system"]
+</programlisting>		 
+	    The response contains a mapping of property names to their values and an array of child names.  Had one of
+	    the properties been multi-valued, the values for that property would have been provided as an array as well, 
+	    as will shortly be shown.
+	    </para>
+	    <para>
+	    The items resource also contains an option query parameter: <code>dna:depth</code>.  This parameter, which defaults
+	    to 1, controls how deep the hierarchy of returned nodes should be.  Had the request had the parameter:
+<programlisting>
+GET http://www.example.com/resources/dna%3arepository/default/items?dna:depth=2
+</programlisting>		 
+	    Then the response would have contained details for the children of the root node as well.
+<programlisting>
+{
+	"properties": {
+		"jcr:primaryType": "dna:root",
+		"jcr:uuid": "163bc5e5-3b57-4e63-b2ae-ededf43d3445"
+	},
+	"children": {
+		"jcr:system": {
+			"properties": {"jcr:primaryType": "dna:system"},
+    		"children": ["dna:namespaces"]
+		}
+	}
+}
+</programlisting>		 
+		</para>
+		<para>
+		It is also possible to use the RESTful API to add, modify and remove repository content.  Removes are simple -
+		a DELETE request with no body returns a response with no body.
+<programlisting>
+DELETE http://www.example.com/resources/dna%3arepository/default/items/path/to/deletedNode
+</programlisting>		 
+		</para>
+		<para>
+		Adding content simply requires a POST to the name of the <emphasis>relative</emphasis> root node of the
+		content that you wish to add and a request body in the same format as the response from a GET.  Adding multiple
+		nodes at once is supported, as shown below.
+<programlisting>
+POST http://www.example.com/resources/dna%3arepository/default/items/newNode
+
+{
+	"properties": {
+		"jcr:primaryType": "nt:unstructured",
+		"jcr:mixinTypes": "mix:referenceable",
+		"someProperty": "foo"
+	},
+	"children": {
+		"newChildNode": {
+			"properties": {"jcr:primaryType": "nt:unstructured"}
+		}
+	}
+}
+</programlisting>		 
+		Note that protected properties like jcr:uuid are not provided but that the primary type and mixin types are
+		provided as properties.  The REST server will translate these into the appropriate calls behind the
+		scenes.  The response from the request will be empty by convention.
+		</para>
+		<para>
+		The PUT method allows for updates of nodes and properties.  If the URI points to a property, the body of the
+		request should be the new JSON-encoded value for the property.
+<programlisting>
+PUT http://www.example.com/resources/dna%3arepository/default/items/newNode/someProperty
+
+"bar"
+</programlisting>
+		Setting multiple properties at once can be performed by providing a URI to a node instead of a property. The
+		body of the request should then be a JSON object that maps property names to their new values.
+<programlisting>
+PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
+
+{
+	"someProperty": "foobar",
+	"someOtherProperty": "newValue"
+}
+</programlisting>
+		<note>
+			<para>
+			The PUT method doesn't currently support adding or removing mixin types.  This will be corrected in the future.
+			A <ulink url="https://jira.jboss.org/jira/browse/DNA-447">JIRA issue</ulink> has been created to help 
+			track this issue.
+			</para>
+		</note>
 		</para>
 	</sect1>
 	<sect1 id="jcr_rest_spi">
