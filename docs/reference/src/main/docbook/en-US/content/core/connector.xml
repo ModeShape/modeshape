@@ -260,6 +260,7 @@
 				As for testing, you probably will want to add more dependencies, such as those listed here:
 			</para>
 			<programlisting role="XML"><![CDATA[
+<!-- DNA-related unit testing utilities and classes -->
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>

@@ -82,6 +82,7 @@
 <!ENTITY UrlEncoder				       			"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>UrlEncoder</classname></ulink>">
 <!ENTITY XmlNameEncoder				       	"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>XmlNameEncoder</classname></ulink>">
 <!ENTITY XmlValueEncoder				      "<ulink url='&API;common/text/XmlValueEncoder.html'><classname>XmlValueEncoder</classname></ulink>">
+<!ENTITY Problems								      "<ulink url='&API;common/collection/Problems.html'><interface>Problems</interface></ulink>">
 
 <!-- Types in dna-graph -->
 
@@ -141,7 +142,7 @@
 <!ENTITY RequestProcessor	       			"<ulink url='&API;graph/request/processor/RequestProcessor.html'><classname>RequestProcessor</classname></ulink>">
 <!ENTITY StreamSequencer		    			"<ulink url='&API;graph/sequencer/StreamSequencer.html'><interface>StreamSequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencer/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">
-<!ENTITY SequencerContext		    			"<ulink url='&API;graph/sequencer/SequencerContext.html'><interface>SequencerContext</interface></ulink>">
+<!ENTITY StreamequencerContext		    "<ulink url='&API;graph/sequencer/StreamequencerContext.html'><interface>StreamequencerContext</interface></ulink>">
 <!ENTITY MimeTypeDetector					  	"<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 <!ENTITY MockSequencerOutput		    	"<ulink url='&API;graph/sequencer/MockSequencerOutput.html'><interface>MockSequencerOutput</interface></ulink>">
 <!ENTITY MockSequencerContext		    	"<ulink url='&API;graph/sequencer/MockSequencerContext.html'><interface>MockSequencerContext</interface></ulink>">
