@@ -31,7 +31,92 @@
 <chapter id="subversion-connector">
   <title>Subversion Connector</title>
   <para>
-		blah blah 
+		This connector provides read-only access to the directories and folders within a Subversion repository, providing that content in
+		the form of <code>nt:file</code> and <code>nt:folder</code> nodes.
+		This source considers a workspace name to be the path to the directory on the repository's root directory location
+		that represents the root of that workspace (e.g., "trunk" or "branches"). 
+		New workspaces can be created, as long as the names represent valid existing directories within the SVN repository.
   </para>
+	<para>
+		The &SVNRepositorySource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&SVNRepositorySource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>repositoryRootURL</entry>
+					<entry>
+						Required property that should be set with the URL to the Subversion repository.
+					</entry>
+				</row>
+				<row>
+					<entry>username</entry>
+					<entry>
+						The username that should be used to establish a connection to the repository.
+					</entry>
+				</row>
+				<row>
+					<entry>password</entry>
+					<entry>
+						The password that should be used to establish a connection to the repository.  This is not required if the URL represents an
+						anonymous SVN repository address.
+					</entry>
+				</row>
+				<row>
+					<entry>directoryForDefaultWorkspace</entry>
+					<entry>Optional property that, if used, specifies the relative path of the directory in the repository that should be
+						exposed as the default workspace.
+					</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+					</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspaceAllowed</entry>
+					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
+				</row>
+				<row>
+					<entry>cacheTimeToLiveInMilliseconds</entry>
+					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
+						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
+						duration for caching information.</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	<para>
+		Using the SVN connector can be used by creating in the &JcrConfiguration; a repository source that uses the &SVNRepositorySource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("SVN repository for JBoss DNA")
+      .usingClass(SVNRepositorySource.class)
+      .setDescription("The DNA SVN repository (anonymous access)")
+      .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/dna");
+      .setProperty("directoryForDefaultWorkspace", "trunk");
+      .setProperty("predefinedWorkspaceNames", new  String[]{"trunk","tags/0.1","/tags/0.2", "/tags/0.3", "/tags/0.4", "/tags/0.5");
+ ]]></programlisting>
 </chapter>
-

@@ -410,7 +410,6 @@
             <emphasis role="strong">dna-connector-svn</emphasis>
             is a prototype DNA sequencer that obtains content from a Subversion repository, providing that content in
 						the form of <code>nt:file</code> and <code>nt:folder</code> nodes.
-						<emphasis>This is still under development.</emphasis>
           </para>
         </listitem>
         <listitem>

@@ -33,6 +33,8 @@
   <para>
   	The in-memory repository connector is a simple connector that creates a transient, in-memory repository.
 		This repository is used as a very simple in-memory cache or as a standalone transient repository.
+		This connector works well for a readable and writable repository source with small to moderate sized
+		content that need not be permanently saved.
   </para>
 	<para>
 		The &InMemoryRepositorySource; class provides a number of JavaBean properties that control its behavior:
@@ -82,5 +84,15 @@
 			</tbody>
 		</tgroup>
 	</table>
+	<para>
+		Using the in-memory connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("source A")
+      .usingClass(InMemoryRepositorySource.class)
+      .setDescription("The repository for our content")
+      .setProperty("defaultWorkspaceName", workspaceName);
+ ]]></programlisting>
 </chapter>
-

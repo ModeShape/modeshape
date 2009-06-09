@@ -30,41 +30,338 @@
 ]>
 <chapter id="federation-connector">
   <title>Federation Connector</title>
+     <para>
+     	The federated repository source provides a unified repository consisting of information that is dynamically federated from multiple other
+			&RepositorySource; instances.  This is a very powerful repository source that appears to be a single repository, when in 
+			fact the content is stored and managed in multiple other systems.  Each &FederatedRepositorySource; is typically configured
+			with the name of another &RepositorySource; that should be used as the local, unified cache of the federated content.
+			The &FederatedRepositorySource; then looks in the configuration repository to determine the various workspaces
+			and how other sources are projected into each workspace.
+     </para>
+		<figure id="dna-connector-federation-image">
+			<title>Federating multiple sources using the Federated Repository Connector</title>
+			<graphic align="center" scale="100" fileref="dna-connector-federation.png"/>
+		</figure>
+		<sect1>
+			<title>Projections</title>
       <para>
-      	The federated repository source provides a unified repository consisting of information that is dynamically federated from multiple other
-				&RepositorySource; instances.  This is a very powerful repository source that appears to be a single repository, when in 
-				fact the content is stored and managed in multiple other systems.  Each &FederatedRepositorySource; is typically configured
-				with the name of another &RepositorySource; that should be used as the local, unified cache of the federated content.
-				The configuration also contains the names of the other &RepositorySource; instances that are to be federated along with
-				the &Projection; definition describing where in the unified repository the content is to appear.
+			 Each federated repository source provides a unified repository consisting of information that is dynamically federated
+			 from multiple other &RepositorySource; instances. The connector is configured with a number of <strong>projections</strong>
+			 that each describe where in the unified repository the federated connector should place the content from another source.
+			 Projections consist of the name of the source containing the content and a number of <strong>rules</strong> that
+			 define the path mappings, where each rule is defined as a string with this format:
       </para>
-			<figure id="dna-connector-federation-image">
-				<title>Federating multiple sources using the Federated Repository Connector</title>
-				<graphic align="center" scale="100" fileref="dna-connector-federation.png"/>
-			</figure>
-      <para> The federation connector works by effectively building up a single graph by querying each source and merging or
-        unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
-        expensive) remote calls, reduces the load on the sources, and helps mitigate problems with source availability. As
-        clients interact with the repository, this cache is consulted first. When the requested portion of the graph (or
-        "subgraph") is contained completely in the cache, it is retuned immediately. However, if any part of the requested
-        subgraph is not in the cache, each source is consulted for their contributions to that subgraph, and any results are
-        cached.</para>
-      <para> This basic flow makes it possible for the federated repository to build up a local cache of the integrated graph
-        (or at least the portions that are used by clients). In fact, the federated repository caches information in a manner
-        that is similar to that of the Domain Name System (DNS). As sources are consulted for their contributions, the source
-        also specifies whether it is the authoritative source for this information (some sources that are themselves federated
-        may not be the information's authority), whether the information may be modified, the time-to-live (TTL) value (the time
-        after which the cached information should be refreshed), and the expiration time (the time after which the cached
-        information is no longer valid). In effect, the source has complete control over how the information it contributes is
-        cached and used.</para>
-      <para>
-        The federated repository also needs to incorporate <emphasis>negative caching</emphasis>, which is storage of the knowledge 
-				that something does <emphasis>not</emphasis> exist. Sources can be configured to contribute information
-        only below certain paths (e.g., <code>/A/B/C</code>), and the federation engine can take advantage of this by never 
-				consulting that source for contributions to information on other paths. However, below that path, any negative responses 
-				must also be cached (with appropriate TTL and expiry parameters) to prevent the exclusion of that source (in case the source 
-				has information to contribute at a later time) or the frequent checking with the source.
-      </para>
+			<programlisting>pathInFederatedRepository => pathInSourceRepository</programlisting>
+     	<para>
+			 Here, the <code>pathInFederatedRepository</code> is the string representation of the path in the unified
+			 (or federated) repository, and <code>pathInSourceRepository</code> is the string representation of the path of the
+			 actual content in the underlying source.  For example:
+    	</para>
+			<programlisting>/ => /</programlisting>
+     	<para>
+			  is a trivial rule that states that all of the content in the underlying source should be mapped into the unified
+			  repository such that the locations are the same.  Therefore, a node at <code>/a/b/c</code> in the source would
+			  appear in the unified repository at <code>/a/b/c</code>.  This is called a <strong>mirror projection</strong>,
+			  since the unified repository mirrors the underlying source repository.
+    	</para>
+     	<para>
+			  Another example is an <strong>offset projection</strong>, which is similar to the mirror projection except that
+			  the federated path includes an offset not found in the source:
+    	</para>
+			<programlisting>/alpha/beta => /</programlisting>
+     	<para>
+			  Here, a node at <code>/a/b/c</code> in the source would actually appear in the unified repository at 
+			  <code>/alpha/beta/a/b/c</code>.  The offset path (<code>/alpha/beta</code> in this example) can have 1 or more segments.
+			  (If there are no segments, then it reduces to a mirror projection.)
+    	</para>
+     	<para>
+			  Often a rule will map a path in one source into another path in the unified source:
+    	</para>
+			<programlisting>/alpha/beta => /foo/bar</programlisting>
+     	<para>
+			  Here, the content at <code>/foo/bar</code> is projected in the unified repository under <code>/alpha/beta</code>,
+			  meaning that the <code>/foo/bar</code> prefix never even appears in the unified repository.  So the node at
+			  <code>/foo/bar/baz/raz</code> would appear in the unified repository at <code>/alpha/beta/baz/raz</code>.  Again,
+			  the size of the two paths in the rule don't matter.
+     	</para>
+		</sect1>
+		<sect1>
+			<title>Multiple Projections</title>
+		  <h3>Multiple Projections</h3>
+		  <para>
+		  Federated repositories that use a single projection are useful, but they aren't as interesting or powerful as
+		  those that use multiple projections.  Consider a federated repository that is defined by two projections:
+		  </para>
+<programlisting>
+/ => /                         for source "S1"
+/alpha => /foo/bar             for source "S2"
+</programlisting>
+		  <para>
+		  And consider that S1 contains the following structure:
+		  </para>
+<programlisting>
++- a
+|  +- i
+|  +- j
++- b
+   +- k
+   +- m
+   +- n
+</programlisting>
+	  <para>
+		  and S2 contains the following:
+		</para>
+<programlisting>
++- foo
+   +- bar
+   |  +- baz
+   |  |  +- taz
+   |  |  +- zaz
+   |  +- raz
+   +- bum
+      +- bot
+</programlisting>
+		  <para>
+		  The unified repository would then have this structure:
+		  </para>
+<programlisting>
++- a
+|  +- i
+|  +- j
++- b
+|  +- k
+|  +- m
+|  +- n
++- alpha
+   +- baz
+      +- taz
+      |  +- zaz
+      +- raz
+</programlisting>
+		  <para>
+		  Note how the <code>/foo/bum</code> branch does not even appear in the unified repository, since it is outside of the
+		  branch being projected. Also, the <code>/alpha</code> node doesn't exist in S1 or S2; it's what is called a
+		  <strong>placeholder</strong> node that exists purely so that the nodes below it have a place to exist.
+		  Placeholders are somewhat special: they allow any structure below them (including other placeholder nodes or real
+		  projected nodes), but they cannot be modified.
+		  </para>
+		  <para>
+		  Even more interesting are cases that involve more projections.  Consider a federated repository that contains
+		  information about different kinds of automobiles, aircraft, and spacecraft, except that the information
+		  about each kind of vehicle exists in a different source (and possibly a different <i>kind</i> of source, such as
+		  a database, or file, or web service).
+			</para>
+		  <para>
+		  First, the sources.  The "Cars" source contains the following structure:
+		  </para>
+<programlisting>
++- Cars
+   +- Hybrid
+   |  +- Toyota Prius
+   |  +- Toyota Highlander
+   |  +- Nissan Altima
+   +- Sports
+   |  +- Aston Martin DB9
+   |  +- Infinity G37
+   +- Luxury
+   |  +- Cadillac DTS
+   |  +- Bentley Continental
+   |  +- Lexus IS350
+   +- Utility
+      +- Land Rover LR2
+      +- Land Rover LR3
+      +- Hummer H3
+      +- Ford F-150
+</programlisting>
+		  <para>
+		  The "Aircraft" source contains the following structure:
+		  </para>
+<programlisting>
++- Aviation
+   +- Business
+   |  +- Gulfstream V
+   |  +- Learjet 45
+   +- Commercial
+   |  +- Boeing 777
+   |  +- Boeing 767
+   |  +- Boeing 787
+   |  +- Boeing 757
+   |  +- Airbus A380
+   |  +- Airbus A340
+   |  +- Airbus A310
+   |  +- Embraer RJ-175
+   +- Vintage
+   |  +- Fokker Trimotor
+   |  +- P-38 Lightning
+   |  +- A6M Zero
+   |  +- Bf 109
+   |  +- Wright Flyer
+   +- Homebuilt
+      +- Long-EZ
+      +- Cirrus VK-30
+      +- Van's RV-4
+</programlisting>
+		  <para>
+		  Finally, our "Spacecraft" source contains the following structure:
+		  </para>
+<programlisting>
++- Space Vehicles
+   +- Manned
+   |  +- Space Shuttle
+   |  +- Soyuz
+   |  +- Skylab
+   |  +- ISS
+   +- Unmanned
+   |  +- Sputnik
+   |  +- Explorer
+   |  +- Vanguard
+   |  +- Pioneer
+   |  +- Marsnik
+   |  +- Mariner
+   |  +- Mars Pathfinder
+   |  +- Mars Observer
+   |  +- Mars Polar Lander
+   +- Launch Vehicles
+   |  +- Saturn V
+   |  +- Aries
+   |  +- Delta
+   |  +- Delta II
+   |  +- Orion
+   +- X-Prize
+      +- SpaceShipOne
+      +- WildFire
+      +- Spirit of Liberty
+</programlisting>
+		  <para>
+		  So, we can define our unified "Vehicles" source with the following projections:
+		  </para>
+<programlisting>
+/Vehicles => /                                  for source "Cars"
+/Vehicles/Aircraft => /Aviation                 for source "Aircraft"
+/Vehicles/Spacecraft => /Space Vehicles         for source "Cars"
+</programlisting>
+		  <para>
+		  The result is a unified repository with the following structure:
+		  </para>
+<programlisting>
++- Vehicles
+   +- Cars
+   |  +- Hybrid
+   |   |  +- Toyota Prius
+   |   |  +- Toyota Highlander
+   |   |  +- Nissan Altima
+   |   +- Sports
+   |   |  +- Aston Martin DB9
+   |   |  +- Infinity G37
+   |   +- Luxury
+   |   |  +- Cadillac DTS
+   |   |  +- Bentley Continental
+   |  +- Lexus IS350
+   |  +- Utility
+   |     +- Land Rover LR2
+   |     +- Land Rover LR3
+   |     +- Hummer H3
+   |     +- Ford F-150
+   +- Aircraft
+   |   +- Business
+   |   |  +- Gulfstream V
+   |   |  +- Learjet 45
+   |   +- Commercial
+   |   |  +- Boeing 777
+   |   |  +- Boeing 767
+   |   |  +- Boeing 787
+   |   |  +- Boeing 757
+   |   |  +- Airbus A380
+   |   |  +- Airbus A340
+   |   |  +- Airbus A310
+   |   |  +- Embraer RJ-175
+   |   +- Vintage
+   |   |  +- Fokker Trimotor
+   |   |  +- P-38 Lightning
+   |   |  +- A6M Zero
+   |   |  +- Bf 109
+   |   |  +- Wright Flyer
+   |   +- Homebuilt
+   |      +- Long-EZ
+   |      +- Cirrus VK-30
+   |      +- Van's RV-4
+   +- Spacecraft
+      +- Manned
+      |  +- Space Shuttle
+      |  +- Soyuz
+      |  +- Skylab
+      |  +- ISS
+      +- Unmanned
+      |  +- Sputnik
+      |  +- Explorer
+      |  +- Vanguard
+      |  +- Pioneer
+      |  +- Marsnik
+      |  +- Mariner
+      |  +- Mars Pathfinder
+      |  +- Mars Observer
+      |  +- Mars Polar Lander
+      +- Launch Vehicles
+      |  +- Saturn V
+      |  +- Aries
+      |  +- Delta
+      |  +- Delta II
+      |  +- Orion
+      +- X-Prize
+         +- SpaceShipOne
+         +- WildFire
+         +- Spirit of Liberty
+</programlisting>
+		  <para>
+		  Other combinations are of course possible.
+		  </para>
+		</sect1>
+		<sect1>
+			<title>Processing flow</title>
+			<para>
+		  This connctor executes &Requests; against the federated repository by
+		  projecting them into requests against the underlying sources that are being federated.
+			</para>
+		  <para>
+		  One important design of the connector framework is that requests can be submitted in a batch, which may be processed more efficiently 
+			than if each request was submitted one at a time.  
+		  This connector design accomplishes this by projecting the incoming requests into requests against each source, then
+		  submitting the batch of projected requests to each source, and then transforming the results of the projected requests back
+		  into original requests.
+		  </para>
+		  <para>
+		  This is accomplished using a three-step process:
+			</para>
+			<orderedlist>
+				<listitem>
+					<para>
+		  			Process the incoming requests and for each generate the appropriate request(s) against the sources
+		  			(dictated by the {@link FederatedWorkspace workspace's} {@link FederatedWorkspace#getProjections() projections}). These
+		  			"projected requests" are then enqueued for each source.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+		  			Submit each batch of projected requests to the appropriate source, in parallel where possible.
+					  Note that the requests are still ordered correctly for each source.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+					  Accumulate the results for the incoming requests by post-processing the projected requests and
+					  transforming the source-specific results back into the federated workspace (again, using the workspace's projections).
+					</para>
+				</listitem>
+			</orderedlist>
+		  <para>
+		  This process is a form of the <i>fork-join</i> divide-and-conquer algorithm, which involves splitting a problem into smaller
+		  parts, forking new subtasks to execute each smaller part, joining on the subtasks (waiting until all have finished), and then
+		  composing the results. Technically, Step 2 performs the fork and join operations, but this class uses &RequestProcessor;
+		  implementations to do Step 1 and 3 (called &ForkRequestProcessor; and &JoinRequestProcessor;, respectively).
+		  </para>
+		</sect1>
+		<sect1>
+			<title>Configuration</title>
 			<para>
 				The federated repository uses other &RepositorySource;s that are to be federated and a &RepositorySource; that is to be used as the
 				cache of the unified contents.  These are configured in another &RepositorySource; that is treated as a configuration repository.
@@ -102,15 +399,9 @@
 					works.
 				</para>
 			</note>
-			<para>
-				Notice that there is a cache projection and three source projections, and each projection defines
-				one or more <emphasis>projection rules</emphasis> that are of the form:
-			</para>
-			<programlisting>pathInFederatedRepository =&gt; pathInSourceRepository</programlisting>
-			<para>
-				So, a projection rule <code>/Vehicles =&gt; /</code> projects the entire contents of the source so that
-				it appears in the federated repository under the "<code>/Vehicles</code>" node.
-			</para>
+		</sect1>
+		<sect1>
+			<title>Repository Source properties</title>
 			<para>
 				The &FederatedRepositorySource; class provides a number of JavaBean properties that control its behavior:
 			</para>
@@ -131,10 +422,6 @@
 							<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 						</row>
 						<row>
-							<entry>repositoryName</entry>
-							<entry>The name for the federated repository.</entry>
-						</row>
-						<row>
 							<entry>configurationSourceName</entry>
 							<entry>The name of the &RepositorySource; that should be used as the configuration repository, and in which is defined
 								how this federated repository is to be set up and configured.
@@ -152,38 +439,13 @@
 								graph structure describing how this federated repository is to be configured.</entry>
 						</row>
 						<row>
-							<entry>securityDomain</entry>
-							<entry>Optional property that, if used, specifies the name of the JAAS application context that should be used
-								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
-								This should correspond to the JAAS login configuration located within the JAAS login configuration file, 
-								and should be used only if a "<code>username</code>" property is defined.</entry>
-						</row>
-						<row>
-							<entry>username</entry>
-							<entry>Optional property that, if used, defines the name of the JAAS subject that should be used
-								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
-								This should be used if a "<code>securityDomain</code>" property is defined.</entry>
-						</row>
-						<row>
-							<entry>password</entry>
-							<entry>Optional property that, if used, defines the password of the JAAS subject that should be used
-								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
-								If the password is not provided but values for the "<code>securityDomain</code>" and "<code>username</code>" properties are,
-								then authentication will use the default JAAS callback handlers.</entry>
-						</row>
-						<row>
 							<entry>retryLimit</entry>
 							<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
 								following a communication failure. The default value is '0'.</entry>
 						</row>
-						<row>
-							<entry>defaultCachePolicy</entry>
-							<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
-								cached by other, higher-level components.  The default value of null implies that this source does not define a specific
-								duration for caching information provided by this repository source.</entry>
-						</row>
 					</tbody>
 				</tgroup>
 			</table>
+		</sect1>
 </chapter>
 

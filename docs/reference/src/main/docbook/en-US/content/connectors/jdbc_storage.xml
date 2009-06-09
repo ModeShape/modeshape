@@ -31,7 +31,301 @@
 <chapter id="jdbc-storage-connector">
   <title>JDBC Storage (JPA) Connector</title>
   <para>
-		blah blah 
+		This connector stores a graph of any structure or size in a relational database, using a JPA provider on top of a JDBC driver. 
+		Currently this connector relies upon some Hibernate-specific capabilities.  The schema of the database is dictated by this
+		connector and is optimized for storing a graph structure.
+		(In other words, this connector does not expose as a graph the data in an existing database with an arbitrary schema.)
   </para>
+	<para>
+		The &JpaSource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&JpaSource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>supportsUpdates</entry>
+					<entry>Determines whether the content in the database is can be updated ("true"), or if the content may only be read ("false").
+						The default value is "true".</entry>
+				</row>
+				<row>
+					<entry>rootNodeUuid</entry>
+					<entry>Optional property that, if used, defines the UUID of the root node in the in-memory repository.  If not used,
+						then a new UUID is generated.</entry>
+				</row>
+				<row>
+					<entry>nameOfDefaultWorkspace</entry>
+					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+					</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspaceAllowed</entry>
+					<entry>
+						Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>dialect</entry>
+					<entry>
+						Required property that defines the dialect of the database.  This must match one of the Hibernate dialect names, and must correspond to the type of driver being used.
+					</entry>
+				</row>
+				<row>
+					<entry>dataSourceJndiName</entry>
+					<entry>
+						The JNDI name of the JDBC DataSource instance that should be used.  If not specified, the other driver properties must be set.
+					</entry>
+				</row>
+				<row>
+					<entry>driverClassName</entry>
+					<entry>
+						The name of the JDBC driver class.
+						This is not required if the DataSource is found in JNDI, but is required otherwise.
+					</entry>
+				</row>
+				<row>
+					<entry>driverClassloaderName</entry>
+					<entry>
+						The name of the <link linkend="class_loader_factory">class loader or classpath</link> that should be used to load the JDBC driver class.
+						This is not required if the DataSource is found in JNDI.
+					</entry>
+				</row>
+				<row>
+					<entry>url</entry>
+					<entry>
+						The URL that should be used when creating JDBC connections using the JDBC driver class.
+						This is not required if the DataSource is found in JNDI.
+					</entry>
+				</row>
+				<row>
+					<entry>username</entry>
+					<entry>
+						The username that should be used when creating JDBC connections using the JDBC driver class.
+						This is not required if the DataSource is found in JNDI.
+					</entry>
+				</row>
+				<row>
+					<entry>password</entry>
+					<entry>
+						The password that should be used when creating JDBC connections using the JDBC driver class.  
+						This is not required if the DataSource is found in JNDI.
+					</entry>
+				</row>
+				<row>
+					<entry>maximumConnectionsInPool</entry>
+					<entry>
+						The maximum number of connections that may be in the connection pool.
+						The default is "5".
+					</entry>
+				</row>
+				<row>
+					<entry>minimumConnectionsInPool</entry>
+					<entry>
+						The minimum number of connections that will be kept in the connection pool.
+						The default is "0".
+					</entry>
+				</row>
+				<row>
+					<entry>maximumConnectionIdleTimeInSeconds</entry>
+					<entry>
+						The maximum number of seconds that a connection should remain in the pool before being closed.
+						The default is "600" seconds (or 10 minutes).
+					</entry>
+				</row>
+				<row>
+					<entry>maximumSizeOfStatementCache</entry>
+					<entry>
+						The maximum number of statements that should be cached.  
+						Statement caching can be disabled by setting to "0".  
+						The default is "100".
+					</entry>
+				</row>
+				<row>
+					<entry>numberOfConnectionsToAcquireAsNeeded</entry>
+					<entry>
+						The number of connections that should be added to the pool when there are not enough to be used.
+						The default is "1".
+					</entry>
+				</row>
+				<row>
+					<entry>idleTimeInSecondsBeforeTestingConnections</entry>
+					<entry>
+						The number of seconds after a connection remains in the pool that the connection should be tested to ensure it is still valid.
+						The default is 180 seconds (or 3 minutes).
+					</entry>
+				</row>
+				<row>
+					<entry>referentialIntegrityEnforced</entry>
+					<entry>
+						An advanced boolean property that dictates whether the database's referential integrity should be enabled, or false if this checking
+						is not to be used.  While referential integrity does help to ensure the consistency of the records, it does add work to update
+						operations and can impact performance.  
+						The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>largeValueSizeInBytes</entry>
+					<entry>
+						An advanced boolean property that controls the size of property values at which they are considered to be "large values".  
+						Depending upon the model, large property values may be stored in a centralized area and keyed by a secure hash
+						of the value.  This is an space and performance optimization that stores each unique large value only once.
+						The default value is "1024" bytes, or 1 kilobyte.
+					</entry>
+				</row>
+				<row>
+					<entry>compressData</entry>
+					<entry>
+						An advanced boolean property that dictates whether large binary and string values should be stored in a compressed form.  
+						This is enabled by default.  Setting this value only affects how new records are stored; records can always be read
+						regardless of the value of this setting.
+						The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>model</entry>
+					<entry>
+						An advanced property that dictates the type of storage schema that is used.  Currently, the only supported value is "Basic",
+						which is also the default.
+					</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. 
+						The default value is '0'.
+					</entry>
+				</row>
+				<row>
+					<entry>cacheTimeToLiveInMilliseconds</entry>
+					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
+						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
+						duration for caching information.
+						The default value is "600000" milliseconds, or 10 minutes.
+					</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	<para>
+		Using the file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &JpaSource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("source A")
+      .usingClass(JpaSource.class)
+      .setDescription("The database store for our content")
+      .setProperty("dialect", "org.hibernate.dialect.MySQLDialect")
+      .setProperty("dataSourceJndiName", "java:/MyDataSource")
+      .setProperty("nameOfDefaultWorkspace", "My Default Workspace");
+ ]]></programlisting>
+	<para>
+		Of course, setting other more advanced properties would entail calling <code>setProperty(...)</code> for each.  Since almost all
+		of the properties have acceptable default values, however, we don't need to set very many of them.
+	</para>
+	<sect2>
+		<title>Basic Model</title>
+		<para>
+			This database schema model stores node properties as opaque records and children as transparent records. 
+			Large property values are stored separately.
+		</para>
+		<para>
+			The set of tables used in this model includes:
+			<itemizedlist>
+				<listitem>
+					<para>
+						Namespaces - the set of namespace URIs used in paths, property names, and property values.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Properties - the properties for each node, stored in a serialized (and optionally compressed) form.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Large values - property values larger than a certain size will be broken out into this table, where they are tracked by
+						their SHA-1 has and shared by all properties that have that same value. The values are stored in a binary (and optionally
+						compressed) form.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Children - the children for each node, where each child is represented by a separate record. This approach makes it
+		 				possible to efficiently work with nodes containing large numbers of children, where adding and removing child nodes is largely
+		 				independent of the number of children. Also, working with properties is also completely independent of the number of child
+		 				nodes.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						ReferenceChanges - the references from one node to another
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+	 					Subgraph - a working area for efficiently computing the space of a subgraph; see below
+					</para>
+				</listitem>
+				<!--listitem>
+					<para>
+				 		Change log - a record of the changes that have been made to the repository. This is used to distribute change events across
+				 		multiple distributed processes, and to allow a recently-connected client to identify the set of changes that have been made
+				 		since a particular time or date. Changes are serialized into a binary, compressed format.
+					</para>
+				</listitem-->
+				<listitem>
+					<para>
+				 		Options - the parameters for this store's configuration (common to all models)
+					</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+		<para>
+		 This database model contains two tables that are used in an efficient mechanism to find all of the nodes in the subgraph below
+		 a certain node. This process starts by creating a record for the subgraph query, and then proceeds by executing a join to find
+		 all the children of the top-level node, and inserting them into the database (in a working area associated with the subgraph
+		 query). Then, another join finds all the children of those children and inserts them into the same working area. This continues
+		 until the maximum depth has been reached, or until there are no more children (whichever comes first). All of the nodes in the
+		 subgraph are then represented by records in the working area, and can be used to quickly and efficient work with the subgraph
+		 nodes. When finished, the mechanism deletes the records in the working area associated with the subgraph query.
+		</para>
+		<para>
+		 This subgraph query mechanism is extremely efficient, performing one join/insert statement <i>per level of the subgraph</i>,
+		 and is completely independent of the number of nodes in the subgraph. For example, consider a subgraph of node A, where A has
+		 10 children, and each child contains 10 children, and each grandchild contains 10 children. This subgraph has a total of 1111
+		 nodes (1 root + 10 children + 10*10 grandchildren + 10*10*10 great-grandchildren). Finding the nodes in this subgraph would
+		 normally require 1 query per node (in other words, 1111 queries). But with this subgraph query mechanism, all of the nodes in
+		 the subgraph can be found with 1 insert plus 4 additional join/inserts.
+		</para>
+		<para>
+		 This mechanism has the added benefit that the set of nodes in the subgraph are kept in a working area in the database, meaning
+		 they don't have to be pulled into memory.
+		</para>
+		<para>
+		 Subgraph queries are used to efficiently process a number of different requests, including &ReadBranchRequest;,
+		 &DeleteBranchRequest;, &MoveBranchRequest;, and &CopyBranchRequest;. Processing each of these kinds of
+		 requests requires knowledge of the subgraph, and in fact all but the &ReadBranchRequest; need to know the complete
+		 subgraph.
+		</para>
+	</sect2>
 </chapter>
 

@@ -127,6 +127,8 @@
 <!ENTITY InMemoryRepositorySource  		"<ulink url='&API;graph/connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
 <!ENTITY FederatedRepository			  	"<ulink url='&API;graph/connector/federation/FederatedRepository.html'><classname>FederatedRepository</classname></ulink>">
 <!ENTITY FederatedRepositorySource  	"<ulink url='&API;graph/connector/federation/FederatedRepositorySource.html'><classname>FederatedRepositorySource</classname></ulink>">
+<!ENTITY ForkRequestProcessor			  	"<ulink url='&API;graph/connector/federation/ForkRequestProcessor.html'><classname>ForkRequestProcessor</classname></ulink>">
+<!ENTITY JoinRequestProcessor			  	"<ulink url='&API;graph/connector/federation/JoinRequestProcessor.html'><classname>JoinRequestProcessor</classname></ulink>">
 <!ENTITY Projection								  	"<ulink url='&API;graph/connector/federation/Projection.html'><classname>Projection</classname></ulink>">
 <!ENTITY CachePolicy							    "<ulink url='&API;graph/cache/CachePolicy.html'><interface>CachePolicy</interface></ulink>">
 <!ENTITY Request					       			"<ulink url='&API;graph/request/Request.html'><classname>Request</classname></ulink>">
@@ -181,12 +183,15 @@
 
 <!-- Types in extensions/ -->
 
+<!ENTITY FileSystemSource  						"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
+<!ENTITY JpaSource  									"<ulink url='&API;connector/source/jap/JpaSource.html'><classname>JpaSource</classname></ulink>">
+<!ENTITY SVNRepositorySource  				"<ulink url='&API;connector/svn/SVNRepositorySource.html'><classname>SVNRepositorySource</classname></ulink>">
 <!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">
 <!ENTITY JBossCacheSource  						"<ulink url='&API;connector/jbosscache/JBossCacheSource.html'><classname>JBossCacheSource</classname></ulink>">
 <!ENTITY ImageMetadataSequencer		  	"<ulink url='&API;sequencer/image/ImageMetadataSequencer.html'><classname>ImageMetadataSequencer</classname></ulink>">
 <!ENTITY ImageMetadata						  	"<ulink url='&API;sequencer/image/ImageMetadata.html'><classname>ImageMetadata</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">
 <!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/aperture/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
-<!ENTITY DnaJcrDeployer	  				"<ulink url='&API;web/jcr/rest/DnaJcrDeployer.html'><classname>DnaJcrDeployer</classname></ulink>">
+<!ENTITY DnaJcrDeployer	  						"<ulink url='&API;web/jcr/rest/DnaJcrDeployer.html'><classname>DnaJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
 

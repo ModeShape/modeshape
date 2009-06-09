@@ -31,7 +31,72 @@
 <chapter id="file-system-connector">
   <title>File System Connector</title>
   <para>
-		blah blah 
+		This connector exposes an area of the local file system as a <emphasis>read-only</emphasis> graph of "nt:file" and "nt:folder" nodes. 
+		The connector considers a workspace name to be the path to the directory on the file system that represents the root of that
+		workspace. Each connector can define whether it allows new workspaces can be created, but if so the names of the new workspaces
+		must represent valid paths to existing directories.
   </para>
+	<para>
+		The &FileSystemSource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&FileSystemSource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>directoryForDefaultWorkspace</entry>
+					<entry>Optional property that, if used, specifies the file system path to the existing directory that should be used for the 
+						default workspace. If null (or not specified), the source will use the current working directory of this virtual machine
+						(as defined by <code>new File(".").getAbsolutePath()</code>.</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+					</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspaceAllowed</entry>
+					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
+				</row>
+				<row>
+					<entry>cacheTimeToLiveInMilliseconds</entry>
+					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
+						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
+						duration for caching information.</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	<para>
+		Using the file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("source A")
+      .usingClass(FileSystemSource.class)
+      .setDescription("The repository for our content")
+      .setProperty("directoryForDefaultWorkspace", "file://some/file/path")
+      .setProperty("creatingWorkspaceAllowed", "false");
+ ]]></programlisting>
 </chapter>
 

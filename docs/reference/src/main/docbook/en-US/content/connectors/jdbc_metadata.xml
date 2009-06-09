@@ -31,7 +31,9 @@
 <chapter id="jdbc-metadata-connector">
   <title>JDBC Metadata Connector</title>
   <para>
-		blah blah 
+		This connector is a prototype that provides read-only access to the database schema (metadata) from relational databases through a JDBC 
+    connection.
+                <emphasis>This is still under development.</emphasis>
   </para>
 </chapter>
 
