@@ -23,7 +23,8 @@
  */
 package org.jboss.dna.web.jcr.rest;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.core.Application;
 
@@ -41,7 +42,12 @@ public class JcrApplication extends Application {
      */
     @Override
     public Set<Class<?>> getClasses() {
-        return Collections.<Class<?>>singleton(JcrResources.class);
+        return new HashSet<Class<?>>(Arrays.asList(new Class<?>[] {
+            JcrResources.class,
+            JcrResources.JSONExceptionMapper.class,
+            JcrResources.NotFoundExceptionMapper.class,
+            JcrResources.RepositoryExceptionMapper.class,
+        })); 
     }
 
 }

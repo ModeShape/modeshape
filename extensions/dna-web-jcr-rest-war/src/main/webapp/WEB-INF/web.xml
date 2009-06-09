@@ -22,46 +22,68 @@
 <web-app>
 	<display-name>JBoss DNA JCR RESTful Interface</display-name>
 
+	<!--
+		This parameter provides the fully-qualified name of a class that implements
+		the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
+		by the DnaJcrDeployer that controls the lifecycle for the DNA REST server.
+	-->
 	<context-param>
 		<param-name>org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
 	</context-param>
 
+	<!--
+		This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
+		the name of the configuration file to initialize the repository or repositories.
+		This configuration file must be on the classpath and is given as a classpath-relative
+		directory.
+	-->
 	<context-param>
 		<param-name>org.jboss.dna.web.jcr.rest.CONFIG_FILE</param-name>
 		<param-value>/configRepository.xml</param-value>
 	</context-param>
 
-	<context-param>
-		<param-name>resteasy.providers</param-name>
-		<param-value>org.jboss.dna.web.jcr.rest.JcrResources$NotFoundExceptionMapper,
-			org.jboss.dna.web.jcr.rest.JcrResources$JSONExceptionMapper,
-			org.jboss.dna.web.jcr.rest.JcrResources$RepositoryExceptionMapper</param-value>
-	</context-param>
-
+	<!--
+		This parameter defines the JAX-RS application class, which is really just a metadata class
+		that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
+		of the JAX-RS specification like exception handling and resource serving.
+		
+		This should not be modified. 
+	 -->
 	<context-param>
 		<param-name>javax.ws.rs.Application</param-name>
 		<param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
 	</context-param>
 
+	<!-- Required parameter for RESTEasy - should not be modified -->
 	<listener>
 		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
 	</listener>
 
+	<!-- Required parameter for JBoss DNA REST - should not be modified -->
 	<listener>
 		<listener-class>org.jboss.dna.web.jcr.rest.DnaJcrDeployer</listener-class>
 	</listener>
 
+	<!-- Required parameter for RESTEasy - should not be modified -->
 	<servlet>
 		<servlet-name>Resteasy</servlet-name>
 		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
 	</servlet>
 
+	<!-- Required parameter for JBoss DNA REST - should not be modified -->
 	<servlet-mapping>
 		<servlet-name>Resteasy</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 
+	<!-- 
+		The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
+		within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
+		so this constraint helps lock down the repository.
+		
+		This should generally not be modified. 
+	-->
 	<security-constraint>
 		<display-name>DNA REST</display-name>
 		<web-resource-collection>
@@ -69,14 +91,25 @@
 			<url-pattern>/*</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
+			<!--  
+				A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
+				or READWRITE roles to actually read or modify the data.  This is not used internally, so another
+				role could be substituted here.
+			-->
 			<role-name>connect</role-name>
 		</auth-constraint>
 	</security-constraint>
 
+	<!--  
+		Any auth-method will work for JBoss DNA.  BASIC is used this example for simplicity.
+	 -->
 	<login-config>
 		<auth-method>BASIC</auth-method>
 	</login-config>
 
+	<!-- 
+		This must match the role-name in the auth-constraint above. 
+	 -->
 	<security-role>
 		<role-name>connect</role-name>
 	</security-role>
