@@ -82,6 +82,7 @@
 			</para>
 		</partintro>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/execution_context.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/graph.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/connector.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/configuration.xml"/>

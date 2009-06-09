@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="graph_api">
+  <title>Graph API</title>
+  <para>
+		One of the central concepts within JBoss DNA is that of its <emphasis>graph model</emphasis>.
+		Information is structured into a hierarchy of nodes with properties, where nodes in the hierarchy
+		are identified by their path (and/or identifier properties).  Properties are identified by
+		a name that incorporates a namespace and local name, and contain one or more property values
+		consisting of normal Java strings, names, paths, URIs, booleans, longs, doubles, decimals, binary content,
+		dates, UUIDs, references to other nodes, or any other serializable object.
+	</para>
+	<para>
+		This graph model is used throughout JBoss DNA: it forms the basis for the 
+		<link linkend="connector_framework">connector framework</link>, it is used by the 
+		<link linkend="sequencing_framework">sequencing framework</link> for the generated output,
+		and it is what the <link linkend="jcr">JCR implementation</link> uses internally to access and operate
+		on the repository content.
+	</para>
+	<para>
+		Therefore, this chapter provides essential information that will be essential to really understanding
+		how the connectors, sequencers, and other JBoss DNA features work.
+	</para>
+	<sect1 id="graph-names">
+		<title>Names</title>
+		<para>
+			JBoss DNA uses names to identify quite a few different types of objects.  As we'll soon see, each property
+			of a node is given by a name, and each segment in a path is comprised of a name.  Therefore,
+			names are a very important concept.
+		</para>
+		<para>
+			JBoss DNA names consist of a local part and are qualified with a namespaces.  The local part can consist of
+			any character, and the namespace is identified by a URI.  Namespaces were introduced in the
+			<link linkend="execution-context">previous chapter</link> and are managed by the &ExecutionContext;'s
+			<link linkend="namespace-registry">namespace registry</link>.  Namespaces help reduce the risk of
+			clashes in names that have an equivalent same local part.
+		</para>
+		<para>
+			All names are immutable, which means that once a &Name; object is created, it will never change.
+			This characteristic makes it much easier to write thread-safe code - the objects never change and therefore
+			require no locks or synchronization to guarantee atomic reads.  This is a technique that is more and more
+			often found in newer languages and frameworks that simplify concurrent operations.
+		</para>
+		<para>
+			&Name; is also a interface rather than a concrete class:
+		</para>
+<programlisting>
+</programlisting>
+		<para>
+			This means that you need to use a factory to create &Name; instances.
+		</para>
+		<para>
+			The use of a factory may seem like a disadvantage and unnecessary complexity, but there actually
+			are several benefits.  First, it hides the concrete implementations, which is very appealing if
+			an optimized implementation can be chosen for particular situations.  It also simplifies the
+			usage, since &Name; only has a few methods.  Third, it allows the factory to cache or pool instances
+			where appropriate to help conserve memory.  Finally, the very same factory actually serves as
+			a <emphasis>conversion</emphasis> mechanism from other forms.  We'll actually see more of this
+			later in this chapter, when we talk about other kinds of <link linkend="graph-properties">property values</link>.
+		</para>
+		<para>
+			The factory for creating &Name; objects is called &NameFactory; and is available within the &ExecutionContext;, 
+			via the <code>getValueFactories()</code> method.  But before we see that, let's first discuss how names are represented as strings.
+		</para>
+		<para>
+			We mentioned earlier that names are qualified with a namespace, and namespaces are identified by URIs.
+			Also, the local part of the names can contain any character.  So what do the string representation of names look like?
+		</para>
+		<para>
+			The &Name; interface defines a number of <code>getString(...)</code> methods that take different parameters.
+			The <code>getString()</code> method (which is called by the <code>toString()</code> method) will simply output
+			the namespace URI followed by a ':' and an local name (encoded with a default &TextEncoder; implementation, which
+			will be discussed in the <link linkend="graph-encoders">next section</link>).  If you want to use the
+			namespace prefix, then simply use one of the <code>getString(...)</code> methods that takes a &NamespaceRegistry;
+			parameter.
+		</para>
+		<para>
+			We'll see how names are used later one, but one more point to make:  &Name; is both serializable and comparable,
+			and all implementations should support <code>equals(...)</code> and <code>hashCode()</code> so that &Name; can
+			be used as a key in a hash-based map.
+		</para>
+	</sect1>
+	<sect1 id="graph-paths">
+		<title>Paths</title>
+		<para>
+			Another important concept in JBoss DNA's graph model is that of a <emphasis>path</emphasis>, which provides a way
+			of locating a node within a hierarchy.  JBoss DNA's &Path; object is actually comprised of an ordered sequence
+			of &PathSegment; objects:
+		</para>
+		<programlisting>
+public interface &Path; extends Comparable<Path>, Iterable<&PathSegment;>, Serializable {
+
+    /**
+     * Return the number of segments in this path.
+     * @return the number of path segments
+     */
+    public int size();
+
+    /**
+     * Return whether this path represents the root path.
+     * @return true if this path is the root path, or false otherwise
+     */
+    public boolean isRoot();
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public Iterator<&PathSegment;> iterator();
+
+		/**
+		 * Obtain a copy of the segments in this path. None of the segments are encoded.
+		 * @return the array of segments as a copy
+		 */
+		public &PathSegment;[] getSegmentsArray();
+
+		/**
+		 * Get an unmodifiable list of the path segments.
+		 * @return the unmodifiable list of path segments; never null
+		 */
+		public List<&PathSegment;> getSegmentsList();
+		/**
+		 * Get the last segment in this path.
+		 * @return the last segment, or null if the path is empty
+		 */
+		public &PathSegment; getLastSegment();
+
+		/**
+		 * Get the segment at the supplied index.
+		 * @param index the index
+		 * @return the segment
+		 * @throws IndexOutOfBoundsException if the index is out of bounds
+		 */
+		public &PathSegment; getSegment( int index );
+
+		/**
+		 * Return an iterator that walks the paths from the root path down to this path. This method 
+		 * always returns at least one path (the root returns an iterator containing itself).
+		 * @return the path iterator; never null
+		 */
+		public Iterator<&Path;> pathsFromRoot();
+
+		/**
+		 * Return a new path consisting of the segments starting at <code>beginIndex</code> index (inclusive). 
+		 * This is equivalent to calling <code>path.subpath(beginIndex,path.size()-1)</code>.
+		 * @param beginIndex the beginning index, inclusive.
+		 * @return the specified subpath
+		 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger 
+		 *            than the length of this <code>Path</code> object
+		 */
+		public &Path; subpath( int beginIndex );
+
+		/**
+		 * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive)
+		 * and the <code>endIndex</code> index (exclusive).
+		 * @param beginIndex the beginning index, inclusive.
+		 * @param endIndex the ending index, exclusive.
+		 * @return the specified subpath
+		 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or 
+		 *            <code>endIndex</code> is larger than the length of this <code>Path</code> 
+		 *            object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
+		 */
+		public &Path; subpath( int beginIndex, int endIndex );
+
+    ...
+
+}   </programlisting>
+		<para>
+			where each &PathSegment; is comprised of a &Name; and <emphasis>same-name-sibling index</emphasis>:
+		</para>
+		<programlisting>
+		</programlisting>
+		<para>
+			
+		</para>
+		
+	</sect1>
+	<sect1 id="graph-properties">
+		<title>Properties</title>
+		<para>
+			
+		</para>
+	</sect1>
+	<sect1 id="graph-value-factories">
+		<title>Values and value factories</title>
+		<para>
+			
+		</para>
+	</sect1>
+	<sect1 id="graph-encoders">
+		<title>Encoders and decoders</title>
+		<para>
+			String representations of &Name; and &Path; objects  mentioned earlier that names are qualified with a namespace, and namespaces are identified by URIs.
+			Also, the local part of the names can contain any character.  So what do the string representation of names look like?
+		</para>
+		<para>
+			The key is understanding that the namespaces will 
+		</para>
+		
+		
+	</sect1>
+	<sect1 id="graph-api">
+		<title>Graph API</title>
+		<para>
+			
+		</para>
+	</sect1>
+	<sect1 id="graph-requests">
+		<title>Request Model</title>
+		<para>
+			
+		</para>
+	</sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we introduced JBoss DNA's <emphasis>graph model</emphasis> and showed the different
+			kinds of objects used to represent nodes, paths, names, and properties.  We saw how all of these objects
+			are actually immutable, and how the low-level Graph API uses this characteristic to provide a stateless
+			and thread-safe interface for working with repository content using the <emphasis>request model</emphasis>
+			used to read, update, and change content.
+		</para>
+		<para>
+			Next, we'll dive into the <link linkend="connector_framework">connector framework</link>, which builds
+			on top of the graph model and request model, allowing JBoss DNA to access the graph content stored
+			in many different kinds of systems.
+		</para>
+	</sect1>
+</chapter>
