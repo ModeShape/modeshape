@@ -31,6 +31,17 @@
 <chapter id="xml-sequencer">
   <title>XML Document Sequencer</title>
   <para>
-    This sequencer stores the structure and data of an XML file into the repository.
+    This sequencer stores the structure and data of an XML file into the repository.  DTD, entity, comments, 
+    and other content are maintained by the sequencer in the output structure.
   </para>
+  <programlisting>
+JcrConfiguration config = ...
+
+config.sequencer("XML Sequencer")
+      .usingClass("org.jboss.dna.sequencer.xml.XmlSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences XML documents and maps their data into the repository")
+      .sequencingFrom("//(*.xml[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/xml/$1");	
+</programlisting>  
 </chapter>

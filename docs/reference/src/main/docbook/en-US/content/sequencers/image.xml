@@ -93,16 +93,16 @@
      </para>
 		<para>
 			To use this sequencer, simply include the <code>dna-sequencer-images</code> JAR
-			in your application and configure	the Sequencing Service to use this sequencer using something similar to:
+			in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
      </para>
    	<programlisting>
-String name = "Image Sequencer";
-String desc = "Sequences image files to extract the characteristics of the image";
-String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data] =&gt; /images/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-sequencingService.addSequencer(sequencerConfig);
+JcrConfiguration config = ...
+config.sequencer("Image Sequencer")
+      .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences image files to extract the characteristics of the image")
+      .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/images/$1");
+
 </programlisting>
 </chapter>

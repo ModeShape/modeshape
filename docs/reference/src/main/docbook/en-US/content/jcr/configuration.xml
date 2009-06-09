@@ -367,7 +367,7 @@ config.mimeTypeDetector("Extension Detector")
 	<sect1 id="using_dna_whats_next">
 		<title>What's next</title>
 		<para>
-			This chapter outline how you configure JBoss DNA, how you then access a <code>javax.jcr.Repository</code> instance,
+			This chapter outlines how you configure JBoss DNA, how you then access a <code>javax.jcr.Repository</code> instance,
 			and use the standard JCR API to interact with the repository. The
 			<link linkend="jcr">next chapter</link> talks about using the JCR API with your JBoss DNA repository.
 		</para>

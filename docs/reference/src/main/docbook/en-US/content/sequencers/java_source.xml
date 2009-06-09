@@ -42,16 +42,16 @@
 	</para>
 	<para>
 		To use this sequencer, simply include the <code>dna-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
-		in your application and configure	the Sequencing Service to use this sequencer using something similar to:
+		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
   <programlisting>
-String name = "Java Sequencer";
-String desc = "Sequences java files to extract the characteristics of the Java source";
-String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] =&gt; /java/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-this.sequencingService.addSequencer(sequencerConfig);
+JcrConfiguration config = ...
+
+config.sequencer("Java Sequencer")
+      .usingClass("org.jboss.dna.sequencer.java.JavaMetadataSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences java files to extract the characteristics of the Java source")
+      .sequencingFrom("//(*.(java)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/java/$1");	
 </programlisting>
 </chapter>

@@ -32,7 +32,7 @@
   <title><trademark class='registered'>Microsoft Office</trademark> Document Sequencer</title>
    <para>
    	This sequencer is included in JBoss DNA and processes Microsoft Office documents, including Word documents, Excel spreadsheets,
-	and PowerPoint presentations.  With documents, the sequencer extracts the internal structure based on Heading styles.
+	and PowerPoint presentations.  With documents, the sequencer attempts to infer the internal structure from the heading styles.
 	With presentations, the sequencer extracts the slides, titles, text and slide thumbnails.
 	With spreadsheets, the sequencer extracts the names of the sheets.  And, the sequencer extracts for all the files the
 	general file information, including the name of the author, title, keywords, subject, comments, and various dates.
@@ -40,16 +40,16 @@
 <para>
 	To use this sequencer, simply include the <code>dna-sequencer-msoffice</code> JAR and all of the
 	<ulink url="http://poi.apache.org/">POI</ulink> JARs
-	in your application and configure	the Sequencing Service to use this sequencer using something similar to:
+	in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
    </para>
   <programlisting>
-String name = "Microsoft Office Document Sequencer";
-String desc = "Sequences MS Office documents, including spreadsheets and presentations";
-String classname = "org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.(doc|docx|ppt|pps|xls)[*])/jcr:content[@jcr:data] =&gt; /msoffice/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-sequencingService.addSequencer(sequencerConfig);
+JcrConfiguration config = ...
+
+config.sequencer("Microsoft Office Document Sequencer")
+      .usingClass("org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences MS Office documents, including spreadsheets and presentations")
+      .sequencingFrom("//(*.(*.(doc|docx|ppt|pps|xls)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/msoffice/$1");	
 </programlisting>
 </chapter>
