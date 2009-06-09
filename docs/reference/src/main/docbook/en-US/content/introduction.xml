@@ -31,16 +31,35 @@
 <chapter id="introduction">
   <title>Introduction to JBoss DNA</title>
 	<para>
-		The JBoss DNA project is building a unified metadata repository system that is <link linkend="jcr_intro">JCR-compliant</link>
-		and capable of federating information from a variety of back-end systems.  To client applications, JBoss DNA looks and behaves like a 
-		regular JCR repository that they search, navigate, version, and listen for changes.  But under the covers, JBoss DNA
-		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
-		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
-		and in sync.  JBoss DNA also analyzes the files you upload into the repository and turns it into information you can use more effectively.
+		JBoss DNA is a JCR implementation that provides access to content stored in many different kinds of systems. 
+		A JBoss DNA repository isn't yet another silo of isolated information, but rather it's a JCR view of the information 
+		you already have in your environment: files systems, databases, other repositories, services, applications, etc.
 	</para>
 	<para>
-		This document goes into detail about JBoss DNA and its capabilities, features, architecture, components, extension points,
-		security, configuration, and the development environment and procedures.  
+		To your applications, JBoss DNA looks and behaves like a regular JCR repository.  Using the standard JCR API,
+		applications can search, navigate, version, and listen for changes in the content.  But under the covers, JBoss DNA
+		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
+		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
+		and in sync.
+	</para>
+	<para>
+		Of course when you start providing a unified view of all this information, you start recognizing the need to store 
+		more information, including metadata about and relationships between the existing content. JBoss DNA lets you do this, too. 
+		And JBoss DNA even tries to help you discover more about the information you already have, especially the information 
+		wrapped up in the kinds of files often found in enterprise systems: service definitions, policy files, images, media, 
+		documents, presentations, application components, reusable libraries, configuration files, application installations, 
+		databases schemas, management scripts, and so on. As files are loaded into the repository, you can make JBoss DNA
+		automatically sequence these files to extract from their content meaningful information that can be stored in the repository, 
+		where it can then be searched, accessed, and analyzed using the JCR API.
+	</para>
+	<para>
+		This document goes into detail about how JBoss DNA works to provide these capabilities.  It also talks in detail
+		about many of the parts within JBoss DNA - what they do, how they work, and how you can extend or customize the
+		behavior.  In particular, you'll learn about JBoss DNA <link linkend='connector-framework'>connectors</link>
+		and <link linkend='sequencing-framework'>sequencers</link>, how you can use the implementations included in JBoss DNA,
+		and how you can write your own to tailor JBoss DNA for your needs.
+	</para>
+	<para>
 		So whether your a developer on the project, or you're trying to learn the intricate details of
 		how JBoss DNA works, this document hopefully serves a good reference for developers on the project.
 	</para>
@@ -169,19 +188,16 @@
 	    and is being revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
 	  </para>
 	  <para>
-	    The <emphasis>JBoss DNA project</emphasis>
-	    is building unified metadata repository system that will be compliant with JCR.  Nearly all of these capabilities are to be hidden
-	    below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
-	    existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
-	    have the file content indexed for search purposes. JBoss DNA also defines a library for "sequencing" content - to extract
-	    meaningful information from that content and store it in the repository, where it can then be searched, accessed, and
-	    analyzed using the JCR API.
-	  </para>
-	  <para> JBoss DNA has other features as well.  You can create federated repositories that dynamically merge the information 
-		  from multiple databases, services, applications, and other JCR repositories.  JBoss DNA also will allow you to 
-	    create customized views based upon the type of data and the role of the user that is accessing the data. And yet another goal is
-	    to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
-	  </para>
+		  The JCR API provides a number of information services that are needed by many applications,
+		  including: read and write access to information; the ability to structure information in a hierarchical and flexible manner that can adapt
+		  and evolve over time; ability to work with unstructured content; ability to (transparently) handle large strings; 
+		  notifications of changes in the information; search and query; versioning of information; access control; integrity constraints;
+		  participation within distributed transactions; explicit locking of content; and of course persistence.
+		</para>
+		<figure id="jcr-features">
+			<title>JCR API features</title>
+			<graphic align="center" scale="100" fileref="jcr-features.png"/>
+		</figure>
 	</sect1>
   <sect1 id="roadmap">
     <title>Project roadmap</title>

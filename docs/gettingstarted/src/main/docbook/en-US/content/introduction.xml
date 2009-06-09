@@ -94,6 +94,10 @@
 	  notifications of changes in the information; search and query; versioning of information; access control; integrity constraints;
 	  participation within distributed transactions; explicit locking of content; and of course persistence.
 	</para>
+	<figure id="jcr-features">
+		<title>JCR API features</title>
+		<graphic align="center" scale="100" fileref="jcr-features.png"/>
+	</figure>
 	<sect1 id="what_is_jboss_dna">
 		<title>JBoss DNA</title>
 		<para>
