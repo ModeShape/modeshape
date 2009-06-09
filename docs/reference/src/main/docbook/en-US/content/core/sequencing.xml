@@ -29,7 +29,7 @@
 %CustomDTD;
 ]>
 <chapter id="sequencing_framework">
-  <title>Sequencing content</title>
+  <title>Sequencing framework</title>
 	<para>As we've mentioned before, JBoss DNA is able to work with existing JCR repositories.  Your client applications
   	make changes to the information in those repositories, and JBoss DNA automatically uses its sequencers to extract
   	additional information from the uploaded files.</para>
@@ -253,207 +253,14 @@ this.sequencingService.addSequencer(javaSequencerConfig);
 			  This filename is then used in the output path, which is where the sequenced content is placed.</para>
 		</sect2>
   </sect1>
-  <sect1 id="sequencers">
-    <title>JBoss DNA Sequencers</title>
+  <sect1 id="sequencer-library">
+    <title>Out-of-the-box sequencers</title>
     <para>
-    	JBoss DNA includes a number of sequencers "out of the box".  These sequencers can be used within your application to sequence
-			a variety of common file formats.  To use them, the only thing you have to do is define the appropriate sequencer configurations
-			and include the appropriate JAR files.
+    	A number of sequencers are already available in JBoss DNA, and are outlined in detail
+      <link linkend="provied-sequencers-part">later in the document</link>.
+			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more sequencers</ulink>
+			in the upcoming releases.
     </para>
-    <sect2 id="dna-sequencer-images">
-      <title>Image sequencer</title>
-      <para>
-				A sequencer that extracts metadata from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM, PGM, PPM and PSD image files.
-				This sequencer extracts the file format, image resolution, number of bits per pixel and optionally number of images, comments 
-				and physical resolution, and then writes this information into the repository using the following structure:
-			</para>
-			<itemizedlist>
-				<listitem>
-					<para>
-						<emphasis role="strong">image:metadata</emphasis> node of type <code>image:metadata</code>
-					</para>
-				</listitem>
-				<listitem>
-					<itemizedlist>
-						<listitem>
-							<para><emphasis role="strong">jcr:mimeType</emphasis> - optional string property for the mime type of the image</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">jcr:encoding</emphasis> - optional string property for the encoding of the image</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:formatName</emphasis> - string property for the name of the format</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:width</emphasis> - optional integer property for the image's width in pixels</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:height</emphasis> - optional integer property for the image's height in pixles</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:bitsPerPixel</emphasis> - optional integer property for the number of bits per pixel</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:progressive</emphasis> - optional boolean property specifying whether the image is stored in a progressive
-									(i.e., interlaced) form</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:numberOfImages</emphasis> - optional integer property for the number of images stored in the file; defaults
-									to 1</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:physicalWidthDpi</emphasis> - optional integer property for the physical width of the image in dots per inch</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:physicalHeightDpi</emphasis> - optional integer property for the physical height of the image in dots per
-									inch</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:physicalWidthInches</emphasis> - optional double property for the physical width of the image in inches</para>
-						</listitem>
-						<listitem>
-							<para><emphasis role="strong">image:physicalHeightInches</emphasis> - optional double property for the physical height of the image in inches</para>
-						</listitem>
-					</itemizedlist>
-				</listitem>
-			</itemizedlist>
-			<para>
-				This structure could be extended in the future to add EXIF and IPTC metadata as child nodes. For example, EXIF metadata is
-				structured as tags in directories, where the directories form something like namespaces, and which are used by different camera
-				vendors to store custom metadata. This structure could be mapped with each directory (e.g. "EXIF" or "Nikon Makernote" or
-				"IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
-      </para>
-			<para>
-				To use this sequencer, simply include the <code>dna-sequencer-images</code> JAR
-				in your application and configure	the Sequencing Service to use this sequencer using something similar to:
-      </para>
-	    <programlisting>
-String name = "Image Sequencer";
-String desc = "Sequences image files to extract the characteristics of the image";
-String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data] =&gt; /images/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-sequencingService.addSequencer(sequencerConfig);
-</programlisting>
-    </sect2>
-    <sect2 id="dna-sequencer-msoffice">
-      <title>Microsoft Office document sequencer</title>
-      <para>
-      	This sequencer is included in JBoss DNA and processes Microsoft Office documents, including Word documents, Excel spreadsheets,
-				and PowerPoint presentations.  With documents, the sequencer extracts the internal structure based on Heading styles.
-				With presentations, the sequencer extracts the slides, titles, text and slide thumbnails.
-				With spreadsheets, the sequencer extracts the names of the sheets.  And, the sequencer extracts for all the files the
-				general file information, including the name of the author, title, keywords, subject, comments, and various dates.
-      </para>
-			<para>
-				To use this sequencer, simply include the <code>dna-sequencer-msoffice</code> JAR and all of the
-				<ulink url="http://poi.apache.org/">POI</ulink> JARs
-				in your application and configure	the Sequencing Service to use this sequencer using something similar to:
-      </para>
-	    <programlisting>
-String name = "Microsoft Office Document Sequencer";
-String desc = "Sequences MS Office documents, including spreadsheets and presentations";
-String classname = "org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.(doc|docx|ppt|pps|xls)[*])/jcr:content[@jcr:data] =&gt; /msoffice/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-sequencingService.addSequencer(sequencerConfig);
-</programlisting>
-    </sect2>
-    <sect2 id="dna-sequencer-zip">
-      <title>ZIP archive sequencer</title>
-      <para>
-      	The ZIP file sequencer is included in JBoss DNA and extracts the files and folders contained in the ZIP archive file,
-				extracting the files and folders into the repository using JCR's <code>nt:file</code> and <code>nt:folder</code> node types.
-      </para>
-			<para>
-				To use this sequencer, simply include the <code>dna-sequencer-zip</code> JAR
-				in your application and configure	the Sequencing Service to use this sequencer using something similar to:
-      </para>
-	    <programlisting>
-String name = "ZIP Sequencer";
-String desc = "Sequences ZIP archives to extract the files and folders";
-String classname = "org.jboss.dna.sequencer.zip.ZipSequencer";
-String[] pathExpressions = {"//(*.zip[*])/jcr:content[@jcr:data] =&gt; /zips/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-this.sequencingService.addSequencer(sequencerConfig);
-</programlisting>
-    </sect2>
-    <sect2 id="dna-sequencer-java">
-      <title>Java source sequencer</title>
-      <para>
-				One of the sequencers that included in JBoss DNA is the <emphasis role="strong">dna-sequencer-java</emphasis> subproject.
-				This sequencer parses Java source code added to the repository and extracts the basic structure of the classes and enumerations 
-				defined in the code.
-				This structure includes: the package structures, class declarations, class and member attribute declarations,
-				class and member method declarations with signature (but not implementation logic), enumerations with each enumeration literal value,
-				annotations, and JavaDoc information for all of the above. 
-				After extracting this information from the source code, the sequencer then writes this structure into the repository,
-				where it can be further processed, analyzed, searched, navigated, or referenced.
-			</para>
-			<para>
-				To use this sequencer, simply include the <code>dna-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
-				in your application and configure	the Sequencing Service to use this sequencer using something similar to:
-      </para>
-	    <programlisting>
-String name = "Java Sequencer";
-String desc = "Sequences java files to extract the characteristics of the Java source";
-String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] =&gt; /java/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-this.sequencingService.addSequencer(sequencerConfig);
-</programlisting>
-    </sect2>
-    <sect2 id="dna-sequencer-mp3">
-      <title>MP3 audio file sequencer</title>
-      <para>
-      	Another sequencer that is included in JBoss DNA is the <emphasis role="strong">dna-sequencer-mp3</emphasis> sequencer project.
-				This sequencer processes MP3 audio files added to a repository and extracts the <ulink url="http://www.id3.org/">ID3</ulink>
-			 	metadata for the file, including the track's title, author, album name, year, and comment.
-				After extracting this information from the audio files, the sequencer then writes this structure into the repository,
-				where it can be further processed, analyzed, searched, navigated, or referenced.
-      </para>
-			<para>
-				To use this sequencer, simply include the <code>dna-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
-				library in your application and configure	the Sequencing Service to use this sequencer using something similar to:
-      </para>
-	    <programlisting>
-String name = "MP3 Sequencer";
-String desc = "Sequences MP3 files to extract the ID3 tags of the audio file";
-String classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-String[] pathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
-&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
-                                                      classpath, pathExpressions);
-this.sequencingService.addSequencer(sequencerConfig);
-</programlisting>
-    </sect2>
-    <sect2 id="dna-sequencer-cnd">
-      <title>JCR Compact Node Definition (CND) file sequencer</title>
-      <para>
-      	This sequencer processes JCR Compact Node Definition (CND) files
-				to extract the node definitions with their property definitions, and inserts these into the repository using JCR standard notation.
-      </para>
-    </sect2>
-        <sect2 id="dna-sequencer-jbpm-jpdl">
-      <title>jBPM JPDL file sequencer</title>
-      <para>
-        This sequencer is incomplete and is not currently usable.  The purpose is to sequence jBPM JPDL files to identify metadata
-        about processes, their actors, and their dependencies.
-      </para>
-    </sect2>
-    <sect2 id="dna-sequencer-xml">
-      <title>XML file sequencer</title>
-      <para>
-        This sequencer stores the structure and data of an XML file into the repository.
-      </para>
-    </sect2> 
-    
   </sect1>
   <sect1 id="custom-sequencers">
 	  <title>Creating custom sequencers</title>

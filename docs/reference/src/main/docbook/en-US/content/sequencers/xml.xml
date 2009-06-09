@@ -31,6 +31,6 @@
 <chapter id="xml-sequencer">
   <title>XML Document Sequencer</title>
   <para>
-		blah blah 
+    This sequencer stores the structure and data of an XML file into the repository.
   </para>
 </chapter>

@@ -30,7 +30,79 @@
 ]>
 <chapter id="image-sequencer">
   <title>Image Sequencer</title>
-  <para>
-		blah blah 
-  </para>
+     <para>
+			The &ImageMetadataSequencer; sequencer extracts metadata from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM, PGM, PPM and PSD image files.
+			This sequencer extracts the file format, image resolution, number of bits per pixel and optionally number of images, comments 
+			and physical resolution, and then writes this information into the repository using the following structure:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					<emphasis role="strong">image:metadata</emphasis> node of type <code>image:metadata</code>
+				</para>
+			</listitem>
+			<listitem>
+				<itemizedlist>
+					<listitem>
+						<para><emphasis role="strong">jcr:mimeType</emphasis> - optional string property for the mime type of the image</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">jcr:encoding</emphasis> - optional string property for the encoding of the image</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:formatName</emphasis> - string property for the name of the format</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:width</emphasis> - optional integer property for the image's width in pixels</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:height</emphasis> - optional integer property for the image's height in pixles</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:bitsPerPixel</emphasis> - optional integer property for the number of bits per pixel</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:progressive</emphasis> - optional boolean property specifying whether the image is stored in a progressive
+								(i.e., interlaced) form</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:numberOfImages</emphasis> - optional integer property for the number of images stored in the file; defaults
+								to 1</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:physicalWidthDpi</emphasis> - optional integer property for the physical width of the image in dots per inch</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:physicalHeightDpi</emphasis> - optional integer property for the physical height of the image in dots per
+								inch</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:physicalWidthInches</emphasis> - optional double property for the physical width of the image in inches</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">image:physicalHeightInches</emphasis> - optional double property for the physical height of the image in inches</para>
+					</listitem>
+				</itemizedlist>
+			</listitem>
+		</itemizedlist>
+		<para>
+			This structure could be extended in the future to add EXIF and IPTC metadata as child nodes. For example, EXIF metadata is
+			structured as tags in directories, where the directories form something like namespaces, and which are used by different camera
+			vendors to store custom metadata. This structure could be mapped with each directory (e.g. "EXIF" or "Nikon Makernote" or
+			"IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
+     </para>
+		<para>
+			To use this sequencer, simply include the <code>dna-sequencer-images</code> JAR
+			in your application and configure	the Sequencing Service to use this sequencer using something similar to:
+     </para>
+   	<programlisting>
+String name = "Image Sequencer";
+String desc = "Sequences image files to extract the characteristics of the image";
+String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
+String[] classpath = null; // Use the current classpath
+String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data] =&gt; /images/$1"};
+&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
+                                                      classpath, pathExpressions);
+sequencingService.addSequencer(sequencerConfig);
+</programlisting>
 </chapter>

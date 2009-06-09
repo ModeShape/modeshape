@@ -31,7 +31,78 @@
 <chapter id="jboss-cache-connector">
   <title>JBoss Cache Connector</title>
   <para>
-		blah blah 
+  	The JBoss Cache repository connector allows a <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink> instance to be 
+		used as a JBoss DNA (and thus JCR) repository.  This provides a repository that is an effective, scalable, and distributed cache,
+		and is often paired with other repository sources to provide a local or <link linkend="federation-connector">federated</link>
+		repository.
   </para>
+	<para>
+		The &JBossCacheSource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&JBossCacheSource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>cacheFactoryJndiName</entry>
+					<entry>Optional property that, if used, specifies the name in JNDI where an existing JBoss Cache Factory instance can be found.
+						That factory would then be used if needed to create a JBoss Cache instance.  If no value is provided, then the
+						JBoss Cache <code>DefaultCacheFactory</code> class is used.</entry>
+				</row>
+				<row>
+					<entry>cacheConfigurationName</entry>
+					<entry>Optional property that, if used, specifies the name of the configuration that is supplied to the cache factory
+						when creating a new JBoss Cache instance.</entry>
+				</row>
+				<row>
+					<entry>cacheJndiName</entry>
+					<entry>Optional property that, if used, specifies the name in JNDI where an existing JBoss Cache instance can be found.
+						This should be used if your application already has a cache that is used, or if you need to configure the cache in
+						a special way.</entry>
+				</row>
+				<row>
+					<entry>uuidPropertyName</entry>
+					<entry>Optional property that, if used, defines the property that should be used to find the UUID value for each node
+						in the cache.  "<code>dna:uuid</code>" is the default.</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
+				</row>
+				<row>
+					<entry>defaultCachePolicy</entry>
+					<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
+						cached by other, higher-level components.  The default value of null implies that this source does not define a specific
+						duration for caching information provided by this repository source.</entry>
+				</row>
+				<row>
+					<entry>nameOfDefaultWorkspace</entry>
+					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that defines the names of the workspaces that exist and that are available for use without having to create them.</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspacesAllowed</entry>
+					<entry>Optional property that is by default 'true' that defines whether clients can create new workspaces.</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
 </chapter>
 

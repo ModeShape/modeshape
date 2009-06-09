@@ -31,6 +31,7 @@
 <chapter id="cnd-sequencer">
   <title>Compact Node Type (CND) Sequencer</title>
   <para>
-		blah blah 
+  	This sequencer processes JCR Compact Node Definition (CND) files
+		to extract the node definitions with their property definitions, and inserts these into the repository using JCR standard notation.
   </para>
 </chapter>

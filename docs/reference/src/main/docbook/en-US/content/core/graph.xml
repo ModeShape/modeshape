@@ -715,17 +715,252 @@ public interface Readable {
 			as required.
 		</para>
 	</sect1>
+	<sect1 id="graph-location">
+		<title>Locations</title>
+		<para>
+			In addition to &Path; objects, nodes can be identified by one or more <emphasis>identification properties</emphasis>.
+			These really are just &Property; instances with names that have a special meaning 
+			(usually to <link linkend="connector-framework">connectors</link>).
+			JBoss DNA also defines a &Location; class that encapsulates:
+		  <itemizedlist>
+		    <listitem>
+		      <para>the &Path; to the node; or</para>
+		    </listitem>
+		    <listitem>
+		      <para>one or more <emphasis>identification properties</emphasis> that are likely source=specific
+						and that are represented with &Property; objects; or</para>
+		    </listitem>
+		    <listitem>
+		      <para>a combination of both.</para>
+		    </listitem>
+		  </itemizedlist>
+			So, when a client knows the path and/or the identification properties, they can create a &Location; object
+			and then use that to identify the node.  &Location; is a class that can be instantiated through factory 
+			methods on the class:
+		</para>
+		<programlisting>
+public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparable&lt;&Location;> {
+
+    public static &Location; create( &Path; path ) { ... }
+    public static &Location; create( &UUID; uuid ) { ... }
+    public static &Location; create( &Path; path, &UUID; uuid ) { ... }
+    public static &Location; create( &Path; path, &Property; idProperty ) { ... }
+    public static &Location; create( &Path; path, &Property; firstIdProperty, 
+                                     &Property;... remainingIdProperties ) { ... }
+    public static &Location; create( &Path; path, &Iterable;&lt;&Property; idProperties ) { ... }
+    public static &Location; create( &Property; idProperty ) { ... }
+    public static &Location; create( &Property; firstIdProperty, 
+                                     &Property;... remainingIdProperties ) { ... }
+    public static &Location; create( &Iterable;&lt;&Property;> idProperties ) { ... }
+    public static &Location; create( &List;&lt;&Property;> idProperties ) { ... }
+    ...
+}		</programlisting>
+		<para>
+		  Like many of the other classes and interfaces, &Location; is immutable and cannot be changed once created.
+		  However, there are methods on the class to create a copy of the &Location; object with a different &Path;,
+		  a different &UUID;, or different identification properties:
+		</para>
+		<programlisting>
+public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparable&lt;&Location;> {
+    ...
+    public &Location; with( &Property; newIdProperty );
+    public &Location; with( &Path; newPath );
+    public &Location; with( &UUID; uuid );
+    ...
+}		</programlisting>
+		<para>
+			One more thing about locations: we'll see later in the next chapter how they are used to make requests
+			to the <link linkend="connector-framework">connectors</link>.  When creating the requests, clients usually have an 
+			incomplete location (e.g., a path but no identification properties).  When processing the requests, connectors
+			provide an <emphasis>actual</emphasis> location that contains the path <emphasis>and</emphasis> all identification properties.
+			If actual &Location; objects are then reused in subsequent requests by the client, the connectors will have the benefit of having
+			both the path and identification properties and may be able to more efficiently locate the identified node.
+		</para>
+	</sect1>
 	<sect1 id="graph-api">
 		<title>Graph API</title>
 		<para>
-			
+			JBoss DNA's <emphasis>Graph API</emphasis> was designed as a lightweight public API for working with graph information.
+			The &Graph; class is the primary class in API, and each instance represents a single, independent
+			view of a single graph.  &Graph; instances don't maintain state, so every request (or batch of requests) operate against
+			the underlying graph and the return <emphasis>immutable snapshots</emphasis> of the requested state at the time
+			the request was made.
 		</para>
-	</sect1>
-	<sect1 id="graph-requests">
-		<title>Request Model</title>
 		<para>
-			
+			There are several ways to obtain a &Graph; instance, as we'll see in later chapters.  For the time being, the important
+			thing to understand is what a &Graph; instance represents and how it interacts with the underlying content to return
+			representations of portions of that underlying graph content.
 		</para>
+		<para>
+			The &Graph; class basically represents an <ulink url="http://www.martinfowler.com/bliki/DomainSpecificLanguage.html">internal domain specific language (DSL)</ulink>,
+			designed to be easy to use in an application.  
+			The Graph API makes extensive use of interfaces and method chaining, so that methods return a concise interface that has only those
+			methods that make sense at that point.  In fact, this should be really easy if your IDE has code completion.
+			Just remember that under the covers, a &Graph; is just building &Request; objects, submitting them to the connector,
+			and then exposing the results.
+		</para>
+		<para>
+			The next few subsections describe how to use a &Graph; instance.
+		</para>
+		<sect2 id="graph-api-workspaces">
+			<title>Using workspaces</title>
+		<para>
+			JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis> that provide different views of the content.  Some graphs may have
+			one workspace, while others may have multiple workspaces.  Some graphs will allow a client to create new workspaces or destroy
+			existing workspaces, while other graphs will not allow adding or removing workspaces.  Some graphs may have workspaces may show the same (or very
+			similar) content, while other graphs may have workspaces that each contain completely independent content.
+		</para>
+		<para>
+			The &Graph; object is always bound to a workspace, which initially is the <emphasis>default workspace</emphasis>.  To find out
+			what the name of the default workspace is, simply ask for the current workspace after creating the &Graph;:
+		</para>
+		<programlisting>
+&Workspace; current = graph.getCurrentWorkspace();
+</programlisting>
+		<para>
+			To obtain the list of workspaces available in a graph, simply ask for them:
+		</para>
+		<programlisting>
+&Set;&lt;&String;> workspaceNames = graph.getWorkspaces();
+</programlisting>
+		<para>Once you know the name of a particular workspace, you can specify that the graph should use it:
+		</para>
+		<programlisting>
+graph.useWorkspace("myWorkspace");
+</programlisting>
+		<para>
+			From this point forward, all requests will apply to the workspace named "myWorkspace".  At any time, you can use a different workspace,
+			which will affect all subsequent requests made using the graph.  To go back to the default workspace, simply supply a null name:
+		</para>
+		<programlisting>
+graph.useWorkspace(null);
+</programlisting>
+		<para>
+			Of course, creating a new workspace is just as easy:
+		</para>
+		<programlisting>
+graph.createWorkspace().named("newWorkspace");
+</programlisting>
+	  <para>This will attempt to create a workspace named "newWorkspace", which will fail if that workspace already exists.  You may
+		want to create a new workspace with a name that should be altered if the name you supply is already used.  The following code shows
+		how you can do this:
+		</para>
+		<programlisting>
+graph.createWorkspace().namedSomethingLike("newWorkspace");
+</programlisting>
+	  <para>If there is no existing workspace named "newWorkspace", a new one will be created with this name.  However, if "newWorkspace" already
+		exists, this call will create a workspace with a name that is some alteration of the supplied name.
+		</para>
+	  <para>
+		You can also clone workspaces, too:
+		</para>
+		<programlisting>
+graph.createWorkspace().clonedFrom("original").named("something");
+</programlisting>
+		<para>
+			or
+		</para>
+		<programlisting>
+graph.createWorkspace().clonedFrom("original").namedSomethingLike("something");
+</programlisting>
+		<para>
+			As you can see, it's very easy to specify which workspace you want to use or to create new workspaces.  You can also find out which workspace
+			the graph is currently using:
+		</para>
+		<programlisting>
+&String; current = graph.getCurrentWorkspaceName();
+</programlisting>
+		<para>or, if you want, you can get more information about the workspace:
+		</para>
+		<programlisting>
+&Workspace; current = graph.getCurrentWorkspace();
+&String; name = current.getName();
+&Location; rootLocation = current.getRoot();
+</programlisting>
+    </sect2>
+		<sect2 id="graph_api_nodes">
+			<title>Working with nodes</title>
+		<para>
+			Now let's switch to working with nodes.  This first example returns a map of properties (keyed by property name) 
+			for a node at a specific &Path;:
+		</para>
+		<programlisting>
+&Path; path = ...
+Map&lt;&Name;,&Property;> propertiesByName = graph.getPropertiesByName().on(path);
+</programlisting>
+		<para>
+			This next example shows how the graph can be used to obtain and loop over the properties of a node:
+		</para>
+		<programlisting>
+&Path; path = ...
+for ( &Property; property : graph.getProperties().on(path) ) {
+	  ...
+}
+</programlisting>
+		<para>
+			Likewise, the next example shows how the graph can be used to obtain and loop over the children of a node:
+		</para>
+		<programlisting>
+&Path; path = ...
+for ( &Location; child : graph.getChildren().of(path) ) {
+    &Path; childPath = child.getPath();
+	  ...
+}
+</programlisting>
+		<para>
+			Notice that the examples pass a &Path; instance to the <code>on(...)</code> and <code>of(...)</code> methods.  Many
+			of the Graph API methods take a variety of parameter types, including String, &Path;s, &Location;s, &UUID;, or &Property; parameters.
+			This should make it easy to use in many different situations.
+		</para>
+		<para>
+			Of course, changing content is more interesting and offers more interesting possibilities.  Here are a few examples:
+		</para>
+		<programlisting>
+&Path; path = ...
+&Location; location = ...
+&Property; idProp1 = ...
+&Property; idProp2 = ...
+&UUID; uuid = ...
+graph.move(path).into(idProp1, idProp2);
+graph.copy(path).into(location);
+graph.delete(uuid);
+graph.delete(idProp1,idProp2);
+</programlisting>
+		<para>
+			The methods shown above work immediately, as soon as each request is built.  However, there is another way to use
+			the &Graph; object, and that is in a <emphasis>batch</emphasis> mode.  Simply create a &GraphBatch; object using the
+			<code>batch()</code> method, create the requests on that batch object, and then execute all of the commands on the
+			batch by calling its <code>execute()</code> method.  That <code>execute()</code> method returns a &Results; interface
+			that can be used to read the node information retrieved by the batched requests. 
+		</para>
+		<para>
+			Method chaining works really well with the batch mode, since multiple commands can be assembled together very easily:
+		</para>
+		<programlisting>
+&Path; path = ...
+String path2 = ...
+&Location; location = ...
+&Property; idProp1 = ...
+&Property; idProp2 = ...
+&UUID; uuid = ...
+graph.batch().move(path).into(idProp1, idProp2)
+       .and().copy(path2).into(location)
+       .and().delete(uuid)
+       .execute();
+&Results; results = graph.batch().read(path2)
+                           .and().readChildren().of(idProp1,idProp2)
+                           .and().readSugraphOfDepth(3).at(uuid2)
+                           .execute();
+for ( &Location; child : results.getNode(path2) ) {
+    ...
+}
+</programlisting>
+		<para>
+			Of course, this section provided just a hint of the Graph API.  
+			The &Graph; interface is actually quite complete and offers a full-featured approach for reading and updating a graph.
+			For more information, see the &Graph; JavaDocs.
+		</para>
+	</sect2>
 	</sect1>
 	<sect1>
 		<title>Summary</title>

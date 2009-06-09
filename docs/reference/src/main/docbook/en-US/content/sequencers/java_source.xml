@@ -30,7 +30,28 @@
 ]>
 <chapter id="java-source-sequencer">
   <title>Java Source File Sequencer</title>
-  <para>
-		blah blah 
-  </para>
+    <para>
+		One of the sequencers that included in JBoss DNA is the <emphasis role="strong">dna-sequencer-java</emphasis> subproject.
+		This sequencer parses Java source code added to the repository and extracts the basic structure of the classes and enumerations 
+		defined in the code.
+		This structure includes: the package structures, class declarations, class and member attribute declarations,
+		class and member method declarations with signature (but not implementation logic), enumerations with each enumeration literal value,
+		annotations, and JavaDoc information for all of the above. 
+		After extracting this information from the source code, the sequencer then writes this structure into the repository,
+		where it can be further processed, analyzed, searched, navigated, or referenced.
+	</para>
+	<para>
+		To use this sequencer, simply include the <code>dna-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
+		in your application and configure	the Sequencing Service to use this sequencer using something similar to:
+    </para>
+  <programlisting>
+String name = "Java Sequencer";
+String desc = "Sequences java files to extract the characteristics of the Java source";
+String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
+String[] classpath = null; // Use the current classpath
+String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] =&gt; /java/$1"};
+&SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
+                                                      classpath, pathExpressions);
+this.sequencingService.addSequencer(sequencerConfig);
+</programlisting>
 </chapter>

@@ -30,8 +30,160 @@
 ]>
 <chapter id="federation-connector">
   <title>Federation Connector</title>
-  <para>
-		blah blah 
-  </para>
+      <para>
+      	The federated repository source provides a unified repository consisting of information that is dynamically federated from multiple other
+				&RepositorySource; instances.  This is a very powerful repository source that appears to be a single repository, when in 
+				fact the content is stored and managed in multiple other systems.  Each &FederatedRepositorySource; is typically configured
+				with the name of another &RepositorySource; that should be used as the local, unified cache of the federated content.
+				The configuration also contains the names of the other &RepositorySource; instances that are to be federated along with
+				the &Projection; definition describing where in the unified repository the content is to appear.
+      </para>
+			<figure id="dna-connector-federation-image">
+				<title>Federating multiple sources using the Federated Repository Connector</title>
+				<graphic align="center" scale="100" fileref="dna-connector-federation.png"/>
+			</figure>
+      <para> The federation connector works by effectively building up a single graph by querying each source and merging or
+        unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
+        expensive) remote calls, reduces the load on the sources, and helps mitigate problems with source availability. As
+        clients interact with the repository, this cache is consulted first. When the requested portion of the graph (or
+        "subgraph") is contained completely in the cache, it is retuned immediately. However, if any part of the requested
+        subgraph is not in the cache, each source is consulted for their contributions to that subgraph, and any results are
+        cached.</para>
+      <para> This basic flow makes it possible for the federated repository to build up a local cache of the integrated graph
+        (or at least the portions that are used by clients). In fact, the federated repository caches information in a manner
+        that is similar to that of the Domain Name System (DNS). As sources are consulted for their contributions, the source
+        also specifies whether it is the authoritative source for this information (some sources that are themselves federated
+        may not be the information's authority), whether the information may be modified, the time-to-live (TTL) value (the time
+        after which the cached information should be refreshed), and the expiration time (the time after which the cached
+        information is no longer valid). In effect, the source has complete control over how the information it contributes is
+        cached and used.</para>
+      <para>
+        The federated repository also needs to incorporate <emphasis>negative caching</emphasis>, which is storage of the knowledge 
+				that something does <emphasis>not</emphasis> exist. Sources can be configured to contribute information
+        only below certain paths (e.g., <code>/A/B/C</code>), and the federation engine can take advantage of this by never 
+				consulting that source for contributions to information on other paths. However, below that path, any negative responses 
+				must also be cached (with appropriate TTL and expiry parameters) to prevent the exclusion of that source (in case the source 
+				has information to contribute at a later time) or the frequent checking with the source.
+      </para>
+			<para>
+				The federated repository uses other &RepositorySource;s that are to be federated and a &RepositorySource; that is to be used as the
+				cache of the unified contents.  These are configured in another &RepositorySource; that is treated as a configuration repository.
+				The &FederatedRepositorySource; class uses JavaBean properties to define the name of the configuration repository and 
+				the path to the "<code>dna:federation</code>" node in that configuration repository containing the information about the 
+				cache and federated sources.  This graph structure that is expected at this location is as follows:
+			</para>
+			<programlisting><![CDATA[<!-- Define the federation configuration. -->
+<dna:federatedRepository xmlns:dna="http://www.jboss.org/dna" 
+	                   xmlns:jcr="http://www.jcp.org/jcr/1.0"
+                     dna:timeToCache="100000" >
+  <dna:workspaces>
+    <dna:workspace jcr:name="default">
+	    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
+      <dna:cache dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/a => /" />
+
+      <!-- Define how the content in the two sources maps to the federated/unified repository.
+           This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
+           'Configuration' content (which is defined by this file) will appear under '/'. -->
+      <dna:projections>
+        <dna:projection jcr:name="Cars" dna:projectionRules="/Vehicles => /" />
+        <dna:projection jcr:name="Aircraft" dna:projectionRules="/Vehicles => /" />
+        <dna:projection jcr:name="Configuration" dna:projectionRules="/ => /" />
+      </dna:projections>
+    </dna:workspace>
+	</dna:workspaces>
+</dna:federatedRepository>
+]]></programlisting>
+			<note>
+				<para>
+					We're using XML to represent a graph structure, since the two map pretty well.  Each XML element represents
+					a node and XML attributes represent properties on a node.  The name of the node is defined by either the 
+					<code>jcr:name</code> attribute (if it exists) or the name of the XML element.  And we use XML namespaces
+					to define the namespaces used in the node and property names.  BTW, this is exactly how the XML graph importer
+					works.
+				</para>
+			</note>
+			<para>
+				Notice that there is a cache projection and three source projections, and each projection defines
+				one or more <emphasis>projection rules</emphasis> that are of the form:
+			</para>
+			<programlisting>pathInFederatedRepository =&gt; pathInSourceRepository</programlisting>
+			<para>
+				So, a projection rule <code>/Vehicles =&gt; /</code> projects the entire contents of the source so that
+				it appears in the federated repository under the "<code>/Vehicles</code>" node.
+			</para>
+			<para>
+				The &FederatedRepositorySource; class provides a number of JavaBean properties that control its behavior:
+			</para>
+			<table frame='all'>
+				<title>&FederatedRepositorySource; properties</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Property</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>name</entry>
+							<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+						</row>
+						<row>
+							<entry>repositoryName</entry>
+							<entry>The name for the federated repository.</entry>
+						</row>
+						<row>
+							<entry>configurationSourceName</entry>
+							<entry>The name of the &RepositorySource; that should be used as the configuration repository, and in which is defined
+								how this federated repository is to be set up and configured.
+								This name is supplied to the &RepositoryConnectionFactory; that is provided to this instance when added to the
+								&RepositoryLibrary;.</entry>
+						</row>
+						<row>
+							<entry>configurationWorkspaceName</entry>
+							<entry>The name of the workspace in the configuration &RepositorySource; with the content defining
+								how this federated repository is to be set up and configured.</entry>
+						</row>
+						<row>
+							<entry>configurationSourcePath</entry>
+							<entry>The path to the node in the configuration repository below which a "dna:federation" node exists with the 
+								graph structure describing how this federated repository is to be configured.</entry>
+						</row>
+						<row>
+							<entry>securityDomain</entry>
+							<entry>Optional property that, if used, specifies the name of the JAAS application context that should be used
+								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
+								This should correspond to the JAAS login configuration located within the JAAS login configuration file, 
+								and should be used only if a "<code>username</code>" property is defined.</entry>
+						</row>
+						<row>
+							<entry>username</entry>
+							<entry>Optional property that, if used, defines the name of the JAAS subject that should be used
+								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
+								This should be used if a "<code>securityDomain</code>" property is defined.</entry>
+						</row>
+						<row>
+							<entry>password</entry>
+							<entry>Optional property that, if used, defines the password of the JAAS subject that should be used
+								to establish the <link linkend="execution-contenxt">execution context</link> for this repository.
+								If the password is not provided but values for the "<code>securityDomain</code>" and "<code>username</code>" properties are,
+								then authentication will use the default JAAS callback handlers.</entry>
+						</row>
+						<row>
+							<entry>retryLimit</entry>
+							<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+								following a communication failure. The default value is '0'.</entry>
+						</row>
+						<row>
+							<entry>defaultCachePolicy</entry>
+							<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
+								cached by other, higher-level components.  The default value of null implies that this source does not define a specific
+								duration for caching information provided by this repository source.</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
 </chapter>
 
