@@ -25,8 +25,6 @@ package org.jboss.dna.graph.property;
 
 import java.io.Serializable;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * A qualified name consisting of a namespace and a local name.
@@ -34,7 +32,7 @@ import org.jboss.dna.graph.property.Path.Segment;
  * @author Randall Hauch
  */
 @Immutable
-public interface Name extends Comparable<Name>, Serializable {
+public interface Name extends Comparable<Name>, Serializable, Readable {
 
     /**
      * Get the local name part of this qualified name.
@@ -49,69 +47,4 @@ public interface Name extends Comparable<Name>, Serializable {
      * @return the URI; never null but possibly empty
      */
     String getNamespaceUri();
-
-    /**
-     * Get the string form of the name. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in the local
-     * name and namespace.
-     * 
-     * @return the encoded string
-     * @see #getString(TextEncoder)
-     */
-    public String getString();
-
-    /**
-     * Get the encoded string form of the name, using the supplied encoder to encode characters in the local name and namespace.
-     * 
-     * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
-     * @return the encoded string
-     * @see #getString()
-     */
-    public String getString( TextEncoder encoder );
-
-    /**
-     * Get the string form of the name, using the supplied namespace registry to convert the {@link #getNamespaceUri() namespace
-     * URI} to a prefix. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in each of the path
-     * segments.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URI}
-     * @return the encoded string
-     * @throws IllegalArgumentException if the namespace registry is null
-     * @see #getString(NamespaceRegistry,TextEncoder)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry );
-
-    /**
-     * Get the encoded string form of the name, using the supplied namespace registry to convert the {@link #getNamespaceUri()
-     * namespace URI} to a prefix.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URI}
-     * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
-     * @return the encoded string
-     * @throws IllegalArgumentException if the namespace registry is null
-     * @see #getString(NamespaceRegistry)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry,
-                             TextEncoder encoder );
-
-    /**
-     * Get the encoded string form of the name, using the supplied namespace registry to convert the names' namespace URIs to
-     * prefixes and the supplied encoder to encode characters in each of the path segments, and using the second delimiter to
-     * encode (or convert) the delimiter used between the namespace prefix and the local part.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
-     * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
-     *        {@link Name#getNamespaceUri() namespace prefix}, or null if the {@link Path#DEFAULT_ENCODER default encoder} should
-     *        be used
-     * @param delimiterEncoder the encoder to use for encoding the delimiter between the {@link Name#getLocalName() local part}
-     *        and {@link Name#getNamespaceUri() namespace prefix}, or null if the standard delimiter should be used
-     * @return the encoded string
-     * @see #getString(NamespaceRegistry)
-     * @see #getString(NamespaceRegistry, TextEncoder)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry,
-                             TextEncoder encoder,
-                             TextEncoder delimiterEncoder );
 }

@@ -73,7 +73,21 @@
 			&Name; is also a interface rather than a concrete class:
 		</para>
 <programlisting>
-</programlisting>
+@Immutable
+public interface &Name; extends Comparable&lt;&Name;>, &Serializable;, &Readable; {
+
+    /**
+     * Get the local name part of this qualified name.
+     * @return the local name; never null
+     */
+    String getLocalName();
+
+    /**
+     * Get the URI for the namespace used in this qualified name.
+     * @return the URI; never null but possibly empty
+     */
+    String getNamespaceUri();
+}</programlisting>
 		<para>
 			This means that you need to use a factory to create &Name; instances.
 		</para>
@@ -91,32 +105,22 @@
 			via the <code>getValueFactories()</code> method.  But before we see that, let's first discuss how names are represented as strings.
 		</para>
 		<para>
-			We mentioned earlier that names are qualified with a namespace, and namespaces are identified by URIs.
-			Also, the local part of the names can contain any character.  So what do the string representation of names look like?
-		</para>
-		<para>
-			The &Name; interface defines a number of <code>getString(...)</code> methods that take different parameters.
-			The <code>getString()</code> method (which is called by the <code>toString()</code> method) will simply output
-			the namespace URI followed by a ':' and an local name (encoded with a default &TextEncoder; implementation, which
-			will be discussed in the <link linkend="graph-encoders">next section</link>).  If you want to use the
-			namespace prefix, then simply use one of the <code>getString(...)</code> methods that takes a &NamespaceRegistry;
-			parameter.
-		</para>
-		<para>
 			We'll see how names are used later one, but one more point to make:  &Name; is both serializable and comparable,
 			and all implementations should support <code>equals(...)</code> and <code>hashCode()</code> so that &Name; can
-			be used as a key in a hash-based map.
+			be used as a key in a hash-based map.  &Name; also extends the &Readable; interface, which we'll learn
+			more about later in this chapter.
 		</para>
 	</sect1>
 	<sect1 id="graph-paths">
 		<title>Paths</title>
 		<para>
 			Another important concept in JBoss DNA's graph model is that of a <emphasis>path</emphasis>, which provides a way
-			of locating a node within a hierarchy.  JBoss DNA's &Path; object is actually comprised of an ordered sequence
-			of &PathSegment; objects:
+			of locating a node within a hierarchy.  JBoss DNA's &Path; object is an immutable ordered sequence
+			of &PathSegment; objects.  A small portion of the interface is shown here:
 		</para>
 		<programlisting>
-public interface &Path; extends Comparable<Path>, Iterable<&PathSegment;>, Serializable {
+@Immutable
+public interface &Path; extends Comparable&lt;Path>, Iterable&lt;&PathSegment;>, &Serializable;, &Readable; {
 
     /**
      * Return the number of segments in this path.
@@ -130,101 +134,586 @@ public interface &Path; extends Comparable<Path>, Iterable<&PathSegment;>, Seria
      */
     public boolean isRoot();
 
-		/**
-		 * {@inheritDoc}
-		 */
-		public Iterator<&PathSegment;> iterator();
+    /**
+     * {@inheritDoc}
+     */
+    public Iterator&lt;&PathSegment;> iterator();
 
-		/**
-		 * Obtain a copy of the segments in this path. None of the segments are encoded.
-		 * @return the array of segments as a copy
-		 */
-		public &PathSegment;[] getSegmentsArray();
+    /**
+     * Obtain a copy of the segments in this path. None of the segments are encoded.
+     * @return the array of segments as a copy
+     */
+    public &PathSegment;[] getSegmentsArray();
 
-		/**
-		 * Get an unmodifiable list of the path segments.
-		 * @return the unmodifiable list of path segments; never null
-		 */
-		public List<&PathSegment;> getSegmentsList();
-		/**
-		 * Get the last segment in this path.
-		 * @return the last segment, or null if the path is empty
-		 */
-		public &PathSegment; getLastSegment();
+    /**
+     * Get an unmodifiable list of the path segments.
+     * @return the unmodifiable list of path segments; never null
+     */
+    public List&lt;&PathSegment;> getSegmentsList();
+    /**
+     * Get the last segment in this path.
+     * @return the last segment, or null if the path is empty
+     */
+    public &PathSegment; getLastSegment();
 
-		/**
-		 * Get the segment at the supplied index.
-		 * @param index the index
-		 * @return the segment
-		 * @throws IndexOutOfBoundsException if the index is out of bounds
-		 */
-		public &PathSegment; getSegment( int index );
+    /**
+     * Get the segment at the supplied index.
+     * @param index the index
+     * @return the segment
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     */
+    public &PathSegment; getSegment( int index );
 
-		/**
-		 * Return an iterator that walks the paths from the root path down to this path. This method 
-		 * always returns at least one path (the root returns an iterator containing itself).
-		 * @return the path iterator; never null
-		 */
-		public Iterator<&Path;> pathsFromRoot();
+    /**
+     * Return an iterator that walks the paths from the root path down to this path. This method 
+     * always returns at least one path (the root returns an iterator containing itself).
+     * @return the path iterator; never null
+     */
+    public Iterator&lt;&Path;> pathsFromRoot();
 
-		/**
-		 * Return a new path consisting of the segments starting at <code>beginIndex</code> index (inclusive). 
-		 * This is equivalent to calling <code>path.subpath(beginIndex,path.size()-1)</code>.
-		 * @param beginIndex the beginning index, inclusive.
-		 * @return the specified subpath
-		 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger 
-		 *            than the length of this <code>Path</code> object
-		 */
-		public &Path; subpath( int beginIndex );
+    /**
+     * Return a new path consisting of the segments starting at <code>beginIndex</code> index (inclusive). 
+     * This is equivalent to calling <code>path.subpath(beginIndex,path.size()-1)</code>.
+     * @param beginIndex the beginning index, inclusive.
+     * @return the specified subpath
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger 
+     *            than the length of this <code>Path</code> object
+     */
+    public &Path; subpath( int beginIndex );
 
-		/**
-		 * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive)
-		 * and the <code>endIndex</code> index (exclusive).
-		 * @param beginIndex the beginning index, inclusive.
-		 * @param endIndex the ending index, exclusive.
-		 * @return the specified subpath
-		 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or 
-		 *            <code>endIndex</code> is larger than the length of this <code>Path</code> 
-		 *            object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
-		 */
-		public &Path; subpath( int beginIndex, int endIndex );
+    /**
+     * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive)
+     * and the <code>endIndex</code> index (exclusive).
+     * @param beginIndex the beginning index, inclusive.
+     * @param endIndex the ending index, exclusive.
+     * @return the specified subpath
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or 
+     *            <code>endIndex</code> is larger than the length of this <code>Path</code> 
+     *            object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
+     */
+    public &Path; subpath( int beginIndex, int endIndex );
 
     ...
-
 }   </programlisting>
 		<para>
-			where each &PathSegment; is comprised of a &Name; and <emphasis>same-name-sibling index</emphasis>:
+			There are actually quite a few methods (not shown above) for obtaining related paths: the path of the parent, the path of an ancestor,
+			resolving a path relative to this path, normalizing a path (by removing "." and ".." segments), finding the lowest
+			common ancestor shared with another path, etc. There are also a number of methods that compare the path with others,
+			including determining whether a path is above, equal to, or below this path.
+		</para>
+		<para>
+			Each &PathSegment; is an immutable pair of a &Name; and <emphasis>same-name-sibling (SNS) index</emphasis>.  When two sibling nodes
+			have the same name, then the first sibling will have SNS index of "1" and the second will be given a SNS index of "2".
+			(This mirrors the same-name-sibling index behavior of <ulink url="&JSR170;">JCR paths</ulink>.)
 		</para>
 		<programlisting>
+@Immutable
+public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegment;>, &Serializable;, &Readable; {
+
+    /**
+     * Get the name component of this segment.
+     * @return the segment's name
+     */
+    public &Name; getName();
+
+    /**
+     * Get the index for this segment, which will be 1 by default.
+     * @return the index
+     */
+    public int getIndex();
+
+    /**
+     * Return whether this segment has an index that is not "1"
+     * @return true if this segment has an index, or false otherwise.
+     */
+    public boolean hasIndex();
+
+    /**
+     * Return whether this segment is a self-reference (or ".").
+     * @return true if the segment is a self-reference, or false otherwise.
+     */
+    public boolean isSelfReference();
+
+    /**
+     * Return whether this segment is a reference to a parent (or "..")
+     * @return true if the segment is a parent-reference, or false otherwise.
+     */
+    public boolean isParentReference();
+}
 		</programlisting>
 		<para>
-			
+			Like &Name;, the only way to create a &Path; or a &PathSegment; is to use the &PathFactory;, which is available 
+			within the &ExecutionContext; via the <code>getValueFactories()</code> method.
 		</para>
-		
 	</sect1>
 	<sect1 id="graph-properties">
 		<title>Properties</title>
 		<para>
-			
+			The JBoss DNA graph model allows nodes to hold multiple properties, where each property is identified
+			by a unique &Name; and may have one or more values.  Like many of the other classes used in the graph model,
+			&Property; is an immutable object that, once constructed, can never be changed and therefore provides
+			a consistent snapshot of the state of a property as it existed at the time it was read.
+		</para>
+		<para>
+		  JBoss DNA properties can hold a wide range of value objects, including normal Java strings, names, paths, 
+		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
+		  or any other serializable object.  All but three these are the standard Java classes: dates are
+		  represented by an immutable &DateTime; class; binary content is represented by an immutable &Binary;
+		  interface patterned after the proposed interface of the same name in <ulink url="&JSR283;">JSR-283</ulink>;
+		  and &Reference; is an immutable interface patterned after the corresponding interface is 
+		  <ulink url="&JSR170;">JSR-170</ulink> and <ulink url="&JSR283;">JSR-283</ulink>.
+		</para>
+		<para>
+			The &Property; interface defines methods for obtaining the name and property values:
+		</para>
+		<programlisting>
+@Immutable
+public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property;>, &Readable; {
+
+    /**
+     * Get the name of the property.
+     * 
+     * @return the property name; never null
+     */
+    &Name; getName();
+
+    /**
+     * Get the number of actual values in this property.
+     * @return the number of actual values in this property; always non-negative
+     */
+    int size();
+
+    /**
+     * Determine whether the property currently has multiple values.
+     * @return true if the property has multiple values, or false otherwise.
+     */
+    boolean isMultiple();
+
+    /**
+     * Determine whether the property currently has a single value.
+     * @return true if the property has a single value, or false otherwise.
+     */
+    boolean isSingle();
+
+    /**
+     * Determine whether this property has no actual values. This method may return <code>true</code> 
+     * regardless of whether the property has a single value or multiple values.
+     * This method is a convenience method that is equivalent to <code>size() == 0</code>.
+     * @return true if this property has no values, or false otherwise
+     */
+    boolean isEmpty();
+
+    /**
+     * Obtain the property's first value in its natural form. This is equivalent to calling
+     * <code>isEmpty() ? null : iterator().next()</code>
+     * @return the first value, or null if the property is {@link #isEmpty() empty}
+     */
+    Object getFirstValue();
+
+    /**
+     * Obtain the property's values in their natural form. This is equivalent to calling <code>iterator()</code>.
+     * A valid iterator is returned if the property has single valued or multi-valued.
+     * The resulting iterator is immutable, and all property values are immutable.
+     * @return an iterator over the values; never null
+     */
+    Iterator&lt;?> getValues();
+
+    /**
+     * Obtain the property's values as an array of objects in their natural form.
+     * A valid iterator is returned if the property has single valued or multi-valued, or a
+     * null value is returned if the property is {@link #isEmpty() empty}.
+     * The resulting array is a copy, guaranteeing immutability for the property.
+     * @return the array of values
+     */
+    Object[] getValuesAsArray();
+}
+		</programlisting>
+		<para>
+			Creating &Property; instances is done by using the &PropertyFactory; object owned by the &ExecutionContext;.
+			This factory defines methods for creating properties with a &Name; and various representation of values,
+			including variable-length arguments, arrays, &Iterator;, and &Iterable;.
+		</para>
+		<para>
+			When it comes to using the property values, JBoss DNA takes a non-traditional approach.
+			Many other graph models (including JCR) mark each property with a data type and then require 
+			all property values adhere to this data type. When the property values are obtained, they
+			are guaranteed to be of the correct type. However, many times the property's data type may
+			not match the data type expected by the caller, and so a conversion may be required
+			and thus has to be coded.
+		</para>
+		<para>
+			The JBoss DNA graph model uses a different tact.  Because callers almost always have to convert the
+			values to the types they can handle, JBoss DNA skips the steps of associating the  &Property; with a data type
+			and ensuring the values match.  Instead, JBoss DNA simply provides a very easy mechanism to convert
+			the property values to the type desired by the caller.  In fact, the conversion mechanism
+			is exactly the same as the factories that create the values in the first place.
 		</para>
 	</sect1>
 	<sect1 id="graph-value-factories">
 		<title>Values and value factories</title>
 		<para>
-			
+			JBoss DNA properties can hold a variety of types of value objects: strings, names, paths, 
+		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
+		  or any other serializable object.  To assist in the creation of these values and conversion
+		  into other types, JBoss DNA defines a &ValueFactory; interface.  This interface is parameterized
+		  with the type of value that is being created, but defines methods for creating those values
+		  from all of the other known value types:
+		</para>
+		<programlisting>
+public interface ValueFactory&lt;T> {
+
+    /**
+     * Get the &PropertyType; of values created by this factory.
+     * @return the value type; never null
+     */
+    &PropertyType; getPropertyType();
+
+		/*
+		 * Methods to create a value by converting from another value type.
+		 * If the supplied value is the same type as returned by this factory,
+		 * these methods simply return the supplied value.
+		 * All of these methods throw a &ValueFormatException; if the supplied value
+		 * could not be converted to this type.
+		 */
+    T create( String value ) throws ValueFormatException;
+    T create( String value, TextDecoder decoder ) throws ValueFormatException;
+    T create( int value ) throws ValueFormatException;
+    T create( long value ) throws ValueFormatException;
+    T create( boolean value ) throws ValueFormatException;
+    T create( float value ) throws ValueFormatException;
+    T create( double value ) throws ValueFormatException;
+    T create( &BigDecimal; value ) throws ValueFormatException;
+    T create( &Calendar; value ) throws ValueFormatException;
+    T create( &Date; value ) throws ValueFormatException;
+    T create( &DateTime; value ) throws ValueFormatException;
+    T create( &Name; value ) throws ValueFormatException;
+    T create( &Path; value ) throws ValueFormatException;
+    T create( &Reference; value ) throws ValueFormatException;
+    T create( &URI; value ) throws ValueFormatException;
+    T create( &UUID; value ) throws ValueFormatException;
+    T create( byte[] value ) throws ValueFormatException;
+    T create( &Binary; value ) throws ValueFormatException, IoException;
+    T create( &InputStream; stream, long approximateLength ) throws ValueFormatException, IoException;
+    T create( &Reader; reader, long approximateLength ) throws ValueFormatException, IoException;
+    T create( Object value ) throws ValueFormatException, IoException;
+
+    /*
+     * Methods to create an array of values by converting from another array of values.
+     * If the supplied values are the same type as returned by this factory,
+     * these methods simply return the supplied array.
+     * All of these methods throw a &ValueFormatException; if the supplied values
+     * could not be converted to this type.
+		 */
+    T[] create( String[] values ) throws ValueFormatException;
+    T[] create( String[] values, TextDecoder decoder ) throws ValueFormatException;
+    T[] create( int[] values ) throws ValueFormatException;
+    T[] create( long[] values ) throws ValueFormatException;
+    T[] create( boolean[] values ) throws ValueFormatException;
+    T[] create( float[] values ) throws ValueFormatException;
+    T[] create( double[] values ) throws ValueFormatException;
+    T[] create( &BigDecimal;[] values ) throws ValueFormatException;
+    T[] create( &Calendar;[] values ) throws ValueFormatException;
+    T[] create( &Date;[] values ) throws ValueFormatException;
+    T[] create( &DateTime;[] values ) throws ValueFormatException;
+    T[] create( &Name;[] values ) throws ValueFormatException;
+    T[] create( &Path;[] values ) throws ValueFormatException;
+    T[] create( &Reference;[] values ) throws ValueFormatException;
+    T[] create( &URI;[] values ) throws ValueFormatException;
+    T[] create( &UUID;[] values ) throws ValueFormatException;
+    T[] create( byte[][] values ) throws ValueFormatException;
+    T[] create( &Binary;[] values ) throws ValueFormatException, IoException;
+    T[] create( Object[] values ) throws ValueFormatException, IoException;
+
+    /**
+     * Create an iterator over the values (of an unknown type). The factory converts any 
+     * values as required.  This is useful when wanting to iterate over the values of a property,
+     * where the resulting iterator exposes the desired type.
+     * @param values the values
+     * @return the iterator of type <code>T</code> over the values, or null if the supplied parameter is null
+     * @throws &ValueFormatException; if the conversion from an iterator of objects could not be performed
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    Iterator&lt;T> create( &Iterator;&lt;?> values ) throws ValueFormatException, IoException;
+    Iterable&lt;T> create( &Iterable;&lt;?> valueIterable ) throws ValueFormatException, IoException;
+}
+	</programlisting>
+		<para>
+			This makes it very easy to convert one or more values (of any type, including mixtures) into
+			corresponding value(s) that are of the desired type.  For example, converting the first value
+			of a property (regardless of type) to a String is simple:
+		</para>
+		<programlisting>
+&ValueFactory;&lt;String> stringFactory = ...
+&Property; property = ...
+String value = stringFactory.create( property.getFirstValue() );
+		</programlisting>
+		<para>
+			Likewise, iterating over the values in a property and converting them is just as easy:
+		</para>
+		<programlisting>
+&ValueFactory;&lt;String> stringFactory = ...
+&Property; property = ...
+for ( String value : stringFactory.create(property) ) {
+    // do something with the values
+}
+		</programlisting>
+		<para>
+			What we've glossed over so far, however, is how to obtain the correct &ValueFactory; for the desired type.
+			If you remember back to the previous chapter, &ExecutionContext; has a <code>getValueFactories()</code> method
+			that return a &ValueFactories; interface:
+		</para>
+		<programlisting>
+		</programlisting>
+		<para>
+			This interface exposes a &ValueFactory; for each of the types, and even has methods to obtain a &ValueFactory;
+			given the &PropertyType; enumeration.  So, the previous examples could be expanded a bit:
+		</para>
+		<programlisting>
+&ValueFactory;&lt;String> stringFactory = context.getValueFactories().getStringFactory();
+&Property; property = ...
+String value = stringFactory.create( property.getFirstValue() );
+		</programlisting>
+		<para>
+			and
+		</para>
+		<programlisting>
+&ValueFactory;&lt;String> stringFactory = context.getValueFactories().getStringFactory();
+&Property; property = ...
+for ( String value : stringFactory.create(property) ) {
+    // do something with the values
+}
+		</programlisting>
+		<para>
+			You might have noticed that several of the &ValueFactories; methods return subinterfaces of &ValueFactory;.  These
+			add type-specific methods that are more commonly needed in certain cases.  For example, here is the &NameFactory; interface:
+		</para>
+		<programlisting>
+public interface &NameFactory; extends &ValueFactory;&lt;&Name;> {
+
+    &Name; create( String namespaceUri, String localName );
+    &Name; create( String namespaceUri, String localName, TextDecoder decoder );
+
+    &NamespaceRegistry; getNamespaceRegistry();
+}
+		</programlisting>
+		<para>and here is the &DateTimeFactory; interface, which adds methods for creating &DateTime; values for the current
+			time as well as for specific instants in time:</para>
+		<programlisting>
+public interface &DateTimeFactory; extends &ValueFactory;&lt;&DateTime;> {
+
+    /**
+     * Create a date-time instance for the current time in the local time zone.
+     */
+    &DateTime; create();
+
+    /**
+     * Create a date-time instance for the current time in UTC.
+     */
+    &DateTime; createUtc();
+
+    &DateTime; create( &DateTime; original, long offsetInMillis );
+    &DateTime; create( int year, int monthOfYear, int dayOfMonth,
+                     int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond );
+    &DateTime; create( int year, int monthOfYear, int dayOfMonth,
+                     int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond,
+                     int timeZoneOffsetHours );
+    &DateTime; create(	int year, int monthOfYear, int dayOfMonth,
+                     int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond,
+                     int timeZoneOffsetHours, String timeZoneId );
+}
+		</programlisting>
+		<para>
+			The &PathFactory; interface defines methods for creating relative and absolute &Path; objects using combinations of other &Path; objects
+			and &Name;s and &PathSegment;s,
+			and introduces methods for creating &PathSegment; objects:
+		</para>
+		<programlisting>
+public interface &PathFactory; extends &ValueFactory;&lt;&Path;> {
+
+    &Path; createRootPath();
+    &Path; createAbsolutePath( &Name;... segmentNames );
+    &Path; createAbsolutePath( &PathSegment;... segments );
+    &Path; createAbsolutePath( &Iterable;&lt;&PathSegment;> segments );
+
+    &Path; createRelativePath();
+    &Path; createRelativePath( &Name;... segmentNames );
+    &Path; createRelativePath( &PathSegment;... segments );
+    &Path; createRelativePath( &Iterable;&lt;&PathSegment;> segments );
+
+    &Path; create( Path parentPath, &Path; childPath );
+    &Path; create( Path parentPath, &Name; segmentName, int index );
+    &Path; create( Path parentPath, String segmentName, int index );
+    &Path; create( Path parentPath, &Name;... segmentNames );
+    &Path; create( Path parentPath, &PathSegment;... segments );
+    &Path; create( Path parentPath, &Iterable;&lt;&PathSegment;> segments );
+    &Path; create( Path parentPath, String subpath );
+
+    &PathSegment; createSegment( String segmentName );
+    &PathSegment; createSegment( String segmentName, &TextDecoder; decoder );
+    &PathSegment; createSegment( String segmentName, int index );
+    &PathSegment; createSegment( &Name; segmentName );
+    &PathSegment; createSegment( &Name; segmentName, int index );
+}
+</programlisting>
+		<para>
+			And finally, the &BinaryFactory; defines methods for creating &Binary; objects from a variety of binary formats,
+			as well as a method that looks for a cached &Binary; instance given the supplied secure hash:
+		</para>
+		<programlisting>
+public interface &BinaryFactory; extends &ValueFactory;&lt;&Binary;> {
+
+    /**
+     * Create a value from the binary content given by the supplied input, the approximate length, 
+     * and the SHA-1 secure hash of the content. If the secure hash is null, then a secure hash is
+     * computed from the content. If the secure hash is not null, it is assumed to be the hash for 
+     * the content and may not be checked.
+     */
+    &Binary; create( &InputStream; stream, long approximateLength, byte[] secureHash ) 
+                          throws ValueFormatException, IoException;
+    &Binary; create( &Reader; reader, long approximateLength, byte[] secureHash ) 
+                          throws ValueFormatException, IoException;
+
+    /**
+     * Create a binary value from the given file.
+     */
+    &Binary; create( &File; file ) throws ValueFormatException, IoException;
+
+    /**
+     * Find an existing binary value given the supplied secure hash. If no such binary value exists, 
+     * null is returned. This method can be used when the caller knows the secure hash (e.g., from 
+     * a previously-held &Binary; object), and would like to reuse an existing binary value 
+     * (if possible) rather than recreate the binary value by processing the stream contents. This is
+     * especially true when the size of the binary is quite large.
+     * 
+     * @param secureHash the secure hash of the binary content, which was probably obtained from a
+     *        previously-held &Binary; object; a null or empty value is allowed, but will always 
+     *        result in returning null
+     * @return the existing Binary value that has the same secure hash, or null if there is no 
+     *        such value available at this time
+     */
+    &Binary; find( byte[] secureHash );
+}
+		</programlisting>
+		<para>
+			JBoss DNA provides efficient implementations of all of these interfaces: the &ValueFactory; interfaces and subinterfaces;
+			the &Path;, &PathSegment;, &Name;, &Binary;, &DateTime;, and &Reference; interfaces; and the &ValueFactories; interface
+			return by the &ExecutionContext;.  In fact, some of these interfaces have multiple implementations that are optimized for 
+			specific but frequently-occurring conditions.
 		</para>
 	</sect1>
-	<sect1 id="graph-encoders">
-		<title>Encoders and decoders</title>
+	<sect1 id="graph-readable">
+		<title>Readable, TextEncoder, and TextDecoder</title>
 		<para>
-			String representations of &Name; and &Path; objects  mentioned earlier that names are qualified with a namespace, and namespaces are identified by URIs.
-			Also, the local part of the names can contain any character.  So what do the string representation of names look like?
+			As shown above, the &Name;, &PathSegment;, &Path;, and &Property; interfaces all extend the &Readable; interface,
+			which defines a number of <code>getString(...)</code> methods that can produce a (readable) string representation of
+		  of that object.  Recall that all of these objects contain names with namespace URIs and local names (consisting of any
+		  characters), and so obtaining a readable string representation will require converting the URIs to prefixes, 
+		  escaping certain characters in the local names, and formatting the prefix and escaped local name appropriately.
+		  The different <code>getString(...)</code> methods of the &Readable; interface accept various combinations
+		  of &NamespaceRegistry; and &TextEncoder; parameters:
+		</para>
+		<programlisting>
+@Immutable
+public interface Readable {
+
+    /**
+     * Get the string form of the object. A default encoder is used to encode characters.
+     * @return the encoded string
+     */
+    public String getString();
+
+    /**
+     * Get the encoded string form of the object, using the supplied encoder to encode characters.
+     * @param encoder the encoder to use, or null if the default encoder should be used
+     * @return the encoded string
+     */
+    public String getString( &TextEncoder; encoder );
+
+    /**
+     * Get the string form of the object, using the supplied namespace registry to convert any 
+     * namespace URIs to prefixes. A default encoder is used to encode characters.
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix
+     *        for any namespace URIs
+     * @return the encoded string
+     * @throws IllegalArgumentException if the namespace registry is null
+     */
+    public String getString( &NamespaceRegistry; namespaceRegistry );
+
+    /**
+     * Get the encoded string form of the object, using the supplied namespace registry to convert 
+     * the any namespace URIs to prefixes.
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for 
+     *        the namespace URIs
+     * @param encoder the encoder to use, or null if the default encoder should be used
+     * @return the encoded string
+     * @throws IllegalArgumentException if the namespace registry is null
+     */
+    public String getString( &NamespaceRegistry; namespaceRegistry,
+                             &TextEncoder; encoder );
+
+    /**
+     * Get the encoded string form of the object, using the supplied namespace registry to convert 
+     * the names' namespace URIs to prefixes and the supplied encoder to encode characters, and using 
+     * the second delimiter to encode (or convert) the delimiter used between the namespace prefix 
+     * and the local part of any names.
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix 
+     *        for the namespace URIs in the names
+     * @param encoder the encoder to use for encoding the local part and namespace prefix of any names, 
+     *        or null if the default encoder should be used
+     * @param delimiterEncoder the encoder to use for encoding the delimiter between the local part 
+     *        and namespace prefix of any names, or null if the standard delimiter should be used
+     * @return the encoded string
+     */
+    public String getString( &NamespaceRegistry; namespaceRegistry,
+                             &TextEncoder; encoder, &TextEncoder; delimiterEncoder );
+}
+		</programlisting>
+		<para>
+			We've seen the &NamespaceRegistry; in the <link linkend="execution-context">previous chapter</link>,
+			but we've haven't yet talked about the &TextEncoder; interface.  A &TextEncoder; merely does what
+			you'd expect: it encodes the characters in a string using some implementation-specific algorithm.  
+			JBoss DNA provides a number of &TextEncoder; implementations, including:
+			<itemizedlist>
+				<listitem>
+					<para>The &Jsr283Encoder; escapes characters that are not allowed in JCR names, 
+						per the <ulink url="&JSR283;">JSR-283</ulink> specification.  Specifically,
+						these are the '*', '/', ':', '[', ']', and '|' characters, which are escaped by replacing
+						them with the Unicode characters U+F02A, U+F02F, U+F03A, U+F05B, U+F05D, and U+F07C, respectively.
+					</para>
+				</listitem>
+				<listitem>
+					<para>The &NoOpEncoder; does no conversion.
+					</para>
+				</listitem>
+				<listitem>
+					<para>The &UrlEncoder; converts text to be used within the different parts of a URL, as defined by Section 2.3 of
+						<ulink url="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</ulink>. Note that this class does not 
+						encode a complete URL (since <code>java.net.URLEncoder</code> and <code>java.net.URLDecoder</code>
+						should be used for such purposes).
+					</para>
+				</listitem>
+				<listitem>
+					<para>The &XmlNameEncoder; converts any UTF-16 unicode character that is not a valid XML name character according to the 
+						<ulink url="http://www.w3.org/TR/REC-xml/#sec-common-syn">World Wide Web Consortium (W3C) Extensible Markup Language (XML) 1.0
+						(Fourth Edition) Recommendation</ulink>, escaping such characters as <code>_xHHHH_</code>, where <code>HHHH</code> stands for the 
+						four-digit hexadecimal UTF-16 unicode value for the character in the most significant bit first order. 
+						For example, the name "Customer_ID" is encoded as "Customer_x0020_ID".
+					</para>
+				</listitem>
+				<listitem>
+					<para>The &XmlValueEncoder; escapes characters that are not allowed in XML values.  Specifically,
+						these are the '&amp;', '&lt;', '&gt;', '&quot;', and '&#039;', which are all escaped to
+						"&amp;amp;", '&amp;lt;', '&amp;gt;', '&amp;quot;', and '&amp;#039;'.
+					</para>
+				</listitem>
+			</itemizedlist>
+			All of these classes also implement the &TextDecoder; interface, which defines a method that
+			<emphasis>decodes</emphasis> an encoded string using the opposite transformation.
 		</para>
 		<para>
-			The key is understanding that the namespaces will 
+			Of course, you can provide alternative implementations, and supply them to the appropriate <code>getString(...)</code> methods
+			as required.
 		</para>
-		
-		
 	</sect1>
 	<sect1 id="graph-api">
 		<title>Graph API</title>

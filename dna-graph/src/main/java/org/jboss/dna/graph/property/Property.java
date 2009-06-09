@@ -25,7 +25,6 @@ package org.jboss.dna.graph.property;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
 
 /**
  * Representation of a property consisting of a name and value(s). Note that this property is immutable, meaning that the property
@@ -59,7 +58,7 @@ import org.jboss.dna.common.text.TextEncoder;
  * @author Randall Hauch
  */
 @Immutable
-public interface Property extends Iterable<Object>, Comparable<Property> {
+public interface Property extends Iterable<Object>, Comparable<Property>, Readable {
 
     /**
      * Get the name of the property.
@@ -155,67 +154,4 @@ public interface Property extends Iterable<Object>, Comparable<Property> {
      * @see ValueFactory#create(Object[])
      */
     Object[] getValuesAsArray();
-
-    /**
-     * Get the string form of the property, using the default encoder.
-     * 
-     * @return the encoded string
-     * @see #getString(TextEncoder)
-     */
-    public String getString();
-
-    /**
-     * Get the encoded string form of the property, using the supplied encoder to encode characters in the property's name and
-     * values.
-     * 
-     * @param encoder the encoder to use, or null if the default encoder should be used
-     * @return the encoded string
-     * @see #getString()
-     */
-    public String getString( TextEncoder encoder );
-
-    /**
-     * Get the string form of the property, using the supplied namespace registry to convert the property's name and values.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URIs} in the property {@link #getName() name}
-     * @return the string
-     * @throws IllegalArgumentException if the namespace registry is null
-     * @see #getString(NamespaceRegistry,TextEncoder)
-     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry );
-
-    /**
-     * Get the encoded string form of the property, using the supplied namespace registry to convert the property's namespace URIs
-     * to prefixes and the supplied encoder to encode characters in the property's name and values.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URIs} in the property {@link #getName() name}, or null if the namespace
-     *        registry should not be used
-     * @param encoder the encoder to use for encoding the name and values, or null if the default encoder should be used
-     * @return the encoded string
-     * @see #getString(NamespaceRegistry)
-     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry,
-                             TextEncoder encoder );
-
-    /**
-     * Get the encoded string form of the property, using the supplied namespace registry to convert the property's namespace URIs
-     * to prefixes and the supplied encoder to encode characters in the property's name and values.
-     * 
-     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URIs} in the property {@link #getName() name}, or null if the namespace
-     *        registry should not be used
-     * @param encoder the encoder to use for encoding the name and values, or null if the default encoder should be used
-     * @param delimiterEncoder the encoder to use for encoding delimiters used in paths and names, or null if the standard
-     *        delimiters should be used
-     * @return the encoded string
-     * @see #getString(NamespaceRegistry)
-     * @see #getString(NamespaceRegistry, TextEncoder)
-     */
-    public String getString( NamespaceRegistry namespaceRegistry,
-                             TextEncoder encoder,
-                             TextEncoder delimiterEncoder );
 }

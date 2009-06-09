@@ -28,7 +28,7 @@
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/reference/html/index.html'>Getting Started</ulink>">
 
-<!ENTITY CND			      		"<ulink url='http://jackrabbit.apache.org/node-type-notation.html'>Compact Node Definition</ulink>">
+<!ENTITY CND			      							"<ulink url='http://jackrabbit.apache.org/node-type-notation.html'>Compact Node Definition</ulink>">
 
 <!-- Types in JRE -->
 
@@ -37,10 +37,11 @@
 <!ENTITY URL  							      		"<ulink url='&Java;java/net/URL.html'><classname>URL</classname></ulink>">
 <!ENTITY URI  							      		"<ulink url='&Java;java/net/URL.html'><classname>URI</classname></ulink>">
 <!ENTITY InputStream				      		"<ulink url='&Java;java/io/InputStream.html'><interface>InputStream</interface></ulink>">
+<!ENTITY Reader							      		"<ulink url='&Java;java/io/Reader.html'><interface>Reader</interface></ulink>">
 <!ENTITY IOException				      		"<ulink url='&Java;java/io/IOException.html'><classname>IOException</classname></ulink>">
 <!ENTITY ClassLoader				      		"<ulink url='&Java;java/lang/ClassLoader.html'><interface>ClassLoader</interface></ulink>">
 <!ENTITY AccessControlContext      		"<ulink url='&Java;java/security/AccessController.html'><classname>AccessControlContext</classname></ulink>">
-<!ENTITY PrivilegedAction			      		"<ulink url='&Java;java/security/PrivilegedAction.html'><classname>PrivilegedAction</classname></ulink>">
+<!ENTITY PrivilegedAction			      	"<ulink url='&Java;java/security/PrivilegedAction.html'><classname>PrivilegedAction</classname></ulink>">
 <!ENTITY LoginContext				      		"<ulink url='&Java;javax/security/auth/login/LoginContext.html'><classname>LoginContext</classname></ulink>">
 <!ENTITY Subject						      		"<ulink url='&Java;javax/security/auth/Subject.html'><classname>Subject</classname></ulink>">
 <!ENTITY CallbackHandler		      		"<ulink url='&Java;javax/security/auth/callback/CallbackHandler.html'><interface>CallbackHandler</interface></ulink>">
@@ -48,7 +49,13 @@
 <!ENTITY TimeUnit						      		"<ulink url='&Java;java/util/concurrent/TimeUnit.html'><interface>TimeUnit</interface></ulink>">
 <!ENTITY UUID						      				"<ulink url='&Java;java/util/UUID.html'><classname>UUID</classname></ulink>">
 <!ENTITY DataSource			      				"<ulink url='&Java;javax/sql/DataSource.html'><classname>DataSource</classname></ulink>">
-<!ENTITY HttpServletRequest			      		"<ulink url='&Java;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
+<!ENTITY HttpServletRequest			      "<ulink url='&Java;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
+<!ENTITY Serializable							    "<ulink url='&Java;java/io/Serializable.html'><interface>Serializable</interface></ulink>">
+<!ENTITY Iterator									    "<ulink url='&Java;java/util/Iterator.html'><interface>Iterator</interface></ulink>">
+<!ENTITY Iteratable								    "<ulink url='&Java;java/util/Iteratable.html'><interface>Iteratable</interface></ulink>">
+<!ENTITY BigDecimal								    "<ulink url='&Java;java/math/BigDecimal.html'><classname>BigDecimal</classname></ulink>">
+<!ENTITY Calendar								    	"<ulink url='&Java;java/util/Calendar.html'><classname>Calendar</classname></ulink>">
+<!ENTITY Date											    "<ulink url='&Java;java/util/Date.html'><classname>Date</classname></ulink>">
 
 
 <!-- Types in JCR API -->
@@ -57,14 +64,21 @@
 <!ENTITY Session						       		"<interface>Session</interface>">
 <!ENTITY Credentials					       	"<interface>Credentials</interface>">
 <!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
-<!ENTITY LoginException						  "<interface>LoginException</interface>">
-<!ENTITY AccessDeniedException						  "<interface>AccessDeniedException</interface>">
+<!ENTITY LoginException						  	"<interface>LoginException</interface>">
+<!ENTITY AccessDeniedException				"<interface>AccessDeniedException</interface>">
 
 <!-- Types in dna-common -->
 
 <!ENTITY Logger							       		"<ulink url='&API;common/util/Logger.html'><interface>Logger</interface></ulink>">
 <!ENTITY ClassLoaderFactory       		"<ulink url='&API;common/component/ClassLoaderFactory.html'><interface>ClassLoaderFactory</interface></ulink>">
 <!ENTITY StandardClassLoaderFactory		"<ulink url='&API;common/component/StandardClassLoaderFactory.html'><classname>StandardClassLoaderFactory</classname></ulink>">
+<!ENTITY TextEncoder				       		"<ulink url='&API;common/text/TextEncoder.html'><interface>TextEncoder</interface></ulink>">
+<!ENTITY TextDecoder				       		"<ulink url='&API;common/text/TextDecoder.html'><interface>TextDecoder</interface></ulink>">
+<!ENTITY Jsr283Encoder				       	"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>Jsr283Encoder</classname></ulink>">
+<!ENTITY NoOpEncoder				       		"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>NoOpEncoder</classname></ulink>">
+<!ENTITY UrlEncoder				       			"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>UrlEncoder</classname></ulink>">
+<!ENTITY XmlNameEncoder				       	"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>XmlNameEncoder</classname></ulink>">
+<!ENTITY XmlValueEncoder				      "<ulink url='&API;common/text/XmlValueEncoder.html'><classname>XmlValueEncoder</classname></ulink>">
 
 <!-- Types in dna-graph -->
 
@@ -78,15 +92,25 @@
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><classname>ExecutionContext</classname></ulink>">
 <!ENTITY SecurityContext		       		"<ulink url='&API;graph/SecurityContext.html'><interface>SecurityContext</interface></ulink>">
 <!ENTITY JaasSecurityContext		      "<ulink url='&API;graph/JaasSecurityContext.html'><classname>JaasSecurityContext</classname></ulink>">
-<!ENTITY ServletSecurityContext		       		"<ulink url='&API;graph/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
+<!ENTITY ServletSecurityContext		   	"<ulink url='&API;graph/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
+<!ENTITY Readable						       		"<ulink url='&API;graph/property/Readable.html'><interface>Readable</interface></ulink>">
 <!ENTITY Name								       		"<ulink url='&API;graph/property/Name.html'><interface>Name</interface></ulink>">
 <!ENTITY Path								       		"<ulink url='&API;graph/property/Path.html'><interface>Path</interface></ulink>">
 <!ENTITY PathSegment				       		"<ulink url='&API;graph/property/Path.Segment.html'><interface>Path.Segment</interface></ulink>">
 <!ENTITY Property						       		"<ulink url='&API;graph/property/Property.html'><interface>Property</interface></ulink>">
+<!ENTITY DateTime						       		"<ulink url='&API;graph/property/DateTime.html'><interface>DateTime</interface></ulink>">
+<!ENTITY Binary							       		"<ulink url='&API;graph/property/Binary.html'><interface>Binary</interface></ulink>">
+<!ENTITY ValueFactory		       				"<ulink url='&API;graph/property/ValueFactory.html'><interface>ValueFactory</interface></ulink>">
 <!ENTITY ValueFactories       				"<ulink url='&API;graph/property/ValueFactories.html'><interface>ValueFactories</interface></ulink>">
+<!ENTITY ValueFormatException  				"<ulink url='&API;graph/property/ValueFormatException.html'><classname>ValueFormatException</classname></ulink>">
+<!ENTITY DateTimeFactory		       		"<ulink url='&API;graph/property/DateTimeFactory.html'><interface>DateTimeFactory</interface></ulink>">
+<!ENTITY BinaryFactory		       			"<ulink url='&API;graph/property/BinaryFactory.html'><interface>BinaryFactory</interface></ulink>">
+<!ENTITY NameFactory		       				"<ulink url='&API;graph/property/NameFactory.html'><interface>NameFactory</interface></ulink>">
+<!ENTITY PathFactory		       				"<ulink url='&API;graph/property/PathFactory.html'><interface>PathFactory</interface></ulink>">
 <!ENTITY NamespaceRegistry       			"<ulink url='&API;graph/property/NamespaceRegistry.html'><interface>NamespaceRegistry</interface></ulink>">
 <!ENTITY Namespace				       			"<ulink url='&API;graph/property/NamespaceRegistry.Namespaces.html'><interface>Namespace</interface></ulink>">
 <!ENTITY PropertyFactory       				"<ulink url='&API;graph/property/PropertyFactory.html'><interface>PropertyFactory</interface></ulink>">
+<!ENTITY PropertyType		       				"<ulink url='&API;graph/property/PropertyType.html'><classname>PropertyType</classname></ulink>">
 <!ENTITY PathNotFoundException				"<ulink url='&API;graph/property/PathNotFoundException.html'><classname>PathNotFoundException</classname></ulink>">
 <!ENTITY RepositorySource       			"<ulink url='&API;graph/connector/RepositorySource.html'><interface>RepositorySource</interface></ulink>">
 <!ENTITY RepositoryConnection    			"<ulink url='&API;graph/connector/RepositoryConnection.html'><interface>RepositoryConnection</interface></ulink>">
