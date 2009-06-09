@@ -32,11 +32,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -177,19 +180,26 @@ public class StreamSequencerAdapter implements Sequencer {
     private void buildPathTo( Path targetPath,
                               SequencerContext context ) {
         PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
+        PropertyFactory propFactory = context.getExecutionContext().getPropertyFactory();
 
         if (targetPath.isRoot()) return;
         Path workingPath = pathFactory.createRootPath();
         Path.Segment[] segments = targetPath.getSegmentsArray();
         int i = 0;
         if (segments.length > 1) {
+            Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
             for (int max = segments.length - 1; i < max; i++) {
                 workingPath = pathFactory.create(workingPath, segments[i]);
-                context.graph().createIfMissing(workingPath);
+                
+                try {
+                    context.graph().getNodeAt(workingPath);
+                }
+                catch (PathNotFoundException pnfe) {
+                    context.graph().create(workingPath, primaryType);
+                }
             }
         }
-        workingPath = pathFactory.create(workingPath, segments[i]);
-        context.graph().create(workingPath);
+        context.graph().create(targetPath); 
     }
 
     /**
@@ -228,7 +238,7 @@ public class StreamSequencerAdapter implements Sequencer {
             if (absolutePath.getParent() != null) {
                 buildPathTo(absolutePath.getParent(), context);
             }
-            context.getDestination().create(absolutePath, properties);
+            context.graph().create(absolutePath, properties);
         }
     }
 
