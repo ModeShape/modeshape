@@ -962,6 +962,441 @@ for ( &Location; child : results.getNode(path2) ) {
 		</para>
 	</sect2>
 	</sect1>
+	<sect1 id="graph-requests">
+		<title>Requests</title>
+		<para>
+			JBoss DNA &Graph; objects operate upon the underlying graph content, but we haven't really talked about how that works.
+			Recall that the &Graph; objects don't maintain any stateful representation of the content, but instead submit requests
+			to the underlying graph and return representations of the requested portions of the content.
+			This section focuses on what those requests look like, since they'll actually become very important when
+			working with <link linkend="connector-framework">connectors</link> in the next chapter.
+		</para>
+		<para>
+			A graph &Request; is an encapsulation of a command that is to be executed by the underlying graph owner (typically
+			a connector).  Request objects can take many different forms, as there are different classes for each kind of request.
+			Each request contains the information needed to complete the processing, and it also is the place
+			where the results (or error) are recorded.
+		</para>
+		<para>
+			The &Graph; object creates the &Request; objects using &Location; objects to identify the node (or nodes) that are the
+			subject of the request.  The &Graph; can either submit the request immediately, or it can batch multiple requests
+			together into "units of work".  The submitted requests are then processed by the underlying system (e.g., connector)
+			and returned back to the &Graph; object, which then extracts and returns the results.
+		</para>
+		<para>
+			There are actually quite a few different types of &Request; classes:
+		</para>
+		<table frame='all'>
+			<title>Types of Read Requests</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Name</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>ReadNodeRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source a node's properties and children.
+							The node may be specified by path and/or by identification properties.
+							The connector returns all properties and the locations for all children,
+							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
+							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>VerifyNodeExistsRequest</entry>
+						<entry>
+							A request to verify the existance of a node at the specified location in the named workspace of the source.
+							The connector returns all the actual location for the node if it exists, or
+							sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadAllPropertiesRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source all of the properties of a node.
+							The node may be specified by path and/or by identification properties.
+							The connector returns all properties that were found on the node,
+							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
+							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadPropertyRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source a single property of a node.
+							The node may be specified by path and/or by identification properties,
+							and the property is specified by name.
+							The connector returns the property if found on the node,
+							or sets a &PathNotFoundException; error on the request if the node or property did not exist in the workspace.
+							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadAllChildrenRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source all of the children of a node.
+							The node may be specified by path and/or by identification properties.
+							The connector returns an ordered list of locations for each child found on the node,
+							an empty list if the node had no children,
+							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
+							If the node is found, the connector sets on the request the actual location of the parent node (including the path and identification properties).
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadBlockOfChildrenRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source a block of children of a node, starting with the n<superscript>th</superscript> children.
+							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
+							The node may be specified by path and/or by identification properties, and the block
+							is defined by a starting index and a count (i.e., the block size).
+							The connector returns an ordered list of locations for each of the node's children found in the block,
+							or an empty list if there are no children in that range.
+							The connector also sets on the request the actual location of the parent node (including the path and identification properties)
+							or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadNextBlockOfChildrenRequest</entry>
+						<entry>
+							A request to read from the named workspace in the source a block of children of a node, starting with the children that immediately follow
+							a previously-returned child.
+							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
+							The node may be specified by path and/or by identification properties, and the block
+							is defined by the location of the node immediately preceding the block and a count (i.e., the block size).
+							The connector returns an ordered list of locations for each of the node's children found in the block,
+							or an empty list if there are no children in that range.
+							The connector also sets on the request the actual location of the parent node (including the path and identification properties)
+							or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>ReadBranchRequest</entry>
+						<entry>
+							A request to read a portion of a subgraph that has as its root a particular node, up to a maximum depth.
+							This request is an efficient mechanism when a branch (or part of a branch) is to be navigated and processed,
+							and replaces some non-trivial code to read the branch iteratively using multiple <code>ReadNodeRequest</code>s.
+							The connector reads the branch to the specified maximum depth, returning the properties and children for all
+							nodes found in the branch.  
+							The connector also sets on the request the actual location of the branch's root node (including the path and identification properties).
+							The connector sets a &PathNotFoundException; error on the request if the node at 
+							the top of the branch does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>
+		  &ChangeRequest; is a subclass of &Request; that provides a base class for all the requests that request a change
+		  be made to the content.  As we'll see later, these &ChangeRequest; objects also get reused by the
+		  <link linkend="graph-observation">observation</link> system.
+		</para>
+		<table frame='all'>
+			<title>Types of Change Requests</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Name</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>CreateNodeRequest</entry>
+						<entry>
+							A request to create a node at the specified location and setting on the new node the properties included in the request.
+							The connector creates the node at the desired location, adjusting any same-name-sibling indexes as required.
+							(If an SNS index is provided in the new node's location, existing children with the same name after that SNS index
+							will have their SNS indexes adjusted.  However, if the requested location does not include a SNS index, the new
+							node is added after all existing children, and it's SNS index is set accordingly.)
+							The connector also sets on the request the actual location of the new node (including the path and identification properties)..
+							The connector sets a &PathNotFoundException; error on the request if the parent node does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>RemovePropertiesRequest</entry>
+						<entry>
+							A request to remove a set of properties on an existing node.  The request contains the location of the node as well as the
+							names of the properties to be removed.  The connector performs these changes and sets on the request the
+							actual location (including the path and identification properties) of the node.
+							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>UpdatePropertiesRequest</entry>
+						<entry>
+							A request to set or update properties on an existing node.  The request contains the location of the node as well as the
+							properties to be set and those to be deleted.  The connector performs these changes and sets on the request the
+							actual location (including the path and identification properties) of the node.
+							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>RenameNodeRequest</entry>
+						<entry>
+							A request to change the name of a node.  The connector changes the node's name, adjusts all SNS indexes
+							accordingly, and returns the actual locations (including the path and identification properties) of both the original
+							location and the new location.
+							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>CopyBranchRequest</entry>
+						<entry>
+							A request to copy a portion of a subgraph that has as its root a particular node, up to a maximum depth.
+							The request includes the name of the workspace where the original node is located as well as the name of the
+							workspace where the copy is to be placed (these may be the same, but may be different).
+							The connector copies the branch from the original location, up to the specified maximum depth, and places a copy
+							of the node as a child of the new location.
+							The connector also sets on the request the actual location (including the path and identification properties)
+							of the original location as well as the location of the new copy.
+							The connector sets a &PathNotFoundException; error on the request if the node at 
+							the top of the branch does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if one of the named workspaces does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>MoveBranchRequest</entry>
+						<entry>
+							A request to move a subgraph that has a particular node as its root.
+							The connector moves the branch from the original location and places it as child of the specified new location.
+							The connector also sets on the request the actual location (including the path and identification properties)
+							of the original and new locations.  The connector will adjust SNS indexes accordingly.
+							The connector sets a &PathNotFoundException; error on the request if the node that is to be moved or the
+							new location do not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>DeleteBranchRequest</entry>
+						<entry>
+							A request to delete an entire branch specified by a single node's location.
+							The connector deletes the specified node and all nodes below it, and sets the actual location,
+							including the path and identification properties, of the node that was deleted.
+							The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist in the workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>CompositeRequest</entry>
+						<entry>
+							A request that actually comprises multiple requests (none of which will be a composite).
+							The connector simply processes all of the requests in the composite request, but should set on the composite
+							request any error (usually the first error) that occurs during processing of the contained requests.
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>There are also requests that deal with workspaces:</para>
+		<table frame='all'>
+			<title>Types of Workspace Read Requests</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Name</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>GetWorkspacesRequest</entry>
+						<entry>
+							A request to obtain the names of the existing workspaces that are accessible to the caller.
+						</entry>
+					</row>
+					<row>
+						<entry>VerifyWorkspaceRequest</entry>
+						<entry>
+							A request to verify that a workspace with a particular name exists.
+							The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
+							(e.g., the default workspace name if a null name is supplied).
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>And there are also requests that deal with changing workspaces (and thus extend &ChangeRequest;):</para>
+		<table frame='all'>
+			<title>Types of Workspace Change Requests</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Name</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>CreateWorkspaceRequest</entry>
+						<entry>
+							A request to create a workspace with a particular name.
+							The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
+							(e.g., the default workspace name if a null name is supplied).
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace already exists.
+						</entry>
+					</row>
+					<row>
+						<entry>DestroyWorkspaceRequest</entry>
+						<entry>
+							A request to destroy a workspace with a particular name.
+							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
+						</entry>
+					</row>
+					<row>
+						<entry>CloneWorkspaceRequest</entry>
+						<entry>
+							A request to clone one named workspace as another new named workspace.
+							The connector sets a &InvalidWorkspaceException; error on the request if the original workspace does not exist, 
+							or if the new workspace already exists.
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+    <para>
+			Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
+			For example, DNA will likely support searching repository content in sources through an additional subclass of &Request;.
+			Getting the version history for a node will likely be another kind of request added in an upcoming release.
+		</para>
+		<para>
+			This section covered the different kinds of &Request; classes.  The next section provides a easy way to encapsulate how
+			a component should responds to these requests, and after that we'll see how these &Request; objects are also used
+			in the <link linkend="graph-observation">observation</link> framework.
+		</para>
+	</sect1>
+	<sect1 id="graph-request-processors">
+		<title>Request processors</title>
+		<para>
+			JBoss DNA connectors are typically the components that receive these &Request; objects.  We'll dive deep into connectors
+			in the <link linkend="connector-framework">next chapter</link>, but before we do there is one more component related to
+			&Request;s that should be discussed.
+		</para>
+		<para>
+			The &RequestProcessor; class is an abstract class that defines a <code>process(...)</code> method for each concrete &Request; subclass.
+			In other words, there is a <code>process(CompositeRequest)</code> method, a <code>process(ReadNodeRequest)</code> method,
+			and so on. This makes it easy to implement behavior that responds to the different kinds of &Request; classes:
+			simply subclass the &RequestProcessor;, override all of the abstract methods, and optionally
+			overriding any of the other methods that have a default implementation.
+		</para>
+		<note>
+			<para>
+				The &RequestProcessor; abstract class contains default implementations for quite a few of the <code>process(...)</code> methods,
+				and these will be <emphasis>sufficient</emphasis>	but probably not efficient or optimum.  If you can provide a more efficient
+				implementation given your source, feel free to do so.  However, if performance is not a big issue, all of the concrete methods
+				will provide the correct behavior. Keep things simple to start out - you can always provide better implementations later.
+			</para>
+		</note>
+	</sect1>
+	<sect1 id="graph-observation">
+		<title>Observation</title>
+		<para>
+			The JBoss DNA graph model also incorporates an observation framework that allows components to register and
+			be notified when changes occur within the content owned by a graph.
+		</para>
+		<para>
+			Many event frameworks define the listeners and sources as interfaces.  While this is often useful, it requires
+			the implementations properly address the thread-safe semantics of managing and calling the listeners.
+			The JBoss DNA observation framework uses abstract or concrete classes to minimize the effort required for implementing
+			&ChangeObserver; or &Observable;. These abstract classes provide implementations for a number of
+			utility methods (such as the <code>unregister()</code> method on &ChangeObserver;) that
+			also save effort and code.
+		</para>
+		<para>
+			However, one of the more important reasons for providing classes is that &ChangeObserver; uses 
+			weak references to track the &Observable; instances, and the &ChangeObservers;
+			class uses weak references for the listeners.  This means that an observer does not prevent &Observable; instances
+			from being garbage collected, nor do observers prevent &Observable; instances from being garbage collected.
+			These abstract class provide all this functionality for free.
+		</para>
+		<sect2 id="graph-observable">
+			<title>Observable</title>
+			<para>
+				Any component that can have changes and be observed can implement the &Observable; interface.  This interface
+				allows &Observers; to register (or be registered) to receive notifications of the changes.  However, a concrete and thread-safe 
+				implementation of this interface, called &ChangeObservers;, is available and should be used where possible, since it 
+				automatically manages the registered &ChangeObserver; instances and properly implements the register and unregister mechanisms.
+			</para>
+		</sect2>
+		<sect2 id="graph-observers">
+			<title>Observers</title>
+			<para>
+				Components that are to recieve notifications of changes are called <emphasis>observers</emphasis>.  To create an observer, simply extend 
+				the &ChangeObserver; abstract class and provide an implementation of the <code>notify(&Changes;)</code> method.
+				Then, register the observer with an &Observable; using its <code>register(&ChangeObserver;)</code> method.
+				The observer's <code>notify(&Changes;)</code> method will then be called with the changes that have
+				been made to the &Observable;.
+			</para>
+			<para>
+				When an observer is no longer needed, it should be unregistered from all &Observable; instances with which
+				it was registered.  The &ChangeObserver; class automatically tracks which &Observable; instances it is
+				registered with, and calling the observer's <code>unregister()</code> will unregister the observer from
+				all of these &Observable;s.  Alternatively, an observer can be unregistered from a single &Observable; using the
+				&Observable;'s <code>unregister(&ChangeObserver;)</code> method.
+			</para>
+		</sect2>
+		<sect2 id="graph-changes">
+			<title>Changes</title>
+			<para>
+				The &Changes; class represents the set of individual changes that have been made during a single, atomic
+				operation.  Each &Changes; instance has information about the source of the changes, the timestamp at which
+				the changes occurred, and the individual changes that were made.  These individual changes take the form of
+				&ChangeRequest; objects, which we'll see more of in the next chapter.  Each request is 
+				frozen, meaning it is immutable and will not change.  Also none of the change requests will be marked as cancelled.
+			</para>
+			<para>
+				Using the actual &ChangeRequest; objects as the "events" has a number of advantages.
+				First, the existing &ChangeRequest; subclasses already contain the information to accurately and completely
+				describe the operation.  Reusing these classes means we don't need a duplicate class structure or come up with a generic
+				event class.
+			</para>
+			<para>
+				Second, the requests have all the state required for an event, plus they often will have more.  For example,
+				the &DeleteBranchRequest; has the actual location of the branch that was deleted (and in this way is not much different than
+				a more generic event), but the &CreateNodeRequest; has the actual location of the created node along with the properties
+				of that node.  Additionally, the &RemovePropertyRequest; has the actual location of the node along with the name of the property
+				that was removed.  In many cases, these requests have all the information a more general event class might have but
+				then hopefully enough information for many observers to use directly without having to read the graph to decide what
+				actually changed. 
+			</para>
+			<para>
+				Third, the requests that make up a &Changes; instance can actually be replayed.  Consider the case of a cache
+				that is backed by a &RepositorySource;, which might use an observer to keep the cache in sync.  
+				As the cache is notified of &Changes;, the cache can simply replay the changes against its source.
+			</para>
+		</sect2>
+		<para>
+			As we'll see in the <link linkend="connector-framework">next chapter</link>, each connector is responsible for propagating
+			the &ChangeRequest; objects to the connector's &Observer;.  But that's not the only use of &Observers;.
+			We'll also see later how the <link linkend="sequencing-framework">sequencing system</link> uses &Observers; to monitor
+			for changes in the graph content to determine which, if any, sequencers should be run.  And, the
+			<link linkend="jcr">JCR implementation</link> also uses the observation framework to propagate those changes
+			to JCR clients.
+		</para>
+	</sect1>
 	<sect1>
 		<title>Summary</title>
 		<para>

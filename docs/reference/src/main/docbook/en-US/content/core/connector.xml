@@ -51,20 +51,20 @@
 		in one spot, using one powerful standard API.
 	</para>
   <sect1 id="connectors">
-    <title>Repository connectors</title>
+    <title>Connectors</title>
 		<para>
 			With JBoss DNA, your applications use the <ulink url="&JSR170;">JCR API</ulink> to work with the repository,
 			but the DNA repository transparently fetches the information from different kinds of repositories and storage systems,
 			not just a single purpose-built store.  This is fundamentally what makes JBoss DNA different.
 		</para>
 		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based 
-			<emphasis>repository connector</emphasis> system.  Essentially, JBoss DNA's JCR implementation uses a single 
-			repository connector to access all content:
+			<emphasis>connector</emphasis> system.  Essentially, JBoss DNA's JCR implementation uses a single 
+			connector to access all content:
 			<figure id="dnajcr-and-connector">
-				<title>JBoss DNA's JCR implementation delegates to a repository connector</title>
+				<title>JBoss DNA's JCR implementation delegates to a connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
-			That single repository connector could use an in-memory repository, a JBoss Cache instance (including those that are clustered and replicated), 
+			That single connector could use an in-memory repository, a JBoss Cache instance (including those that are clustered and replicated), 
 			or a federated repository where content from multiple sources is unified.
 			<figure id="dna-connectors-0.2">
 				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
@@ -128,9 +128,9 @@
 					A repository source instance is then used to establish <emphasis role="strong">connections</emphasis> to
 					that source.  A connector provides an implementation of the &RepositoryConnection; interface, which
 					defines methods for interacting with the external system.  In particular, the <code>execute(...)</code> method
-					takes an &ExecutionContext; instance and a &Request; object.  The &ExectuionContext; object defines the
-					environment in which the processing is occurring, including information about the JAAS &Subject; and &LoginContext;.
-					The &Request; object describes the requested operations on the content, with different concrete subclasses
+					takes an &ExecutionContext; instance and a &Request; object.  The &ExecutionContext; object defines the
+					environment in which the processing is occurring,
+					while the &Request; object describes the requested operations on the content, with different concrete subclasses
 					representing each type of activity.  Examples of commands include (but not limited to) getting a node, moving a node, creating a node, 
 					changing a node, and deleting a node.  And, if the repository source is able to participate in JTA/JTS distributed transactions, then the
 					&RepositoryConnection; must implement the <code>getXaResource()</code> method by returning 
@@ -161,123 +161,15 @@
 			JBoss DNA components, including the <link linkend="jcr">JCR</link> implementation.
 		</para>
 		<para>
-			So, we've so far learned what a repository connector is and how they're used to establish connections to the underlying sources 
-			and access the content in those sources.  In the <link linkend="repository-service">next section</link>, we'll show how these 
-			source instances can be configured, managed, and their connections pooled.  After that, we'll look review JBoss DNA's 
-			<link linkend="connector-library">existing connectors</link> and show how to <link linkend="custom-connectors">create your own connectors</link>.
-		</para>
-  </sect1>
-  <sect1 id="repository-workspaces">
-    <title>Workspaces</title>
-		<para>The <link linkend="graph-api-workspaces">previous chapter</link> talked about how connector expose their information through the graph language of JBoss DNA.
-			This is true, except that we didn't dive into too much of the detail.  JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis>
-			in which the content appears, and its very easy for clients using the graph to switch between workspaces.  In fact,
-			workspaces differ from each other in that they provide different views of the same information.
-		</para>
-		<para>Consider a source control system, like SVN or CVS.  These systems provide different views of the source code:
-			a mainline development branch as well as other branches (or tags) commonly used for releases.  So, just like one source
-			file might appear in the mainline branch as well as the previous two release branches, a node in a repository source
-			might appear in multiple workspaces.
-		</para>
-		<para>
-			However, each connector can kind of decide how (or whether) it uses workspaces.  For example, there may be no overlap
-			in the content between workspaces.  Or a connector might only expose a single workspace (in other words, there's only one
-			"default" workspace).
-		</para>
-  </sect1>
-  <sect1 id="repository-service">
-    <title>Repository Service</title>
-		<para>The JBoss DNA &RepositoryService; is the component that manages the <emphasis>repository sources</emphasis>
-		  and the connections to them.  &RepositorySource; instances can be programmatically added to the service, but
-			the service can actually read its configuration from a configuration repository (which, by the way, is represented by a
-			just another &RepositorySource; instance that's usually added programmatically to the service).  The service connects to
-			the configuration repository, reads the content in a particular area, and automatically sets up the &RepositorySource; instances
-		  per the information found in the configuration repository.  
-		</para>
-		<para>
-			The &RepositoryService; also transparently maintains for each source a pool of reusable connections.  The pooling properties
-			can be controlled via the configuration repository, or adjusted programmatically.
-		</para>
-    <para>
-			Using a repository, then, involves simply asking the &RepositoryService; for a &RepositoryConnection;
-			to the repository given the repository's name.  If a source exists with that name, the service checks out a connection from
-			the source's pool.  The resulting connection is actually a wrapper around the underlying pooled connection, so the
-			component that requested the connection can simply close it, and under the covers the actual connection is simply returned
-			to the pool.
-    </para>
-		<para>To instantiate the &RepositoryService;, we need to first have a few other objects:
-			<itemizedlist>
-				<listitem>
-					<para>
-						A &ExecutionContext; instance, as discussed <link linkend="execution-context">earlier</link>.
-					</para>
-				</listitem>
-				<listitem>
-					<para>
-						A &RepositoryLibrary; instance that manages the list of &RepositorySource; instances,
-						properly injects the execution contexts into each repository source, and provides a configurable pool of connections
-						for each source.
-					</para>
-				</listitem>
-				<listitem>
-					<para>
-						A <emphasis>configuration repository</emphasis> that contains descriptions of all of the repository sources
-					  as well as any information those sources need.  Because this is a regular repository, this could be a simple 
-					  repository with content loaded from an XML file, or it could be a shared
-					  central repository with information about all of the JBoss DNA repositories used across your organization.
-					</para>
-				</listitem>
-			</itemizedlist>
-			With these components in place, we can then instantiate the &RepositoryService; and start it (using its
-			&ServiceAdministrator;).  During startup, the service reads the configuration repository and loads any
-			defined &RepositorySource; instances into the repository library, using the class loader factory 
-			(available in the &ExecutionContext;) to obtain.
-    </para>
-		<para>
-			Here's sample code that shows how to set up and start the repository service.  You can see something similar
-			in the example application in the <code>startRepositories()</code> method of the 
-			<code>org.jboss.example.dna.repository.RepositoryClient</code> class.
-		</para>
-    <programlisting>
- // Create the top-level execution context with all standard components ...
- &ExecutionContext; context = new ExecutionContext();
-
- // Create the library for the RepositorySource instances ...
- &RepositoryLibrary; sources = new &RepositoryLibrary;(context);
-
- // Load into the source manager the repository source for the configuration repository ...
- &InMemoryRepositorySource; configSource = new &InMemoryRepositorySource;();
- configSource.setName("Configuration");
- sources.addSource(configSource);
-
- // Now instantiate the Repository Service ...
- &RepositoryService; service = new &RepositoryService;(sources, configSource.getName(), context);
- service.getAdministrator().start();
- </programlisting>
-
-		<para>After startup completes, the repositories are ready to be used.  The client application obtains the list of repositories
-			and presents them to the user.  When the user selects one, the client application starts navigating that repository
-			starting at its root node (e.g., the "/" path).  As you type a command to list the contents of the current node or to
-			"change directories" to a different node, the client application obtains the information for the node using a simple
-			procedure:
-			<orderedlist>
-				<listitem>
-					<para>Get a connection to the repository.</para>
-				</listitem>
-				<listitem>
-					<para>Using the connection, find the current node and read its properties and children, putting the information
-						into a simple Java plain old Java object (POJO).</para>
-				</listitem>
-				<listitem>
-					<para>Close the connection to the repository (in a finally block to ensure it always happens).</para>
-				</listitem>
-			</orderedlist>
+			So, we've so far learned what a connector is and how they're used to establish connections to the underlying sources 
+			and access the content in those sources.  Next we'll show how connectors expose the notion of workspaces, and describe
+			how to <link linkend="custom-connectors">create your own connectors</link>.
 		</para>
   </sect1>
   <sect1 id="connector-library">
-    <title>Out-of-the-box repository connectors</title>
+    <title>Out-of-the-box connectors</title>
     <para>
-    	A number of repository connectors are already available in JBoss DNA, and are outlined in detail
+    	A number of connectors are already available in JBoss DNA, and are outlined in detail
       <link linkend="provied-connectors-part">later in the document</link>.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more connectors</ulink>
 			in the upcoming releases.
@@ -286,7 +178,7 @@
   <sect1 id="custom-connectors">
     <title>Writing custom connectors</title>
     <para>
-		  There may come a time when you want to tackle creating your own repository connector.  Maybe the connectors we provide out-of-the-box
+		  There may come a time when you want to tackle creating your own connector.  Maybe the connectors we provide out-of-the-box
 			don't work with your source.  Maybe you want to use a different cache system.  
 			Maybe you have a system that you want to make available through a JBoss DNA repository.  Or, maybe you're
 			a contributor and want to help us round out our library with a new connector.  No matter what the reason, creating a new connector
@@ -356,7 +248,7 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
@@ -371,17 +263,18 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
+<!-- Unit testing -->
 <dependency>
   <groupId>junit</groupId>
   <artifactId>junit</artifactId>
@@ -441,6 +334,37 @@
 				Most of the semantics of the class are defined by the &RepositorySource; and inherited interface.
 				However, there are a few characteristics that are worth mentioning here.
 			</para>
+		  <sect3 id="repository-workspaces">
+		    <title>Workspaces</title>
+				<para>The <link linkend="graph-api-workspaces">previous chapter</link> talked about how connector expose their information through the graph language of JBoss DNA.
+					This is true, except that we didn't dive into too much of the detail.  JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis>
+					in which the content appears, and its very easy for clients using the graph to switch between workspaces.  In fact,
+					workspaces differ from each other in that they provide different views of the same information.
+				</para>
+				<para>Consider a source control system, like SVN or CVS.  These systems provide different views of the source code:
+					a mainline development branch as well as other branches (or tags) commonly used for releases.  So, just like one source
+					file might appear in the mainline branch as well as the previous two release branches, a node in a repository source
+					might appear in multiple workspaces.
+				</para>
+				<para>
+					However, each connector can kind of decide how (or whether) it uses workspaces.  For example, there may be no overlap
+					in the content between workspaces.  Or a connector might only expose a single workspace (in other words, there's only one
+					"default" workspace).
+				</para>
+		  </sect3>
+			<sect3 id="connector_events">
+				<title>Broadcasting events</title>
+				<para>
+					When your &RepositorySource; instance is put into the library within a running JBoss DNA system, 
+					the <code>initialize(&RepositoryContext;)</code> method will be called on the instance.
+					The supplied &RepositoryContext; object represents the context in which the &RepositorySource;
+					is running, and provides access to an &ExecutionContext;, a &RepositoryConnectionFactory; that can be used
+					to obtain connections to other sources, and an &Observer; of your source that should be called with
+					events describing the &Changes; being made within the source, either as a result of &ChangeRequest; operations being
+					performed on this source, or as a result of operations being performed on the content from outside
+					the source.
+				</para>
+			</sect3>
 			<sect3 id="connector_cache_policy">
 				<title>Cache policy</title>
 				<para>
@@ -538,7 +462,7 @@
 	    <para>
 				One job of the &RepositorySource; implementation is to create connections to the underlying sources.
 				Connections are represented by classes that implement the &RepositoryConnection; interface, and creating this
-				class is the next step in writing a repository connector.  This is what we'll cover in this section.
+				class is the next step in writing a connector.  This is what we'll cover in this section.
 			</para>
 	    <para>
 				The &RepositoryConnection; interface is pretty straightforward:
@@ -580,13 +504,6 @@ public interface &RepositoryConnection; {
     boolean ping( long time, &TimeUnit; unit ) throws InterruptedException;
 
     /**
-     * Set the listener that is to receive notifications to changes to content within this source.
-     * 
-     * @param listener the new listener, or null if no component is interested in the change notifications
-     */
-    void setListener( &RepositorySourceListener; listener );
-
-    /**
      * Get the default cache policy for this repository. If none is provided, a global cache policy
      * will be used.
      * 
@@ -601,8 +518,7 @@ public interface &RepositoryConnection; {
      * @param request the request to be executed; never null
      * @throws RepositorySourceException if there is a problem loading the node data
      */
-    void execute( &ExecutionContext; context,
-                  &Request; request ) throws &RepositorySourceException;;
+    void execute( &ExecutionContext; context, &Request; request ) throws &RepositorySourceException;;
 
     /**
      * Close this connection to signal that it is no longer needed and that any accumulated 
@@ -618,6 +534,7 @@ public interface &RepositoryConnection; {
 				a connection pool.
 			</para>
 	    <para>
+				If the connector is able to publish events, then 
 				DNA hasn't yet defined the event mechanism, so connectors don't have any methods to invoke on the &RepositorySourceListener;.
 				This will be defined in the next release, so feel free to manage the listeners now.  Note that by default the &RepositorySourceCapabilities; returns
 				<code>false</code> for <code>supportsEvents()</code>.
@@ -629,293 +546,12 @@ public interface &RepositoryConnection; {
 				as well as the subject performing the request.  This was discussed <link linkend="execution-context">earlier</link>.
 			</para>
 	    <para>
-				The second parameter, however, represents a request that is to be processed by the connector.  Request objects can
-				take many different forms, as there are different classes for each kind of request (see the table below).
+				The second parameter, however, represents a &Request; that is to be processed by the connector.  Request objects can
+				take many different forms, as there are different classes for each kind of request (see the
+				<link linkend="graph-requests">previous chapter</link> for details).
 				Each request contains the information a connector needs to do the processing, and it also is the place
 				where the connector places the results (or the error, if one occurs).
 			</para>
-			<para>
-				How do the requests reference a node (or nodes)? Since requests are coming from a client, the client 
-				may identify a particular node using a &Location; object that is created with:
-			  <itemizedlist>
-			    <listitem>
-			      <para>the &Path; to the node; or</para>
-			    </listitem>
-			    <listitem>
-			      <para>one or more <emphasis>identification properties</emphasis> that are likely source=specific
-							and that are represented with &Property; objects; or</para>
-			    </listitem>
-			    <listitem>
-			      <para>a combination of both.</para>
-			    </listitem>
-			  </itemizedlist>
-				So, when a client knows the path or the identification properties, they can create a &Location;.  However,
-				all of the requests return &Location; objects, so often times the client simply uses the location
-				from a previous request.  Since &Location; is an immutable class, it is perfectly safe to reuse them.
-			</para>
-			<para>
-				One more thing about locations: while the request may have an incomplete location (e.g., a path but no
-				identification properties), the connector is expected to set on the request the <emphasis>actual</emphasis>
-				location that contains the path and all identification properties.  So as long as the client
-				reuses the actual locations in subsequent requests, the connectors will have the benefit of having
-				both the path and identification properties.  Connectors can then be written to leverage this
-				information, although the connector should still perform as expected when requests have incomplete locations.
-			</para>
-			<table frame='all'>
-				<title>Types of Node Operation Requests</title>
-				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-		      <colspec colname='c1' colwidth="1*"/>
-		      <colspec colname='c2' colwidth="1*"/>
-					<thead>
-						<row>
-				  		<entry>Name</entry>
-				  		<entry>Description</entry>
-						</row>
-					</thead>
-					<tbody>
-						<row>
-							<entry>ReadNodeRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source a node's properties and children.
-								The node may be specified by path and/or by identification properties.
-								The connector returns all properties and the locations for all children,
-								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
-								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>VerifyNodeExistsRequest</entry>
-							<entry>
-								A request to verify the existance of a node at the specified location in the named workspace of the source.
-								The connector returns all the actual location for the node if it exists, or
-								sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadAllPropertiesRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source all of the properties of a node.
-								The node may be specified by path and/or by identification properties.
-								The connector returns all properties that were found on the node,
-								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
-								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadPropertyRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source a single property of a node.
-								The node may be specified by path and/or by identification properties,
-								and the property is specified by name.
-								The connector returns the property if found on the node,
-								or sets a &PathNotFoundException; error on the request if the node or property did not exist in the workspace.
-								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadAllChildrenRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source all of the children of a node.
-								The node may be specified by path and/or by identification properties.
-								The connector returns an ordered list of locations for each child found on the node,
-								an empty list if the node had no children,
-								or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
-								If the node is found, the connector sets on the request the actual location of the parent node (including the path and identification properties).
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadBlockOfChildrenRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source a block of children of a node, starting with the n<superscript>th</superscript> children.
-								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
-								The node may be specified by path and/or by identification properties, and the block
-								is defined by a starting index and a count (i.e., the block size).
-								The connector returns an ordered list of locations for each of the node's children found in the block,
-								or an empty list if there are no children in that range.
-								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
-								or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadNextBlockOfChildrenRequest</entry>
-							<entry>
-								A request to read from the named workspace in the source a block of children of a node, starting with the children that immediately follow
-								a previously-returned child.
-								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
-								The node may be specified by path and/or by identification properties, and the block
-								is defined by the location of the node immediately preceding the block and a count (i.e., the block size).
-								The connector returns an ordered list of locations for each of the node's children found in the block,
-								or an empty list if there are no children in that range.
-								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
-								or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>ReadBranchRequest</entry>
-							<entry>
-								A request to read a portion of a subgraph that has as its root a particular node, up to a maximum depth.
-								This request is an efficient mechanism when a branch (or part of a branch) is to be navigated and processed,
-								and replaces some non-trivial code to read the branch iteratively using multiple <code>ReadNodeRequest</code>s.
-								The connector reads the branch to the specified maximum depth, returning the properties and children for all
-								nodes found in the branch.  
-								The connector also sets on the request the actual location of the branch's root node (including the path and identification properties).
-								The connector sets a &PathNotFoundException; error on the request if the node at 
-								the top of the branch does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>CreateNodeRequest</entry>
-							<entry>
-								A request to create a node at the specified location and setting on the new node the properties included in the request.
-								The connector creates the node at the desired location, adjusting any same-name-sibling indexes as required.
-								(If an SNS index is provided in the new node's location, existing children with the same name after that SNS index
-								will have their SNS indexes adjusted.  However, if the requested location does not include a SNS index, the new
-								node is added after all existing children, and it's SNS index is set accordingly.)
-								The connector also sets on the request the actual location of the new node (including the path and identification properties)..
-								The connector sets a &PathNotFoundException; error on the request if the parent node does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>RemovePropertiesRequest</entry>
-							<entry>
-								A request to remove a set of properties on an existing node.  The request contains the location of the node as well as the
-								names of the properties to be removed.  The connector performs these changes and sets on the request the
-								actual location (including the path and identification properties) of the node.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>UpdatePropertiesRequest</entry>
-							<entry>
-								A request to set or update properties on an existing node.  The request contains the location of the node as well as the
-								properties to be set and those to be deleted.  The connector performs these changes and sets on the request the
-								actual location (including the path and identification properties) of the node.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>RenameNodeRequest</entry>
-							<entry>
-								A request to change the name of a node.  The connector changes the node's name, adjusts all SNS indexes
-								accordingly, and returns the actual locations (including the path and identification properties) of both the original
-								location and the new location.
-								The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>CopyBranchRequest</entry>
-							<entry>
-								A request to copy a portion of a subgraph that has as its root a particular node, up to a maximum depth.
-								The request includes the name of the workspace where the original node is located as well as the name of the
-								workspace where the copy is to be placed (these may be the same, but may be different).
-								The connector copies the branch from the original location, up to the specified maximum depth, and places a copy
-								of the node as a child of the new location.
-								The connector also sets on the request the actual location (including the path and identification properties)
-								of the original location as well as the location of the new copy.
-								The connector sets a &PathNotFoundException; error on the request if the node at 
-								the top of the branch does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if one of the named workspaces does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>MoveBranchRequest</entry>
-							<entry>
-								A request to move a subgraph that has a particular node as its root.
-								The connector moves the branch from the original location and places it as child of the specified new location.
-								The connector also sets on the request the actual location (including the path and identification properties)
-								of the original and new locations.  The connector will adjust SNS indexes accordingly.
-								The connector sets a &PathNotFoundException; error on the request if the node that is to be moved or the
-								new location do not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>DeleteBranchRequest</entry>
-							<entry>
-								A request to delete an entire branch specified by a single node's location.
-								The connector deletes the specified node and all nodes below it, and sets the actual location,
-								including the path and identification properties, of the node that was deleted.
-								The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist in the workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>CompositeRequest</entry>
-							<entry>
-								A request that actually comprises multiple requests (none of which will be a composite).
-								The connector simply processes all of the requests in the composite request, but should set on the composite
-								request any error (usually the first error) that occurs during processing of the contained requests.
-							</entry>
-						</row>
-					</tbody>
-				</tgroup>
-			</table>
-			<para>There are also requests that deal with workspaces:</para>
-			<table frame='all'>
-				<title>Types of Workspace Requests</title>
-				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-		      <colspec colname='c1' colwidth="1*"/>
-		      <colspec colname='c2' colwidth="1*"/>
-					<thead>
-						<row>
-				  		<entry>Name</entry>
-				  		<entry>Description</entry>
-						</row>
-					</thead>
-					<tbody>
-						<row>
-							<entry>GetWorkspacesRequest</entry>
-							<entry>
-								A request to obtain the names of the existing workspaces that are accessible to the caller.
-							</entry>
-						</row>
-						<row>
-							<entry>VerifyWorkspaceRequest</entry>
-							<entry>
-								A request to verify that a workspace with a particular name exists.
-								The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
-								(e.g., the default workspace name if a null name is supplied).
-							</entry>
-						</row>
-						<row>
-							<entry>CreateWorkspaceRequest</entry>
-							<entry>
-								A request to create a workspace with a particular name.
-								The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
-								(e.g., the default workspace name if a null name is supplied).
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace already exists.
-							</entry>
-						</row>
-						<row>
-							<entry>DestroyWorkspaceRequest</entry>
-							<entry>
-								A request to destroy a workspace with a particular name.
-								The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-							</entry>
-						</row>
-						<row>
-							<entry>CloneWorkspaceRequest</entry>
-							<entry>
-								A request to clone one named workspace as another new named workspace.
-								The connector sets a &InvalidWorkspaceException; error on the request if the original workspace does not exist, 
-								or if the new workspace already exists.
-							</entry>
-						</row>
-					</tbody>
-				</tgroup>
-			</table>
 	    <para>
 				Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
 				For example, DNA will likely support searching repository content in sources through an additional subclass of &Request;.
@@ -923,7 +559,8 @@ public interface &RepositoryConnection; {
 			</para>
 	    <para>
 				A connector is technically free to implement the <code>execute(...)</code> method in any way, as long as the semantics
-				are maintained.  But DNA provides a &RequestProcessor; class that can simplify writing your own connector and at the
+				are maintained.  But as discussed in the <link linkend="graph-request-processors">previous chapter</link>, JBoss DNA provides 
+				a &RequestProcessor; class that can simplify writing your own connector and at the
 				same time help insulate your connector from new kinds of requests that may be added in the future.  The &RequestProcessor;
 				is an abstract class that defines a <code>process(...)</code> method for each concrete &Request; subclass.
 				In other words, there is a <code>process(CompositeRequest)</code> method, a <code>process(ReadNodeRequest)</code> method,
@@ -984,28 +621,16 @@ public void execute( final &ExecutionContext; context,
 				don't become polluted with slow-running tests that break if the external system is not available.
 			</para>
 		</sect2>
-	  <sect2 id="deploying_custom_connectors">
-	    <title>Configuring and deploying custom connectors</title>
-	    <para>
-				After building your connector project, you need to configure the JBoss DNA components your application is using so
-				that they use your connector.  In a lot of cases, this will entail instantiating your connector's &RepositorySource; class,
-				setting the various properties, and registering it with a &RepositoryLibrary;.  Or, it will entail using a configuration
-				repository to use your source and letting &RepositoryService; instantiate and set up your &RepositorySource; instance.
-				Or, you can just instantiate and set it up manually, passing the instance to whatever component needs it.
-			</para>
-			<para>
-				And of course you have to make the JAR file containing your connector (as well as any dependency JARs) available to
-				your application's classpath.
-			</para>
-		</sect2>
   </sect1>
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we covered all the aspects of JBoss DNA repositories, including the connector framework,
+			In this chapter, we covered all the aspects of JBoss DNA connectors, including the connector API,
 			how DNA's JCR implementation works with connectors, what connectors are available (and how to use them),
 			and how to write your own connector.  So now that you know how to set up and use JBoss DNA repositories,
-			the <link linkend="jcr">next chapter</link> describes how you can leverage JBoss DNA's JCR implementation.
+			the <link linkend="sequencing-framework">next chapter</link> describes the sequencing framework and how
+			to build your own custom sequencers.  After that, we'll get into <link linkend="configuration">how to configure
+			JBoss DNA</link> to use the connectors and sequencers.
 		</para>
 	</sect1>
 </chapter>
