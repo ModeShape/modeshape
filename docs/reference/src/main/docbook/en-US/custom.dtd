@@ -24,6 +24,7 @@
 <!ENTITY Git									"http://git-scm.com/">
 
 <!ENTITY Java									"http://java.sun.com/j2se/1.5.0/docs/api/">
+<!ENTITY JavaEE                                 "http://java.sun.com/javaee/5/docs/api/">
 
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/reference/html/index.html'>Getting Started</ulink>">
@@ -49,7 +50,7 @@
 <!ENTITY TimeUnit						      		"<ulink url='&Java;java/util/concurrent/TimeUnit.html'><interface>TimeUnit</interface></ulink>">
 <!ENTITY UUID						      				"<ulink url='&Java;java/util/UUID.html'><classname>UUID</classname></ulink>">
 <!ENTITY DataSource			      				"<ulink url='&Java;javax/sql/DataSource.html'><classname>DataSource</classname></ulink>">
-<!ENTITY HttpServletRequest			      "<ulink url='&Java;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
+<!ENTITY HttpServletRequest			      "<ulink url='&JavaEE;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
 <!ENTITY Serializable							    "<ulink url='&Java;java/io/Serializable.html'><interface>Serializable</interface></ulink>">
 <!ENTITY Iterator									    "<ulink url='&Java;java/util/Iterator.html'><interface>Iterator</interface></ulink>">
 <!ENTITY Iteratable								    "<ulink url='&Java;java/util/Iteratable.html'><interface>Iteratable</interface></ulink>">
