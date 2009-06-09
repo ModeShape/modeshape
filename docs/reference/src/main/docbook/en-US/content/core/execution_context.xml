@@ -485,7 +485,7 @@ public interface &ClassLoaderFactory; {
 	  </note>
 	</sect1>
 	<sect1 id="mime-type-detectors">
-		<title>Property factory and value factories</title>
+		<title>MIME Type Detectors</title>
 	  <para>
 	  	JBoss DNA often needs the ability to determine the MIME type for some binary content.  When uploading content into
 			a repository, we may want to add the MIME type as metadata.  Or, we may want to make some processing decisions
