@@ -107,55 +107,6 @@ public class RepositoryService implements AdministeredService {
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     /**
-     * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the source with
-     * the supplied name.
-     * 
-     * @param sources the source manager
-     * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
-     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
-     *        repository
-     * @param context the execution context in which this service should run
-     * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
-     */
-    public RepositoryService( RepositoryLibrary sources,
-                              String configurationSourceName,
-                              String configurationWorkspaceName,
-                              ExecutionContext context ) {
-        this(sources, configurationSourceName, configurationWorkspaceName, null, context);
-    }
-
-    /**
-     * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the source with
-     * the supplied name and path within the repository.
-     * 
-     * @param sources the source manager
-     * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
-     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
-     *        repository, or null if the default workspace of the source should be used (if there is one)
-     * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
-     *        service as the root of the service's configuration; if null, then "/dna:system" is used
-     * @param context the execution context in which this service should run
-     * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
-     */
-    public RepositoryService( RepositoryLibrary sources,
-                              String configurationSourceName,
-                              String configurationWorkspaceName,
-                              Path pathToConfigurationRoot,
-                              ExecutionContext context ) {
-        CheckArg.isNotNull(configurationSourceName, "configurationSourceName");
-        CheckArg.isNotNull(sources, "sources");
-        CheckArg.isNotNull(context, "context");
-        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
-                                                                              .getPathFactory()
-                                                                              .create("/dna:system");
-        this.sources = sources;
-        this.pathToConfigurationRoot = pathToConfigurationRoot;
-        this.configurationSourceName = configurationSourceName;
-        this.configurationWorkspaceName = configurationWorkspaceName;
-        this.context = context;
-    }
-
-    /**
      * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the supplied
      * configuration repository.
      * 
@@ -176,7 +127,7 @@ public class RepositoryService implements AdministeredService {
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
                                                                               .getPathFactory()
                                                                               .create("/dna:system");
-        this.sources = new RepositoryLibrary();
+        this.sources = new RepositoryLibrary(context);
         this.sources.addSource(configurationSource);
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSource.getName();

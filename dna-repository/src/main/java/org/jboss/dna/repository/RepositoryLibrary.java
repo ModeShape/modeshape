@@ -115,45 +115,13 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
 
     /**
      * Create a new manager instance.
-     */
-    public RepositoryLibrary() {
-        this(new ExecutionContext(), null);
-    }
-
-    /**
-     * Create a new manager instance.
-     * 
-     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
-     *        this manager; may be null if there is no delegate
-     */
-    public RepositoryLibrary( RepositoryConnectionFactory delegate ) {
-        this(new ExecutionContext(), delegate);
-    }
-
-    /**
-     * Create a new manager instance.
      * 
      * @param executionContext the execution context, which can be used used by sources to create other {@link ExecutionContext}
      *        instances with different JAAS security contexts
      * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
      */
-    public RepositoryLibrary( ExecutionContext executionContext ) {
-        this(executionContext, null);
-    }
-
-    /**
-     * Create a new manager instance.
-     * 
-     * @param executionContext the execution context, which can be used used by sources to create other {@link ExecutionContext}
-     *        instances with different JAAS security contexts
-     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
-     *        this manager; may be null if there is no delegate
-     * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
-     */
-    public RepositoryLibrary( final ExecutionContext executionContext,
-                              RepositoryConnectionFactory delegate ) {
+    public RepositoryLibrary( final ExecutionContext executionContext ) {
         CheckArg.isNotNull(executionContext, "executionContext");
-        this.delegate = delegate;
         this.executionContext = executionContext;
         final ObservationBus observationBus = this.observationBus;
         this.repositoryContext = new RepositoryContext() {
@@ -210,26 +178,6 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      */
     public ExecutionContext getExecutionContext() {
         return executionContext;
-    }
-
-    /**
-     * Get the delegate connection factory.
-     * 
-     * @return the connection factory to which this instance should delegate in the event that a source is not found in this
-     *         manager, or null if there is no delegate
-     */
-    public RepositoryConnectionFactory getDelegate() {
-        return delegate;
-    }
-
-    /**
-     * Set the delegate connection factory.
-     * 
-     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
-     *        this manager; may be null if there is no delegate
-     */
-    public void setDelegate( RepositoryConnectionFactory delegate ) {
-        this.delegate = delegate;
     }
 
     /**

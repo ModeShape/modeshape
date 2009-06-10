@@ -29,14 +29,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.stub;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -80,7 +76,7 @@ public class RepositoryServiceTest {
         RepositoryConnection configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
         root = context.getValueFactories().getPathFactory().createRootPath();
-        service = new RepositoryService(sources, configSourceName, configWorkspaceName, context);
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context);
     }
 
     @After
@@ -120,65 +116,6 @@ public class RepositoryServiceTest {
         assertThat(service.getAdministrator().getState(), is(ServiceAdministrator.State.TERMINATED));
     }
 
-    @Test( expected = FederationException.class )
-    public void shouldFailToStartUpIfConfigurationRepositorySourceIsNotFound() throws Exception {
-        stub(sources.createConnection(configSourceName)).toReturn(null);
-        service.getAdministrator().start();
-    }
-
-    @Test( expected = FederationException.class )
-    public void shouldFailToStartUpIfUnableToConnectToConfigurationRepository() throws Exception {
-        stub(sources.createConnection(configSourceName)).toThrow(new UnsupportedOperationException());
-        service.getAdministrator().start();
-    }
-
-    @Test
-    public void shouldStartUpUsingConfigurationRepositoryThatContainsSomeSources() throws Exception {
-        // Use a real source manager for this test ...
-        sources = new RepositoryLibrary(sources);
-        sources.addSource(configRepositorySource);
-        assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
-        assertThat(sources.getSources().size(), is(1));
-        service = new RepositoryService(sources, configSourceName, configWorkspaceName, root, context);
-
-        // Set up the configuration repository to contain 3 sources ...
-        final String className = InMemoryRepositorySource.class.getName();
-        configRepository.create("/dna:sources");
-        configRepository.create("/dna:sources/source A");
-        configRepository.set(DnaLexicon.CLASSNAME).on("/dna:sources/source A").to(className);
-        configRepository.set(DnaLexicon.CLASSPATH).on("/dna:sources/source A").to("");
-        configRepository.set("retryLimit").on("/dna:sources/source A").to(3);
-
-        configRepository.create("/dna:sources/source B");
-        configRepository.set(DnaLexicon.CLASSNAME).on("/dna:sources/source B").to(className);
-        configRepository.set(DnaLexicon.CLASSPATH).on("/dna:sources/source B").to("");
-
-        configRepository.create("/dna:sources/source C");
-        configRepository.set(DnaLexicon.CLASSNAME).on("/dna:sources/source C").to(className);
-        configRepository.set(DnaLexicon.CLASSPATH).on("/dna:sources/source C").to("");
-
-        // Now, start up the service ...
-        service.getAdministrator().start();
-
-        // and verify that the sources were added to the manager...
-        assertThat(sources.getSources().size(), is(4));
-        assertThat(sources.getSource("source A"), is(instanceOf(InMemoryRepositorySource.class)));
-        assertThat(sources.getSource("source B"), is(instanceOf(InMemoryRepositorySource.class)));
-        assertThat(sources.getSource("source C"), is(instanceOf(InMemoryRepositorySource.class)));
-
-        InMemoryRepositorySource sourceA = (InMemoryRepositorySource)sources.getSource("source A");
-        assertThat(sourceA.getName(), is("source A"));
-        assertThat(sourceA.getRetryLimit(), is(3));
-
-        InMemoryRepositorySource sourceB = (InMemoryRepositorySource)sources.getSource("source B");
-        assertThat(sourceB.getName(), is("source B"));
-        assertThat(sourceB.getRetryLimit(), is(InMemoryRepositorySource.DEFAULT_RETRY_LIMIT));
-
-        InMemoryRepositorySource sourceC = (InMemoryRepositorySource)sources.getSource("source C");
-        assertThat(sourceC.getName(), is("source C"));
-        assertThat(sourceC.getRetryLimit(), is(InMemoryRepositorySource.DEFAULT_RETRY_LIMIT));
-    }
-
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() throws Exception {
         // Set up the configuration repository to contain NO sources ...
@@ -186,9 +123,6 @@ public class RepositoryServiceTest {
 
         // Now, start up the service ...
         service.getAdministrator().start();
-
-        // and verify that the configuration source was obtained from the manager ...
-        verify(sources, times(2)).createConnection(configSourceName); // once for checking source, second for getting
 
         // and verify that the sources were never added to the manager...
         verifyNoMoreInteractions(sources);
@@ -254,9 +188,8 @@ public class RepositoryServiceTest {
 
     @Test
     public void shouldConfigureRepositorySourceWithSetterThatTakesArrayButWithSingleValues() {
-        RepositoryLibrary sources = new RepositoryLibrary(context);
-        sources.addSource(configRepositorySource);
-        service = new RepositoryService(sources, configSourceName, configWorkspaceName, context);
+        Path configPath = context.getValueFactories().getPathFactory().create("/dna:system");
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context);
 
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");

@@ -59,7 +59,7 @@ public class SequencingServiceTest {
 
     @Before
     public void beforeEach() {
-        sources = new RepositoryLibrary();
+        sources = new RepositoryLibrary(new ExecutionContext());
         InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName(REPOSITORY_SOURCE_NAME);
         sources.addSource(source);
