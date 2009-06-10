@@ -44,6 +44,7 @@ import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyType;
@@ -124,10 +125,11 @@ public class RepositoryService implements AdministeredService {
                               ExecutionContext context ) {
         CheckArg.isNotNull(configurationSource, "configurationSource");
         CheckArg.isNotNull(context, "context");
-        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
-                                                                              .getPathFactory()
-                                                                              .create("/dna:system");
-        this.sources = new RepositoryLibrary(context);
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        if (pathToConfigurationRoot == null) pathToConfigurationRoot = pathFactory.create("/dna:system");
+        Path sourcesPath = pathFactory.create(pathToConfigurationRoot, DnaLexicon.SOURCES);
+
+        this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context);
         this.sources.addSource(configurationSource);
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSource.getName();

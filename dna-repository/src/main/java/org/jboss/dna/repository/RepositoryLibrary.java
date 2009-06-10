@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryConnectionPool;
@@ -46,6 +47,7 @@ import org.jboss.dna.graph.observe.ChangeObservers;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observable;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
 import org.jboss.dna.repository.service.ServiceAdministrator;
 
@@ -110,49 +112,56 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
     private final ExecutionContext executionContext;
-    private final RepositoryContext repositoryContext;
     private final ObservationBus observationBus = new InMemoryObservationBus();
+    private final RepositorySource configurationSource;
+    private final String configurationWorkspaceName;
+    private final Path pathToConfigurationRoot;
 
     /**
      * Create a new manager instance.
      * 
-     * @param executionContext the execution context, which can be used used by sources to create other {@link ExecutionContext}
-     *        instances with different JAAS security contexts
+     * @param configurationSource the {@link RepositorySource} that is the configuration repository
+     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
+     *        repository, or null if the default workspace of the source should be used (if there is one)
+     * @param pathToSourcesConfigurationRoot the path of the node in the configuration source repository that should be treated by
+     *        this service as the root of the service's configuration; if null, then "/dna:system" is used
+     * @param context the execution context in which this service should run
      * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
      */
-    public RepositoryLibrary( final ExecutionContext executionContext ) {
-        CheckArg.isNotNull(executionContext, "executionContext");
-        this.executionContext = executionContext;
-        final ObservationBus observationBus = this.observationBus;
-        this.repositoryContext = new RepositoryContext() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
-             */
-            public ExecutionContext getExecutionContext() {
-                return executionContext;
-            }
+    public RepositoryLibrary( RepositorySource configurationSource,
+                              String configurationWorkspaceName,
+                              Path pathToSourcesConfigurationRoot,
+                              final ExecutionContext context ) {
+        CheckArg.isNotNull(configurationSource, "configurationSource");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(pathToSourcesConfigurationRoot, "pathToSourcesConfigurationRoot");
+        this.executionContext = context;
+        this.configurationSource = configurationSource;
+        this.configurationWorkspaceName = configurationWorkspaceName;
+        this.pathToConfigurationRoot = pathToSourcesConfigurationRoot;
+    }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
-             */
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return RepositoryLibrary.this;
-            }
+    /**
+     * Get the path to the top-level of the configuration root.
+     * 
+     * @return pathToConfigurationRoot
+     */
+    protected Path getPathToConfigurationRoot() {
+        return pathToConfigurationRoot;
+    }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
-             */
-            public Observer getObserver() {
-                return observationBus.hasObservers() ? observationBus : null;
-            }
+    /**
+     * @return configurationSource
+     */
+    protected RepositorySource getConfigurationSource() {
+        return configurationSource;
+    }
 
-        };
+    /**
+     * @return configurationWorkspaceName
+     */
+    protected String getConfigurationWorkspaceName() {
+        return configurationWorkspaceName;
     }
 
     /**
@@ -350,9 +359,68 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         if (source == null) return false;
         try {
             this.sourcesLock.writeLock().lock();
+            final String sourceName = source.getName();
             for (RepositoryConnectionPool existingPool : this.pools) {
-                if (existingPool.getRepositorySource().getName().equals(source.getName())) return false;
+                if (existingPool.getRepositorySource().getName().equals(sourceName)) return false;
             }
+            // Create a repository context for this source ...
+            final ObservationBus observationBus = this.observationBus;
+            RepositoryContext repositoryContext = new RepositoryContext() {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
+                 */
+                public ExecutionContext getExecutionContext() {
+                    return getExecutionContext();
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
+                 */
+                public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                    return RepositoryLibrary.this;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
+                 */
+                public Observer getObserver() {
+                    return observationBus.hasObservers() ? observationBus : null;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration()
+                 */
+                public Graph getConfiguration() {
+                    Graph result = null;
+                    RepositorySource configSource = getConfigurationSource();
+                    if (configSource != null) {
+                        result = Graph.create(configSource, getExecutionContext());
+                        String workspaceName = getConfigurationWorkspaceName();
+                        if (workspaceName != null) {
+                            result.useWorkspace(workspaceName);
+                        }
+                    }
+                    return result;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getPathInConfiguration()
+                 */
+                public Path getPathInConfiguration() {
+                    Path configPath = getPathToConfigurationRoot();
+                    return getExecutionContext().getValueFactories().getPathFactory().create(configPath, sourceName);
+                }
+            };
             source.initialize(repositoryContext);
             RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
             this.pools.add(pool);

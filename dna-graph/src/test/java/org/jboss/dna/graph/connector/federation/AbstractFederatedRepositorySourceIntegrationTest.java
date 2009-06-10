@@ -43,6 +43,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.connector.test.AbstractConnectorTest;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -72,10 +73,9 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
     protected ExecutionContext context;
     private Map<String, InMemoryRepositorySource> sources;
     protected Graph federated;
+    private RepositoryContext repositoryContext;
     @Mock
     private RepositoryConnectionFactory connectionFactory;
-    @Mock
-    private RepositoryContext repositoryContext;
 
     /**
      * @throws java.lang.Exception
@@ -88,16 +88,6 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         configurationWorkspaceName = "configSpace";
         repositoryName = "Test Repository";
 
-        // Set up the source ...
-        source = new FederatedRepositorySource();
-        source.setName(repositoryName);
-        sourceName = "federated source";
-        source.setName(sourceName);
-        source.setConfigurationSourceName(configurationSourceName);
-        source.setConfigurationWorkspaceName(configurationWorkspaceName);
-        source.setConfigurationPath("/a/b/Test Repository");
-        source.initialize(repositoryContext);
-
         // Set up the configuration repository ...
         configRepositorySource = new InMemoryRepositorySource();
         configRepositorySource.setName("Configuration Repository");
@@ -108,13 +98,44 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         config.create("/a/b/Test Repository");
         config.create("/a/b/Test Repository/dna:workspaces");
 
+        repositoryContext = new RepositoryContext() {
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return connectionFactory;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Graph getConfiguration() {
+                Graph result = Graph.create(configRepositorySource, context);
+                result.useWorkspace(configurationWorkspaceName);
+                return result;
+            }
+
+            public Path getPathInConfiguration() {
+                return context.getValueFactories().getPathFactory().create("/a/b/Test Repository");
+            }
+        };
+
+        // Set up the source ...
+        source = new FederatedRepositorySource();
+        source.setName(repositoryName);
+        sourceName = "federated source";
+        source.setName(sourceName);
+        source.initialize(repositoryContext);
+
         // Set up the map of sources ...
         sources = new HashMap<String, InMemoryRepositorySource>();
 
         // Stub the RepositoryContext and RepositoryConnectionFactory instances ...
         configRepositoryConnection = configRepositorySource.getConnection();
-        stub(repositoryContext.getExecutionContext()).toReturn(context);
-        stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
         stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
         stub(connectionFactory.createConnection(sourceName)).toAnswer(new Answer<RepositoryConnection>() {
             public RepositoryConnection answer( InvocationOnMock invocation ) throws Throwable {
@@ -151,16 +172,19 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         CheckArg.isNotNull(sourceName, "sourceName");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotEmpty(projectionRules, "projectionRules");
-        assertThat(source.getConfigurationPath().endsWith("/"), is(true));
-        String wsPath = source.getConfigurationPath() + "dna:workspaces/" + federatedWorkspace;
+        String configPath = repositoryContext.getPathInConfiguration().getString(context.getNamespaceRegistry());
+        assertThat(configPath.endsWith("/"), is(false));
+        String wsPath = configPath + "/dna:workspaces/" + federatedWorkspace;
         String projectionPath = wsPath + "/dna:projections/" + projectionName;
         Graph config = Graph.create(configRepositorySource, context);
         config.useWorkspace(configurationWorkspaceName);
         config.createIfMissing(wsPath);
         config.createIfMissing(wsPath + "/dna:projections");
-        config.createAt(projectionPath).with(FederatedLexicon.PROJECTION_RULES, (Object[])projectionRules).with(FederatedLexicon.SOURCE_NAME,
-                                                                                                                sourceName).with(FederatedLexicon.WORKSPACE_NAME,
-                                                                                                                                 workspaceName).and();
+        config.createAt(projectionPath)
+              .with(FederatedLexicon.PROJECTION_RULES, (Object[])projectionRules)
+              .with(FederatedLexicon.SOURCE_NAME, sourceName)
+              .with(FederatedLexicon.WORKSPACE_NAME, workspaceName)
+              .and();
         // Make sure the source and workspace exist ...
         graphFor(sourceName, workspaceName);
     }
@@ -258,8 +282,10 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         Path fedPath = fedNode.getLocation().getPath();
         Path sourcePath = sourceNode.getLocation().getPath();
         if (!fedPath.isRoot() && !sourcePath.isRoot()) {
-            assertThat(fedNode.getLocation().getPath().getLastSegment().getName(),
-                       is(sourceNode.getLocation().getPath().getLastSegment().getName()));
+            assertThat(fedNode.getLocation().getPath().getLastSegment().getName(), is(sourceNode.getLocation()
+                                                                                                .getPath()
+                                                                                                .getLastSegment()
+                                                                                                .getName()));
         }
         // The children should match ...
         List<Path.Segment> fedChildren = new ArrayList<Path.Segment>();

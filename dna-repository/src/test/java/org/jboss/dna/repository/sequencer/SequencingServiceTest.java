@@ -36,6 +36,7 @@ import javax.jcr.observation.Event;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.service.ServiceAdministrator;
 import org.junit.After;
@@ -59,7 +60,12 @@ public class SequencingServiceTest {
 
     @Before
     public void beforeEach() {
-        sources = new RepositoryLibrary(new ExecutionContext());
+        ExecutionContext context = new ExecutionContext();
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setDefaultWorkspaceName("default");
+        Path configPath = context.getValueFactories().getPathFactory().create("/");
+
+        sources = new RepositoryLibrary(configSource, "default", configPath, context);
         InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName(REPOSITORY_SOURCE_NAME);
         sources.addSource(source);

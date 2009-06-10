@@ -24,7 +24,9 @@
 package org.jboss.dna.graph.connector;
 
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * The context for a repository. This interface need not be implemented by a {@link RepositorySource}, as it is normally provided
@@ -54,4 +56,19 @@ public interface RepositoryContext {
      * @return the observer, or null if the are no listeners and publishing is not required/requested
      */
     Observer getObserver();
+
+    /**
+     * Get a graph to the configuration content, already configured to the correct workspace.
+     * 
+     * @return the configuration graph, or null if there is no configuration
+     */
+    Graph getConfiguration();
+
+    /**
+     * Get the path within the {@link #getConfiguration() configuration} where the source is represented.
+     * 
+     * @return the path to the {@link RepositorySource}'s configuration element, or null if the source is not defined within the
+     *         configuration
+     */
+    Path getPathInConfiguration();
 }

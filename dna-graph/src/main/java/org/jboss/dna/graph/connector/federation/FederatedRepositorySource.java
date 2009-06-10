@@ -74,24 +74,13 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    /**
-     * The default path to the node defining the configuration for a source.
-     */
-    public static final String DEFAULT_CONFIGURATION_PATH = "/";
-
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String RETRY_LIMIT = "retryLimit";
-    protected static final String CONFIGURATION_SOURCE_NAME = "configurationSourceName";
-    protected static final String CONFIGURATION_PATH = "configurationPath";
-    protected static final String CONFIGURATION_WORKSPACE_NAME = "configurationWorkspaceName";
 
     private static final long serialVersionUID = 1L;
 
     private volatile String name;
     private volatile int retryLimit;
-    private volatile String configurationSourceName;
-    private volatile String configurationWorkspaceName;
-    private volatile String configurationPath = DEFAULT_CONFIGURATION_PATH;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, false, true);
     private volatile transient FederatedRepository configuration;
     private volatile transient RepositoryContext context;
@@ -136,114 +125,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     public synchronized void setRetryLimit( int limit ) {
         retryLimit = limit < 0 ? 0 : limit;
-        changeConfiguration();
-    }
-
-    /**
-     * Get the name of the {@link RepositorySource} that should be used to create the {@link FederatedRepository federated
-     * repository configuration} as the configuration repository.
-     * <p>
-     * This is a required property.
-     * </p>
-     * 
-     * @return the name of the {@link RepositorySource} instance that should be used for the configuration
-     * @see #setConfigurationSourceName(String)
-     * @see #getConfigurationWorkspaceName()
-     * @see #getConfigurationPath()
-     */
-    public String getConfigurationSourceName() {
-        return configurationSourceName;
-    }
-
-    /**
-     * Set the name of the {@link RepositorySource} that should be used to create the {@link FederatedRepository federated
-     * repository configuration} as the configuration repository. The instance will be retrieved from the
-     * {@link RepositoryConnectionFactory} instance inside the {@link RepositoryContext#getRepositoryConnectionFactory()
-     * repository context} supplied during {@link RepositorySource#initialize(RepositoryContext) initialization}.
-     * <p>
-     * This is a required property.
-     * </p>
-     * 
-     * @param sourceName the name of the {@link RepositorySource} instance that should be used for the configuration, or null if
-     *        the federated repository instance is to be found in JNDI
-     * @see #getConfigurationSourceName()
-     * @see #setConfigurationPath(String)
-     * @see #setConfigurationWorkspaceName(String)
-     */
-    public synchronized void setConfigurationSourceName( String sourceName ) {
-        if (this.configurationSourceName == sourceName || this.configurationSourceName != null
-            && this.configurationSourceName.equals(sourceName)) return; // unchanged
-        this.configurationSourceName = sourceName;
-        changeConfiguration();
-    }
-
-    /**
-     * Get the name of the workspace in the {@link #getConfigurationSourceName() source} containing the configuration content for
-     * this source. If this workspace name is null, the default workspace as defined by that source will be used.
-     * 
-     * @return the name of the configuration workspace, or null if the default workspace for the
-     *         {@link #getConfigurationSourceName() configuration source} should be used
-     * @see #getConfigurationSourceName()
-     * @see #setConfigurationWorkspaceName(String)
-     * @see #getConfigurationPath()
-     */
-    public String getConfigurationWorkspaceName() {
-        return configurationWorkspaceName;
-    }
-
-    /**
-     * Set the name of the workspace in the {@link #getConfigurationSourceName() source} containing the configuration content for
-     * this source. If this workspace name is null, the default workspace as defined by that source will be used.
-     * 
-     * @param workspaceName the name of the configuration workspace, or null if the default workspace for the
-     *        {@link #getConfigurationSourceName() configuration source} should be used
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationPath(String)
-     * @see #getConfigurationWorkspaceName()
-     */
-    public synchronized void setConfigurationWorkspaceName( String workspaceName ) {
-        if (this.configurationWorkspaceName == workspaceName || this.configurationWorkspaceName != null
-            && this.configurationWorkspaceName.equals(workspaceName)) return; // unchanged
-        this.configurationWorkspaceName = workspaceName;
-        changeConfiguration();
-    }
-
-    /**
-     * Get the path in the {@link #getConfigurationWorkspaceName() workspace} of the {@link #getConfigurationSourceName()
-     * configuration source} where this source can find the content defining its configuration.
-     * <p>
-     * This is a required property.
-     * </p>
-     * 
-     * @return the string array of projection rules, or null if the projection rules haven't yet been set or if the federated
-     *         repository instance is to be found in JNDI
-     * @see #getConfigurationSourceName()
-     * @see #getConfigurationWorkspaceName()
-     * @see #setConfigurationPath(String)
-     */
-    public String getConfigurationPath() {
-        return configurationPath;
-    }
-
-    /**
-     * Set the path in the {@link #getConfigurationWorkspaceName() workspace} of the {@link #getConfigurationSourceName()
-     * configuration source} where this source can find the content defining its configuration.
-     * <p>
-     * This is a required property.
-     * </p>
-     * 
-     * @param pathInSourceToConfigurationRoot the path within the configuration source to the node that should be the root of the
-     *        configuration information, or null if the {@link #DEFAULT_CONFIGURATION_PATH default path} should be used
-     * @see #getConfigurationPath()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationWorkspaceName(String)
-     */
-    public void setConfigurationPath( String pathInSourceToConfigurationRoot ) {
-        if (this.configurationPath == pathInSourceToConfigurationRoot || this.configurationPath != null
-            && this.configurationPath.equals(pathInSourceToConfigurationRoot)) return;
-        String path = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_PATH;
-        // Ensure one leading slash and one trailing slashes ...
-        this.configurationPath = path = ("/" + path).replaceAll("^/+", "/").replaceAll("/+$", "") + "/";
         changeConfiguration();
     }
 
@@ -296,16 +177,15 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                         I18n msg = GraphI18n.federatedRepositorySourceMustBeInitialized;
                         throw new RepositorySourceException(getName(), msg.text("name", name));
                     }
-                    String configSource = getConfigurationSourceName();
-                    String configWorkspace = getConfigurationWorkspaceName();
-                    String configPath = getConfigurationPath();
-                    if (configSource == null) {
+
+                    // Make sure there is a configuration ...
+                    if (repositoryContext.getConfiguration() == null) {
                         I18n msg = GraphI18n.propertyIsRequiredForFederatedRepositorySource;
-                        throw new RepositorySourceException(getName(), msg.text("configuration source name", name));
+                        throw new RepositorySourceException(getName(), msg.text("configuration", name));
                     }
 
                     // Load the configuration ...
-                    this.configuration = loadRepository(name, repositoryContext, configSource, configWorkspace, configPath);
+                    this.configuration = loadRepository(name, repositoryContext);
                 }
                 config = this.configuration;
             }
@@ -326,9 +206,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
         ref.add(new StringRefAddr(SOURCE_NAME, getName()));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
-        ref.add(new StringRefAddr(CONFIGURATION_SOURCE_NAME, getConfigurationSourceName()));
-        ref.add(new StringRefAddr(CONFIGURATION_WORKSPACE_NAME, getConfigurationWorkspaceName()));
-        ref.add(new StringRefAddr(CONFIGURATION_PATH, getConfigurationPath()));
         return ref;
     }
 
@@ -356,16 +233,10 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             }
             String sourceName = values.get(SOURCE_NAME);
             String retryLimit = values.get(RETRY_LIMIT);
-            String configSourceName = values.get(CONFIGURATION_SOURCE_NAME);
-            String configSourceWorkspace = values.get(CONFIGURATION_WORKSPACE_NAME);
-            String configSourcePath = values.get(CONFIGURATION_PATH);
 
             // Create the source instance ...
             FederatedRepositorySource source = new FederatedRepositorySource();
             if (sourceName != null) source.setName(sourceName);
-            if (configSourceName != null) source.setConfigurationSourceName(configSourceName);
-            if (configSourceWorkspace != null) source.setConfigurationWorkspaceName(configSourceWorkspace);
-            if (configSourcePath != null) source.setConfigurationPath(configSourcePath);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             return source;
         }
@@ -408,23 +279,17 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Utility to load the current configuration for this source from the {@link #getConfigurationSourceName() configuration
-     * repository}. This method may only be called after the source is {@link #initialize(RepositoryContext) initialized}.
+     * Utility to load the current configuration for this source from the {@link RepositoryContext#getConfiguration()
+     * configuration repository}. This method may only be called after the source is {@link #initialize(RepositoryContext)
+     * initialized}.
      * 
      * @param name the name of the source; may not be null
      * @param repositoryContext the repository context; may not be null
-     * @param configSource the name of the configuration source; may not be null
-     * @param configWorkspace the name of the workspace in the configuration source, or null if the configuration source's default
-     *        workspace should be used
-     * @param configPath the path to the node in the configuration workspace that defines the source; may not be null
      * @return the configuration; never null
      * @throws RepositorySourceException if there is a problem with the configuration
      */
     protected FederatedRepository loadRepository( String name,
-                                                  RepositoryContext repositoryContext,
-                                                  String configSource,
-                                                  String configWorkspace,
-                                                  String configPath ) throws RepositorySourceException {
+                                                  RepositoryContext repositoryContext ) throws RepositorySourceException {
         // All the required properties have been set ...
         ExecutionContext executionContext = repositoryContext.getExecutionContext();
         RepositoryConnectionFactory connectionFactory = repositoryContext.getRepositoryConnectionFactory();
@@ -434,14 +299,12 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         ProjectionParser projectionParser = ProjectionParser.getInstance();
         NamespaceRegistry registry = executionContext.getNamespaceRegistry();
 
-        try {
-            Graph config = Graph.create(configSource, connectionFactory, executionContext);
-            if (configWorkspace != null) {
-                configWorkspace = config.useWorkspace(configWorkspace).getName();
-            } else {
-                configWorkspace = config.getCurrentWorkspaceName();
-            }
+        Graph config = repositoryContext.getConfiguration();
+        Path pathOfSource = repositoryContext.getPathInConfiguration();
+        assert config != null;
+        assert pathOfSource != null;
 
+        try {
             // Read the configuration for the federated repository:
             // Level 1: the node representing the federated repository
             // Level 2: the "dna:workspaces" node
@@ -449,7 +312,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             // Level 4: the "dna:projections" nodes
             // Level 5: a node below "dna:projections" for each projection, with properties for the source name,
             // workspace name, cache expiration time, and projection rules
-            Subgraph repositories = config.getSubgraphOfDepth(5).at(configPath);
+            Subgraph repositories = config.getSubgraphOfDepth(5).at(pathOfSource);
 
             // Get the name of the default workspace ...
             String defaultWorkspaceName = null;
@@ -473,8 +336,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                 I18n msg = GraphI18n.requiredNodeDoesNotExistRelativeToNode;
                 throw new RepositorySourceException(msg.text(DnaLexicon.WORKSPACES.getString(registry),
                                                              repositories.getLocation().getPath().getString(registry),
-                                                             configWorkspace,
-                                                             configSource));
+                                                             config.getCurrentWorkspaceName(),
+                                                             config.getSourceName()));
             }
 
             // Level 3: The workspace nodes ...
@@ -502,8 +365,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                                                                             workspaceNode.getLocation()
                                                                                          .getPath()
                                                                                          .getString(registry),
-                                                                            configWorkspace,
-                                                                            configSource));
+                                                                            config.getCurrentWorkspaceName(),
+                                                                            config.getSourceName()));
                 }
 
                 // Level 5: the projection nodes ...
@@ -531,6 +394,9 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             throw t; // rethrow
         } catch (Throwable t) {
             I18n msg = GraphI18n.errorReadingConfigurationForFederatedRepositorySource;
+            String configSource = config.getSourceName();
+            String configWorkspace = config.getCurrentWorkspaceName();
+            String configPath = pathOfSource.getString(registry);
             throw new RepositorySourceException(getName(), msg.text(name, configSource, configWorkspace, configPath), t);
         }
     }

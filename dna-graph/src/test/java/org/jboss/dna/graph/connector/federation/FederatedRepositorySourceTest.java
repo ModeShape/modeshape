@@ -46,6 +46,8 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -68,7 +70,6 @@ public class FederatedRepositorySourceTest {
     private RepositoryConnection connection;
     @Mock
     private RepositoryConnectionFactory connectionFactory;
-    @Mock
     private RepositoryContext repositoryContext;
 
     /**
@@ -80,16 +81,42 @@ public class FederatedRepositorySourceTest {
         context = new ExecutionContext();
         configurationSourceName = "configuration";
         repositoryName = "Test Repository";
+        configRepositorySource = new InMemoryRepositorySource();
+        configRepositorySource.setName("Configuration Repository");
+
+        repositoryContext = new RepositoryContext() {
+            @SuppressWarnings( "synthetic-access" )
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return connectionFactory;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Graph getConfiguration() {
+                Graph result = Graph.create(configRepositorySource, context);
+                result.useWorkspace("configSpace");
+                return result;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Path getPathInConfiguration() {
+                return context.getValueFactories().getPathFactory().create("/a/b/Test Repository");
+            }
+        };
+
         source = new FederatedRepositorySource();
         source.setName(repositoryName);
         sourceName = "federated source";
         source.setName(sourceName);
-        source.setConfigurationSourceName(configurationSourceName);
-        source.setConfigurationWorkspaceName("configSpace");
-        source.setConfigurationPath("/a/b/Test Repository");
         source.initialize(repositoryContext);
-        configRepositorySource = new InMemoryRepositorySource();
-        configRepositorySource.setName("Configuration Repository");
 
         Graph configRepository = Graph.create(configRepositorySource, context);
         configRepository.createWorkspace().named("configSpace");
@@ -99,24 +126,26 @@ public class FederatedRepositorySourceTest {
         batch.create("/a/b/Test Repository").with(FederatedLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
         batch.create("/a/b/Test Repository/dna:workspaces").and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:cache").with(FederatedLexicon.PROJECTION_RULES, "/ => /").with(FederatedLexicon.SOURCE_NAME,
-                                                                                                                                      "cache source").with(FederatedLexicon.WORKSPACE_NAME,
-                                                                                                                                                           "cacheSpace").with(FederatedLexicon.TIME_TO_EXPIRE,
-                                                                                                                                                                              100000).and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:cache")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /")
+             .with(FederatedLexicon.SOURCE_NAME, "cache source")
+             .with(FederatedLexicon.WORKSPACE_NAME, "cacheSpace")
+             .with(FederatedLexicon.TIME_TO_EXPIRE, 100000)
+             .and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection1").with(FederatedLexicon.PROJECTION_RULES,
-                                                                                                      "/ => /s1").with(FederatedLexicon.SOURCE_NAME,
-                                                                                                                       "source 1").with(FederatedLexicon.WORKSPACE_NAME,
-                                                                                                                                        "s1 workspace").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection2").with(FederatedLexicon.PROJECTION_RULES,
-                                                                                                      "/ => /s2").with(FederatedLexicon.SOURCE_NAME,
-                                                                                                                       "source 2").with(FederatedLexicon.WORKSPACE_NAME,
-                                                                                                                                        "s2 worskspace").and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection1")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
+             .with(FederatedLexicon.SOURCE_NAME, "source 1")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection2")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s2")
+             .with(FederatedLexicon.SOURCE_NAME, "source 2")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s2 worskspace")
+             .and();
         batch.execute();
 
         configRepositoryConnection = configRepositorySource.getConnection();
-        stub(repositoryContext.getExecutionContext()).toReturn(context);
-        stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
         stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
     }
 
@@ -199,8 +228,6 @@ public class FederatedRepositorySourceTest {
         int retryLimit = 100;
         source.setRetryLimit(retryLimit);
         source.setName("Some source");
-        source.setConfigurationSourceName("config source");
-        source.setConfigurationPath("/a/b/c");
 
         Reference ref = source.getReference();
         assertThat(ref.getClassName(), is(FederatedRepositorySource.class.getName()));
@@ -215,11 +242,6 @@ public class FederatedRepositorySourceTest {
 
         assertThat((String)refAttributes.remove(FederatedRepositorySource.SOURCE_NAME), is(source.getName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.RETRY_LIMIT), is(Integer.toString(retryLimit)));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_WORKSPACE_NAME),
-                   is(source.getConfigurationWorkspaceName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME),
-                   is(source.getConfigurationSourceName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_PATH), is("/a/b/c/"));
         assertThat(refAttributes.isEmpty(), is(true));
 
         // Recreate the object, use a newly constructed source ...
@@ -232,9 +254,6 @@ public class FederatedRepositorySourceTest {
 
         assertThat(recoveredSource.getName(), is(source.getName()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
-        assertThat(recoveredSource.getConfigurationSourceName(), is(source.getConfigurationSourceName()));
-        assertThat(recoveredSource.getConfigurationWorkspaceName(), is(source.getConfigurationWorkspaceName()));
-        assertThat(recoveredSource.getConfigurationPath(), is(source.getConfigurationPath()));
 
         assertThat(recoveredSource.equals(source), is(true));
         assertThat(source.equals(recoveredSource), is(true));

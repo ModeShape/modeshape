@@ -83,6 +83,7 @@ public abstract class AbstractConnectorTest {
     protected static ExecutionContext context;
     protected static RepositorySource source;
     protected static Graph graph;
+    protected static RepositorySource configSource;
     private static RepositoryConnectionFactory connectionFactory;
     private static List<RepositoryConnection> openConnections;
     private static boolean running;
@@ -95,6 +96,9 @@ public abstract class AbstractConnectorTest {
 
             // Set up the execution context ...
             context = setUpExecutionContext(new ExecutionContext());
+
+            // Set up the configuration source ...
+            configSource = setUpConfigurationSource();
 
             // Set up the source ...
             source = setUpSource();
@@ -127,6 +131,19 @@ public abstract class AbstractConnectorTest {
 
                 public Observer getObserver() {
                     return null; // no observers here
+                }
+
+                public Graph getConfiguration() {
+                    Graph result = null;
+                    if (configSource != null) {
+                        result = Graph.create(configSource, getExecutionContext());
+                        // use the default workspace
+                    }
+                    return result;
+                }
+
+                public Path getPathInConfiguration() {
+                    return getExecutionContext().getValueFactories().getPathFactory().create(source.getName());
                 }
             });
 
@@ -197,6 +214,17 @@ public abstract class AbstractConnectorTest {
      */
     protected ExecutionContext setUpExecutionContext( ExecutionContext context ) {
         return context;
+    }
+
+    /**
+     * Set up a {@link RepositorySource} that contains the configuration for the source being tested (and any other sources, if
+     * needed). The source's default workspace will be used. This implementation returns null by default.
+     * 
+     * @return the configuration source, or null if no configuration is needed
+     * @throws Exception if there is a problem setting up the source
+     */
+    protected RepositorySource setUpConfigurationSource() throws Exception {
+        return null;
     }
 
     /**
