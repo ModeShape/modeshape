@@ -401,31 +401,21 @@
 			<title>Configuration</title>
 			<para>
 				The federated repository uses other &RepositorySource;s that are to be federated and a &RepositorySource; that is to be used as the
-				cache of the unified contents.  These are configured in another &RepositorySource; that is treated as a configuration repository.
-				The &FederatedRepositorySource; class uses JavaBean properties to define the name of the configuration repository and 
-				the path to the "<code>dna:federation</code>" node in that configuration repository containing the information about the 
-				cache and federated sources.  This graph structure that is expected at this location is as follows:
+				cache of the unified contents.  These are configured in another &RepositorySource; that is treated as a configuration repository,
+				which should contain information about the workspaces and how other sources are projected:
 			</para>
 			<programlisting role='xml'><![CDATA[<!-- Define the federation configuration. -->
-<dna:federatedRepository xmlns:dna="http://www.jboss.org/dna" 
-	                   xmlns:jcr="http://www.jcp.org/jcr/1.0"
-                     dna:timeToCache="100000" >
-  <dna:workspaces>
-    <dna:workspace jcr:name="default">
-	    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
-      <dna:cache dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/a => /" />
-
-      <!-- Define how the content in the two sources maps to the federated/unified repository.
-           This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
-           'Configuration' content (which is defined by this file) will appear under '/'. -->
-      <dna:projections>
-        <dna:projection jcr:name="Cars" dna:projectionRules="/Vehicles => /" />
-        <dna:projection jcr:name="Aircraft" dna:projectionRules="/Vehicles => /" />
-        <dna:projection jcr:name="Configuration" dna:projectionRules="/ => /" />
-      </dna:projections>
-    </dna:workspace>
-	</dna:workspaces>
-</dna:federatedRepository>
+<dna:workspaces>
+  <dna:workspace jcr:name="default">
+    <!-- Define how the content in the two sources maps to the federated/unified repository.
+         This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
+         'Configuration' content (which is defined by this file) will appear under '/'. -->
+    <dna:projections>
+      <dna:projection jcr:name="Cars" dna:projectionRules="/Vehicles => /" />
+      <dna:projection jcr:name="Aircraft" dna:projectionRules="/Vehicles => /" />
+    </dna:projections>
+  </dna:workspace>
+</dna:workspaces>
 ]]></programlisting>
 			<note>
 				<para>
@@ -440,7 +430,8 @@
 		<sect1>
 			<title>Repository Source properties</title>
 			<para>
-				The &FederatedRepositorySource; class provides a number of JavaBean properties that control its behavior:
+				While the majority of the configuration is defined using the configuration source (as discussed above), the &FederatedRepositorySource; 
+				class have have a few JavaBean properties:
 			</para>
 			<table frame='all'>
 				<title>&FederatedRepositorySource; properties</title>
@@ -457,23 +448,6 @@
 						<row>
 							<entry>name</entry>
 							<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-						</row>
-						<row>
-							<entry>configurationSourceName</entry>
-							<entry>The name of the &RepositorySource; that should be used as the configuration repository, and in which is defined
-								how this federated repository is to be set up and configured.
-								This name is supplied to the &RepositoryConnectionFactory; that is provided to this instance when added to the
-								&RepositoryLibrary;.</entry>
-						</row>
-						<row>
-							<entry>configurationWorkspaceName</entry>
-							<entry>The name of the workspace in the configuration &RepositorySource; with the content defining
-								how this federated repository is to be set up and configured.</entry>
-						</row>
-						<row>
-							<entry>configurationSourcePath</entry>
-							<entry>The path to the node in the configuration repository below which a "dna:federation" node exists with the 
-								graph structure describing how this federated repository is to be configured.</entry>
 						</row>
 						<row>
 							<entry>retryLimit</entry>
