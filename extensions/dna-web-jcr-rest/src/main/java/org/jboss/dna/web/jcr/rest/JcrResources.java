@@ -25,10 +25,13 @@ package org.jboss.dna.web.jcr.rest;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -38,6 +41,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -122,17 +126,17 @@ public class JcrResources {
      * @return an active session with the given workspace in the named repository
      * @throws RepositoryException if any other error occurs
      */
-    private Session getSession( HttpServletRequest request, 
+    private Session getSession( HttpServletRequest request,
                                 String rawRepositoryName,
                                 String rawWorkspaceName ) throws NotFoundException, RepositoryException {
         assert request != null;
-        assert request.getUserPrincipal() != null: "Request must be authorized";
+        assert request.getUserPrincipal() != null : "Request must be authorized";
 
         // Sanity check
         if (request.getUserPrincipal() == null) {
             throw new UnauthorizedException("Client is not authorized");
         }
-        
+
         return RepositoryFactory.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
     }
 
@@ -177,7 +181,7 @@ public class JcrResources {
     public Map<String, WorkspaceEntry> getWorkspaces( @Context HttpServletRequest request,
                                                       @PathParam( "repositoryName" ) String rawRepositoryName )
         throws RepositoryException, IOException {
-        
+
         assert request != null;
         assert rawRepositoryName != null;
 
@@ -185,7 +189,7 @@ public class JcrResources {
 
         Session session = getSession(request, rawRepositoryName, null);
         rawRepositoryName = URL_ENCODER.encode(rawRepositoryName);
-        
+
         for (String name : session.getWorkspace().getAccessibleWorkspaceNames()) {
             if (name.trim().length() == 0) {
                 name = EMPTY_WORKSPACE_NAME;
@@ -221,7 +225,7 @@ public class JcrResources {
     @GET
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
     @Produces( "application/json" )
-    public String getItem( @Context HttpServletRequest request, 
+    public String getItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
@@ -464,18 +468,46 @@ public class JcrResources {
     private void setPropertyOnNode( Node node,
                                     String propName,
                                     Object value ) throws RepositoryException, JSONException {
+        String[] values;
         if (value instanceof JSONArray) {
             JSONArray jsonValues = (JSONArray)value;
-            String[] values = new String[jsonValues.length()];
+            values = new String[jsonValues.length()];
 
             for (int i = 0; i < values.length; i++) {
                 values[i] = jsonValues.getString(i);
             }
-            node.setProperty(propName, values);
         } else {
-            node.setProperty(propName, (String)value);
+            values = new String[] { (String)value };
         }
 
+        if (propName.equals(JcrResources.MIXIN_TYPES_PROPERTY)) {
+            Set<String> toBeMixins = new HashSet<String>(Arrays.asList(values));
+            Set<String> asIsMixins = new HashSet<String>();
+            
+            for (NodeType nodeType : node.getMixinNodeTypes()) {
+                asIsMixins.add(nodeType.getName());
+            }
+            
+            Set<String> mixinsToAdd = new HashSet<String>(toBeMixins);
+            mixinsToAdd.removeAll(asIsMixins);
+            asIsMixins.removeAll(toBeMixins);
+            
+            for (String nodeType : mixinsToAdd) {
+                node.addMixin(nodeType);
+            }
+
+            for (String nodeType : asIsMixins) {
+                node.removeMixin(nodeType);
+            }
+        } else {
+            if (values.length == 1) {
+                node.setProperty(propName, values[0]);
+                
+            }
+            else {
+                node.setProperty(propName, values);
+            }
+        }
     }
 
     /**
@@ -581,7 +613,7 @@ public class JcrResources {
 
             setPropertyOnNode(node, property.getName(), properties.get("value"));
         }
-
+        node.save();
         return jsonFor(node, 0).toString();
     }
 

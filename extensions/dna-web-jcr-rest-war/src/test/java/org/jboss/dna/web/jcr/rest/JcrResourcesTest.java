@@ -825,4 +825,74 @@ public class JcrResourcesTest {
         connection.disconnect();
     
     }
+
+    @Test
+    public void shouldBeAbleToAddAndRemoveMixinTypes() throws Exception {
+
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeWithNoMixins");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
+        connection.getOutputStream().write(payload.getBytes());
+        
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
+        connection.disconnect();
+
+        connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        payload = "{\"jcr:mixinTypes\": \"mix:referenceable\"}";
+        connection.getOutputStream().write(payload.getBytes());
+        
+        JSONObject body = new JSONObject(getResponseFor(connection));
+        assertThat(body.length(), is(1));
+
+        JSONObject properties = body.getJSONObject("properties");
+        assertThat(properties, is(notNullValue()));
+
+        assertThat(properties.length(), is(3));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
+        JSONArray mixinTypes = properties.getJSONArray("jcr:mixinTypes");
+        assertThat(mixinTypes, is(notNullValue()));
+        assertThat(mixinTypes.length(), is(1));
+        assertThat(mixinTypes.getString(0), is("mix:referenceable"));
+        assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
+        
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        connection.disconnect();
+
+        connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        payload = "{\"jcr:mixinTypes\": []}";
+        connection.getOutputStream().write(payload.getBytes());
+        
+        body = new JSONObject(getResponseFor(connection));
+        assertThat(body.length(), is(1));
+
+        properties = body.getJSONObject("properties");
+        assertThat(properties, is(notNullValue()));
+        assertThat(properties.length(), is(2));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
+
+        // removeMixin doesn't currently null out this value
+        mixinTypes = properties.getJSONArray("jcr:mixinTypes");
+        assertThat(mixinTypes, is(notNullValue()));
+        assertThat(mixinTypes.length(), is(0));
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        connection.disconnect();
+
+    }
+
 }
