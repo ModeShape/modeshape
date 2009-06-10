@@ -358,6 +358,44 @@
 		  composing the results. Technically, Step 2 performs the fork and join operations, but this class uses &RequestProcessor;
 		  implementations to do Step 1 and 3 (called &ForkRequestProcessor; and &JoinRequestProcessor;, respectively).
 		  </para>
+			<para>
+				Such fork-join style techniques are well-suited to <emphasis>parallel processing</emphasis>.  This connector uses an &ExecutorService;
+				to allow these different processors to operate concurrently.  This can greatly improve the performance as perceived
+				by the clients, since indeed much of the operations on the different sources are occurring at the same time.
+			</para>
+			<para>
+				It is also possible that not every incoming &Request; get projected to all sources. Indeed, many operations can
+				effectively be mapped to a <emphasis>single projection</emphasis>.  In such cases, the overhead of the federated
+				connector is quite minimal.
+			</para>
+			<note>
+				<para>
+					&Request;s that include the &Path; within the request's &Location; can be very quickly mapped to the correct projection,
+					and thus such federated requests can be processed with very little overhead.  However, when requests contain &Location;s
+					that only contain identification properties (e.g., UUIDs), the connector may not be able to determine the correct
+					projection(s), and may have to simply forward the request to all of the projections.  This is obviously less desirable,
+					so when possible ensure that the &Request; objects include the &Path;.
+				</para>
+			</note>
+		</sect1>
+		<sect1>
+			<title>Update operations</title>
+			<para>
+				The federated connector behavior for <emphasis>read-only</emphasis> requests is fairly obvious.  In the best case, the connector determines the
+				appropriate projections, forwards the request into the appropriate sources, and then combines the results.
+				But what happens with <emphasis>change requests</emphasis>?
+			</para>
+			<para>
+				Currently, the federated connector requires that each &ChangeRequest; be mapped to <emphasis>one and only one</emphasis> projection.
+				However, when a single projection cannot be determined for a &ChangeRequest;, the connector throws an error.
+			</para>
+			<para>
+				This is thought to be a minimal problem that will not actually be an issue in most uses of the federated connector.  
+				If you find that your usage does indeed fall into this category, 
+				please let us know via the <ulink url="&Home;lists.html">mailing lists</ulink> or log
+				an enhancement request in <ulink url="&JIRA;">JIRA</ulink>.  Be sure to include as much detail as possible about the scenario,
+				the problem condition, and the desired behavior.
+			</para> 
 		</sect1>
 		<sect1>
 			<title>Configuration</title>
