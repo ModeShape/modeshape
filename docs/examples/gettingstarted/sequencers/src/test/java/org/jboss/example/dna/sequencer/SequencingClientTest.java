@@ -39,7 +39,6 @@ import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
 import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -159,7 +158,6 @@ public class SequencingClientTest {
         client.search();
     }
 
-    @Ignore
     @Test
     public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
