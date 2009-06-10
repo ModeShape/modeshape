@@ -42,12 +42,12 @@ import javax.naming.spi.ObjectFactory;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -100,15 +100,10 @@ public class FederatedRepositorySourceTest {
             }
 
             @SuppressWarnings( "synthetic-access" )
-            public Graph getConfiguration() {
+            public Subgraph getConfiguration( int depth ) {
                 Graph result = Graph.create(configRepositorySource, context);
                 result.useWorkspace("configSpace");
-                return result;
-            }
-
-            @SuppressWarnings( "synthetic-access" )
-            public Path getPathInConfiguration() {
-                return context.getValueFactories().getPathFactory().create("/a/b/Test Repository");
+                return result.getSubgraphOfDepth(depth).at("/a/b/Test Repository");
             }
         };
 

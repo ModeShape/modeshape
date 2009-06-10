@@ -113,14 +113,10 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
             }
 
             @SuppressWarnings( "synthetic-access" )
-            public Graph getConfiguration() {
+            public Subgraph getConfiguration( int depth ) {
                 Graph result = Graph.create(configRepositorySource, context);
                 result.useWorkspace(configurationWorkspaceName);
-                return result;
-            }
-
-            public Path getPathInConfiguration() {
-                return context.getValueFactories().getPathFactory().create("/a/b/Test Repository");
+                return result.getSubgraphOfDepth(depth).at("/a/b/Test Repository");
             }
         };
 
@@ -172,7 +168,10 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         CheckArg.isNotNull(sourceName, "sourceName");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotEmpty(projectionRules, "projectionRules");
-        String configPath = repositoryContext.getPathInConfiguration().getString(context.getNamespaceRegistry());
+        String configPath = repositoryContext.getConfiguration(1)
+                                             .getLocation()
+                                             .getPath()
+                                             .getString(context.getNamespaceRegistry());
         assertThat(configPath.endsWith("/"), is(false));
         String wsPath = configPath + "/dna:workspaces/" + federatedWorkspace;
         String projectionPath = wsPath + "/dna:projections/" + projectionName;

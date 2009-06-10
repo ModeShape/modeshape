@@ -133,17 +133,14 @@ public abstract class AbstractConnectorTest {
                     return null; // no observers here
                 }
 
-                public Graph getConfiguration() {
-                    Graph result = null;
+                public Subgraph getConfiguration( int depth ) {
+                    Subgraph result = null;
                     if (configSource != null) {
-                        result = Graph.create(configSource, getExecutionContext());
-                        // use the default workspace
+                        Graph config = Graph.create(configSource, getExecutionContext());
+                        config.useWorkspace(null); // default workspace
+                        result = config.getSubgraphOfDepth(depth).at(source.getName());
                     }
                     return result;
-                }
-
-                public Path getPathInConfiguration() {
-                    return getExecutionContext().getValueFactories().getPathFactory().create(source.getName());
                 }
             });
 

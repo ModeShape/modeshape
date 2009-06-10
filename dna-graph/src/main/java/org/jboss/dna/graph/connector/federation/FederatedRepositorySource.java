@@ -43,7 +43,6 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
@@ -178,12 +177,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                         throw new RepositorySourceException(getName(), msg.text("name", name));
                     }
 
-                    // Make sure there is a configuration ...
-                    if (repositoryContext.getConfiguration() == null) {
-                        I18n msg = GraphI18n.propertyIsRequiredForFederatedRepositorySource;
-                        throw new RepositorySourceException(getName(), msg.text("configuration", name));
-                    }
-
                     // Load the configuration ...
                     this.configuration = loadRepository(name, repositoryContext);
                 }
@@ -279,7 +272,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Utility to load the current configuration for this source from the {@link RepositoryContext#getConfiguration()
+     * Utility to load the current configuration for this source from the {@link RepositoryContext#getConfiguration(int)
      * configuration repository}. This method may only be called after the source is {@link #initialize(RepositoryContext)
      * initialized}.
      * 
@@ -299,11 +292,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         ProjectionParser projectionParser = ProjectionParser.getInstance();
         NamespaceRegistry registry = executionContext.getNamespaceRegistry();
 
-        Graph config = repositoryContext.getConfiguration();
-        Path pathOfSource = repositoryContext.getPathInConfiguration();
-        assert config != null;
-        assert pathOfSource != null;
-
         try {
             // Read the configuration for the federated repository:
             // Level 1: the node representing the federated repository
@@ -312,7 +300,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             // Level 4: the "dna:projections" nodes
             // Level 5: a node below "dna:projections" for each projection, with properties for the source name,
             // workspace name, cache expiration time, and projection rules
-            Subgraph repositories = config.getSubgraphOfDepth(5).at(pathOfSource);
+            Subgraph repositories = repositoryContext.getConfiguration(5);
 
             // Get the name of the default workspace ...
             String defaultWorkspaceName = null;
@@ -336,8 +324,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                 I18n msg = GraphI18n.requiredNodeDoesNotExistRelativeToNode;
                 throw new RepositorySourceException(msg.text(DnaLexicon.WORKSPACES.getString(registry),
                                                              repositories.getLocation().getPath().getString(registry),
-                                                             config.getCurrentWorkspaceName(),
-                                                             config.getSourceName()));
+                                                             repositories.getGraph().getCurrentWorkspaceName(),
+                                                             repositories.getGraph().getSourceName()));
             }
 
             // Level 3: The workspace nodes ...
@@ -365,8 +353,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                                                                             workspaceNode.getLocation()
                                                                                          .getPath()
                                                                                          .getString(registry),
-                                                                            config.getCurrentWorkspaceName(),
-                                                                            config.getSourceName()));
+                                                                            repositories.getGraph().getCurrentWorkspaceName(),
+                                                                            repositories.getGraph().getSourceName()));
                 }
 
                 // Level 5: the projection nodes ...
@@ -394,10 +382,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             throw t; // rethrow
         } catch (Throwable t) {
             I18n msg = GraphI18n.errorReadingConfigurationForFederatedRepositorySource;
-            String configSource = config.getSourceName();
-            String configWorkspace = config.getCurrentWorkspaceName();
-            String configPath = pathOfSource.getString(registry);
-            throw new RepositorySourceException(getName(), msg.text(name, configSource, configWorkspace, configPath), t);
+            throw new RepositorySourceException(getName(), msg.text(name), t);
         }
     }
 

@@ -24,9 +24,8 @@
 package org.jboss.dna.graph.connector;
 
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * The context for a repository. This interface need not be implemented by a {@link RepositorySource}, as it is normally provided
@@ -58,17 +57,11 @@ public interface RepositoryContext {
     Observer getObserver();
 
     /**
-     * Get a graph to the configuration content, already configured to the correct workspace.
+     * Get a snapshot of the current configuration for the {@link RepositorySource}. The root of the subgraph will be the node in
+     * the configuration that represents the RepositorySource.
      * 
-     * @return the configuration graph, or null if there is no configuration
+     * @param depth the max depth of the configuration subgraph
+     * @return the configuration snapshot as a subgraph, or null if there is no configuration
      */
-    Graph getConfiguration();
-
-    /**
-     * Get the path within the {@link #getConfiguration() configuration} where the source is represented.
-     * 
-     * @return the path to the {@link RepositorySource}'s configuration element, or null if the source is not defined within the
-     *         configuration
-     */
-    Path getPathInConfiguration();
+    Subgraph getConfiguration( int depth );
 }

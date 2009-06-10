@@ -37,6 +37,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryConnectionPool;
@@ -396,29 +397,23 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
                 /**
                  * {@inheritDoc}
                  * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration()
+                 * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration(int)
                  */
-                public Graph getConfiguration() {
-                    Graph result = null;
+                public Subgraph getConfiguration( int depth ) {
+                    Subgraph result = null;
                     RepositorySource configSource = getConfigurationSource();
                     if (configSource != null) {
-                        result = Graph.create(configSource, getExecutionContext());
+                        Graph config = Graph.create(configSource, getExecutionContext());
                         String workspaceName = getConfigurationWorkspaceName();
                         if (workspaceName != null) {
-                            result.useWorkspace(workspaceName);
+                            config.useWorkspace(workspaceName);
                         }
+                        Path configPath = getPathToConfigurationRoot();
+                        Path sourcePath = getExecutionContext().getValueFactories().getPathFactory().create(configPath,
+                                                                                                            sourceName);
+                        result = config.getSubgraphOfDepth(depth).at(sourcePath);
                     }
                     return result;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getPathInConfiguration()
-                 */
-                public Path getPathInConfiguration() {
-                    Path configPath = getPathToConfigurationRoot();
-                    return getExecutionContext().getValueFactories().getPathFactory().create(configPath, sourceName);
                 }
             };
             source.initialize(repositoryContext);

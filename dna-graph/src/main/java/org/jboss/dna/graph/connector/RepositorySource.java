@@ -139,9 +139,13 @@ import org.jboss.dna.graph.request.CacheableRequest;
 public interface RepositorySource extends Referenceable, Serializable {
 
     /**
-     * Initialize this source to use the supplied {@link RepositoryContext}, from which this source can obtain
-     * {@link RepositoryContext#getRepositoryConnectionFactory() connections} to other {@link RepositorySource sources} as well as
-     * {@link RepositoryContext#getExecutionContext() execution contexts}.
+     * Initialize this source to use the supplied {@link RepositoryContext}, from which this source can obtain the
+     * {@link RepositoryContext#getConfiguration(int) configuration} defining this source,
+     * {@link RepositoryContext#getRepositoryConnectionFactory() connections} to other {@link RepositorySource sources}, and the
+     * {@link RepositoryContext#getExecutionContext() execution context}.
+     * <p>
+     * This method may be called each time the configuration changes, allowing the source to update itself.
+     * </p>
      * 
      * @param context
      * @throws RepositorySourceException
