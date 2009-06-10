@@ -48,7 +48,7 @@
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
       <figure id="xample-sequencer-cli-client">
 				<title>Example client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-client.png"/>
+				<graphic align="center" scale="60" fileref="example-sequencer-client.png"/>
 			</figure>
       From this menu, you can upload a file into the repository, search for media in the repository, print sequencing statistics,
       or quit the application.</para>
@@ -59,7 +59,7 @@
 			in that directory without specifying the path:
       <figure id="example-sequencer-upload">
 				<title>Uploading an image using the example client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-upload.png"/>
+				<graphic align="center" scale="60" fileref="example-sequencer-upload.png"/>
 			</figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
       specified. The example client configures JBoss DNA to sequence MP3 audio files, Java source files, or image files with one of
@@ -98,17 +98,17 @@
 		<para>So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
     	<figure id="example-sequencer-search">
 				<title>Searching for media using the example client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-search.png"/>
+				<graphic align="center" scale="60" fileref="example-sequencer-search.png"/>
 			</figure>
     	Here are the search results after the <code>sample1.mp3</code> audio file has been uploaded (to the <code>/a/b/sample1.mp3</code> location):
     	<figure id="example-sequencer-search-with-mp3">
 				<title>Searching for media using the example client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-search-with-mp3.png"/>
+				<graphic align="center" scale="60" fileref="example-sequencer-search-with-mp3.png"/>
 			</figure>
     	You can also display the sequencing statistics using the "d" menu option:
     	<figure id="example-sequencer-statistics">
 				<title>Sequencing statistics using the example client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-statistics.png"/>
+				<graphic align="center" scale="60" fileref="example-sequencer-statistics.png"/>
 			</figure>
     	These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the sequencer's
     	criteria.
@@ -341,7 +341,7 @@ protected class MyCustomSecurityContext implements SecurityContext {
 		<para>At this point, we've reviewed all of the interesting code in the example application related to JBoss DNA.  However, feel free
     to play with the application, trying different things.</para>
 	</sect1>
-	<sect1 id="using_dna_whats_next">
+	<sect1>
 		<title>What's next</title>
 		<para>
 			This chapter walked through running the sequencer example and looked at the example code.  With the sequencer client, you could upload files into a

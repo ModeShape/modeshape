@@ -34,7 +34,6 @@
 		<subtitle>Getting Started Guide</subtitle>
 		<releaseinfo>&versionNumber;</releaseinfo>
 		<productnumber>&versionNumber;</productnumber>
-		<issuenum>5</issuenum>
 		<mediaobject>
 			<imageobject role="fo">
 				<imagedata fileref="dna-logo.png" align="center"/>
@@ -48,7 +47,6 @@
 			<holder>&copyrightHolder;</holder>
 		</copyright>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/author_group.xml"/>
-		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/legal_notice.xml"/>
 	</bookinfo>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>

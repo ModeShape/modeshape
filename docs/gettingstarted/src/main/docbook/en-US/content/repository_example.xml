@@ -45,13 +45,13 @@
 		<para>This collection of repositories is shown in the following figure:
 	  	<figure id="example-repositories">
 				<title>Repositories used in the example client</title>
-				<graphic align="center" scale="100" fileref="example-repositories.png"/>
+				<graphic align="center" scale="60" fileref="example-repositories.png"/>
 			</figure>
 			Most of the repositories are in-memory repositories (using the In-Memory repository connector), but the federated "Vehicles" repository
 			content is federated from the other repositories and cached into the "Cache" repository.  This is shown in the following figure: 
 	  	<figure id="example-federated-repository">
 				<title>Vehicles repository content is federated from the Cars, Airplanes and Configuration repositories</title>
-				<graphic align="center" scale="100" fileref="example-federated-repository.png"/>
+				<graphic align="center" scale="60" fileref="example-federated-repository.png"/>
 			</figure>
 	  </para>
 		<para>
@@ -59,7 +59,7 @@
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
       <figure id="example-repositories-client">
 				<title>Example Client</title>
-				<graphic align="center" scale="100" fileref="example-repositories-client.png"/>
+				<graphic align="center" scale="60" fileref="example-repositories-client.png"/>
 			</figure>
       From this menu, you can see the list of repositories, select one, and navigate through that repository in a manner similar
       to a *nix command-line shell (although the client itself uses the JCR API to interact with the repositories).
@@ -88,7 +88,7 @@
 			<para>If you were to select the "Cars" repository and use some of the commands, you should see something similar to: 
 	      <figure id="example-repositories-navigating">
 					<title>Navigating the Cars repository</title>
-					<graphic align="center" scale="100" fileref="example-repositories-navigating.png"/>
+					<graphic align="center" scale="60" fileref="example-repositories-navigating.png"/>
 				</figure>
 			</para>
 			<para>You can also choose to navigate the "Vehicles" repository, which projects the "Cars" repository content under the
