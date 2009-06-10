@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
@@ -530,16 +529,16 @@ public class StreamSequencerAdapterTest {
                                                                                          problems);
         assertThat(sequencerContext.getMimeType(), is("text/plain"));
     }
-    
-    private Name nameFor(String raw) {
+
+    private Name nameFor( String raw ) {
         return context.getValueFactories().getNameFactory().create(raw);
     }
-    
+
     @Test
     public void shouldNotCreateExtraNodesWhenSavingOutput() throws Exception {
         SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
         Map<Name, Property> props;
-        
+
         /*
          * Create several output properties and make sure the resulting graph
          * does not contain duplicate nodes
@@ -549,38 +548,38 @@ public class StreamSequencerAdapterTest {
         output.setProperty("a/b", "property2", "value2");
         output.setProperty("a/b[2]", "property1", "value1");
         output.setProperty("a/b[2]/c", "property1", "value1");
-        
+
         Set<Path> builtPaths = new HashSet<Path>();
         sequencer.saveOutput("/", output, seqContext, builtPaths);
         seqContext.getDestination().submit();
-        
+
         Node rootNode = graph.getNodeAt("/");
         assertThat(rootNode.getChildren().size(), is(1));
-        
+
         Node nodeA = graph.getNodeAt("/a");
         props = nodeA.getPropertiesByName();
 
         assertThat(nodeA.getChildren().size(), is(2));
-        assertThat(props.size(), is(2));  // Need to add one to account for dna:uuid
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
 
         Node nodeB = graph.getNodeAt("/a/b[1]");
         props = nodeB.getPropertiesByName();
-    
-        assertThat(props.size(), is(3));  // Need to add one to account for dna:uuid
+
+        assertThat(props.size(), is(3)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
         assertThat(props.get(nameFor("property2")).getFirstValue().toString(), is("value2"));
 
         Node nodeB2 = graph.getNodeAt("/a/b[2]");
         props = nodeB2.getPropertiesByName();
-    
-        assertThat(props.size(), is(2));   // Need to add one to account for dna:uuid
+
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
 
         Node nodeC = graph.getNodeAt("/a/b[2]/c");
         props = nodeC.getPropertiesByName();
-    
-        assertThat(props.size(), is(2));   // Need to add one to account for dna:uuid
+
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
 
     }

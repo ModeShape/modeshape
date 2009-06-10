@@ -212,7 +212,7 @@ public class StreamSequencerAdapter implements Sequencer {
      * Save the sequencing output to the supplied node. This method does not need to save the output, as that is done by the
      * caller of this method.
      * 
-     * @param outputNode the existing node onto (or below) which the output is to be written; never null
+     * @param nodePath the existing node onto (or below) which the output is to be written; never null
      * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
      * @param builtPaths a set of the paths that have already been created but not submitted in this batch
@@ -267,7 +267,8 @@ public class StreamSequencerAdapter implements Sequencer {
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
-                                                                                                              input.getPropertiesByName().values());
+                                                                                                              input.getPropertiesByName()
+                                                                                                                   .values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
