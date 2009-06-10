@@ -24,7 +24,7 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the DNA-specific Graph API.
     In fact, this is how the DNA JCR implementation works.  You can think of these as being similar to
@@ -50,7 +50,7 @@
         under '/Vehicles/Cars', while all the 'Aircraft' content appears under '/Vehicles/Aircraft'.
         -->
         <dna:source jcr:name="Vehicles">
-            <dna:classname>org.jboss.dna.graph.connector.federated.FederatedRepositorySource</dna:classname>
+            <dna:classname>org.jboss.dna.graph.connector.federation.FederatedRepositorySource</dna:classname>
             <dna:workspaces>
                 <!-- 
                 Unlike some other repository sources, federated sources have to define all of their workspaces,
@@ -61,11 +61,11 @@
                 <dna:workspace jcr:name="virtual">
                     <dna:projections>
                         <!-- Project the 'Cars' content, starting with the '/Cars' node. -->
-                        <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspace="workspace1">
+                        <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspaceName="workspace1">
                             <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
                         </dna:projection>
                         <!-- Project the 'Aicraft' content, starting with the '/Aircraft' node. -->
-                        <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspace="workspace2">
+                        <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspaceName="workspace2">
                             <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
                         </dna:projection>
                     </dna:projections>
@@ -114,15 +114,15 @@
         Define a JCR repository that accesses the 'Cars' source directly.
         This of course is optional, since we could access the same content through 'vehicles'.
         -->
-        <dna:repository jcr:name="car repository">
+        <dna:repository jcr:name="Cars">
             <!-- Specify the source that should be used for the repository -->
-            <source>Cars</source>
+            <dna:source>Cars</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <options jcr:primaryType="dna:options"/>
+            <dna:options jcr:primaryType="dna:options">
                 <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
-            </options>
+            </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
             <namespaces jcr:primaryType="dna:namespaces">
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
@@ -132,34 +132,34 @@
         Define a JCR repository that accesses the 'Aircraft' source directly.
         This of course isn't really necessary for this example, since we could access the same content through 'vehicles'.
         -->
-        <dna:repository jcr:name="aircraft repository">
+        <dna:repository jcr:name="Aircraft">
             <!-- Specify the source that should be used for the repository -->
-            <source>Aircraft</source>
+            <dna:source>Aircraft</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <options jcr:primaryType="dna:options"/>
+            <dna:options jcr:primaryType="dna:options">
                 <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
-            </options>
+            </dna:options>
         </dna:repository>
         <!-- 
         Define a JCR repository that accesses the 'Vehicles' federated source directly,
         which is defined in the sources to be a projection of the 'Cars' and 'Vehicles' content.
         -->
         <!-- Define a JCR repository that accesses the 'Vehicles' federated source directly -->
-        <dna:repository jcr:name="vehicles">
+        <dna:repository jcr:name="Vehicles">
             <!-- Specify the source that should be used for the repository -->
-            <source>Vehicles</source>
+            <dna:source>Vehicles</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <options jcr:primaryType="dna:options">
+            <dna:options jcr:primaryType="dna:options">
                 <projectNodeTypes jcr:primaryType="dna:option" dna:value="false"/>
                 <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
-            </options>
+            </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR, DNA or by imported content. -->
-            <namespaces jcr:primaryType="dna:namespaces">
+            <dna:namespaces jcr:primaryType="dna:namespaces">
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
                 <air jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/aircraft/1.0"/>
-            </namespaces>
+            </dna:namespaces>
         </dna:repository>
     </dna:repositories>
 </configuration>

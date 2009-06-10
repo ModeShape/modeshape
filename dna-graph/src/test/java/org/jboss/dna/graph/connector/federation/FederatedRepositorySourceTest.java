@@ -40,6 +40,7 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import javax.security.auth.callback.CallbackHandler;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Subgraph;
@@ -118,25 +119,25 @@ public class FederatedRepositorySourceTest {
         Graph.Batch batch = configRepository.batch();
         batch.create("/a").and();
         batch.create("/a/b").and();
-        batch.create("/a/b/Test Repository").with(FederatedLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
+        batch.create("/a/b/Test Repository").with(DnaLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
         batch.create("/a/b/Test Repository/dna:workspaces").and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace").and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:cache")
-             .with(FederatedLexicon.PROJECTION_RULES, "/ => /")
-             .with(FederatedLexicon.SOURCE_NAME, "cache source")
-             .with(FederatedLexicon.WORKSPACE_NAME, "cacheSpace")
-             .with(FederatedLexicon.TIME_TO_EXPIRE, 100000)
+             .with(DnaLexicon.PROJECTION_RULES, "/ => /")
+             .with(DnaLexicon.SOURCE_NAME, "cache source")
+             .with(DnaLexicon.WORKSPACE_NAME, "cacheSpace")
+             .with(DnaLexicon.TIME_TO_EXPIRE, 100000)
              .and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections").and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection1")
-             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
-             .with(FederatedLexicon.SOURCE_NAME, "source 1")
-             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .with(DnaLexicon.PROJECTION_RULES, "/ => /s1")
+             .with(DnaLexicon.SOURCE_NAME, "source 1")
+             .with(DnaLexicon.WORKSPACE_NAME, "s1 workspace")
              .and();
         batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection2")
-             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s2")
-             .with(FederatedLexicon.SOURCE_NAME, "source 2")
-             .with(FederatedLexicon.WORKSPACE_NAME, "s2 worskspace")
+             .with(DnaLexicon.PROJECTION_RULES, "/ => /s2")
+             .with(DnaLexicon.SOURCE_NAME, "source 2")
+             .with(DnaLexicon.WORKSPACE_NAME, "s2 worskspace")
              .and();
         batch.execute();
 

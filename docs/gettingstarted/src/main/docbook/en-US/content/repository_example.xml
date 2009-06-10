@@ -263,9 +263,9 @@ public void startRepositories() throws IOException, SAXException {
     // in the configuration file, but this approach is easy and allows us to define the node types
     // using the CND format in one or multiple files.
     String locationOfCndFiles = userInterface.getLocationOfCndFiles();
-    configuration.repository("aircraft repository").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
-    configuration.repository("car repository").addNodeTypes(locationOfCndFiles + "/cars.cnd");
-    configuration.repository("virtual").addNodeTypes(locationOfCndFiles + "/virtual.cnd");
+    configuration.repository("Aircraft").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
+    configuration.repository("Cars").addNodeTypes(locationOfCndFiles + "/cars.cnd");
+    configuration.repository("Vehicles").addNodeTypes(locationOfCndFiles + "/vehicles.cnd");
 
     // Now create the JCR engine ...
     engine = configuration.build();

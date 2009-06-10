@@ -179,7 +179,7 @@ configuration.loadFrom(file);
 	      This of course is optional, since we could access the same content through 'vehicles'.
 	      -->
 	      <dna:repository jcr:name="car repository" dna:source="Cars">
-	          <options jcr:primaryType="dna:options"/>
+	          <options jcr:primaryType="dna:options">
 	              <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
 	          </options>
 	      </dna:repository>

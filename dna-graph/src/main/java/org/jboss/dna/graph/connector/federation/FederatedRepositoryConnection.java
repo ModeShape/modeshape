@@ -156,7 +156,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
 
         // Figure out whether we should asynchronously do the forking ...
         boolean synchronousStep1 = shouldProcessSynchronously(request);
-        final boolean awaitAllSubtasks = false;
+        final boolean awaitAllSubtasks = true;
 
         // Prepare for trace-level logging ...
         if (stopwatch != null) stopwatch.start();

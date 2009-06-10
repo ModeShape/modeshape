@@ -71,13 +71,16 @@ final class BranchedMirrorProjector extends ProjectorWithPlaceholders {
         if (firstTopLevelPaths.size() != 1) return null;
         List<Path> secondTopLevelPaths = second.getRules().get(0).getTopLevelPathsInRepository(pathFactory);
         if (secondTopLevelPaths.size() != 1) return null;
-        // We're good, so create the instance ...
         Path firstTopLevelPath = firstTopLevelPaths.get(0);
         Path secondTopLevelPath = secondTopLevelPaths.get(0);
         if (firstTopLevelPath.isRoot()) {
+            // We're good, so create the instance ...
             return new BranchedMirrorProjector(context, projections, first, second, secondTopLevelPath,
                                                secondRule.getPathInSource(secondTopLevelPath, pathFactory));
         }
+        // the second top-level path must be a root ...
+        if (!secondTopLevelPath.isRoot()) return null;
+        // We're good, so create the instance ...
         return new BranchedMirrorProjector(context, projections, second, first, firstTopLevelPath,
                                            firstRule.getPathInSource(firstTopLevelPath, pathFactory));
     }

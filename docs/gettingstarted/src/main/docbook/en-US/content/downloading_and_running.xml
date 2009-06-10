@@ -224,8 +224,9 @@ $ ]]></programlisting>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>aircraft.cnd</code></emphasis>, <emphasis role="strong"><code>cars.cnd</code></emphasis>,
-					and <emphasis role="strong"><code>virtual.cnd</code></emphasis> are the CND files used for the three different JCR Repositories
-					set up in the example.  The <emphasis role="strong"><code>virtual.cnd</code></emphasis> is just a combination of the other two.
+					and <emphasis role="strong"><code>vehicles.cnd</code></emphasis> are the CND files used for the three different JCR Repositories
+					set up in the example.  The <emphasis role="strong"><code>vehicles.cnd</code></emphasis> is just a combination of the other two
+					(with duplicates removed).
 					</para>
 				</listitem>
 				<listitem>

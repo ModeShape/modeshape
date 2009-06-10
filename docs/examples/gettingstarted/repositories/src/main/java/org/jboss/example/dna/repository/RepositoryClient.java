@@ -99,7 +99,6 @@ public class RepositoryClient {
     private String jaasContextName;
     private UserInterface userInterface;
     private LoginContext loginContext;
-    private ExecutionContext context;
     private JcrEngine engine;
 
     /**
@@ -144,9 +143,9 @@ public class RepositoryClient {
         // in the configuration file, but this approach is easy and allows us to define the node types
         // using the CND format in one or multiple files.
         String locationOfCndFiles = userInterface.getLocationOfCndFiles();
-        configuration.repository("aircraft repository").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
-        configuration.repository("car repository").addNodeTypes(locationOfCndFiles + "/cars.cnd");
-        configuration.repository("virtual").addNodeTypes(locationOfCndFiles + "/virtual.cnd");
+        configuration.repository("Aircraft").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
+        configuration.repository("Car").addNodeTypes(locationOfCndFiles + "/cars.cnd");
+        configuration.repository("Vehicles").addNodeTypes(locationOfCndFiles + "/vehicles.cnd");
 
         // Now create the JCR engine ...
         engine = configuration.build();
@@ -157,11 +156,9 @@ public class RepositoryClient {
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
 
-        // Now import the content for the two in-memory repositories ...
-        Graph cars = engine.getGraph("Cars");
-        cars.importXmlFrom(location + "/cars.xml").into("/");
-        Graph aircraft = engine.getGraph("Aircraft");
-        aircraft.importXmlFrom(location + "/aircraft.xml").into("/");
+        // Now import the content for the two in-memory repository sources ...
+        engine.getGraph("Cars").importXmlFrom(location + "/cars.xml").into("/");
+        engine.getGraph("Aircraft").importXmlFrom(location + "/aircraft.xml").into("/");
     }
 
     /**
@@ -307,13 +304,12 @@ public class RepositoryClient {
             case DNA: {
                 try {
                     // Use the DNA Graph API to read the properties and children of the node ...
-                    ExecutionContext context = this.context;
+                    ExecutionContext context = this.engine.getExecutionContext();
                     if (loginContext != null) {
                         JaasSecurityContext security = new JaasSecurityContext(loginContext);
-                        context = this.context.with(security);
+                        context = context.with(security);
                     }
                     Graph graph = engine.getGraph(context, sourceName);
-                    graph.useWorkspace("default");
                     org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
 
                     if (properties != null) {
@@ -351,6 +347,7 @@ public class RepositoryClient {
                              String input ) {
         if (current == null) current = "/";
         if (input == null || input.length() == 0) return current;
+        ExecutionContext context = this.engine.getExecutionContext();
         PathFactory factory = context.getValueFactories().getPathFactory();
         Path inputPath = factory.create(input);
         if (inputPath.isAbsolute()) {

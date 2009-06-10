@@ -329,6 +329,7 @@ class ForkRequestProcessor extends RequestProcessor {
                  */
                 public String call() throws Exception {
                     final RepositoryConnection connection = connectionFactory.createConnection(sourceName);
+                    assert connection != null;
                     try {
                         connection.execute(context, composite);
                     } finally {
@@ -1129,7 +1130,10 @@ class ForkRequestProcessor extends RequestProcessor {
         if (projectedFromNode == null) return;
         ProjectedNode projectedIntoNode = project(request.into(), request.inWorkspace(), request, true);
         if (projectedIntoNode == null) return;
-        ProjectedNode projectedBeforeNode = request.before() != null ? project(request.before(), request.inWorkspace(), request, true) : null;
+        ProjectedNode projectedBeforeNode = request.before() != null ? project(request.before(),
+                                                                               request.inWorkspace(),
+                                                                               request,
+                                                                               true) : null;
 
         // Limitation: only able to project the move if the 'from' and 'into' are in the same source & projection ...
         while (projectedFromNode != null) {
@@ -1166,8 +1170,9 @@ class ForkRequestProcessor extends RequestProcessor {
         boolean sameLocation = fromProxy.isSameLocationAsOriginal() && intoProxy.isSameLocationAsOriginal();
 
         // Create the pushed-down request ...
-        MoveBranchRequest pushDown = new MoveBranchRequest(fromProxy.location(), intoProxy.location(), beforeProxy.location(), intoProxy.workspaceName(),
-                                                           request.desiredName(), request.conflictBehavior());
+        MoveBranchRequest pushDown = new MoveBranchRequest(fromProxy.location(), intoProxy.location(), beforeProxy.location(),
+                                                           intoProxy.workspaceName(), request.desiredName(),
+                                                           request.conflictBehavior());
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
         federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());

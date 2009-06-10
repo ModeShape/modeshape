@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -60,6 +61,8 @@ public class RepositoryClientTest {
         client.setUserInterface(userInterface);
         client.setApi(getApi());
         stub(userInterface.getLocationOfRepositoryFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
+        stub(userInterface.getLocationOfCndFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
+        stub(userInterface.getRepositoryConfiguration()).toReturn(new File("src/main/resources/configRepository.xml"));
     }
 
     @After
@@ -96,21 +99,22 @@ public class RepositoryClientTest {
     @Test
     public void shouldStartupWithoutError() throws Exception {
         client.startRepositories();
-        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Cars", "Configuration", "Vehicles", "Cache"));
+        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Car", "Vehicles"));
     }
 
     @Test
     public void shouldStartupWithoutErrorMoreThanOnce() throws Exception {
         client.startRepositories();
-        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Cars", "Configuration", "Vehicles", "Cache"));
+        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Car", "Vehicles"));
     }
 
+    @Ignore
     @Test
     public void shouldHaveContentFromConfigurationRepository() throws Throwable {
         client.startRepositories();
 
         getNodeInfo("Configuration", "/jcr:system");
-        //assertThat(children, hasItems("dna:sources", "dna:federatedRepositories"));
+        // assertThat(children, hasItems("dna:sources", "dna:federatedRepositories"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         // assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size() >= 1, is(true));
@@ -225,13 +229,13 @@ public class RepositoryClientTest {
         client.startRepositories();
 
         getNodeInfo("Vehicles", "/");
-        //assertThat(children, hasItems("Vehicles", "jcr:system"));
+        // assertThat(children, hasItems("Vehicles", "jcr:system"));
 
         getNodeInfo("Vehicles", "/Vehicles");
         assertThat(children, hasItems("Cars", "Aircraft"));
 
         getNodeInfo("Vehicles", "/");
-        //assertThat(children, hasItems("Vehicles", "jcr:system"));
+        // assertThat(children, hasItems("Vehicles", "jcr:system"));
 
         getNodeInfo("Vehicles", "/Vehicles/Cars/Hybrid");
         assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
@@ -251,6 +255,8 @@ public class RepositoryClientTest {
         assertProperty("lengthInInches", "185.5");
         assertProperty("wheelbaseInInches", "108.0");
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
+
+        getNodeInfo("Vehicles", "/Vehicles/Aircraft");
 
         getNodeInfo("Vehicles", "/Vehicles/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
@@ -272,10 +278,10 @@ public class RepositoryClientTest {
     @Test
     public void shouldBeAbleToExecuteTestsRepeatedly() throws Throwable {
         for (int i = 0; i != 5; ++i) {
-            shouldHaveContentFromConfigurationRepository();
+            // shouldHaveContentFromConfigurationRepository();
             shouldHaveContentFromCarsRepository();
             shouldHaveContentFromAircraftRepository();
-            // shouldHaveContentFromVehiclesRepository();
+            shouldHaveContentFromVehiclesRepository();
         }
     }
 }

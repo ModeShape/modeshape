@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -180,9 +181,9 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         config.createIfMissing(wsPath);
         config.createIfMissing(wsPath + "/dna:projections");
         config.createAt(projectionPath)
-              .with(FederatedLexicon.PROJECTION_RULES, (Object[])projectionRules)
-              .with(FederatedLexicon.SOURCE_NAME, sourceName)
-              .with(FederatedLexicon.WORKSPACE_NAME, workspaceName)
+              .with(DnaLexicon.PROJECTION_RULES, (Object[])projectionRules)
+              .with(DnaLexicon.SOURCE_NAME, sourceName)
+              .with(DnaLexicon.WORKSPACE_NAME, workspaceName)
               .and();
         // Make sure the source and workspace exist ...
         graphFor(sourceName, workspaceName);

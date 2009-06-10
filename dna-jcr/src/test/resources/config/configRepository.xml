@@ -66,7 +66,7 @@
     </dna:mimeTypeDetectors>
     <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
     <dna:repositories>
-        <dna:repository jcr:name="Car Repository" dna:sourceName="Cars">
+        <dna:repository jcr:name="Car Repository" dna:source="Cars">
             <dna:options>
                 <dna:option jcr:name="projectNodeTypes" dna:value="true"/>
                 <dna:option jcr:name="jaasLoginConfigName" dna:value="dna-jcr"/>

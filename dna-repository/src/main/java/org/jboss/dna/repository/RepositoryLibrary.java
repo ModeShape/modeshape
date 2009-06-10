@@ -373,7 +373,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
                  * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
                  */
                 public ExecutionContext getExecutionContext() {
-                    return getExecutionContext();
+                    return RepositoryLibrary.this.getExecutionContext();
                 }
 
                 /**

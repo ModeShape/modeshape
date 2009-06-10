@@ -577,7 +577,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
             }
             sb.append("]");
             if (hasPath) {
-                sb.append("<");
+                sb.append(">");
             }
         }
         return sb.toString();
