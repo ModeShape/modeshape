@@ -138,6 +138,9 @@ public class StreamSequencerAdapter implements Sequencer {
             }
         }
 
+        // Accumulator of paths that we've added to the batch but have not yet been submitted to the graph
+        Set<Path> builtPaths = new HashSet<Path>();
+
         // Find each output node and save the image metadata there ...
         for (RepositoryNodePath outputPath : outputPaths) {
             // Get the name of the repository workspace and the path to the output node
@@ -147,11 +150,11 @@ public class StreamSequencerAdapter implements Sequencer {
             // Find or create the output node in this session ...
             context.graph().useWorkspace(repositoryWorkspaceName);
 
-            buildPathTo(nodePath, context);
-            Node outputNode = context.graph().getNodeAt(nodePath);
+            buildPathTo(nodePath, context, builtPaths);
+            // Node outputNode = context.graph().getNodeAt(nodePath);
 
             // Now save the image metadata to the output node ...
-            saveOutput(outputNode, output, context);
+            saveOutput(nodePath, output, context, builtPaths);
         }
 
         context.getDestination().submit();
@@ -162,13 +165,15 @@ public class StreamSequencerAdapter implements Sequencer {
      * 
      * @param nodePath the node path to create
      * @param context the sequencer context under which it should be created
+     * @param builtPaths a set of the paths that have already been created but not submitted in this batch
      */
     private void buildPathTo( String nodePath,
-                              SequencerContext context ) {
+                              SequencerContext context,
+                              Set<Path> builtPaths ) {
         PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
         Path targetPath = pathFactory.create(nodePath);
 
-        buildPathTo(targetPath, context);
+        buildPathTo(targetPath, context, builtPaths);
     }
 
     /**
@@ -176,9 +181,11 @@ public class StreamSequencerAdapter implements Sequencer {
      * 
      * @param targetPath the node path to create
      * @param context the sequencer context under which it should be created
+     * @param builtPaths a set of the paths that have already been created but not submitted in this batch
      */
     private void buildPathTo( Path targetPath,
-                              SequencerContext context ) {
+                              SequencerContext context,
+                              Set<Path> builtPaths ) {
         PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
         PropertyFactory propFactory = context.getExecutionContext().getPropertyFactory();
 
@@ -186,20 +193,19 @@ public class StreamSequencerAdapter implements Sequencer {
         Path workingPath = pathFactory.createRootPath();
         Path.Segment[] segments = targetPath.getSegmentsArray();
         int i = 0;
-        if (segments.length > 1) {
-            Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            for (int max = segments.length - 1; i < max; i++) {
-                workingPath = pathFactory.create(workingPath, segments[i]);
-                
+        Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+        for (int max = segments.length; i < max; i++) {
+            workingPath = pathFactory.create(workingPath, segments[i]);
+
+            if (!builtPaths.contains(workingPath)) {
                 try {
                     context.graph().getNodeAt(workingPath);
-                }
-                catch (PathNotFoundException pnfe) {
-                    context.graph().create(workingPath, primaryType);
+                } catch (PathNotFoundException pnfe) {
+                    context.getDestination().create(workingPath, primaryType);
+                    builtPaths.add(workingPath);
                 }
             }
         }
-        context.graph().create(targetPath); 
     }
 
     /**
@@ -209,15 +215,16 @@ public class StreamSequencerAdapter implements Sequencer {
      * @param outputNode the existing node onto (or below) which the output is to be written; never null
      * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
+     * @param builtPaths a set of the paths that have already been created but not submitted in this batch
      */
-    protected void saveOutput( Node outputNode,
+    protected void saveOutput( String nodePath,
                                SequencerOutputMap output,
-                               SequencerContext context ) {
+                               SequencerContext context,
+                               Set<Path> builtPaths ) {
         if (output.isEmpty()) return;
         final PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
         final PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
-        // TODO: Is it safe to assume that the location for this node will include a path?
-        final Path outputNodePath = pathFactory.create(outputNode.getLocation().getPath());
+        final Path outputNodePath = pathFactory.create(nodePath);
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
@@ -230,15 +237,15 @@ public class StreamSequencerAdapter implements Sequencer {
             List<Property> properties = new LinkedList<Property>();
             // Set all of the properties on this
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                // String propertyName = property.getName().getString(namespaceRegistry, Path.NO_OP_ENCODER);
                 properties.add(propertyFactory.create(property.getName(), property.getValue()));
                 // TODO: Handle reference properties - currently passed in as Paths
             }
 
             if (absolutePath.getParent() != null) {
-                buildPathTo(absolutePath.getParent(), context);
+                buildPathTo(absolutePath.getParent(), context, builtPaths);
             }
-            context.graph().create(absolutePath, properties);
+            context.getDestination().create(absolutePath, properties);
+            builtPaths.add(absolutePath);
         }
     }
 
@@ -260,8 +267,7 @@ public class StreamSequencerAdapter implements Sequencer {
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
-                                                                                                              input.getPropertiesByName()
-                                                                                                                   .values());
+                                                                                                              input.getPropertiesByName().values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
