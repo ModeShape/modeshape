@@ -85,6 +85,14 @@
 					</tbody>
 				</tgroup>
 			</table>
+			<note>
+				<para>
+					The first time you access any repository, you will be prompted to log in.  This is JAAS at work, and the example application
+					should prompt you for a username and password.  As configured in the "jaas.conf.xml" and "users.properties" files,
+					enter "jsmith" for the username and "secret" for the password.  And, yes, the password is shown in cleartext - this
+					is a simple example, after all!
+				</para>
+			</note>
 			<para>If you were to select the "Cars" repository and use some of the commands, you should see something similar to: 
 	      <figure id="example-repositories-navigating">
 					<title>Navigating the Cars repository</title>
