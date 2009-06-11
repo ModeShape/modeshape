@@ -386,6 +386,12 @@ class SessionCache {
                                               boolean checkSns )
         throws ConstraintViolationException, ItemExistsException, RepositoryException {
 
+        assert nodeUuid != null;
+        
+        if (this.deletedNodes.containsKey(nodeUuid)) {
+            nodeUuid = this.deletedNodes.get(nodeUuid).getParent();
+        }
+        
         NodeInfo nodeInfo = findNodeInfo(nodeUuid);
         AbstractJcrNode node = findJcrNode(nodeUuid);
 
@@ -631,9 +637,9 @@ class SessionCache {
      */
     public void save() throws RepositoryException {
         if (operations.isExecuteRequired()) {
-            for (UUID changedUuid : changedNodes.keySet()) {
-                checkAgainstTypeDefinitions(changedUuid, false);
-            }
+			for (UUID changedUuid : this.changedNodes.keySet()) {
+            	checkAgainstTypeDefinitions(changedUuid, false);
+	        }
 
             // Execute the batched operations ...
             try {
@@ -726,6 +732,11 @@ class SessionCache {
              */
             Set<UUID> uuidsUnderBranch = new HashSet<UUID>();
             LinkedList<UUID> peersToCheck = new LinkedList<UUID>();
+         
+         	for (UUID changedUuid : branchUuids) {
+         		checkAgainstTypeDefinitions(changedUuid, false);
+	        }
+
             for (UUID branchUuid : branchUuids) {
                 uuidsUnderBranch.add(branchUuid);
                 ChangedNodeInfo changedNode = changedNodes.get(branchUuid);
@@ -746,12 +757,6 @@ class SessionCache {
             for (UUID peerUuid : peersToCheck) {
                 if (!uuidsUnderBranch.contains(peerUuid)) {
                     throw new ConstraintViolationException();
-                }
-            }
-
-            for (UUID changedUuid : uuidsUnderBranch) {
-                if (!this.deletedNodes.containsKey(changedUuid)) {
-                    checkAgainstTypeDefinitions(changedUuid, false);
                 }
             }
 
