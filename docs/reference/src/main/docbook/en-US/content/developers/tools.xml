@@ -481,7 +481,18 @@
 				</para>
 			</note>
 			<para>
-				The artifacts are deployed to the local file system, which is comprised of a local checkout of the JBoss Maven2 repository 
+				The release has been performed, but we still need to build and deploy the <emphasis>real</emphasis> artifacts
+				to the JBoss Maven repository.  To do
+				this, go to a working area and check out the recently-produced SVN tag (using the correct <code>{release-number}</code>):
+			</para>
+			<programlisting>$ svn checkout https://anonsvn.jboss.org/repos/dna/tags/dna-{release-number}/</programlisting>
+			<para>
+				Then, go into the new directory, and perform a Maven deploy:
+			<para>
+				<programlisting>$ mvn clean deploy</programlisting>
+			<para>
+				This will rebuild all the artifacts (from your local copy of the <emphasis>tagged</emphasis> source) and deploy them
+				to the local file system, which is comprised of a local checkout of the JBoss Maven2 repository 
 				in a location specified by a combination of the <code>&lt;distributionManagement&gt;</code> section of several <code>pom.xml</code> 
 				files and your personal <code>settings.xml</code> file.  Once this Maven command completes, you will need to 
 				commit the new files after they are deployed.  For more information, see the 
