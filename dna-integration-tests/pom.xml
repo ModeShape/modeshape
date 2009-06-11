@@ -3,12 +3,12 @@
   <parent>
     <groupId>org.jboss.dna</groupId>
     <artifactId>dna</artifactId>
-    <version>0.5</version>
+    <version>0.6-SNAPSHOT</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-integration-tests</artifactId>
   <packaging>jar</packaging>
-  <version>0.5</version>
+  <version>0.6-SNAPSHOT</version>
   <name>JBoss DNA Integration Tests</name>
   <url>http://labs.jboss.org/dna</url>
   
