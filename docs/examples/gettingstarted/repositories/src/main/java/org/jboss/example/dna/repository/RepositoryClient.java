@@ -144,11 +144,8 @@ public class RepositoryClient {
         // using the CND format in one or multiple files.
         String locationOfCndFiles = userInterface.getLocationOfCndFiles();
         configuration.repository("Aircraft").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
-        configuration.save();
         configuration.repository("Cars").addNodeTypes(locationOfCndFiles + "/cars.cnd");
-        configuration.save();
         configuration.repository("Vehicles").addNodeTypes(locationOfCndFiles + "/vehicles.cnd");
-        configuration.save();
 
         // Now create the JCR engine ...
         engine = configuration.build();

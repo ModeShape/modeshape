@@ -156,7 +156,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
 
         // Figure out whether we should asynchronously do the forking ...
         boolean synchronousStep1 = shouldProcessSynchronously(request);
-        final boolean awaitAllSubtasks = true;
+        final boolean awaitAllSubtasks = false;
 
         // Prepare for trace-level logging ...
         if (stopwatch != null) stopwatch.start();
@@ -180,7 +180,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                 } finally {
                     fork.close();
                 }
-                requests.add(new NoMoreFederatedRequests());
+                if (!awaitAllSubtasks) requests.add(new NoMoreFederatedRequests());
                 // At this point, all submitted requests have been processed/forked, so we can continue with
                 // the join process, starting with the first submitted request. Note that the subtasks may
                 // still be executing, but as the join process operates on a forked request, it will wait
@@ -195,7 +195,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                         } finally {
                             fork.close();
                         }
-                        requests.add(new NoMoreFederatedRequests());
+                        if (!awaitAllSubtasks) requests.add(new NoMoreFederatedRequests());
                     }
                 });
 

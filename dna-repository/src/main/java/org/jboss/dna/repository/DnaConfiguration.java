@@ -403,8 +403,6 @@ public class DnaConfiguration {
     public DnaConfiguration save() {
         Graph.Batch changes = this.changes;
         if (changes != null && changes.isExecuteRequired()) {
-            System.out.println("Execution: ");
-            System.out.println(changes);
             changes.execute();
         }
         this.changes = null;

@@ -55,6 +55,7 @@ final class LocationWithPathAndProperties extends Location {
      */
     LocationWithPathAndProperties( Path path,
                                    List<Property> idProperties ) {
+        assert path != null;
         assert idProperties != null;
         assert !idProperties.isEmpty();
         this.path = path;

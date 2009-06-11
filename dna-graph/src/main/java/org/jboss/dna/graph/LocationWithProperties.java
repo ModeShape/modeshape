@@ -138,7 +138,7 @@ final class LocationWithProperties extends Location {
      */
     @Override
     public Location with( Path newPath ) {
-        if (newPath == null || this.getPath().equals(newPath)) return this;
+        if (newPath == null) return this;
         return new LocationWithPathAndProperties(newPath, idProperties);
     }
 

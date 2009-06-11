@@ -208,7 +208,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         for (Property property : remainingIdProperties) {
             if (names.add(property.getName())) idProperties.add(property);
         }
-        return new LocationWithPathAndProperties(null, idProperties);
+        return new LocationWithProperties(idProperties);
     }
 
     /**

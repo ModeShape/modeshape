@@ -738,16 +738,19 @@ class ForkRequestProcessor extends RequestProcessor {
                         continue;
                     }
                     while (child != null && child.isProxy()) {
-                        // Take any children so far and simply record a ReadNodeRequest with results ...
-                        ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
-                        placeholderRequest.addChildren(children);
-                        if (firstRequest) {
-                            firstRequest = false;
-                            placeholderRequest.addProperties(placeholder.properties().values());
+                        if (!children.isEmpty()) {
+                            // Take any children so far and simply record a ReadNodeRequest with results ...
+                            ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(),
+                                                                                     request.inWorkspace());
+                            placeholderRequest.addChildren(children);
+                            if (firstRequest) {
+                                firstRequest = false;
+                                placeholderRequest.addProperties(placeholder.properties().values());
+                            }
+                            placeholderRequest.setActualLocationOfNode(placeholder.location());
+                            federatedRequest.add(placeholderRequest, true, true, null);
+                            children = new LinkedList<Location>();
                         }
-                        placeholderRequest.setActualLocationOfNode(placeholder.location());
-                        federatedRequest.add(placeholderRequest, true, true, null);
-                        children = new LinkedList<Location>();
                         // Now issue a VerifyNodeExistsRequest for the child.
                         // We'll mix these into the federated request along with the ReadNodeRequests ...
                         ProxyNode proxy = child.asProxy();
@@ -757,7 +760,7 @@ class ForkRequestProcessor extends RequestProcessor {
                         child = child.next();
                     }
                 }
-                if (!children.isEmpty()) {
+                if (!children.isEmpty() || firstRequest) {
                     // Submit the children so far ...
                     ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
                     placeholderRequest.addChildren(children);
@@ -799,19 +802,25 @@ class ForkRequestProcessor extends RequestProcessor {
                 // This placeholder may have proxy nodes as children, in which case we need to verify
                 // their existance to get their actual locations.
                 List<Location> children = new LinkedList<Location>();
+                boolean firstRequest = true;
                 for (ProjectedNode child : placeholder.children()) {
                     if (child.isPlaceholder()) {
                         children.add(child.location());
                         continue;
                     }
                     while (child != null && child.isProxy()) {
-                        // Take any children so far and simply record a ReadNodeRequest with results ...
-                        ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
-                                                                                               request.inWorkspace());
-                        placeholderRequest.addChildren(children);
-                        placeholderRequest.setActualLocationOfNode(placeholder.location());
-                        federatedRequest.add(placeholderRequest, true, true, null);
-                        children = new LinkedList<Location>();
+                        if (!children.isEmpty()) {
+                            // Take any children so far and simply record a ReadNodeRequest with results ...
+                            ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
+                                                                                                   request.inWorkspace());
+                            placeholderRequest.addChildren(children);
+                            if (firstRequest) {
+                                firstRequest = false;
+                            }
+                            placeholderRequest.setActualLocationOfNode(placeholder.location());
+                            federatedRequest.add(placeholderRequest, true, true, null);
+                            children = new LinkedList<Location>();
+                        }
                         // Now issue a VerifyNodeExistsRequest for the child.
                         // We'll mix these into the federated request along with the ReadNodeRequests ...
                         ProxyNode proxy = child.asProxy();
@@ -821,11 +830,14 @@ class ForkRequestProcessor extends RequestProcessor {
                         child = child.next();
                     }
                 }
-                if (!children.isEmpty()) {
+                if (!children.isEmpty() || firstRequest) {
                     // Submit the children so far ...
                     ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
                                                                                            request.inWorkspace());
                     placeholderRequest.addChildren(children);
+                    if (firstRequest) {
+                        firstRequest = false;
+                    }
                     placeholderRequest.setActualLocationOfNode(placeholder.location());
                     federatedRequest.add(placeholderRequest, true, true, null);
                 }

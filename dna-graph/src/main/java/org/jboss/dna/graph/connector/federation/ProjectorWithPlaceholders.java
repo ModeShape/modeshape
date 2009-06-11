@@ -129,8 +129,12 @@ abstract class ProjectorWithPlaceholders implements Projector {
                         parentPlaceholder = new PlaceholderNode(location, properties, new ArrayList<ProjectedNode>());
                         placeholdersByPath.put(parent, parentPlaceholder);
                         placeholderNodes.add(parentPlaceholder);
+                        parentPlaceholder.children().add(child);
+                    } else {
+                        // The placeholder already exists, so make sure we're not adding it to this parent twice ...
+                        List<ProjectedNode> children = parentPlaceholder.children();
+                        if (!children.contains(child)) children.add(child);
                     }
-                    parentPlaceholder.children().add(child);
                     child = parentPlaceholder;
                     path = parent;
                 }

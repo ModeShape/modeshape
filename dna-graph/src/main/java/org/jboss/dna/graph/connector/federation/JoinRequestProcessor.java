@@ -314,6 +314,7 @@ class JoinRequestProcessor extends RequestProcessor {
                 assert federatedPath != null;
                 actualLocation = actualLocation.with(federatedPath);
             }
+            assert actualLocation.getPath() != null;
             request.setActualLocationOfNode(actualLocation);
         }
     }
@@ -328,7 +329,7 @@ class JoinRequestProcessor extends RequestProcessor {
             // We've lost the name of the child, so we need to recompute the path ...
             for (Path path : projection.getPathsInRepository(childInSource.getPath(), pathFactory)) {
                 childPath = path;
-                if (federatedPath == null) federatedPath = path;
+                if (federatedPath == null) federatedPath = path.getParent();
                 break;
             }
         }
@@ -458,7 +459,7 @@ class JoinRequestProcessor extends RequestProcessor {
     protected Location determineActualLocation( Location actual,
                                                 Location inSource,
                                                 Projection projection ) {
-        if (!actual.hasPath()) {
+        if (actual.getPath() == null) {
             if (projection == null) {
                 // It must be a placeholder node ...
                 return inSource;
