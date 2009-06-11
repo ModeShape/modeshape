@@ -50,6 +50,7 @@ import org.jboss.dna.graph.connector.federation.FederatedRequest.ProjectedReques
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
@@ -70,6 +71,7 @@ import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
@@ -933,6 +935,7 @@ class ForkRequestProcessor extends RequestProcessor {
         FederatedRequest federatedRequest = new FederatedRequest(request);
 
         // Any non-read request should be submitted to the first ProxyNode ...
+        PlaceholderNode placeholder = null;
         while (projectedNode != null) {
             if (projectedNode.isProxy()) {
                 ProxyNode proxy = projectedNode.asProxy();
@@ -947,9 +950,48 @@ class ForkRequestProcessor extends RequestProcessor {
                 return;
             }
             assert projectedNode.isPlaceholder();
+            if (placeholder == null) placeholder = projectedNode.asPlaceholder();
             projectedNode = projectedNode.next();
         }
-        // Unable to perform this create ...
+
+        // At this point, we know the parent node is a placeholder, so we cannot create children.
+        // What we don't know, though, is whether there is an existing child at the desired location.
+        if (placeholder != null) {
+            switch (request.conflictBehavior()) {
+                case UPDATE:
+                case DO_NOT_REPLACE:
+                    // See if there is an existing node at the desired location ...
+                    Location parent = request.under();
+                    if (parent.hasPath()) {
+                        PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
+                        Path childPath = pathFactory.create(parent.getPath(), request.named());
+                        Location childLocation = Location.create(childPath);
+                        projectedNode = project(childLocation, request.inWorkspace(), request, true);
+                        if (projectedNode != null) {
+                            if (projectedNode.isProxy()) {
+                                ProxyNode proxy = projectedNode.asProxy();
+
+                                // We know that the parent is a placeholder, so this proxy node must exist, so do a read ...
+                                ReadNodeRequest pushDownRequest = new ReadNodeRequest(proxy.location(), proxy.workspaceName());
+                                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                                // Submit the requests for processing and then STOP ...
+                                submit(federatedRequest);
+                                return;
+                            }
+                            // The node does exist, so set the location ...
+                            assert projectedNode.isPlaceholder();
+                            request.setActualLocationOfNode(projectedNode.location());
+                            return;
+                        }
+                    }
+                    break;
+                case APPEND:
+                case REPLACE:
+                    // Unable to perform this create ...
+                    break;
+            }
+        }
         String msg = GraphI18n.unableToCreateNodeUnderPlaceholder.text(readable(request.named()),
                                                                        readable(request.under()),
                                                                        request.inWorkspace(),
@@ -978,6 +1020,41 @@ class ForkRequestProcessor extends RequestProcessor {
                 // Create and submit a request for the projection ...
                 UpdatePropertiesRequest pushDownRequest = new UpdatePropertiesRequest(proxy.location(), proxy.workspaceName(),
                                                                                       request.properties());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.on()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.SetPropertyRequest)
+     */
+    @Override
+    public void process( SetPropertyRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                SetPropertyRequest pushDownRequest = new SetPropertyRequest(proxy.location(), proxy.workspaceName(),
+                                                                            request.property());
                 federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
 
                 // Submit the requests for processing and then STOP ...

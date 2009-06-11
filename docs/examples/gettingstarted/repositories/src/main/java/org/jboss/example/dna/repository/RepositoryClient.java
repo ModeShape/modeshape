@@ -62,7 +62,7 @@ import org.xml.sax.SAXException;
 public class RepositoryClient {
 
     public static final String INMEMORY_REPOSITORY_SOURCE_CLASSNAME = "org.jboss.dna.connector.inmemory.InMemoryRepositorySource";
-    public static final String JAAS_LOGIN_CONTEXT_NAME = "dna-repository-example";
+    public static final String JAAS_LOGIN_CONTEXT_NAME = "dna-jcr";
 
     /**
      * @param args
@@ -96,7 +96,7 @@ public class RepositoryClient {
     }
 
     private Api api = Api.JCR;
-    private String jaasContextName;
+    private String jaasContextName = JAAS_LOGIN_CONTEXT_NAME;
     private UserInterface userInterface;
     private LoginContext loginContext;
     private JcrEngine engine;

@@ -24,11 +24,18 @@
 package org.jboss.example.dna.repository;
 
 import org.jboss.example.dna.repository.RepositoryClient.Api;
+import org.junit.Before;
 
 /**
  * @author Randall Hauch
  */
 public class RepositoryClientUsingJcrTest extends RepositoryClientTest {
+
+    @Before
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+    }
 
     /**
      * {@inheritDoc}

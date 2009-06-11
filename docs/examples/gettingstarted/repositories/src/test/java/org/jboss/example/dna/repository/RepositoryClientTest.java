@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.security.auth.callback.CallbackHandler;
+import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -63,6 +66,17 @@ public class RepositoryClientTest {
         stub(userInterface.getLocationOfRepositoryFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
         stub(userInterface.getLocationOfCndFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
         stub(userInterface.getRepositoryConfiguration()).toReturn(new File("src/main/resources/configRepository.xml"));
+
+        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+        try {
+            idtrustConfig.config("security/jaas.conf.xml");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        CallbackHandler handler = new JaasSecurityContext.UserPasswordCallbackHandler("jsmith", "secret".toCharArray());
+        stub(userInterface.getCallbackHandler()).toReturn(handler);
     }
 
     @After

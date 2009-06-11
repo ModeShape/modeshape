@@ -61,6 +61,7 @@ import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
@@ -678,9 +679,22 @@ class JoinRequestProcessor extends RequestProcessor {
     public void process( CreateNodeRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
         assert !projected.hasNext();
-        CreateNodeRequest source = (CreateNodeRequest)projected.getRequest();
-        if (checkErrorOrCancel(request, source)) return;
-        Location sourceLocation = source.getActualLocationOfNode();
+        Request projectedRequest = projected.getRequest();
+        // Check the error first ...
+        if (checkErrorOrCancel(request, projectedRequest)) return;
+
+        // No error, so project the results back to the federated repository ...
+        Location sourceLocation = null;
+        if (projectedRequest instanceof CreateNodeRequest) {
+            CreateNodeRequest source = (CreateNodeRequest)projectedRequest;
+            sourceLocation = source.getActualLocationOfNode();
+        } else if (projectedRequest instanceof ReadNodeRequest) {
+            // In this case, the original request was to create the node only if it was missing,
+            // but we knew it already exists because the parent was a placeholder and the child
+            // mapped to an existing proxy node. Therefore, record the location...
+            ReadNodeRequest source = (ReadNodeRequest)projectedRequest;
+            sourceLocation = source.getActualLocationOfNode();
+        }
         request.setActualLocationOfNode(projectToFederated(request.under(), projected.getProjection(), sourceLocation, request));
     }
 
@@ -694,6 +708,21 @@ class JoinRequestProcessor extends RequestProcessor {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
         assert !projected.hasNext();
         UpdatePropertiesRequest source = (UpdatePropertiesRequest)projected.getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        Location sourceLocation = source.getActualLocationOfNode();
+        request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.SetPropertyRequest)
+     */
+    @Override
+    public void process( SetPropertyRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        assert !projected.hasNext();
+        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
