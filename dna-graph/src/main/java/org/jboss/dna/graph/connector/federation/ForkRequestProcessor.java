@@ -696,9 +696,7 @@ class ForkRequestProcessor extends RequestProcessor {
             if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
                 // Create a request and set the results ...
-                ReadNodeRequest placeholderRequest = new ReadNodeRequest(request.at(), request.inWorkspace());
-                placeholderRequest.addChildren(placeholder.children());
-                placeholderRequest.addProperties(placeholder.properties().values());
+                VerifyNodeExistsRequest placeholderRequest = new VerifyNodeExistsRequest(request.at(), request.inWorkspace());
                 placeholderRequest.setActualLocationOfNode(placeholder.location());
                 federatedRequest.add(placeholderRequest, true, true, null);
             } else if (projectedNode.isProxy()) {
