@@ -31,6 +31,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -87,7 +88,7 @@ public class ForkRequestProcessorTest {
     private MockRepositoryConnection connectionForSourceB;
     private MockRepositoryConnection connectionForSourceC;
     private Map<Name, Property> properties;
-    private List<Location> children;
+    private List<ProjectedNode> children;
 
     @Before
     public void beforeEach() {
@@ -105,7 +106,7 @@ public class ForkRequestProcessorTest {
         context = new ExecutionContext();
         now = context.getValueFactories().getDateFactory().create();
         federatedRequests = new LinkedList<FederatedRequest>();
-        children = new ArrayList<Location>();
+        children = new ArrayList<ProjectedNode>();
         properties = new HashMap<Name, Property>();
 
         // Set up the connection factory and connection ...
@@ -169,7 +170,10 @@ public class ForkRequestProcessorTest {
     public void addChild( Location parent,
                           String childName ) {
         Path path = context.getValueFactories().getPathFactory().create(parent.getPath(), segment(childName));
-        children.add(Location.create(path));
+        Map<Name, Property> properties = Collections.emptyMap();
+        List<ProjectedNode> grandChildren = Collections.emptyList();
+        PlaceholderNode child = new PlaceholderNode(Location.create(path), properties, grandChildren);
+        this.children.add(child);
     }
 
     @Test
@@ -349,7 +353,11 @@ public class ForkRequestProcessorTest {
         FederatedRequest fedRequest = federatedRequests.poll();
         ReadNodeRequest projectedRequest = (ReadNodeRequest)fedRequest.getFirstProjectedRequest().getRequest();
         assertThat(projectedRequest.at(), is(locationInFed));
-        assertThat(projectedRequest.getChildren(), is(children));
+        List<Location> expectedChildren = new ArrayList<Location>();
+        for (ProjectedNode child : children) {
+            expectedChildren.add(child.location());
+        }
+        assertThat(projectedRequest.getChildren(), is(expectedChildren));
         assertThat(projectedRequest.getPropertiesByName(), is(properties));
         assertThat(fedRequest.getFirstProjectedRequest().hasNext(), is(false));
 

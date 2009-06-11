@@ -113,13 +113,13 @@ public class RepositoryClientTest {
     @Test
     public void shouldStartupWithoutError() throws Exception {
         client.startRepositories();
-        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Car", "Vehicles"));
+        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Cars", "Vehicles"));
     }
 
     @Test
     public void shouldStartupWithoutErrorMoreThanOnce() throws Exception {
         client.startRepositories();
-        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Car", "Vehicles"));
+        assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Cars", "Vehicles"));
     }
 
     @Ignore

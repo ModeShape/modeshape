@@ -37,8 +37,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.TreeMultimap;
 
 /**
  * A Projector for federated repository configurations that are an offset, direct one-for-one mirror against a single source
@@ -99,28 +97,44 @@ abstract class ProjectorWithPlaceholders implements Projector {
                                                 Iterable<Projection> projections,
                                                 Collection<PlaceholderNode> placeholderNodes ) {
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        TreeMultimap<Path, Location> childrenForParent = Multimaps.newTreeMultimap();
+        Map<Path, ProxyNode> proxyNodesByPath = new HashMap<Path, ProxyNode>();
+        Map<Path, PlaceholderNode> placeholdersByPath = new HashMap<Path, PlaceholderNode>();
         for (Projection projection : projections) {
-            // Collect the paths to all of the top-level nodes under each of their parents ...
+            // Create for all of the top-level nodes ...
             for (Path path : projection.getTopLevelPathsInRepository(pathFactory)) {
                 if (path.isRoot()) continue;
+                // Create ProxyNodes for each corresponding path-in-source ...
+                Location inRepository = Location.create(path);
+                ProxyNode previous = null;
+                for (Path pathInSource : projection.getPathsInSource(path, pathFactory)) {
+                    Location inSource = Location.create(pathInSource);
+                    ProxyNode proxy = new ProxyNode(projection, inSource, inRepository);
+                    if (previous == null) {
+                        previous = proxy;
+                        proxyNodesByPath.put(path, proxy);
+                    } else {
+                        previous.add(proxy);
+                    }
+                }
+                // Walk up the in-repository path to create the placeholder nodes ...
+                ProjectedNode child = previous;
                 while (!path.isRoot()) {
                     // Create a projected node for the parent of this path ...
                     Path parent = path.getParent();
-                    childrenForParent.put(parent, Location.create(path));
+                    PlaceholderNode parentPlaceholder = placeholdersByPath.get(parent);
+                    if (parentPlaceholder == null) {
+                        // Need to create the placeholder ...
+                        Map<Name, Property> properties = Collections.emptyMap();
+                        Location location = Location.create(parent, UUID.randomUUID());
+                        parentPlaceholder = new PlaceholderNode(location, properties, new ArrayList<ProjectedNode>());
+                        placeholdersByPath.put(parent, parentPlaceholder);
+                        placeholderNodes.add(parentPlaceholder);
+                    }
+                    parentPlaceholder.children().add(child);
+                    child = parentPlaceholder;
                     path = parent;
                 }
             }
         }
-        // Now, we want to create a placeholder for each parent, with the list of all children ...
-        for (Path parentPath : childrenForParent.keySet()) {
-            // Get the children for this parent ...
-            List<Location> children = new ArrayList<Location>(childrenForParent.get(parentPath));
-            Map<Name, Property> properties = Collections.emptyMap();
-            Location location = Location.create(parentPath, UUID.randomUUID());
-            PlaceholderNode placeholder = new PlaceholderNode(location, properties, children);
-            placeholderNodes.add(placeholder);
-        }
     }
-
 }

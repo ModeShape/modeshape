@@ -111,7 +111,7 @@ public class BranchedMirrorProjectorTest extends AbstractProjectorTest<BranchedM
         assertThat(placeholder.isPlaceholder(), is(true));
         assertThat(placeholder.location().getPath(), is(path("/")));
         assertThat(placeholder.children().size(), is(1));
-        assertThat(placeholder.children().get(0).getPath(), is(path("/system")));
+        assertThat(placeholder.children().get(0).location().getPath(), is(path("/system")));
         assertThat(placeholder.hasNext(), is(false));
     }
 

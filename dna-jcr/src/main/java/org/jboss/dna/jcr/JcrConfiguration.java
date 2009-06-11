@@ -118,14 +118,14 @@ public class JcrConfiguration extends DnaConfiguration {
         String getOption( JcrRepository.Option option );
 
         /**
-         * Specify that the CND in the supplied string should be loaded into the repository.
+         * Specify that the CND file located at the supplied path should be loaded into the repository.
          * 
-         * @param cndContents the string containing the compact node definitions
+         * @param pathToCndFile the path to the CND file
          * @return this object for chained method invocation
          * @throws IllegalArgumentException if the string is null or empty
-         * @throws DnaConfigurationException if there is an error reading the CND contents
+         * @throws DnaConfigurationException if there is an error reading the CND file
          */
-        RepositoryDefinition<ReturnType> addNodeTypes( String cndContents );
+        RepositoryDefinition<ReturnType> addNodeTypes( String pathToCndFile );
 
         /**
          * Specify that the CND file is to be loaded into the repository.
@@ -513,19 +513,9 @@ public class JcrConfiguration extends DnaConfiguration {
             return this;
         }
 
-        public RepositoryDefinition<ReturnType> addNodeTypes( String cndContents ) {
-            CheckArg.isNotEmpty(cndContents, "cndContents");
-            CndImporter importer = createCndImporter();
-            try {
-                Set<Namespace> namespacesBefore = batch.getGraph().getContext().getNamespaceRegistry().getNamespaces();
-                importer.importFrom(cndContents, getProblems(), "stream");
-
-                // Record any new namespaces added by this import ...
-                registerNewNamespaces(namespacesBefore);
-            } catch (IOException e) {
-                throw new DnaConfigurationException(e);
-            }
-            return this;
+        public RepositoryDefinition<ReturnType> addNodeTypes( String pathToCndFile ) {
+            CheckArg.isNotEmpty(pathToCndFile, "pathToCndFile");
+            return addNodeTypes(new File(pathToCndFile));
         }
 
         public RepositoryDefinition<ReturnType> addNodeTypes( File file ) {

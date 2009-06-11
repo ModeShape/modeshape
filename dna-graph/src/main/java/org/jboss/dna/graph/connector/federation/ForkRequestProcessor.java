@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.connector.federation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -727,12 +728,46 @@ class ForkRequestProcessor extends RequestProcessor {
         while (projectedNode != null) {
             if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
-                // Create a request and set the results ...
-                ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
-                placeholderRequest.addChildren(placeholder.children());
-                placeholderRequest.addProperties(placeholder.properties().values());
-                placeholderRequest.setActualLocationOfNode(placeholder.location());
-                federatedRequest.add(placeholderRequest, true, true, null);
+                // This placeholder may have proxy nodes as children, in which case we need to verify
+                // their existance to get their actual locations.
+                List<Location> children = new LinkedList<Location>();
+                boolean firstRequest = true;
+                for (ProjectedNode child : placeholder.children()) {
+                    if (child.isPlaceholder()) {
+                        children.add(child.location());
+                        continue;
+                    }
+                    while (child != null && child.isProxy()) {
+                        // Take any children so far and simply record a ReadNodeRequest with results ...
+                        ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
+                        placeholderRequest.addChildren(children);
+                        if (firstRequest) {
+                            firstRequest = false;
+                            placeholderRequest.addProperties(placeholder.properties().values());
+                        }
+                        placeholderRequest.setActualLocationOfNode(placeholder.location());
+                        federatedRequest.add(placeholderRequest, true, true, null);
+                        children = new LinkedList<Location>();
+                        // Now issue a VerifyNodeExistsRequest for the child.
+                        // We'll mix these into the federated request along with the ReadNodeRequests ...
+                        ProxyNode proxy = child.asProxy();
+                        VerifyNodeExistsRequest verifyRequest = new VerifyNodeExistsRequest(proxy.location(),
+                                                                                            proxy.workspaceName());
+                        federatedRequest.add(verifyRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+                        child = child.next();
+                    }
+                }
+                if (!children.isEmpty()) {
+                    // Submit the children so far ...
+                    ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
+                    placeholderRequest.addChildren(children);
+                    if (firstRequest) {
+                        firstRequest = false;
+                        placeholderRequest.addProperties(placeholder.properties().values());
+                    }
+                    placeholderRequest.setActualLocationOfNode(placeholder.location());
+                    federatedRequest.add(placeholderRequest, true, true, null);
+                }
             } else if (projectedNode.isProxy()) {
                 ProxyNode proxy = projectedNode.asProxy();
                 // Create and submit a request for the projection ...
@@ -761,12 +796,39 @@ class ForkRequestProcessor extends RequestProcessor {
         while (projectedNode != null) {
             if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
-                // Create a request and set the results ...
-                ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
-                                                                                       request.inWorkspace());
-                placeholderRequest.addChildren(placeholder.children());
-                placeholderRequest.setActualLocationOfNode(placeholder.location());
-                federatedRequest.add(placeholderRequest, true, true, null);
+                // This placeholder may have proxy nodes as children, in which case we need to verify
+                // their existance to get their actual locations.
+                List<Location> children = new LinkedList<Location>();
+                for (ProjectedNode child : placeholder.children()) {
+                    if (child.isPlaceholder()) {
+                        children.add(child.location());
+                        continue;
+                    }
+                    while (child != null && child.isProxy()) {
+                        // Take any children so far and simply record a ReadNodeRequest with results ...
+                        ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
+                                                                                               request.inWorkspace());
+                        placeholderRequest.addChildren(children);
+                        placeholderRequest.setActualLocationOfNode(placeholder.location());
+                        federatedRequest.add(placeholderRequest, true, true, null);
+                        children = new LinkedList<Location>();
+                        // Now issue a VerifyNodeExistsRequest for the child.
+                        // We'll mix these into the federated request along with the ReadNodeRequests ...
+                        ProxyNode proxy = child.asProxy();
+                        VerifyNodeExistsRequest verifyRequest = new VerifyNodeExistsRequest(proxy.location(),
+                                                                                            proxy.workspaceName());
+                        federatedRequest.add(verifyRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+                        child = child.next();
+                    }
+                }
+                if (!children.isEmpty()) {
+                    // Submit the children so far ...
+                    ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
+                                                                                           request.inWorkspace());
+                    placeholderRequest.addChildren(children);
+                    placeholderRequest.setActualLocationOfNode(placeholder.location());
+                    federatedRequest.add(placeholderRequest, true, true, null);
+                }
             } else if (projectedNode.isProxy()) {
                 ProxyNode proxy = projectedNode.asProxy();
                 // Create and submit a request for the projection ...
@@ -895,17 +957,19 @@ class ForkRequestProcessor extends RequestProcessor {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
                 // Create a request and set the results ...
                 ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), workspace.getName());
-                placeholderRequest.addChildren(placeholder.children());
+                List<Location> children = new ArrayList<Location>(placeholder.children().size());
+                for (ProjectedNode child : placeholder.children()) {
+                    children.add(child.location()); // the ProxyNodes will have only a path!
+                }
+                placeholderRequest.addChildren(children);
                 placeholderRequest.addProperties(placeholder.properties().values());
                 placeholderRequest.setActualLocationOfNode(placeholder.location());
                 federatedRequest.add(placeholderRequest, true, true, null);
                 if (maxDepth > 1) {
-                    ExecutionContext context = getExecutionContext();
                     // For each child of the placeholder node ...
-                    for (Location child : placeholder.children()) {
-                        ProjectedNode projectedSubnode = workspace.project(context, child, false);
+                    for (ProjectedNode child : placeholder.children()) {
                         // Call recursively, but reduce the max depth
-                        processBranch(federatedRequest, projectedSubnode, workspace, maxDepth - 1);
+                        processBranch(federatedRequest, child, workspace, maxDepth - 1);
                     }
                 }
             } else if (projectedNode.isProxy()) {
@@ -1124,10 +1188,12 @@ class ForkRequestProcessor extends RequestProcessor {
                 federatedRequest.add(delete, true, true, null);
                 // Create and submit a request for each proxy below this placeholder ...
                 // For each child of the placeholder node ...
-                for (Location child : placeholder.children()) {
-                    ProjectedNode projectedSubnode = workspace.project(context, child, true);
-                    // Call recursively ...
-                    submit = deleteBranch(federatedRequest, projectedSubnode, workspace, context);
+                for (ProjectedNode child : placeholder.children()) {
+                    while (child != null && child.isProxy()) {
+                        // Call recursively ...
+                        submit = deleteBranch(federatedRequest, child.asProxy(), workspace, context);
+                        child = child.next();
+                    }
                 }
             }
             projectedNode = projectedNode.next();

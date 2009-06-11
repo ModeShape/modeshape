@@ -202,6 +202,11 @@ class JoinRequestProcessor extends RequestProcessor {
                 return;
             }
 
+            // Make sure we have an actual location ...
+            actualLocation = determineActualLocation(actualLocation,
+                                                     readFromSource.getActualLocationOfNode(),
+                                                     projectedRequest.getProjection());
+
             // Accumulate the identification properties ...
             for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
                 Name name = propertyInSource.getName();
@@ -240,56 +245,64 @@ class JoinRequestProcessor extends RequestProcessor {
         Location actualLocation = request.at();
         int numMerged = 0;
         while (projectedRequest != null) {
-            ReadNodeRequest readFromSource = (ReadNodeRequest)projectedRequest.getRequest();
-            if (readFromSource.hasError()) {
+            Request sourceRequest = projectedRequest.getRequest();
+            if (sourceRequest.hasError()) {
                 projectedRequest = projectedRequest.next();
                 continue;
             }
-            if (readFromSource.isCancelled()) {
+            if (sourceRequest.isCancelled()) {
                 request.cancel();
                 return;
             }
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            Projection projection = projectedRequest.getProjection();
+            if (sourceRequest instanceof VerifyNodeExistsRequest) {
+                // We needed to verify the existance of a child node ...
+                VerifyNodeExistsRequest verify = (VerifyNodeExistsRequest)sourceRequest;
+                Location childInSource = verify.getActualLocationOfNode();
+                Location childInRepos = getChildLocationWithCorrectSnsIndex(childInSource,
+                                                                            federatedPath,
+                                                                            childSnsIndexes,
+                                                                            projection);
+                request.addChild(childInRepos);
+                if (federatedPath == null) federatedPath = childInRepos.getPath().getParent();
+            } else {
+                ReadNodeRequest readFromSource = (ReadNodeRequest)sourceRequest;
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
-            }
 
-            // Add all the children from the source ...
-            for (Location childInSource : readFromSource.getChildren()) {
-                // Project back into the federated repository ...
-                Path childPath = childInSource.getPath();
-                // Correct the same-name-sibling index for the child ...
-                Name childName = childPath.getLastSegment().getName();
-                Integer snsIndex = childSnsIndexes.get(childName);
-                if (snsIndex == null) {
-                    snsIndex = new Integer(1);
-                    childSnsIndexes.put(childName, snsIndex);
-                } else {
-                    snsIndex = new Integer(snsIndex.intValue() + 1);
-                    childSnsIndexes.put(childName, snsIndex);
-                }
-                Path newPath = pathFactory.create(federatedPath, childName, snsIndex.intValue());
-                request.addChild(childInSource.with(newPath));
-            }
+                // Make sure we have an actual location ...
+                actualLocation = determineActualLocation(actualLocation, readFromSource.getActualLocationOfNode(), projection);
+                if (federatedPath == null) federatedPath = actualLocation.getPath();
 
-            // Add all the properties ...
-            for (Property propertyInSource : readFromSource.getProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = properties.get(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                // Add all the children from the source ...
+                for (Location childInSource : readFromSource.getChildren()) {
+                    request.addChild(getChildLocationWithCorrectSnsIndex(childInSource,
+                                                                         federatedPath,
+                                                                         childSnsIndexes,
+                                                                         projection));
                 }
-                properties.put(name, propertyInSource);
+
+                // Add all the properties ...
+                for (Property propertyInSource : readFromSource.getProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = properties.get(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    properties.put(name, propertyInSource);
+                }
+                setCacheableInfo(request, readFromSource.getCachePolicy());
             }
-            setCacheableInfo(request, readFromSource.getCachePolicy());
             projectedRequest = projectedRequest.next();
             ++numMerged;
         }
@@ -297,8 +310,41 @@ class JoinRequestProcessor extends RequestProcessor {
             // No source requests had results ...
             setPathNotFound(request, request.at(), federatedRequest.getFirstProjectedRequest());
         } else {
+            if (!actualLocation.hasPath()) {
+                assert federatedPath != null;
+                actualLocation = actualLocation.with(federatedPath);
+            }
             request.setActualLocationOfNode(actualLocation);
         }
+    }
+
+    protected Location getChildLocationWithCorrectSnsIndex( Location childInSource,
+                                                            Path federatedPath,
+                                                            Map<Name, Integer> childSnsIndexes,
+                                                            Projection projection ) {
+        // Project back into the federated repository ...
+        Path childPath = childInSource.getPath();
+        if (childPath.isRoot() || federatedPath == null) {
+            // We've lost the name of the child, so we need to recompute the path ...
+            for (Path path : projection.getPathsInRepository(childInSource.getPath(), pathFactory)) {
+                childPath = path;
+                if (federatedPath == null) federatedPath = path;
+                break;
+            }
+        }
+
+        // Correct the same-name-sibling index for the child ...
+        Name childName = childPath.getLastSegment().getName();
+        Integer snsIndex = childSnsIndexes.get(childName);
+        if (snsIndex == null) {
+            snsIndex = new Integer(1);
+            childSnsIndexes.put(childName, snsIndex);
+        } else {
+            snsIndex = new Integer(snsIndex.intValue() + 1);
+            childSnsIndexes.put(childName, snsIndex);
+        }
+        Path newPath = pathFactory.create(federatedPath, childName, snsIndex.intValue());
+        return childInSource.with(newPath);
     }
 
     /**
@@ -346,46 +392,54 @@ class JoinRequestProcessor extends RequestProcessor {
         Location actualLocation = request.of();
         int numMerged = 0;
         while (projectedRequest != null) {
-            ReadAllChildrenRequest readFromSource = (ReadAllChildrenRequest)projectedRequest.getRequest();
-            if (readFromSource.hasError()) {
+            Request sourceRequest = projectedRequest.getRequest();
+            if (sourceRequest.hasError()) {
                 projectedRequest = projectedRequest.next();
                 continue;
             }
-            if (readFromSource.isCancelled()) {
+            if (sourceRequest.isCancelled()) {
                 request.cancel();
                 return;
             }
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            Projection projection = projectedRequest.getProjection();
+            if (sourceRequest instanceof VerifyNodeExistsRequest) {
+                // We needed to verify the existance of a child node ...
+                VerifyNodeExistsRequest verify = (VerifyNodeExistsRequest)sourceRequest;
+                Location childInSource = verify.getActualLocationOfNode();
+                Location childInRepos = getChildLocationWithCorrectSnsIndex(childInSource,
+                                                                            federatedPath,
+                                                                            childSnsIndexes,
+                                                                            projection);
+                request.addChild(childInRepos);
+                if (federatedPath == null) federatedPath = childInRepos.getPath().getParent();
+            } else {
+                ReadAllChildrenRequest readFromSource = (ReadAllChildrenRequest)sourceRequest;
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
+
+                // Make sure we have an actual location ...
+                actualLocation = determineActualLocation(actualLocation, readFromSource.getActualLocationOfNode(), projection);
+                if (federatedPath == null) federatedPath = actualLocation.getPath();
+
+                // Add all the children from the source ...
+                for (Location childInSource : readFromSource.getChildren()) {
+                    request.addChild(getChildLocationWithCorrectSnsIndex(childInSource,
+                                                                         federatedPath,
+                                                                         childSnsIndexes,
+                                                                         projection));
+                }
+                setCacheableInfo(request, readFromSource.getCachePolicy());
             }
 
-            // Add all the children from the source ...
-            for (Location childInSource : readFromSource.getChildren()) {
-                // Project back into the federated repository ...
-                Path childPath = childInSource.getPath();
-                // Correct the same-name-sibling index for the child ...
-                Name childName = childPath.getLastSegment().getName();
-                Integer snsIndex = childSnsIndexes.get(childName);
-                if (snsIndex == null) {
-                    snsIndex = new Integer(1);
-                    childSnsIndexes.put(childName, snsIndex);
-                } else {
-                    snsIndex = new Integer(snsIndex.intValue() + 1);
-                    childSnsIndexes.put(childName, snsIndex);
-                }
-                Path newPath = pathFactory.create(federatedPath, childName, snsIndex.intValue());
-                request.addChild(childInSource.with(newPath));
-            }
-
-            setCacheableInfo(request, readFromSource.getCachePolicy());
             projectedRequest = projectedRequest.next();
             ++numMerged;
         }
@@ -393,8 +447,29 @@ class JoinRequestProcessor extends RequestProcessor {
             // No source requests had results ...
             setPathNotFound(request, request.of(), federatedRequest.getFirstProjectedRequest());
         } else {
+            if (!actualLocation.hasPath()) {
+                assert federatedPath != null;
+                actualLocation = actualLocation.with(federatedPath);
+            }
             request.setActualLocationOfNode(actualLocation);
         }
+    }
+
+    protected Location determineActualLocation( Location actual,
+                                                Location inSource,
+                                                Projection projection ) {
+        if (!actual.hasPath()) {
+            if (projection == null) {
+                // It must be a placeholder node ...
+                return inSource;
+            }
+            // Get the projection from the source-specific location ...
+            Path pathInSource = inSource.getPath();
+            for (Path path : projection.getPathsInRepository(pathInSource, pathFactory)) {
+                return actual.with(path);
+            }
+        }
+        return actual;
     }
 
     /**
@@ -420,6 +495,11 @@ class JoinRequestProcessor extends RequestProcessor {
                 request.cancel();
                 return;
             }
+
+            // Make sure we have an actual location ...
+            actualLocation = determineActualLocation(actualLocation,
+                                                     readFromSource.getActualLocationOfNode(),
+                                                     projectedRequest.getProjection());
 
             // Accumulate the identification properties ...
             for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
@@ -477,6 +557,11 @@ class JoinRequestProcessor extends RequestProcessor {
                 return;
             }
 
+            // Make sure we have an actual location ...
+            actualLocation = determineActualLocation(actualLocation,
+                                                     readFromSource.getActualLocationOfNode(),
+                                                     projectedRequest.getProjection());
+
             // Accumulate the identification properties ...
             for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
                 Name name = propertyInSource.getName();
@@ -523,6 +608,8 @@ class JoinRequestProcessor extends RequestProcessor {
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.at();
         int numMerged = 0;
+        // The first pass will only capture the actual ReadBranchRequests to the underlying sources ...
+        Map<Path, Location> actualLocationsOfProxyNodes = new HashMap<Path, Location>();
         while (projectedRequest != null) {
             CacheableRequest fromSource = (CacheableRequest)projectedRequest.getRequest();
             if (fromSource.hasError()) {
@@ -535,24 +622,45 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             Projection projection = projectedRequest.getProjection();
-            if (fromSource instanceof ReadNodeRequest) {
-                ReadNodeRequest readFromSource = (ReadNodeRequest)fromSource;
-                Location parent = readFromSource.getActualLocationOfNode();
-                List<Location> children = readFromSource.getChildren();
-                Map<Name, Property> properties = readFromSource.getPropertiesByName();
-                projectToFederated(actualLocation, projection, request, parent, children, properties);
-            } else if (fromSource instanceof ReadBranchRequest) {
+            if (fromSource instanceof ReadBranchRequest) {
                 ReadBranchRequest readFromSource = (ReadBranchRequest)fromSource;
                 for (Location parent : readFromSource) {
                     List<Location> children = readFromSource.getChildren(parent);
                     Map<Name, Property> properties = readFromSource.getPropertiesFor(parent);
                     projectToFederated(actualLocation, projection, request, parent, children, properties);
                 }
+                Location locationOfProxy = readFromSource.getActualLocationOfNode();
+                actualLocationsOfProxyNodes.put(locationOfProxy.getPath(), locationOfProxy);
             }
             setCacheableInfo(request, fromSource.getCachePolicy());
             projectedRequest = projectedRequest.next();
             ++numMerged;
         }
+        // Go through the requests and process the ReadNodeRequests (which were reading children of placeholders)...
+        projectedRequest = federatedRequest.getFirstProjectedRequest();
+        while (projectedRequest != null) {
+            CacheableRequest fromSource = (CacheableRequest)projectedRequest.getRequest();
+            Projection projection = projectedRequest.getProjection();
+            if (fromSource instanceof ReadNodeRequest) {
+                ReadNodeRequest readFromSource = (ReadNodeRequest)fromSource;
+                Location parent = readFromSource.getActualLocationOfNode();
+                List<Location> children = readFromSource.getChildren();
+                for (int i = 0; i != children.size(); ++i) {
+                    Location child = children.get(i);
+                    if (!child.hasIdProperties()) {
+                        // The the child must have been a proxy node ...
+                        Location actual = actualLocationsOfProxyNodes.get(child.getPath());
+                        assert actual != null;
+                        children.set(i, actual);
+                    }
+                }
+                Map<Name, Property> properties = readFromSource.getPropertiesByName();
+                projectToFederated(actualLocation, projection, request, parent, children, properties);
+            }
+            setCacheableInfo(request, fromSource.getCachePolicy());
+            projectedRequest = projectedRequest.next();
+        }
+
         if (numMerged == 0) {
             // No source requests had results ...
             setPathNotFound(request, request.at(), federatedRequest.getFirstProjectedRequest());

@@ -25,7 +25,6 @@ package org.jboss.dna.graph.connector.federation;
 
 import java.util.List;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -35,7 +34,7 @@ import org.jboss.dna.graph.property.Property;
  * Information about a node that has been projected into the repository from a source. Each projected node may be followed by a
  * {@link #next() next} projected node.
  */
-@Immutable
+@NotThreadSafe
 abstract class ProjectedNode {
     private final Location location;
     private ProjectedNode next;
@@ -82,20 +81,20 @@ abstract class ProjectedNode {
     public abstract ProxyNode asProxy();
 }
 
-@Immutable
+@NotThreadSafe
 class PlaceholderNode extends ProjectedNode {
     private final Map<Name, Property> properties;
-    private final List<Location> children;
+    private final List<ProjectedNode> children;
 
     protected PlaceholderNode( Location location,
                                Map<Name, Property> properties,
-                               List<Location> children ) {
+                               List<ProjectedNode> children ) {
         super(location);
         this.properties = properties;
         this.children = children;
     }
 
-    public List<Location> children() {
+    public List<ProjectedNode> children() {
         return children;
     }
 

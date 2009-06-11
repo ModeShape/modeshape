@@ -69,6 +69,9 @@ final class GeneralProjector extends ProjectorWithPlaceholders {
     public ProjectedNode project( ExecutionContext context,
                                   Location location,
                                   boolean requiresUpdate ) {
+        PlaceholderNode placeholder = isPlaceholder(location);
+        if (placeholder != null) return placeholder;
+
         // Find the location of the desired node ...
         Path path = location.getPath();
         if (path == null) {

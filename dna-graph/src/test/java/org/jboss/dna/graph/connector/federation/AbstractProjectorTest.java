@@ -106,11 +106,19 @@ public abstract class AbstractProjectorTest<ProjectorType extends Projector> {
         assertThat(node, is(notNullValue()));
         assertThat(node.isPlaceholder(), is(true));
         PlaceholderNode placeholder = node.asPlaceholder();
-        List<Location> locations = new ArrayList<Location>();
+        List<Path> locations = new ArrayList<Path>();
         for (String childSegment : childSegments) {
             Path childPath = path(parentPath, childSegment);
-            locations.add(Location.create(childPath));
+            locations.add(childPath);
         }
-        assertThat(placeholder.children(), is(locations));
+        List<Path> actual = new ArrayList<Path>();
+        for (ProjectedNode child : placeholder.children()) {
+            if (child.isPlaceholder()) {
+                actual.add(child.location().getPath());
+            } else {
+                actual.add(child.asProxy().federatedLocation().getPath());
+            }
+        }
+        assertThat(actual, is(locations));
     }
 }
