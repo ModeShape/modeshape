@@ -61,6 +61,8 @@ import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -154,7 +156,8 @@ public class JcrSessionTest {
         sessionAttributes.put("attribute1", "value1");
 
         // Now create the workspace ...
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
+        SecurityContext mockSecurityContext = new MockSecurityContext(null, Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
 
         // Create the session and log in ...
         session = (JcrSession)workspace.getSession();

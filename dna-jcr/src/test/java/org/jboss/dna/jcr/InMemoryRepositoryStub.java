@@ -97,6 +97,8 @@ public class InMemoryRepositoryStub extends RepositoryStub {
             // URI xmlContent = new File("src/test/resources/repositoryForTckTests.xml").toURI();
             URI xmlContent = getClass().getClassLoader().getResource("repositoryForTckTests.xml").toURI();
             graph.importXmlFrom(xmlContent).into(destinationPath);
+            
+            graph.createWorkspace().named("otherWorkspace");
 
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.

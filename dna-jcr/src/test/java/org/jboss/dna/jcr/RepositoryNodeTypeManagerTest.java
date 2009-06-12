@@ -50,6 +50,8 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -144,7 +146,8 @@ public class RepositoryNodeTypeManagerTest {
         sessionAttributes.put("attribute1", "value1");
 
         // Now create the workspace ...
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_READ_PERMISSION));
+        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
 
         // Create the session and log in ...
         session = (JcrSession)workspace.getSession();

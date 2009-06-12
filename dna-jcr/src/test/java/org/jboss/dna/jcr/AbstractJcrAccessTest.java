@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -33,6 +34,7 @@ import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -90,7 +92,8 @@ public abstract class AbstractJcrAccessTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused");
 
-        session = (JcrSession) repository.login(new SecurityContextCredentials(new MockSecurityContext(null)));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        session = (JcrSession) repository.login(new SecurityContextCredentials(mockSecurityContext));
     }
 
     @After

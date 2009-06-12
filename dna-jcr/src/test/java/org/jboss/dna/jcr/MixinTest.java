@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,8 @@ import javax.jcr.version.OnParentVersionAction;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrNtLexicon;
+import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -160,7 +163,8 @@ public class MixinTest {
         sessionAttributes = new HashMap<String, Object>();
 
         // Now create the workspace ...
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
 
         // Create the session and log in ...
         session = (JcrSession)workspace.getSession();

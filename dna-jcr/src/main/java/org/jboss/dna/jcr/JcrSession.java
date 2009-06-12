@@ -81,8 +81,13 @@ class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
-    private static final String READ_PERMISSION = "readonly";
-    private static final String WRITE_PERMISSION = "readwrite";
+    public static final String DNA_READ_PERMISSION = "readonly";
+    public static final String DNA_WRITE_PERMISSION = "readwrite";
+
+    public static final String JCR_ADD_NODE_PERMISSION = "add_node";
+    public static final String JCR_SET_PROPERTY_PERMISSION = "set_property";
+    public static final String JCR_REMOVE_PERMISSION = "remove";
+    public static final String JCR_READ_PERMISSION = "read";
 
     /**
      * The repository that created this session.
@@ -305,25 +310,52 @@ class JcrSession implements Session {
         this.checkPermission(executionContext.getValueFactories().getPathFactory().create(path), actions);
     }
 
+    /**
+     * Throws an {@link AccessControlException} if the current user does not have permission for all of the named actions in the
+     * current workspace, otherwise returns silently.
+     * <p>
+     * The {@code path} parameter is included for future use and is currently ignored
+     * </p>
+     * 
+     * @param path the path on which the actions are occurring
+     * @param actions a comma-delimited list of actions to check
+     */
     void checkPermission( Path path,
-                                 String actions ) {
+                          String actions ) {
+        checkPermission(this.workspace().getName(), path, actions);
+    }
 
-        CheckArg.isNotNull(path, "path");
+    /**
+     * Throws an {@link AccessControlException} if the current user does not have permission for all of the named actions in the
+     * named workspace, otherwise returns silently.
+     * <p>
+     * The {@code path} parameter is included for future use and is currently ignored
+     * </p>
+     * 
+     * @param workspaceName the name of the workspace in which the path exists
+     * @param path the path on which the actions are occurring
+     * @param actions a comma-delimited list of actions to check
+     */
+    void checkPermission( String workspaceName,
+                          Path path,
+                          String actions ) {
+
         CheckArg.isNotEmpty(actions, "actions");
 
         if ("read".equals(actions)) {
             // readonly access is sufficient
-            if (hasRole(READ_PERMISSION) || hasRole(READ_PERMISSION + "." + this.workspace.getName())) {
+            if (hasRole(DNA_READ_PERMISSION) || hasRole(DNA_READ_PERMISSION + "." + workspaceName)) {
                 return;
             }
         }
 
         // need readwrite access
-        if (hasRole(WRITE_PERMISSION) || hasRole(WRITE_PERMISSION + "." + this.workspace.getName())) {
+        if (hasRole(DNA_WRITE_PERMISSION) || hasRole(DNA_WRITE_PERMISSION + "." + workspaceName)) {
             return;
         }
 
-        throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
+        String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
+        throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
 
     }
 

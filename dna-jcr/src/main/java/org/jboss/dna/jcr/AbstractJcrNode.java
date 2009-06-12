@@ -478,7 +478,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // It's just a name, so look for it directly ...
         Property property = getProperty(nameFrom(relativePath));
         if (property != null) return property;
-        throw new PathNotFoundException();
+        I18n msg = JcrI18n.pathNotFoundRelativeTo;
+        throw new PathNotFoundException(msg.text(relativePath, getPath(), cache.workspaceName()));
     }
 
     /**

@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
@@ -229,6 +231,23 @@ class SessionCache {
     }
 
     /**
+     * Checks whether the current session has the appropriate permissions to perform the given action.
+     * 
+     * @param the node on which the action will be performed
+     * @param action the name of the action to perform, should be "add_node", "remove", or "set_property"
+     * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+     * @throws RepositoryException if any other error occurs
+     */
+    private void checkPermission( NodeInfo node,
+                                  String action ) throws AccessDeniedException, RepositoryException {
+        try {
+            this.session.checkPermission(SessionCache.this.getPathFor(node), action);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+    }
+
+    /**
      * Returns whether the session cache has any pending changes that need to be executed.
      * 
      * @return true if there are pending changes, or false if there is currently no changes
@@ -387,11 +406,11 @@ class SessionCache {
         throws ConstraintViolationException, ItemExistsException, RepositoryException {
 
         assert nodeUuid != null;
-        
+
         if (this.deletedNodes.containsKey(nodeUuid)) {
             nodeUuid = this.deletedNodes.get(nodeUuid).getParent();
         }
-        
+
         NodeInfo nodeInfo = findNodeInfo(nodeUuid);
         AbstractJcrNode node = findJcrNode(nodeUuid);
 
@@ -637,9 +656,9 @@ class SessionCache {
      */
     public void save() throws RepositoryException {
         if (operations.isExecuteRequired()) {
-			for (UUID changedUuid : this.changedNodes.keySet()) {
-            	checkAgainstTypeDefinitions(changedUuid, false);
-	        }
+            for (UUID changedUuid : this.changedNodes.keySet()) {
+                checkAgainstTypeDefinitions(changedUuid, false);
+            }
 
             // Execute the batched operations ...
             try {
@@ -732,10 +751,10 @@ class SessionCache {
              */
             Set<UUID> uuidsUnderBranch = new HashSet<UUID>();
             LinkedList<UUID> peersToCheck = new LinkedList<UUID>();
-         
-         	for (UUID changedUuid : branchUuids) {
-         		checkAgainstTypeDefinitions(changedUuid, false);
-	        }
+
+            for (UUID changedUuid : branchUuids) {
+                checkAgainstTypeDefinitions(changedUuid, false);
+            }
 
             for (UUID branchUuid : branchUuids) {
                 uuidsUnderBranch.add(branchUuid);
@@ -1053,18 +1072,38 @@ class SessionCache {
          * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
          * @throws RepositoryException if any other error occurs
          */
         public PropertyId setProperty( Name name,
-                                       JcrValue value ) throws ConstraintViolationException, RepositoryException {
+                                       JcrValue value )
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException {
             return setProperty(name, value, true);
         }
 
+        /**
+         * Set the value for the property. If the property does not exist, it will be added. If the property does exist, the
+         * existing values will be replaced with the supplied value. Protected property definitions may be considered, based on
+         * the {@code skipProtected} flag.
+         * 
+         * @param name the property name; may not be null
+         * @param value the new property values; may not be null
+         * @param skipProtected indicates whether protected property definitions should be ignored
+         * @return the identifier for the property; never null
+         * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
+         *         definition constraint
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws RepositoryException if any other error occurs
+         */
         public PropertyId setProperty( Name name,
                                        JcrValue value,
-                                       boolean skipProtected ) throws ConstraintViolationException, RepositoryException {
+                                       boolean skipProtected )
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException {
             assert name != null;
             assert value != null;
+
+            SessionCache.this.checkPermission(node, JcrSession.JCR_SET_PROPERTY_PERMISSION);
+
             JcrPropertyDefinition definition = null;
             PropertyId id = null;
 
@@ -1146,12 +1185,13 @@ class SessionCache {
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          * @throws javax.jcr.ValueFormatException
-         * @throws RepositoryException
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws RepositoryException if any other error occurs
          */
         public PropertyId setProperty( Name name,
                                        Value[] values,
                                        int valueType )
-            throws ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
             return setProperty(name, values, valueType, true);
         }
 
@@ -1169,16 +1209,18 @@ class SessionCache {
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          * @throws javax.jcr.ValueFormatException
-         * @throws RepositoryException
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws RepositoryException if any other error occurs
          */
         public PropertyId setProperty( Name name,
                                        Value[] values,
                                        int valueType,
                                        boolean skipProtected )
-            throws ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
             assert name != null;
             assert values != null;
 
+            SessionCache.this.checkPermission(node, JcrSession.JCR_SET_PROPERTY_PERMISSION);
             checkCardinalityOfExistingProperty(name, true);
 
             int len = values.length;
@@ -1321,8 +1363,12 @@ class SessionCache {
          * 
          * @param name the property name; may not be null
          * @return true if there was a property with the supplied name, or false if no such property existed
+         * @throws AccessDeniedException if the current session does not have the requisite permissions to remove this property
+         * @throws RepositoryException if any other error occurs
          */
-        public boolean removeProperty( Name name ) {
+        public boolean removeProperty( Name name ) throws AccessDeniedException, RepositoryException {
+            SessionCache.this.checkPermission(node, JcrSession.JCR_REMOVE_PERMISSION);
+
             PropertyInfo info = node.removeProperty(name);
             if (info != null) {
                 operations.remove(name).on(currentLocation);
@@ -1416,8 +1462,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1521,12 +1567,16 @@ class SessionCache {
          * @throws InvalidItemStateException if the specified child has been marked for deletion within this session
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
          * @throws NoSuchNodeTypeException if the node type for the primary type could not be found
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
          * @throws RepositoryException if any other error occurs while reading information from the repository
          */
         public ChildNode createChild( Name name,
                                       UUID desiredUuid,
                                       Name primaryTypeName )
-            throws InvalidItemStateException, ConstraintViolationException, RepositoryException {
+            throws InvalidItemStateException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+
+            SessionCache.this.checkPermission(node, JcrSession.JCR_ADD_NODE_PERMISSION);
+
             if (desiredUuid == null) desiredUuid = UUID.randomUUID();
 
             // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
@@ -1666,9 +1716,13 @@ class SessionCache {
          * and haven't been persisted.
          * 
          * @param nodeUuid the UUID of the child node; may not be null
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws RepositoryException if any other error occurs
          * @return true if the child was successfully removed, or false if the node did not exist as a child
          */
-        public boolean destroyChild( UUID nodeUuid ) {
+        public boolean destroyChild( UUID nodeUuid ) throws AccessDeniedException, RepositoryException {
+            SessionCache.this.checkPermission(node, JcrSession.JCR_REMOVE_PERMISSION);
+
             ChildNode deleted = node.removeChild(nodeUuid, pathFactory);
 
             if (deleted != null) {
@@ -1812,14 +1866,18 @@ class SessionCache {
      * @see #findNodeInfo(UUID, Path)
      * @see #findNodeInfoForRoot()
      */
-    NodeInfo findNodeInfo( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+    NodeInfo findNodeInfo( UUID uuid )
+        throws AccessDeniedException, ItemNotFoundException, InvalidItemStateException, RepositoryException {
         assert uuid != null;
         // See if we already have something in the cache ...
         NodeInfo info = findNodeInfoInCache(uuid);
         if (info == null) {
             // Nope, so go ahead and load it ...
             info = loadFromGraph(uuid, null);
+
         }
+        SessionCache.this.checkPermission(info, JcrSession.JCR_READ_PERMISSION);
+
         return info;
     }
 
@@ -1903,10 +1961,12 @@ class SessionCache {
 
         // If the relative path is of zero-length ...
         if (relativePath.size() == 0) {
+            SessionCache.this.checkPermission(fromInfo, JcrSession.JCR_READ_PERMISSION);
             return fromInfo;
         }
         // Or it is of length 1 but it is a self reference ...
         if (relativePath.size() == 1 && relativePath.getLastSegment().isSelfReference()) {
+            SessionCache.this.checkPermission(fromInfo, JcrSession.JCR_READ_PERMISSION);
             return fromInfo;
         }
 
@@ -2000,6 +2060,7 @@ class SessionCache {
                 }
             }
         }
+        SessionCache.this.checkPermission(info, JcrSession.JCR_READ_PERMISSION);
         return info;
     }
 

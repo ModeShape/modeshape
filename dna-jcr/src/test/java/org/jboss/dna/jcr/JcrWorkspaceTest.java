@@ -155,8 +155,8 @@ public class JcrWorkspaceTest {
         workspace.copy("/a/b", "/b/b-copy");
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowCopyFromOtherWorkspace() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCopyFromOtherWorkspaceWithNullWorkspace() throws Exception {
         workspace.copy(null, null, null);
     }
 
