@@ -32,6 +32,7 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -326,7 +327,16 @@ final class JcrWorkspace implements Workspace {
      */
     public void copy( String srcWorkspace,
                       String srcAbsPath,
-                      String destAbsPath ) {
+                      String destAbsPath ) throws NoSuchWorkspaceException {
+        CheckArg.isNotNull(srcWorkspace, "source workspace");
+        CheckArg.isNotNull(srcAbsPath, "source path");
+        CheckArg.isNotNull(destAbsPath, "destination path");
+        
+        if (!graph.getWorkspaces().contains(srcWorkspace)) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
+        }
+                
+        
         throw new UnsupportedOperationException();
     }
 
