@@ -38,6 +38,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -46,6 +47,7 @@ import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -1100,6 +1102,89 @@ class RepositoryNodeTypeManager {
     }
 
     /**
+     * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
+     * default primary types of child nodes, or required primary types of child nodes.
+     * <p>
+     * <b>NOTE: This method does not check to see if any of the node types are currently being used. Unregistering a node type
+     * that is being used will cause the system to become unstable</b>
+     * </p>
+     * 
+     * @param nodeTypeNames the names of the node types to be unregistered
+     * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
+     * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
+     *         they are the supertype, one of the required primary types, or a default primary type of a node type that is not
+     *         being unregistered.
+     * @throws RepositoryException if any other error occurs
+     */
+    void unregisterNodeType( Collection<Name> nodeTypeNames )
+        throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
+        CheckArg.isNotNull(nodeTypeNames, "nodeTypeNames");
+        try {
+            /*
+             * Grab an exclusive lock on this data to keep other nodes from being added/saved while the unregistration checks are occurring
+             */
+            nodeTypeManagerLock.writeLock().lock();
+
+            for (Name nodeTypeName : nodeTypeNames) {
+                /*
+                 * Check that the type names are valid
+                 */
+                if (nodeTypeName == null) {
+                    throw new NoSuchNodeTypeException(JcrI18n.invalidNodeTypeName.text());
+                }
+                String name = nodeTypeName.getString(context.getNamespaceRegistry());
+
+                if (!this.nodeTypes.containsKey(nodeTypeName)) {
+                    throw new NoSuchNodeTypeException(JcrI18n.noSuchNodeType.text(name));
+                }
+
+                /*
+                 * Check that no other node definitions have dependencies on any of the named types
+                 */
+                for (JcrNodeType nodeType : nodeTypes.values()) {
+                    // If this node is also being unregistered, don't run checks against it
+                    if (nodeTypeNames.contains(nodeType.getInternalName())) {
+                        continue;
+                    }
+
+                    for (JcrNodeType supertype : nodeType.supertypes()) {
+                        if (nodeTypeName.equals(supertype.getInternalName())) {
+                            throw new InvalidNodeTypeDefinitionException(
+                                                                         JcrI18n.cannotUnregisterSupertype.text(name,
+                                                                                                                supertype.getName()));
+                        }
+                    }
+
+                    for (JcrNodeDefinition childNode : nodeType.childNodeDefinitions()) {
+                        NodeType defaultPrimaryType = childNode.getDefaultPrimaryType();
+                        if (defaultPrimaryType != null && name.equals(defaultPrimaryType.getName())) {
+                            throw new InvalidNodeTypeDefinitionException(
+                                                                         JcrI18n.cannotUnregisterDefaultPrimaryType.text(name,
+                                                                                                                         nodeType.getName(),
+                                                                                                                         childNode.getName()));
+                        }
+                        if (childNode.getRequiredPrimaryTypeNames().contains(nodeTypeName)) {
+                            throw new InvalidNodeTypeDefinitionException(
+                                                                         JcrI18n.cannotUnregisterRequiredPrimaryType.text(name,
+                                                                                                                          nodeType.getName(),
+                                                                                                                          childNode.getName()));
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Do a full recursive search over the content graph to make sure that this type isn't being used
+             */
+            // TODO: replace this with a query after queries work
+            this.nodeTypes.keySet().removeAll(nodeTypeNames);
+
+        } finally {
+            nodeTypeManagerLock.writeLock().unlock();
+        }
+    }
+
+    /**
      * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
      * NodeType} object.
      * <p>
@@ -1803,15 +1888,13 @@ class RepositoryNodeTypeManager {
         for (JcrNodeDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
-                                                                                                                    .getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                             "child node"));
             }
 
             if (ancestor.isMandatory() && !node.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
-                                                                                                                        .getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                                 "child node"));
 
             }
@@ -1876,16 +1959,15 @@ class RepositoryNodeTypeManager {
 
         Value[] defaultValues = prop.getDefaultValues();
         if (prop.isAutoCreated() && !prop.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
-            throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
-                                                                                                      prop.getDeclaringNodeType()
-                                                                                                          .getName()));
+            throw new InvalidNodeTypeDefinitionException(
+                                                         JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
+                                                                                                      prop.getDeclaringNodeType().getName()));
         }
 
         if (!prop.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
             throw new InvalidNodeTypeDefinitionException(
                                                          JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(prop.getName(),
-                                                                                                                   prop.getDeclaringNodeType()
-                                                                                                                       .getName()));
+                                                                                                                   prop.getDeclaringNodeType().getName()));
         }
 
         Name propName = context.getValueFactories().getNameFactory().create(prop.getName());
@@ -1899,15 +1981,13 @@ class RepositoryNodeTypeManager {
         for (JcrPropertyDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
-                                                                                                                    .getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                             "property"));
             }
 
             if (ancestor.isMandatory() && !prop.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
-                                                                                                                        .getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                                 "property"));
 
             }
@@ -1918,16 +1998,14 @@ class RepositoryNodeTypeManager {
                 && !Arrays.equals(ancestor.getValueConstraints(), prop.getValueConstraints())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.constraintsChangedInSubtype.text(propName,
-                                                                                                      ancestor.getDeclaringNodeType()
-                                                                                                              .getName()));
+                                                                                                      ancestor.getDeclaringNodeType().getName()));
             }
 
             if (!isAlwaysSafeConversion(prop.getRequiredType(), ancestor.getRequiredType())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.cannotRedefineProperty.text(propName,
                                                                                                  PropertyType.nameFromValue(prop.getRequiredType()),
-                                                                                                 ancestor.getDeclaringNodeType()
-                                                                                                         .getName(),
+                                                                                                 ancestor.getDeclaringNodeType().getName(),
                                                                                                  PropertyType.nameFromValue(ancestor.getRequiredType())));
 
             }

@@ -165,6 +165,10 @@ class JcrNodeType implements NodeType {
         return thisAndAllSupertypes;
     }
 
+    List<JcrNodeType> supertypes() {
+        return allSupertypes;
+    }
+
     /**
      * Get the child definitions defined on this node type (excluding inherited definitions).
      * 

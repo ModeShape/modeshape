@@ -94,5 +94,4 @@ final class JcrNode extends AbstractJcrNode {
     public void remove() throws RepositoryException {
         editorForParent().destroyChild(nodeUuid);
     }
-
 }

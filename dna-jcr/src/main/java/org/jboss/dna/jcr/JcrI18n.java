@@ -115,6 +115,7 @@ public final class JcrI18n {
 
     // Type registration messages
     public static I18n invalidNodeTypeName;
+    public static I18n noSuchNodeType;
     public static I18n nodeTypeAlreadyExists;
     public static I18n invalidPrimaryTypeName;
     public static I18n invalidSupertypeName;
@@ -138,6 +139,10 @@ public final class JcrI18n {
 
     public static I18n nodeNotReferenceable;
     public static I18n noPendingChangesAllowed;
+
+    public static I18n cannotUnregisterSupertype;
+    public static I18n cannotUnregisterRequiredPrimaryType;
+    public static I18n cannotUnregisterDefaultPrimaryType;
 
     static {
         try {

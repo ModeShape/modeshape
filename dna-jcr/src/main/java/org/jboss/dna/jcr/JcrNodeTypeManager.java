@@ -39,6 +39,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
 import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
@@ -413,6 +414,32 @@ class JcrNodeTypeManager implements NodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         RepositoryException {
         return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
+    }
+
+    /**
+     * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
+     * default primary types of child nodes, or required primary types of child nodes.
+     * <p>
+     * <b>NOTE: This method does not check to see if any of the node types are currently being used. Unregistering a node type
+     * that is being used will cause the system to become unstable</b>
+     * </p>
+     * 
+     * @param nodeTypeNames the names of the node types to be unregistered
+     * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
+     * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
+     *         they are the supertype, one of the required primary types, or a default primary type of a node type that is not
+     *         being unregistered.
+     * @throws RepositoryException if any other error occurs
+     */
+    public void unregisterNodeType( Collection<String> nodeTypeNames )
+        throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
+        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
+
+        Collection<Name> names = new ArrayList<Name>(nodeTypeNames.size());
+        for (String name : nodeTypeNames) {
+            names.add(nameFactory.create(name));
+        }
+        repositoryTypeManager.unregisterNodeType(names);
     }
 
     /**
