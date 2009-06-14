@@ -432,6 +432,8 @@ public abstract class RequestBuilder {
      *        used
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location, or null if the default conflict behavior should be used
+     * @param uuidConflictBehavior the expected behavior if a node with the same UUID as any of the nodes in the branch under the
+     *        {@code from} location in the {@code fromWorkspace} workspace already exists in the workspace
      * @return the request; never null
      * @throws IllegalArgumentException if either of the locations or workspace names are null
      */
@@ -440,9 +442,11 @@ public abstract class RequestBuilder {
                                          Location into,
                                          String intoWorkspace,
                                          Name nameForCopy,
-                                         NodeConflictBehavior conflictBehavior ) {
-        if (conflictBehavior == null) conflictBehavior = CopyBranchRequest.DEFAULT_CONFLICT_BEHAVIOR;
-        return process(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy, conflictBehavior));
+                                         NodeConflictBehavior conflictBehavior,
+                                         UuidConflictBehavior uuidConflictBehavior) {
+        if (conflictBehavior == null) conflictBehavior = CopyBranchRequest.DEFAULT_NODE_CONFLICT_BEHAVIOR;
+        return process(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy, conflictBehavior,
+                                             uuidConflictBehavior));
     }
 
     /**
@@ -474,9 +478,10 @@ public abstract class RequestBuilder {
                                          Location into,
                                          String workspaceName,
                                          Name newNameForNode ) {
-        return process(new MoveBranchRequest(from, into, null, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
+        return process(new MoveBranchRequest(from, into, null, workspaceName, newNameForNode,
+                                             MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
     }
-    
+
     /**
      * Create a request to move a branch from one location into another before the given child node of the new location.
      * 
@@ -490,11 +495,13 @@ public abstract class RequestBuilder {
      */
     public MoveBranchRequest moveBranch( Location from,
                                          Location into,
-                                         Location before, 
+                                         Location before,
                                          String workspaceName,
                                          Name newNameForNode ) {
-        return process(new MoveBranchRequest(from, into, before, workspaceName, newNameForNode, MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
-    }    
+        return process(new MoveBranchRequest(from, into, before, workspaceName, newNameForNode,
+                                             MoveBranchRequest.DEFAULT_CONFLICT_BEHAVIOR));
+    }
+
     /**
      * Create a request to move a branch from one location into another.
      * 

@@ -367,7 +367,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         Location intoLocation = Location.create(intoProjection.pathInSource);
         String workspaceName = fromProjection.projection.getWorkspaceName();
         CopyBranchRequest sourceRequest = new CopyBranchRequest(fromLocation, workspaceName, intoLocation, workspaceName,
-                                                                request.desiredName(), request.conflictBehavior());
+                                                                request.desiredName(), request.nodeConflictBehavior(),
+                                                                request.uuidConflictBehavior());
         execute(sourceRequest, fromProjection.projection);
 
         // Copy/transform the results ...

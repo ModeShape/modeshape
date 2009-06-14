@@ -98,6 +98,7 @@ public class JcrWorkspaceTest {
         Graph graph = Graph.create(source, context);
         graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b");
         graph.set("booleanProperty").on("/a/b").to(true);
+        graph.set("jcr:primaryType").on("/a/b").to("nt:unstructured");
         graph.set("stringProperty").on("/a/b/c").to("value");
 
         // Make sure the path to the namespaces exists ...

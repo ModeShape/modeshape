@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
@@ -53,6 +54,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
@@ -270,8 +272,24 @@ final class JcrWorkspace implements Workspace {
                       String destAbsPath )
         throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
         LockException, RepositoryException {
-        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
-        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+        this.copy(this.name, srcAbsPath, destAbsPath);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void copy( String srcWorkspace,
+                      String srcAbsPath,
+                      String destAbsPath ) 
+    throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
+    LockException, RepositoryException {
+        CheckArg.isNotNull(srcWorkspace, "source workspace name");
+        CheckArg.isNotNull(srcAbsPath, "source path");
+        CheckArg.isNotNull(destAbsPath, "destination path");
+        
+        if (!graph.getWorkspaces().contains(srcWorkspace)) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
+        }
 
         // Create the paths ...
         PathFactory factory = context.getValueFactories().getPathFactory();
@@ -294,8 +312,7 @@ final class JcrWorkspace implements Workspace {
         }
 
         try {
-            // this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
-            this.session.checkPermission(destAbsPath, "add_node");
+            this.session.checkPermission(destPath.getParent(), "add_node");
         }
         catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
@@ -305,7 +322,6 @@ final class JcrWorkspace implements Workspace {
          * Make sure that the node has a definition at the new location
          */
         SessionCache cache = this.session.cache();
-        NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
         NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
 
         // Skip the cache and load the latest parent info directly from the graph
@@ -314,30 +330,22 @@ final class JcrWorkspace implements Workspace {
         String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
 
         // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
-        this.session.cache().findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
+        graph.useWorkspace(srcWorkspace);
+        Property primaryTypeProp = graph.getNodeAt(srcPath).getProperty(JcrLexicon.PRIMARY_TYPE);
+        Property uuidProp = graph.getNodeAt(srcPath).getProperty(DnaLexicon.UUID);
+        graph.useWorkspace(this.name);
+        
+        assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
+        assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";
+
+        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
+        this.session.cache().findBestNodeDefinition(parent, parentPath, newNodeName, nameFactory.create(primaryTypeProp.getFirstValue()));
 
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        graph.copy(srcPath).to(destPath);
-        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, nodeInfo.getUuid(), newNodeName);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void copy( String srcWorkspace,
-                      String srcAbsPath,
-                      String destAbsPath ) throws NoSuchWorkspaceException {
-        CheckArg.isNotNull(srcWorkspace, "source workspace");
-        CheckArg.isNotNull(srcAbsPath, "source path");
-        CheckArg.isNotNull(destAbsPath, "destination path");
+        graph.copy(srcPath).fromWorkspace(srcWorkspace).to(destPath);
         
-        if (!graph.getWorkspaces().contains(srcWorkspace)) {
-            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
-        }
-                
-        
-        throw new UnsupportedOperationException();
+        // Load the node that we just copied
+        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, UUID.fromString(uuidProp.getFirstValue().toString()), newNodeName);
     }
 
     /**

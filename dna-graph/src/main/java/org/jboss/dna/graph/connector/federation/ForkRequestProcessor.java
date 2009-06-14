@@ -1262,7 +1262,8 @@ class ForkRequestProcessor extends RequestProcessor {
         // Create the pushed-down request ...
         CopyBranchRequest pushDown = new CopyBranchRequest(fromProxy.location(), fromProxy.workspaceName(), intoProxy.location(),
                                                            intoProxy.workspaceName(), request.desiredName(),
-                                                           request.conflictBehavior());
+                                                           request.nodeConflictBehavior(),
+                                                           request.uuidConflictBehavior());
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
         federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());

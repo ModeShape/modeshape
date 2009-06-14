@@ -78,6 +78,7 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.RequestBuilder;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
+import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
@@ -564,17 +565,19 @@ public class Graph {
     public Copy<Graph> copy( Location from ) {
         return new CopyAction<Graph>(this, from) {
             @Override
-            protected Graph submit( Locations from,
+            protected Graph submit( String fromWorkspaceName,
+                                    Locations from,
                                     Location into,
                                     Name childName ) {
-                String workspaceName = getCurrentWorkspaceName();
+                String workspaceName = fromWorkspaceName != null ? fromWorkspaceName : getCurrentWorkspaceName();
                 do {
                     requests.copyBranch(from.getLocation(),
                                         workspaceName,
                                         into,
-                                        workspaceName,
+                                        getCurrentWorkspaceName(),
                                         childName,
-                                        NodeConflictBehavior.APPEND);
+                                        NodeConflictBehavior.APPEND,
+                                        UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID);
                 } while ((from = from.next()) != null);
                 return and();
             }
@@ -1734,15 +1737,13 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
-                                               .getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
-                                       .getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -2368,12 +2369,19 @@ public class Graph {
             assertNotExecuted();
             return new CopyAction<BatchConjunction>(this.nextRequests, from) {
                 @Override
-                protected BatchConjunction submit( Locations from,
+                protected BatchConjunction submit( String fromWorkspaceName,
+                                                   Locations from,
                                                    Location into,
                                                    Name copyName ) {
-                    String workspaceName = getCurrentWorkspaceName();
+                    String workspaceName = fromWorkspaceName != null ? fromWorkspaceName : getCurrentWorkspaceName();
                     do {
-                        requestQueue.copyBranch(from.getLocation(), workspaceName, into, workspaceName, copyName);
+                        requestQueue.copyBranch(from.getLocation(),
+                                                workspaceName,
+                                                into,
+                                                workspaceName,
+                                                copyName,
+                                                null,
+                                                UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID);
                     } while ((from = from.next()) != null);
                     return and();
                 }
@@ -3993,7 +4001,33 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
      */
-    public interface Copy<Next> extends To<Next>, Into<Next>, And<Copy<Next>> {
+    public interface Copy<Next>
+        extends WithUuids<FromWorkspace<CopyTarget<Next>>>, FromWorkspace<CopyTarget<Next>>, CopyTarget<Next>, And<Copy<Next>> {
+    }
+
+    public interface CopyTarget<Next> extends To<Next>, Into<Next> {
+    }
+
+    /**
+     * The interface for specifying that a node should come from a workspace other than the current workspace.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     */
+    public interface FromWorkspace<Next> {
+        Next fromWorkspace( String workspaceName );
+    }
+
+    /**
+     * The interface for specifying how UUID conflicts should be handled.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     */
+    public interface WithUuids<Next> {
+        Next removingMatchingUuids();
+
+        Next failingIfUuidsMatch();
+
+        Next unlessMatchingUuidExists();
     }
 
     /**
@@ -5473,10 +5507,7 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext()
-                                  .getValueFactories()
-                                  .getPathFactory()
-                                  .create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }
@@ -5762,12 +5793,16 @@ public class Graph {
 
     @NotThreadSafe
     protected abstract class CopyAction<T> extends AbstractAction<T> implements Copy<T> {
-        private final Locations from;
+        protected Locations from;
+        protected String fromWorkspaceName;
+        protected UuidConflictBehavior uuidConflictBehavior;
 
         /*package*/CopyAction( T afterConjunction,
                                 Location from ) {
             super(afterConjunction);
             this.from = new Locations(from);
+            this.fromWorkspaceName = Graph.this.getCurrentWorkspaceName();
+            this.uuidConflictBehavior = UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID;
         }
 
         public Copy<T> and( Location from ) {
@@ -5809,38 +5844,61 @@ public class Graph {
         /**
          * Submit any requests to move the targets into the supplied parent location
          * 
+         * @param fromWorkspaceName the name of the workspace containing the {@code from} locations
          * @param from the locations that are being copied
          * @param into the parent location
          * @param nameForCopy the name that should be used for the copy, or null if the name should be the same as the original
          * @return this object, for method chaining
          */
-        protected abstract T submit( Locations from,
-                                     Location into,
-                                     Name nameForCopy );
+        protected abstract T submit( String fromWorkspaceName,
+                           Locations from,
+                           Location into,
+                           Name nameForCopy );
+
+        public FromWorkspace<CopyTarget<T>> failingIfUuidsMatch() {
+            this.uuidConflictBehavior = UuidConflictBehavior.THROW_EXCEPTION;
+            return this;
+        }
+
+        public FromWorkspace<CopyTarget<T>> removingMatchingUuids() {
+            this.uuidConflictBehavior = UuidConflictBehavior.REPLACE_EXISTING_NODE;
+            return this;
+        }
+
+        public FromWorkspace<CopyTarget<T>> unlessMatchingUuidExists() {
+            this.uuidConflictBehavior = UuidConflictBehavior.DO_NOT_COPY;
+            return this;
+        }
+
+        public CopyTarget<T> fromWorkspace( String workspaceName ) {
+            this.fromWorkspaceName = workspaceName;
+
+            return this;
+        }
 
         public T into( Location into ) {
-            return submit(from, into, null);
+            return submit(this.fromWorkspaceName, this.from, into, null);
         }
 
         public T into( Path into ) {
-            return submit(from, Location.create(into), null);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( UUID into ) {
-            return submit(from, Location.create(into), null);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(from, Location.create(firstIdProperty, additionalIdProperties), null);
+            return submit(this.fromWorkspaceName, this.from, Location.create(firstIdProperty, additionalIdProperties), null);
         }
 
         public T into( Property into ) {
-            return submit(from, Location.create(into), null);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( String into ) {
-            return submit(from, Location.create(createPath(into)), null);
+            return submit(this.fromWorkspaceName, this.from, Location.create(createPath(into)), null);
         }
 
         public T to( Location desiredLocation ) {
@@ -5852,7 +5910,7 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredLocation));
             }
             Path parent = desiredPath.getParent();
-            return submit(from, Location.create(parent), desiredPath.getLastSegment().getName());
+            return submit(this.fromWorkspaceName, this.from, Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( Path desiredPath ) {
@@ -5860,7 +5918,7 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredPath));
             }
             Path parent = desiredPath.getParent();
-            return submit(from, Location.create(parent), desiredPath.getLastSegment().getName());
+            return submit(this.fromWorkspaceName, this.from, Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( String desiredPath ) {

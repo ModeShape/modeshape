@@ -72,6 +72,7 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
@@ -184,13 +185,28 @@ public class GraphTest {
 
     protected void assertNextRequestIsCopy( Location from,
                                             Location to ) {
+        assertNextRequestIsCopy(this.graph.getCurrentWorkspaceName(), from, to);
+    }
+
+    protected void assertNextRequestIsCopy( String fromWorkspace,
+                                            Location from,
+                                            Location to ) {
+        assertNextRequestIsCopy(fromWorkspace, from, to, UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID);
+    }
+
+    protected void assertNextRequestIsCopy( String fromWorkspace,
+                                            Location from,
+                                            Location to,
+                                            UuidConflictBehavior uuidConflictBehavior) {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(CopyBranchRequest.class)));
         CopyBranchRequest copy = (CopyBranchRequest)request;
+        assertThat(copy.fromWorkspace(), is(fromWorkspace));
         assertThat(copy.from(), is(from));
         assertThat(copy.into(), is(to));
+        assertThat(copy.uuidConflictBehavior(), is(uuidConflictBehavior));
     }
-
+    
     protected void assertNextRequestIsDelete( Location at ) {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(DeleteBranchRequest.class)));
@@ -363,6 +379,24 @@ public class GraphTest {
         graph.copy(validPath).into(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.copy(validPathString).into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.copy(validUuid).into(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCopyNodeFromOtherWorkspace() {
+        graph.copy(validPath).fromWorkspace("other").into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy("other", Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.copy(validPathString).into(validIdProperty1, validIdProperty2);

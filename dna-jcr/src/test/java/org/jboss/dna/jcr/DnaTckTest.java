@@ -9,7 +9,6 @@ import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.test.AbstractJCRTest;
-import org.junit.Test;
 
 /**
  * Additional DNA tests that check for JCR compliance.
@@ -141,7 +140,6 @@ public class DnaTckTest extends AbstractJCRTest {
      * Tests that read-write sessions can read nodes by loading all of the children of the root node
      * @throws Exception
      */
-    @Test
     public void testShouldAllowReadWriteSessionToRead() throws Exception {
         session = helper.getReadWriteSession();
         testRead(session);
@@ -151,7 +149,6 @@ public class DnaTckTest extends AbstractJCRTest {
      * Tests that read-write sessions can add nodes, remove nodes, set nodes, and set properties.
      * @throws Exception
      */
-    @Test
     public void testShouldAllowReadWriteSessionToWrite() throws Exception {
         session = helper.getReadWriteSession();
         testWrite(session);
@@ -162,7 +159,6 @@ public class DnaTckTest extends AbstractJCRTest {
      * workspace.  This test makes sure both work.
      * @throws Exception
      */
-    @Test
     public void testShouldMapRolesToWorkspacesWhenSpecified() throws Exception {
         Credentials creds = new SimpleCredentials("defaultonly", "defaultonly".toCharArray());
         session = helper.getRepository().login(creds);
@@ -183,4 +179,24 @@ public class DnaTckTest extends AbstractJCRTest {
         session.logout();
     }
 
+
+    public void testShouldCopyFromAnotherWorkspace() throws Exception {
+        session = helper.getSuperuserSession("otherWorkspace");
+        String nodetype1 = this.getProperty("nodetype");
+        Node node1 = session.getRootNode().addNode(nodeName1, nodetype1);
+        node1.addNode(nodeName2, nodetype1);
+        session.save();
+        session.logout();
+        
+        superuser.getRootNode().addNode(nodeName4, nodetype1);
+        superuser.save();
+        
+        superuser.getWorkspace().copy("otherWorkspace", "/" + nodeName1, "/" + nodeName4 + "/" + nodeName1);
+        
+        Node node4 = superuser.getRootNode().getNode(nodeName4);
+        Node node4node1 = node4.getNode(nodeName1);
+        Node node4node1node2 = node4node1.getNode(nodeName2);
+        
+        assertNotNull(node4node1node2);
+    }
 }
