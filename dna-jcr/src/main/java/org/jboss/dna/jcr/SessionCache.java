@@ -233,13 +233,13 @@ class SessionCache {
     /**
      * Checks whether the current session has the appropriate permissions to perform the given action.
      * 
-     * @param the node on which the action will be performed
+     * @param node the node on which the action will be performed
      * @param action the name of the action to perform, should be "add_node", "remove", or "set_property"
      * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
      * @throws RepositoryException if any other error occurs
      */
-    private void checkPermission( NodeInfo node,
-                                  String action ) throws AccessDeniedException, RepositoryException {
+    protected void checkPermission( NodeInfo node,
+                                    String action ) throws AccessDeniedException, RepositoryException {
         try {
             this.session.checkPermission(SessionCache.this.getPathFor(node), action);
         } catch (AccessControlException ace) {
@@ -1462,8 +1462,8 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -1859,6 +1859,7 @@ class SessionCache {
      * 
      * @param uuid the UUID for the node; may not be null
      * @return the information for the node with the supplied UUID, or null if the information is not in the cache
+     * @throws AccessDeniedException if the node cannot be accessed
      * @throws ItemNotFoundException if there is no node with the supplied UUID
      * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if any other error occurs while reading information from the repository

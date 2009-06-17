@@ -184,7 +184,6 @@ public class JcrRepositoryTest {
         repository.login();
     }
 
-    @SuppressWarnings("cast")
     @Test
     public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
         LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
