@@ -93,6 +93,24 @@ class FederatedRequest {
         if (forkLatch != null) forkLatch.await();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Federated request: ").append(original).append("\n");
+        sb.append("  projected to: ").append("\n");
+        ProjectedRequest projected = first;
+        while (projected != null) {
+            sb.append("  - ").append(projected).append("\n");
+            projected = projected.next();
+        }
+        return sb.toString();
+    }
+
     class ProjectedRequest {
         private final Projection projection;
         private final Projection projection2;

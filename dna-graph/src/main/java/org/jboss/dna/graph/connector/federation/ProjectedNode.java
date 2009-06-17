@@ -121,6 +121,11 @@ class PlaceholderNode extends ProjectedNode {
     public ProxyNode asProxy() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "Placeholder " + location();
+    }
 }
 
 @NotThreadSafe
@@ -195,5 +200,11 @@ class ProxyNode extends ProjectedNode {
 
     public boolean isSameLocationAsOriginal() {
         return this.sameLocationAsOriginal;
+    }
+
+    @Override
+    public String toString() {
+        return "Proxy for " + federatedLocation() + " projected from " + location() + " in workspace \"" + workspaceName()
+               + "\" in \"" + source() + "\"";
     }
 }

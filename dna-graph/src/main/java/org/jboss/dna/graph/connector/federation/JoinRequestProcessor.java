@@ -203,19 +203,20 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             // Make sure we have an actual location ...
-            actualLocation = determineActualLocation(actualLocation,
-                                                     readFromSource.getActualLocationOfNode(),
-                                                     projectedRequest.getProjection());
+            Location sourceLocation = readFromSource.getActualLocationOfNode();
+            actualLocation = determineActualLocation(actualLocation, sourceLocation, projectedRequest.getProjection());
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            if (sourceLocation.hasIdProperties()) {
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
             }
             setCacheableInfo(request, readFromSource.getCachePolicy());
             projectedRequest = projectedRequest.next();
@@ -268,19 +269,22 @@ class JoinRequestProcessor extends RequestProcessor {
                 if (federatedPath == null) federatedPath = childInRepos.getPath().getParent();
             } else {
                 ReadNodeRequest readFromSource = (ReadNodeRequest)sourceRequest;
-                // Accumulate the identification properties ...
-                for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                    Name name = propertyInSource.getName();
-                    Property existing = actualLocation.getIdProperty(name);
-                    if (existing != null) {
-                        // Merge the property values ...
-                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                Location sourceLocation = readFromSource.getActualLocationOfNode();
+                if (sourceLocation.hasIdProperties()) {
+                    // Accumulate the identification properties ...
+                    for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                        Name name = propertyInSource.getName();
+                        Property existing = actualLocation.getIdProperty(name);
+                        if (existing != null) {
+                            // Merge the property values ...
+                            propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                        }
+                        actualLocation = actualLocation.with(propertyInSource);
                     }
-                    actualLocation = actualLocation.with(propertyInSource);
                 }
 
                 // Make sure we have an actual location ...
-                actualLocation = determineActualLocation(actualLocation, readFromSource.getActualLocationOfNode(), projection);
+                actualLocation = determineActualLocation(actualLocation, sourceLocation, projection);
                 if (federatedPath == null) federatedPath = actualLocation.getPath();
 
                 // Add all the children from the source ...
@@ -416,15 +420,18 @@ class JoinRequestProcessor extends RequestProcessor {
                 if (federatedPath == null) federatedPath = childInRepos.getPath().getParent();
             } else {
                 ReadAllChildrenRequest readFromSource = (ReadAllChildrenRequest)sourceRequest;
-                // Accumulate the identification properties ...
-                for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                    Name name = propertyInSource.getName();
-                    Property existing = actualLocation.getIdProperty(name);
-                    if (existing != null) {
-                        // Merge the property values ...
-                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                Location sourceLocation = readFromSource.getActualLocationOfNode();
+                if (sourceLocation.hasIdProperties()) {
+                    // Accumulate the identification properties ...
+                    for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                        Name name = propertyInSource.getName();
+                        Property existing = actualLocation.getIdProperty(name);
+                        if (existing != null) {
+                            // Merge the property values ...
+                            propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                        }
+                        actualLocation = actualLocation.with(propertyInSource);
                     }
-                    actualLocation = actualLocation.with(propertyInSource);
                 }
 
                 // Make sure we have an actual location ...
@@ -498,19 +505,20 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             // Make sure we have an actual location ...
-            actualLocation = determineActualLocation(actualLocation,
-                                                     readFromSource.getActualLocationOfNode(),
-                                                     projectedRequest.getProjection());
+            Location sourceLocation = readFromSource.getActualLocationOfNode();
+            actualLocation = determineActualLocation(actualLocation, sourceLocation, projectedRequest.getProjection());
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            if (sourceLocation.hasIdProperties()) {
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
             }
 
             // Add all the properties ...
@@ -559,19 +567,20 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             // Make sure we have an actual location ...
-            actualLocation = determineActualLocation(actualLocation,
-                                                     readFromSource.getActualLocationOfNode(),
-                                                     projectedRequest.getProjection());
+            Location sourceLocation = readFromSource.getActualLocationOfNode();
+            actualLocation = determineActualLocation(actualLocation, sourceLocation, projectedRequest.getProjection());
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            if (sourceLocation.hasIdProperties()) {
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
             }
 
             // Add all the properties ...
@@ -930,15 +939,18 @@ class JoinRequestProcessor extends RequestProcessor {
                 return;
             }
 
-            // Accumulate the identification properties ...
-            for (Property propertyInSource : readFromSource.getActualLocationOfNode().getIdProperties()) {
-                Name name = propertyInSource.getName();
-                Property existing = actualLocation.getIdProperty(name);
-                if (existing != null) {
-                    // Merge the property values ...
-                    propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+            Location sourceLocation = readFromSource.getActualLocationOfNode();
+            if (sourceLocation.hasIdProperties()) {
+                // Accumulate the identification properties ...
+                for (Property propertyInSource : sourceLocation.getIdProperties()) {
+                    Name name = propertyInSource.getName();
+                    Property existing = actualLocation.getIdProperty(name);
+                    if (existing != null) {
+                        // Merge the property values ...
+                        propertyInSource = merge(existing, propertyInSource, propertyFactory, true);
+                    }
+                    actualLocation = actualLocation.with(propertyInSource);
                 }
-                actualLocation = actualLocation.with(propertyInSource);
             }
             projectedRequest = projectedRequest.next();
         }
