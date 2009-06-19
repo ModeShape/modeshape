@@ -4,6 +4,7 @@
     <groupId>org.jboss.dna</groupId>
     <artifactId>dna</artifactId>
     <version>0.6-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-classloader-maven</artifactId>

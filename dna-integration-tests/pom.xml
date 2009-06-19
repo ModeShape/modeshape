@@ -7,8 +7,8 @@
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-integration-tests</artifactId>
+  <description>The JBoss DNA integration tests</description>
   <packaging>jar</packaging>
-  <version>0.6-SNAPSHOT</version>
   <name>JBoss DNA Integration Tests</name>
   <url>http://labs.jboss.org/dna</url>
   

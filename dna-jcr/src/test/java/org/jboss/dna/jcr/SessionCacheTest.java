@@ -60,6 +60,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.Vehicles.Lexicon;
+import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
 import org.jboss.dna.jcr.cache.PropertyInfo;
@@ -743,5 +744,33 @@ public class SessionCacheTest {
 
         db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
         assertNoProperty(db9, Lexicon.LENGTH_IN_INCHES);
+    }
+
+    protected void walkInfosForNodesUnder( NodeInfo parentInfo,
+                                           Stopwatch sw ) throws Exception {
+        for (ChildNode child : parentInfo.getChildren()) {
+            sw.start();
+            NodeInfo childInfo = cache.findNodeInfo(child.getUuid());
+            cache.getPathFor(childInfo);
+            sw.stop();
+
+            // Walk the infos for nodes under the child (this is recursive) ...
+            walkInfosForNodesUnder(childInfo, sw);
+        }
+    }
+
+    @Test
+    public void shouldFindInfoForAllNodesInGraph() throws Exception {
+        Stopwatch sw = new Stopwatch();
+
+        // Get the root ...
+        sw.start();
+        NodeInfo root = cache.findNodeInfoForRoot();
+        cache.getPathFor(root);
+        sw.stop();
+
+        // Walk the infos for nodes under the root (this is recursive) ...
+        walkInfosForNodesUnder(root, sw);
+        System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics());
     }
 }
