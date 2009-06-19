@@ -280,13 +280,13 @@ final class JcrWorkspace implements Workspace {
      */
     public void copy( String srcWorkspace,
                       String srcAbsPath,
-                      String destAbsPath ) 
-    throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
-    LockException, RepositoryException {
+                      String destAbsPath )
+        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
+        LockException, RepositoryException {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
         CheckArg.isNotNull(srcAbsPath, "source path");
         CheckArg.isNotNull(destAbsPath, "destination path");
-        
+
         if (!graph.getWorkspaces().contains(srcWorkspace)) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
         }
@@ -313,8 +313,7 @@ final class JcrWorkspace implements Workspace {
 
         try {
             this.session.checkPermission(destPath.getParent(), "add_node");
-        }
-        catch (AccessControlException ace) {
+        } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
 
@@ -325,7 +324,7 @@ final class JcrWorkspace implements Workspace {
         NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
 
         // Skip the cache and load the latest parent info directly from the graph
-        NodeInfo parent = cache.loadFromGraph(cacheParent.getUuid(), null);
+        NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
         Name newNodeName = destPath.getLastSegment().getName();
         String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
 
@@ -334,18 +333,24 @@ final class JcrWorkspace implements Workspace {
         Property primaryTypeProp = graph.getNodeAt(srcPath).getProperty(JcrLexicon.PRIMARY_TYPE);
         Property uuidProp = graph.getNodeAt(srcPath).getProperty(DnaLexicon.UUID);
         graph.useWorkspace(this.name);
-        
+
         assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
         assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";
 
         NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
-        this.session.cache().findBestNodeDefinition(parent, parentPath, newNodeName, nameFactory.create(primaryTypeProp.getFirstValue()));
+        this.session.cache().findBestNodeDefinition(parent,
+                                                    parentPath,
+                                                    newNodeName,
+                                                    nameFactory.create(primaryTypeProp.getFirstValue()));
 
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
         graph.copy(srcPath).fromWorkspace(srcWorkspace).to(destPath);
-        
+
         // Load the node that we just copied
-        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, UUID.fromString(uuidProp.getFirstValue().toString()), newNodeName);
+        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(),
+                                                null,
+                                                UUID.fromString(uuidProp.getFirstValue().toString()),
+                                                newNodeName);
     }
 
     /**
@@ -432,8 +437,7 @@ final class JcrWorkspace implements Workspace {
         try {
             this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
             this.session.checkPermission(destAbsPath, "add_node");
-        }
-        catch (AccessControlException ace) {
+        } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
 
@@ -446,7 +450,7 @@ final class JcrWorkspace implements Workspace {
         NodeInfo oldParent = cache.findNodeInfo(null, srcPath.getParent());
 
         // Skip the cache and load the latest parent info directly from the graph
-        NodeInfo parent = cache.loadFromGraph(cacheParent.getUuid(), null);
+        NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
         Name newNodeName = destPath.getLastSegment().getName();
         String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
 

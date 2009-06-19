@@ -373,7 +373,7 @@ public class SessionCacheTest {
             sw.stop();
             assertThat(nodeInfo, is(sameInstance(cache.findNodeInfo(rootUuid))));
         }
-        System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
+        // System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
     }
 
     @Test
@@ -391,7 +391,7 @@ public class SessionCacheTest {
             sw.stop();
             assertThat(rootInfo, is(notNullValue()));
         }
-        System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
+        // System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
     }
 
     @Test
@@ -409,7 +409,7 @@ public class SessionCacheTest {
             sw.stop();
             assertThat(rootInfo, is(notNullValue()));
         }
-        System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
+        // System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
     }
 
     @Test
@@ -437,7 +437,7 @@ public class SessionCacheTest {
         sw.stop();
         assertThat(lr3.getUuid(), is(lr3Node.getLocation().getUuid()));
         assertSameProperties(lr3, lr3Node);
-        System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
+        // System.out.println(pad(sourceName) + " ==> " + sw.getSimpleStatistics());
 
         // Verify that this loaded all the intermediate nodes, by walking up ...
         NodeInfo info = lr3;
@@ -761,16 +761,18 @@ public class SessionCacheTest {
 
     @Test
     public void shouldFindInfoForAllNodesInGraph() throws Exception {
-        Stopwatch sw = new Stopwatch();
+        for (int i = 0; i != 3; ++i) {
+            Stopwatch sw = new Stopwatch();
 
-        // Get the root ...
-        sw.start();
-        NodeInfo root = cache.findNodeInfoForRoot();
-        cache.getPathFor(root);
-        sw.stop();
+            // Get the root ...
+            sw.start();
+            NodeInfo root = cache.findNodeInfoForRoot();
+            cache.getPathFor(root);
+            sw.stop();
 
-        // Walk the infos for nodes under the root (this is recursive) ...
-        walkInfosForNodesUnder(root, sw);
-        System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics());
+            // Walk the infos for nodes under the root (this is recursive) ...
+            walkInfosForNodesUnder(root, sw);
+            System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics());
+        }
     }
 }

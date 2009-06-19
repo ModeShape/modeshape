@@ -156,6 +156,7 @@ class SessionCache {
     protected final HashMap<UUID, ImmutableNodeInfo> cachedNodes;
     protected final HashMap<UUID, ChangedNodeInfo> changedNodes;
     protected final HashMap<UUID, NodeInfo> deletedNodes;
+    protected final Map<UUID, Path> pathCache;
 
     private LinkedList<Request> requests;
     private BatchRequestBuilder requestBuilder;
@@ -191,6 +192,7 @@ class SessionCache {
         this.cachedNodes = new HashMap<UUID, ImmutableNodeInfo>();
         this.changedNodes = new HashMap<UUID, ChangedNodeInfo>();
         this.deletedNodes = new HashMap<UUID, NodeInfo>();
+        this.pathCache = new HashMap<UUID, Path>();
 
         // Create the batch operations ...
         this.requests = new LinkedList<Request>();
@@ -1002,7 +1004,7 @@ class SessionCache {
             // Or in the cache ...
             NodeInfo cached = cachedNodes.get(uuid);
             if (cached == null) {
-                cached = loadFromGraph(uuid, null);
+                cached = loadFromGraph(null, uuid);
             }
             // Now put into the changed nodes ...
             info = new ChangedNodeInfo(cached);
@@ -1400,6 +1402,9 @@ class SessionCache {
 
         public void orderChildBefore( Path.Segment childToBeMoved,
                                       Path.Segment before ) {
+            // Clear the path cache ...
+            SessionCache.this.pathCache.clear();
+
             PathFactory pathFactory = SessionCache.this.pathFactory;
             Path thisPath = this.currentLocation.getPath();
             UUID fromUuid = this.node.getChildren().getChild(childToBeMoved).getUuid();
@@ -1476,6 +1481,9 @@ class SessionCache {
                     newChildEditor.removeProperty(DnaIntLexicon.NODE_DEFINITON);
                 }
             }
+
+            // Clear the path cache ...
+            SessionCache.this.pathCache.clear();
 
             // Remove the node from the current parent and add it to this ...
             ChangedNodeInfo newChildInfo = newChildEditor.node;
@@ -1874,7 +1882,7 @@ class SessionCache {
         NodeInfo info = findNodeInfoInCache(uuid);
         if (info == null) {
             // Nope, so go ahead and load it ...
-            info = loadFromGraph(uuid, null);
+            info = loadFromGraph(null, uuid);
 
         }
         SessionCache.this.checkPermission(info, JcrSession.JCR_READ_PERMISSION);
@@ -1919,7 +1927,7 @@ class SessionCache {
     NodeInfo findNodeInfoForRoot() throws RepositoryException {
         if (root == null) {
             // We haven't found the root yet ...
-            NodeInfo info = loadFromGraph(this.rootPath, null);
+            NodeInfo info = loadFromGraph(this.rootPath, (NodeInfo)null);
             root = info.getUuid();
             this.jcrNodes.put(root, new JcrRootNode(this, root));
             return info;
@@ -2082,23 +2090,36 @@ class SessionCache {
     }
 
     Path getPathFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
-        if (uuid == root) return rootPath;
+        if (uuid.equals(root)) return rootPath;
         return getPathFor(findNodeInfo(uuid));
     }
 
     Path getPathFor( NodeInfo info ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
-        if (info != null && info.getUuid() == root) return rootPath;
-        LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
-        while (info != null) {
-            UUID parent = info.getParent();
-            if (parent == null) break;
-            NodeInfo parentInfo = findNodeInfo(parent);
-            ChildNode child = parentInfo.getChildren().getChild(info.getUuid());
-            if (child == null) break;
-            segments.addFirst(child.getSegment());
-            info = parentInfo;
+        if (info == null) {
+            return pathFactory.createRootPath();
         }
-        return pathFactory.createAbsolutePath(segments);
+        UUID uuid = info.getUuid();
+        if (uuid.equals(root)) return rootPath;
+
+        // This isn't the root node ...
+        Path result = pathCache.get(uuid);
+        if (result == null) {
+            // We need to build a path using the parent path ...
+            UUID parent = info.getParent();
+            if (parent == null) {
+                // Then this node is the root ...
+                root = info.getUuid();
+                result = rootPath;
+            } else {
+                NodeInfo parentInfo = findNodeInfo(parent);
+                Path parentPath = getPathFor(parentInfo);
+                ChildNode child = parentInfo.getChildren().getChild(info.getUuid());
+                result = pathFactory.create(parentPath, child.getSegment());
+            }
+            pathCache.put(uuid, result);
+        }
+        assert result != null;
+        return result;
     }
 
     Path getPathFor( PropertyInfo propertyInfo ) throws ItemNotFoundException, RepositoryException {
@@ -2138,18 +2159,20 @@ class SessionCache {
      * Note that this method does not check the cache before loading from the repository graph.
      * </p>
      * 
-     * @param uuid the UUID of the node; may not be null
-     * @param parentInfo the parent information; may be null if not known
+     * @param path the path of the node, if known; may be null only if the UUID is supplied
+     * @param uuid the UUID of the node, if known; may be null only if the path is supplied
      * @return the information for the node
      * @throws ItemNotFoundException if the node does not exist in the repository
      * @throws RepositoryException if there was an error obtaining this information from the repository
      */
-    protected ImmutableNodeInfo loadFromGraph( UUID uuid,
-                                               NodeInfo parentInfo ) throws ItemNotFoundException, RepositoryException {
+    protected ImmutableNodeInfo loadFromGraph( Path path,
+                                               UUID uuid ) throws ItemNotFoundException, RepositoryException {
         // Load the node information from the store ...
         try {
-            org.jboss.dna.graph.Node node = store.getNodeAt(uuid);
-            ImmutableNodeInfo info = createNodeInfoFrom(node, parentInfo);
+            // See if there is a path for this uuid ...
+            Location location = Location.create(path, uuid);
+            org.jboss.dna.graph.Node node = store.getNodeAt(location);
+            ImmutableNodeInfo info = createNodeInfoFrom(node, null);
             this.cachedNodes.put(info.getUuid(), info);
             return info;
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
@@ -2539,6 +2562,9 @@ class SessionCache {
             }
             // Whether or not we found an info, add it to the deleted map ...
             this.deletedNodes.put(toDelete, info);
+
+            // Remove it from the path cache ...
+            this.pathCache.remove(toDelete);
 
             if (info != null) {
                 // Get all the children and add them to the queue ...
