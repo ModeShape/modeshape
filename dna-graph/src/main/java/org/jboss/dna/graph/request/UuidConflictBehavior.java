@@ -9,7 +9,6 @@ package org.jboss.dna.graph.request;
 public enum UuidConflictBehavior {
 
     ALWAYS_CREATE_NEW_UUID,
-    DO_NOT_COPY,
     REPLACE_EXISTING_NODE,
     THROW_EXCEPTION;
 }

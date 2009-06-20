@@ -30,7 +30,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCode;
 
 /**
- * A unique identifer for a parent-child relationship.
+ * A unique identifier for a parent-child relationship.
  * 
  * @author Randall Hauch
  */
@@ -47,9 +47,6 @@ public class ChildId implements Serializable {
     @Column( name = "WORKSPACE_ID", nullable = false )
     private Long workspaceId;
 
-    @Column( name = "PARENT_UUID", nullable = false, length = 36 )
-    private String parentUuidString;
-
     @Column( name = "CHILD_UUID", nullable = false, length = 36 )
     private String childUuidString;
 
@@ -57,26 +54,15 @@ public class ChildId implements Serializable {
     }
 
     public ChildId( Long workspaceId,
-                    NodeId parentId,
                     NodeId childId ) {
         this.workspaceId = workspaceId;
-        if (parentId != null) this.parentUuidString = parentId.getUuidString();
         if (childId != null) this.childUuidString = childId.getUuidString();
     }
 
     public ChildId( Long workspaceId,
-                    String parentUuid,
                     String childUuid ) {
         this.workspaceId = workspaceId;
-        this.parentUuidString = parentUuid;
         this.childUuidString = childUuid;
-    }
-
-    /**
-     * @return parentUuidString
-     */
-    public String getParentUuidString() {
-        return parentUuidString;
     }
 
     /**
@@ -100,7 +86,7 @@ public class ChildId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(parentUuidString, childUuidString);
+        return HashCode.compute(workspaceId, childUuidString);
     }
 
     /**
@@ -117,11 +103,6 @@ public class ChildId implements Serializable {
                 if (that.workspaceId != null) return false;
             } else {
                 if (!this.workspaceId.equals(that.workspaceId)) return false;
-            }
-            if (this.parentUuidString == null) {
-                if (that.parentUuidString != null) return false;
-            } else {
-                if (!this.parentUuidString.equals(that.parentUuidString)) return false;
             }
             if (this.childUuidString == null) {
                 if (that.childUuidString != null) return false;
@@ -140,7 +121,7 @@ public class ChildId implements Serializable {
      */
     @Override
     public String toString() {
-        return "Child " + childUuidString + " of " + parentUuidString + " in workspace " + workspaceId;
+        return "Node " + childUuidString + " in workspace " + workspaceId;
     }
 
 }

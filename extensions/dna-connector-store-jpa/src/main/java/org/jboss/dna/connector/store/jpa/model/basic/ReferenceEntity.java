@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.connector.store.jpa.model.basic;
 
+import java.util.Collection;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -49,7 +50,8 @@ import org.hibernate.annotations.Index;
     @NamedQuery( name = "ReferenceEntity.removeNonEnforcedReferences", query = "delete ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.fromUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
     @NamedQuery( name = "ReferenceEntity.countUnresolveReferences", query = "select count(*) from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
     @NamedQuery( name = "ReferenceEntity.getUnresolveReferences", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
-    @NamedQuery( name = "ReferenceEntity.findInWorkspace", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId" )} )
+    @NamedQuery( name = "ReferenceEntity.findInWorkspace", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId" ),
+    @NamedQuery( name = "ReferenceEntity.getInwardReferencesForList", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.toUuidString in (:toUuidList)" )} )
 public class ReferenceEntity {
 
     @Id
@@ -186,6 +188,26 @@ public class ReferenceEntity {
         assert manager != null;
         Query query = manager.createNamedQuery("ReferenceEntity.getUnresolveReferences");
         query.setParameter("workspaceId", workspaceId);
+        return query.getResultList();
+    }
+
+    /**
+     * Returns a list of all references to UUIDs in the given list within the given workspace
+     * 
+     * @param workspaceId the ID of the workspace; may not be null
+     * @param uuids the UUIDs (as strings) of the nodes to check; may not be null
+     * @param manager the manager; may not be null
+     * @return the number of deleted references
+     */
+    @SuppressWarnings( "unchecked" )
+    public static List<ReferenceEntity> getReferencesToUuids( Long workspaceId,
+                                                              Collection<String> uuids,
+                                                              EntityManager manager ) {
+        assert manager != null;
+
+        Query query = manager.createNamedQuery("ReferenceEntity.getInwardReferencesForList");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("toUuidList", uuids);
         return query.getResultList();
     }
 }

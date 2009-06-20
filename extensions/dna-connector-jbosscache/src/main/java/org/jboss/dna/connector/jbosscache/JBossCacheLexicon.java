@@ -39,5 +39,7 @@ public class JBossCacheLexicon {
     }
 
     public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
+    public static final Name UUIDS = new BasicName(Namespace.URI, "uuids");
+    public static final Name FQN = new BasicName(Namespace.URI, "fqn");
 
 }

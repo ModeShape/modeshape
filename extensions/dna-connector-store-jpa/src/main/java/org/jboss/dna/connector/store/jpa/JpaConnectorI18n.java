@@ -43,6 +43,7 @@ public final class JpaConnectorI18n {
     public static I18n unableToReadLargeValue;
     public static I18n unableToMoveRootNode;
     public static I18n locationShouldHavePathAndOrProperty;
+    public static I18n invalidUuidForWorkspace;
     public static I18n invalidReferences;
     public static I18n unableToDeleteBecauseOfReferences;
 

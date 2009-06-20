@@ -38,7 +38,9 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -119,11 +121,51 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         if (workspace == null || newWorkspace == null) return;
         InMemoryNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
+
+        Map<UUID, UUID> copyMap = null;
+        Set<UUID> uuidsInFromBranch = null;
+
+        switch (request.uuidConflictBehavior()) {
+            case ALWAYS_CREATE_NEW_UUID:
+
+                /*
+                 * The copyNode method uses the presence of a non-null map as an indicator that new UUIDs should be created
+                 * during the copy operation
+                 */
+                copyMap = new HashMap<UUID, UUID>();
+                break;
+            case REPLACE_EXISTING_NODE:
+                uuidsInFromBranch = workspace.getUuidsUnderNode(node);
+
+                for (UUID uuid : uuidsInFromBranch) {
+                    InMemoryNode existing;
+                    if (null != (existing = newWorkspace.getNode(uuid))) {
+                        newWorkspace.removeNode(this.getExecutionContext(), existing);
+                    }
+                }
+                break;
+            case THROW_EXCEPTION:
+                uuidsInFromBranch = workspace.getUuidsUnderNode(node);
+
+                for (UUID uuid : uuidsInFromBranch) {
+                    InMemoryNode existing;
+                    if (null != (existing = newWorkspace.getNode(uuid))) {
+                        NamespaceRegistry namespaces = this.getExecutionContext().getNamespaceRegistry();
+                        String path = newWorkspace.pathFor(pathFactory, existing).getString(namespaces);
+                        request.setError(new UuidAlreadyExistsException(this.getSourceName(), uuid, path, newWorkspace.getName()));
+                        return;
+                    }
+                }
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected UUID conflict behavior: " + request.uuidConflictBehavior());
+        }
+
         // Look up the new parent, which must exist ...
         Path newParentPath = request.into().getPath();
         Name desiredName = request.desiredName();
         InMemoryNode newParent = newWorkspace.getNode(newParentPath);
-        Map<UUID, UUID> copyMap = workspace.equals(newWorkspace) ? new HashMap<UUID, UUID>() : null;
         InMemoryNode newNode = workspace.copyNode(getExecutionContext(),
                                                   node,
                                                   newWorkspace,
@@ -222,24 +264,23 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         if (node == null) return;
         // Look up the new parent, which must exist ...
         Path newParentPath;
-        
+
         if (request.into() != null) {
             newParentPath = request.into().getPath();
-        }
-        else {
+        } else {
             // into or before cannot both be null
             assert beforeNode != null;
-            
+
             // Build the path from the before node to the root.
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
             InMemoryNode current = beforeNode.getParent();
             while (current != workspace.getRoot()) {
                 segments.addFirst(current.getName());
                 current = current.getParent();
-            } 
+            }
             newParentPath = getExecutionContext().getValueFactories().getPathFactory().createAbsolutePath(segments);
         }
-        
+
         InMemoryNode newParent = workspace.getNode(newParentPath);
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
         assert node.getParent() == newParent;

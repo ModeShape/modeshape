@@ -53,6 +53,7 @@ import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
@@ -259,8 +260,93 @@ final class JcrWorkspace implements Workspace {
     public void clone( String srcWorkspace,
                        String srcAbsPath,
                        String destAbsPath,
-                       boolean removeExisting ) {
-        throw new UnsupportedOperationException();
+                       boolean removeExisting )
+        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
+        LockException, RepositoryException {
+        CheckArg.isNotNull(srcWorkspace, "source workspace name");
+        CheckArg.isNotNull(srcAbsPath, "source path");
+        CheckArg.isNotNull(destAbsPath, "destination path");
+
+        if (!graph.getWorkspaces().contains(srcWorkspace)) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
+        }
+
+        // Create the paths ...
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path srcPath = null;
+        Path destPath = null;
+        try {
+            srcPath = factory.create(srcAbsPath);
+        } catch (ValueFormatException e) {
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
+        }
+        try {
+            destPath = factory.create(destAbsPath);
+        } catch (ValueFormatException e) {
+            throw new PathNotFoundException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+        }
+
+        // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
+        if (destAbsPath.endsWith("]")) {
+            throw new RepositoryException();
+        }
+
+        try {
+            this.session.checkPermission(destPath.getParent(), "add_node");
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
+        /*
+         * Make sure that the node has a definition at the new location
+         */
+        SessionCache cache = this.session.cache();
+        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
+
+        // Skip the cache and load the latest parent info directly from the graph
+        NodeInfo parent = cache.loadFromGraph(null, cacheParent.getUuid());
+        Name newNodeName = destPath.getLastSegment().getName();
+        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
+
+        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
+        graph.useWorkspace(srcWorkspace);
+        Property primaryTypeProp;
+        Property uuidProp;
+        try {
+            Map<Name, Property> props = graph.getNodeAt(srcPath).getPropertiesByName();
+            primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
+            uuidProp = props.get(DnaLexicon.UUID);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(srcAbsPath, srcWorkspace));
+        } finally {
+            graph.useWorkspace(this.name);
+        }
+
+        assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
+        assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";
+
+        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
+        this.session.cache().findBestNodeDefinition(parent,
+                                                    parentPath,
+                                                    newNodeName,
+                                                    nameFactory.create(primaryTypeProp.getFirstValue()));
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+        // graph.copy(srcPath).fromWorkspace(srcWorkspace).to(destPath);
+        if (removeExisting) {
+            graph.copy(srcPath).replacingExistingNodesWithSameUuids().fromWorkspace(srcWorkspace).to(destPath);
+        } else {
+            try {
+                graph.copy(srcPath).failingIfUuidsMatch().fromWorkspace(srcWorkspace).to(destPath);
+            } catch (UuidAlreadyExistsException uaee) {
+                throw new ItemExistsException(uaee.getMessage());
+            }
+        }
+
+        assert uuidProp.getFirstValue() instanceof UUID;
+        // Load the node that we just copied
+        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, (UUID)uuidProp.getFirstValue(), newNodeName);
+
     }
 
     /**
@@ -330,9 +416,18 @@ final class JcrWorkspace implements Workspace {
 
         // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
         graph.useWorkspace(srcWorkspace);
-        Property primaryTypeProp = graph.getNodeAt(srcPath).getProperty(JcrLexicon.PRIMARY_TYPE);
-        Property uuidProp = graph.getNodeAt(srcPath).getProperty(DnaLexicon.UUID);
-        graph.useWorkspace(this.name);
+
+        Property primaryTypeProp;
+        Property uuidProp;
+        try {
+            Map<Name, Property> props = graph.getNodeAt(srcPath).getPropertiesByName();
+            primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
+            uuidProp = props.get(DnaLexicon.UUID);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(srcAbsPath, srcWorkspace));
+        } finally {
+            graph.useWorkspace(this.name);
+        }
 
         assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
         assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";

@@ -310,9 +310,9 @@ public class BasicModelTest {
         UUID parentId = UUID.randomUUID();
 
         // Create UUIDs for several children ...
-        ChildId childId1 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
-        ChildId childId2 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
-        ChildId childId3 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId1 = new ChildId(workspaceId, UUID.randomUUID().toString());
+        ChildId childId2 = new ChildId(workspaceId, UUID.randomUUID().toString());
+        ChildId childId3 = new ChildId(workspaceId, UUID.randomUUID().toString());
         assertThat(childId1, is(not(childId2)));
         assertThat(childId1, is(not(childId3)));
         assertThat(childId2, is(not(childId3)));
@@ -322,9 +322,9 @@ public class BasicModelTest {
             NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
 
             // Create the child entities ...
-            ChildEntity child1 = new ChildEntity(childId1, 1, ns, "child1");
-            ChildEntity child2 = new ChildEntity(childId2, 2, ns, "child2");
-            ChildEntity child3 = new ChildEntity(childId3, 3, ns, "child3", 1);
+            ChildEntity child1 = new ChildEntity(childId1, parentId.toString(), 1, ns, "child1");
+            ChildEntity child2 = new ChildEntity(childId2, parentId.toString(), 2, ns, "child2");
+            ChildEntity child3 = new ChildEntity(childId3, parentId.toString(), 3, ns, "child3", 1);
 
             // Save a properties entities ...
             manager.persist(child1);

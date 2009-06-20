@@ -42,7 +42,7 @@ import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 /**
  * An entity representing the parent-child relationship between two nodes. In addition to the references to the parent and child
  * nodes, this entity also maintains the indexInParent of the indexInParent within the parent node's list of all children, the
- * child's name ( {@link #getChildName() local part} and {@link #getChildNamespace() namespace}), and the same-name-sibiling
+ * child's name ( {@link #getChildName() local part} and {@link #getChildNamespace() namespace}), and the same-name-sibling
  * indexInParent (if there is one).
  * 
  * @author Randall Hauch
@@ -51,22 +51,24 @@ import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 @Table( name = "DNA_BASIC_CHILDREN" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_BASIC_CHILDREN", indexes = {
     @Index( name = "CHILDINDEX_INX", columnNames = {"WORKSPACE_ID", "PARENT_UUID", "CHILD_INDEX"} ),
-    @Index( name = "CHILDUUID_INX", columnNames = {"WORKSPACE_ID", "CHILD_UUID"} ),
     @Index( name = "CHILDNAME_INX", columnNames = {"WORKSPACE_ID", "PARENT_UUID", "CHILD_NAME_NS_ID", "CHILD_NAME_LOCAL",
         "SNS_INDEX"} )} )
 @NamedQueries( {
-    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
-    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString order by child.indexInParent" ),
-    @NamedQuery( name = "ChildEntity.findRangeUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString and child.indexInParent >= :firstIndex and child.indexInParent < :afterIndex order by child.indexInParent" ),
-    @NamedQuery( name = "ChildEntity.findChildrenAfterIndexUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString and child.indexInParent >= :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
+    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuidString order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findRangeUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuidString and child.indexInParent >= :firstIndex and child.indexInParent < :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findChildrenAfterIndexUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuidString and child.indexInParent >= :afterIndex order by child.indexInParent" ),
     @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.childUuidString = :childUuidString" ),
-    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
-    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuid" ),
+    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
+    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.parentUuidString = :parentUuid" ),
     @NamedQuery( name = "ChildEntity.findInWorkspace", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId" )} )
 public class ChildEntity {
 
     @Id
     private ChildId id;
+
+    @Column( name = "PARENT_UUID", nullable = false, length = 36 )
+    private String parentUuidString;
 
     /** The zero-based index */
     @Column( name = "CHILD_INDEX", nullable = false, unique = false )
@@ -93,10 +95,12 @@ public class ChildEntity {
     }
 
     public ChildEntity( ChildId id,
+                        String parentUuidString,
                         int indexInParent,
                         NamespaceEntity ns,
                         String name ) {
         this.id = id;
+        this.parentUuidString = parentUuidString;
         this.indexInParent = indexInParent;
         this.childNamespace = ns;
         this.childName = name;
@@ -104,11 +108,13 @@ public class ChildEntity {
     }
 
     public ChildEntity( ChildId id,
+                        String parentUuidString,
                         int indexInParent,
                         NamespaceEntity ns,
                         String name,
                         int sameNameSiblingIndex ) {
         this.id = id;
+        this.parentUuidString = parentUuidString;
         this.indexInParent = indexInParent;
         this.childNamespace = ns;
         this.childName = name;
@@ -127,6 +133,24 @@ public class ChildEntity {
      */
     public void setId( ChildId childId ) {
         this.id = childId;
+    }
+
+    /**
+     * Returns the parent UUID string
+     * 
+     * @return the parent UUID string
+     */
+    public String getParentUuidString() {
+        return parentUuidString;
+    }
+
+    /**
+     * Sets the parent UUID string
+     * 
+     * @param parentUuidString the parent UUID string
+     */
+    public void setParentUuidString( String parentUuidString ) {
+        this.parentUuidString = parentUuidString;
     }
 
     /**
@@ -248,7 +272,7 @@ public class ChildEntity {
         }
         if (id != null) {
             sb.append(" (id=").append(id.getChildUuidString()).append(")");
-            String parentId = id.getParentUuidString();
+            String parentId = getParentUuidString();
             if (parentId != null) {
                 sb.append(" is ");
                 sb.append(Inflector.getInstance().ordinalize(indexInParent));

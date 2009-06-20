@@ -73,6 +73,10 @@ public class RequestProcessorCache {
         cache.addNewNode(location);
     }
 
+    public void clear( Long workspaceId ) {
+        workspaceCaches.remove(workspaceId);
+    }
+
     public LinkedList<Location> getAllChildren( Long workspaceId,
                                                 Path parent ) {
         WorkspaceCache cache = workspaceCaches.get(workspaceId);

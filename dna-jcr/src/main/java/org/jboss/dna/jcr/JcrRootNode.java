@@ -26,7 +26,6 @@ package org.jboss.dna.jcr;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
@@ -89,8 +88,8 @@ final class JcrRootNode extends AbstractJcrNode {
      * @throws ItemNotFoundException always
      * @see javax.jcr.Item#getParent()
      */
-    public Node getParent() throws ItemNotFoundException {
-        throw new ItemNotFoundException();
+    public AbstractJcrNode getParent() throws ItemNotFoundException {
+        throw new ItemNotFoundException(JcrI18n.rootNodeHasNoParent.text());
     }
 
     /**

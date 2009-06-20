@@ -279,7 +279,7 @@ public class SubgraphQuery {
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final NameFactory nameFactory = context.getValueFactories().getNameFactory();
         for (ChildEntity entity : getNodes(false, includeChildrenOfMaxDepthNodes)) {
-            String parentUuid = entity.getId().getParentUuidString();
+            String parentUuid = entity.getParentUuidString();
             Path parentPath = pathByUuid.get(parentUuid);
             assert parentPath != null;
             String nsUri = entity.getChildNamespace().getUri();

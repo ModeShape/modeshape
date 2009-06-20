@@ -371,9 +371,8 @@ class JcrContentHandler extends DefaultHandler {
                         ByteArrayInputStream is = new ByteArrayInputStream(Base64.decode(s, Base64.URL_SAFE));
                         currentProps.get(currentPropName).add(session.getValueFactory().createValue(is));
                     } else {
-                        currentProps.get(currentPropName).add(session.getValueFactory()
-                                                                     .createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
-                                                                                  currentPropType));
+                        currentProps.get(currentPropName).add(session.getValueFactory().createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
+                                                                                                    currentPropType));
                     }
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
@@ -430,7 +429,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (existingNodeWithUuid != null) {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
-                                parentNode = (AbstractJcrNode)existingNodeWithUuid.getParent();
+                                parentNode = existingNodeWithUuid.getParent();
                                 parentNode.editorFor(operations()).destroyChild(uuid);
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
@@ -440,7 +439,7 @@ class JcrContentHandler extends DefaultHandler {
                                 if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
                                     throw new ConstraintViolationException();
                                 }
-                                AbstractJcrNode temp = (AbstractJcrNode)existingNodeWithUuid.getParent();
+                                AbstractJcrNode temp = existingNodeWithUuid.getParent();
                                 temp.editorFor(operations()).destroyChild(uuid);
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:

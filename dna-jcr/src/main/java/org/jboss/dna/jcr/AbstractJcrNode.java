@@ -24,8 +24,8 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
@@ -97,6 +98,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     abstract boolean isRoot();
+
+    public abstract AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException;
 
     final UUID internalUuid() {
         return nodeUuid;
@@ -995,26 +998,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return cache.findJcrNode(child.getUuid());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#update(java.lang.String)
-     */
-    public final void update( String srcWorkspaceName ) throws NoSuchWorkspaceException, RepositoryException {
-        String[] workspaces = this.session().workspace().getAccessibleWorkspaceNames();
-
-        if (!Arrays.asList(workspaces).contains(srcWorkspaceName)) {
-            JcrRepository repo = session().repository();
-            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(srcWorkspaceName, repo.getName()));
-        }
-
-        if (session().hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
-        
-        if (true) throw new UnsupportedOperationException();
-    }
-
     protected final Property removeExistingValuedProperty( String name ) throws ConstraintViolationException, RepositoryException {
         PropertyId id = new PropertyId(nodeUuid, nameFrom(name));
         AbstractJcrProperty property = cache.findJcrProperty(id);
@@ -1377,18 +1360,66 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#getCorrespondingNodePath(java.lang.String)
      */
-    public final String getCorrespondingNodePath( String workspaceName ) throws NoSuchWorkspaceException, RepositoryException {
-        
-        String[] workspaces = this.session().workspace().getAccessibleWorkspaceNames();
+    final Path correspondingNodePathFrom( String workspaceName )
+        throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
 
-        if (!Arrays.asList(workspaces).contains(workspaceName)) {
-            JcrRepository repo = session().repository();
-            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(workspaceName, repo.getName()));
+        assert workspaceName != null;
+
+        NamespaceRegistry namespaces = this.context().getNamespaceRegistry();
+
+        AbstractJcrNode referenceableRoot = this;
+        while (!referenceableRoot.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
+            referenceableRoot = referenceableRoot.getParent();
         }
 
-        // TODO:Check permissions on workspace
-        
-        throw new UnsupportedOperationException();
+        UUID uuid = referenceableRoot.internalUuid();
+        Path relativePath = path().equals(referenceableRoot.path()) ? null : path().relativeTo(referenceableRoot.path());
+
+        Path correspondingPath = this.cache.getPathFor(workspaceName, uuid, relativePath);
+
+        try {
+            this.session().checkPermission(workspaceName, correspondingPath, "read");
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
+        return correspondingPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getCorrespondingNodePath(java.lang.String)
+     */
+    public final String getCorrespondingNodePath( String workspaceName )
+        throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
+
+        CheckArg.isNotNull(workspaceName, "workspace name");
+        return correspondingNodePathFrom(workspaceName).getString(this.namespaces());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#update(java.lang.String)
+     */
+    @SuppressWarnings( "unused" )
+    public final void update( String srcWorkspaceName ) throws NoSuchWorkspaceException, RepositoryException {
+        CheckArg.isNotNull(srcWorkspaceName, "workspace name");
+
+        Path correspondingPath;
+
+        if (session().hasPendingChanges()) {
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
+        }
+
+        try {
+            correspondingPath = correspondingNodePathFrom(srcWorkspaceName);
+        } catch (ItemNotFoundException infe) {
+            return;
+        }
+
+        if (true) throw new UnsupportedOperationException();
     }
 
     /**

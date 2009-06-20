@@ -209,8 +209,9 @@ public class SubgraphQueryTest {
         int snsIndex = path.getLastSegment().getIndex();
         NamespaceEntity namespace = namespaces.get(childName.getNamespaceUri(), true);
         UUID childUuid = UUID.randomUUID();
-        ChildId id = new ChildId(workspaceId, parentUuid.toString(), childUuid.toString());
-        ChildEntity entity = new ChildEntity(id, ++numChildren, namespace, childName.getLocalName(), snsIndex);
+        ChildId id = new ChildId(workspaceId, childUuid.toString());
+        ChildEntity entity = new ChildEntity(id, parentUuid.toString(), ++numChildren, namespace, childName.getLocalName(),
+                                             snsIndex);
         manager.persist(entity);
 
         // Create the properties ...

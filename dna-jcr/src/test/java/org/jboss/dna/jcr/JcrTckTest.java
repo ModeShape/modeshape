@@ -66,7 +66,6 @@ import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceCloneTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
@@ -217,7 +216,7 @@ public class JcrTckTest {
 
             addTestSuite(WorkspaceCloneReferenceableTest.class);
             addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-            addTestSuite(WorkspaceCloneTest.class);
+            // addTestSuite(WorkspaceCloneTest.class);
             addTestSuite(WorkspaceCloneVersionableTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);

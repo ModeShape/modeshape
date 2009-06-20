@@ -88,6 +88,7 @@ public final class GraphI18n {
 
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
+    public static I18n nodeAlreadyExistsWithUuid;
 
     /* In-Memory Connector */
     public static I18n inMemoryNodeDoesNotExist;

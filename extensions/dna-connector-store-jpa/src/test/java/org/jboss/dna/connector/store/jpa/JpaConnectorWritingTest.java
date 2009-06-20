@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.connector.store.jpa;
 
+import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.WritableConnectorTest;
+import org.jboss.dna.graph.property.ReferentialIntegrityException;
+import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -47,7 +50,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
         source.setUsername("sa");
         source.setPassword("");
         source.setUrl("jdbc:hsqldb:.");
-        source.setMaximumConnectionsInPool(3);
+        source.setMaximumConnectionsInPool(1);
         source.setMinimumConnectionsInPool(0);
         source.setNumberOfConnectionsToAcquireAsNeeded(1);
         source.setMaximumSizeOfStatementCache(100);
@@ -68,40 +71,39 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
         graph.createWorkspace().named("default");
     }
 
-    // @Test
-    // public void shouldCreateFlatAndReallyWideTreeUsingOneBatch() {
-    // String initialPath = "";
-    // int depth = 1;
-    // int numChildren = 10000;
-    // int numBatches = 100;
-    // int numChildrenPerNodePerBatch = numChildren / numBatches;
-    // int numPropertiesPerNode = 7;
-    // int total = 0;
-    // Stopwatch sw = new Stopwatch();
-    // System.out.println("" + numChildren + " children under a node");
-    // for (int i = 0; i != numBatches; ++i) {
-    // Graph.Batch batch = graph.batch();
-    // total += createChildren(batch, initialPath, "node", numChildrenPerNodePerBatch, numPropertiesPerNode, depth, null);
-    // Stopwatch sw2 = new Stopwatch();
-    // sw.start();
-    // sw2.start();
-    // batch.execute();
-    // sw.stop();
-    // sw2.stop();
-    // System.out.println(" ... created " + (total - numChildrenPerNodePerBatch + 1) + "-" + total + " in "
-    // + sw2.getTotalDuration().getDuration(TimeUnit.MILLISECONDS) + " milliseconds");
-    // }
-    // System.out.println("  " + getTotalAndAverageDuration(sw));
-    // assert total == numChildren;
-    //
-    // // Create 10 more ...
-    // System.out.println(" Extra nodes (" + (total + 1) + "-" + (total + 10) + "):");
-    // sw = new Stopwatch();
-    // Graph.Batch batch = graph.batch();
-    // createChildren(batch, initialPath, "added node", 10, numPropertiesPerNode, 1, null);
-    // sw.start();
-    // batch.execute();
-    // sw.stop();
-    // System.out.println("  " + getTotalAndAverageDuration(sw));
-    // }
+    @Test( expected = ReferentialIntegrityException.class )
+    public void shouldNotCopyChildrenBetweenWorkspacesAndRemoveExistingNodesWithSameUuidIfSpecifiedIfReferentialIntegrityIsViolated()
+        throws Exception {
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+        String workspaceName = "copyChildrenSource";
+
+        tryCreatingAWorkspaceNamed(workspaceName);
+
+        graph.useWorkspace(workspaceName);
+        String initialPath = "";
+        int depth = 3;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        graph.useWorkspace(defaultWorkspaceName);
+
+        graph.create("/newUuids");
+        // Copy once to get the UUID into the default workspace
+        graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
+
+        // Create a new child node that in the target workspace that has no corresponding node in the source workspace
+        graph.create("/newUuids/node1/shouldBeRemoved");
+        graph.create("/refererringNode");
+        graph.set("refProp").on("/refererringNode").to(graph.getNodeAt("/newUuids/node1/shouldBeRemoved"));
+
+        // Now create a reference to this new node
+
+        // Copy again to test the behavior now that the UUIDs are already in the default workspace
+        // This should fail because /newUuids/node1/shouldBeRemoved must be removed by the copy, but can't be removed
+        // because there is a reference to it.
+        graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/otherNode");
+    }
 }

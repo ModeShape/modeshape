@@ -107,14 +107,14 @@ public class JBossCacheRequestProcessorTest {
     @Test
     public void shouldCreatePathFromFullyQualifiedNode() {
         Path path = pathFactory.create("/a/b/c/d");
-        Fqn<?> fqn = processor.getFullyQualifiedName(path);
+        Fqn<Path.Segment> fqn = processor.getFullyQualifiedName(path);
         assertThat(processor.getPath(pathFactory, fqn), is(path));
     }
 
     @Test
     public void shouldCreateRootPathFromRootFullyQualifiedNode() {
         Path path = pathFactory.createRootPath();
-        Fqn<?> fqn = processor.getFullyQualifiedName(path);
+        Fqn<Path.Segment> fqn = processor.getFullyQualifiedName(path);
         assertThat(processor.getPath(pathFactory, fqn), is(path));
     }
 }

@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -426,7 +425,7 @@ public class Serializer {
      * 
      * @param input the stream from which the existing properties are to be deserialized; may not be null
      * @param output the stream to which the updated properties are to be serialized; may not be null
-     * @param oldUuidToNewUuid the map of old-to-new UUIDs
+     * @param oldUuidToNewUuid the map of old-to-new UUIDs; may not be null
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
      */
@@ -435,7 +434,7 @@ public class Serializer {
                                            Map<String, String> oldUuidToNewUuid ) throws IOException, ClassNotFoundException {
         assert input != null;
         assert output != null;
-        if (oldUuidToNewUuid == null) oldUuidToNewUuid = Collections.emptyMap();
+        assert oldUuidToNewUuid != null;
 
         UuidFactory uuidFactory = valueFactories.getUuidFactory();
         ValueFactory<Reference> referenceFactory = valueFactories.getReferenceFactory();

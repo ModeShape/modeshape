@@ -857,8 +857,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass())
-                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
 
@@ -887,6 +886,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, "hibernate.connection.url", this.url);
                 setProperty(configurator, "hibernate.connection.max_fetch_depth", DEFAULT_MAXIMUM_FETCH_DEPTH);
                 setProperty(configurator, "hibernate.connection.pool_size", 0); // don't use the built-in pool
+                setProperty(configurator, "hibernate.show_sql", "false");
             }
 
             entityManagerFactory = configurator.buildEntityManagerFactory();

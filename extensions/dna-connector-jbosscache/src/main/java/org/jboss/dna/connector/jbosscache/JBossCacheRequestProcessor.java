@@ -26,6 +26,7 @@ package org.jboss.dna.connector.jbosscache;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -62,6 +64,7 @@ import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -82,6 +85,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     private final PathFactory pathFactory;
     private final PropertyFactory propertyFactory;
     private final UuidFactory uuidFactory;
+    private Path.Segment dnaUuidsSegment;
 
     /**
      * @param sourceName the name of the source in which this processor is operating
@@ -106,6 +110,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.propertyFactory = context.getPropertyFactory();
         this.uuidFactory = context.getValueFactories().getUuidFactory();
+        this.dnaUuidsSegment = pathFactory.createSegment(JBossCacheLexicon.UUIDS);
     }
 
     @Override
@@ -152,6 +157,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     }
 
     @Override
+    @SuppressWarnings( "unchecked" )
     public void process( CreateNodeRequest request ) {
         // Look up the cache and the node ...
         Cache<Name, Object> cache = getCache(request, request.inWorkspace());
@@ -168,7 +174,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert checkChildren(parentNode);
 
         // Add the UUID property (if required), which may be overwritten by a supplied property ...
-        node.put(DnaLexicon.UUID, uuidFactory.create());
+        UUID uuid = uuidFactory.create();
+        node.put(DnaLexicon.UUID, uuid);
         // Now add the properties to the supplied node ...
         for (Property property : request.properties()) {
             if (property.size() == 0) continue;
@@ -181,6 +188,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             }
             node.put(propName, value);
         }
+
+        mapUuid(cache, uuid, node.getFqn());
         Path nodePath = pathFactory.create(parent, newSegment);
         request.setActualLocationOfNode(Location.create(nodePath));
         recordChange(request);
@@ -234,9 +243,29 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Node<Name, Object> newParent = getNode(request, intoCache, newParentPath);
         if (newParent == null) return;
 
-        boolean useSameUuids = fromCache != intoCache;
-        UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
-        UUID newNodeUuid = useSameUuids ? uuid : uuidFactory.create();
+        if (UuidConflictBehavior.THROW_EXCEPTION.equals(request.uuidConflictBehavior())) {
+            // Build a list of all the UUIDs in the source branch
+            Set<UUID> uuidsFromSource = new HashSet<UUID>();
+            LinkedList<Node<Name, Object>> nodesToVisit = new LinkedList<Node<Name, Object>>();
+            nodesToVisit.add(node);
+
+            while (!nodesToVisit.isEmpty()) {
+                Node<Name, Object> nodeToCheck = nodesToVisit.pop();
+                UUID uuid = uuidFactory.create(nodeToCheck.get(DnaLexicon.UUID));
+                if (uuid != null) uuidsFromSource.add(uuid);
+
+                nodesToVisit.addAll(nodeToCheck.getChildren());
+            }
+
+            // If any of the UUIDS currently exist in this workspace, throw an exception
+            for (UUID uuid : uuidsFromSource) {
+                Fqn<Path.Segment> path;
+                if (null != (path = getFullyQualifiedName(intoCache, uuid))) {
+                    String pathAsString = path.toString();
+                    throw new UuidAlreadyExistsException(this.getSourceName(), uuid, pathAsString, request.intoWorkspace());
+                }
+            }
+        }
 
         // Copy the branch ...
         Name desiredName = request.desiredName();
@@ -246,14 +275,28 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                                            desiredName,
                                            null,
                                            true,
-                                           useSameUuids,
-                                           newNodeUuid,
+                                           request.uuidConflictBehavior(),
                                            null,
                                            getExecutionContext());
 
+        mapUuids(intoCache, Fqn.fromRelativeElements(Fqn.fromList(newParentPath.getSegmentsList()), newSegment));
         Path newPath = pathFactory.create(newParentPath, newSegment);
         request.setActualLocations(Location.create(nodePath), Location.create(newPath));
         recordChange(request);
+    }
+
+    @SuppressWarnings( "unchecked" )
+    private boolean deleteNode( Cache<Name, Object> cache,
+                                Node<Name, Object> node ) {
+        Fqn<Path.Segment> nodeFqn = node.getFqn();
+
+        removeUuids(cache, nodeFqn);
+        Path.Segment nameOfRemovedNode = (Path.Segment)nodeFqn.getLastElement();
+        if (cache.removeNode(node.getFqn())) {
+            removeFromChildList(cache, node.getParent(), nameOfRemovedNode, getExecutionContext());
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -265,10 +308,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Node<Name, Object> node = getNode(request, cache, nodePath);
         if (node == null) return;
 
-        Path.Segment nameOfRemovedNode = nodePath.getLastSegment();
-        Node<Name, Object> parent = node.getParent();
-        if (cache.removeNode(node.getFqn())) {
-            removeFromChildList(cache, parent, nameOfRemovedNode, getExecutionContext());
+        if (deleteNode(cache, node)) {
             request.setActualLocationOfNode(Location.create(nodePath));
             recordChange(request);
         } else {
@@ -278,6 +318,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
     }
 
     @Override
+    @SuppressWarnings( "unchecked" )
     public void process( MoveBranchRequest request ) {
         // Look up the caches ...
         Cache<Name, Object> cache = getCache(request, request.inWorkspace());
@@ -301,6 +342,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Node<Name, Object> newParent = getNode(request, cache, newParentPath);
         if (newParent == null) return;
 
+        removeUuids(cache, node.getFqn());
+
         // Copy the branch and use the same UUIDs ...
         Name desiredName = request.desiredName();
         Path.Segment newSegment = copyNode(cache,
@@ -309,11 +352,10 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                                            desiredName,
                                            beforeNodeName,
                                            true,
-                                           true,
-                                           null,
+                                           UuidConflictBehavior.THROW_EXCEPTION,
                                            null,
                                            getExecutionContext());
-
+        mapUuids(cache, node.getFqn());
         // Now delete the old node ...
         Node<Name, Object> oldParent = node.getParent();
         boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
@@ -341,7 +383,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             String msg = JBossCacheConnectorI18n.workspaceDoesNotExist.text(getSourceName(), workspaceName);
             request.setError(new InvalidWorkspaceException(msg));
         } else {
-            Fqn<?> rootName = Fqn.root();
+            Fqn<Path.Segment> rootName = Fqn.root();
             UUID uuid = uuidFactory.create(cache.get(rootName, DnaLexicon.UUID));
             if (uuid == null) {
                 uuid = uuidFactory.create();
@@ -383,11 +425,12 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             return;
         }
         // Make sure the root node has a UUID ...
-        Fqn<?> rootName = Fqn.root();
+        Fqn<Path.Segment> rootName = Fqn.root();
         UUID uuid = uuidFactory.create(cache.get(rootName, DnaLexicon.UUID));
         if (uuid == null) {
             uuid = uuidFactory.create();
             cache.put(rootName, DnaLexicon.UUID, uuid);
+            mapUuid(cache, uuid, rootName);
         }
         request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
         request.setActualWorkspaceName(workspaceName);
@@ -400,6 +443,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
      */
     @Override
+    @SuppressWarnings( "unchecked" )
     public void process( CloneWorkspaceRequest request ) {
         String fromWorkspaceName = request.nameOfWorkspaceToBeCloned();
         String toWorkspaceName = request.desiredNameOfTargetWorkspace();
@@ -426,7 +470,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         }
 
         // And finally copy the contents ...
-        Fqn<?> rootName = Fqn.root();
+        Fqn<Path.Segment> rootName = Fqn.root();
         Node<Name, Object> fromRoot = fromCache.getNode(rootName);
         Node<Name, Object> intoRoot = intoCache.getNode(rootName);
         intoRoot.clearData();
@@ -435,9 +479,10 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         // Loop over each child and copy it ...
         for (Node<Name, Object> child : fromRoot.getChildren()) {
-            copyNode(intoCache, child, intoRoot, null, null, true, true, null, null, context);
+            copyNode(intoCache, child, intoRoot, null, null, true, UuidConflictBehavior.THROW_EXCEPTION, null, context);
         }
 
+        mapUuids(intoCache, intoRoot.getFqn());
         // Copy the list of child segments in the root (this maintains the order of the children) ...
         Path.Segment[] childNames = (Path.Segment[])fromRoot.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         intoRoot.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childNames);
@@ -477,14 +522,14 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                                             String workspaceName ) {
         if (workspaceName == null) workspaceName = defaultWorkspaceName;
         Cache<Name, Object> cache = workspaces.getWorkspace(workspaceName, creatingWorkspacesAllowed);
-        if (cache == null) {
+        if (cache == null && request != null) {
             String msg = JBossCacheConnectorI18n.workspaceDoesNotExist.text(getSourceName(), workspaceName);
             request.setError(new InvalidWorkspaceException(msg));
         }
         return cache;
     }
 
-    protected Fqn<?> getFullyQualifiedName( Path path ) {
+    protected Fqn<Path.Segment> getFullyQualifiedName( Path path ) {
         assert path != null;
         return Fqn.fromList(path.getSegmentsList());
     }
@@ -495,16 +540,113 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @param pathSegment the segment from which the fully qualified name is to be created
      * @return the relative fully-qualified name
      */
-    protected Fqn<?> getFullyQualifiedName( Path.Segment pathSegment ) {
+    protected Fqn<Path.Segment> getFullyQualifiedName( Path.Segment pathSegment ) {
         assert pathSegment != null;
         return Fqn.fromElements(pathSegment);
     }
 
     @SuppressWarnings( "unchecked" )
+    protected Fqn<Path.Segment> getFullyQualifiedName( Cache<Name, Object> cache,
+                                                       UUID uuid ) {
+        assert cache != null;
+        assert uuid != null;
+
+        Fqn<Path.Segment> uuidFqn = Fqn.fromElements(dnaUuidsSegment, pathFactory.createSegment(uuid.toString()));
+
+        return (Fqn<Path.Segment>)cache.get(uuidFqn, JBossCacheLexicon.FQN);
+    }
+
     protected Path getPath( PathFactory factory,
-                            Fqn<?> fqn ) {
-        List<Path.Segment> segments = (List<Path.Segment>)fqn.peekElements();
+                            Fqn<Path.Segment> fqn ) {
+        List<Path.Segment> segments = fqn.peekElements();
         return factory.create(factory.createRootPath(), segments);
+    }
+
+    protected void removeUuid( Cache<Name, Object> cache,
+                               UUID uuid ) {
+        assert cache != null;
+        assert uuid != null;
+
+        Fqn<Path.Segment> uuidFqn = Fqn.fromElements(pathFactory.createSegment(JBossCacheLexicon.UUIDS),
+                                                     pathFactory.createSegment(uuid.toString()));
+
+        removeFromChildList(cache,
+                            getNode(null, cache, pathFactory.create(JBossCacheLexicon.UUIDS)),
+                            pathFactory.createSegment(uuid.toString()),
+                            getExecutionContext());
+        cache.removeNode(uuidFqn);
+    }
+
+    @SuppressWarnings( "unchecked" )
+    protected void mapUuid( Cache<Name, Object> cache,
+                            UUID uuid,
+                            Fqn<Path.Segment> path ) {
+        assert cache != null;
+        assert uuid != null;
+
+        Fqn<Path.Segment> uuidsFqn = Fqn.fromElements(this.dnaUuidsSegment);
+
+        Node uuidsNode = cache.getNode(uuidsFqn);
+        if (uuidsNode == null) {
+            uuidsNode = cache.getRoot().addChild(uuidsFqn);
+            updateChildList(cache, cache.getRoot(), this.dnaUuidsSegment.getName(), null, this.getExecutionContext(), true);
+        }
+
+        assert uuidsNode != null : this.dnaUuidsSegment.getName() + "=" + uuidsFqn;
+        Path.Segment uuidSegment = pathFactory.createSegment(uuid.toString());
+
+        if (!uuidsNode.getChildrenNames().contains(uuidSegment)) {
+            Path.Segment newSegment = updateChildList(cache,
+                                                      uuidsNode,
+                                                      uuidSegment.getName(),
+                                                      null,
+                                                      this.getExecutionContext(),
+                                                      true);
+            assert newSegment.getIndex() == 1 : "Should not have SNS under uuids branch";
+        }
+
+        Fqn<Path.Segment> uuidFqn = Fqn.fromRelativeElements(uuidsFqn, uuidSegment);
+
+        cache.put(uuidFqn, JBossCacheLexicon.FQN, path);
+        assert cache.getNode(uuidFqn) != null;
+        assert cache.get(uuidFqn, JBossCacheLexicon.FQN) != null;
+        assert path.equals(getFullyQualifiedName(cache, uuid)) : path + " => " + getFullyQualifiedName(cache, uuid);
+    }
+
+    protected void mapUuids( Cache<Name, Object> cache,
+                             Fqn<Path.Segment> path ) {
+        Node<Name, Object> node = cache.getNode(path);
+        assert node != null : path.toString();
+        UUID uuid = (UUID)node.get(DnaLexicon.UUID);
+        if (uuid != null) {
+            mapUuid(cache, uuid, path);
+            assert getFullyQualifiedName(cache, uuid).equals(path);
+        }
+
+        Path.Segment[] childNamesProperty = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
+        if (childNamesProperty == null) return;
+
+        for (Path.Segment childName : childNamesProperty) {
+            Fqn<Path.Segment> childPath = Fqn.fromRelativeElements(path, childName);
+            mapUuids(cache, childPath);
+        }
+    }
+
+    protected void removeUuids( Cache<Name, Object> cache,
+                                Fqn<Path.Segment> path ) {
+        Node<Name, Object> node = cache.getNode(path);
+        assert node != null : path.toString();
+        UUID uuid = (UUID)node.get(DnaLexicon.UUID);
+
+        if (uuid != null) removeUuid(cache, uuid);
+
+        Path.Segment[] childNamesProperty = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
+        if (childNamesProperty == null) return;
+
+        for (Path.Segment childName : childNamesProperty) {
+            Fqn<Path.Segment> childPath = Fqn.fromRelativeElements(path, childName);
+            removeUuids(cache, childPath);
+        }
     }
 
     protected Node<Name, Object> getNode( Request request,
@@ -517,8 +659,9 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             return null;
         }
         // Look up the node with the supplied path ...
-        Fqn<?> fqn = getFullyQualifiedName(path);
+        Fqn<Path.Segment> fqn = getFullyQualifiedName(path);
         Node<Name, Object> node = cache.getNode(fqn);
+
         if (node == null) {
             String nodePath = path.getString(context.getNamespaceRegistry());
             Path lowestExisting = null;
@@ -551,21 +694,20 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @param context the execution context that provides the path factory to be used to create the new path name
      * @return the path segment that identifies the new node under its new parent
      */
+    @SuppressWarnings( "unchecked" )
     protected Path.Segment copyNode( Cache<Name, Object> newCache,
                                      Node<Name, Object> original,
                                      Node<Name, Object> newParent,
                                      Name desiredName,
                                      Path.Segment beforeNodeName,
                                      boolean recursive,
-                                     boolean reuseOriginalUuids,
-                                     UUID uuidForCopyOfOriginal,
+                                     UuidConflictBehavior uuidConflictBehavior,
                                      AtomicInteger count,
                                      ExecutionContext context ) {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn()
-                                                                                                                                                  .getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
@@ -578,18 +720,37 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         copy.putAll(original.getData());
         copy.remove(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST); // will be reset later ...
 
-        // Generate a new UUID for the new node, overwriting any existing value from the original ...
-        if (reuseOriginalUuids) uuidForCopyOfOriginal = uuidFactory.create(original.get(DnaLexicon.UUID));
-        if (uuidForCopyOfOriginal == null) uuidForCopyOfOriginal = uuidFactory.create();
-        copy.put(DnaLexicon.UUID, uuidForCopyOfOriginal);
+        UUID uuid;
+        switch (uuidConflictBehavior) {
+            case ALWAYS_CREATE_NEW_UUID:
+                uuid = UUID.randomUUID();
+                break;
+            case REPLACE_EXISTING_NODE:
+                uuid = uuidFactory.create(original.get(DnaLexicon.UUID));
+                Fqn<?> existingPath = getFullyQualifiedName(newCache, uuid);
+                if (existingPath != null) {
+                    Node<Name, Object> existingNode = newCache.getNode(existingPath);
+                    deleteNode(newCache, existingNode);
+                }
+
+                break;
+            case THROW_EXCEPTION:
+                uuid = uuidFactory.create(original.get(DnaLexicon.UUID));
+                break;
+            default:
+                throw new IllegalStateException("Unexpected UuidConflictBehavior value: " + uuidConflictBehavior);
+        }
+        copy.put(DnaLexicon.UUID, uuid);
 
         if (count != null) count.incrementAndGet();
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node<Name, Object> child : original.getChildren()) {
-                copyNode(newCache, child, copy, null, null, true, reuseOriginalUuids, null, count, context);
+                copyNode(newCache, child, copy, null, null, true, uuidConflictBehavior, count, context);
             }
         }
+        mapUuids(newCache, copy.getFqn());
+        assert getFullyQualifiedName(newCache, uuid) != null;
         return newSegment;
     }
 
@@ -748,6 +909,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         int index = 0;
         Path.Segment[] newChildNames = new Path.Segment[childNames.length - 1];
         for (Path.Segment childName : childNames) {
+
             if (!childName.getName().equals(removedNode.getName())) {
                 newChildNames[index] = childName;
                 index++;
@@ -761,9 +923,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     // don't copy ...
                 } else {
                     // Append an updated segment ...
-                    Path.Segment newSegment = context.getValueFactories()
-                                                     .getPathFactory()
-                                                     .createSegment(childName.getName(), childName.getIndex() - 1);
+                    Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(childName.getName(),
+                                                                                                         childName.getIndex() - 1);
                     newChildNames[index] = newSegment;
                     // Replace the child with the correct FQN ...
                     changeNodeName(cache, parent, childName, newSegment, context);
@@ -779,18 +940,22 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Set<Object> childNames = parent.getChildrenNames();
         boolean result = true;
         if (childNamesProperty.length != childNames.size()) result = false;
+        if (!result) throw new IllegalStateException(parent.getFqn().toString());
         for (int i = 0; i != childNamesProperty.length; ++i) {
             if (!childNames.contains(childNamesProperty[i])) result = false;
         }
+        if (!result) throw new IllegalStateException(parent.getFqn().toString());
         if (!result) {
             List<Path.Segment> names = new ArrayList<Path.Segment>();
             for (Object name : childNames) {
+                assert name instanceof Path.Segment : parent.getFqn().toString() + "/" + name.toString();
                 names.add((Path.Segment)name);
             }
             Collections.sort(names);
             Logger.getLogger(getClass()).trace("Child list on {0} is: {1}", parent.getFqn(), childNamesProperty);
             Logger.getLogger(getClass()).trace("Children of {0} is: {1}", parent.getFqn(), names);
         }
+        if (!result) throw new IllegalStateException(parent.getFqn().toString());
         return result;
     }
 
@@ -827,6 +992,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @param newSegment
      * @param context
      */
+    @SuppressWarnings( "unchecked" )
     protected void changeNodeName( Cache<Name, Object> cache,
                                    Node<Name, Object> parent,
                                    Path.Segment existing,
@@ -840,7 +1006,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (existing.equals(newSegment)) return;
         context.getLogger(getClass()).trace("Renaming {0} to {1} under {2}", existing, newSegment, parent.getFqn());
         Node<Name, Object> existingChild = parent.getChild(existing);
-        assert existingChild != null;
+        assert existingChild != null : parent.getFqn().toString() + "/" + existing;
 
         // JBoss Cache can move a node from one node to another node, but the move doesn't change the name;
         // since you provide the FQN of the parent location, the name of the node cannot be changed.
@@ -849,7 +1015,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
 
         // Create the new node ...
         Node<Name, Object> newChild = parent.addChild(Fqn.fromElements(newSegment));
-        Fqn<?> newChildFqn = newChild.getFqn();
+        Fqn<Path.Segment> newChildFqn = newChild.getFqn();
 
         // Copy the data ...
         newChild.putAll(existingChild.getData());

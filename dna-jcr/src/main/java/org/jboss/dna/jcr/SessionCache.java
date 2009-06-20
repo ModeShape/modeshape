@@ -42,6 +42,7 @@ import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
@@ -74,6 +75,7 @@ import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.jcr.cache.ChangedNodeInfo;
 import org.jboss.dna.jcr.cache.ChildNode;
@@ -2089,6 +2091,47 @@ class SessionCache {
         return info.getProperty(propertyId.getPropertyName());
     }
 
+    Path getPathFor(String workspaceName, UUID uuid, Path relativePath) throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
+        assert workspaceName != null;
+        assert uuid != null || relativePath != null;
+        
+        Graph graph = operations.getGraph();
+        try {
+            graph.useWorkspace(workspaceName);
+        }
+        catch (InvalidWorkspaceException iwe) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), workspaceName));
+        }
+        
+        try {
+            org.jboss.dna.graph.Node node;
+            if (uuid != null) {
+                node = graph.getNodeAt(uuid);
+
+                if (relativePath != null) {
+                    Path nodePath = node.getLocation().getPath();
+                    Path absolutePath = relativePath.resolveAgainst(nodePath);
+                    node = graph.getNodeAt(absolutePath);       
+                }
+                
+            }
+            else {
+                Path absolutePath = pathFactory.createAbsolutePath(relativePath.getSegmentsList());
+                node = graph.getNodeAt(absolutePath);       
+            }
+            assert node != null;
+            
+            return node.getLocation().getPath();
+        }
+        catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+            throw new ItemNotFoundException(pnfe);
+        }
+        finally {
+            graph.useWorkspace(this.workspaceName);
+        }
+        
+    }
+    
     Path getPathFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         if (uuid.equals(root)) return rootPath;
         return getPathFor(findNodeInfo(uuid));

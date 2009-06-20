@@ -107,13 +107,13 @@ public class ChildEntityTest {
             // Create the child entities ...
             for (int i = 0; i != numChildren; ++i) {
                 int indexInParent = i + startingIndex;
-                ChildId id = new ChildId(workspaceId, parentUuid.toString(), UUID.randomUUID().toString());
+                ChildId id = new ChildId(workspaceId, UUID.randomUUID().toString());
                 ChildEntity child = null;
                 if (useSns) {
-                    child = new ChildEntity(id, indexInParent, ns, localName, i + 1);
+                    child = new ChildEntity(id, parentUuid.toString(), indexInParent, ns, localName, i + 1);
                 } else {
                     String name = numChildren == 1 ? localName : localName + indexInParent;
-                    child = new ChildEntity(id, indexInParent, ns, name);
+                    child = new ChildEntity(id, parentUuid.toString(), indexInParent, ns, name);
                 }
                 result[i] = id;
                 manager.persist(child);

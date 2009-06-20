@@ -25,6 +25,7 @@ package org.jboss.dna.graph.connector.inmemory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.PropertyType;
@@ -229,6 +231,30 @@ public class InMemoryRepository {
         }
 
         /**
+         * Returns the absolute path to the given node
+         * 
+         * @param pathFactory the path factory to use to create the path from the list of names of all of the nodes on the path
+         *        from the root node to the given node
+         * @param node the node for which the path should be returned
+         * @return the absolute path to the given node
+         */
+        Path pathFor( PathFactory pathFactory,
+                      InMemoryNode node ) {
+            assert node != null;
+            assert pathFactory != null;
+
+            LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
+            InMemoryNode root = getRoot();
+
+            do {
+                segments.addFirst(node.getName());
+                node = node.getParent();
+            } while (!node.equals(root));
+
+            return pathFactory.createAbsolutePath(segments);
+        }
+
+        /**
          * Find the lowest existing node along the path.
          * 
          * @param path the path to the node; may not be null
@@ -358,12 +384,12 @@ public class InMemoryRepository {
                               Name desiredNewName,
                               Workspace newWorkspace,
                               InMemoryNode newParent,
-                              InMemoryNode beforeNode) {
+                              InMemoryNode beforeNode ) {
             assert context != null;
             assert newParent != null;
             assert node != null;
-// Why was this restriction here? -- BRC            
-//            assert newWorkspace.getRoot().equals(newParent) != true;
+            // Why was this restriction here? -- BRC
+            // assert newWorkspace.getRoot().equals(newParent) != true;
             assert this.getRoot().equals(node) != true;
             InMemoryNode oldParent = node.getParent();
             Name oldName = node.getName().getName();
@@ -379,16 +405,15 @@ public class InMemoryRepository {
                 newName = desiredNewName;
                 node.setName(context.getValueFactories().getPathFactory().createSegment(desiredNewName, 1));
             }
-            
+
             if (beforeNode == null) {
                 newParent.getChildren().add(node);
-            }
-            else {
+            } else {
                 int index = newParent.getChildren().indexOf(beforeNode);
                 newParent.getChildren().add(index, node);
             }
             correctSameNameSiblingIndexes(context, newParent, newName);
-            
+
             // If the node was moved to a new workspace...
             if (!this.equals(newWorkspace)) {
                 // We need to remove the node from this workspace's map of nodes ...
@@ -434,14 +459,13 @@ public class InMemoryRepository {
             assert original != null;
             assert newParent != null;
             assert newWorkspace != null;
-            if (this.equals(newWorkspace) && oldToNewUuids == null) oldToNewUuids = new HashMap<UUID, UUID>();
             boolean reuseUuids = oldToNewUuids == null;
 
             // Get or create the new node ...
             Name childName = desiredName != null ? desiredName : original.getName().getName();
             UUID uuidForCopy = reuseUuids ? original.getUuid() : UUID.randomUUID();
             InMemoryNode copy = newWorkspace.createNode(context, newParent, childName, uuidForCopy);
-            if (oldToNewUuids != null) {
+            if (!reuseUuids) {
                 oldToNewUuids.put(original.getUuid(), copy.getUuid());
             }
 
@@ -455,7 +479,7 @@ public class InMemoryRepository {
                 }
             }
 
-            if (oldToNewUuids != null) {
+            if (!reuseUuids) {
                 // Now, adjust any references in the new subgraph to objects in the original subgraph
                 // (because they were internal references, and need to be internal to the new subgraph)
                 PropertyFactory propertyFactory = context.getPropertyFactory();
@@ -496,6 +520,22 @@ public class InMemoryRepository {
             }
 
             return copy;
+        }
+
+        public Set<UUID> getUuidsUnderNode( InMemoryNode node ) {
+            Set<UUID> uuids = new HashSet<UUID>();
+            uuidsUnderNode(node, uuids);
+
+            return uuids;
+        }
+
+        private void uuidsUnderNode( InMemoryNode node,
+                                     Set<UUID> accumulator ) {
+            accumulator.add(node.getUuid());
+
+            for (InMemoryNode child : node.getChildren()) {
+                uuidsUnderNode(child, accumulator);
+            }
         }
 
         protected void correctSameNameSiblingIndexes( ExecutionContext context,

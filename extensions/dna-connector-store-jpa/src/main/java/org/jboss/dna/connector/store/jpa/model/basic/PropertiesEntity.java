@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -34,6 +35,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Query;
 import javax.persistence.Table;
 import org.jboss.dna.connector.store.jpa.util.Serializer;
 
@@ -205,5 +207,25 @@ public class PropertiesEntity {
     @Override
     public String toString() {
         return "Properties for " + this.id;
+    }
+
+    /**
+     * Delete all properties for the node with the supplied UUID.
+     * 
+     * @param workspaceId the ID of the workspace; may not be null
+     * @param uuid the UUID of the node from which the references start
+     * @param manager the manager; may not be null
+     * @return the number of deleted references
+     */
+    public static int deletePropertiesFor( Long workspaceId,
+                                           String uuid,
+                                           EntityManager manager ) {
+        assert manager != null;
+        Query delete = manager.createNamedQuery("PropertiesEntity.deleteByUuid");
+        delete.setParameter("uuid", uuid);
+        delete.setParameter("workspaceId", workspaceId);
+        int result = delete.executeUpdate();
+        manager.flush();
+        return result;
     }
 }

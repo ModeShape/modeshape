@@ -141,9 +141,9 @@ public class JcrWorkspaceTest {
         workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowClone() throws Exception {
-        workspace.clone(null, null, null, false);
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCloneWithNullWorkspaceName() throws Exception {
+        workspace.clone(null, "/src", "/dest", false);
     }
 
     @Test( expected = IllegalArgumentException.class )
