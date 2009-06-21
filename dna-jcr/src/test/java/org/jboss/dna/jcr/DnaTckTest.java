@@ -1,5 +1,7 @@
 package org.jboss.dna.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.Node;
@@ -8,6 +10,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 
 /**
@@ -197,4 +200,74 @@ public class DnaTckTest extends AbstractJCRTest {
 
         assertNotNull(node4node1node2);
     }
+
+    /**
+     * A clone operation with removeExisting = true should fail if it would require removing an existing node that is a mandatory
+     * child node of some other parent (and not replacing it as part of the clone operation).
+     * 
+     * @throws Exception if an error occurs
+     */
+    public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
+        session = helper.getSuperuserSession("otherWorkspace");
+        assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
+
+        String nodetype1 = this.getProperty("nodetype");
+        Node node1 = session.getRootNode().addNode("cloneSource", nodetype1);
+        // This node is not a mandatory child of nodetype1 (dnatest:referenceableUnstructured)
+        node1.addNode("dnatest:mandatoryChild", nodetype1);
+
+        session.save();
+        session.logout();
+
+        // /node4 in the default workspace is type dna:referenceableUnstructured
+        superuser.getRootNode().addNode("cloneTarget", nodetype1);
+
+        // /node3 in the default workspace is type dna:referenceableUnstructured
+        superuser.getRootNode().addNode(nodeName3, nodetype1);
+        superuser.save();
+
+        // Throw the cloned items under node4
+        superuser.getWorkspace().clone("otherWorkspace", "/cloneSource", "/cloneTarget/cloneSource", false);
+
+        superuser.refresh(false);
+        Node node3 = (Node)superuser.getItem("/node3");
+        assertThat(node3.getNodes().getSize(), is(0L));
+
+        Node node4node1 = (Node)superuser.getItem("/cloneTarget/cloneSource");
+        assertThat(node4node1.getNodes().getSize(), is(1L));
+
+        // Now clone from the same source under node3 and remove the existing records
+        superuser.getWorkspace().clone("otherWorkspace", "/cloneSource", "/" + nodeName3 + "/cloneSource", true);
+        superuser.refresh(false);
+
+        Node node3node1 = (Node)superuser.getItem("/node3/cloneSource");
+        assertThat(node3node1.getNodes().getSize(), is(1L));
+
+        // Check that the nodes were indeed removed
+        Node node4 = (Node)superuser.getItem("/cloneTarget");
+
+        assertThat(node4.getNodes().getSize(), is(0L));
+
+        superuser.getRootNode().addNode("nodeWithMandatoryChild", "dnatest:nodeWithMandatoryChild");
+        try {
+            superuser.save();
+            fail("A node with type dnatest:nodeWithMandatoryChild should not be savable until the child is added");
+        } catch (ConstraintViolationException cve) {
+            // Expected
+        }
+
+        superuser.move("/node3/cloneSource/dnatest:mandatoryChild", "/nodeWithMandatoryChild/dnatest:mandatoryChild");
+        superuser.save();
+        superuser.refresh(false);
+
+        // Now clone from the same source under node3 and remove the existing records
+        try {
+            superuser.getWorkspace().clone("otherWorkspace", "/cloneSource", "/" + nodeName3 + "/cloneSource", true);
+            fail("Should not be able to use clone to remove the mandatory child node at /nodeWithMandatoryChild/dnatest:mandatoryChild");
+        } catch (ConstraintViolationException cve) {
+            // expected
+        }
+
+    }
+
 }

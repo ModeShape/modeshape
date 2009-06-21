@@ -89,6 +89,7 @@ public final class JcrI18n {
     public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
     public static I18n unableToRefreshBranchSinceAtLeastOneNodeMovedToParentOutsideOfBranch;
     public static I18n allPropertyValuesMustHaveSameType;
+    public static I18n cannotRemoveNodeFromClone;
 
     public static I18n unableToRemoveRootNode;
     public static I18n unableToMoveNodeToBeChildOfDecendent;

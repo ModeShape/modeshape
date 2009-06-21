@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -113,7 +114,7 @@ class JcrNodeType implements NodeType {
                  boolean mixin,
                  boolean orderableChildNodes ) {
         assert context != null;
-        
+
         this.context = context;
         this.nodeTypeManager = nodeTypeManager;
         this.name = name;
@@ -140,12 +141,12 @@ class JcrNodeType implements NodeType {
             JcrNodeType superType = thisAndAllSupertypes.get(i);
             for (NodeType superSuperType : superType.getDeclaredSupertypes()) {
                 JcrNodeType jcrSuperSuperType = (JcrNodeType)superSuperType;
-                
+
                 if (jcrSuperSuperType == null) {
                     assert JcrNtLexicon.BASE.equals(name);
                     continue;
                 }
-                
+
                 if (typeNames.add(jcrSuperSuperType.getInternalName())) {
                     thisAndAllSupertypes.add(jcrSuperSuperType);
                 }
@@ -206,6 +207,17 @@ class JcrNodeType implements NodeType {
 
     Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName ) {
         return allDefinitions.allChildNodeDefinitions(childName);
+    }
+
+    JcrNodeDefinition childNodeDefinition( NodeDefinitionId nodeDefnId ) {
+        List<Name> requiredPrimaryTypeNames = Arrays.asList(nodeDefnId.getRequiredPrimaryTypes());
+        for (JcrNodeDefinition nodeDefn : allChildNodeDefinitions(nodeDefnId.getChildDefinitionName())) {
+            if (nodeDefn.getRequiredPrimaryTypeNames().size() == requiredPrimaryTypeNames.size()
+                && nodeDefn.getRequiredPrimaryTypeNames().containsAll(requiredPrimaryTypeNames)) {
+                return nodeDefn;
+            }
+        }
+        return null;
     }
 
     /**

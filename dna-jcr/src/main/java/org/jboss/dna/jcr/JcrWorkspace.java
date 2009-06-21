@@ -26,12 +26,15 @@ package org.jboss.dna.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
@@ -50,6 +53,8 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -60,8 +65,10 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
+import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrRepository.Option;
@@ -308,12 +315,20 @@ final class JcrWorkspace implements Workspace {
         Name newNodeName = destPath.getLastSegment().getName();
         String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
 
+        Subgraph sourceTree = null;
         // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
         graph.useWorkspace(srcWorkspace);
         Property primaryTypeProp;
         Property uuidProp;
         try {
-            Map<Name, Property> props = graph.getNodeAt(srcPath).getPropertiesByName();
+            Map<Name, Property> props;
+
+            if (removeExisting) {
+                sourceTree = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(srcPath);
+                props = sourceTree.getRoot().getPropertiesByName();
+            } else {
+                props = graph.getNodeAt(srcPath).getPropertiesByName();
+            }
             primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
             uuidProp = props.get(DnaLexicon.UUID);
         } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
@@ -331,12 +346,56 @@ final class JcrWorkspace implements Workspace {
                                                     newNodeName,
                                                     nameFactory.create(primaryTypeProp.getFirstValue()));
 
-        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        // graph.copy(srcPath).fromWorkspace(srcWorkspace).to(destPath);
         if (removeExisting) {
+            assert sourceTree != null;
+
+            // Find all of the UUIDS in the source tree
+            UuidFactory uuidFactory = context().getValueFactories().getUuidFactory();
+            PathFactory pathFactory = context().getValueFactories().getPathFactory();
+
+            Set<UUID> sourceUuids = new HashSet<UUID>();
+            LinkedList<SubgraphNode> nodesToVisit = new LinkedList<SubgraphNode>();
+            nodesToVisit.push(sourceTree.getRoot());
+
+            while (!nodesToVisit.isEmpty()) {
+                SubgraphNode node = nodesToVisit.pop();
+
+                UUID uuid = uuidFactory.create(node.getProperty(DnaLexicon.UUID).getFirstValue().toString());
+                if (uuid != null) {
+                    sourceUuids.add(uuid);
+                }
+                for (Path.Segment childSegment : node.getChildrenSegments()) {
+                    nodesToVisit.add(node.getNode(pathFactory.createRelativePath(childSegment)));
+                }
+            }
+
+            // See if the nodes exist in the current workspace outside of the current tree
+            for (UUID uuid : sourceUuids) {
+                NodeInfo nodeInfo = null;
+                try {
+                    nodeInfo = session.cache().findNodeInfo(uuid);
+                } catch (ItemNotFoundException infe) {
+                    continue;
+                }
+                assert nodeInfo != null;
+
+                NodeDefinitionId nodeDefnId = nodeInfo.getDefinitionId();
+
+                JcrNodeType nodeType = nodeTypeManager.getNodeType(nodeDefnId.getNodeTypeName());
+                JcrNodeDefinition nodeDefn = nodeType.childNodeDefinition(nodeDefnId);
+                if (nodeDefn.isMandatory()) {
+                    // We can't just remove a mandatory node... unless its parent will be removed too!
+                    String path = session.cache().getPathFor(nodeInfo).getString(context().getNamespaceRegistry());
+                    throw new ConstraintViolationException(JcrI18n.cannotRemoveNodeFromClone.text(path, uuid));
+
+                }
+            }
+
+            // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
             graph.copy(srcPath).replacingExistingNodesWithSameUuids().fromWorkspace(srcWorkspace).to(destPath);
         } else {
             try {
+                // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
                 graph.copy(srcPath).failingIfUuidsMatch().fromWorkspace(srcWorkspace).to(destPath);
             } catch (UuidAlreadyExistsException uaee) {
                 throw new ItemExistsException(uaee.getMessage());

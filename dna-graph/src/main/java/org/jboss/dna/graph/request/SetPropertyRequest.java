@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.request;
 
+import java.util.Arrays;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
@@ -209,6 +210,6 @@ public class SetPropertyRequest extends ChangeRequest {
     @Override
     public String toString() {
         return "set property " + property().getName() + " on " + on() + " in the \"" + workspaceName + "\" workspace to "
-               + property().getValuesAsArray();
+               + Arrays.asList(property().getValuesAsArray()).toString();
     }
 }
