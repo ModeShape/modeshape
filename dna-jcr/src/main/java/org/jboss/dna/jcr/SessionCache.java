@@ -277,12 +277,14 @@ class SessionCache {
 
             // Removed any cached nodes not already in the changed or deleted set
             this.cachedNodes.keySet().retainAll(retainedSet);
+            this.jcrNodes.keySet().retainAll(retainedSet);
         } else {
             // Throw out the old pending operations
             this.requests.clear();
             this.changedNodes.clear();
             this.cachedNodes.clear();
             this.deletedNodes.clear();
+            this.jcrNodes.clear();
         }
 
     }
@@ -364,6 +366,7 @@ class SessionCache {
             this.cachedNodes.keySet().removeAll(nodesUnderBranch);
             this.changedNodes.keySet().removeAll(nodesUnderBranch);
             this.deletedNodes.keySet().removeAll(nodesUnderBranch);
+            this.jcrNodes.keySet().removeAll(nodesUnderBranch);
 
             // Throw out the old pending operations
             if (operations.isExecuteRequired()) {
@@ -1060,8 +1063,8 @@ class SessionCache {
                                                                       workspaceName));
                 }
                 I18n msg = JcrI18n.unableToSetMultiValuedPropertyUsingSingleValue;
-                throw new javax.jcr.ValueFormatException(msg.text(getPathFor(this.node).getString(namespaces),
-                                                                  propertyName,
+                throw new javax.jcr.ValueFormatException(msg.text(propertyName.getString(namespaces),
+                                                                  getPathFor(this.node).getString(namespaces),
                                                                   workspaceName));
             }
 
@@ -1461,7 +1464,7 @@ class SessionCache {
             ChildNode existingChild = node.getChildren().getChild(nodeUuid);
             if (existingChild != null && nameDoesNotChange) return existingChild;
 
-            JcrNodeDefinition definition = findBestNodeDefinition(node.getUuid(), newNodeName, null);
+            JcrNodeDefinition definition = findBestNodeDefinition(node.getUuid(), newNodeName, child.getPrimaryTypeName());
 
             // Get an editor for the child (in its current location) and one for its parent ...
             NodeEditor newChildEditor = getEditorFor(nodeUuid);
@@ -1469,9 +1472,9 @@ class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
-                    setProperty(DnaIntLexicon.NODE_DEFINITON, value);
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
+                    newChildEditor.setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
                     // But we still want the node info to have the correct node definition.
@@ -1693,15 +1696,17 @@ class SessionCache {
                                                                            node.getMixinTypeNames(),
                                                                            nodeDefinitionProp,
                                                                            PropertyType.STRING,
-                                                                           false,
+                                                                           true,
                                                                            false);
+
             if (nodeDefnDefn != null) {
                 PropertyDefinitionId nodeDefnDefinitionId = nodeDefnDefn.getId();
                 PropertyInfo nodeDefinitionInfo = new PropertyInfo(new PropertyId(desiredUuid, nodeDefinitionProp.getName()),
                                                                    nodeDefnDefinitionId, PropertyType.STRING, nodeDefinitionProp,
-                                                                   true, true, false);
+                                                                   false, true, false);
                 properties.put(nodeDefinitionProp.getName(), nodeDefinitionInfo);
             }
+            assert nodeDefnDefn != null && nodeDefnDefn.getInternalName().equals(DnaIntLexicon.NODE_DEFINITON);
 
             // Now create the child node info, putting it in the changed map (and not the cache map!) ...
             NewNodeInfo newInfo = new NewNodeInfo(location, primaryTypeName, definition.getId(), node.getUuid(), properties);
@@ -1710,13 +1715,10 @@ class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
-                                                         .nodeNamed(name)
-                                                         .with(desiredUuid)
-                                                         .with(primaryTypeProp);
-            if (nodeDefnDefn != null) {
-                create = create.with(nodeDefinitionProp);
-            }
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
+            // if (nodeDefnDefn != null) {
+            create = create.with(nodeDefinitionProp);
+            // }
             create.and();
             return result;
         }
@@ -2091,18 +2093,19 @@ class SessionCache {
         return info.getProperty(propertyId.getPropertyName());
     }
 
-    Path getPathFor(String workspaceName, UUID uuid, Path relativePath) throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
+    Path getPathFor( String workspaceName,
+                     UUID uuid,
+                     Path relativePath ) throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
         assert workspaceName != null;
         assert uuid != null || relativePath != null;
-        
+
         Graph graph = operations.getGraph();
         try {
             graph.useWorkspace(workspaceName);
-        }
-        catch (InvalidWorkspaceException iwe) {
+        } catch (InvalidWorkspaceException iwe) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), workspaceName));
         }
-        
+
         try {
             org.jboss.dna.graph.Node node;
             if (uuid != null) {
@@ -2111,27 +2114,24 @@ class SessionCache {
                 if (relativePath != null) {
                     Path nodePath = node.getLocation().getPath();
                     Path absolutePath = relativePath.resolveAgainst(nodePath);
-                    node = graph.getNodeAt(absolutePath);       
+                    node = graph.getNodeAt(absolutePath);
                 }
-                
-            }
-            else {
+
+            } else {
                 Path absolutePath = pathFactory.createAbsolutePath(relativePath.getSegmentsList());
-                node = graph.getNodeAt(absolutePath);       
+                node = graph.getNodeAt(absolutePath);
             }
             assert node != null;
-            
+
             return node.getLocation().getPath();
-        }
-        catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
             throw new ItemNotFoundException(pnfe);
-        }
-        finally {
+        } finally {
             graph.useWorkspace(this.workspaceName);
         }
-        
+
     }
-    
+
     Path getPathFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         if (uuid.equals(root)) return rootPath;
         return getPathFor(findNodeInfo(uuid));
@@ -2537,8 +2537,8 @@ class SessionCache {
                                                                                    DnaIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                                    values,
                                                                                    false);
-        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES, newSingleMultiPropertyNames.iterator()
-                                                                                                                    .next());
+        Property dnaProp = propertyFactory.create(DnaIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                  newSingleMultiPropertyNames.iterator().next());
         PropertyId propId = new PropertyId(uuid, dnaProp.getName());
         JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
         return new PropertyInfo(propId, defn.getId(), PropertyType.STRING, dnaProp, defn.isMultiple(), true, false);
