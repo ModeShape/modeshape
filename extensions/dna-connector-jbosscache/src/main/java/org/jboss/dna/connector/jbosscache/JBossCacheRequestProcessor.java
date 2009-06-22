@@ -250,7 +250,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             nodesToVisit.add(node);
 
             while (!nodesToVisit.isEmpty()) {
-                Node<Name, Object> nodeToCheck = nodesToVisit.pop();
+                Node<Name, Object> nodeToCheck = nodesToVisit.removeFirst();
                 UUID uuid = uuidFactory.create(nodeToCheck.get(DnaLexicon.UUID));
                 if (uuid != null) uuidsFromSource.add(uuid);
 
@@ -688,8 +688,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
      * @param desiredName the desired name of the node in the new location
      * @param beforeNodeName the node before which the new node should be placed
      * @param recursive if this is a deep copy
-     * @param reuseOriginalUuids indicates whether the original UUIDs should be used for the copies or new UUIDs should be used
-     * @param uuidForCopyOfOriginal pre-determined UUID for copy of node; ignored if reuseOriginalUuids is true
+     * @param uuidConflictBehavior indicates whether the original UUIDs should be used for the copies or new UUIDs should be used
      * @param count the count of nodes affected by the operation
      * @param context the execution context that provides the path factory to be used to create the new path name
      * @return the path segment that identifies the new node under its new parent
@@ -707,7 +706,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn()
+                                                                                                                                                  .getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
@@ -923,8 +923,9 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     // don't copy ...
                 } else {
                     // Append an updated segment ...
-                    Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(childName.getName(),
-                                                                                                         childName.getIndex() - 1);
+                    Path.Segment newSegment = context.getValueFactories()
+                                                     .getPathFactory()
+                                                     .createSegment(childName.getName(), childName.getIndex() - 1);
                     newChildNames[index] = newSegment;
                     // Replace the child with the correct FQN ...
                     changeNodeName(cache, parent, childName, newSegment, context);

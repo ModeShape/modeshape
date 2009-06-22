@@ -88,6 +88,7 @@ final class JcrRootNode extends AbstractJcrNode {
      * @throws ItemNotFoundException always
      * @see javax.jcr.Item#getParent()
      */
+    @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException {
         throw new ItemNotFoundException(JcrI18n.rootNodeHasNoParent.text());
     }

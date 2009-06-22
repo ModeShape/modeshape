@@ -2094,7 +2094,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     /**
      * Attempt to resolve the reference.
      * 
-     * @param workspaceId the ID of the workspace in which the reference occurs; may not be null
+     * @param workspace the workspace in which the reference occurs; may not be null
      * @param reference the reference
      * @return the UUID of the node to which the reference points, or null if the reference could not be resolved
      */
@@ -2135,7 +2135,7 @@ public class BasicRequestProcessor extends RequestProcessor {
      * This method will also find the path when the location contains just the UUID.
      * </p>
      * 
-     * @param workspaceId the ID of the workspace; may not be null
+     * @param workspace the workspace; may not be null
      * @param original the original location; may not be null
      * @return the actual location, which includes the verified location and additional information needed by this method that may
      *         be usable after this method is called

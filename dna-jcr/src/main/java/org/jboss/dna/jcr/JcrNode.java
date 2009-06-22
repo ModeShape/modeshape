@@ -72,6 +72,7 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getParent()
      */
+    @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
         return cache.findJcrNode(nodeInfo().getParent());
     }

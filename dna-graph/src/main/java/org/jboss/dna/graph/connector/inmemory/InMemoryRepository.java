@@ -466,6 +466,7 @@ public class InMemoryRepository {
             UUID uuidForCopy = reuseUuids ? original.getUuid() : UUID.randomUUID();
             InMemoryNode copy = newWorkspace.createNode(context, newParent, childName, uuidForCopy);
             if (!reuseUuids) {
+                assert oldToNewUuids != null;
                 oldToNewUuids.put(original.getUuid(), copy.getUuid());
             }
 
@@ -480,6 +481,7 @@ public class InMemoryRepository {
             }
 
             if (!reuseUuids) {
+                assert oldToNewUuids != null;
                 // Now, adjust any references in the new subgraph to objects in the original subgraph
                 // (because they were internal references, and need to be internal to the new subgraph)
                 PropertyFactory propertyFactory = context.getPropertyFactory();

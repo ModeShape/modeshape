@@ -355,10 +355,10 @@ final class JcrWorkspace implements Workspace {
 
             Set<UUID> sourceUuids = new HashSet<UUID>();
             LinkedList<SubgraphNode> nodesToVisit = new LinkedList<SubgraphNode>();
-            nodesToVisit.push(sourceTree.getRoot());
+            nodesToVisit.addFirst(sourceTree.getRoot());
 
             while (!nodesToVisit.isEmpty()) {
-                SubgraphNode node = nodesToVisit.pop();
+                SubgraphNode node = nodesToVisit.removeFirst();
 
                 UUID uuid = uuidFactory.create(node.getProperty(DnaLexicon.UUID).getFirstValue().toString());
                 if (uuid != null) {

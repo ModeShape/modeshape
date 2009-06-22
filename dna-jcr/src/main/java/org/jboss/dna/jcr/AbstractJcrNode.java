@@ -717,7 +717,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 JcrNodeDefinition match = this.cache.nodeTypes().findChildNodeDefinition(mixinCandidateType.getInternalName(),
                                                                                          Collections.<Name>emptyList(),
                                                                                          nodeName,
-                                                                                         childNode.getPrimaryNodeType().getInternalName(),
+                                                                                         childNode.getPrimaryNodeType()
+                                                                                                  .getInternalName(),
                                                                                          snsCount,
                                                                                          false);
 
@@ -1356,9 +1357,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * {@inheritDoc}
+     * Obtain the corresponding node path from the supplied workspace name.
      * 
-     * @see javax.jcr.Node#getCorrespondingNodePath(java.lang.String)
+     * @param workspaceName
+     * @return the path of the corresponding node in the supplied workspace
+     * @throws NoSuchWorkspaceException if the workspace does not exist
+     * @throws ItemNotFoundException if there is no corresponding node in the supplied workspace
+     * @throws RepositoryException if there is another problem
      */
     final Path correspondingNodePathFrom( String workspaceName )
         throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {

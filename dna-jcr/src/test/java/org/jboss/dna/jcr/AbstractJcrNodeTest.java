@@ -87,6 +87,7 @@ public class AbstractJcrNodeTest {
             return cache.getPathFor(nodeInfo()).getLastSegment().getString(namespaces());
         }
 
+        @Override
         public AbstractJcrNode getParent() throws RepositoryException {
             return cache.findJcrNode(nodeInfo().getParent());
         }
