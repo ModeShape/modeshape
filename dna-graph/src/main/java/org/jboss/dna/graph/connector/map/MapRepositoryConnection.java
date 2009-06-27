@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.connector.inmemory;
+package org.jboss.dna.graph.connector.map;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -35,16 +35,12 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
-/**
- * @author Randall Hauch
- */
-public class InMemoryRepositoryConnection implements RepositoryConnection {
+public class MapRepositoryConnection implements RepositoryConnection {
+    private final MapRepositorySource source;
+    private final MapRepository repository;
 
-    private final InMemoryRepositorySource source;
-    private final InMemoryRepository repository;
-
-    InMemoryRepositoryConnection( InMemoryRepositorySource source,
-                                  InMemoryRepository repository ) {
+    public MapRepositoryConnection( MapRepositorySource source,
+                                  MapRepository repository ) {
         assert source != null;
         assert repository != null;
         this.source = source;
@@ -102,7 +98,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        RequestProcessor processor = new InMemoryRequestProcessor(context, this.repository, this.source.getRepositoryContext());
+        RequestProcessor processor = new MapRequestProcessor(context, this.repository, this.source.getRepositoryContext());
 
         Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
         lock.lock();
@@ -119,7 +115,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
         if (logger.isTraceEnabled()) {
             assert sw != null;
             sw.stop();
-            logger.trace("InMemoryRepositoryConnection.execute(...) took " + sw.getTotalDuration());
+            logger.trace("MapRepositoryConnection.execute(...) took " + sw.getTotalDuration());
         }
     }
 
@@ -130,6 +126,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
      */
     @Override
     public String toString() {
-        return "Connection to the \"" + getSourceName() + "\" in-memory repository";
+        return "Connection to the \"" + getSourceName() + "\" " + repository.getClass().getSimpleName();
     }
+
 }

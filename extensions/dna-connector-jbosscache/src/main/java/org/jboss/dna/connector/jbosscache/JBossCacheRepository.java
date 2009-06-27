@@ -1,0 +1,79 @@
+package org.jboss.dna.connector.jbosscache;
+
+import java.util.UUID;
+import org.jboss.cache.Cache;
+import org.jboss.cache.Fqn;
+import org.jboss.cache.Node;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
+import org.jboss.dna.graph.connector.map.MapNode;
+import org.jboss.dna.graph.connector.map.MapRepository;
+import org.jboss.dna.graph.connector.map.MapWorkspace;
+
+public class JBossCacheRepository extends MapRepository {
+
+    private final Cache<UUID, MapNode> cache;
+
+    public JBossCacheRepository( String sourceName,
+                                 UUID rootNodeUuid,
+                                 Cache<UUID, MapNode> cache ) {
+        super(sourceName, rootNodeUuid, null);
+        assert cache != null;
+        this.cache = cache;
+        initialize();
+    }
+
+    public JBossCacheRepository( String sourceName,
+                                 UUID rootNodeUuid,
+                                 String defaultWorkspaceName,
+                                 Cache<UUID, MapNode> cache ) {
+        super(sourceName, rootNodeUuid, defaultWorkspaceName);
+
+        assert cache != null;
+        this.cache = cache;
+        
+        initialize();
+    }
+
+    @Override
+    protected MapWorkspace createWorkspace( ExecutionContext context,
+                                            String name ) {
+        assert name != null;
+        assert cache != null;
+        Node<UUID, MapNode> newWorkspaceNode = cache.getRoot().addChild(Fqn.fromElements(name));
+        return new Workspace(this, name, newWorkspaceNode);
+    }
+
+    protected class Workspace extends AbstractMapWorkspace {
+        private final Node<UUID, MapNode> workspaceNode;
+
+        public Workspace( MapRepository repository,
+                          String name,
+                          Node<UUID, MapNode> workspaceNode ) {
+            super(repository, name);
+
+            this.workspaceNode = workspaceNode;
+            initialize();
+        }
+
+        protected void addNodeToMap( MapNode node ) {
+            assert node != null;
+            workspaceNode.put(node.getUuid(), node);
+        }
+
+        protected MapNode removeNodeFromMap( UUID nodeUuid ) {
+            assert nodeUuid != null;
+            return workspaceNode.remove(nodeUuid);
+        }
+
+        protected void removeAllNodesFromMap() {
+            workspaceNode.clearData();
+        }
+
+        public MapNode getNode( UUID nodeUuid ) {
+            assert nodeUuid != null;
+            return workspaceNode.get(nodeUuid);
+        }
+    }
+
+}

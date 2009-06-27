@@ -21,25 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.jbosscache;
+package org.jboss.dna.graph.connector.map;
 
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.basic.BasicName;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
 
 /**
- * The namespace and property names used within a {@link JBossCacheSource} to store internal information.
- * 
- * @author Randall Hauch
+ * An extension of the {@link RepositorySource} class that provides a {@link CachePolicy cache policy} and a
+ * {@link RepositoryContext repository context}.
  */
-public class JBossCacheLexicon {
+public interface MapRepositorySource extends RepositorySource {
 
-    public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna/connector/jbosscache";
-        public static final String PREFIX = "dnajbcc";
-    }
+    /**
+     * Returns the {@link CachePolicy cache policy} for the repository source 
+     * @return the {@link CachePolicy cache policy} for the repository source
+     */
+    CachePolicy getDefaultCachePolicy();
 
-    public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
-    public static final Name UUIDS = new BasicName(Namespace.URI, "uuids");
-    public static final Name FQN = new BasicName(Namespace.URI, "fqn");
+    /**
+     * Returns the {@link RepositoryContext repository context} for the repository source
+     * @return the {@link RepositoryContext repository context} for the repository source
+     */
+    RepositoryContext getRepositoryContext();
 
 }

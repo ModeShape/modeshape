@@ -31,7 +31,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepository.Workspace;
+import org.jboss.dna.graph.connector.map.MapNode;
+import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.PathFactory;
@@ -99,7 +100,7 @@ public class InMemoryRepositoryTest {
         String workspaceName = "New Workspace";
         assertThat(repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE), is(notNullValue()));
         assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
-        Workspace secondWorkspace = repository.createWorkspace(context,
+        MapWorkspace secondWorkspace = repository.createWorkspace(context,
                                                                workspaceName,
                                                                CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME);
         assertThat(secondWorkspace, is(notNullValue()));
@@ -124,25 +125,25 @@ public class InMemoryRepositoryTest {
     @Test
     public void shouldCloneWorkspaceAndCopyContentsIfWorkspaceWithSpecifiedNameExists() {
         String workspaceName = "Original Workspace";
-        Workspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
+        MapWorkspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
         assertThat(workspace, is(notNullValue()));
         assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
 
         // Populate the workspace with a few nodes ...
-        InMemoryNode root = workspace.getRoot();
-        InMemoryNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        InMemoryNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        InMemoryNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        InMemoryNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        InMemoryNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        InMemoryNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode root = workspace.getRoot();
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
 
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");
         Property property = propertyFactory.create(propertyName, stringFactory.create("Worth the wait"));
-        node_b.getProperties().put(propertyName, property);
+        node_b.setProperty(property);
 
-        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(((InMemoryRepository.Workspace) workspace).size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
         assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
@@ -150,11 +151,11 @@ public class InMemoryRepositoryTest {
         assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperty(propertyName), is(property));
 
         // Now clone the workspace ...
         String newWorkspaceName = "New Workspace";
-        Workspace new_workspace = repository.createWorkspace(context,
+        MapWorkspace new_workspace = repository.createWorkspace(context,
                                                              newWorkspaceName,
                                                              CreateConflictBehavior.DO_NOT_CREATE,
                                                              workspaceName);
@@ -162,7 +163,7 @@ public class InMemoryRepositoryTest {
         assertThat(repository.getWorkspaceNames(), hasItems(workspaceName, newWorkspaceName));
 
         // Now check that the original workspace still has its content ...
-        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(((InMemoryRepository.Workspace) workspace).size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
         assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
@@ -170,10 +171,10 @@ public class InMemoryRepositoryTest {
         assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperty(propertyName), is(property));
 
         // Now check that the new workspace has its content ...
-        assertThat(new_workspace.getNodesByUuid().size(), is(7));
+        assertThat(((InMemoryRepository.Workspace) new_workspace).size(), is(7));
 
         // Since we cloned workspaces, the UUIDs should be the same in each workspace ...
         assertThat(workspace.getNode(pathFactory.create("/")).getUuid(),
@@ -195,25 +196,25 @@ public class InMemoryRepositoryTest {
     @Test
     public void shouldCloneWorkspaceButShouldNotCopyContentsIfWorkspaceWithSpecifiedNameDoesNotExist() {
         String workspaceName = "Original Workspace";
-        Workspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
+        MapWorkspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
         assertThat(workspace, is(notNullValue()));
         assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
 
         // Populate the workspace with a few nodes ...
-        InMemoryNode root = workspace.getRoot();
-        InMemoryNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        InMemoryNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        InMemoryNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        InMemoryNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        InMemoryNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        InMemoryNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode root = workspace.getRoot();
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
 
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");
         Property property = propertyFactory.create(propertyName, stringFactory.create("Worth the wait"));
-        node_b.getProperties().put(propertyName, property);
+        node_b.setProperty(property);
 
-        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(((InMemoryRepository.Workspace) workspace).size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
         assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
@@ -221,11 +222,11 @@ public class InMemoryRepositoryTest {
         assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
         assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperty(propertyName), is(property));
 
         // Now clone the workspace ...
         String newWorkspaceName = "New Workspace";
-        Workspace new_workspace = repository.createWorkspace(context,
+        MapWorkspace new_workspace = repository.createWorkspace(context,
                                                              newWorkspaceName,
                                                              CreateConflictBehavior.DO_NOT_CREATE,
                                                              "non-existant workspace");

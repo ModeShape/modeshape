@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
+ * individual contributors. 
  *
- * Unless otherwise indicated, all code in JBoss DNA is licensed
- * to you under the terms of the GNU Lesser General Public License as
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * JBoss DNA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,9 +21,8 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.connector.inmemory;
+package org.jboss.dna.graph.connector.map;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,9 +37,7 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryContext;
-import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -64,33 +61,38 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
- * A {@link RequestProcessor} implementation that operates on an {@link InMemoryRepository} and its
- * {@link InMemoryRepository.Workspace workspaces}.
+ * The default implementation of the {@link RequestProcessor} for map repositories.
+ *
  */
-public class InMemoryRequestProcessor extends RequestProcessor {
+public class MapRequestProcessor extends RequestProcessor {
     private final PathFactory pathFactory;
     private final PropertyFactory propertyFactory;
-    private final InMemoryRepository repository;
+    private final MapRepository repository;
 
-    protected InMemoryRequestProcessor( ExecutionContext context,
-                                        InMemoryRepository repository,
-                                        RepositoryContext repositoryContext ) {
+    public MapRequestProcessor( ExecutionContext context,
+                                   MapRepository repository,
+                                   RepositoryContext repositoryContext ) {
         super(repository.getSourceName(), context, repositoryContext != null ? repositoryContext.getObserver() : null);
         this.repository = repository;
         pathFactory = context.getValueFactories().getPathFactory();
         propertyFactory = context.getPropertyFactory();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
+     */
     @Override
     public void process( ReadAllChildrenRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
-        InMemoryNode node = getTargetNode(workspace, request, request.of());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapNode node = getTargetNode(workspace, request, request.of());
         if (node == null) return;
         Location actualLocation = getActualLocation(request.of().getPath(), node);
         Path path = actualLocation.getPath();
         // Get the names of the children ...
-        List<InMemoryNode> children = node.getChildren();
-        for (InMemoryNode child : children) {
+        List<MapNode> children = node.getChildren();
+        for (MapNode child : children) {
             Segment childName = child.getName();
             Path childPath = pathFactory.create(path, childName);
             request.addChild(childPath, propertyFactory.create(DnaLexicon.UUID, child.getUuid()));
@@ -101,8 +103,8 @@ public class InMemoryRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( ReadAllPropertiesRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
-        InMemoryNode node = getTargetNode(workspace, request, request.at());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapNode node = getTargetNode(workspace, request, request.at());
         if (node == null) return;
         // Get the properties of the node ...
         Location actualLocation = getActualLocation(request.at().getPath(), node);
@@ -114,65 +116,30 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         setCacheableInfo(request);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
+     */
     @Override
     public void process( CopyBranchRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.fromWorkspace());
-        InMemoryRepository.Workspace newWorkspace = getWorkspace(request, request.intoWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.fromWorkspace());
+        MapWorkspace newWorkspace = getWorkspace(request, request.intoWorkspace());
         if (workspace == null || newWorkspace == null) return;
-        InMemoryNode node = getTargetNode(workspace, request, request.from());
+        MapNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
-
-        Map<UUID, UUID> copyMap = null;
-        Set<UUID> uuidsInFromBranch = null;
-
-        switch (request.uuidConflictBehavior()) {
-            case ALWAYS_CREATE_NEW_UUID:
-
-                /*
-                 * The copyNode method uses the presence of a non-null map as an indicator that new UUIDs should be created
-                 * during the copy operation
-                 */
-                copyMap = new HashMap<UUID, UUID>();
-                break;
-            case REPLACE_EXISTING_NODE:
-                uuidsInFromBranch = workspace.getUuidsUnderNode(node);
-
-                for (UUID uuid : uuidsInFromBranch) {
-                    InMemoryNode existing;
-                    if (null != (existing = newWorkspace.getNode(uuid))) {
-                        newWorkspace.removeNode(this.getExecutionContext(), existing);
-                    }
-                }
-                break;
-            case THROW_EXCEPTION:
-                uuidsInFromBranch = workspace.getUuidsUnderNode(node);
-
-                for (UUID uuid : uuidsInFromBranch) {
-                    InMemoryNode existing;
-                    if (null != (existing = newWorkspace.getNode(uuid))) {
-                        NamespaceRegistry namespaces = this.getExecutionContext().getNamespaceRegistry();
-                        String path = newWorkspace.pathFor(pathFactory, existing).getString(namespaces);
-                        request.setError(new UuidAlreadyExistsException(this.getSourceName(), uuid, path, newWorkspace.getName()));
-                        return;
-                    }
-                }
-                break;
-
-            default:
-                throw new IllegalStateException("Unexpected UUID conflict behavior: " + request.uuidConflictBehavior());
-        }
 
         // Look up the new parent, which must exist ...
         Path newParentPath = request.into().getPath();
         Name desiredName = request.desiredName();
-        InMemoryNode newParent = newWorkspace.getNode(newParentPath);
-        InMemoryNode newNode = workspace.copyNode(getExecutionContext(),
-                                                  node,
-                                                  newWorkspace,
-                                                  newParent,
-                                                  desiredName,
-                                                  true,
-                                                  copyMap);
+        MapNode newParent = newWorkspace.getNode(newParentPath);
+        MapNode newNode = workspace.copyNode(getExecutionContext(),
+                                             node,
+                                             newWorkspace,
+                                             newParent,
+                                             desiredName,
+                                             true,
+                                             request.uuidConflictBehavior());
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
@@ -180,16 +147,21 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         recordChange(request);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
+     */
     @Override
     public void process( CreateNodeRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
         Path parent = request.under().getPath();
         CheckArg.isNotNull(parent, "request.under().getPath()");
-        InMemoryNode node = null;
+        MapNode node = null;
         // Look up the parent node, which must exist ...
-        // System.err.println(request.toString());
-        InMemoryNode parentNode = workspace.getNode(parent);
+
+        MapNode parentNode = workspace.getNode(parent);
         if (parentNode == null) {
             Path lowestExisting = workspace.getLowestExistingPath(parent);
             request.setError(new PathNotFoundException(request.under(), lowestExisting,
@@ -242,11 +214,16 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         recordChange(request);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
+     */
     @Override
     public void process( DeleteBranchRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
-        InMemoryNode node = getTargetNode(workspace, request, request.at());
+        MapNode node = getTargetNode(workspace, request, request.at());
         if (node == null) return;
         workspace.removeNode(getExecutionContext(), node);
         Location actualLocation = getActualLocation(request.at().getPath(), node);
@@ -254,13 +231,18 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         recordChange(request);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
+     */
     @Override
     public void process( MoveBranchRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
 
-        InMemoryNode beforeNode = request.before() != null ? getTargetNode(workspace, request, request.before()) : null;
-        InMemoryNode node = getTargetNode(workspace, request, request.from());
+        MapNode beforeNode = request.before() != null ? getTargetNode(workspace, request, request.before()) : null;
+        MapNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
         // Look up the new parent, which must exist ...
         Path newParentPath;
@@ -273,7 +255,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
 
             // Build the path from the before node to the root.
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
-            InMemoryNode current = beforeNode.getParent();
+            MapNode current = beforeNode.getParent();
             while (current != workspace.getRoot()) {
                 segments.addFirst(current.getName());
                 current = current.getParent();
@@ -281,7 +263,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             newParentPath = getExecutionContext().getValueFactories().getPathFactory().createAbsolutePath(segments);
         }
 
-        InMemoryNode newParent = workspace.getNode(newParentPath);
+        MapNode newParent = workspace.getNode(newParentPath);
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
         assert node.getParent() == newParent;
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
@@ -291,10 +273,15 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         recordChange(request);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdatePropertiesRequest)
+     */
     @Override
     public void process( UpdatePropertiesRequest request ) {
-        InMemoryRepository.Workspace workspace = getWorkspace(request, request.inWorkspace());
-        InMemoryNode node = getTargetNode(workspace, request, request.on());
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapNode node = getTargetNode(workspace, request, request.on());
         if (node == null) return;
         // Now set (or remove) the properties to the supplied node ...
         for (Map.Entry<Name, Property> propertyEntry : request.properties().entrySet()) {
@@ -320,15 +307,15 @@ public class InMemoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
-        InMemoryRepository.Workspace workspace = repository.createWorkspace(getExecutionContext(),
-                                                                            request.desiredNameOfNewWorkspace(),
-                                                                            request.conflictBehavior());
+        MapWorkspace workspace = repository.createWorkspace(getExecutionContext(),
+                                                            request.desiredNameOfNewWorkspace(),
+                                                            request.conflictBehavior());
         if (workspace == null) {
             String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(request.desiredNameOfNewWorkspace(),
                                                                            repository.getSourceName());
             request.setError(new InvalidWorkspaceException(msg));
         } else {
-            InMemoryNode root = workspace.getRoot();
+            MapNode root = workspace.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(workspace.getName());
             recordChange(request);
@@ -342,9 +329,9 @@ public class InMemoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        InMemoryRepository.Workspace workspace = repository.getWorkspace(getExecutionContext(), request.workspaceName());
+        MapWorkspace workspace = repository.getWorkspace(request.workspaceName());
         if (workspace != null) {
-            InMemoryNode root = workspace.getRoot();
+            MapNode root = workspace.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             recordChange(request);
         } else {
@@ -372,7 +359,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        InMemoryRepository.Workspace original = getWorkspace(request, request.workspaceName());
+        MapWorkspace original = getWorkspace(request, request.workspaceName());
         if (original != null) {
             Path path = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
             request.setActualRootLocation(Location.create(path, original.getRoot().getUuid()));
@@ -391,8 +378,8 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         final ExecutionContext context = getExecutionContext();
         String targetWorkspaceName = request.desiredNameOfTargetWorkspace();
         String nameOfWorkspaceToBeCloned = request.nameOfWorkspaceToBeCloned();
-        InMemoryRepository.Workspace original = repository.getWorkspace(context, nameOfWorkspaceToBeCloned);
-        InMemoryRepository.Workspace target = repository.getWorkspace(context, targetWorkspaceName);
+        MapWorkspace original = repository.getWorkspace(nameOfWorkspaceToBeCloned);
+        MapWorkspace target = repository.getWorkspace(targetWorkspaceName);
         if (original == null) {
             switch (request.cloneConflictBehavior()) {
                 case DO_NOT_CLONE:
@@ -406,7 +393,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
                         msg = GraphI18n.workspaceAlreadyExistsInRepository.text(targetWorkspaceName, repository.getSourceName());
                         request.setError(new InvalidWorkspaceException(msg));
                     } else {
-                        InMemoryNode root = target.getRoot();
+                        MapNode root = target.getRoot();
                         request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
                         request.setActualWorkspaceName(target.getName());
                     }
@@ -424,7 +411,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(targetWorkspaceName, repository.getSourceName());
             request.setError(new InvalidWorkspaceException(msg));
         } else {
-            InMemoryNode root = target.getRoot();
+            MapNode root = target.getRoot();
             request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(target.getName());
             recordChange(request);
@@ -432,11 +419,11 @@ public class InMemoryRequestProcessor extends RequestProcessor {
     }
 
     protected Location getActualLocation( Path path,
-                                          InMemoryNode node ) {
+                                          MapNode node ) {
         if (path == null) {
             // Find the path on the node ...
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
-            InMemoryNode n = node;
+            MapNode n = node;
             while (n != null) {
                 if (n.getParent() == null) break;
                 segments.addFirst(n.getName());
@@ -447,10 +434,10 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         return Location.create(path, node.getUuid());
     }
 
-    protected InMemoryRepository.Workspace getWorkspace( Request request,
-                                                         String workspaceName ) {
+    protected MapWorkspace getWorkspace( Request request,
+                                         String workspaceName ) {
         // Get the workspace for this request ...
-        InMemoryRepository.Workspace workspace = repository.getWorkspace(getExecutionContext(), workspaceName);
+        MapWorkspace workspace = repository.getWorkspace(workspaceName);
         if (workspace == null) {
             String msg = GraphI18n.workspaceDoesNotExistInRepository.text(workspaceName, repository.getSourceName());
             request.setError(new InvalidWorkspaceException(msg));
@@ -458,12 +445,12 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         return workspace;
     }
 
-    protected InMemoryNode getTargetNode( InMemoryRepository.Workspace workspace,
-                                          Request request,
-                                          Location location ) {
+    protected MapNode getTargetNode( MapWorkspace workspace,
+                                     Request request,
+                                     Location location ) {
         if (workspace == null) return null;
         // Check first for the UUID ...
-        InMemoryNode node = null;
+        MapNode node = null;
         UUID uuid = location.getUuid();
         if (uuid != null) {
             node = workspace.getNode(uuid);

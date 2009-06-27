@@ -52,6 +52,8 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.map.MapRepositoryConnection;
+import org.jboss.dna.graph.connector.map.MapRepositorySource;
 
 /**
  * A {@link RepositorySource} for an in-memory repository. Each {@link InMemoryRepositorySource} instance contains its own
@@ -59,7 +61,7 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
  * 
  * @author Randall Hauch
  */
-public class InMemoryRepositorySource implements RepositorySource, ObjectFactory {
+public class InMemoryRepositorySource implements MapRepositorySource, ObjectFactory {
 
     /**
      * The initial version is 1
@@ -258,7 +260,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
         if (repository == null) {
             repository = new InMemoryRepository(name, rootNodeUuid, defaultWorkspaceName);
         }
-        return new InMemoryRepositoryConnection(this, repository);
+        return new MapRepositoryConnection(this, repository);
     }
 
     /**

@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.connector.inmemory;
+package org.jboss.dna.graph.connector.map;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,40 +29,36 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 
-/**
- * @author Randall Hauch
- */
-@NotThreadSafe
-public class InMemoryNode {
+public class MapNode {
 
     private final UUID uuid;
-    private InMemoryNode parent;
+    private MapNode parent;
     private Path.Segment name;
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
-    private final LinkedList<InMemoryNode> children = new LinkedList<InMemoryNode>();
+    private final LinkedList<MapNode> children = new LinkedList<MapNode>();
     final Set<Name> existingNames = new HashSet<Name>();
 
-    public InMemoryNode( UUID uuid ) {
+    public MapNode( UUID uuid ) {
         assert uuid != null;
         this.uuid = uuid;
     }
 
-    /**
-     * @return uuid
+    /* (non-Javadoc)
+     * @see org.jboss.dna.graph.connector.map.MapNode#getUuid()
      */
     public UUID getUuid() {
         return uuid;
     }
 
-    /**
-     * @return name
+    /* (non-Javadoc)
+     * @see org.jboss.dna.graph.connector.map.MapNode#getName()
      */
     public Path.Segment getName() {
         return name;
@@ -71,28 +67,32 @@ public class InMemoryNode {
     /**
      * @param name Sets name to the specified value.
      */
-    protected void setName( Path.Segment name ) {
+    public void setName( Path.Segment name ) {
         this.name = name;
     }
 
-    /**
-     * @return parent
+    public Set<Name> getUniqueChildNames() {
+        return existingNames;
+    }
+
+    /* (non-Javadoc)
+     * @see org.jboss.dna.graph.connector.map.MapNode#getParent()
      */
-    public InMemoryNode getParent() {
+    public MapNode getParent() {
         return parent;
     }
 
     /**
      * @param parent Sets parent to the specified value.
      */
-    protected void setParent( InMemoryNode parent ) {
+    public void setParent( MapNode parent ) {
         this.parent = parent;
     }
 
     /**
      * @return children
      */
-    LinkedList<InMemoryNode> getChildren() {
+    public LinkedList<MapNode> getChildren() {
         return children;
     }
 
@@ -103,27 +103,55 @@ public class InMemoryNode {
         return properties;
     }
 
-    public InMemoryNode setProperty( Property property ) {
+    /**
+     * Sets the property with the given name, overwriting any previous property for the given name
+     * 
+     * @param property the property to set
+     * @return this map node
+     */
+    public MapNode setProperty( Property property ) {
         if (property != null) {
             this.properties.put(property.getName(), property);
         }
         return this;
     }
 
-    public InMemoryNode setProperty( ExecutionContext context,
-                                     String name,
-                                     Object... values ) {
+    /**
+     * Sets the property with the given name, overwriting any previous property for the given name
+     * 
+     * @param context the current execution context, used to get a {@link NameFactory name factory} and {@link PropertyFactory
+     *        property factory}.
+     * @param name the name of the property
+     * @param values the values for the property
+     * @return this map node
+     */
+    public MapNode setProperty( ExecutionContext context,
+                                String name,
+                                Object... values ) {
         PropertyFactory propertyFactory = context.getPropertyFactory();
         Name propertyName = context.getValueFactories().getNameFactory().create(name);
         return setProperty(propertyFactory.create(propertyName, values));
     }
 
+    /**
+     * Returns the named property
+     * 
+     * @param context the current execution context, used to get a {@link NameFactory name factory}
+     * @param name the name of the property to return
+     * @return the property for the given name
+     */
     public Property getProperty( ExecutionContext context,
                                  String name ) {
         Name propertyName = context.getValueFactories().getNameFactory().create(name);
         return getProperty(propertyName);
     }
 
+    /**
+     * Returns the named property
+     * 
+     * @param name the name of the property to return
+     * @return the property for the given name
+     */
     public Property getProperty( Name name ) {
         return this.properties.get(name);
     }
@@ -146,8 +174,8 @@ public class InMemoryNode {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof InMemoryNode) {
-            InMemoryNode that = (InMemoryNode)obj;
+        if (obj instanceof MapNode) {
+            MapNode that = (MapNode)obj;
             if (!this.getUuid().equals(that.getUuid())) return false;
             return true;
         }
@@ -170,4 +198,5 @@ public class InMemoryNode {
         sb.append(" (").append(uuid).append(")");
         return sb.toString();
     }
+
 }

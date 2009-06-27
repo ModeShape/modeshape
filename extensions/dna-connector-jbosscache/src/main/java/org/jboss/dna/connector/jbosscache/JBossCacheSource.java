@@ -45,11 +45,14 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
+import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
+import org.jboss.cache.config.ConfigurationException;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.cache.CachePolicy;
@@ -58,8 +61,11 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.map.MapNode;
+import org.jboss.dna.graph.connector.map.MapRepositoryConnection;
+import org.jboss.dna.graph.connector.map.MapRepositorySource;
 import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * A repository source that uses a JBoss Cache instance to manage the content. This source is capable of using an existing
@@ -79,7 +85,7 @@ import org.jboss.dna.graph.property.Name;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class JBossCacheSource implements RepositorySource, ObjectFactory {
+public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
 
     private static final long serialVersionUID = 2L;
     /**
@@ -114,9 +120,10 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     private volatile String defaultWorkspace;
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
-    private transient JBossCacheWorkspaces workspaces;
+    private transient JBossCacheRepository repository;
     private transient Context jndiContext;
     private transient RepositoryContext repositoryContext;
+    private final Set<String> repositoryNamesForConfigurationNameProblems = new HashSet<String>();
 
     /**
      * Create a repository source instance.
@@ -435,7 +442,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
             I18n msg = JBossCacheConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        if (this.workspaces == null) {
+        if (this.repository == null) {
             Context context = getContext();
             if (context == null) {
                 try {
@@ -446,13 +453,13 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
             }
 
             // Look for a cache factory in JNDI ...
-            CacheFactory<Name, Object> cacheFactory = null;
+            CacheFactory<UUID, MapNode> cacheFactory = null;
             String jndiName = getCacheFactoryJndiName();
             if (jndiName != null && jndiName.trim().length() != 0) {
                 Object object = null;
                 try {
                     object = context.lookup(jndiName);
-                    if (object != null) cacheFactory = (CacheFactory<Name, Object>)object;
+                    if (object != null) cacheFactory = (CacheFactory<UUID, MapNode>)object;
                 } catch (ClassCastException err) {
                     I18n msg = JBossCacheConnectorI18n.objectFoundInJndiWasNotCacheFactory;
                     String className = object != null ? object.getClass().getName() : "null";
@@ -462,27 +469,65 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
                     throw new RepositorySourceException(getName(), err);
                 }
             }
-            if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<Name, Object>();
+            if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<UUID, MapNode>();
 
-            // Get the default cache configuration name
-            String configName = this.getCacheConfigurationName();
+            // Now create the repository ...
+            this.repository = new JBossCacheRepository(getName(), this.rootNodeUuid, createNewCache(cacheFactory, getName()));
 
             // Create the set of initial names ...
-            Set<String> initialNames = new HashSet<String>();
             for (String initialName : getPredefinedWorkspaceNames())
-                initialNames.add(initialName);
-
-            // Now create the workspace manager ...
-            this.workspaces = new JBossCacheWorkspaces(getName(), cacheFactory, configName, initialNames, context);
+                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
+        
         }
 
-        return new JBossCacheConnection(this, this.workspaces);
+        return new MapRepositoryConnection(this, this.repository);
     }
 
     /**
+     * Method that is responsible for attempting to create a new cache given the supplied workspace name. Note that this is
+     * probably called at most once for each workspace name (except if this method fails to create a cache for a given workspace
+     * name).
+     * 
+     * @param workspaceName the name of the workspace
+     * @return the new cache that corresponds to the workspace name
+     */
+    @GuardedBy( "writeLock" )
+    protected Cache<UUID, MapNode> createNewCache( CacheFactory<UUID, MapNode> cacheFactory, String repositoryName ) {
+        assert repositoryName != null;
+        if (cacheFactory == null) return null;
+
+        // Try to create the cache using the workspace name as the configuration ...
+        try {
+            return cacheFactory.createCache(repositoryName);
+        } catch (ConfigurationException error) {
+            // The workspace name is probably not the name of a configuration ...
+            I18n msg = JBossCacheConnectorI18n.workspaceNameWasNotValidConfiguration;
+            Logger.getLogger(getClass()).debug(msg.text(repositoryName, error.getMessage()));
+        }
+
+        if (this.cacheConfigurationName != null) {
+            // Try to create the cache using the default configuration name ...
+            try {
+                return cacheFactory.createCache(getCacheConfigurationName());
+            } catch (ConfigurationException error) {
+                // The default configuration name is not valid ...
+                if (this.repositoryNamesForConfigurationNameProblems.add(repositoryName)) {
+                    // Log this problem only the first time ...
+                    I18n msg = JBossCacheConnectorI18n.defaultCacheFactoryConfigurationNameWasNotValidConfiguration;
+                    Logger.getLogger(getClass()).debug(msg.text(repositoryName));
+                }
+            }
+        }
+
+        // Just create a new cache with the default configuration ...
+        return cacheFactory.createCache();
+    }
+
+    
+    /**
      * @return repositoryContext
      */
-    protected RepositoryContext getRepositoryContext() {
+    public RepositoryContext getRepositoryContext() {
         return repositoryContext;
     }
 
