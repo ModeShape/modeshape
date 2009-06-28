@@ -32,7 +32,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -249,7 +248,7 @@ public abstract class MapRepository {
             // Loop over each child and call this method to copy the immediate children (and below).
             // Note that this makes the copy have the same UUID as the original.
             for (MapNode originalNode : origRoot.getChildren()) {
-                original.copyNode(context, originalNode, workspace, root, originalNode.getName().getName(), true, UuidConflictBehavior.REPLACE_EXISTING_NODE);
+                original.cloneNode(context, originalNode, workspace, root, originalNode.getName().getName(), null, true);
             }
         }
 

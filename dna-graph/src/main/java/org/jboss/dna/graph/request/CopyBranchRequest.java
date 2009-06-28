@@ -33,16 +33,18 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction that a branch be copied from one location into another. This request can copy a branch in one workspace into
- * another workspace, or it can copy a branch in the same workspace.
+ * another workspace, or it can copy a branch in the same workspace. Copying a branch always results in the generation of new
+ * UUIDs for the copied nodes. {@link CloneBranchRequest Cloning a branch} provides functionality similar to copy, but with the
+ * ability to preserve UUIDs in the move.
  * 
  * @author Randall Hauch
+ * @see CloneBranchRequest
  */
 public class CopyBranchRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
     public static final NodeConflictBehavior DEFAULT_NODE_CONFLICT_BEHAVIOR = NodeConflictBehavior.APPEND;
-    public static final UuidConflictBehavior DEFAULT_UUID_CONFLICT_BEHAVIOR = UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID;
 
     private final Location from;
     private final Location into;
@@ -50,7 +52,6 @@ public class CopyBranchRequest extends ChangeRequest {
     private final String intoWorkspace;
     private final Name desiredNameForCopy;
     private final NodeConflictBehavior nodeConflictBehavior;
-    private final UuidConflictBehavior uuidConflictBehavior;
     private Location actualFromLocation;
     private Location actualIntoLocation;
 
@@ -68,7 +69,7 @@ public class CopyBranchRequest extends ChangeRequest {
                               String fromWorkspace,
                               Location into,
                               String intoWorkspace ) {
-        this(from, fromWorkspace, into, intoWorkspace, null, DEFAULT_NODE_CONFLICT_BEHAVIOR, DEFAULT_UUID_CONFLICT_BEHAVIOR);
+        this(from, fromWorkspace, into, intoWorkspace, null, DEFAULT_NODE_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -87,7 +88,7 @@ public class CopyBranchRequest extends ChangeRequest {
                               Location into,
                               String intoWorkspace,
                               Name nameForCopy ) {
-        this(from, fromWorkspace, into, intoWorkspace, nameForCopy, DEFAULT_NODE_CONFLICT_BEHAVIOR, DEFAULT_UUID_CONFLICT_BEHAVIOR);
+        this(from, fromWorkspace, into, intoWorkspace, nameForCopy, DEFAULT_NODE_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -101,8 +102,6 @@ public class CopyBranchRequest extends ChangeRequest {
      *        used
      * @param nodeConflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location
-     * @param uuidConflictBehavior the expected behavior if a node with the same UUID as any of the nodes in the branch under the
-     *        {@code from} location in the {@code fromWorkspace} workspace already exists in the workspace
      * @throws IllegalArgumentException if any of the parameters are null
      */
     public CopyBranchRequest( Location from,
@@ -110,21 +109,18 @@ public class CopyBranchRequest extends ChangeRequest {
                               Location into,
                               String intoWorkspace,
                               Name nameForCopy,
-                              NodeConflictBehavior nodeConflictBehavior,
-                              UuidConflictBehavior uuidConflictBehavior ) {
+                              NodeConflictBehavior nodeConflictBehavior ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(into, "into");
         CheckArg.isNotNull(fromWorkspace, "fromWorkspace");
         CheckArg.isNotNull(intoWorkspace, "intoWorkspace");
         CheckArg.isNotNull(nodeConflictBehavior, "nodeConflictBehavior");
-        CheckArg.isNotNull(uuidConflictBehavior, "uuidConflictBehavior");
         this.from = from;
         this.into = into;
         this.fromWorkspace = fromWorkspace;
         this.intoWorkspace = intoWorkspace;
         this.desiredNameForCopy = nameForCopy;
         this.nodeConflictBehavior = nodeConflictBehavior;
-        this.uuidConflictBehavior = uuidConflictBehavior;
     }
 
     /**
@@ -200,15 +196,6 @@ public class CopyBranchRequest extends ChangeRequest {
      */
     public NodeConflictBehavior nodeConflictBehavior() {
         return nodeConflictBehavior;
-    }
-
-    /**
-     * Get the expected behavior when one of the nodes in the branch has the same UUID as an existing node in the workspace.
-     * 
-     * @return the behavior specification
-     */
-    public UuidConflictBehavior uuidConflictBehavior() {
-        return uuidConflictBehavior;
     }
 
     /**

@@ -45,8 +45,8 @@ import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.property.basic.RootPath;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 
 /**
  * A default implementation of {@link MapWorkspace} that only requires the user to implement some simple, map-like operations.
@@ -415,8 +415,6 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      * @param newParent the parent where the copy is to be placed; may not be null
      * @param desiredName the desired name for the node; if null, the name will be obtained from the original node
      * @param recursive true if the copy should be recursive
-     * @param uuidConflictBehavior the behavior to use if a UUID in the branch rooted at {@code original} already exists in the
-     *        new workspace
      * @return the new node, which is the top of the new subgraph
      */
     public MapNode copyNode( ExecutionContext context,
@@ -424,48 +422,8 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
                              MapWorkspace newWorkspace,
                              MapNode newParent,
                              Name desiredName,
-                             boolean recursive,
-                             UuidConflictBehavior uuidConflictBehavior ) throws UuidAlreadyExistsException {
-        Map<UUID, UUID> copyMap = null;
-        Set<UUID> uuidsInFromBranch = null;
-
-        switch (uuidConflictBehavior) {
-            case ALWAYS_CREATE_NEW_UUID:
-
-                /*
-                 * The copyNode method uses the presence of a non-null map as an indicator that new UUIDs should be created
-                 * during the copy operation
-                 */
-                copyMap = new HashMap<UUID, UUID>();
-                break;
-            case REPLACE_EXISTING_NODE:
-                uuidsInFromBranch = getUuidsUnderNode(original);
-
-                for (UUID uuid : uuidsInFromBranch) {
-                    MapNode existing;
-                    if (null != (existing = newWorkspace.getNode(uuid))) {
-                        newWorkspace.removeNode(context, existing);
-                    }
-                }
-                break;
-            case THROW_EXCEPTION:
-                uuidsInFromBranch = getUuidsUnderNode(original);
-                PathFactory pathFactory = context.getValueFactories().getPathFactory();
-                for (UUID uuid : uuidsInFromBranch) {
-                    MapNode existing;
-                    if (null != (existing = newWorkspace.getNode(uuid))) {
-                        NamespaceRegistry namespaces = context.getNamespaceRegistry();
-                        String path = newWorkspace.pathFor(pathFactory, existing).getString(namespaces);
-                        throw new UuidAlreadyExistsException(repository.getSourceName(), uuid, path, newWorkspace.getName());
-                    }
-                }
-                break;
-
-            default:
-                throw new IllegalStateException("Unexpected UUID conflict behavior: " + uuidConflictBehavior);
-        }
-
-        return copyNode(context, original, newWorkspace, newParent, desiredName, true, copyMap);
+                             boolean recursive ) {
+        return copyNode(context, original, newWorkspace, newParent, desiredName, true, new HashMap<UUID, UUID>());
     }
 
     /**
@@ -483,12 +441,12 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      * @return the new node, which is the top of the new subgraph
      */
     protected MapNode copyNode( ExecutionContext context,
-                              MapNode original,
-                              MapWorkspace newWorkspace,
-                              MapNode newParent,
-                              Name desiredName,
-                              boolean recursive,
-                              Map<UUID, UUID> oldToNewUuids ) {
+                                MapNode original,
+                                MapWorkspace newWorkspace,
+                                MapNode newParent,
+                                Name desiredName,
+                                boolean recursive,
+                                Map<UUID, UUID> oldToNewUuids ) {
         assert context != null;
         assert original != null;
         assert newParent != null;
@@ -557,7 +515,82 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     }
 
     /**
-     * Returns all of the UUIDs in the branch rooted at {@code node}
+     * {@inheritDoc}
+     * 
+     * @see MapWorkspace#cloneNode(ExecutionContext, MapNode, MapWorkspace, MapNode, Name, Segment, boolean)
+     */
+    public MapNode cloneNode( ExecutionContext context,
+                              MapNode original,
+                              MapWorkspace newWorkspace,
+                              MapNode newParent,
+                              Name desiredName,
+                              Segment desiredSegment,
+                              boolean removeExisting ) throws UuidAlreadyExistsException {
+        assert context != null;
+        assert original != null;
+        assert newWorkspace != null;
+        assert newParent != null;
+
+        Set<UUID> uuidsInFromBranch = getUuidsUnderNode(original);
+        MapNode existing;
+
+        // TODO: Need to handle removing/throwing root node
+        if (removeExisting) {
+
+            for (UUID uuid : uuidsInFromBranch) {
+                if (null != (existing = newWorkspace.getNode(uuid))) {
+                    newWorkspace.removeNode(context, existing);
+                }
+            }
+        } else {
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            uuidsInFromBranch.add(original.getUuid());
+            for (UUID uuid : uuidsInFromBranch) {
+                if (null != (existing = newWorkspace.getNode(uuid))) {
+                    NamespaceRegistry namespaces = context.getNamespaceRegistry();
+                    String path = newWorkspace.pathFor(pathFactory, existing).getString(namespaces);
+                    throw new UuidAlreadyExistsException(repository.getSourceName(), uuid, path, newWorkspace.getName());
+                }
+            }
+        }
+
+        if (desiredSegment != null) {
+            MapNode newRoot = null;
+            for (MapNode child : newParent.getChildren()) {
+                if (desiredSegment.equals(child.getName())) {
+                    newRoot = child;
+                    break;
+                }
+            }
+
+            assert newRoot != null;
+
+            newRoot.getProperties().clear();
+            for (MapNode child : newRoot.getChildren()) {
+                newWorkspace.removeNode(context, child);
+            }
+
+            for (Property property : original.getProperties().values()) {
+                newRoot.setProperty(property);
+            }
+
+            for (MapNode child : original.getChildren()) {
+                copyNode(context, child, newWorkspace, newRoot, null, true, (Map<UUID, UUID>)null);
+            }
+            return newRoot;
+        }
+
+        existing = newWorkspace.getNode(original.getUuid());
+
+        if (existing != null) {
+            newWorkspace.removeNode(context, existing);
+        }
+        return copyNode(context, original, newWorkspace, newParent, desiredName, true, (Map<UUID, UUID>)null);
+    }
+
+    /**
+     * Returns all of the UUIDs in the branch rooted at {@code node}. The UUID of {@code node} will not be included in the set of
+     * returned UUIDs.
      * 
      * @param node the root of the branch
      * @return all of the UUIDs in the branch rooted at {@code node}
@@ -571,9 +604,8 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
 
     private void uuidsUnderNode( MapNode node,
                                  Set<UUID> accumulator ) {
-        accumulator.add(node.getUuid());
-
         for (MapNode child : node.getChildren()) {
+            accumulator.add(child.getUuid());
             uuidsUnderNode(child, accumulator);
         }
     }

@@ -304,6 +304,17 @@ final class JcrWorkspace implements Workspace {
             throw new AccessDeniedException(ace);
         }
 
+        clone(srcWorkspace, srcPath, destPath, removeExisting, false);
+    }
+
+    void clone( String srcWorkspace,
+                Path srcPath,
+                Path destPath,
+                boolean removeExisting,
+                boolean destPathIncludesSegment )
+        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
+        LockException, RepositoryException {
+
         /*
          * Make sure that the node has a definition at the new location
          */
@@ -332,6 +343,7 @@ final class JcrWorkspace implements Workspace {
             primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
             uuidProp = props.get(DnaLexicon.UUID);
         } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+            String srcAbsPath = srcPath.getString(this.context.getNamespaceRegistry());
             throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(srcAbsPath, srcWorkspace));
         } finally {
             graph.useWorkspace(this.name);
@@ -391,12 +403,19 @@ final class JcrWorkspace implements Workspace {
                 }
             }
 
-            // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-            graph.copy(srcPath).replacingExistingNodesWithSameUuids().fromWorkspace(srcWorkspace).to(destPath);
+            if (destPathIncludesSegment) {
+                graph.clone(srcPath).fromWorkspace(srcWorkspace).as(destPath.getLastSegment()).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
+            } else {
+                graph.clone(srcPath).fromWorkspace(srcWorkspace).as(newNodeName).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
+            }
         } else {
             try {
-                // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-                graph.copy(srcPath).failingIfUuidsMatch().fromWorkspace(srcWorkspace).to(destPath);
+                if (destPathIncludesSegment) {
+                    graph.clone(srcPath).fromWorkspace(srcWorkspace).as(destPath.getLastSegment()).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
+                } else {
+                    graph.clone(srcPath).fromWorkspace(srcWorkspace).as(newNodeName).into(destPath.getParent()).failingIfAnyUuidsMatch();
+                }
+
             } catch (UuidAlreadyExistsException uaee) {
                 throw new ItemExistsException(uaee.getMessage());
             }

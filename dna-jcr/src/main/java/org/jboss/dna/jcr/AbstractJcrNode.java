@@ -717,8 +717,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 JcrNodeDefinition match = this.cache.nodeTypes().findChildNodeDefinition(mixinCandidateType.getInternalName(),
                                                                                          Collections.<Name>emptyList(),
                                                                                          nodeName,
-                                                                                         childNode.getPrimaryNodeType()
-                                                                                                  .getInternalName(),
+                                                                                         childNode.getPrimaryNodeType().getInternalName(),
                                                                                          snsCount,
                                                                                          false);
 
@@ -1408,7 +1407,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#update(java.lang.String)
      */
-    @SuppressWarnings( "unused" )
     public final void update( String srcWorkspaceName ) throws NoSuchWorkspaceException, RepositoryException {
         CheckArg.isNotNull(srcWorkspaceName, "workspace name");
 
@@ -1424,7 +1422,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return;
         }
 
-        if (true) throw new UnsupportedOperationException();
+        // Need to force remove in case this node is not referenceable
+        this.session().workspace().clone(srcWorkspaceName, correspondingPath, path(), true, true);
+
+        session().refresh(false);
     }
 
     /**

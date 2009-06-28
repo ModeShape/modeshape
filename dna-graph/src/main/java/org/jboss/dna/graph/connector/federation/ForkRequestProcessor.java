@@ -54,6 +54,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -1262,7 +1263,66 @@ class ForkRequestProcessor extends RequestProcessor {
         // Create the pushed-down request ...
         CopyBranchRequest pushDown = new CopyBranchRequest(fromProxy.location(), fromProxy.workspaceName(), intoProxy.location(),
                                                            intoProxy.workspaceName(), request.desiredName(),
-                                                           request.nodeConflictBehavior(), request.uuidConflictBehavior());
+                                                           request.nodeConflictBehavior());
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+        federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());
+
+        // Submit the requests for processing and then STOP ...
+        submit(federatedRequest);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        // Figure out where the 'from' is projected ...
+        ProjectedNode projectedFromNode = project(request.from(), request.fromWorkspace(), request, false);
+        if (projectedFromNode == null) return;
+        ProjectedNode projectedIntoNode = project(request.into(), request.intoWorkspace(), request, true);
+        if (projectedIntoNode == null) return;
+
+        // Limitation: only able to project the copy if the 'from' and 'into' are in the same source & projection ...
+        while (projectedFromNode != null) {
+            if (projectedFromNode.isProxy()) {
+                ProxyNode fromProxy = projectedFromNode.asProxy();
+                // Look for a projectedIntoNode that has the same source/projection ...
+                while (projectedIntoNode != null) {
+                    if (projectedIntoNode.isProxy()) {
+                        // Both are proxies, so compare the projection ...
+                        ProxyNode intoProxy = projectedIntoNode.asProxy();
+                        if (fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName())) break;
+                    }
+                    projectedIntoNode = projectedIntoNode.next();
+                }
+                if (projectedIntoNode != null) break;
+            }
+            projectedFromNode = projectedFromNode.next();
+        }
+        if (projectedFromNode == null || projectedIntoNode == null) {
+            // The copy is not done within a single source ...
+            String msg = GraphI18n.cloneLimitedToBeWithinSingleSource.text(readable(request.from()),
+                                                                           request.fromWorkspace(),
+                                                                           readable(request.into()),
+                                                                           request.intoWorkspace(),
+                                                                           getSourceName());
+            request.setError(new UnsupportedRequestException(msg));
+            return;
+        }
+
+        ProxyNode fromProxy = projectedFromNode.asProxy();
+        ProxyNode intoProxy = projectedIntoNode.asProxy();
+        assert fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName());
+        boolean sameLocation = fromProxy.isSameLocationAsOriginal() && intoProxy.isSameLocationAsOriginal();
+
+        // Create the pushed-down request ...
+        CloneBranchRequest pushDown = new CloneBranchRequest(fromProxy.location(), fromProxy.workspaceName(),
+                                                             intoProxy.location(), intoProxy.workspaceName(),
+                                                             request.desiredName(), request.desiredSegment(),
+                                                             request.removeExisting());
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
         federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());

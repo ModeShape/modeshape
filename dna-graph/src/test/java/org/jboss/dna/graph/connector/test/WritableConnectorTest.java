@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChildren;
 import static org.jboss.dna.graph.IsNodeWithChildren.isEmpty;
@@ -44,9 +45,9 @@ import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -73,14 +74,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         validLargeValues = new String[] {IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum1.txt")),
             IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum2.txt")),
             IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum3.txt"))};
-    }
-
-    protected void tryCreatingAWorkspaceNamed( String workspaceName ) {
-        try {
-            graph.createWorkspace().named(workspaceName);
-        } catch (Exception ex) {
-            assumeNoException(ex);
-        }
     }
 
     /**
@@ -308,7 +301,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, description);
     }
 
-    @Ignore
     @Test
     public void shouldCreateTreeWith10ChildrenAnd2LevelsDeepUsingIndividualRequests() {
         String initialPath = "";
@@ -320,7 +312,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
     }
 
-    @Ignore
     @Test
     public void shouldCreateTreeWith10ChildrenAnd2LevelsDeepUsingOneBatch() {
         String initialPath = "";
@@ -332,7 +323,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
     }
 
-    @Ignore
     @Test
     public void shouldCreateTreeWith10ChildrenAnd3LevelsDeepUsingOneBatch() {
         String initialPath = "";
@@ -839,7 +829,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.useWorkspace(defaultWorkspaceName);
 
         graph.create("/newUuids");
-        graph.copy("/node1").withNewUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
+        graph.copy("/node1").fromWorkspace(workspaceName).to("/newUuids/node1");
 
         /*
          * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
@@ -858,46 +848,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     }
 
     @Test
-    public void shouldCopyChildrenBetweenWorkspacesPreservingUuids() throws Exception {
-        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
-        String workspaceName = "copyChildrenSource";
-
-        tryCreatingAWorkspaceNamed(workspaceName);
-
-        graph.useWorkspace(workspaceName);
-        String initialPath = "";
-        int depth = 3;
-        int numChildrenPerNode = 3;
-        int numPropertiesPerNode = 3;
-        Stopwatch sw = new Stopwatch();
-        boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
-
-        Subgraph source = graph.getSubgraphOfDepth(3).at("/node1");
-
-        graph.useWorkspace(defaultWorkspaceName);
-
-        graph.create("/newUuids");
-        graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
-
-        /*
-         * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
-         */
-        Subgraph target = graph.getSubgraphOfDepth(3).at("/newUuids/node1");
-        assertThat(target, is(notNullValue()));
-        assertThat(target.getNode(".").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
-        assertThat(uuidFor(target.getNode(".")), is(uuidFor(source.getNode("."))));
-        assertThat(target.getNode("node1").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
-        assertThat(uuidFor(target.getNode("node1")), is(uuidFor(source.getNode("node1"))));
-        assertThat(target.getNode("node2").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
-        assertThat(uuidFor(target.getNode("node2")), is(uuidFor(source.getNode("node2"))));
-        assertThat(target.getNode("node3").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
-        assertThat(uuidFor(target.getNode("node3")), is(uuidFor(source.getNode("node3"))));
-
-    }
-
-    @Test
-    public void shouldNotCopyChildrenBetweenWorkspacesIfUuidConflictAndFailureBehavior() throws Exception {
+    public void shouldNotCloneChildrenIfUuidConflictAndFailureBehavior() throws Exception {
         String defaultWorkspaceName = graph.getCurrentWorkspaceName();
         String workspaceName = "copyChildrenSource";
 
@@ -916,11 +867,13 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.create("/newUuids");
         // Copy once to get the UUID into the default workspace
-        graph.copy("/node1/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/node1");
+        //graph.copy("/node1/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/node1");
+        graph.clone("/node1/node1/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").failingIfAnyUuidsMatch();
 
         try {
             // Copy again to get the exception since the UUID is already in the default workspace
-            graph.copy("/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/shouldNotWork");
+            // graph.copy("/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/shouldNotWork");
+            graph.clone("/node1/node1/node1").fromWorkspace(workspaceName).as(name("shouldNotWork")).into("/newUuids").failingIfAnyUuidsMatch();
             fail("Should not be able to copy a node into a workspace if another node with the "
                  + "same UUID already exists in the workspace and UUID behavior is failingIfUuidsMatch");
         } catch (UuidAlreadyExistsException ex) {
@@ -930,7 +883,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     }
 
     @Test
-    public void shouldCopyChildrenBetweenWorkspacesAndRemoveExistingNodesWithSameUuidIfSpecified() throws Exception {
+    public void shouldCloneChildrenAndRemoveExistingNodesWithSameUuidIfSpecified() throws Exception {
         String defaultWorkspaceName = graph.getCurrentWorkspaceName();
         String workspaceName = "copyChildrenSource";
 
@@ -951,14 +904,21 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.create("/newUuids");
         // Copy once to get the UUID into the default workspace
-        graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
+        // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
+        graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").replacingExistingNodesWithSameUuids();
+        
+        // Make sure that the node wasn't moved by the clone
+        graph.useWorkspace(workspaceName);
+        graph.getNodeAt("/node1");
+        graph.useWorkspace(defaultWorkspaceName);
         
         // Create a new child node that in the target workspace that has no corresponding node in the source workspace
         graph.create("/newUuids/node1/shouldBeRemoved");
         
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
         // This should remove /newUuids/node1/shouldBeRemoved
-        graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/otherNode");
+        // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/otherNode");
+        graph.clone("/node1").fromWorkspace(workspaceName).as(name("otherNode")).into("/newUuids").replacingExistingNodesWithSameUuids();
 
         /*
          * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
@@ -985,7 +945,67 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         assertThat(target.getNode("node3").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
         assertThat(uuidFor(target.getNode("node3")), is(uuidFor(source.getNode("node3"))));
     }
-    
+
+    @Test
+    public void shouldCloneNodeIntoExactLocationIfSpecified() throws Exception {
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+        String workspaceName = "copyChildrenSource";
+
+        tryCreatingAWorkspaceNamed(workspaceName);
+
+        graph.useWorkspace(workspaceName);
+        String initialPath = "";
+        int depth = 3;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        Subgraph source = graph.getSubgraphOfDepth(3).at("/node1");
+
+        graph.useWorkspace(defaultWorkspaceName);
+
+        graph.create("/segmentTestUuids");
+        // Copy once to get the UUID into the default workspace
+        graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/segmentTestUuids").failingIfAnyUuidsMatch();
+        
+        // Create a new child node that in the target workspace that has no corresponding node in the source workspace
+        PropertyFactory propFactory = context.getPropertyFactory();
+        graph.create("/segmentTestUuids/node1", propFactory.create(name("identifier"), "backup copy"));
+
+        // Copy again to test the behavior now that the UUIDs are already in the default workspace
+        // This should remove /newUuids/node1/shouldBeRemoved
+        graph.clone("/node1").fromWorkspace(workspaceName).as(segment("node1[1]")).into("/segmentTestUuids").replacingExistingNodesWithSameUuids();
+
+        /*
+         * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
+         */
+        // /newUuids/node1 should have been removed when the new node was added with the same UUID
+        assertThat(graph.getNodeAt("/segmentTestUuids").getChildren(), hasChildren(segment("node1"), segment("node1[2]")));
+        assertThat(graph.getNodeAt("/segmentTestUuids/node1[1]").getProperty("identifier"), is(nullValue()));
+        assertThat(graph.getNodeAt("/segmentTestUuids/node1[2]").getProperty("identifier").getFirstValue().toString(), is("backup copy"));
+        
+        Subgraph target = graph.getSubgraphOfDepth(3).at("/segmentTestUuids/node1[1]");
+        assertThat(target, is(notNullValue()));
+        assertThat(target.getNode(".").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(uuidFor(target.getNode(".")), is(uuidFor(source.getNode("."))));
+        assertThat(target.getNode("node1").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(uuidFor(target.getNode("node1")), is(uuidFor(source.getNode("node1"))));
+        assertThat(target.getNode("node2").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(uuidFor(target.getNode("node2")), is(uuidFor(source.getNode("node2"))));
+        assertThat(target.getNode("node3").getChildren(), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+        assertThat(uuidFor(target.getNode("node3")), is(uuidFor(source.getNode("node3"))));
+    }
+
+    protected void tryCreatingAWorkspaceNamed( String workspaceName ) {
+        try {
+            graph.createWorkspace().named(workspaceName);
+        } catch (Exception ex) {
+            assumeNoException(ex);
+        }
+    }
+
     private UUID uuidFor( Node node ) {
         return (UUID)node.getProperty(DnaLexicon.UUID).getFirstValue();
     }

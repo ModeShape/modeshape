@@ -62,6 +62,7 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -324,8 +325,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete in the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(), workspace.getCacheProjection()
-                                                                                          .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.at(),
+                                                                   workspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, workspace);
     }
 
@@ -367,8 +368,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         Location intoLocation = Location.create(intoProjection.pathInSource);
         String workspaceName = fromProjection.projection.getWorkspaceName();
         CopyBranchRequest sourceRequest = new CopyBranchRequest(fromLocation, workspaceName, intoLocation, workspaceName,
-                                                                request.desiredName(), request.nodeConflictBehavior(),
-                                                                request.uuidConflictBehavior());
+                                                                request.desiredName(), request.nodeConflictBehavior());
         execute(sourceRequest, fromProjection.projection);
 
         // Copy/transform the results ...
@@ -380,8 +380,64 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Delete from the cache the parent of the new location ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(), fromWorkspace.getCacheProjection()
-                                                                                                .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(),
+                                                                   fromWorkspace.getCacheProjection().getWorkspaceName());
+        executeInCache(cacheRequest, fromWorkspace);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        FederatedWorkspace fromWorkspace = getWorkspace(request, request.fromWorkspace());
+        if (fromWorkspace == null) return;
+        FederatedWorkspace intoWorkspace = getWorkspace(request, request.intoWorkspace());
+        if (intoWorkspace == null) return;
+        if (!fromWorkspace.equals(intoWorkspace)) {
+            // Otherwise there wasn't a single projection with a single path ...
+            String msg = FederationI18n.unableToPerformOperationSpanningWorkspaces.text(fromWorkspace.getName(),
+                                                                                        intoWorkspace.getName());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+
+        // Can push this down if and only if the entire request is within a single federated source ...
+        SingleProjection fromProjection = asSingleProjection(fromWorkspace, request.from(), request);
+        if (fromProjection == null) return;
+        SingleProjection intoProjection = asSingleProjection(intoWorkspace, request.into(), request);
+        if (intoProjection == null) return;
+        if (!intoProjection.projection.equals(fromProjection.projection)) {
+            // Otherwise there wasn't a single projection with a single path ...
+            String msg = FederationI18n.unableToPerformOperationUnlessLocationsAreFromSingleProjection.text(request.from(),
+                                                                                                            request.into(),
+                                                                                                            fromWorkspace.getName(),
+                                                                                                            fromProjection.projection.getRules(),
+                                                                                                            intoProjection.projection.getRules());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+
+        // Push down the request ...
+        Location fromLocation = Location.create(fromProjection.pathInSource);
+        Location intoLocation = Location.create(intoProjection.pathInSource);
+        String workspaceName = fromProjection.projection.getWorkspaceName();
+        CloneBranchRequest sourceRequest = new CloneBranchRequest(fromLocation, workspaceName, intoLocation, workspaceName,
+                                                                  request.desiredName(), request.desiredSegment(),
+                                                                  request.removeExisting());
+        execute(sourceRequest, fromProjection.projection);
+
+        // Copy/transform the results ...
+        if (sourceRequest.hasError()) {
+            request.setError(sourceRequest.getError());
+        } else {
+            request.setActualLocations(fromProjection.convertToRepository(sourceRequest.getActualLocationBefore()),
+                                       intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
+        }
+
+        // Delete from the cache the parent of the new location ...
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.into(),
+                                                                   fromWorkspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, fromWorkspace);
     }
 
@@ -411,14 +467,13 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
         SingleProjection beforeProjection = request.before() != null ? asSingleProjection(workspace, request.before(), request) : null;
 
-        
         // Push down the request ...
         Location fromLocation = Location.create(fromProjection.pathInSource);
         Location intoLocation = Location.create(intoProjection.pathInSource);
         Location beforeLocation = beforeProjection != null ? Location.create(beforeProjection.pathInSource) : null;
         String workspaceName = fromProjection.projection.getWorkspaceName();
-        MoveBranchRequest sourceRequest = new MoveBranchRequest(fromLocation, intoLocation, beforeLocation, workspaceName, request.desiredName(),
-                                                                request.conflictBehavior());
+        MoveBranchRequest sourceRequest = new MoveBranchRequest(fromLocation, intoLocation, beforeLocation, workspaceName,
+                                                                request.desiredName(), request.conflictBehavior());
         execute(sourceRequest, fromProjection.projection);
 
         // Copy/transform the results ...
@@ -429,8 +484,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
                                        intoProjection.convertToRepository(sourceRequest.getActualLocationAfter()));
         }
         // Delete from the cache ...
-        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(), workspace.getCacheProjection()
-                                                                                            .getWorkspaceName());
+        DeleteBranchRequest cacheRequest = new DeleteBranchRequest(request.from(),
+                                                                   workspace.getCacheProjection().getWorkspaceName());
         executeInCache(cacheRequest, workspace);
         // Mark the new parent node as being expired ...
         cacheRequest = new DeleteBranchRequest(request.into(), workspace.getCacheProjection().getWorkspaceName());
@@ -465,8 +520,8 @@ public class FederatingRequestProcessor extends RequestProcessor {
         }
 
         // Update the cache ...
-        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(), workspace.getCacheProjection()
-                                                                                                  .getWorkspaceName(),
+        UpdatePropertiesRequest cacheRequest = new UpdatePropertiesRequest(request.on(),
+                                                                           workspace.getCacheProjection().getWorkspaceName(),
                                                                            request.properties());
         executeInCache(cacheRequest, workspace);
     }
@@ -1151,9 +1206,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
                              readable(registry, create.properties()));
             } else if (request instanceof UpdatePropertiesRequest) {
                 UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
-                logger.trace("  updating {0} with properties {1}", update.on().getString(registry), readable(registry,
-                                                                                                             update.properties()
-                                                                                                                   .values()));
+                logger.trace("  updating {0} with properties {1}",
+                             update.on().getString(registry),
+                             readable(registry, update.properties().values()));
             } else {
                 logger.trace("  " + request.toString());
             }
@@ -1172,9 +1227,9 @@ public class FederatingRequestProcessor extends RequestProcessor {
                          readable(registry, create.properties()));
         } else if (request instanceof UpdatePropertiesRequest) {
             UpdatePropertiesRequest update = (UpdatePropertiesRequest)request;
-            logger.trace("  updating {0} with properties {1}", update.on().getString(registry), readable(registry,
-                                                                                                         update.properties()
-                                                                                                               .values()));
+            logger.trace("  updating {0} with properties {1}",
+                         update.on().getString(registry),
+                         readable(registry, update.properties().values()));
         } else {
             logger.trace("  " + request.toString());
         }

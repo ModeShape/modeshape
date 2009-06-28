@@ -26,6 +26,7 @@ package org.jboss.dna.graph.request.processor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -107,6 +108,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);

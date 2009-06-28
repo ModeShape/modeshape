@@ -82,6 +82,7 @@ import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -102,7 +103,6 @@ import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -132,6 +132,12 @@ public class BasicRequestProcessor extends RequestProcessor {
     protected final boolean enforceReferentialIntegrity;
     private final Set<Long> workspaceIdsWithChangedReferences = new HashSet<Long>();
 
+    private enum UuidConflictBehavior {
+        ALWAYS_CREATE_NEW_UUID,
+        REPLACE_EXISTING_NODE,
+        THROW_EXCEPTION
+    }
+    
     /**
      * @param sourceName
      * @param context
@@ -1215,7 +1221,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                                      intoWorkspace,
                                                      original,
                                                      actualNewParent,
-                                                     request.uuidConflictBehavior(),
+                                                     UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID,
                                                      desiredName,
                                                      originalToNewUuid,
                                                      addedLocations,
@@ -1236,7 +1242,201 @@ public class BasicRequestProcessor extends RequestProcessor {
                                   intoWorkspace,
                                   original,
                                   actualNewParent,
-                                  request.uuidConflictBehavior(),
+                                  UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID,
+                                  desiredName,
+                                  originalToNewUuid,
+                                  addedLocations,
+                                  deletedLocations);
+                }
+                entities.flush();
+
+                Set<String> newNodesWithReferenceProperties = new HashSet<String>();
+                // Now create copies of all the intra-subgraph references, replacing the UUIDs on both ends ...
+                for (ReferenceEntity reference : query.getInternalReferences()) {
+                    String newFromUuid = originalToNewUuid.get(reference.getId().getFromUuidString());
+                    assert newFromUuid != null;
+                    String newToUuid = originalToNewUuid.get(reference.getId().getToUuidString());
+                    assert newToUuid != null;
+                    ReferenceEntity copy = new ReferenceEntity(new ReferenceId(intoWorkspaceId, newFromUuid, newToUuid));
+                    entities.persist(copy);
+                    newNodesWithReferenceProperties.add(newFromUuid);
+                }
+
+                // Now create copies of all the references owned by the subgraph but pointing to non-subgraph nodes,
+                // so we only replaced the 'from' UUID ...
+                for (ReferenceEntity reference : query.getOutwardReferences()) {
+                    String oldToUuid = reference.getId().getToUuidString();
+                    String newFromUuid = originalToNewUuid.get(reference.getId().getFromUuidString());
+                    assert newFromUuid != null;
+
+                    ActualLocation refTargetLocation = getActualLocation(intoWorkspace,
+                                                                         Location.create(UUID.fromString(oldToUuid)));
+                    if (refTargetLocation == null) {
+                        // Some of the references that remain will be invalid, since they point to nodes that
+                        // have just been deleted. Build up the information necessary to produce a useful exception ...
+                        ValueFactory<Reference> refFactory = getExecutionContext().getValueFactories().getReferenceFactory();
+                        Map<Location, List<Reference>> invalidRefs = new HashMap<Location, List<Reference>>();
+                        UUID fromUuid = UUID.fromString(reference.getId().getFromUuidString());
+                        ActualLocation actualRefFromLocation = getActualLocation(intoWorkspace, Location.create(fromUuid));
+                        Location refFromLocation = actualRefFromLocation.location;
+                        List<Reference> refs = invalidRefs.get(fromLocation);
+                        if (refs == null) {
+                            refs = new ArrayList<Reference>();
+                            invalidRefs.put(refFromLocation, refs);
+                        }
+                        UUID toUuid = UUID.fromString(oldToUuid);
+                        refs.add(refFactory.create(toUuid));
+
+                        String msg = JpaConnectorI18n.invalidReferences.text(reference.getId().getFromUuidString());
+                        throw new ReferentialIntegrityException(invalidRefs, msg);
+                    }
+
+                    ReferenceEntity copy = new ReferenceEntity(new ReferenceId(intoWorkspaceId, newFromUuid, oldToUuid));
+                    entities.persist(copy);
+                    newNodesWithReferenceProperties.add(newFromUuid);
+                }
+
+                Set<PropertiesEntity> addedProps = new HashSet<PropertiesEntity>();
+                // Now process the properties, creating a copy (note references are not changed) ...
+                for (PropertiesEntity original : query.getProperties(true, true)) {
+                    // Find the UUID of the copy ...
+                    String copyUuid = originalToNewUuid.get(original.getId().getUuidString());
+                    assert copyUuid != null;
+
+                    // Create the copy ...
+                    boolean compressed = original.isCompressed();
+                    byte[] originalData = original.getData();
+                    NodeId propertiesId = new NodeId(intoWorkspaceId, copyUuid);
+                    PropertiesEntity copy = entities.find(PropertiesEntity.class, propertiesId);
+
+                    if (copy == null) {
+                        copy = new PropertiesEntity(propertiesId);
+                    }
+                    copy.setCompressed(compressed);
+                    if (newNodesWithReferenceProperties.contains(copyUuid)) {
+
+                        // This node has internal or outward references that must be adjusted ...
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        ByteArrayInputStream bais = new ByteArrayInputStream(originalData);
+                        InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        try {
+                            serializer.adjustReferenceProperties(ois, oos, originalToNewUuid);
+                        } finally {
+                            try {
+                                ois.close();
+                            } finally {
+                                oos.close();
+                            }
+                        }
+                        copy.setData(baos.toByteArray());
+                    } else {
+                        // No references to adjust, so just copy the original data ...
+                        copy.setData(originalData);
+                    }
+                    copy.setPropertyCount(original.getPropertyCount());
+                    copy.setReferentialIntegrityEnforced(original.isReferentialIntegrityEnforced());
+                    addedProps.add(copy);
+                    entities.persist(copy);
+                }
+                entities.flush();
+            } finally {
+                // Close and release the temporary data used for this operation ...
+                query.close();
+            }
+
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        request.setActualLocations(actualFromLocation, actualToLocation);
+        recordChange(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        logger.trace(request.toString());
+        Location actualFromLocation = null;
+        Location actualToLocation = null;
+        try {
+            // Find the workspaces ...
+            WorkspaceEntity fromWorkspace = getExistingWorkspace(request.fromWorkspace(), request);
+            if (fromWorkspace == null) return;
+            WorkspaceEntity intoWorkspace = getExistingWorkspace(request.intoWorkspace(), request);
+            if (intoWorkspace == null) return;
+            Long fromWorkspaceId = fromWorkspace.getId();
+            Long intoWorkspaceId = intoWorkspace.getId();
+            assert fromWorkspaceId != null;
+            assert intoWorkspaceId != null;
+
+            Location fromLocation = request.from();
+            ActualLocation actualFrom = getActualLocation(fromWorkspace, fromLocation);
+            actualFromLocation = actualFrom.location;
+            Path fromPath = actualFromLocation.getPath();
+
+            Location newParentLocation = request.into();
+            ActualLocation actualNewParent = getActualLocation(intoWorkspace, newParentLocation);
+            assert actualNewParent != null;
+
+            // Create a map that we'll use to record the new UUID for each of the original nodes ...
+            Map<String, String> originalToNewUuid = new HashMap<String, String>();
+
+            // Compute the subgraph, including the top node in the subgraph ...
+            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(),
+                                                       entities,
+                                                       fromWorkspaceId,
+                                                       actualFromLocation.getUuid(),
+                                                       fromPath,
+                                                       0);
+
+            UuidConflictBehavior conflictBehavior = request.removeExisting() ? UuidConflictBehavior.REPLACE_EXISTING_NODE : UuidConflictBehavior.THROW_EXCEPTION;
+            try {
+                // Walk through the original nodes, creating new ChildEntity object (i.e., copy) for each original ...
+                List<ChildEntity> originalNodes = query.getNodes(true, true);
+                Iterator<ChildEntity> originalIter = originalNodes.iterator();
+                Map<String, ChildEntity> addedLocations = new HashMap<String, ChildEntity>();
+                Map<String, Location> deletedLocations = new HashMap<String, Location>();
+
+                // Start with the original (top-level) node first, since we need to add it to the list of children ...
+                if (originalIter.hasNext()) {
+                    ChildEntity original = originalIter.next();
+
+                    Name desiredName = request.desiredName();
+                    if (desiredName == null) desiredName = fromPath.getLastSegment().getName();
+                    actualToLocation = this.copyNode(entities,
+                                                     fromWorkspace,
+                                                     intoWorkspace,
+                                                     original,
+                                                     actualNewParent,
+                                                     conflictBehavior,
+                                                     desiredName,
+                                                     originalToNewUuid,
+                                                     addedLocations,
+                                                     deletedLocations).location;
+                }
+
+                // Now create copies of all children in the subgraph.
+                while (originalIter.hasNext()) {
+                    ChildEntity original = originalIter.next();
+                    String newParentUuidOfCopy = originalToNewUuid.get(original.getParentUuidString());
+                    assert newParentUuidOfCopy != null;
+
+                    actualNewParent = getActualLocation(intoWorkspace, Location.create(UUID.fromString(newParentUuidOfCopy)));
+
+                    Name desiredName = nameFactory.create(original.getChildNamespace().getUri(), original.getChildName());
+                    this.copyNode(entities,
+                                  fromWorkspace,
+                                  intoWorkspace,
+                                  original,
+                                  actualNewParent,
+                                  conflictBehavior,
                                   desiredName,
                                   originalToNewUuid,
                                   addedLocations,
@@ -1337,7 +1537,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
                 entities.flush();
 
-                if (request.uuidConflictBehavior() == UuidConflictBehavior.REPLACE_EXISTING_NODE) {
+                if (request.removeExisting()) {
                     /*
                     * We may have deleted some old copies of nodes and replaced them with new copies.
                     * Now we need to clean up any nodes that were descendants of the old copies of the

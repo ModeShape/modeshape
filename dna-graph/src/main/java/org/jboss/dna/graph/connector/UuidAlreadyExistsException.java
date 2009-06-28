@@ -25,13 +25,12 @@ package org.jboss.dna.graph.connector;
 
 import java.util.UUID;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.request.CopyBranchRequest;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 
 /**
  * Exception that indicates that a copy request failed because one of the UUIDs in the source branch already exists in the target
- * workspace and the {@link CopyBranchRequest#uuidConflictBehavior() UUID conflict behavior} is set to
- * {@link UuidConflictBehavior#THROW_EXCEPTION}.
+ * workspace and the {@link CloneBranchRequest#removeExisting() UUID conflict behavior} is set to throw an exception instead of
+ * removing the existing nodes.
  */
 public class UuidAlreadyExistsException extends RepositorySourceException {
 

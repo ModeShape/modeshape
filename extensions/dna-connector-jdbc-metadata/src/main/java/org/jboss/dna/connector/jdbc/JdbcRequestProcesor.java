@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -95,6 +96,15 @@ public class JdbcRequestProcesor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
     }
 
     /**

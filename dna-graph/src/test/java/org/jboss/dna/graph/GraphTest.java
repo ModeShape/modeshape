@@ -54,6 +54,7 @@ import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -72,7 +73,6 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
@@ -191,22 +191,14 @@ public class GraphTest {
     protected void assertNextRequestIsCopy( String fromWorkspace,
                                             Location from,
                                             Location to ) {
-        assertNextRequestIsCopy(fromWorkspace, from, to, UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID);
-    }
-
-    protected void assertNextRequestIsCopy( String fromWorkspace,
-                                            Location from,
-                                            Location to,
-                                            UuidConflictBehavior uuidConflictBehavior) {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(CopyBranchRequest.class)));
         CopyBranchRequest copy = (CopyBranchRequest)request;
         assertThat(copy.fromWorkspace(), is(fromWorkspace));
         assertThat(copy.from(), is(from));
         assertThat(copy.into(), is(to));
-        assertThat(copy.uuidConflictBehavior(), is(uuidConflictBehavior));
     }
-    
+
     protected void assertNextRequestIsDelete( Location at ) {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(DeleteBranchRequest.class)));
@@ -1101,6 +1093,23 @@ public class GraphTest {
             if (request.into().hasPath()) {
                 Name childName = request.desiredName();
                 if (childName == null) childName = createName("child");
+                Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), childName);
+                Location newChild = actualLocationOf(Location.create(childPath));
+                // Just update the actual location
+                request.setActualLocations(actualLocationOf(request.from()), newChild);
+            } else {
+                // Just update the actual location
+                request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
+            }
+        }
+
+        @Override
+        public void process( CloneBranchRequest request ) {
+            // Create a child under the new parent ...
+            if (request.into().hasPath()) {
+                Name childName = request.desiredName();
+                if (childName == null) childName = request.desiredSegment().getName();
+                
                 Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), childName);
                 Location newChild = actualLocationOf(Location.create(childPath));
                 // Just update the actual location

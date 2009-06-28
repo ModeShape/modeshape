@@ -47,6 +47,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -277,6 +278,16 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+        updatesAllowed(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
         updatesAllowed(request);
     }
 

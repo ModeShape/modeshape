@@ -45,6 +45,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueComparators;
 import org.jboss.dna.graph.request.CacheableRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -891,6 +892,24 @@ class JoinRequestProcessor extends RequestProcessor {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
         assert !projected.hasNext();
         CopyBranchRequest source = (CopyBranchRequest)projected.getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        Location locationBefore = source.getActualLocationBefore();
+        Location locationAfter = source.getActualLocationBefore();
+        locationBefore = projectToFederated(request.from(), projected.getProjection(), locationBefore, request);
+        locationAfter = projectToFederated(request.into(), projected.getSecondProjection(), locationAfter, request);
+        request.setActualLocations(locationBefore, locationAfter);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        assert !projected.hasNext();
+        CloneBranchRequest source = (CloneBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();

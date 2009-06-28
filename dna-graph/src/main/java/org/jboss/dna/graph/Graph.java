@@ -78,7 +78,6 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.RequestBuilder;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
@@ -525,13 +524,181 @@ public class Graph {
      * </p>
      * 
      * @param firstIdProperty the first identification property of the node that is to be moved
-     * @param additionalIdProperties the remaining idenficiation properties of the node that is to be moved
+     * @param additionalIdProperties the remaining identification properties of the node that is to be moved
      * @return the object that can be used to specify addition nodes to be moved or the location of the node where the node is to
      *         be moved
      */
     public Move<Conjunction<Graph>> move( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
         return move(Location.create(firstIdProperty, additionalIdProperties));
+    }
+
+    /**
+     * Begin the request to clone a node at the specified location into a parent node at a different location, which is specified
+     * via the <code>into(...)</code> method on the returned {@link Clone} object.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param from the location of the node that is to be cloned.
+     * @return the object that can be used to specify the location of the node where the node is to be cloned
+     */
+    public Clone<Graph> clone( Location from ) {
+        return new CloneAction<Graph>(this, from) {
+            @Override
+            protected Graph submit( String fromWorkspaceName,
+                                    Location from,
+                                    String intoWorkspaceName,
+                                    Location into,
+                                    Name desiredName,
+                                    Segment desiredSegment,
+                                    boolean removeExisting ) {
+                requests.cloneBranch(from,
+                                     fromWorkspaceName,
+                                     into,
+                                     intoWorkspaceName,
+                                     desiredName,
+                                     desiredSegment,
+                                     removeExisting);
+                return and();
+            }
+        };
+    }
+
+    /**
+     * Begin the request to clone the specified node into a parent node at a different location, which is specified via the
+     * <code>into(...)</code> method on the returned {@link Clone} object.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param from the node that is to be copied.
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( Node from ) {
+        return clone(from.getLocation());
+    }
+
+    /**
+     * Begin the request to clone a node located at the supplied path into a parent node at a different location, which is
+     * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param fromPath the path to the node that is to be copied.
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( String fromPath ) {
+        return clone(Location.create(createPath(fromPath)));
+    }
+
+    /**
+     * Begin the request to clone a node located at the supplied path into a parent node at a different location, which is
+     * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param from the path to the node that is to be copied.
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( Path from ) {
+        return clone(Location.create(from));
+    }
+
+    /**
+     * Begin the request to clone a node with the specified unique identifier into a parent node at a different location, which is
+     * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param from the UUID of the node that is to be copied.
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( UUID from ) {
+        return clone(Location.create(from));
+    }
+
+    /**
+     * Begin the request to clone a node with the specified unique identification property into a parent node at a different
+     * location, which is specified via the <code>into(...)</code> method on the returned {@link Clone} object. The identification
+     * property should uniquely identify a single node.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param idProperty the unique identification property of the node that is to be copied.
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( Property idProperty ) {
+        return clone(Location.create(idProperty));
+    }
+
+    /**
+     * Begin the request to clone a node with the specified identification properties into a parent node at a different location,
+     * which is specified via the <code>into(...)</code> method on the returned {@link Clone} object. The identification
+     * properties should uniquely identify a single node.
+     * <p>
+     * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the {@link WithUuids UUID
+     * behavior} is specified.
+     * </p>
+     * <p>
+     * The clone operation differs from the copy operation in that it must replicate nodes from one workspace to another (the copy
+     * operations supports replicating nodes within a workspace as well as across workspaces) and that it preserves UUIDs (the
+     * copy operation always generates new UUIDs).
+     * </p>
+     * 
+     * @param firstIdProperty the first identification property of the node that is to be copied
+     * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+     * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
+     *         be copied
+     */
+    public Clone<Graph> clone( Property firstIdProperty,
+                               Property... additionalIdProperties ) {
+        return clone(Location.create(firstIdProperty, additionalIdProperties));
     }
 
     /**
@@ -568,8 +735,7 @@ public class Graph {
             protected Graph submit( String fromWorkspaceName,
                                     Locations from,
                                     Location into,
-                                    Name childName,
-                                    UuidConflictBehavior uuidConflictBehavior ) {
+                                    Name childName ) {
                 String workspaceName = fromWorkspaceName != null ? fromWorkspaceName : getCurrentWorkspaceName();
                 do {
                     requests.copyBranch(from.getLocation(),
@@ -577,8 +743,7 @@ public class Graph {
                                         into,
                                         getCurrentWorkspaceName(),
                                         childName,
-                                        NodeConflictBehavior.APPEND,
-                                        uuidConflictBehavior);
+                                        NodeConflictBehavior.APPEND);
                 } while ((from = from.next()) != null);
                 return and();
             }
@@ -660,7 +825,7 @@ public class Graph {
      * </p>
      * 
      * @param firstIdProperty the first identification property of the node that is to be copied
-     * @param additionalIdProperties the remaining idenficiation properties of the node that is to be copied
+     * @param additionalIdProperties the remaining identification properties of the node that is to be copied
      * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node is to
      *         be copied
      */
@@ -737,7 +902,7 @@ public class Graph {
      * a single node. This request is submitted to the repository immediately.
      * 
      * @param firstIdProperty the first identification property of the node that is to be copied
-     * @param additionalIdProperties the remaining idenficiation properties of the node that is to be copied
+     * @param additionalIdProperties the remaining identification properties of the node that is to be copied
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Property firstIdProperty,
@@ -2312,7 +2477,7 @@ public class Graph {
          * </p>
          * 
          * @param firstIdProperty the first identification property of the node that is to be moved
-         * @param additionalIdProperties the remaining idenficiation properties of the node that is to be moved
+         * @param additionalIdProperties the remaining identification properties of the node that is to be moved
          * @return the object that can be used to specify addition nodes to be moved or the location of the node where the node is
          *         to be moved
          */
@@ -2330,12 +2495,164 @@ public class Graph {
          * called.
          * </p>
          * 
-         * @param idProperties the idenficiation properties of the node that is to be moved
+         * @param idProperties the identification properties of the node that is to be moved
          * @return the object that can be used to specify addition nodes to be moved or the location of the node where the node is
          *         to be moved
          */
         public Move<BatchConjunction> move( Iterable<Property> idProperties ) {
             return move(Location.create(idProperties));
+        }
+
+        /**
+         * Begin the request to clone the specified node into a parent node at a different location, which is specified via the
+         * <code>into(...)</code> method on the returned {@link Clone} object.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param from the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Node from ) {
+            return clone(from.getLocation());
+        }
+
+        /**
+         * Begin the request to clone a node at the specified location into a parent node at a different location, which is
+         * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param from the location of the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Location from ) {
+            assertNotExecuted();
+            return new CloneAction<BatchConjunction>(this.nextRequests, from) {
+                @Override
+                protected BatchConjunction submit( String fromWorkspaceName,
+                                                   Location from,
+                                                   String intoWorkspaceName,
+                                                   Location into,
+                                                   Name desiredName,
+                                                   Segment desiredSegment,
+                                                   boolean removeExisting ) {
+                    requests.cloneBranch(from,
+                                         fromWorkspaceName,
+                                         into,
+                                         intoWorkspaceName,
+                                         desiredName,
+                                         desiredSegment,
+                                         removeExisting);
+                    return and();
+                }
+            };
+        }
+
+        /**
+         * Begin the request to clone a node located at the supplied path into a parent node at a different location, which is
+         * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param fromPath the path to the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( String fromPath ) {
+            return clone(Location.create(createPath(fromPath)));
+        }
+
+        /**
+         * Begin the request to clone a node located at the supplied path into a parent node at a different location, which is
+         * specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+         * <p>
+         * Like all other methods on the {@link Graph}, the clone request will be performed immediately when the
+         * <code>into(...)</code> method is called.
+         * </p>
+         * 
+         * @param from the path to the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Path from ) {
+            return clone(Location.create(from));
+        }
+
+        /**
+         * Begin the request to clone a node with the specified unique identifier into a parent node at a different location,
+         * which is specified via the <code>into(...)</code> method on the returned {@link Clone} object.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param from the UUID of the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( UUID from ) {
+            return clone(Location.create(from));
+        }
+
+        /**
+         * Begin the request to clone a node with the specified unique identification property into a parent node at a different
+         * location, which is specified via the <code>into(...)</code> method on the returned {@link Clone} object. The
+         * identification property should uniquely identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperty the unique identification property of the node that is to be copied.
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Property idProperty ) {
+            return clone(Location.create(idProperty));
+        }
+
+        /**
+         * Begin the request to clone a node with the specified identification properties into a parent node at a different
+         * location, which is specified via the <code>into(...)</code> method on the returned {@link Clone} object. The
+         * identification properties should uniquely identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param firstIdProperty the first identification property of the node that is to be copied
+         * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Property firstIdProperty,
+                                              Property... additionalIdProperties ) {
+            return clone(Location.create(firstIdProperty, additionalIdProperties));
+        }
+
+        /**
+         * Begin the request to clone a node with the specified identification properties into a parent node at a different
+         * location, which is specified via the <code>into(...)</code> method on the returned {@link Clone} object. The
+         * identification properties should uniquely identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperties the identification properties of the node that is to be copied
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Clone<BatchConjunction> clone( Iterable<Property> idProperties ) {
+            return clone(Location.create(idProperties));
         }
 
         /**
@@ -2373,17 +2690,10 @@ public class Graph {
                 protected BatchConjunction submit( String fromWorkspaceName,
                                                    Locations from,
                                                    Location into,
-                                                   Name copyName,
-                                                   UuidConflictBehavior uuidConflictBehavior ) {
+                                                   Name copyName ) {
                     String workspaceName = fromWorkspaceName != null ? fromWorkspaceName : getCurrentWorkspaceName();
                     do {
-                        requestQueue.copyBranch(from.getLocation(),
-                                                workspaceName,
-                                                into,
-                                                workspaceName,
-                                                copyName,
-                                                null,
-                                                uuidConflictBehavior);
+                        requestQueue.copyBranch(from.getLocation(), workspaceName, into, workspaceName, copyName, null);
                     } while ((from = from.next()) != null);
                     return and();
                 }
@@ -2465,7 +2775,7 @@ public class Graph {
          * </p>
          * 
          * @param firstIdProperty the first identification property of the node that is to be copied
-         * @param additionalIdProperties the remaining idenficiation properties of the node that is to be copied
+         * @param additionalIdProperties the remaining identification properties of the node that is to be copied
          * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
          *         is to be copied
          */
@@ -2586,7 +2896,7 @@ public class Graph {
          * </p>
          * 
          * @param firstIdProperty the first identification property of the node that is to be copied
-         * @param additionalIdProperties the remaining idenficiation properties of the node that is to be copied
+         * @param additionalIdProperties the remaining identification properties of the node that is to be copied
          * @return an object that may be used to start another request
          */
         public BatchConjunction delete( Property firstIdProperty,
@@ -3894,6 +4204,31 @@ public class Graph {
     }
 
     /**
+     * A component that defines a new child name for a node.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     */
+    public interface AsChild<Next> {
+        /**
+         * Finish the request by specifying the exact segment for the new child node. If no segment already exists, this request
+         * should fail.
+         * 
+         * @param newSegment the new name
+         * @return the interface for additional requests or actions
+         */
+        Next as( Path.Segment newSegment );
+
+        /**
+         * Finish the request by specifying the name of the new child node. This method indicates that the child should be added
+         * as a new node with the given name at the end of the parents children
+         * 
+         * @param newName the new name
+         * @return the interface for additional requests or actions
+         */
+        Next as( Name newName );
+    }
+
+    /**
      * A component that defines a new name for a node.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
@@ -4003,11 +4338,29 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
      */
-    public interface Copy<Next>
-        extends WithUuids<FromWorkspace<CopyTarget<Next>>>, FromWorkspace<CopyTarget<Next>>, CopyTarget<Next>, And<Copy<Next>> {
+    public interface Copy<Next> extends FromWorkspace<CopyTarget<Next>>, CopyTarget<Next>, And<Copy<Next>> {
     }
 
     public interface CopyTarget<Next> extends To<Next>, Into<Next> {
+    }
+
+    /**
+     * The interface for defining a branch of nodes to be cloned and the location where the clone is to be placed. Cloning a
+     * branch differs from copying a branch in that:
+     * <ol>
+     * <li>Nodes can be copied within the same workspace or to another workspace; cloned nodes must be copied from one workspace
+     * into another.</li>
+     * <li>Copied nodes always get new UUIDs; cloned nodes always maintain their UUIDs and hence must define the behavior that
+     * occurs if a node with the same UUID already exists in the new workspace.</li>
+     * <li>Nodes can be copied to a specific name under a specific parent, but can only be added as a new child node at the end of
+     * the new parent's children; nodes can be cloned to an exact location among the parent's children, replacing the existing
+     * node at that location.</li>
+     * </ol>
+     * 
+     * @param <Next>
+     */
+    public interface Clone<Next> extends FromWorkspace<AsChild<Into<WithUuids<Next>>>> {
+
     }
 
     /**
@@ -4025,9 +4378,7 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      */
     public interface WithUuids<Next> {
-        Next withNewUuids();
-
-        Next failingIfUuidsMatch();
+        Next failingIfAnyUuidsMatch();
 
         Next replacingExistingNodesWithSameUuids();
     }
@@ -5797,14 +6148,12 @@ public class Graph {
     protected abstract class CopyAction<T> extends AbstractAction<T> implements Copy<T> {
         protected Locations from;
         protected String fromWorkspaceName;
-        protected UuidConflictBehavior uuidConflictBehavior;
 
         /*package*/CopyAction( T afterConjunction,
                                 Location from ) {
             super(afterConjunction);
             this.from = new Locations(from);
             this.fromWorkspaceName = Graph.this.getCurrentWorkspaceName();
-            this.uuidConflictBehavior = UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID;
         }
 
         public Copy<T> and( Location from ) {
@@ -5850,30 +6199,12 @@ public class Graph {
          * @param from the locations that are being copied
          * @param into the parent location
          * @param nameForCopy the name that should be used for the copy, or null if the name should be the same as the original
-         * @param uuidConflictBehavior the behavior to be used for resolving any UUID collisions that the copy request might
-         *        create
          * @return this object, for method chaining
          */
         protected abstract T submit( String fromWorkspaceName,
                                      Locations from,
                                      Location into,
-                                     Name nameForCopy,
-                                     UuidConflictBehavior uuidConflictBehavior );
-
-        public FromWorkspace<CopyTarget<T>> failingIfUuidsMatch() {
-            this.uuidConflictBehavior = UuidConflictBehavior.THROW_EXCEPTION;
-            return this;
-        }
-
-        public FromWorkspace<CopyTarget<T>> withNewUuids() {
-            this.uuidConflictBehavior = UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID;
-            return this;
-        }
-
-        public FromWorkspace<CopyTarget<T>> replacingExistingNodesWithSameUuids() {
-            this.uuidConflictBehavior = UuidConflictBehavior.REPLACE_EXISTING_NODE;
-            return this;
-        }
+                                     Name nameForCopy );
 
         public CopyTarget<T> fromWorkspace( String workspaceName ) {
             this.fromWorkspaceName = workspaceName;
@@ -5882,32 +6213,28 @@ public class Graph {
         }
 
         public T into( Location into ) {
-            return submit(this.fromWorkspaceName, this.from, into, null, this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, into, null);
         }
 
         public T into( Path into ) {
-            return submit(this.fromWorkspaceName, this.from, Location.create(into), null, this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( UUID into ) {
-            return submit(this.fromWorkspaceName, this.from, Location.create(into), null, this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(this.fromWorkspaceName,
-                          this.from,
-                          Location.create(firstIdProperty, additionalIdProperties),
-                          null,
-                          this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(firstIdProperty, additionalIdProperties), null);
         }
 
         public T into( Property into ) {
-            return submit(this.fromWorkspaceName, this.from, Location.create(into), null, this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(into), null);
         }
 
         public T into( String into ) {
-            return submit(this.fromWorkspaceName, this.from, Location.create(createPath(into)), null, this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(createPath(into)), null);
         }
 
         public T to( Location desiredLocation ) {
@@ -5919,11 +6246,7 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredLocation));
             }
             Path parent = desiredPath.getParent();
-            return submit(this.fromWorkspaceName,
-                          this.from,
-                          Location.create(parent),
-                          desiredPath.getLastSegment().getName(),
-                          this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( Path desiredPath ) {
@@ -5931,15 +6254,108 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredPath));
             }
             Path parent = desiredPath.getParent();
-            return submit(this.fromWorkspaceName,
-                          this.from,
-                          Location.create(parent),
-                          desiredPath.getLastSegment().getName(),
-                          this.uuidConflictBehavior);
+            return submit(this.fromWorkspaceName, this.from, Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( String desiredPath ) {
             return to(createPath(desiredPath));
+        }
+    }
+
+    @NotThreadSafe
+    public abstract class CloneAction<T> extends AbstractAction<T> implements Clone<T> {
+        private final Location from;
+
+        /*package*/CloneAction( T afterConjunction,
+                                 Location from ) {
+            super(afterConjunction);
+            this.from = from;
+        }
+
+        protected abstract T submit( String fromWorkspaceName,
+                                     Location from,
+                                     String intoWorkspaceName,
+                                     Location into,
+                                     Name desiredName,
+                                     Segment desiredSegment,
+                                     boolean removeExisting );
+
+        public AsChild<Into<WithUuids<T>>> fromWorkspace( final String workspaceName ) {
+            final CloneAction<T> source = this;
+            return new AsChild<Into<WithUuids<T>>>() {
+                public Into<WithUuids<T>> as( final Name name ) {
+                    return new CloneTargetAction<T>(afterConjunction(), source) {
+                        @Override
+                        protected T submit( Location into,
+                                            boolean removeExisting ) {
+                            String intoWorkspaceName = getCurrentWorkspaceName();
+                            return source.submit(workspaceName, from, intoWorkspaceName, into, name, null, removeExisting);
+                        }
+                    };
+                }
+
+                public Into<WithUuids<T>> as( final Segment segment ) {
+                    return new CloneTargetAction<T>(afterConjunction(), source) {
+                        @Override
+                        protected T submit( Location into,
+                                            boolean removeExisting ) {
+                            String intoWorkspaceName = getCurrentWorkspaceName();
+                            return source.submit(workspaceName, from, intoWorkspaceName, into, null, segment, removeExisting);
+                        }
+                    };
+                }
+
+            };
+        }
+    }
+
+    @NotThreadSafe
+    public abstract class CloneTargetAction<T> extends AbstractAction<T> implements Into<WithUuids<T>> {
+        protected final CloneAction<T> source;
+
+        /*package*/CloneTargetAction( T afterConjunction,
+                                       CloneAction<T> source ) {
+            super(afterConjunction);
+            this.source = source;
+        }
+
+        protected abstract T submit( Location into,
+                                     boolean removeExisting );
+
+        public WithUuids<T> into( final Location into ) {
+            return new WithUuids<T>() {
+                public T failingIfAnyUuidsMatch() {
+                    submit(into, false);
+                    return and();
+                }
+
+                public T replacingExistingNodesWithSameUuids() {
+                    submit(into, true);
+                    return and();
+
+                }
+            };
+        }
+
+        public WithUuids<T> into( Path into ) {
+            return into(Location.create(into));
+        }
+
+        public WithUuids<T> into( UUID into ) {
+            return into(Location.create(into));
+        }
+
+        public WithUuids<T> into( Property firstIdProperty,
+                                  Property... additionalIdProperties ) {
+            return into(Location.create(firstIdProperty, additionalIdProperties));
+        }
+
+        public WithUuids<T> into( Property into ) {
+            return into(Location.create(into));
+        }
+
+        public WithUuids<T> into( String into ) {
+            return into(Location.create(createPath(into)));
         }
     }
 

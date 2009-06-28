@@ -44,6 +44,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -253,6 +254,8 @@ public abstract class RequestProcessor {
                 process((GetWorkspacesRequest)request);
             } else if (request instanceof CreateWorkspaceRequest) {
                 process((CreateWorkspaceRequest)request);
+            } else if (request instanceof CloneBranchRequest) {
+                process((CloneBranchRequest)request);
             } else if (request instanceof CloneWorkspaceRequest) {
                 process((CloneWorkspaceRequest)request);
             } else if (request instanceof DestroyWorkspaceRequest) {
@@ -356,6 +359,16 @@ public abstract class RequestProcessor {
      * @param request the request
      */
     public abstract void process( CreateWorkspaceRequest request );
+
+    /**
+     * Process a request to clone a branch into a new workspace.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( CloneBranchRequest request );
 
     /**
      * Process a request to clone an existing workspace as a new workspace.
@@ -786,7 +799,7 @@ public abstract class RequestProcessor {
     public void close() {
         // Publish any changes ...
         if (observer != null && !this.changes.isEmpty()) {
-            String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null; 
+            String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
             Changes changes = new Changes(userName, getSourceName(), getNowInUtc(), this.changes);
             observer.notify(changes);
         }

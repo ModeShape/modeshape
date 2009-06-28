@@ -572,8 +572,7 @@ public class BatchRequestBuilder {
                                            String intoWorkspace,
                                            Name nameForCopy ) {
         return add(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy,
-                                         CopyBranchRequest.DEFAULT_NODE_CONFLICT_BEHAVIOR,
-                                         UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID));
+                                         CopyBranchRequest.DEFAULT_NODE_CONFLICT_BEHAVIOR));
     }
 
     /**
@@ -587,9 +586,6 @@ public class BatchRequestBuilder {
      *        used
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location, or null if the default node conflict behavior should be used
-     * @param uuidConflictBehavior the expected behavior if a node with the same UUID as any of the nodes in the branch under the
-     *        {@code from} location in the {@code fromWorkspace} workspace already exists in the workspace, or null if the default
-     *        UUID conflict behavior should be used
      * @return this builder for method chaining; never null
      * @throws IllegalArgumentException if either of the locations or workspace names are null
      */
@@ -598,12 +594,9 @@ public class BatchRequestBuilder {
                                            Location into,
                                            String intoWorkspace,
                                            Name nameForCopy,
-                                           NodeConflictBehavior conflictBehavior,
-                                           UuidConflictBehavior uuidConflictBehavior) {
+                                           NodeConflictBehavior conflictBehavior ) {
         if (conflictBehavior == null) conflictBehavior = CopyBranchRequest.DEFAULT_NODE_CONFLICT_BEHAVIOR;
-        if (uuidConflictBehavior == null) uuidConflictBehavior = CopyBranchRequest.DEFAULT_UUID_CONFLICT_BEHAVIOR;
-        return add(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy, conflictBehavior,
-                                         uuidConflictBehavior));
+        return add(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy, conflictBehavior));
     }
 
     /**

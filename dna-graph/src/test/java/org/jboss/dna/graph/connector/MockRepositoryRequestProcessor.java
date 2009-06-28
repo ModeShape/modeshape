@@ -25,6 +25,7 @@ package org.jboss.dna.graph.connector;
 
 import java.util.Queue;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -130,6 +131,16 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+        recordChange(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
         recordChange(request);
     }
 

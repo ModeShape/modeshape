@@ -29,7 +29,6 @@ import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.request.UuidConflictBehavior;
 
 /**
  * The {@code MapWorkspace} defines the required methods for workspaces in a {@link MapRepository map repository}. By default, a
@@ -138,18 +137,42 @@ public interface MapWorkspace {
      * @param newParent the parent where the copy is to be placed; may not be null
      * @param desiredName the desired name for the node; if null, the name will be obtained from the original node
      * @param recursive true if the copy should be recursive
-     * @param uuidConflictBehavior the behavior to use to manage UUIDs from the source into the target
      * @return the new node, which is the top of the new subgraph
-     * @throws UuidAlreadyExistsException if {@code uuidConflictBehavior} is true and and a UUID in the source tree alread exists
-     *         in the new workspace
      */
     MapNode copyNode( ExecutionContext context,
                       MapNode original,
                       MapWorkspace newWorkspace,
                       MapNode newParent,
                       Name desiredName,
-                      boolean recursive,
-                      UuidConflictBehavior uuidConflictBehavior ) throws UuidAlreadyExistsException;
+                      boolean recursive );
+
+    /**
+     * This should clone the subgraph given by the original node and place the cloned copy under the supplied new parent. Note
+     * that internal references between nodes within the original subgraph must be reflected as internal nodes within the new
+     * subgraph.
+     * 
+     * @param context the context; may not be null
+     * @param original the node to be cloned; may not be null
+     * @param newWorkspace the workspace containing the new parent node; may not be null
+     * @param newParent the parent where the clone is to be placed; may not be null
+     * @param desiredName the desired name for the node; if null, the name will be calculated from {@code desiredSegment}; Exactly
+     *        one of {@code desiredSegment} and {@code desiredName} must be non-null
+     * @param desiredSegment the exact segment at which the clone should be rooted; if null, the name will be inferred from
+     *        {@code desiredName}; Exactly one of {@code desiredSegment} and {@code desiredName} must be non-null
+     * @param removeExisting true if existing nodes in the new workspace with the same UUIDs as nodes in the branch rooted at
+     *        {@code original} should be removed; if false, a UuidAlreadyExistsException will be thrown if a UUID conflict is
+     *        detected
+     * @return the new node, which is the top of the new subgraph
+     * @throws UuidAlreadyExistsException if {@code removeExisting} is true and and a UUID in the source tree already exists in
+     *         the new workspace
+     */
+    MapNode cloneNode( ExecutionContext context,
+                       MapNode original,
+                       MapWorkspace newWorkspace,
+                       MapNode newParent,
+                       Name desiredName,
+                       Path.Segment desiredSegment,
+                       boolean removeExisting ) throws UuidAlreadyExistsException;
 
     /**
      * Find the lowest existing node along the path.

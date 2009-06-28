@@ -44,6 +44,7 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -62,7 +63,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * The default implementation of the {@link RequestProcessor} for map repositories.
- *
  */
 public class MapRequestProcessor extends RequestProcessor {
     private final PathFactory pathFactory;
@@ -70,8 +70,8 @@ public class MapRequestProcessor extends RequestProcessor {
     private final MapRepository repository;
 
     public MapRequestProcessor( ExecutionContext context,
-                                   MapRepository repository,
-                                   RepositoryContext repositoryContext ) {
+                                MapRepository repository,
+                                RepositoryContext repositoryContext ) {
         super(repository.getSourceName(), context, repositoryContext != null ? repositoryContext.getObserver() : null);
         this.repository = repository;
         pathFactory = context.getValueFactories().getPathFactory();
@@ -119,6 +119,36 @@ public class MapRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        MapWorkspace workspace = getWorkspace(request, request.fromWorkspace());
+        MapWorkspace newWorkspace = getWorkspace(request, request.intoWorkspace());
+        if (workspace == null || newWorkspace == null) return;
+        MapNode node = getTargetNode(workspace, request, request.from());
+        if (node == null) return;
+
+        // Look up the new parent, which must exist ...
+        Path newParentPath = request.into().getPath();
+        MapNode newParent = newWorkspace.getNode(newParentPath);
+        MapNode newNode = workspace.cloneNode(getExecutionContext(),
+                                              node,
+                                              newWorkspace,
+                                              newParent,
+                                              request.desiredName(),
+                                              request.desiredSegment(),
+                                              request.removeExisting());
+        Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
+        Location oldLocation = getActualLocation(request.from().getPath(), node);
+        Location newLocation = Location.create(newPath, newNode.getUuid());
+        request.setActualLocations(oldLocation, newLocation);
+        recordChange(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
      */
     @Override
@@ -133,13 +163,7 @@ public class MapRequestProcessor extends RequestProcessor {
         Path newParentPath = request.into().getPath();
         Name desiredName = request.desiredName();
         MapNode newParent = newWorkspace.getNode(newParentPath);
-        MapNode newNode = workspace.copyNode(getExecutionContext(),
-                                             node,
-                                             newWorkspace,
-                                             newParent,
-                                             desiredName,
-                                             true,
-                                             request.uuidConflictBehavior());
+        MapNode newNode = workspace.copyNode(getExecutionContext(), node, newWorkspace, newParent, desiredName, true);
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());

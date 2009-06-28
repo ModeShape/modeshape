@@ -77,6 +77,8 @@ public final class GraphI18n {
     public static I18n unableToCopyToTheRoot;
     public static I18n actualLocationIsNotSameAsInputLocation;
     public static I18n actualLocationIsNotChildOfInputLocation;
+    public static I18n actualLocationIsNotAtCorrectChildSegment;
+    public static I18n actualLocationDoesNotHaveCorrectChildName;
     public static I18n actualLocationMustHavePath;
     public static I18n actualNewLocationIsNotSameAsInputLocation;
     public static I18n actualNewLocationMustHavePath;
@@ -117,6 +119,7 @@ public final class GraphI18n {
     public static I18n unableToDeletePlaceholder;
     public static I18n copyLimitedToBeWithinSingleSource;
     public static I18n moveLimitedToBeWithinSingleSource;
+    public static I18n cloneLimitedToBeWithinSingleSource;
 
     static {
         try {

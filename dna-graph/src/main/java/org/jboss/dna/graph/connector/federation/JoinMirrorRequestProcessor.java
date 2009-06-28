@@ -33,6 +33,7 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.CacheableRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -173,8 +174,7 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadNextBlockOfChildrenRequest request ) {
-        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest()
-                                                                                                .getRequest();
+        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocationOfStartingAfterNode(source.getActualLocationOfStartingAfterNode());
         for (Location childInSource : source.getChildren()) {
@@ -310,6 +310,18 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
     @Override
     public void process( CopyBranchRequest request ) {
         CopyBranchRequest source = (CopyBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        request.setActualLocations(source.getActualLocationBefore(), source.getActualLocationAfter());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneBranchRequest)
+     */
+    @Override
+    public void process( CloneBranchRequest request ) {
+        CloneBranchRequest source = (CloneBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocations(source.getActualLocationBefore(), source.getActualLocationAfter());
     }
