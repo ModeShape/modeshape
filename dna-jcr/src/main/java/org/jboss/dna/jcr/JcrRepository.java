@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -428,6 +429,7 @@ public class JcrRepository implements Repository {
                     // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
                     throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
+                
                 graph.useWorkspace(workspaceName);
             } catch (InvalidWorkspaceException e) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), e);
@@ -440,7 +442,17 @@ public class JcrRepository implements Repository {
         // Create the workspace, which will create its own session ...
         sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
         JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
-        return workspace.getSession();
+        
+        JcrSession session = (JcrSession) workspace.getSession();
+        
+        // Need to make sure that the user has access to this session
+        try {
+            session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
+        }
+        catch (AccessControlException ace) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
+        }
+        return session;
     }
 
     /**

@@ -170,9 +170,6 @@ final class JcrWorkspace implements Workspace {
                                                                                                        uriProperty, namespaceType);
         this.context = context.with(persistentRegistry);
 
-        // Set up and initialize the persistent JCR namespace registry ...
-        this.workspaceRegistry = new JcrNamespaceRegistry(persistentRegistry);
-
         // Now create a graph with this new execution context ...
         this.graph = Graph.create(this.repository.getRepositorySourceName(), this.repository.getConnectionFactory(), this.context);
         this.graph.useWorkspace(workspaceName);
@@ -182,13 +179,17 @@ final class JcrWorkspace implements Workspace {
 
         // This must be initialized after the session
         RepositoryNodeTypeManager repoTypeManager = repository.getRepositoryTypeManager();
-        this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repoTypeManager);
+        this.nodeTypeManager = new JcrNodeTypeManager(session, repoTypeManager);
         this.queryManager = new JcrQueryManager(this.session);
 
         if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
             Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
             repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
         }
+
+        // Set up and initialize the persistent JCR namespace registry ...
+        this.workspaceRegistry = new JcrNamespaceRegistry(persistentRegistry, this.session);
+
     }
 
     final String getSourceName() {
@@ -231,8 +232,20 @@ final class JcrWorkspace implements Workspace {
      */
     public String[] getAccessibleWorkspaceNames() throws RepositoryException {
         try {
-            Set<String> workspaces = graph.getWorkspaces();
-            return workspaces.toArray(new String[workspaces.size()]);
+            Set<String> workspaceNamesFromGraph = graph.getWorkspaces();
+            Set<String> workspaceNames = new HashSet<String>(workspaceNamesFromGraph.size());
+            
+            for(String workspaceName : workspaceNamesFromGraph) {
+                try {
+                    session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
+                    workspaceNames.add(workspaceName);
+                }
+                catch (AccessControlException ace) {
+                    // Can happen if user doesn't have the privileges to read from the workspace
+                }
+            }
+            
+            return workspaceNames.toArray(new String[workspaceNames.size()]);
         } catch (RepositorySourceException e) {
             throw new RepositoryException(JcrI18n.errorObtainingWorkspaceNames.text(getSourceName(), e.getMessage()), e);
         }

@@ -23,9 +23,11 @@
  */
 package org.jboss.dna.jcr;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -40,6 +42,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
 import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
@@ -58,13 +61,17 @@ import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 @Immutable
 class JcrNodeTypeManager implements NodeTypeManager {
 
-    private final ExecutionContext context;
+    private final JcrSession session;
     private final RepositoryNodeTypeManager repositoryTypeManager;
 
-    JcrNodeTypeManager( ExecutionContext context,
+    JcrNodeTypeManager( JcrSession session,
                         RepositoryNodeTypeManager repositoryTypeManager ) {
-        this.context = context;
+        this.session = session;
         this.repositoryTypeManager = repositoryTypeManager;
+    }
+
+    private final ExecutionContext context() {
+        return session.getExecutionContext();
     }
 
     /**
@@ -87,7 +94,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
 
         // Need to return a version of the node type with the current context
         for (JcrNodeType type : rawTypes) {
-            types.add(type.with(context));
+            types.add(type.with(context()));
         }
 
         return new JcrNodeTypeIterator(types);
@@ -99,10 +106,10 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getNodeType(java.lang.String)
      */
     public JcrNodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
-        Name ntName = context.getValueFactories().getNameFactory().create(nodeTypeName);
+        Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
         JcrNodeType type = repositoryTypeManager.getNodeType(ntName);
         if (type != null) {
-            type = type.with(context);
+            type = type.with(context());
             return type;
         }
         throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(nodeTypeName));
@@ -119,7 +126,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
         JcrNodeType nodeType = repositoryTypeManager.getNodeType(nodeTypeName);
 
         if (nodeType != null) {
-            nodeType = nodeType.with(context);
+            nodeType = nodeType.with(context());
         }
 
         return nodeType;
@@ -136,7 +143,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
 
         // Need to return a version of the node type with the current context
         for (JcrNodeType type : rawTypes) {
-            types.add(type.with(context));
+            types.add(type.with(context()));
         }
 
         return new JcrNodeTypeIterator(types);
@@ -383,12 +390,20 @@ class JcrNodeTypeManager implements NodeTypeManager {
      *         name that already exists
      * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; DNA does not allow updating node types at
      *         this time.
+     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#DNA_REGISTER_TYPE_PERMISSION
+     *         register type permission}.
      * @throws RepositoryException if another error occurs
      */
     public NodeType registerNodeType( NodeTypeDefinition template,
                                       boolean allowUpdate )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
-        RepositoryException {
+        AccessDeniedException, RepositoryException {
+
+        try {
+            session.checkPermission((Path)null, JcrSession.DNA_REGISTER_TYPE_PERMISSION);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
         return this.repositoryTypeManager.registerNodeType(template, allowUpdate);
     }
 
@@ -407,12 +422,21 @@ class JcrNodeTypeManager implements NodeTypeManager {
      *         specifies a node type name that already exists
      * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; DNA does not allow updating node types at
      *         this time.
+     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#DNA_REGISTER_TYPE_PERMISSION
+     *         register type permission}.
      * @throws RepositoryException if another error occurs
      */
     public NodeTypeIterator registerNodeTypes( Collection<NodeTypeDefinition> templates,
                                                boolean allowUpdates )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
-        RepositoryException {
+        AccessDeniedException, RepositoryException {
+
+        try {
+            session.checkPermission((Path)null, JcrSession.DNA_REGISTER_TYPE_PERMISSION);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
         return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
     }
 
@@ -433,7 +457,13 @@ class JcrNodeTypeManager implements NodeTypeManager {
      */
     public void unregisterNodeType( Collection<String> nodeTypeNames )
         throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
-        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
+        NameFactory nameFactory = context().getValueFactories().getNameFactory();
+
+        try {
+            session.checkPermission((Path)null, JcrSession.DNA_REGISTER_TYPE_PERMISSION);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
 
         Collection<Name> names = new ArrayList<Name>(nodeTypeNames.size());
         for (String name : nodeTypeNames) {
@@ -451,7 +481,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @throws RepositoryException if another error occurs
      */
     public NodeTypeTemplate createNodeTypeTemplate() throws RepositoryException {
-        return new JcrNodeTypeTemplate(this.context);
+        return new JcrNodeTypeTemplate(context());
     }
 
     /**
@@ -463,7 +493,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @throws RepositoryException if another error occurs
      */
     public NodeDefinitionTemplate createNodeDefinitionTemplate() throws RepositoryException {
-        return new JcrNodeDefinitionTemplate(this.context);
+        return new JcrNodeDefinitionTemplate(context());
     }
 
     /**
@@ -475,6 +505,6 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @throws RepositoryException if another error occurs
      */
     public PropertyDefinitionTemplate createPropertyDefinitionTemplate() throws RepositoryException {
-        return new JcrPropertyDefinitionTemplate(this.context);
+        return new JcrPropertyDefinitionTemplate(context());
     }
 }

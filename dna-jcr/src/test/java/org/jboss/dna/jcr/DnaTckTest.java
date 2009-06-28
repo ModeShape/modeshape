@@ -2,8 +2,10 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import java.util.Collections;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -12,6 +14,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * Additional DNA tests that check for JCR compliance.
@@ -68,6 +71,7 @@ public class DnaTckTest extends AbstractJCRTest {
 
     private void testRemoveProperty( Session session ) throws Exception {
         Session localAdmin = helper.getRepository().login(helper.getSuperuserCredentials(), session.getWorkspace().getName());
+
         assertEquals(session.getWorkspace().getName(), superuser.getWorkspace().getName());
 
         Node superRoot = localAdmin.getRootNode();
@@ -90,11 +94,31 @@ public class DnaTckTest extends AbstractJCRTest {
         session.save();
     }
 
+    private void testRegisterNamespace( Session session ) throws Exception {
+        String unusedPrefix = session.getUserID();
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(unusedPrefix, unusedPrefix);
+        session.getWorkspace().getNamespaceRegistry().unregisterNamespace(unusedPrefix);
+    }
+
+    private void testRegisterType( Session session ) throws Exception {
+        JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate newType = nodeTypes.createNodeTypeTemplate();
+        String nodeTypeName = session.getUserID() + "Type";
+        newType.setName(nodeTypeName);
+        nodeTypes.registerNodeType(newType, false);
+        nodeTypes.unregisterNodeType(Collections.singleton(nodeTypeName));
+    }
+
     private void testWrite( Session session ) throws Exception {
         testAddNode(session);
         testSetProperty(session);
         testRemoveProperty(session);
         testRemoveNode(session);
+    }
+
+    private void testAdmin( Session session ) throws Exception {
+        testRegisterNamespace(session);
+        testRegisterType(session);
     }
 
     /**
@@ -137,6 +161,25 @@ public class DnaTckTest extends AbstractJCRTest {
     }
 
     /**
+     * Tests that read-only sessions cannot register namespaces or types
+     * 
+     * @throws Exception
+     */
+    public void testShouldNotAllowReadOnlySessionToAdmin() throws Exception {
+        session = helper.getReadOnlySession();
+        try {
+            testRegisterNamespace(session);
+            fail("Read-only sessions should not be able to register namespaces");
+        } catch (AccessDeniedException expected) {
+        }
+        try {
+            testRegisterType(session);
+            fail("Read-only sessions should not be able to register types");
+        } catch (AccessDeniedException expected) {
+        }
+    }
+
+    /**
      * Tests that read-write sessions can read nodes by loading all of the children of the root node
      * 
      * @throws Exception
@@ -154,6 +197,55 @@ public class DnaTckTest extends AbstractJCRTest {
     public void testShouldAllowReadWriteSessionToWrite() throws Exception {
         session = helper.getReadWriteSession();
         testWrite(session);
+    }
+
+    /**
+     * Tests that read-write sessions cannot register namespaces or types
+     * 
+     * @throws Exception
+     */
+    public void testShouldNotAllowReadWriteSessionToAdmin() throws Exception {
+        session = helper.getReadWriteSession();
+        try {
+            testRegisterNamespace(session);
+            fail("Read-write sessions should not be able to register namespaces");
+        } catch (AccessDeniedException expected) {
+        }
+        try {
+            testRegisterType(session);
+            fail("Read-write sessions should not be able to register types");
+        } catch (AccessDeniedException expected) {
+        }
+    }
+
+    /**
+     * Tests that admin sessions can read nodes by loading all of the children of the root node
+     * 
+     * @throws Exception
+     */
+    public void testShouldAllowAdminSessionToRead() throws Exception {
+        session = helper.getSuperuserSession();
+        testRead(session);
+    }
+
+    /**
+     * Tests that admin sessions can add nodes, remove nodes, set nodes, and set properties.
+     * 
+     * @throws Exception
+     */
+    public void testShouldAllowAdminSessionToWrite() throws Exception {
+        session = helper.getSuperuserSession();
+        testWrite(session);
+    }
+
+    /**
+     * Tests that admin sessions can register namespaces and types
+     * 
+     * @throws Exception
+     */
+    public void testShouldAllowAdminSessionToAdmin() throws Exception {
+        session = helper.getSuperuserSession();
+        testAdmin(session);
     }
 
     /**
@@ -181,6 +273,32 @@ public class DnaTckTest extends AbstractJCRTest {
         session.logout();
     }
 
+    /**
+     * Users should not be able to see workspaces to which they don't at least have read access.
+     * User 'noaccess' has no access to the default workspace.
+     * @throws Exception
+     */
+    public void testShouldNotSeeWorkspacesWithoutReadPermission() throws Exception {
+        Credentials creds = new SimpleCredentials("noaccess", "noaccess".toCharArray());
+        
+        try {
+            session = helper.getRepository().login(creds);
+            fail("User 'noaccess' with no access to the default workspace should not be able to log into that workspace");
+        }
+        catch (NoSuchWorkspaceException le) {
+            // Expected
+        }
+        
+        session = helper.getRepository().login(creds, "otherWorkspace");
+
+        String[] workspaceNames = session.getWorkspace().getAccessibleWorkspaceNames();
+
+        assertThat(workspaceNames.length, is(1));
+        assertThat(workspaceNames[0], is("otherWorkspace"));
+        
+        session.logout();
+    }
+    
     public void testShouldCopyFromAnotherWorkspace() throws Exception {
         session = helper.getSuperuserSession("otherWorkspace");
         String nodetype1 = this.getProperty("nodetype");

@@ -30,6 +30,7 @@ import static org.junit.Assert.assertThat;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.Credentials;
@@ -208,7 +209,10 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        repository.login(new SecurityContextCredentials(new MockSecurityContext(null)));
+        repository.login(new SecurityContextCredentials(
+                                                        new MockSecurityContext(
+                                                                                null,
+                                                                                Collections.singleton(JcrSession.DNA_ADMIN_PERMISSION))));
     }
 
     @Test
@@ -216,7 +220,11 @@ public class JcrRepositoryTest {
         Session session = repository.login(credentials, null);
         assertThat(session, notNullValue());
         session.logout();
-        session = repository.login(new SecurityContextCredentials(new MockSecurityContext(null)), (String)null);
+        session = repository.login(new SecurityContextCredentials(
+                                                                  new MockSecurityContext(
+                                                                                          null,
+                                                                                          Collections.singleton(JcrSession.DNA_ADMIN_PERMISSION))),
+                                   (String)null);
         assertThat(session, notNullValue());
         session.logout();
     }

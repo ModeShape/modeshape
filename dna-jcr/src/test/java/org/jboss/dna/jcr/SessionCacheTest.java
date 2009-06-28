@@ -114,7 +114,7 @@ public class SessionCacheTest {
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
 
-        nodeTypes = new JcrNodeTypeManager(this.context, repoTypes);
+        nodeTypes = new JcrNodeTypeManager(this.session, repoTypes);
         stub(session.nodeTypeManager()).toReturn(nodeTypes);
 
         // Now set up the graph and session cache ...

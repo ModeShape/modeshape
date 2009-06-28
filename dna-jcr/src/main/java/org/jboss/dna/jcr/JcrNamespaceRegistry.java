@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrMixLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.NamespaceRegistry.Namespace;
 
 /**
@@ -108,17 +110,22 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     private final Behavior behavior;
     private final NamespaceRegistry registry;
     private final NamespaceRegistry workspaceRegistry;
+    private final JcrSession session;
 
-    JcrNamespaceRegistry( NamespaceRegistry workspaceRegistry ) {
-        this(Behavior.WORKSPACE, null, workspaceRegistry);
+    JcrNamespaceRegistry( NamespaceRegistry workspaceRegistry,
+                          JcrSession session ) {
+        this(Behavior.WORKSPACE, null, workspaceRegistry, session);
     }
 
     JcrNamespaceRegistry( Behavior behavior,
                           NamespaceRegistry localRegistry,
-                          NamespaceRegistry workspaceRegistry ) {
+                          NamespaceRegistry workspaceRegistry,
+                          JcrSession session ) {
         this.behavior = behavior;
         this.registry = localRegistry != null ? localRegistry : workspaceRegistry;
         this.workspaceRegistry = workspaceRegistry;
+        this.session = session;
+
         // Add the built-ins, ensuring we overwrite any badly-initialized values ...
         for (Map.Entry<String, String> builtIn : STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {
             this.registry.register(builtIn.getKey(), builtIn.getValue());
@@ -126,6 +133,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         assert this.behavior != null;
         assert this.registry != null;
         assert this.workspaceRegistry != null;
+        assert this.session != null;
     }
 
     /**
@@ -272,6 +280,12 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
                 // JSR-170 & JSR-283 Workspace namespace registry ...
                 // --------------------------------------------------
 
+                try {
+                    session.checkPermission((Path)null, JcrSession.DNA_REGISTER_NAMESPACE_PERMISSION);
+                } catch (AccessControlException ace) {
+                    throw new AccessDeniedException(ace);
+                }
+
                 // Check the zero-length prefix and zero-length URI ...
                 if (DEFAULT_NAMESPACE_PREFIX.equals(prefix) || DEFAULT_NAMESPACE_URI.equals(uri)) {
                     throw new NamespaceException(JcrI18n.unableToChangeTheDefaultNamespace.text());
@@ -319,6 +333,16 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     public synchronized void unregisterNamespace( String prefix )
         throws NamespaceException, AccessDeniedException, RepositoryException {
         CheckArg.isNotNull(prefix, "prefix");
+
+        // Don't need to check permissions for transient registration/unregistration
+        if (behavior.equals(Behavior.WORKSPACE)) {
+            try {
+                session.checkPermission((Path)null, JcrSession.DNA_REGISTER_NAMESPACE_PERMISSION);
+            } catch (AccessControlException ace) {
+                throw new AccessDeniedException(ace);
+            }
+        }
+
         // Look to see whether the prefix is registered ...
         String uri = registry.getNamespaceForPrefix(prefix);
         // It is an error to unregister a namespace that is not registered ...

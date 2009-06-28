@@ -31,6 +31,8 @@ import javax.jcr.NamespaceException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
@@ -39,11 +41,15 @@ public class JcrNamespaceRegistryTest {
 
     private ExecutionContext executionContext;
     private JcrNamespaceRegistry registry;
+    @Mock
+    private JcrSession session;
 
     @Before
     public void before() {
+        MockitoAnnotations.initMocks(this);
         executionContext = new ExecutionContext();
-        registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry());
+        registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry(), session);
+
     }
 
     protected void assertThatNamespaceIsRegistered( String prefix,

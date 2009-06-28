@@ -83,6 +83,10 @@ class JcrSession implements Session {
 
     public static final String DNA_READ_PERMISSION = "readonly";
     public static final String DNA_WRITE_PERMISSION = "readwrite";
+    public static final String DNA_ADMIN_PERMISSION = "admin";
+
+    public static final String DNA_REGISTER_NAMESPACE_PERMISSION = "register_namespace";
+    public static final String DNA_REGISTER_TYPE_PERMISSION = "register_type";
 
     public static final String JCR_ADD_NODE_PERMISSION = "add_node";
     public static final String JCR_SET_PROPERTY_PERMISSION = "set_property";
@@ -145,7 +149,7 @@ class JcrSession implements Session {
         NamespaceRegistry workspaceRegistry = workspaceContext.getNamespaceRegistry();
         NamespaceRegistry local = new LocalNamespaceRegistry(workspaceRegistry);
         this.executionContext = workspaceContext.with(local);
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, workspaceRegistry);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, workspaceRegistry, this);
         this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
@@ -291,10 +295,16 @@ class JcrSession implements Session {
      * Returns whether the authenticated user has the given role.
      * 
      * @param roleName the name of the role to check
+     * @param workspaceName the workspace under which the user must have the role. This may be different from the current
+     *        workspace.
      * @return true if the user has the role and is logged in; false otherwise
      */
-    final boolean hasRole( String roleName ) {
-        return getExecutionContext().getSecurityContext().hasRole(roleName);
+    final boolean hasRole( String roleName,
+                           String workspaceName ) {
+        SecurityContext context = getExecutionContext().getSecurityContext();
+
+        return context.hasRole(roleName) || context.hasRole(roleName + "." + this.repository.getName())
+               || context.hasRole(roleName + "." + this.repository.getName() + "." + workspaceName);
     }
 
     /**
@@ -342,17 +352,19 @@ class JcrSession implements Session {
 
         CheckArg.isNotEmpty(actions, "actions");
 
-        if ("read".equals(actions)) {
-            // readonly access is sufficient
-            if (hasRole(DNA_READ_PERMISSION) || hasRole(DNA_READ_PERMISSION + "." + workspaceName)) {
-                return;
+        boolean hasPermission = true;
+        for (String action : actions.split(",")) {
+            if (JCR_READ_PERMISSION.equals(action)) {
+                hasPermission &= hasRole(DNA_READ_PERMISSION, workspaceName) || hasRole(DNA_WRITE_PERMISSION, workspaceName)
+                                 || hasRole(DNA_ADMIN_PERMISSION, workspaceName);
+            } else if (DNA_REGISTER_NAMESPACE_PERMISSION.equals(action) || DNA_REGISTER_TYPE_PERMISSION.equals(action)) {
+                hasPermission &= hasRole(DNA_ADMIN_PERMISSION, workspaceName);
+            } else {
+                hasPermission &= hasRole(DNA_ADMIN_PERMISSION, workspaceName) || hasRole(DNA_WRITE_PERMISSION, workspaceName);
             }
         }
 
-        // need readwrite access
-        if (hasRole(DNA_WRITE_PERMISSION) || hasRole(DNA_WRITE_PERMISSION + "." + workspaceName)) {
-            return;
-        }
+        if (hasPermission) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
         throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
