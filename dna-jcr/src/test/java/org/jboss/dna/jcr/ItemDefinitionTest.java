@@ -28,37 +28,24 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.basic.BasicName;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * BDD test cases for property and child node definition inheritance. Could be part of RepositoryNodeTypeManagerTest, but split
  * off to isolate tests for this behavior vs. projection/inference and registration/unregistration behavior.
  */
-public class ItemDefinitionTest {
+public class ItemDefinitionTest extends AbstractJcrTest {
 
     private static final Name NODE_TYPE_A = new BasicName(TestLexicon.Namespace.URI, "nodeA");
     private static final Name NODE_TYPE_B = new BasicName(TestLexicon.Namespace.URI, "nodeB");
@@ -67,85 +54,22 @@ public class ItemDefinitionTest {
     private static final Name SINGLE_PROP1 = new BasicName(TestLexicon.Namespace.URI, "singleProp1");
     private static final Name SINGLE_PROP2 = new BasicName(TestLexicon.Namespace.URI, "singleProp2");
 
-    private String workspaceName;
-    protected ExecutionContext context;
-    private InMemoryRepositorySource source;
-    private JcrWorkspace workspace;
-    private JcrSession session;
-    private Graph graph;
-    private RepositoryConnectionFactory connectionFactory;
-    private RepositoryNodeTypeManager repoTypeManager;
-    private Map<String, Object> sessionAttributes;
-    private ValueFactory<Name> nameFactory;
-    @Mock
-    private JcrRepository repository;
+    protected NameFactory nameFactory;
 
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        workspaceName = "workspace1";
-        final String repositorySourceName = "repository";
-
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(workspaceName);
-        source.setDefaultWorkspaceName(workspaceName);
-
-        // Set up the execution context ...
-        context = new ExecutionContext();
-        // Register the test namespace
-        context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-        // Set up the initial content ...
-        graph = Graph.create(source, context);
-
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
-
-        // Stub out the connection factory ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
-            }
-        };
-
-        // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context);
-        try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
-                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
-            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
-        } catch (RepositoryException re) {
-            re.printStackTrace();
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-
-        // Now create the workspace ...
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
+        super.beforeEach();
 
         nameFactory = session.getExecutionContext().getValueFactories().getNameFactory();
     }
 
+    @Override
+    protected void initializeContent() {
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        
+    }
+    
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {
@@ -267,7 +191,8 @@ public class ItemDefinitionTest {
     *      dnatest:singleProp2 of type LONG (note the double-definition)
     */
 
-    private List<NodeTypeTemplate> getTestTypes() {
+    @Override
+    protected List<NodeTypeTemplate> getTestTypes() {
         NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);
         nodeA.setName("dnatest:nodeA");
 

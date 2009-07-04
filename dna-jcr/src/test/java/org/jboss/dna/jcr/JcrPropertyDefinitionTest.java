@@ -26,27 +26,14 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.MockSecurityContext;
-import org.jboss.dna.graph.SecurityContext;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
@@ -54,14 +41,12 @@ import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)}, which
  * provides the wrapper around the factory that the rest of the API is expected to utilize.
  */
-public class JcrPropertyDefinitionTest {
+public class JcrPropertyDefinitionTest extends AbstractJcrTest {
 
     protected final String[] EXPECTED_BINARY_CONSTRAINTS = new String[] {"[,5)", "[10, 20)", "(30,40]", "[50,]"};
     protected final String[] EXPECTED_DATE_CONSTRAINTS = new String[] {"[,+1945-08-01T01:30:00.000Z]",
@@ -73,92 +58,26 @@ public class JcrPropertyDefinitionTest {
     protected final String[] EXPECTED_REFERENCE_CONSTRAINTS = new String[] {"dna:root"};
     protected final String[] EXPECTED_STRING_CONSTRAINTS = new String[] {"foo", "bar*", ".*baz"};
 
-    private String workspaceName;
-    private ExecutionContext context;
-    private InMemoryRepositorySource source;
-    private JcrWorkspace workspace;
-    private JcrSession session;
-    private Graph graph;
-    private RepositoryConnectionFactory connectionFactory;
-    private RepositoryNodeTypeManager repoTypeManager;
-    private NodeTypeManager nodeTypeManager;
-    private Map<String, Object> sessionAttributes;
-    @Mock
-    private JcrRepository repository;
+    protected NodeTypeManager nodeTypeManager;
 
+
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        super.beforeEach();
 
-        workspaceName = "workspace1";
-        final String repositorySourceName = "repository";
+        nodeTypeManager = workspace.getNodeTypeManager();
+    }
 
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(workspaceName);
-        source.setDefaultWorkspaceName(workspaceName);
-
-        // Set up the execution context ...
-        context = new ExecutionContext();
-        // Register the test namespace
-        context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-        // Set up the initial content ...
-        graph = Graph.create(source, context);
-
-        // Make sure the path to the namespaces exists ...
+    @Override
+    protected void initializeContent() {
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
 
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
 
-        // Stub out the connection factory ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
-            }
-        };
-
-        // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context);
-
-        try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
-                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
-            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
-
-        } catch (RepositoryException re) {
-            re.printStackTrace();
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-        sessionAttributes.put("attribute1", "value1");
-
-        // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
-        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
-
-        nodeTypeManager = workspace.getNodeTypeManager();
     }
-
+    
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {
@@ -650,7 +569,8 @@ public class JcrPropertyDefinitionTest {
         assertThat(satisfiesConstraints(prop, new Value[] {value}), is(false));
     }
 
-    private List<NodeTypeTemplate> getTestTypes() {
+    @Override
+    protected List<NodeTypeTemplate> getTestTypes() {
         NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);
         constrainedType.setName("dnatest:constrainedType");
 

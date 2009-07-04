@@ -29,8 +29,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -42,63 +40,30 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.MockSecurityContext;
-import org.jboss.dna.graph.SecurityContext;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
-public class RepositoryNodeTypeManagerTest {
+public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
 
-    private String workspaceName;
-    private ExecutionContext context;
-    private InMemoryRepositorySource source;
-    private JcrWorkspace workspace;
-    private JcrSession session;
-    private Graph graph;
-    private RepositoryConnectionFactory connectionFactory;
-    private RepositoryNodeTypeManager repoTypeManager;
-    private Map<String, Object> sessionAttributes;
-    private Map<JcrRepository.Option, String> options;
-    @Mock
-    private JcrRepository repository;
-
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        super.beforeEach();
 
-        workspaceName = "workspace1";
-        final String repositorySourceName = "repository";
+        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
 
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(workspaceName);
-        source.setDefaultWorkspaceName(workspaceName);
+    }
 
-        // Set up the execution context ...
-        context = new ExecutionContext();
-        // Register the test namespace
-        context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-        // Set up the initial content ...
-        graph = Graph.create(source, context);
-
+    @Override
+    protected void initializeContent() {
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system"); // .and().create("/jcr:system/dna:namespaces");
         graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
@@ -106,56 +71,16 @@ public class RepositoryNodeTypeManagerTest {
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
 
-        // Stub out the connection factory ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
-            }
-        };
+    }
 
-        // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context);
-        try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
-                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
-        } catch (RepositoryException re) {
-            re.printStackTrace();
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-
+    @Override
+    protected void initializeOptions() {
         // Stub out the repository options ...
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
-        stub(repository.getOptions()).toReturn(options);
-
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-        sessionAttributes.put("attribute1", "value1");
-
-        // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_READ_PERMISSION));
-        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
-
-        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
 
     }
-
+    
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {

@@ -26,46 +26,22 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
-import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.JcrLexicon;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
-public class JcrWorkspaceTest {
-
-    private String workspaceName;
-    private ExecutionContext context;
-    private InMemoryRepositorySource source;
-    private JcrWorkspace workspace;
-    private RepositoryConnectionFactory connectionFactory;
-    private Map<String, Object> sessionAttributes;
-    @Mock
-    private JcrRepository repository;
-    private RepositoryNodeTypeManager repoManager;
+public class JcrWorkspaceTest extends AbstractJcrTest {
 
     @BeforeClass
     public static void beforeClass() {
@@ -80,22 +56,14 @@ public class JcrWorkspaceTest {
         }
     }
 
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        final String repositorySourceName = "repository";
-        workspaceName = "workspace1";
+        super.beforeEach();
+    }
 
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(repositorySourceName);
-        source.setDefaultWorkspaceName(workspaceName);
-
-        // Set up the execution context ...
-
-        context = new ExecutionContext().with(new JaasSecurityContext("dna-jcr", "superuser", "superuser".toCharArray()));
-
-        // Set up the initial content ...
-        Graph graph = Graph.create(source, context);
+    @Override
+    protected void initializeContent() {
         graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b");
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("jcr:primaryType").on("/a/b").to("nt:unstructured");
@@ -104,43 +72,8 @@ public class JcrWorkspaceTest {
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
 
-        // Stub out the connection factory ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
-            }
-        };
-
-        // Stub out the repository, since we only need a few methods ...
-        MockitoAnnotations.initMocks(this);
-
-        repoManager = new RepositoryNodeTypeManager(context);
-        try {
-            this.repoManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
-                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
-        } catch (RepositoryException re) {
-            re.printStackTrace();
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getRepositoryTypeManager()).toReturn(repoManager);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-
-        // Now create the workspace ...
-        sessionAttributes = new HashMap<String, Object>();
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
     }
-
+    
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCloneWithNullWorkspaceName() throws Exception {
         workspace.clone(null, "/src", "/dest", false);

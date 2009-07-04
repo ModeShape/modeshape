@@ -28,15 +28,12 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -48,42 +45,25 @@ import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 
-public class TypeRegistrationTest {
+public class TypeRegistrationTest extends AbstractJcrTest {
 
     private static final String TEST_TYPE_NAME = "dna:testNode";
     private static final String TEST_TYPE_NAME2 = "dna:testNode2";
     private static final String TEST_PROPERTY_NAME = "dna:testProperty";
     private static final String TEST_CHILD_NODE_NAME = "dna:testChildNode";
 
-    private ExecutionContext context;
-    private RepositoryNodeTypeManager repoTypeManager;
     private JcrNodeTypeTemplate ntTemplate;
-    private NameFactory nameFactory;
     private NamespaceRegistry registry;
+    private NameFactory nameFactory;
 
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        context = new ExecutionContext();
-        nameFactory = context.getValueFactories().getNameFactory();
-        registry = context.getNamespaceRegistry();
-
-        repoTypeManager = new RepositoryNodeTypeManager(context);
-
-        try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
-                "/org/jboss/dna/jcr/dna_builtins.cnd"}));
-        } catch (RepositoryException re) {
-            re.printStackTrace();
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-
+        super.beforeEach();
         ntTemplate = new JcrNodeTypeTemplate(context);
+        registry = context.getNamespaceRegistry();
+        nameFactory = context.getValueFactories().getNameFactory();
     }
 
     @Test( expected = AssertionError.class )
