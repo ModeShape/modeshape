@@ -927,7 +927,7 @@ class RepositoryNodeTypeManager {
             PropertyFactory propertyFactory = context.getPropertyFactory();
             graph.create(parentOfTypeNodes,
                          propertyFactory.create(JcrLexicon.PRIMARY_TYPE,
-                                                DnaLexicon.NODE_TYPES.getString(context.getNamespaceRegistry())));
+                                                DnaLexicon.NODE_TYPES.getString(context.getNamespaceRegistry()))).and();
         }
 
         Graph.Batch batch = graph.batch();

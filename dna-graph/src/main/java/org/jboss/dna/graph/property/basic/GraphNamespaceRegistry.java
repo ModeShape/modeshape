@@ -88,7 +88,7 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
             this.store.getNodeAt(this.parentOfNamespaceNodes);
         } catch (PathNotFoundException pnfe) {
             // The node did not already exist - create it!
-            this.store.create(parentOfNamespaceNodes);
+            this.store.create(parentOfNamespaceNodes).and();
             this.store.set(JcrLexicon.PRIMARY_TYPE).on(parentOfNamespaceNodes).to(DnaLexicon.NAMESPACES);
         }
     }
@@ -314,9 +314,10 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                 Property uriProperty = store.getContext().getPropertyFactory().create(uriPropertyName, namespaceUri);
                 List<Property> props = new ArrayList<Property>(namespaceProperties);
                 props.add(uriProperty);
-                Location actualLocation = store.createIfMissing(pathToNamespaceNode, props).andReturn().getLocation();
+                // Location actualLocation = store.createIfMissing(pathToNamespaceNode, props).andReturn().getLocation();
+                store.create(pathToNamespaceNode, props).ifAbsent().and();
 
-                return getPrefixFor(actualLocation.getPath());
+                return getPrefixFor(pathToNamespaceNode);
             }
 
         } catch (PathNotFoundException e) {

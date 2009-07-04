@@ -96,7 +96,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldAddChildUnderRootNode() {
-        graph.batch().create("/a").with("propB", "valueB").and("propC", "valueC").execute();
+        graph.batch().create("/a").with("propB", "valueB").and("propC", "valueC").and().execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
@@ -115,7 +115,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     public void shouldAddChildrenAndSettingProperties() {
         graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and().create("/b").with("propD",
                                                                                                                                                   "valueD").and("propE",
-                                                                                                                                                                "valueE").execute();
+                                                                                                                                                                "valueE").and().execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
@@ -159,7 +159,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         for (int i = 0; i != 100; ++i) {
             create = create.with("property" + i, "value" + i);
         }
-        create.execute();
+        create.and().execute();
         // Now look up all the properties ...
         Node nodeA = graph.getNodeAt("/a");
         assertThat(nodeA, is(notNullValue()));
@@ -176,7 +176,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         for (int i = 0; i != 10; ++i) {
             create = create.with("property" + i, "value" + i);
         }
-        create.execute();
+        create.and().execute();
 
         // Now look up all the properties ...
         Node nodeA = graph.getNodeAt("/a");
@@ -217,7 +217,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         }
         create = create.with("largeProperty1", validLargeValues[0]);
         create = create.with("largeProperty2", validLargeValues[1]);
-        create.execute();
+        create.and().execute();
 
         // Now look up all the properties ...
         Node nodeA = graph.getNodeAt("/a");
@@ -828,7 +828,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.useWorkspace(defaultWorkspaceName);
 
-        graph.create("/newUuids");
+        graph.create("/newUuids").and();
         graph.copy("/node1").fromWorkspace(workspaceName).to("/newUuids/node1");
 
         /*
@@ -865,7 +865,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.useWorkspace(defaultWorkspaceName);
 
-        graph.create("/newUuids");
+        graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
         //graph.copy("/node1/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/node1");
         graph.clone("/node1/node1/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").failingIfAnyUuidsMatch();
@@ -902,7 +902,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.useWorkspace(defaultWorkspaceName);
 
-        graph.create("/newUuids");
+        graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
         // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
         graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").replacingExistingNodesWithSameUuids();
@@ -966,13 +966,13 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.useWorkspace(defaultWorkspaceName);
 
-        graph.create("/segmentTestUuids");
+        graph.create("/segmentTestUuids").and();
         // Copy once to get the UUID into the default workspace
         graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/segmentTestUuids").failingIfAnyUuidsMatch();
         
         // Create a new child node that in the target workspace that has no corresponding node in the source workspace
         PropertyFactory propFactory = context.getPropertyFactory();
-        graph.create("/segmentTestUuids/node1", propFactory.create(name("identifier"), "backup copy"));
+        graph.create("/segmentTestUuids/node1", propFactory.create(name("identifier"), "backup copy")).and();
 
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
         // This should remove /newUuids/node1/shouldBeRemoved

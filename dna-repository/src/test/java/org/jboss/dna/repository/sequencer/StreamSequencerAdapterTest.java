@@ -68,15 +68,15 @@ public class StreamSequencerAdapterTest {
 
     private StreamSequencer streamSequencer;
     private StreamSequencerAdapter sequencer;
-    private String[] validExpressions = {"/a/* => /output"};
-    private SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(),
+    private final String[] validExpressions = {"/a/* => /output"};
+    private final SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(),
                                                               "something.class", null, validExpressions);
     private SequencerOutputMap sequencerOutput;
-    private String sampleData = "The little brown fox didn't something bad.";
+    private final String sampleData = "The little brown fox didn't something bad.";
     private ExecutionContext context;
     private SequencerContext seqContext;
-    private String repositorySourceName = "repository";
-    private String repositoryWorkspaceName = "";
+    private final String repositorySourceName = "repository";
+    private final String repositoryWorkspaceName = "";
     private Problems problems;
     private Graph graph;
     private Property sequencedProperty;
@@ -124,8 +124,8 @@ public class StreamSequencerAdapterTest {
         };
         StreamSequencerAdapter adapter = new StreamSequencerAdapter(streamSequencer);
 
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
-        graph.create("/d").and().create("/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
+        graph.create("/d").and().create("/d/e").and();
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
         Node inputNode = graph.getNodeAt("/a/b/c");
 
@@ -174,8 +174,8 @@ public class StreamSequencerAdapterTest {
     public void shouldExecuteSequencerOnExistingNodeAndOutputToExistingNode() throws Exception {
 
         // Set up the repository for the test ...
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
-        graph.create("/d").and().create("/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
+        graph.create("/d").and().create("/d/e").and();
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
         Node nodeC = graph.getNodeAt("/a/b/c");
         Node nodeE = graph.getNodeAt("/d/e");
@@ -209,8 +209,8 @@ public class StreamSequencerAdapterTest {
     public void shouldExecuteSequencerOnExistingNodeWithMissingSequencedPropertyAndOutputToExistingNode() throws Exception {
 
         // Set up the repository for the test ...
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
-        graph.create("/d").and().create("/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
+        graph.create("/d").and().create("/d/e").and();
         Node nodeC = graph.getNodeAt("/a/b/c");
         Node nodeE = graph.getNodeAt("/d/e");
         assertThat(nodeC, is(notNullValue()));
@@ -245,8 +245,8 @@ public class StreamSequencerAdapterTest {
     public void shouldExecuteSequencerOnExistingNodeAndOutputToMultipleExistingNodes() throws Exception {
 
         // Set up the repository for the test ...
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
-        graph.create("/d").and().create("/d/e");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
+        graph.create("/d").and().create("/d/e").and();
 
         // Set the property that will be sequenced ...
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
@@ -286,7 +286,7 @@ public class StreamSequencerAdapterTest {
     public void shouldExecuteSequencerOnExistingNodeAndOutputToNonExistingNode() throws Exception {
 
         // Set up the repository for the test ...
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
 
         // Set the property that will be sequenced ...
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
@@ -325,7 +325,7 @@ public class StreamSequencerAdapterTest {
     public void shouldExecuteSequencerOnExistingNodeAndOutputToMultipleNonExistingNodes() throws Exception {
 
         // Set up the repository for the test ...
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
 
         // Set the property that will be sequenced ...
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
@@ -430,7 +430,7 @@ public class StreamSequencerAdapterTest {
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullSequencedProperty() throws Exception {
 
-        graph.create("/a");
+        graph.create("/a").and();
         Node input = graph.getNodeAt("/a");
         sequencer.createStreamSequencerContext(input, null, seqContext, problems);
     }
@@ -439,7 +439,7 @@ public class StreamSequencerAdapterTest {
     public void shouldNotAllowNullExecutionContext() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a");
+        graph.create("/a").and();
         Node input = graph.getNodeAt("/a");
         sequencer.createStreamSequencerContext(input, sequencedProperty, null, problems);
     }
@@ -448,7 +448,7 @@ public class StreamSequencerAdapterTest {
     public void shouldProvideNamespaceRegistry() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         Node input = graph.getNodeAt("/a/b/c");
         StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
                                                                                          sequencedProperty,
@@ -461,7 +461,7 @@ public class StreamSequencerAdapterTest {
     public void shouldProvideValueFactories() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         Node input = graph.getNodeAt("/a/b/c");
         StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
                                                                                          sequencedProperty,
@@ -474,7 +474,7 @@ public class StreamSequencerAdapterTest {
     public void shouldProvidePathToInput() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         Node input = graph.getNodeAt("/a/b/c");
         StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
                                                                                          sequencedProperty,
@@ -487,7 +487,7 @@ public class StreamSequencerAdapterTest {
     public void shouldNeverReturnNullInputProperties() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         Node input = graph.getNodeAt("/a/b/c");
         StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
                                                                                          sequencedProperty,
@@ -501,7 +501,7 @@ public class StreamSequencerAdapterTest {
     public void shouldProvideInputProperties() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         graph.set("x").on("/a/b/c").to(true);
         graph.set("y").on("/a/b/c").to(Arrays.asList(new String[] {"asdf", "xyzzy"}));
         Node input = graph.getNodeAt("/a/b/c");
@@ -521,7 +521,7 @@ public class StreamSequencerAdapterTest {
     public void shouldCreateSequencerContextThatProvidesMimeType() throws Exception {
 
         this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         Node input = graph.getNodeAt("/a/b/c");
         StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
                                                                                          sequencedProperty,

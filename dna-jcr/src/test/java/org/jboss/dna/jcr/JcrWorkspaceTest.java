@@ -64,13 +64,13 @@ public class JcrWorkspaceTest extends AbstractJcrTest {
 
     @Override
     protected void initializeContent() {
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b").and();
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("jcr:primaryType").on("/a/b").to("nt:unstructured");
         graph.set("stringProperty").on("/a/b/c").to("value");
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").ifAbsent().and();
 
     }
     

@@ -90,14 +90,14 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
 
         graph.useWorkspace(defaultWorkspaceName);
 
-        graph.create("/newUuids");
+        graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
         //graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
         graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").replacingExistingNodesWithSameUuids();
 
         // Create a new child node that in the target workspace that has no corresponding node in the source workspace
-        graph.create("/newUuids/node1/shouldBeRemoved");
-        graph.create("/refererringNode");
+        graph.create("/newUuids/node1/shouldBeRemoved").and();
+        graph.create("/refererringNode").and();
         graph.set("refProp").on("/refererringNode").to(graph.getNodeAt("/newUuids/node1/shouldBeRemoved"));
 
         // Now create a reference to this new node

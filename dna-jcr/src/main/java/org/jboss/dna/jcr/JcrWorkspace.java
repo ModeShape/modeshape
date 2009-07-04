@@ -159,7 +159,7 @@ final class JcrWorkspace implements Workspace {
         Path root = pathFactory.createRootPath();
         Path systemPath = pathFactory.create(root, JcrLexicon.SYSTEM);
         Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
-        namespaceGraph.createIfMissing(systemPath, systemPrimaryType);
+        namespaceGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
 
         Name uriProperty = DnaLexicon.NAMESPACE_URI;
         Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);

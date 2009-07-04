@@ -75,7 +75,7 @@ public abstract class NotWritableConnectorTest extends AbstractConnectorTest {
 
     @Test( expected = InvalidRequestException.class )
     public void shouldNowAllowAddChildUnderRootNode() {
-        graph.batch().create("/a").with("propB", "valueB").and("propC", "valueC").execute();
+        graph.batch().create("/a").with("propB", "valueB").and("propC", "valueC").and().execute();
     }
 
     @Test( expected = InvalidRequestException.class )
@@ -84,7 +84,7 @@ public abstract class NotWritableConnectorTest extends AbstractConnectorTest {
         for (int i = 0; i != 100; ++i) {
             create = create.with("property" + i, "value" + i);
         }
-        create.execute();
+        create.and().execute();
     }
 
     @Test( expected = InvalidRequestException.class )

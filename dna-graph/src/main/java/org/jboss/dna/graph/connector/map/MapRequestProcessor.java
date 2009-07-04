@@ -201,8 +201,18 @@ public class MapRequestProcessor extends RequestProcessor {
         }
         switch (request.conflictBehavior()) {
             case APPEND:
-            case DO_NOT_REPLACE:
                 node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                break;
+            case DO_NOT_REPLACE:
+                for (MapNode child : parentNode.getChildren()) {
+                    if (request.named().equals(child.getName().getName())) {
+                        node = child;
+                        break;
+                    }
+                }
+                if (node == null) {
+                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                }
                 break;
             case REPLACE:
                 // See if the node already exists (this doesn't record an error on the request) ...

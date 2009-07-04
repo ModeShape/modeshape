@@ -79,7 +79,7 @@ public class JcrSessionTest extends AbstractJcrTest {
 
     @Override
     protected void initializeContent() {
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("stringProperty").on("/a/b/c").to("value");
         graph.set("jcr:mixinTypes").on("/a").to("mix:lockable");
@@ -87,7 +87,7 @@ public class JcrSessionTest extends AbstractJcrTest {
         graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").and();
 
     }
 

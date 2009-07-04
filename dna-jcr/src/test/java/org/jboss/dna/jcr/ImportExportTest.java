@@ -82,7 +82,7 @@ public class ImportExportTest {
         Graph graph = Graph.create(source, context);
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system"); // .and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
         graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
 
         // Stub out the connection factory ...

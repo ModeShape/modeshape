@@ -65,10 +65,10 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
     @Override
     protected void initializeContent() {
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system"); // .and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
         graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
 
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
 
     }

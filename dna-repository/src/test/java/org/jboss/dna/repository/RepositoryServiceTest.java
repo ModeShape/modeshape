@@ -119,7 +119,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() throws Exception {
         // Set up the configuration repository to contain NO sources ...
-        configRepository.create("/dna:sources");
+        configRepository.create("/dna:sources").and();
 
         // Now, start up the service ...
         service.getAdministrator().start();
@@ -132,8 +132,8 @@ public class RepositoryServiceTest {
     public void shouldStartUpAndCreateRepositoryUsingConfigurationRepositoryThatContainsNoSources() {
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");
-        configRepository.create("/dna:sources");
-        configRepository.create("/dna:sources/source A");
+        configRepository.create("/dna:sources").and();
+        configRepository.create("/dna:sources/source A").and();
 
         final String className = InMemoryRepositorySource.class.getName();
         configRepository.set(DnaLexicon.CLASSNAME).on("/dna:sources/source A").to(className);
@@ -141,13 +141,13 @@ public class RepositoryServiceTest {
         configRepository.set("retryLimit").on("/dna:sources/source A").to(3);
 
         String fedReposPath = "/dna:repositories/fed repos/";
-        configRepository.create("/dna:repositories");
-        configRepository.create("/dna:repositories/fed repos");
-        configRepository.create("/dna:repositories/fed repos/dna:regions");
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source A");
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source B");
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source C");
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source D");
+        configRepository.create("/dna:repositories").and();
+        configRepository.create("/dna:repositories/fed repos").and();
+        configRepository.create("/dna:repositories/fed repos/dna:regions").and();
+        configRepository.create("/dna:repositories/fed repos/dna:regions/source A").and();
+        configRepository.create("/dna:repositories/fed repos/dna:regions/source B").and();
+        configRepository.create("/dna:repositories/fed repos/dna:regions/source C").and();
+        configRepository.create("/dna:repositories/fed repos/dna:regions/source D").and();
         configRepository.set(DnaLexicon.TIME_TO_EXPIRE).on(fedReposPath).to(20000);
         configRepository.set(DnaLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source A").to("/a/b/c => /sx/sy");
         configRepository.set(DnaLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source B").to("/ => /");
@@ -193,9 +193,9 @@ public class RepositoryServiceTest {
 
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");
-        configRepository.create("/dna:system");
-        configRepository.create("/dna:system/dna:sources");
-        configRepository.create("/dna:system/dna:sources/source A");
+        configRepository.create("/dna:system").and();
+        configRepository.create("/dna:system/dna:sources").and();
+        configRepository.create("/dna:system/dna:sources/source A").and();
 
         final String className = FakeRepositorySource.class.getName();
         configRepository.set(DnaLexicon.CLASSNAME).on("/dna:system/dna:sources/source A").to(className);

@@ -82,7 +82,7 @@ public class CndImporterTest {
 
         // Set up the path where the content will go, and make sure that path exists in the repository ...
         rootPath = context.getValueFactories().getPathFactory().create("/a");
-        graph.create(rootPath);
+        graph.create(rootPath).and();
 
         // Now set up the destination ...
         destination = new GraphBatchDestination(graph.batch());

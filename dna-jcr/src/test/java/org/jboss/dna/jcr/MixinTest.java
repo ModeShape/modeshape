@@ -84,7 +84,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullMixinTypeName() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set("jcr:primaryType").on("/a").to(PRIMARY_TYPE_A);
 
         Node rootNode = session.getRootNode();
@@ -95,7 +95,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyMixinTypeName() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set("jcr:primaryType").on("/a").to(PRIMARY_TYPE_A);
 
         Node rootNode = session.getRootNode();
@@ -106,7 +106,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = NoSuchNodeTypeException.class )
     public void shouldNotAllowInvalidMixinTypeName() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
 
         Node rootNode = session.getRootNode();
@@ -126,7 +126,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAllowAddingMixinIfNoConflict() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
 
@@ -138,7 +138,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldNotAllowAddingMixinIfPrimaryTypeConflicts() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
 
@@ -150,7 +150,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldNotAllowAddingMixinIfMixinTypeConflicts() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
 
@@ -162,7 +162,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAutoCreateAutoCreatedPropertiesOnAddition() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
 
         Node rootNode = session.getRootNode();
@@ -178,7 +178,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAutoCreateAutoCreatedChildNodesOnAddition() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
 
         Node rootNode = session.getRootNode();
@@ -194,7 +194,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowAdditionIfResidualPropertyConflicts() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
         Node rootNode = session.getRootNode();
@@ -207,7 +207,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAllowAdditionIfResidualPropertyDoesNotConflict() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
         Node rootNode = session.getRootNode();
@@ -220,7 +220,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowAdditionIfResidualChildNodeConflicts() throws Exception {
-        graph.create("/a").and().create("/a/" + CHILD_NODE_B);
+        graph.create("/a").and().create("/a/" + CHILD_NODE_B).and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.BASE.getString(registry));
 
@@ -233,7 +233,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAllowAdditionIfResidualChildNodeDoesNotConflict() throws Exception {
-        graph.create("/a").and().create("/a/" + CHILD_NODE_B);
+        graph.create("/a").and().create("/a/" + CHILD_NODE_B).and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
@@ -260,7 +260,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAllowSettingNewPropertyAfterAddingMixin() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
 
@@ -283,7 +283,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test
     public void shouldAllowAddingNewChildNodeAfterAddingMixin() throws Exception {
-        graph.create("/a");
+        graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
 
@@ -370,7 +370,7 @@ public class MixinTest extends AbstractJcrTest {
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowRemovalIfExistingChildNodeWouldHaveNoDefinition() throws Exception {
-        graph.create("/a").and().create("/a/nodeB");
+        graph.create("/a").and().create("/a/nodeB").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
 

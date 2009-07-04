@@ -94,10 +94,10 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         configRepositorySource.setName("Configuration Repository");
         configRepositorySource.setDefaultWorkspaceName(configurationWorkspaceName);
         Graph config = Graph.create(configRepositorySource, context);
-        config.create("/a");
-        config.create("/a/b");
-        config.create("/a/b/Test Repository");
-        config.create("/a/b/Test Repository/dna:workspaces");
+        config.create("/a").and();
+        config.create("/a/b").and();
+        config.create("/a/b/Test Repository").and();
+        config.create("/a/b/Test Repository/dna:workspaces").and();
 
         repositoryContext = new RepositoryContext() {
             public ExecutionContext getExecutionContext() {
@@ -178,8 +178,8 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         String projectionPath = wsPath + "/dna:projections/" + projectionName;
         Graph config = Graph.create(configRepositorySource, context);
         config.useWorkspace(configurationWorkspaceName);
-        config.createIfMissing(wsPath);
-        config.createIfMissing(wsPath + "/dna:projections");
+        config.create(wsPath).ifAbsent().and();
+        config.create(wsPath + "/dna:projections").ifAbsent().and();
         config.createAt(projectionPath)
               .with(DnaLexicon.PROJECTION_RULES, (Object[])projectionRules)
               .with(DnaLexicon.SOURCE_NAME, sourceName)

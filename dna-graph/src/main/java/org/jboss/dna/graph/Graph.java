@@ -1037,229 +1037,145 @@ public class Graph {
     }
 
     /**
-     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * Begin the request to create a node located at the supplied path.
      * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
      * </p>
      * 
      * @param atPath the path to the node that is to be created.
-     * @return an object that may be used to start another request
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
      */
-    public Conjunction<Graph> create( String atPath ) {
-        Path at = createPath(atPath);
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, EMPTY_PROPERTIES);
-        return nextGraph;
+    public Create<Graph> create( String atPath ) {
+        return create(createPath(atPath));
     }
 
     /**
-     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * Begin the request to create a node located at the supplied path.
      * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
-     * </p>
-     * 
-     * @param at the path to the node that is to be created.
-     * @return an object that may be used to start another request
-     */
-    public Conjunction<Graph> create( final Path at ) {
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, EMPTY_PROPERTIES);
-        return nextGraph;
-    }
-
-    /**
-     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
-     * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
      * </p>
      * 
      * @param atPath the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
+     * @param property a property for the new node
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
      */
-    public Conjunction<Graph> create( String atPath,
-                                      Property... properties ) {
-        Path at = createPath(atPath);
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, properties);
-        return nextGraph;
+    public Create<Graph> create( String atPath,
+                                 Property property ) {
+        return create(createPath(atPath)).with(property);
     }
 
     /**
-     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * Begin the request to create a node located at the supplied path.
      * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
-     * </p>
-     * 
-     * @param at the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
-     */
-    public Conjunction<Graph> create( Path at,
-                                      Property... properties ) {
-        CheckArg.isNotNull(at, "at");
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, properties);
-        return nextGraph;
-    }
-
-    /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
-     * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
-     * </p>
-     * 
-     * @param at the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
-     */
-    public Conjunction<Graph> create( Path at,
-                                      Iterable<Property> properties ) {
-        CheckArg.isNotNull(at, "at");
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        requests.createNode(Location.create(parent), getCurrentWorkspaceName(), child, properties.iterator());
-        return nextGraph;
-    }
-
-    /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
-     * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
      * </p>
      * 
      * @param atPath the path to the node that is to be created.
-     * @return an object that may be used to start another request
+     * @param firstProperty a property for the new node
+     * @param additionalProperties additional properties for the new node
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
      */
-    public GetNodeConjunction<Graph> createIfMissing( String atPath ) {
-        Path at = createPath(atPath);
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        Location location = requests.createNode(Location.create(parent),
-                                                getCurrentWorkspaceName(),
-                                                child,
-                                                EMPTY_PROPERTIES,
-                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
-        return new GetNodeOrReturnGraph(location);
+    public Create<Graph> create( String atPath,
+                                 Property firstProperty,
+                                 Property... additionalProperties ) {
+        return create(createPath(atPath)).with(firstProperty, additionalProperties);
     }
 
     /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
+     * Begin the request to create a node located at the supplied path.
      * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
      * </p>
      * 
      * @param at the path to the node that is to be created.
-     * @return an object that may be used to start another request
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
      */
-    public GetNodeConjunction<Graph> createIfMissing( final Path at ) {
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        Location location = requests.createNode(Location.create(parent),
-                                                getCurrentWorkspaceName(),
-                                                child,
-                                                EMPTY_PROPERTIES,
-                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
-        return new GetNodeOrReturnGraph(location);
-    }
-
-    /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
-     * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
-     * </p>
-     * 
-     * @param atPath the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
-     */
-    public GetNodeConjunction<Graph> createIfMissing( String atPath,
-                                                      Property... properties ) {
-        Path at = createPath(atPath);
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        Location location = requests.createNode(Location.create(parent),
-                                                getCurrentWorkspaceName(),
-                                                child,
-                                                properties,
-                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
-        return new GetNodeOrReturnGraph(location);
-    }
-
-    /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
-     * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
-     * </p>
-     * 
-     * @param at the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
-     */
-    public GetNodeConjunction<Graph> createIfMissing( Path at,
-                                                      Property... properties ) {
+    public final Create<Graph> create( Path at ) {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        Location location = requests.createNode(Location.create(parent),
-                                                getCurrentWorkspaceName(),
-                                                child,
-                                                properties,
-                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
-        return new GetNodeOrReturnGraph(location);
+        Name name = at.getLastSegment().getName();
+        return create(Location.create(parent), name);
+    }
+
+    protected final CreateAction<Graph> create( Location parent,
+                                                Name child ) {
+        return new CreateAction<Graph>(this, parent, getCurrentWorkspaceName(), child) {
+            @Override
+            protected Graph submit( Location parent,
+                                    String workspaceName,
+                                    Name childName,
+                                    Collection<Property> properties,
+                                    NodeConflictBehavior behavior ) {
+                requests.createNode(parent, workspaceName, childName, properties.iterator(), behavior);
+                return Graph.this;
+            }
+
+        };
     }
 
     /**
-     * Begin the request to create a node located at the supplied path, if the node does not exist. This request is submitted to
-     * the repository immediately.
+     * Begin the request to create a node located at the supplied path.
      * <p>
-     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
-     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
-     * parent or new node.
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
      * </p>
      * 
      * @param at the path to the node that is to be created.
-     * @param properties the properties for the new node
-     * @return an object that may be used to start another request
+     * @param properties the iterator over the properties for the new node
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
      */
-    public GetNodeConjunction<Graph> createIfMissing( Path at,
-                                                      Iterable<Property> properties ) {
-        CheckArg.isNotNull(at, "at");
-        Path parent = at.getParent();
-        Name child = at.getLastSegment().getName();
-        Location location = requests.createNode(Location.create(parent),
-                                                getCurrentWorkspaceName(),
-                                                child,
-                                                properties.iterator(),
-                                                NodeConflictBehavior.UPDATE).getActualLocationOfNode();
-        return new GetNodeOrReturnGraph(location);
+    public Create<Graph> create( Path at,
+                                 Iterable<Property> properties ) {
+        Create<Graph> action = create(at);
+        for (Property property : properties) {
+            action.and(property);
+        }
+        return action;
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path.
+     * <p>
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @param property a property for the new node
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
+     */
+    public Create<Graph> create( Path at,
+                                 Property property ) {
+        return create(at).with(property);
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path.
+     * <p>
+     * Like all other methods on the {@link Graph}, the request will be performed when the no-argument {@link Create#and()} method
+     * is called.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @param firstProperty a property for the new node
+     * @param additionalProperties additional properties for the new node
+     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+     *         node where the node is to be created
+     */
+    public Create<Graph> create( Path at,
+                                 Property firstProperty,
+                                 Property... additionalProperties ) {
+        return create(at).with(firstProperty, additionalProperties);
     }
 
     /**
@@ -3001,23 +2917,13 @@ public class Graph {
                     requestQueue.createNode(parent, workspaceName, childName, properties.iterator(), behavior);
                     return Batch.this;
                 }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.Graph.Executable#execute()
-                 */
-                public Results execute() {
-                    and();
-                    return Batch.this.execute();
-                }
             };
         }
 
         /**
          * Begin the request to create a node located at the supplied path.
          * <p>
-         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link Batch#execute()} method is
          * called.
          * </p>
          * 
@@ -4389,7 +4295,7 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this create request is completed
      * @author Randall Hauch
      */
-    public interface Create<Next> extends Conjunction<Next>, Executable<Node> {
+    public interface Create<Next> extends Conjunction<Next> {
         /**
          * Create the node only if there is no existing node with the same {@link Path.Segment#getName() name} (ignoring
          * {@link Path.Segment#getIndex() same-name-sibling indexes}).
@@ -5442,33 +5348,6 @@ public class Graph {
         Node andReturn();
     }
 
-    protected class GetNodeOrReturnGraph implements GetNodeConjunction<Graph> {
-        private final Location location;
-
-        GetNodeOrReturnGraph( Location location ) {
-            assert location != null;
-            this.location = location;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.Graph.Conjunction#and()
-         */
-        public Graph and() {
-            return Graph.this;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.Graph.GetNodeConjunction#andReturn()
-         */
-        public Node andReturn() {
-            return and().getNodeAt(location);
-        }
-    }
-
     // ----------------------------------------------------------------------------------------------------------------
     // Node Implementation
     // ----------------------------------------------------------------------------------------------------------------
@@ -6383,7 +6262,7 @@ public class Graph {
          * 
          * @see org.jboss.dna.graph.Graph.Create#ifAbsent()
          */
-        public Create<T> ifAbsent() {
+        public CreateAction<T> ifAbsent() {
             conflictBehavior = NodeConflictBehavior.DO_NOT_REPLACE;
             return this;
         }
@@ -6393,7 +6272,7 @@ public class Graph {
          * 
          * @see org.jboss.dna.graph.Graph.Create#orReplace()
          */
-        public Create<T> orReplace() {
+        public CreateAction<T> orReplace() {
             conflictBehavior = NodeConflictBehavior.REPLACE;
             return this;
         }
@@ -6403,7 +6282,7 @@ public class Graph {
          * 
          * @see org.jboss.dna.graph.Graph.Create#orUpdate()
          */
-        public Create<T> orUpdate() {
+        public CreateAction<T> orUpdate() {
             conflictBehavior = NodeConflictBehavior.UPDATE;
             return this;
         }
@@ -6413,7 +6292,7 @@ public class Graph {
          * 
          * @see org.jboss.dna.graph.Graph.Create#byAppending()
          */
-        public Create<T> byAppending() {
+        public CreateAction<T> byAppending() {
             conflictBehavior = NodeConflictBehavior.APPEND;
             return this;
         }

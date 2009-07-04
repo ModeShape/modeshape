@@ -432,32 +432,32 @@ public class GraphTest {
 
     @Test
     public void shouldCreateNode() {
-        graph.create(validPath);
+        graph.create(validPath).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c");
         assertNoMoreRequests();
 
-        graph.create(validPath, validIdProperty1);
+        graph.create(validPath, validIdProperty1).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
-        graph.create(validPath, validIdProperty1, validIdProperty2);
+        graph.create(validPath, validIdProperty1, validIdProperty2).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
 
-        graph.create(validPathString);
+        graph.create(validPathString).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c");
         assertNoMoreRequests();
 
-        graph.create(validPathString, validIdProperty1);
+        graph.create(validPathString, validIdProperty1).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
-        graph.create(validPathString, validIdProperty1, validIdProperty2);
+        graph.create(validPathString, validIdProperty1, validIdProperty2).and();
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
@@ -522,7 +522,7 @@ public class GraphTest {
     @Test
     public void shouldCreateNodesWithBatch() {
         graph.batch().create(validPath, validIdProperty1).and().remove("prop").on(validPathString).execute();
-        graph.batch().move(validPath).and(validPath).into(validPathString).and().create(validPath).execute();
+        graph.batch().move(validPath).and(validPath).into(validPathString).and().create(validPath).and().execute();
         graph.batch().createUnder(validLocation).nodeNamed("someName").and().delete(validLocation).execute();
     }
 
