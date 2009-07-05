@@ -32,12 +32,6 @@
 			<version>4.4</version>
 			<scope>integration-test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-client</artifactId>
-			<version>1.0-beta-8</version>
-			<scope>integration-test</scope>
-		</dependency>
 	</dependencies>
 	<build>
 		<finalName>resources</finalName>
