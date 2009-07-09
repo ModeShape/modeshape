@@ -66,7 +66,7 @@ import org.mockito.Mockito;
 /**
  * @author jverhaeg
  */
-public class JcrSessionTest extends AbstractJcrTest {
+public class JcrSessionTest extends AbstractSessionTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
 
@@ -74,6 +74,7 @@ public class JcrSessionTest extends AbstractJcrTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
+
     }
 
     @Override
@@ -88,20 +89,8 @@ public class JcrSessionTest extends AbstractJcrTest {
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").and();
 
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-        sessionAttributes.put("attribute1", "value1");
-
-        // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext(null,
-                                                                      Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
-        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
     }
 
-    
     @After
     public void after() throws Exception {
         if (session.isLive()) {
@@ -247,6 +236,8 @@ public class JcrSessionTest extends AbstractJcrTest {
     public void shouldProvideRootNode() throws Exception {
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
+        String uuid = root.getUUID();
+        assertThat(uuid, notNullValue());
     }
 
     @Test
@@ -419,15 +410,6 @@ public class JcrSessionTest extends AbstractJcrTest {
      * Moved these three tests over from AbstractJcrNode as they require more extensive scaffolding that is already implemented in
      * this test.
      */
-
-    @Test
-    public void shouldProvideUuidIfReferenceable() throws Exception {
-        // The root node is referenceable in DNA
-        Node rootNode = session.getRootNode();
-
-        UUID uuid = ((AbstractJcrNode)rootNode).location.getUuid();
-        assertThat(rootNode.getUUID(), is(uuid.toString()));
-    }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNotReferenceable() throws Exception {

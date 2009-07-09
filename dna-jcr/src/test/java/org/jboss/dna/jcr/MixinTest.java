@@ -44,7 +44,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class MixinTest extends AbstractJcrTest {
+public class MixinTest extends AbstractSessionTest {
 
     /*
      * Declares the following node types:
@@ -235,7 +235,9 @@ public class MixinTest extends AbstractJcrTest {
     public void shouldAllowAdditionIfResidualChildNodeDoesNotConflict() throws Exception {
         graph.create("/a").and().create("/a/" + CHILD_NODE_B).and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry))
+             .on("/a/" + CHILD_NODE_B)
+             .to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");

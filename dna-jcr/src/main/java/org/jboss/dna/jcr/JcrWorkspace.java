@@ -185,7 +185,7 @@ final class JcrWorkspace implements Workspace {
         this.queryManager = new JcrQueryManager(this.session);
 
         if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
-            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
+            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, DnaLexicon.NODE_TYPES);
             repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
         }
 
@@ -236,17 +236,16 @@ final class JcrWorkspace implements Workspace {
         try {
             Set<String> workspaceNamesFromGraph = graph.getWorkspaces();
             Set<String> workspaceNames = new HashSet<String>(workspaceNamesFromGraph.size());
-            
-            for(String workspaceName : workspaceNamesFromGraph) {
+
+            for (String workspaceName : workspaceNamesFromGraph) {
                 try {
                     session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
                     workspaceNames.add(workspaceName);
-                }
-                catch (AccessControlException ace) {
+                } catch (AccessControlException ace) {
                     // Can happen if user doesn't have the privileges to read from the workspace
                 }
             }
-            
+
             return workspaceNames.toArray(new String[workspaceNames.size()]);
         } catch (RepositorySourceException e) {
             throw new RepositoryException(JcrI18n.errorObtainingWorkspaceNames.text(getSourceName(), e.getMessage()), e);
@@ -354,7 +353,7 @@ final class JcrWorkspace implements Workspace {
             }
 
             // Now perform the clone, using the direct (non-session) method ...
-            cache.graphSession().immediateClone(srcPath, srcWorkspace, destPath, removeExisting);
+            cache.graphSession().immediateClone(srcPath, srcWorkspace, destPath, removeExisting, false);
         } catch (ItemNotFoundException e) {
             // The destination path was not found ...
             throw new PathNotFoundException(e.getLocalizedMessage(), e);

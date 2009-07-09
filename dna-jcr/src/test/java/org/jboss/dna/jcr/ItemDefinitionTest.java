@@ -45,7 +45,7 @@ import org.junit.Test;
  * BDD test cases for property and child node definition inheritance. Could be part of RepositoryNodeTypeManagerTest, but split
  * off to isolate tests for this behavior vs. projection/inference and registration/unregistration behavior.
  */
-public class ItemDefinitionTest extends AbstractJcrTest {
+public class ItemDefinitionTest extends AbstractSessionTest {
 
     private static final Name NODE_TYPE_A = new BasicName(TestLexicon.Namespace.URI, "nodeA");
     private static final Name NODE_TYPE_B = new BasicName(TestLexicon.Namespace.URI, "nodeB");
@@ -67,9 +67,9 @@ public class ItemDefinitionTest extends AbstractJcrTest {
     @Override
     protected void initializeContent() {
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
-        
+
     }
-    
+
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {

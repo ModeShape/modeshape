@@ -46,7 +46,7 @@ import org.junit.Test;
  * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)}, which
  * provides the wrapper around the factory that the rest of the API is expected to utilize.
  */
-public class JcrPropertyDefinitionTest extends AbstractJcrTest {
+public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
     protected final String[] EXPECTED_BINARY_CONSTRAINTS = new String[] {"[,5)", "[10, 20)", "(30,40]", "[50,]"};
     protected final String[] EXPECTED_DATE_CONSTRAINTS = new String[] {"[,+1945-08-01T01:30:00.000Z]",
@@ -59,7 +59,6 @@ public class JcrPropertyDefinitionTest extends AbstractJcrTest {
     protected final String[] EXPECTED_STRING_CONSTRAINTS = new String[] {"foo", "bar*", ".*baz"};
 
     protected NodeTypeManager nodeTypeManager;
-
 
     @Override
     @Before
@@ -77,7 +76,7 @@ public class JcrPropertyDefinitionTest extends AbstractJcrTest {
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
 
     }
-    
+
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {

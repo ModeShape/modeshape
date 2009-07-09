@@ -41,7 +41,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
+ * Abstract test that sets up a SessionCache environment with a real {@link RepositoryNodeTypeManager}, albeit with a mocked
+ * JcrSession, Workspace, and Repository.
  * 
+ * @see AbstractSessionTest for an alternative with a more complete environment
  */
 public abstract class AbstractJcrTest {
 
@@ -109,19 +112,23 @@ public abstract class AbstractJcrTest {
         store.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream(xmlResourceName)).into("/");
         numberOfConnections = 0; // reset the number of connections
 
-        nodeTypes = new JcrNodeTypeManager(context, rntm);
-
-        // Stub the session ...
+        // Stub the session, workspace, and repository; then stub some critical methods ...
         jcrSession = mock(JcrSession.class);
+        workspace = mock(Workspace.class);
+        repository = mock(Repository.class);
+        stub(jcrSession.getExecutionContext()).toReturn(context);
+        stub(jcrSession.getWorkspace()).toReturn(workspace);
+        stub(jcrSession.getRepository()).toReturn(repository);
+        stub(workspace.getName()).toReturn("workspace1");
+
+        // Create the node type manager for the session ...
+        // no need to stub the 'JcrSession.checkPermission' methods, since we're never calling 'register' on the
+        // JcrNodeTypeManager
+        nodeTypes = new JcrNodeTypeManager(jcrSession, rntm);
         stub(jcrSession.nodeTypeManager()).toReturn(nodeTypes);
 
         cache = new SessionCache(jcrSession, store.getCurrentWorkspaceName(), context, nodeTypes, store);
 
-        workspace = mock(Workspace.class);
-        repository = mock(Repository.class);
-        stub(jcrSession.getWorkspace()).toReturn(workspace);
-        stub(jcrSession.getRepository()).toReturn(repository);
-        stub(workspace.getName()).toReturn("workspace1");
     }
 
     protected String getResourceNameOfXmlFileToImport() {

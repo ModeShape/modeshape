@@ -1444,6 +1444,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
         CheckArg.isNotNull(workspaceName, "workspace name");
         NamespaceRegistry namespaces = this.context().getNamespaceRegistry();
+        return correspondingNodePath(workspaceName).getString(namespaces);
+    }
+
+    protected final Path correspondingNodePath( String workspaceName )
+        throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
+        assert workspaceName != null;
+        NamespaceRegistry namespaces = this.context().getNamespaceRegistry();
 
         // Find the closest ancestor (including this node) that is referenceable ...
         AbstractJcrNode referenceableRoot = this;
@@ -1454,7 +1461,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         // Find the relative path from the nearest referenceable node to this node (or null if this node is referenceable) ...
         Path relativePath = path().equals(referenceableRoot.path()) ? null : path().relativeTo(referenceableRoot.path());
         UUID uuid = UUID.fromString(referenceableRoot.getUUID());
-        return this.cache.getPathForCorrespondingNode(workspaceName, uuid, relativePath).getString(namespaces);
+        return this.cache.getPathForCorrespondingNode(workspaceName, uuid, relativePath);
     }
 
     /**
@@ -1469,14 +1476,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
         }
 
+        Path correspondingPath = null;
         try {
-            getCorrespondingNodePath(srcWorkspaceName);
+            correspondingPath = correspondingNodePath(srcWorkspaceName);
         } catch (ItemNotFoundException infe) {
             return;
         }
 
         // Need to force remove in case this node is not referenceable
-        this.session().workspace().clone(srcWorkspaceName, correspondingPath, path(), true, true);
+        cache.graphSession().immediateClone(correspondingPath, srcWorkspaceName, path(), true, true);
 
         session().refresh(false);
     }

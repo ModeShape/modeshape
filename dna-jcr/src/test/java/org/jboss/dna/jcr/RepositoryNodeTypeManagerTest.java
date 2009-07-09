@@ -49,10 +49,9 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
+public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
 
     @Override
     @Before
@@ -80,24 +79,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
 
-        stub(repository.getOptions()).toReturn(options);
-
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-        sessionAttributes.put("attribute1", "value1");
-
-        // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
-                                                                      Collections.singleton(JcrSession.DNA_READ_PERMISSION));
-        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
-
-        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
-
     }
-    
+
     @After
     public void after() throws Exception {
         if (session != null && session.isLive()) {
@@ -119,7 +102,6 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         assertEquals(namespacesNodes.getSize(), 1);
     }
 
-    @Ignore( "dna-466" )
     @Test
     public void shouldOnlyHaveOneNodeTypesNode() throws Exception {
         NamespaceRegistry registry = context.getNamespaceRegistry();
@@ -130,7 +112,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         Node systemNode = rootNode.getNode(JcrLexicon.SYSTEM.getString(registry));
         assertThat(systemNode, is(notNullValue()));
 
-        NodeIterator nodeTypesNodes = systemNode.getNodes(JcrLexicon.NODE_TYPES.getString(registry));
+        NodeIterator nodeTypesNodes = systemNode.getNodes(DnaLexicon.NODE_TYPES.getString(registry));
         assertEquals(nodeTypesNodes.getSize(), 1);
     }
 
@@ -160,7 +142,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         Node systemNode = rootNode.getNode(JcrLexicon.SYSTEM.getString(registry));
         assertThat(systemNode, is(notNullValue()));
 
-        Node typesNode = systemNode.getNode(JcrLexicon.NODE_TYPES.getString(registry));
+        Node typesNode = systemNode.getNode(DnaLexicon.NODE_TYPES.getString(registry));
         assertThat(typesNode, is(notNullValue()));
 
         Collection<JcrNodeType> allNodeTypes = repoTypeManager.getAllNodeTypes();

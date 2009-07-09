@@ -477,7 +477,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
             // Create the set of initial names ...
             for (String initialName : getPredefinedWorkspaceNames())
                 repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
-        
+
         }
 
         return new MapRepositoryConnection(this, this.repository);
@@ -488,11 +488,13 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
      * probably called at most once for each workspace name (except if this method fails to create a cache for a given workspace
      * name).
      * 
-     * @param workspaceName the name of the workspace
+     * @param cacheFactory the cache factory
+     * @param repositoryName the name of the repository
      * @return the new cache that corresponds to the workspace name
      */
     @GuardedBy( "writeLock" )
-    protected Cache<UUID, MapNode> createNewCache( CacheFactory<UUID, MapNode> cacheFactory, String repositoryName ) {
+    protected Cache<UUID, MapNode> createNewCache( CacheFactory<UUID, MapNode> cacheFactory,
+                                                   String repositoryName ) {
         assert repositoryName != null;
         if (cacheFactory == null) return null;
 
@@ -523,7 +525,6 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
         return cacheFactory.createCache();
     }
 
-    
     /**
      * @return repositoryContext
      */

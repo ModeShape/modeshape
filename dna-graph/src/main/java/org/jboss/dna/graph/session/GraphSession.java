@@ -59,6 +59,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.Request;
@@ -564,6 +565,7 @@ public class GraphSession<Payload, PropertyPayload> {
      *        should be used
      * @param destination the path for the new cloned copy; may not be null index
      * @param removeExisting true if the original should be removed, or false if the original should be left
+     * @param destPathIncludesSegment true if the destination path includes the segment that should be used
      * @throws IllegalArgumentException either path is null or invalid
      * @throws InvalidWorkspaceException if the source workspace name is invalid or does not exist
      * @throws UuidAlreadyExistsException if copy could not be completed because the current workspace already includes at least
@@ -575,7 +577,8 @@ public class GraphSession<Payload, PropertyPayload> {
     public void immediateClone( Path source,
                                 String sourceWorkspace,
                                 Path destination,
-                                boolean removeExisting )
+                                boolean removeExisting,
+                                boolean destPathIncludesSegment )
         throws InvalidWorkspaceException, AccessControlException, UuidAlreadyExistsException, PathNotFoundException,
         RepositorySourceException {
         CheckArg.isNotNull(source, "source");
@@ -591,18 +594,42 @@ public class GraphSession<Payload, PropertyPayload> {
         Graph.Batch batch = store.batch();
         if (removeExisting) {
             // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-            batch.copy(source).replacingExistingNodesWithSameUuids().fromWorkspace(sourceWorkspace).to(destination);
+            if (destPathIncludesSegment) {
+                batch.clone(source)
+                     .fromWorkspace(sourceWorkspace)
+                     .as(destination.getLastSegment())
+                     .into(destination.getParent())
+                     .replacingExistingNodesWithSameUuids();
+            } else {
+                Name newNodeName = destination.getLastSegment().getName();
+                batch.clone(source)
+                     .fromWorkspace(sourceWorkspace)
+                     .as(newNodeName)
+                     .into(destination.getParent())
+                     .replacingExistingNodesWithSameUuids();
+            }
         } else {
             // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-            batch.copy(source).failingIfUuidsMatch().fromWorkspace(sourceWorkspace).to(destination);
+            if (destPathIncludesSegment) {
+                batch.clone(source)
+                     .fromWorkspace(sourceWorkspace)
+                     .as(destination.getLastSegment())
+                     .into(destination.getParent())
+                     .failingIfAnyUuidsMatch();
+            } else {
+                Name newNodeName = destination.getLastSegment().getName();
+                batch.clone(source)
+                     .fromWorkspace(sourceWorkspace)
+                     .as(newNodeName)
+                     .into(destination.getParent())
+                     .failingIfAnyUuidsMatch();
+            }
         }
-        // And read the children of the destination's parent ...
-        batch.readChildren().of(destination.getParent());
         // Now execute these two operations ...
         Results results = batch.execute();
 
         // Find the copy request to get the actual location of the copy ...
-        CopyBranchRequest request = (CopyBranchRequest)results.getRequests().get(0);
+        CloneBranchRequest request = (CloneBranchRequest)results.getRequests().get(0);
         Location locationOfCopy = request.getActualLocationAfter();
 
         // Find the parent node in the session ...

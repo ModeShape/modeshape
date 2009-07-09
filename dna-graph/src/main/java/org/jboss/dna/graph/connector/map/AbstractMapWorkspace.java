@@ -458,6 +458,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         UUID uuidForCopy = reuseUuids ? original.getUuid() : UUID.randomUUID();
         MapNode copy = newWorkspace.createNode(context, newParent, childName, uuidForCopy);
         if (!reuseUuids) {
+            assert oldToNewUuids != null;
             oldToNewUuids.put(original.getUuid(), copy.getUuid());
         }
 

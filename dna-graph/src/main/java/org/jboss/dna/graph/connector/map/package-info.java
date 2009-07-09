@@ -65,7 +65,6 @@
  * 
  * @see org.jboss.dna.graph.connector.inmemory.InMemoryRepository
  * @see org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource
- * @see org.jboss.dna.graph.connector.inmemory.InMemoryRepository#Workspace
  */
 
 package org.jboss.dna.graph.connector.map;

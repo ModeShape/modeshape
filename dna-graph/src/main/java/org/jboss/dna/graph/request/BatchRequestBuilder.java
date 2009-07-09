@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
+import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -597,6 +598,33 @@ public class BatchRequestBuilder {
                                            NodeConflictBehavior conflictBehavior ) {
         if (conflictBehavior == null) conflictBehavior = CopyBranchRequest.DEFAULT_NODE_CONFLICT_BEHAVIOR;
         return add(new CopyBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForCopy, conflictBehavior));
+    }
+
+    /**
+     * Add a request to clone a branch to another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be cloned
+     * @param fromWorkspace the name of the workspace where the <code>from</code> node exists
+     * @param into the location of the existing node into which the clone should be placed
+     * @param intoWorkspace the name of the workspace where the <code>into</code> node is to be cloned
+     * @param nameForClone the desired name for the node that results from the clone, or null if the name of the original should
+     *        be used
+     * @param exactSegmentForClone the exact {@link Path.Segment segment} at which the cloned tree should be rooted.
+     * @param removeExisting whether any nodes in the intoWorkspace with the same UUIDs as a node in the source branch should be
+     *        removed (if true) or a {@link UuidAlreadyExistsException} should be thrown.
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or {@code
+     *         exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
+     */
+    public BatchRequestBuilder cloneBranch( Location from,
+                                            String fromWorkspace,
+                                            Location into,
+                                            String intoWorkspace,
+                                            Name nameForClone,
+                                            Path.Segment exactSegmentForClone,
+                                            boolean removeExisting ) {
+        return add(new CloneBranchRequest(from, fromWorkspace, into, intoWorkspace, nameForClone, exactSegmentForClone,
+                                          removeExisting));
     }
 
     /**

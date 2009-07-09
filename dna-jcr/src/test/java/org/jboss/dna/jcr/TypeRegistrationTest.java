@@ -46,7 +46,7 @@ import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TypeRegistrationTest extends AbstractJcrTest {
+public class TypeRegistrationTest extends AbstractSessionTest {
 
     private static final String TEST_TYPE_NAME = "dna:testNode";
     private static final String TEST_TYPE_NAME2 = "dna:testNode2";
@@ -691,97 +691,94 @@ public class TypeRegistrationTest extends AbstractJcrTest {
      * Unregistration tests
      */
 
-    @Test (expected=IllegalArgumentException.class)
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowUnregisteringNullCollection() throws Exception {
         repoTypeManager.unregisterNodeType(null);
     }
-    
-    @Test (expected=NoSuchNodeTypeException.class)
+
+    @Test( expected = NoSuchNodeTypeException.class )
     public void shouldNotAllowUnregisteringInvalidTypeNames() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { JcrNtLexicon.FILE, JcrLexicon.DATA}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE, JcrLexicon.DATA}));
     }
 
-    @Test (expected=InvalidNodeTypeDefinitionException.class)
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowUnregisteringSupertype() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { JcrNtLexicon.HIERARCHY_NODE, }));
-        
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.HIERARCHY_NODE,}));
+
     }
 
-    @Test (expected=InvalidNodeTypeDefinitionException.class)
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowUnregisteringRequiredPrimaryType() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { JcrNtLexicon.FROZEN_NODE, }));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FROZEN_NODE,}));
     }
-    
-    @Test (expected=InvalidNodeTypeDefinitionException.class)
+
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowUnregisteringDefaultPrimaryType() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        
+
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
         childNode.setDefaultPrimaryType(JcrNtLexicon.FILE.getString(this.registry));
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
-        
+
         try {
             repoTypeManager.registerNodeType(ntTemplate, false);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             fail(ex.getMessage());
         }
-        
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { JcrNtLexicon.FILE, }));
+
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE,}));
     }
 
-    @Test 
+    @Test
     public void shouldAllowUnregisteringUnusedType() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        
+
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
         childNode.setDefaultPrimaryType(JcrNtLexicon.FILE.getString(this.registry));
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
-        
+
         try {
             repoTypeManager.registerNodeType(ntTemplate, false);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             fail(ex.getMessage());
         }
-        
+
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
         int nodeTypeCount = repoTypeManager.getAllNodeTypes().size();
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { typeNameAsName }));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName}));
         assertThat(repoTypeManager.getAllNodeTypes().size(), is(nodeTypeCount - 1));
         assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
     }
 
-    @Test 
+    @Test
     public void shouldAllowUnregisteringUnusedTypesWithMutualDependencies() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        
+
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
         childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         NodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(this.context);
         ntTemplate2.setName(TEST_TYPE_NAME2);
-        
+
         JcrNodeDefinitionTemplate childNode2 = new JcrNodeDefinitionTemplate(this.context);
         childNode2.setDefaultPrimaryType(TEST_TYPE_NAME);
         ntTemplate2.getNodeDefinitionTemplates().add(childNode2);
 
         try {
-            repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] { ntTemplate, ntTemplate2 }), false);
-        }
-        catch (Exception ex) {
+            repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2}), false);
+        } catch (Exception ex) {
             fail(ex.getMessage());
         }
-        
+
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
         Name type2NameAsName = nameFactory.create(TEST_TYPE_NAME2);
         int nodeTypeCount = repoTypeManager.getAllNodeTypes().size();
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] { typeNameAsName, type2NameAsName }));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName, type2NameAsName}));
         assertThat(repoTypeManager.getAllNodeTypes().size(), is(nodeTypeCount - 2));
         assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
         assertThat(repoTypeManager.getNodeType(type2NameAsName), is(nullValue()));
-        
+
     }
 
     private void compareTemplatesToNodeTypes( List<NodeTypeDefinition> templates,

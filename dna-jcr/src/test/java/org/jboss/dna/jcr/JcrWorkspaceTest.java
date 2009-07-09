@@ -41,7 +41,7 @@ import org.junit.Test;
 /**
  * @author jverhaeg
  */
-public class JcrWorkspaceTest extends AbstractJcrTest {
+public class JcrWorkspaceTest extends AbstractSessionTest {
 
     @BeforeClass
     public static void beforeClass() {
@@ -73,7 +73,7 @@ public class JcrWorkspaceTest extends AbstractJcrTest {
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").ifAbsent().and();
 
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCloneWithNullWorkspaceName() throws Exception {
         workspace.clone(null, "/src", "/dest", false);

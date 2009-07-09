@@ -2462,13 +2462,13 @@ public class Graph {
                                                    Name desiredName,
                                                    Segment desiredSegment,
                                                    boolean removeExisting ) {
-                    requests.cloneBranch(from,
-                                         fromWorkspaceName,
-                                         into,
-                                         intoWorkspaceName,
-                                         desiredName,
-                                         desiredSegment,
-                                         removeExisting);
+                    requestQueue.cloneBranch(from,
+                                             fromWorkspaceName,
+                                             into,
+                                             intoWorkspaceName,
+                                             desiredName,
+                                             desiredSegment,
+                                             removeExisting);
                     return and();
                 }
             };
@@ -2611,9 +2611,9 @@ public class Graph {
                                                    Locations from,
                                                    Location into,
                                                    Name copyName ) {
-	
+
                     String intoWorkspaceName = getCurrentWorkspaceName();
-                    if ( fromWorkspaceName == null ) fromWorkspaceName = intoWorkspaceName;
+                    if (fromWorkspaceName == null) fromWorkspaceName = intoWorkspaceName;
                     do {
                         requestQueue.copyBranch(from.getLocation(), fromWorkspaceName, into, intoWorkspaceName, copyName, null);
                     } while ((from = from.next()) != null);
