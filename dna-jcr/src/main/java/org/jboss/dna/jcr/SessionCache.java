@@ -141,6 +141,10 @@ class SessionCache {
 
     private GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession;
 
+    public SessionCache( JcrSession session ) {
+        this(session, session.workspace().getName(), session.getExecutionContext(), session.nodeTypeManager(), session.graph());
+    }
+
     public SessionCache( JcrSession session,
                          String workspaceName,
                          ExecutionContext context,
@@ -200,6 +204,10 @@ class SessionCache {
 
     NameFactory nameFactory() {
         return nameFactory;
+    }
+
+    ValueFactory<String> stringFactory() {
+        return factories.getStringFactory();
     }
 
     JcrNodeTypeManager nodeTypes() {
@@ -1375,7 +1383,6 @@ class SessionCache {
                 // Create the initial properties ...
                 Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
                 Property nodeDefinitionProp = propertyFactory.create(DnaIntLexicon.NODE_DEFINITON, definition.getId().getString());
-                List<Name> mixinTypeNames = null;
 
                 // Now add the "jcr:uuid" property if and only if referenceable ...
                 Node<JcrNodePayload, JcrPropertyPayload> result = null;
@@ -1388,13 +1395,10 @@ class SessionCache {
                 } else {
                     result = node.createChild(name, primaryTypeProp, nodeDefinitionProp);
                 }
-                // Now create the payload ...
-                JcrNodePayload newPayload = new JcrNodePayload(SessionCache.this, result, primaryTypeName, mixinTypeNames,
-                                                               definition.getId());
-                result.setPayload(newPayload);
+                // The postCreateChild hook impl should populate the payloads
+
                 // Finally, return the jcr node ...
-                assert result.getPayload() == newPayload;
-                return (JcrNode)newPayload.getJcrNode();
+                return (JcrNode)result.getPayload().getJcrNode();
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e.getCause());
             } catch (RepositorySourceException e) {
@@ -1418,6 +1422,22 @@ class SessionCache {
             if (!child.getParent().equals(node)) return false;
             try {
                 child.destroy();
+            } catch (AccessControlException e) {
+                throw new AccessDeniedException(e.getMessage(), e.getCause());
+            }
+            return true;
+        }
+
+        /**
+         * Convenience method that destroys this node.
+         * 
+         * @return true if this node was successfully removed
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws RepositoryException if any other error occurs
+         */
+        public boolean destroy() throws AccessDeniedException, RepositoryException {
+            try {
+                node.destroy();
             } catch (AccessControlException e) {
                 throw new AccessDeniedException(e.getMessage(), e.getCause());
             }
@@ -1971,7 +1991,7 @@ class SessionCache {
                                                                          PropertyInfo<JcrPropertyPayload> existing ) {
         // Create (or reuse) the JCR Property object ...
         AbstractJcrProperty jcrProp = null;
-        if (existing != null) {
+        if (existing != null && existing.getPayload() != null) {
             jcrProp = existing.getPayload().getJcrProperty();
         } else {
             AbstractJcrNode jcrNode = nodePayload.getJcrNode();
@@ -1985,7 +2005,6 @@ class SessionCache {
         JcrPropertyPayload propPayload = new JcrPropertyPayload(definition.getId(), propertyType, jcrProp);
         Status status = existing != null ? Status.CHANGED : Status.NEW;
         return new GraphSession.PropertyInfo<JcrPropertyPayload>(dnaProp, definition.isMultiple(), status, propPayload);
-
     }
 
     @Immutable
@@ -2398,6 +2417,60 @@ class SessionCache {
                     }
 
                 }
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.NodeOperations#postCreateChild(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node, java.util.Map)
+         */
+        @Override
+        public void postCreateChild( Node<JcrNodePayload, JcrPropertyPayload> parent,
+                                     Node<JcrNodePayload, JcrPropertyPayload> child,
+                                     Map<Name, PropertyInfo<JcrPropertyPayload>> properties ) throws ValidationException {
+            super.postCreateChild(parent, child, properties);
+            // Populate the node and properties with the payloads ...
+
+            // Get the 2 properties that WILL be here ...
+            PropertyInfo<JcrPropertyPayload> primaryTypeInfo = properties.get(JcrLexicon.PRIMARY_TYPE);
+            PropertyInfo<JcrPropertyPayload> nodeDefnInfo = properties.get(DnaIntLexicon.NODE_DEFINITON);
+            Name primaryTypeName = nameFactory().create(primaryTypeInfo.getProperty().getFirstValue());
+            String nodeDefnIdStr = stringFactory().create(nodeDefnInfo.getProperty().getFirstValue());
+            NodeDefinitionId nodeDefnId = NodeDefinitionId.fromString(nodeDefnIdStr, nameFactory);
+
+            // Now create the payload ...
+            JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, child, primaryTypeName, null, nodeDefnId);
+            child.setPayload(nodePayload);
+
+            // Now update the property infos for the two mandatory properties ...
+            JcrNodeType ntBase = nodeTypes().getNodeType(JcrNtLexicon.BASE);
+            assert ntBase != null;
+            primaryTypeInfo = createPropertyInfo(parent.getPayload(),
+                                                 primaryTypeInfo.getProperty(),
+                                                 ntBase.allPropertyDefinitions(JcrLexicon.PRIMARY_TYPE).iterator().next(),
+                                                 PropertyType.NAME,
+                                                 primaryTypeInfo);
+            properties.put(primaryTypeInfo.getName(), primaryTypeInfo);
+            nodeDefnInfo = createPropertyInfo(parent.getPayload(),
+                                              nodeDefnInfo.getProperty(),
+                                              ntBase.allPropertyDefinitions(DnaIntLexicon.NODE_DEFINITON).iterator().next(),
+                                              PropertyType.STRING,
+                                              nodeDefnInfo);
+            properties.put(nodeDefnInfo.getName(), nodeDefnInfo);
+
+            // The UUID property is optional ...
+            PropertyInfo<JcrPropertyPayload> uuidInfo = properties.get(JcrLexicon.UUID);
+            if (uuidInfo != null) {
+                JcrNodeType mixRef = nodeTypes().getNodeType(JcrMixLexicon.REFERENCEABLE);
+                assert mixRef != null;
+                uuidInfo = createPropertyInfo(parent.getPayload(),
+                                              uuidInfo.getProperty(),
+                                              mixRef.allPropertyDefinitions(JcrLexicon.UUID).iterator().next(),
+                                              PropertyType.STRING,
+                                              uuidInfo);
+                properties.put(uuidInfo.getName(), uuidInfo);
             }
         }
 

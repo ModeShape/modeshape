@@ -158,8 +158,7 @@ class JcrSession implements Session {
                                   this.executionContext);
         this.graph.useWorkspace(workspace.getName());
 
-        this.cache = new SessionCache(this, workspace.getName(), this.executionContext, this.workspace.nodeTypeManager(),
-                                      this.graph);
+        this.cache = new SessionCache(this);
         this.isLive = true;
 
         assert this.sessionAttributes != null;
@@ -198,6 +197,10 @@ class JcrSession implements Session {
 
     Graph.Batch createBatch() {
         return graph.batch();
+    }
+
+    Graph graph() {
+        return graph;
     }
 
     String sourceName() {

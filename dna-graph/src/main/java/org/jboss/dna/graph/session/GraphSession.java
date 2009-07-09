@@ -2290,6 +2290,7 @@ public class GraphSession<Payload, PropertyPayload> {
             // Set the properties on the new node, but in a private backdoor way ...
             assert child.properties == null;
             child.properties = newProperties;
+            child.childrenByName = cache.NO_CHILDREN;
 
             try {
                 // The node has been changed, so try notifying before we record the creation (which can't be undone) ...
@@ -2745,7 +2746,6 @@ public class GraphSession<Payload, PropertyPayload> {
         COPIED;
     }
 
-    @Immutable
     public static final class PropertyInfo<PropertyPayload> {
         private final Property property;
         private final Status status;

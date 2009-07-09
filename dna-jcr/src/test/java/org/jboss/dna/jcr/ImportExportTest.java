@@ -128,7 +128,6 @@ public class ImportExportTest {
         session.importXML(targetPath, bais, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
     }
 
-    @Ignore( "dna-466" )
     @Test
     public void shouldImportExportEscapedXmlCharactersInSystemView() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
