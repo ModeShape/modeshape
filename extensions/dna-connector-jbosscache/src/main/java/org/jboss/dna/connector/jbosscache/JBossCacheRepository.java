@@ -31,7 +31,7 @@ public class JBossCacheRepository extends MapRepository {
 
         assert cache != null;
         this.cache = cache;
-        
+
         initialize();
     }
 
@@ -56,20 +56,24 @@ public class JBossCacheRepository extends MapRepository {
             initialize();
         }
 
+        @Override
         protected void addNodeToMap( MapNode node ) {
             assert node != null;
             workspaceNode.put(node.getUuid(), node);
         }
 
+        @Override
         protected MapNode removeNodeFromMap( UUID nodeUuid ) {
             assert nodeUuid != null;
             return workspaceNode.remove(nodeUuid);
         }
 
+        @Override
         protected void removeAllNodesFromMap() {
             workspaceNode.clearData();
         }
 
+        @Override
         public MapNode getNode( UUID nodeUuid ) {
             assert nodeUuid != null;
             return workspaceNode.get(nodeUuid);

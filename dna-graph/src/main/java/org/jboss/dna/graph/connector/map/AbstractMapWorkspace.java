@@ -473,6 +473,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         }
 
         if (!reuseUuids) {
+            assert oldToNewUuids != null;
             // Now, adjust any references in the new subgraph to objects in the original subgraph
             // (because they were internal references, and need to be internal to the new subgraph)
             PropertyFactory propertyFactory = context.getPropertyFactory();

@@ -54,6 +54,7 @@ public class InMemoryRepository extends MapRepository {
         initialize();
     }
 
+    @Override
     @GuardedBy( "getLock()" )
     protected MapWorkspace createWorkspace( ExecutionContext context,
                                             String name ) {
@@ -70,21 +71,25 @@ public class InMemoryRepository extends MapRepository {
             initialize();
         }
 
+        @Override
         protected void addNodeToMap( MapNode node ) {
             assert node != null;
             assert nodesByUuid != null;
             nodesByUuid.put(node.getUuid(), node);
         }
 
+        @Override
         protected MapNode removeNodeFromMap( UUID nodeUuid ) {
             assert nodeUuid != null;
             return nodesByUuid.remove(nodeUuid);
         }
 
+        @Override
         protected void removeAllNodesFromMap() {
             nodesByUuid.clear();
         }
 
+        @Override
         public MapNode getNode( UUID nodeUuid ) {
             assert nodeUuid != null;
             return nodesByUuid.get(nodeUuid);

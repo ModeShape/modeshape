@@ -6199,7 +6199,7 @@ public class Graph {
 
     @NotThreadSafe
     public abstract class CloneAction<T> extends AbstractAction<T> implements Clone<T> {
-        private final Location from;
+        protected final Location from;
 
         /*package*/CloneAction( T afterConjunction,
                                  Location from ) {
