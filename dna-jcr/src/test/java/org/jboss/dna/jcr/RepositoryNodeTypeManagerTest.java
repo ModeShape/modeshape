@@ -112,8 +112,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         Node systemNode = rootNode.getNode(JcrLexicon.SYSTEM.getString(registry));
         assertThat(systemNode, is(notNullValue()));
 
-        NodeIterator nodeTypesNodes = systemNode.getNodes(DnaLexicon.NODE_TYPES.getString(registry));
-        assertEquals(nodeTypesNodes.getSize(), 1);
+        NodeIterator nodeTypesNodes = systemNode.getNodes(JcrLexicon.NODE_TYPES.getString(registry));
+        assertEquals(1, nodeTypesNodes.getSize());
     }
 
     @Test

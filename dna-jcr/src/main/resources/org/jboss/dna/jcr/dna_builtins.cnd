@@ -25,6 +25,7 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
+<jcr = "http://www.jcp.org/jcr/1.0">
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <mix = "http://www.jcp.org/jcr/mix/1.0">
 <dna = "http://www.jboss.org/dna/1.0">
@@ -44,7 +45,7 @@
 
 [dna:system] > nt:base
 + dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected version
-+ dna:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected version
++ jcr:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected version
 
 [dna:root] > nt:base, mix:referenceable orderable
 - * (undefined) multiple version

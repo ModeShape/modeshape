@@ -185,7 +185,7 @@ final class JcrWorkspace implements Workspace {
         this.queryManager = new JcrQueryManager(this.session);
 
         if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
-            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, DnaLexicon.NODE_TYPES);
+            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
             repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
         }
 

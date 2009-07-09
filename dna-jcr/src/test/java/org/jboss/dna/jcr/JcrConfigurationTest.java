@@ -351,11 +351,11 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/dna:repositories/Car Repository"), is(notNullValue()));
         assertThat(subgraph.getNode("/dna:repositories/Car Repository"), hasProperty(DnaLexicon.SOURCE_NAME, "Cars"));
         assertThat(subgraph.getNode("/dna:repositories/Car Repository").getChildren(), hasChild(segment("dna:options")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:nodeTypes"), is(notNullValue()));
+        assertThat(subgraph.getNode("/dna:repositories/Car Repository/jcr:nodeTypes"), is(notNullValue()));
         // for (Location child : subgraph.getNode("/dna:repositories/Car Repository/dna:nodeTypes").getChildren()) {
         // System.out.println(child.getPath().getLastSegment().getString(context().getNamespaceRegistry()));
         // }
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:nodeTypes").getChildren(),
+        assertThat(subgraph.getNode("/dna:repositories/Car Repository/jcr:nodeTypes").getChildren(),
                    hasChildren(segment("dnatest:noSameNameSibs"),
                                segment("dnatest:referenceableUnstructured"),
                                segment("dnatest:nodeWithMandatoryProperty"),

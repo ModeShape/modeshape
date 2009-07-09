@@ -591,8 +591,8 @@ public class JcrConfiguration extends DnaConfiguration {
 
         protected CndImporter createCndImporter() {
             // The node types will be loaded into 'dna:repositories/{repositoryName}/dna:nodeTypes/' ...
-            Path nodeTypesPath = subpath(DnaLexicon.NODE_TYPES);
-            createIfMissing(DnaLexicon.NODE_TYPES).and();
+            Path nodeTypesPath = subpath(JcrLexicon.NODE_TYPES);
+            createIfMissing(JcrLexicon.NODE_TYPES).and();
 
             // Now set up the destination, but make it so that ...
             Destination destination = new GraphBatchDestination(batch, true); // will NOT be executed
