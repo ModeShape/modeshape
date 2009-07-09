@@ -49,6 +49,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
@@ -79,6 +80,22 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
 
+        stub(repository.getOptions()).toReturn(options);
+
+        // Set up the session attributes ...
+        sessionAttributes = new HashMap<String, Object>();
+        sessionAttributes.put("attribute1", "value1");
+
+        // Now create the workspace ...
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
+                                                                      Collections.singleton(JcrSession.DNA_READ_PERMISSION));
+        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
+
+        // Create the session and log in ...
+        session = (JcrSession)workspace.getSession();
+
+        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
+
     }
     
     @After
@@ -102,6 +119,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         assertEquals(namespacesNodes.getSize(), 1);
     }
 
+    @Ignore( "dna-466" )
     @Test
     public void shouldOnlyHaveOneNodeTypesNode() throws Exception {
         NamespaceRegistry registry = context.getNamespaceRegistry();
@@ -162,8 +180,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         assertThat(nodeType.hasOrderableChildNodes(),
                    is(typeNode.getProperty(JcrLexicon.HAS_ORDERABLE_CHILD_NODES.getString(registry)).getBoolean()));
         try {
-            assertThat(nodeType.getPrimaryItemName(),
-                       is(typeNode.getProperty(JcrLexicon.PRIMARY_ITEM_NAME.getString(registry)).getString()));
+            assertThat(nodeType.getPrimaryItemName(), is(typeNode.getProperty(JcrLexicon.PRIMARY_ITEM_NAME.getString(registry))
+                                                                 .getString()));
         } catch (PathNotFoundException pnfe) {
             assertThat(nodeType.getPrimaryItemName(), is(nullValue()));
         }
@@ -226,7 +244,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
 
         Set<Name> requiredPrimaryTypeNames = nodeDef.getRequiredPrimaryTypeNames();
         try {
-            Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry)).getValues();
+            Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry))
+                                                        .getValues();
             assertEquals(requiredPrimaryTypes.length, requiredPrimaryTypeNames.size());
             for (int i = 0; i < requiredPrimaryTypes.length; i++) {
                 Name rptName = context.getValueFactories().getNameFactory().create(requiredPrimaryTypes[i].getString());
@@ -249,7 +268,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         assertEquals(nodeDef.allowsSameNameSiblings(),
                      childNodeNode.getProperty(JcrLexicon.SAME_NAME_SIBLINGS.getString(registry)).getBoolean());
         assertEquals(nodeDef.getOnParentVersion(),
-                     OnParentVersionAction.valueFromName(childNodeNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry)).getString()));
+                     OnParentVersionAction.valueFromName(childNodeNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry))
+                                                                      .getString()));
 
     }
 
@@ -270,7 +290,8 @@ public class RepositoryNodeTypeManagerTest extends AbstractJcrTest {
         assertEquals(propertyDef.isMultiple(), propNode.getProperty(JcrLexicon.MULTIPLE.getString(registry)).getBoolean());
         assertEquals(propertyDef.isProtected(), propNode.getProperty(JcrLexicon.PROTECTED.getString(registry)).getBoolean());
         assertEquals(propertyDef.getOnParentVersion(),
-                     OnParentVersionAction.valueFromName(propNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry)).getString()));
+                     OnParentVersionAction.valueFromName(propNode.getProperty(JcrLexicon.ON_PARENT_VERSION.getString(registry))
+                                                                 .getString()));
         assertEquals(propertyDef.getRequiredType(),
                      PropertyType.valueFromName(propNode.getProperty(JcrLexicon.REQUIRED_TYPE.getString(registry)).getString()));
 

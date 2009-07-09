@@ -1194,7 +1194,7 @@ class SessionCache {
                 existingChild.moveTo(node, newNodeName);
 
                 NodeDefinitionId existingChildDefinitionId = existingChild.getPayload().getDefinitionId();
-                if (defn.getId().equals(existingChildDefinitionId)) {
+                if (!defn.getId().equals(existingChildDefinitionId)) {
                     // The node definition changed, so try to set the property ...
                     NodeEditor newChildEditor = getEditorFor(existingChild);
                     try {

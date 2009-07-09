@@ -46,7 +46,6 @@ import org.mockito.MockitoAnnotations;
 
 /**
  * Tests of round-trip importing/exporting of repository content.
- *
  */
 public class ImportExportTest {
 
@@ -54,14 +53,13 @@ public class ImportExportTest {
         SYSTEM,
         DOCUMENT
     }
-    
+
     private static final String BAD_CHARACTER_STRING = "Test & <Test>*";
 
-    
     private InMemoryRepositorySource source;
     private JcrSession session;
     private JcrRepository repository;
-    
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -100,8 +98,9 @@ public class ImportExportTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused");
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
-        session = (JcrSession) repository.login(new SecurityContextCredentials(mockSecurityContext));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
+                                                                      Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
     }
 
     @After
@@ -110,55 +109,57 @@ public class ImportExportTest {
             session.logout();
         }
     }
-    
-    private void testImportExport(String sourcePath, String targetPath, ExportType useSystemView, boolean skipBinary, boolean noRecurse) 
-        throws Exception
-    {
+
+    private void testImportExport( String sourcePath,
+                                   String targetPath,
+                                   ExportType useSystemView,
+                                   boolean skipBinary,
+                                   boolean noRecurse ) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
+
         if (useSystemView == ExportType.SYSTEM) {
             session.exportSystemView(sourcePath, baos, skipBinary, noRecurse);
-        }
-        else {
+        } else {
             session.exportDocumentView(sourcePath, baos, skipBinary, noRecurse);
         }
-        
+
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        
+
         session.importXML(targetPath, bais, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
     }
 
+    @Ignore( "dna-466" )
     @Test
     public void shouldImportExportEscapedXmlCharactersInSystemView() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
         Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
-        
+
         // Test data
         sourceNode.setProperty("badcharacters", BAD_CHARACTER_STRING);
         assertThat(sourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
         sourceNode.addNode(BAD_CHARACTER_STRING);
-        
+
         testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.SYSTEM, false, false);
         Node newSourceNode = targetNode.getNode(testName + "Source");
         newSourceNode.getNode(BAD_CHARACTER_STRING);
         assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
     }
 
-    @Ignore("JR TCK is broken")
+    @Ignore( "JR TCK is broken" )
     @Test
     public void shouldImportExportEscapedXmlCharactersInDocumentView() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
         Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
-        
+
         // Test data
         sourceNode.setProperty("badcharacters", BAD_CHARACTER_STRING);
         assertThat(sourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
         sourceNode.addNode(BAD_CHARACTER_STRING);
-        
+
         testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.DOCUMENT, false, false);
         Node newSourceNode = targetNode.getNode(testName + "Source");
         newSourceNode.getNode(BAD_CHARACTER_STRING);

@@ -26,8 +26,10 @@ package org.jboss.dna.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
@@ -50,6 +52,9 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -62,6 +67,8 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.request.ReadBranchRequest;
+import org.jboss.dna.graph.session.GraphSession;
 import org.jboss.dna.graph.session.GraphSession.Node;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
@@ -314,6 +321,38 @@ final class JcrWorkspace implements Workspace {
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
+            if (removeExisting) {
+                // This will remove any existing nodes in this (the "target") workspace that have the same UUIDs
+                // as nodes that will be put into this workspace with the clone operation. Thus, any such
+                // existing nodes will be removed; but if they're mandatory they cannot be removed, resulting
+                // in a ConstraintViolationException. Therefore, we have to do a little homework here ...
+                Set<UUID> uuidsInCloneBranch = getUuidsInBranch(srcPath, srcWorkspace);
+                if (!uuidsInCloneBranch.isEmpty()) {
+                    // See if any of these exist in the current workspace, and if so whether they can be removed ...
+                    // This is NOT very efficient, since it may result in a batch read for each node ...
+                    GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession = cache.graphSession();
+                    Node<JcrNodePayload, JcrPropertyPayload> node = null;
+                    for (UUID uuid : uuidsInCloneBranch) {
+                        Location location = Location.create(uuid);
+                        try {
+                            node = graphSession.findNodeWith(location);
+                        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+                            // okay, it's not found in the current workspace, so nothing to check ...
+                            continue;
+                        }
+                        // Get the node type that owns the child node definition ...
+                        NodeDefinitionId childDefnId = node.getPayload().getDefinitionId();
+                        JcrNodeType nodeType = nodeTypeManager().getNodeType(childDefnId.getNodeTypeName());
+                        JcrNodeDefinition childDefn = nodeType.childNodeDefinition(childDefnId);
+                        if (childDefn.isMandatory()) {
+                            // We can't just remove a mandatory node... unless its parent will be removed too!
+                            String path = node.getPath().getString(context.getNamespaceRegistry());
+                            throw new ConstraintViolationException(JcrI18n.cannotRemoveNodeFromClone.text(path, uuid));
+                        }
+                    }
+                }
+            }
+
             // Now perform the clone, using the direct (non-session) method ...
             cache.graphSession().immediateClone(srcPath, srcWorkspace, destPath, removeExisting);
         } catch (ItemNotFoundException e) {
@@ -329,6 +368,24 @@ final class JcrWorkspace implements Workspace {
             throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
+        }
+    }
+
+    protected Set<UUID> getUuidsInBranch( Path sourcePath,
+                                          String workspace ) {
+        String existingWorkspace = graph.getCurrentWorkspaceName();
+        try {
+            graph.useWorkspace(workspace);
+            Subgraph subgraph = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(sourcePath);
+            // Collect up the UUIDs; we use UUID here because that's what JCR requires ...
+            Set<UUID> uuids = new HashSet<UUID>();
+            for (SubgraphNode nodeInSubgraph : subgraph) {
+                UUID uuid = nodeInSubgraph.getLocation().getUuid();
+                if (uuid != null) uuids.add(uuid);
+            }
+            return uuids;
+        } finally {
+            graph.useWorkspace(existingWorkspace);
         }
     }
 

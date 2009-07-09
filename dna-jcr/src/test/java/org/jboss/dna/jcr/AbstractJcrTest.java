@@ -43,7 +43,7 @@ import org.junit.BeforeClass;
 /**
  * 
  */
-public class AbstractJcrTest {
+public abstract class AbstractJcrTest {
 
     protected static ExecutionContext context;
     protected static RepositoryNodeTypeManager rntm;
@@ -105,7 +105,8 @@ public class AbstractJcrTest {
         store = Graph.create(source.getName(), connectionFactory, context);
 
         // Load the store with content ...
-        store.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        String xmlResourceName = getResourceNameOfXmlFileToImport();
+        store.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream(xmlResourceName)).into("/");
         numberOfConnections = 0; // reset the number of connections
 
         nodeTypes = new JcrNodeTypeManager(context, rntm);
@@ -121,6 +122,10 @@ public class AbstractJcrTest {
         stub(jcrSession.getWorkspace()).toReturn(workspace);
         stub(jcrSession.getRepository()).toReturn(repository);
         stub(workspace.getName()).toReturn("workspace1");
+    }
+
+    protected String getResourceNameOfXmlFileToImport() {
+        return "cars.xml";
     }
 
     protected Name name( String name ) {

@@ -23,30 +23,8 @@
  */
 package org.jboss.dna.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.session.GraphSession.Node;
-import org.jboss.dna.graph.session.GraphSession.PropertyInfo;
 import org.jboss.dna.jcr.SessionCache.JcrNodePayload;
 import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.junit.Before;
@@ -63,320 +41,87 @@ public class SessionCacheTest2 extends AbstractJcrTest {
         super.beforeEach();
     }
 
-    @Test
-    public void shouldRepeatedlyFindRootNode() throws Exception {
-        AbstractJcrNode root = cache.findJcrRootNode();
-        for (int i = 0; i != 10; ++i) {
-            AbstractJcrNode node = cache.findJcrRootNode();
-            assertThat(node, is(sameInstance(root)));
-            // Look up the graph node ...
-            assertMatchesStore(node);
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.AbstractJcrTest#getResourceNameOfXmlFileToImport()
+     */
+    @Override
+    protected String getResourceNameOfXmlFileToImport() {
+        return "vehicles.xml";
+    }
+
+    protected void walkInfosForNodesUnder( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                           Stopwatch sw ) throws Exception {
+        for (Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
+            sw.start();
+            child.getPath();
+            sw.stop();
+
+            // Walk the infos for nodes under the child (this is recursive) ...
+            walkInfosForNodesUnder(child, sw);
         }
     }
 
     @Test
-    public void shouldRepeatedlyFindRootNodeByPath() throws Exception {
-        AbstractJcrNode root = cache.findJcrNode(null, path("/"));
-        for (int i = 0; i != 10; ++i) {
-            AbstractJcrNode node = cache.findJcrRootNode();
-            assertThat(node, is(sameInstance(root)));
-            // Look up the graph node ...
-            assertMatchesStore(node);
+    public void shouldFindInfoForAllNodesInGraph() throws Exception {
+        for (int i = 0; i != 3; ++i) {
+            super.numberOfConnections = 0;
+            Stopwatch sw = new Stopwatch();
+
+            // Get the root ...
+            sw.start();
+            Node<JcrNodePayload, JcrPropertyPayload> root = cache.findNode(null, path("/"));
+            root.getPath();
+            root.getPayload(); // forces a load
+            sw.stop();
+
+            // Walk the infos for nodes under the root (this is recursive) ...
+            walkInfosForNodesUnder(root, sw);
+            System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics() + "  -> "
+                               + super.numberOfConnections);
         }
     }
 
     @Test
-    public void shouldRepeatedlyFindRootNodeByLocationWithoutPath() throws Exception {
-        AbstractJcrNode root = cache.findJcrRootNode();
-        AbstractJcrNode root2 = cache.findJcrNode(Location.create(root.location.getIdProperties()));
-        assertThat(root2, is(sameInstance(root)));
-    }
+    public void shouldFindInfoForAllNodesInGraphWithLoadingDepthOf2() throws Exception {
+        cache.graphSession().setDepthForLoadingNodes(2);
+        for (int i = 0; i != 3; ++i) {
+            super.numberOfConnections = 0;
+            Stopwatch sw = new Stopwatch();
 
-    @Test
-    public void shouldRepeatedlyFindNodeByPath() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        for (int i = 0; i != 10; ++i) {
-            AbstractJcrNode hybrid2 = cache.findJcrNode(null, hybrid.path());
-            assertThat(hybrid, is(sameInstance(hybrid2)));
-            // Look up the graph node ...
-            assertMatchesStore(hybrid2);
+            // Get the root ...
+            sw.start();
+            Node<JcrNodePayload, JcrPropertyPayload> root = cache.findNode(null, path("/"));
+            root.getPath();
+            root.getPayload(); // forces a load
+            sw.stop();
+
+            // Walk the infos for nodes under the root (this is recursive) ...
+            walkInfosForNodesUnder(root, sw);
+            System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics() + "  -> "
+                               + super.numberOfConnections);
         }
     }
 
     @Test
-    public void shouldRepeatedlyFindNodeByNodeId() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        for (int i = 0; i != 10; ++i) {
-            AbstractJcrNode hybrid2 = cache.findJcrNode(hybrid.nodeId, null);
-            assertThat(hybrid, is(sameInstance(hybrid2)));
-            // Look up the graph node ...
-            assertMatchesStore(hybrid2);
-        }
-    }
+    public void shouldFindInfoForAllNodesInGraphWithLoadingDepthOf4() throws Exception {
+        cache.graphSession().setDepthForLoadingNodes(6);
+        for (int i = 0; i != 3; ++i) {
+            Stopwatch sw = new Stopwatch();
+            super.numberOfConnections = 0;
 
-    @Test
-    public void shouldRepeatedlyFindNodeByLocationWithoutPath() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        AbstractJcrNode hybrid2 = cache.findJcrNode(Location.create(hybrid.location.getIdProperties()));
-        assertThat(hybrid2, is(sameInstance(hybrid)));
-    }
+            // Get the root ...
+            sw.start();
+            Node<JcrNodePayload, JcrPropertyPayload> root = cache.findNode(null, path("/"));
+            root.getPath();
+            root.getPayload(); // forces a load
+            sw.stop();
 
-    @Test
-    public void shouldFindNodeUsingStartingNodeAndRelativePath() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        AbstractJcrNode highlander = cache.findJcrNode(hybrid.nodeId, hybrid.path(), path("../Hybrid/Toyota Highlander"));
-        // Make sure this is the same as if we find it directly ...
-        AbstractJcrNode highlander2 = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Highlander"));
-        assertThat(highlander, is(sameInstance(highlander2)));
-        assertMatchesStore(highlander);
-    }
-
-    @Test
-    public void shouldFindNodeItemUsingStartingNodeAndRelativePath() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        AbstractJcrItem highlander = cache.findJcrItem(hybrid.nodeId, hybrid.path(), path("../Hybrid/Toyota Highlander"));
-        assertThat(highlander.isNode(), is(true));
-        // Make sure this is the same as if we find it directly ...
-        AbstractJcrNode highlander2 = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Highlander"));
-        assertThat((AbstractJcrNode)highlander, is(sameInstance(highlander2)));
-    }
-
-    @Test
-    public void shouldFindPropertyItemUsingStartingNodeAndRelativePath() throws Exception {
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        AbstractJcrItem altimaModel = cache.findJcrItem(hybrid.nodeId, hybrid.path(), path("../Hybrid/Nissan Altima/vehix:model"));
-        assertThat(altimaModel.isNode(), is(false));
-        javax.jcr.Node altimaModelParent = altimaModel.getParent();
-        javax.jcr.Node altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertThat(altima, is(sameInstance(altimaModelParent)));
-    }
-
-    @Test
-    public void shouldFindPropertyForNodeUsingPropertyName() throws Exception {
-        AbstractJcrNode altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        AbstractJcrItem altimaModel = cache.findJcrProperty(altima.nodeId, altima.path(), name("vehix:model"));
-        assertThat(altimaModel.isNode(), is(false));
-        javax.jcr.Node altimaModelParent = altimaModel.getParent();
-        assertThat(altima, is(sameInstance(altimaModelParent)));
-    }
-
-    @Test
-    public void shouldFindPropertiesForNode() throws Exception {
-        AbstractJcrNode altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(altima.nodeId, altima.path());
-        assertThat(properties.size(), is(7));
-        List<AbstractJcrProperty> properties2 = new ArrayList<AbstractJcrProperty>(properties);
-        Collections.sort(properties2);
-        Iterator<AbstractJcrProperty> iter = properties2.iterator();
-        assertProperty(iter.next(), altima, "jcr:primaryType", PropertyType.NAME, "vehix:car");
-        assertProperty(iter.next(), altima, "vehix:maker", PropertyType.STRING, "Nissan");
-        assertProperty(iter.next(), altima, "vehix:model", PropertyType.STRING, "Altima");
-        assertProperty(iter.next(), altima, "vehix:mpgCity", PropertyType.LONG, "23");
-        assertProperty(iter.next(), altima, "vehix:mpgHighway", PropertyType.LONG, "32");
-        assertProperty(iter.next(), altima, "vehix:msrp", PropertyType.STRING, "$18,260");
-        assertProperty(iter.next(), altima, "vehix:year", PropertyType.LONG, "2008");
-    }
-
-    @Test
-    public void shouldRefreshWithoutKeepingChanges() throws Exception {
-        AbstractJcrNode altima1 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima1);
-        assertThat(altima1.isNew(), is(false));
-
-        // Add the child ...
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        javax.jcr.Node child = hybrid.addNode("child");
-        assertThat(hybrid.isModified(), is(true));
-        assertThat(child.isNew(), is(true));
-        assertThat(hybrid.hasNode("child"), is(true));
-
-        cache.refresh(false);
-        AbstractJcrNode altima2 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima2);
-
-        // The objects should no longer be the same ...
-        assertThat(altima1, is(altima2));
-        assertThat(altima1, is(not(sameInstance(altima2))));
-        assertThat(altima2.isNew(), is(false));
-
-        // The new child should no longer exist ...
-        assertThat(hybrid.hasNode("child"), is(false));
-    }
-
-    @Test
-    public void shouldRefreshAndKeepChanges() throws Exception {
-        AbstractJcrNode altima1 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima1);
-        assertThat(altima1.isNew(), is(false));
-
-        // Add the child ...
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        javax.jcr.Node child = hybrid.addNode("child");
-        assertThat(hybrid.isModified(), is(true));
-        assertThat(child.isNew(), is(true));
-        assertThat(hybrid.hasNode("child"), is(true));
-
-        cache.refresh(true);
-        AbstractJcrNode altima2 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima2);
-
-        // The objects should still be the same ...
-        assertThat(altima1, is(altima2));
-        assertThat(altima1, is(sameInstance(altima2)));
-        assertThat(altima2.isNew(), is(false));
-
-        // The new child should still exist ...
-        assertThat(hybrid.hasNode("child"), is(true));
-    }
-
-    @Test
-    public void shouldSaveChanges() throws Exception {
-        AbstractJcrNode altima1 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima1);
-        assertThat(altima1.isNew(), is(false));
-
-        // Add the child ...
-        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        javax.jcr.Node child = hybrid.addNode("child");
-        assertThat(hybrid.isModified(), is(true));
-        assertThat(child.isNew(), is(true));
-        assertThat(hybrid.hasNode("child"), is(true));
-
-        cache.save();
-        AbstractJcrNode altima2 = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
-        assertMatchesStore(altima2);
-
-        // The objects should no longer be the same ...
-        assertThat(altima1, is(altima2));
-        assertThat(altima1, is(not(sameInstance(altima2))));
-        assertThat(altima2.isNew(), is(false));
-
-        // The new child should still exist ...
-        assertThat(hybrid.hasNode("child"), is(true));
-    }
-
-    protected void assertProperty( AbstractJcrProperty property,
-                                   javax.jcr.Node node,
-                                   String name,
-                                   int propertyType,
-                                   Object... values ) throws Exception {
-        assertThat(property.getName(), is(name));
-        assertThat(property.getType(), is(propertyType));
-        assertThat(property.getParent(), is(node));
-        if (values.length > 1) {
-            int i = 0;
-            for (Value actual : property.getValues()) {
-                String actualString = actual.getString();
-                String expectedString = context.getValueFactories().getStringFactory().create(values[i]);
-                assertThat(actualString, is(expectedString));
-                assertCanObtainValue(actual, propertyType);
-                ++i;
-            }
-            // Getting the single value should result in an error ...
-            try {
-                property.getValue();
-                fail("Should not be able to call Property.getValue() on multi-valued properties");
-            } catch (ValueFormatException e) {
-                // expected ...
-            }
-        } else {
-            String actualString = property.getValue().getString();
-            String expectedString = context.getValueFactories().getStringFactory().create(values[0]);
-            assertThat(actualString, is(expectedString));
-            assertThat(actualString, is(property.getString()));
-            assertCanObtainValue(property.getValue(), propertyType);
-            // Getting the multiple values should result in an error ...
-            try {
-                property.getValues();
-                fail("Should not be able to call Property.getValues() on single-valued properties");
-            } catch (ValueFormatException e) {
-                // expected ...
-            }
-            // Check resolving the reference ...
-            if (propertyType == PropertyType.REFERENCE) {
-                javax.jcr.Node referenced = property.getNode();
-                assertThat(referenced, is(notNullValue()));
-            }
-        }
-    }
-
-    protected void assertCanObtainValue( Value value,
-                                         int expectedType ) throws Exception {
-        switch (expectedType) {
-            case PropertyType.BINARY:
-                InputStream stream = value.getStream();
-                assertThat(stream, is(notNullValue()));
-                try {
-                    stream.read();
-                } finally {
-                    stream.close();
-                }
-                break;
-            case PropertyType.BOOLEAN:
-                assertThat(value.getBoolean() || !value.getBoolean(), is(true));
-                break;
-            case PropertyType.DATE:
-                Calendar cal = value.getDate();
-                assertThat(cal, is(notNullValue()));
-                break;
-            case PropertyType.DOUBLE:
-                double doubleValue = value.getDouble();
-                assertThat(doubleValue < 0.0d || doubleValue >= -1.0d, is(true));
-                break;
-            case PropertyType.LONG:
-                long longValue = value.getLong();
-                assertThat(longValue < 0L || longValue >= 0L, is(true));
-                break;
-            case PropertyType.NAME:
-                context.getValueFactories().getNameFactory().create(value.getString());
-                break;
-            case PropertyType.PATH:
-                context.getValueFactories().getPathFactory().create(value.getString());
-                break;
-            case PropertyType.REFERENCE:
-                UUID uuid = context.getValueFactories().getUuidFactory().create(value.getString());
-                assertThat(uuid, is(notNullValue()));
-                break;
-            case PropertyType.STRING:
-                value.getString();
-                break;
-        }
-    }
-
-    protected void assertMatchesStore( AbstractJcrNode jcrNode ) throws RepositoryException {
-        // Find the corresponding session node ...
-        Node<JcrNodePayload, JcrPropertyPayload> nodeInfo = cache.findNode(jcrNode.nodeId, jcrNode.path());
-        // And the graph node ...
-        org.jboss.dna.graph.Node dnaNode = store.getNodeAt(jcrNode.location);
-
-        assertThat(nodeInfo.getLocation(), is(dnaNode.getLocation()));
-        Set<Name> propertyNames = nodeInfo.getPropertyNames();
-        for (Name propertyName : propertyNames) {
-            PropertyInfo<JcrPropertyPayload> info = nodeInfo.getProperty(propertyName);
-            assertThat(info.getName(), is(propertyName));
-            assertThat(info.getProperty().getName(), is(propertyName));
-            Property actual = dnaNode.getProperty(propertyName);
-            if (actual != null) {
-                assertThat(info.getProperty().size(), is(actual.size()));
-                assertThat(info.getProperty().getValuesAsArray(), is(actual.getValuesAsArray()));
-            } else {
-                if (propertyName.equals(JcrLexicon.UUID)) {
-                    // check for a DNA UUID property ...
-                    actual = dnaNode.getProperty(DnaLexicon.UUID);
-                    if (actual != null) {
-                        assertThat(info.getProperty().size(), is(actual.size()));
-                        assertThat(info.getProperty().getValuesAsArray(), is(actual.getValuesAsArray()));
-                    } else {
-                        fail("missing property \"" + propertyName + "\" on " + dnaNode);
-                    }
-                } else if (propertyName.equals(JcrLexicon.PRIMARY_TYPE)) {
-                    // This is okay
-                } else if (propertyName.equals(DnaIntLexicon.MULTI_VALUED_PROPERTIES)) {
-                    // This is okay
-                } else {
-                    fail("missing property \"" + propertyName + "\" on " + dnaNode);
-                }
-            }
+            // Walk the infos for nodes under the root (this is recursive) ...
+            walkInfosForNodesUnder(root, sw);
+            System.out.println("Statistics for walking nodes using SessionCache: " + sw.getSimpleStatistics() + "  -> "
+                               + super.numberOfConnections);
         }
     }
 }

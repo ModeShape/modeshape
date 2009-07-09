@@ -375,7 +375,7 @@ public class GraphSessionTest {
                 try {
                     cache.save(utility);
                     fail("Expected exception from the call to save");
-                } catch (InvalidStateException e) {
+                } catch (ValidationException e) {
                     // expected ...
                 }
             } else if (i == 1) {
