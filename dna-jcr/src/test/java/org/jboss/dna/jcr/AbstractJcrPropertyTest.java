@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * JBoss DNA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -24,463 +24,237 @@
 package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
-import javax.jcr.Property;
 import javax.jcr.Repository;
 import javax.jcr.Session;
-import javax.jcr.Value;
 import javax.jcr.Workspace;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.cache.NodeInfo;
-import org.jboss.dna.jcr.cache.PropertyInfo;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
- * @author jverhaeg
+ * 
  */
-public class AbstractJcrPropertyTest {
+public class AbstractJcrPropertyTest extends AbstractJcrTest {
 
-    private PropertyId propertyId;
-    private PropertyInfo info;
-    private ExecutionContext executionContext;
-    private JcrNode node;
-    private AbstractJcrProperty prop;
-    @Mock
-    private JcrSession session;
-    @Mock
-    private SessionCache cache;
+    protected AbstractJcrNode rootNode;
+    protected AbstractJcrNode cars;
+    protected AbstractJcrNode prius;
+    protected AbstractJcrNode altima;
+    protected AbstractJcrProperty altimaModel;
 
+    @Override
     @Before
-    public void before() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        executionContext = new ExecutionContext();
-        stub(session.getExecutionContext()).toReturn(executionContext);
-
-        UUID uuid = UUID.randomUUID();
-        node = new JcrNode(cache, uuid);
-        propertyId = new PropertyId(uuid, JcrLexicon.MIMETYPE);
-        prop = new MockAbstractJcrProperty(cache, propertyId);
-
-        info = mock(PropertyInfo.class);
-        stub(info.getPropertyId()).toReturn(propertyId);
-        stub(info.getPropertyName()).toReturn(propertyId.getPropertyName());
-
-        stub(cache.session()).toReturn(session);
-        stub(cache.context()).toReturn(executionContext);
-        stub(cache.findJcrProperty(propertyId)).toReturn(prop);
-        stub(cache.findPropertyInfo(propertyId)).toReturn(info);
-        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/jcr:mimeType"));
-        stub(cache.getPathFor(propertyId)).toReturn(path("/a/b/c/jcr:mimeType"));
-        stub(cache.getPathFor(uuid)).toReturn(path("/a/b/c"));
-
-        NodeInfo nodeInfo = mock(NodeInfo.class);
-        stub(cache.findJcrNode(uuid)).toReturn(node);
-        stub(cache.findNodeInfo(uuid)).toReturn(nodeInfo);
-        stub(cache.getPathFor(uuid)).toReturn(path("/a/b/c"));
-        stub(cache.getPathFor(nodeInfo)).toReturn(path("/a/b/c"));
-    }
-
-    protected Name name( String name ) {
-        return executionContext.getValueFactories().getNameFactory().create(name);
-    }
-
-    protected Path path( String path ) {
-        return executionContext.getValueFactories().getPathFactory().create(path);
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        rootNode = cache.findJcrRootNode();
+        cars = cache.findJcrNode(null, path("/Cars"));
+        prius = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altimaModel = cache.findJcrProperty(altima.nodeId, altima.path(), Vehicles.Lexicon.MODEL);
     }
 
     @Test
     public void shouldAllowVisitation() throws Exception {
         ItemVisitor visitor = Mockito.mock(ItemVisitor.class);
-        prop.accept(visitor);
-        Mockito.verify(visitor).visit(prop);
+        altimaModel.accept(visitor);
+        Mockito.verify(visitor).visit(altimaModel);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowVisitationIfNoVisitor() throws Exception {
-        prop.accept(null);
+        altimaModel.accept(null);
     }
 
     @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowNegativeAncestorDepth() throws Exception {
-        stub(node.getAncestor(-2)).toThrow(new IllegalArgumentException());
-        prop.getAncestor(-1);
+        altimaModel.getAncestor(-1);
     }
 
     @Test
-    public void shouldProvideAncestor() throws Exception {
-        assertThat(prop.getAncestor(prop.getDepth()), is((Item)prop));
-        assertThat(prop.getAncestor(prop.getDepth() - 1), is((Item)node));
+    public void shouldReturnRootForAncestorOfDepthZero() throws Exception {
+        assertThat(altimaModel.getAncestor(0), is((Item)rootNode));
+    }
+
+    @Test
+    public void shouldReturnAncestorAtLevelOneForAncestorOfDepthOne() throws Exception {
+        assertThat(altimaModel.getAncestor(1), is((Item)cars));
+    }
+
+    @Test
+    public void shouldReturnSelfForAncestorOfDepthEqualToDepthOfNode() throws Exception {
+        assertThat(altimaModel.getAncestor(altimaModel.getDepth()), is((Item)altimaModel));
+        assertThat(altimaModel.getAncestor(altimaModel.getDepth() - 1), is((Item)altima));
     }
 
     @Test( expected = ItemNotFoundException.class )
-    public void shouldNotAllowAncestorDepthGreaterThanPropertyDepth() throws Exception {
-        prop.getAncestor(prop.getDepth() + 1);
+    public void shouldFailToReturnAncestorWhenDepthIsGreaterThanNodeDepth() throws Exception {
+        altimaModel.getAncestor(40);
     }
 
     @Test
-    public void shouldProvideDepth() throws Exception {
-        assertThat(prop.getDepth(), is(4));
+    public void shouldIndicateIsNotNode() {
+        assertThat(altimaModel.isNode(), is(false));
     }
 
     @Test
     public void shouldProvideExecutionContext() throws Exception {
-        assertThat(prop.context(), is(executionContext));
+        assertThat(altimaModel.context(), is(context));
     }
 
     @Test
     public void shouldProvideName() throws Exception {
-        assertThat(prop.getName(), is("jcr:mimeType"));
+        assertThat(altimaModel.getName(), is("vehix:model"));
     }
 
     @Test
     public void shouldProvideParent() throws Exception {
-        assertThat(prop.getParent(), is((Node)node));
+        assertThat(altimaModel.getParent(), is((Node)altima));
     }
 
     @Test
     public void shouldProvidePath() throws Exception {
-        assertThat(prop.getPath(), is("/a/b/c/jcr:mimeType"));
+        assertThat(altimaModel.getPath(), is(altima.getPath() + "/vehix:model"));
     }
 
     @Test
     public void shouldProvideSession() throws Exception {
-        assertThat(prop.getSession(), is((Session)session));
+        assertThat(altimaModel.getSession(), is((Session)jcrSession));
     }
 
     @Test
-    public void shouldIndicateIsNotANode() {
-        assertThat(prop.isNode(), is(false));
-    }
+    public void shouldReturnFalseFromIsSameIfTheRepositoryInstanceIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
-    @Test
-    public void shouldIndicateSameAsPropertyWithSameNodeAndSamePropertyName() throws Exception {
-        Repository repository = mock(Repository.class);
-        Workspace workspace = mock(Workspace.class);
         Workspace workspace2 = mock(Workspace.class);
-        stub(workspace.getName()).toReturn("workspace");
-        stub(workspace2.getName()).toReturn("workspace");
-        JcrSession session2 = mock(JcrSession.class);
-        SessionCache cache2 = mock(SessionCache.class);
-        stub(session2.getRepository()).toReturn(repository);
-        stub(session.getRepository()).toReturn(repository);
-        stub(session2.getWorkspace()).toReturn(workspace2);
-        stub(session.getWorkspace()).toReturn(workspace);
-        stub(cache2.session()).toReturn(session2);
-        stub(cache2.context()).toReturn(executionContext);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace1");
 
-        // Make the other node have the same UUID ...
-        UUID uuid = node.internalUuid();
-        NodeInfo nodeInfo = mock(NodeInfo.class);
-        PropertyInfo propertyInfo = mock(PropertyInfo.class);
-        AbstractJcrNode otherNode = new JcrNode(cache2, uuid);
-        stub(propertyInfo.getPropertyId()).toReturn(propertyId);
-        stub(propertyInfo.getPropertyName()).toReturn(propertyId.getPropertyName());
-        stub(cache2.findJcrNode(uuid)).toReturn(otherNode);
-        stub(cache2.findNodeInfo(uuid)).toReturn(nodeInfo);
-        stub(cache2.getPathFor(uuid)).toReturn(path("/a/b/c"));
-        stub(cache2.getPathFor(nodeInfo)).toReturn(path("/a/b/c"));
-        stub(cache2.findPropertyInfo(propertyId)).toReturn(info);
+        // Use the same id and location ...
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        assertThat(prius2.isSame(prius), is(false));
 
-        assertThat(node.isSame(otherNode), is(true));
-
-        Property prop = new MockAbstractJcrProperty(cache, propertyId);
-        Property otherProp = new MockAbstractJcrProperty(cache2, propertyId);
-        assertThat(prop.isSame(otherProp), is(true));
+        // Check the properties ...
+        javax.jcr.Property model = prius.getProperty("vehix:model");
+        javax.jcr.Property model2 = prius2.getProperty("vehix:model");
+        assertThat(model.isSame(model2), is(false));
     }
 
     @Test
-    public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
-        Repository repository = mock(Repository.class);
-        Workspace workspace = mock(Workspace.class);
+    public void shouldReturnFalseFromIsSameIfTheWorkspaceNameIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
         Workspace workspace2 = mock(Workspace.class);
-        stub(workspace.getName()).toReturn("workspace");
-        stub(workspace2.getName()).toReturn("workspace");
-        JcrSession session2 = mock(JcrSession.class);
-        SessionCache cache2 = mock(SessionCache.class);
-        stub(session2.getRepository()).toReturn(repository);
-        stub(session.getRepository()).toReturn(repository);
-        stub(session2.getWorkspace()).toReturn(workspace2);
-        stub(session.getWorkspace()).toReturn(workspace);
-        stub(cache2.session()).toReturn(session2);
-        stub(cache2.context()).toReturn(executionContext);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace2");
 
-        // Make the other node have a different UUID ...
-        UUID uuid = UUID.randomUUID();
-        PropertyId propertyId2 = new PropertyId(uuid, JcrLexicon.MIXIN_TYPES);
-        NodeInfo nodeInfo = mock(NodeInfo.class);
-        PropertyInfo propertyInfo = mock(PropertyInfo.class);
-        AbstractJcrNode otherNode = new JcrNode(cache2, uuid);
-        stub(propertyInfo.getPropertyId()).toReturn(propertyId2);
-        stub(propertyInfo.getPropertyName()).toReturn(propertyId2.getPropertyName());
-        stub(cache2.findJcrNode(uuid)).toReturn(otherNode);
-        stub(cache2.findNodeInfo(uuid)).toReturn(nodeInfo);
-        stub(cache2.getPathFor(uuid)).toReturn(path("/a/b/c"));
-        stub(cache2.getPathFor(nodeInfo)).toReturn(path("/a/b/c"));
+        // Use the same id and location; use 'Toyota Prius'
+        // since the UUID is defined in 'cars.xml' and therefore will be the same
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        prius2.addMixin("mix:referenceable");
+        prius.addMixin("mix:referenceable");
+        String priusUuid2 = prius2.getUUID();
+        String priusUuid = prius.getUUID();
+        assertThat(priusUuid, is(priusUuid2));
+        assertThat(prius2.isSame(prius), is(false));
 
-        assertThat(node.isSame(otherNode), is(false));
-
-        Property prop = new MockAbstractJcrProperty(cache, propertyId);
-        Property otherProp = new MockAbstractJcrProperty(cache2, propertyId2);
-        assertThat(prop.isSame(otherProp), is(false));
+        // Check the properties ...
+        javax.jcr.Property model = prius.getProperty("vehix:model");
+        javax.jcr.Property model2 = prius2.getProperty("vehix:model");
+        assertThat(model.isSame(model2), is(false));
     }
 
     @Test
-    public void shouldIndicateDifferentThanPropertyWithSameNodeWithDifferentPropertyName() throws Exception {
-        Repository repository = mock(Repository.class);
-        Workspace workspace = mock(Workspace.class);
+    public void shouldReturnFalseFromIsSameIfTheNodeUuidIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
         Workspace workspace2 = mock(Workspace.class);
-        stub(workspace.getName()).toReturn("workspace");
-        stub(workspace2.getName()).toReturn("workspace");
-        JcrSession session2 = mock(JcrSession.class);
-        SessionCache cache2 = mock(SessionCache.class);
-        stub(session2.getRepository()).toReturn(repository);
-        stub(session.getRepository()).toReturn(repository);
-        stub(session2.getWorkspace()).toReturn(workspace2);
-        stub(session.getWorkspace()).toReturn(workspace);
-        stub(cache2.session()).toReturn(session2);
-        stub(cache2.context()).toReturn(executionContext);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace1");
 
-        // Make the other node have the same UUID ...
-        UUID uuid = node.internalUuid();
-        NodeInfo nodeInfo = mock(NodeInfo.class);
-        PropertyInfo propertyInfo = mock(PropertyInfo.class);
-        PropertyId propertyId2 = new PropertyId(uuid, JcrLexicon.NAME);
-        AbstractJcrNode otherNode = new JcrNode(cache2, uuid);
-        stub(propertyInfo.getPropertyId()).toReturn(propertyId2);
-        stub(propertyInfo.getPropertyName()).toReturn(propertyId2.getPropertyName());
-        stub(cache2.findJcrNode(uuid)).toReturn(otherNode);
-        stub(cache2.findNodeInfo(uuid)).toReturn(nodeInfo);
-        stub(cache2.getPathFor(uuid)).toReturn(path("/a/b/c"));
-        stub(cache2.getPathFor(nodeInfo)).toReturn(path("/a/b/c"));
-        stub(cache2.findPropertyInfo(propertyId2)).toReturn(propertyInfo);
+        // Use the same id and location; use 'Nissan Altima'
+        // since the UUIDs will be different (cars.xml doesn't define on this node) ...
+        javax.jcr.Node altima2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altima2.addMixin("mix:referenceable");
+        altima.addMixin("mix:referenceable");
+        String altimaUuid = altima.getUUID();
+        String altimaUuid2 = altima2.getUUID();
+        assertThat(altimaUuid, is(not(altimaUuid2)));
+        assertThat(altima2.isSame(altima), is(false));
 
-        assertThat(node.isSame(otherNode), is(true));
-
-        Property prop = new MockAbstractJcrProperty(cache, propertyId);
-        Property otherProp = new MockAbstractJcrProperty(cache2, propertyId2);
-        assertThat(prop.isSame(otherProp), is(false));
+        // Check the properties ...
+        javax.jcr.Property model = altima.getProperty("vehix:model");
+        javax.jcr.Property model2 = altima2.getProperty("vehix:model");
+        assertThat(model.isSame(model2), is(false));
     }
 
-    private class MockAbstractJcrProperty extends AbstractJcrProperty {
+    @Test
+    public void shouldReturnTrueFromIsSameIfTheNodeUuidAndWorkspaceNameAndRepositoryInstanceAreSame() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
-        MockAbstractJcrProperty( SessionCache cache,
-                                 PropertyId propertyId ) {
-            super(cache, propertyId);
-        }
+        Workspace workspace2 = mock(Workspace.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository);
+        stub(workspace2.getName()).toReturn("workspace1");
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrProperty#isMultiple()
-         */
-        @Override
-        boolean isMultiple() {
-            return false;
-        }
+        // Use the same id and location ...
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        prius2.addMixin("mix:referenceable");
+        prius.addMixin("mix:referenceable");
+        String priusUuid = prius.getUUID();
+        String priusUuid2 = prius2.getUUID();
+        assertThat(priusUuid, is(priusUuid2));
+        assertThat(prius2.isSame(prius), is(true));
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getNode()
-         */
-        @SuppressWarnings( "synthetic-access" )
-        public Node getNode() {
-            return node;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getBoolean()
-         */
-        public boolean getBoolean() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getDate()
-         */
-        public Calendar getDate() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getDouble()
-         */
-        public double getDouble() {
-            return 0;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getLength()
-         */
-        public long getLength() {
-            return 0;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getLengths()
-         */
-        public long[] getLengths() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getLong()
-         */
-        public long getLong() {
-            return 0;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getStream()
-         */
-        public InputStream getStream() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getString()
-         */
-        public String getString() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getValue()
-         */
-        public Value getValue() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getValues()
-         */
-        public Value[] getValues() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(javax.jcr.Value)
-         */
-        public void setValue( Value value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(javax.jcr.Value[])
-         */
-        public void setValue( Value[] values ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(java.lang.String)
-         */
-        public void setValue( String value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(java.lang.String[])
-         */
-        public void setValue( String[] values ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(java.io.InputStream)
-         */
-        public void setValue( InputStream value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(long)
-         */
-        public void setValue( long value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(double)
-         */
-        public void setValue( double value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(java.util.Calendar)
-         */
-        public void setValue( Calendar value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(boolean)
-         */
-        public void setValue( boolean value ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#setValue(javax.jcr.Node)
-         */
-        public void setValue( Node value ) {
-            throw new UnsupportedOperationException();
-        }
+        // Check the properties ...
+        javax.jcr.Property model = prius.getProperty("vehix:model");
+        javax.jcr.Property model2 = prius2.getProperty("vehix:model");
+        javax.jcr.Property year2 = prius2.getProperty("vehix:year");
+        assertThat(model.isSame(model2), is(true));
+        assertThat(model.isSame(year2), is(false));
     }
+
 }

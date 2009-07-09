@@ -26,157 +26,211 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.cache.PropertyInfo;
+import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
+import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
-/**
- * @author jverhaeg
- */
-public class JcrSingleValuePropertyTest {
+public class JcrSingleValuePropertyTest extends AbstractJcrTest {
 
-    private PropertyId propertyId;
-    private JcrSingleValueProperty prop;
-    private ExecutionContext executionContext;
-    private org.jboss.dna.graph.property.Property dnaProperty;
-    @Mock
-    private SessionCache cache;
-    @Mock
-    private JcrSession session;
-    @Mock
-    private PropertyInfo propertyInfo;
-    @Mock
-    private JcrPropertyDefinition definition;
-    @Mock
-    private JcrNodeTypeManager nodeTypes;
+    private Property prop;
+    private byte[] binaryValue;
+    private DateTime dateValue;
+    private double doubleValue;
+    private long longValue;
+    private String stringValue;
+    private boolean booleanValue;
+    private String nameValue;
+    private String pathValue;
+    private ValueFactory<String> stringFactory;
+    protected AbstractJcrNode cars;
+    protected AbstractJcrNode altima;
 
+    /**
+     * Initialize the expensive activities, and in particular the RepositoryNodeTypeManager instance.
+     * 
+     * @throws Exception
+     */
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        AbstractJcrTest.beforeAll();
+
+        // Define the node definition that will have all the different kinds of properties ...
+        JcrNodeTypeTemplate nodeType = new JcrNodeTypeTemplate(context);
+        nodeType.setMixin(true);
+        nodeType.setName("mixinWithAllPropTypes");
+        List<PropertyDefinitionTemplate> propDefns = nodeType.getPropertyDefinitionTemplates();
+
+        // Add a property for each type ...
+        JcrPropertyDefinitionTemplate binaryDefn = new JcrPropertyDefinitionTemplate(context);
+        binaryDefn.setName("binaryProperty");
+        binaryDefn.setRequiredType(PropertyType.BINARY);
+        propDefns.add(binaryDefn);
+
+        JcrPropertyDefinitionTemplate booleanDefn = new JcrPropertyDefinitionTemplate(context);
+        booleanDefn.setName("booleanProperty");
+        booleanDefn.setRequiredType(PropertyType.BOOLEAN);
+        propDefns.add(booleanDefn);
+
+        JcrPropertyDefinitionTemplate dateDefn = new JcrPropertyDefinitionTemplate(context);
+        dateDefn.setName("dateProperty");
+        dateDefn.setRequiredType(PropertyType.DATE);
+        propDefns.add(dateDefn);
+
+        JcrPropertyDefinitionTemplate doubleDefn = new JcrPropertyDefinitionTemplate(context);
+        doubleDefn.setName("doubleProperty");
+        doubleDefn.setRequiredType(PropertyType.DOUBLE);
+        propDefns.add(doubleDefn);
+
+        JcrPropertyDefinitionTemplate longDefn = new JcrPropertyDefinitionTemplate(context);
+        longDefn.setName("longProperty");
+        longDefn.setRequiredType(PropertyType.LONG);
+        propDefns.add(longDefn);
+
+        JcrPropertyDefinitionTemplate nameDefn = new JcrPropertyDefinitionTemplate(context);
+        nameDefn.setName("nameProperty");
+        nameDefn.setRequiredType(PropertyType.NAME);
+        propDefns.add(nameDefn);
+
+        JcrPropertyDefinitionTemplate pathDefn = new JcrPropertyDefinitionTemplate(context);
+        pathDefn.setName("pathProperty");
+        pathDefn.setRequiredType(PropertyType.PATH);
+        propDefns.add(pathDefn);
+
+        JcrPropertyDefinitionTemplate refDefn = new JcrPropertyDefinitionTemplate(context);
+        refDefn.setName("referenceProperty");
+        refDefn.setRequiredType(PropertyType.REFERENCE);
+        propDefns.add(refDefn);
+
+        JcrPropertyDefinitionTemplate stringDefn = new JcrPropertyDefinitionTemplate(context);
+        stringDefn.setName("stringProperty");
+        stringDefn.setRequiredType(PropertyType.STRING);
+        propDefns.add(stringDefn);
+
+        JcrPropertyDefinitionTemplate undefinedDefn = new JcrPropertyDefinitionTemplate(context);
+        undefinedDefn.setName("undefinedProperty");
+        undefinedDefn.setRequiredType(PropertyType.UNDEFINED);
+        propDefns.add(undefinedDefn);
+
+        // Add the node type ...
+        Collection<NodeTypeDefinition> defns = new ArrayList<NodeTypeDefinition>();
+        defns.add(nodeType);
+        rntm.registerNodeTypes(defns, false);
+    }
+
+    @Override
     @Before
-    public void before() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        executionContext = new ExecutionContext();
-        stub(cache.session()).toReturn(session);
-        stub(cache.context()).toReturn(executionContext);
-        stub(session.nodeTypeManager()).toReturn(nodeTypes);
-        stub(session.getExecutionContext()).toReturn(executionContext);
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        context.getNamespaceRegistry().register("acme", "http://example.com");
+        stringFactory = context.getValueFactories().getStringFactory();
 
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, "text/plain");
-        stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
-        stub(definition.isMultiple()).toReturn(false);
-        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"),
-                                                                     PropertyType.STRING, false);
-        stub(nodeTypes.getPropertyDefinition(definitionId)).toReturn(definition);
+        binaryValue = "This is a binary value".getBytes();
+        dateValue = context.getValueFactories().getDateFactory().create();
+        doubleValue = 3.14159d;
+        longValue = 100L;
+        booleanValue = true;
+        stringValue = "stringValue";
+        nameValue = "acme:SomeName";
+        pathValue = "/Cars/Hybrid/Toyota Highlander/acme:SomethingElse";
 
-        UUID uuid = UUID.randomUUID();
-        propertyId = new PropertyId(uuid, JcrLexicon.MIMETYPE);
-        prop = new JcrSingleValueProperty(cache, propertyId);
+        // Add the mixin to the 'Cars' node ...
+        cars = cache.findJcrNode(null, path("/Cars"));
+        cars.addMixin("mixinWithAllPropTypes");
 
-        stub(cache.findPropertyInfo(propertyId)).toReturn(propertyInfo);
-        stub(propertyInfo.getDefinitionId()).toReturn(definitionId);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.STRING);
-        stub(propertyInfo.isMultiValued()).toReturn(false);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyName()).toReturn(dnaProperty.getName());
-    }
+        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altima.addMixin("mix:referenceable");
 
-    protected Name name( String name ) {
-        return executionContext.getValueFactories().getNameFactory().create(name);
-    }
-
-    @Test
-    public void shouldProvideBoolean() throws Exception {
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.BOOLEAN);
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, "true");
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        assertThat(prop.getBoolean(), is(true));
-        assertThat(prop.getType(), is(PropertyType.BOOLEAN));
+        // Set each property ...
+        cars.setProperty("booleanProperty", booleanValue);
+        cars.setProperty("dateProperty", dateValue.toCalendar());
+        cars.setProperty("doubleProperty", doubleValue);
+        cars.setProperty("binaryProperty", new ByteArrayInputStream(binaryValue));
+        cars.setProperty("longProperty", longValue);
+        cars.setProperty("referenceProperty", altima);
+        cars.setProperty("stringProperty", stringValue);
+        cars.setProperty("pathProperty", pathValue);
+        cars.setProperty("nameProperty", nameValue);
+        cars.setProperty("undefinedProperty", "100");
     }
 
     @Test
     public void shouldIndicateHasSingleValue() throws Exception {
+        prop = cars.getProperty("booleanProperty");
         PropertyDefinition def = prop.getDefinition();
         assertThat(def.isMultiple(), is(false));
     }
 
     @Test
+    public void shouldProvideBoolean() throws Exception {
+        prop = cars.getProperty("booleanProperty");
+        assertThat(prop.getBoolean(), is(booleanValue));
+        assertThat(prop.getType(), is(PropertyType.BOOLEAN));
+        assertThat(prop.getString(), is(stringFactory.create(booleanValue)));
+        assertThat(prop.getLength(), is((long)stringFactory.create(booleanValue).length()));
+        checkValue(prop);
+    }
+
+    @Test
     public void shouldProvideDate() throws Exception {
-        DateTime dnaDate = executionContext.getValueFactories().getDateFactory().create();
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, dnaDate);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.DATE);
-        assertThat(prop.getDate(), is(dnaDate.toCalendar()));
-        assertThat(prop.getLong(), is(dnaDate.getMilliseconds()));
+        prop = cars.getProperty("dateProperty");
+        assertThat(prop.getDate(), is(dateValue.toCalendar()));
+        assertThat(prop.getLong(), is(dateValue.getMilliseconds()));
+        assertThat(prop.getString(), is(stringFactory.create(dateValue)));
         assertThat(prop.getType(), is(PropertyType.DATE));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getLength(), is((long)stringFactory.create(dateValue).length()));
+        checkValue(prop);
     }
 
     @Test
     public void shouldProvideNode() throws Exception {
-        UUID referencedUuid = UUID.randomUUID();
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, referencedUuid);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.REFERENCE);
-        AbstractJcrNode referencedNode = mock(AbstractJcrNode.class);
-        stub(cache.findJcrNode(referencedUuid)).toReturn(referencedNode);
-        assertThat(prop.getNode(), is((Node)referencedNode));
+        prop = cars.getProperty("referenceProperty");
+        assertThat(prop.getNode(), is((Node)altima));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getString(), is(altima.getUUID()));
+        assertThat(prop.getLength(), is((long)altima.getUUID().length()));
+        checkValue(prop);
     }
 
     @Test
     public void shouldProvideDouble() throws Exception {
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, 1.0);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.DOUBLE);
-        assertThat(prop.getDouble(), is(1.0));
+        prop = cars.getProperty("doubleProperty");
+        assertThat(prop.getDouble(), is(doubleValue));
+        assertThat(prop.getString(), is(stringFactory.create(doubleValue)));
         assertThat(prop.getType(), is(PropertyType.DOUBLE));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, 1.0F);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        assertThat(prop.getDouble(), is(1.0));
-        assertThat(prop.getType(), is(PropertyType.DOUBLE));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getLength(), is((long)stringFactory.create(doubleValue).length()));
+        checkValue(prop);
     }
 
     @Test
     public void shouldProvideLong() throws Exception {
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, 1);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.LONG);
-        assertThat(prop.getLong(), is(1L));
+        prop = cars.getProperty("longProperty");
+        assertThat(prop.getLong(), is(longValue));
+        assertThat(prop.getString(), is(stringFactory.create(longValue)));
         assertThat(prop.getType(), is(PropertyType.LONG));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
-
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, 1L);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.LONG);
-        assertThat(prop.getLong(), is(1L));
-        assertThat(prop.getString(), is("1"));
-        assertThat(prop.getType(), is(PropertyType.LONG));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getLength(), is((long)stringFactory.create(longValue).length()));
+        checkValue(prop);
     }
 
     @Test
     public void shouldProvideStream() throws Exception {
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, new Object());
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.BINARY);
+        prop = cars.getProperty("binaryProperty");
         assertThat(prop.getType(), is(PropertyType.BINARY));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
         InputStream stream = prop.getStream();
         try {
             assertThat(stream, notNullValue());
@@ -185,95 +239,62 @@ public class JcrSingleValuePropertyTest {
                 stream.close();
             }
         }
+        assertThat(prop.getString(), is(stringFactory.create(binaryValue)));
+        assertThat(prop.getLength(), is((long)binaryValue.length)); // note this value!!
+        checkValue(prop);
     }
 
     @Test
     public void shouldProvideString() throws Exception {
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, "value");
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.STRING);
-        assertThat(prop.getString(), is("value"));
+        prop = cars.getProperty("stringProperty");
+        assertThat(prop.getString(), is(stringValue));
         assertThat(prop.getType(), is(PropertyType.STRING));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
-    }
-
-    @Test
-    public void shouldAllowReferenceValue() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, uuid);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.STRING);
-        assertThat(prop.getString(), is(uuid.toString()));
-        assertThat(prop.getType(), is(PropertyType.STRING));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getLength(), is((long)stringValue.length()));
+        checkValue(prop);
     }
 
     @Test
     public void shouldAllowNameValue() throws Exception {
-        executionContext.getNamespaceRegistry().register("acme", "http://example.com");
-        Name path = executionContext.getValueFactories().getNameFactory().create("acme:something");
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, path);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.NAME);
-        assertThat(prop.getString(), is("acme:something"));
+        prop = cars.getProperty("nameProperty");
         assertThat(prop.getType(), is(PropertyType.NAME));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getString(), is(nameValue));
+        assertThat(prop.getLength(), is((long)nameValue.length()));
         // Change the namespace registry ...
-        executionContext.getNamespaceRegistry().register("acme2", "http://example.com");
-        assertThat(prop.getString(), is("acme2:something"));
+        context.getNamespaceRegistry().register("acme2", "http://example.com");
+        assertThat(prop.getString(), is("acme2:SomeName"));
+        checkValue(prop);
     }
 
     @Test
     public void shouldAllowPathValue() throws Exception {
-        executionContext.getNamespaceRegistry().register("acme", "http://example.com");
-        Path path = executionContext.getValueFactories().getPathFactory().create("/a/b/acme:c");
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object)path);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.PATH);
-        assertThat(prop.getString(), is("/a/b/acme:c"));
+        prop = cars.getProperty("pathProperty");
         assertThat(prop.getType(), is(PropertyType.PATH));
-        assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
+        assertThat(prop.getString(), is(pathValue));
         // Change the namespace registry ...
-        executionContext.getNamespaceRegistry().register("acme2", "http://example.com");
-        assertThat(prop.getString(), is("/a/b/acme2:c"));
+        context.getNamespaceRegistry().register("acme2", "http://example.com");
+        assertThat(prop.getString(), is("/Cars/Hybrid/Toyota Highlander/acme2:SomethingElse"));
+        checkValue(prop);
     }
 
-    @Test
-    public void shouldProvideValue() throws Exception {
+    public void checkValue( Property prop ) throws Exception {
+        // Should provide a value and not multiple values ...
         Value val = prop.getValue();
         assertThat(val, notNullValue());
-    }
-
-    @Test( expected = ValueFormatException.class )
-    public void shouldNotProvideValues() throws Exception {
-        prop.getValues();
-    }
-
-    @Test
-    public void shouldProvideLength() throws Exception {
-        String dnaValue = executionContext.getValueFactories().getStringFactory().create(dnaProperty.getFirstValue());
-        assertThat(prop.getLength(), is((long)dnaValue.length()));
-
-        dnaValue = "some other value";
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, dnaValue);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        assertThat(prop.getLength(), is((long)dnaValue.length()));
-
-        Object obj = new Object();
-        long binaryLength = executionContext.getValueFactories().getBinaryFactory().create(obj).getSize();
-        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, obj);
-        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-        assertThat(prop.getLength(), is(binaryLength));
-    }
-
-    @Test( expected = ValueFormatException.class )
-    public void shouldNotProvideLengths() throws Exception {
-        prop.getLengths();
-    }
-
-    @Test
-    public void shouldProvidePropertyDefinition() throws Exception {
         assertThat(prop.getDefinition(), notNullValue());
+
+        // Should not allow multiple-value methods ...
+        try {
+            prop.getValues();
+            fail("Should not be able to call 'getValues()' on a single-value property");
+        } catch (ValueFormatException e) {
+            // expected
+        }
+        try {
+            prop.getLengths();
+            fail("Should not be able to call 'getValues()' on a single-value property");
+        } catch (ValueFormatException e) {
+            // expected
+        }
     }
 
 }

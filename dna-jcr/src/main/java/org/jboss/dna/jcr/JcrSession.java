@@ -53,10 +53,10 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -480,14 +480,11 @@ class JcrSession implements Session {
         if (path.getLastSegment().hasIndex()) {
             return getNode(path);
         }
-        // We can't tell from the name, so try a node first ...
+        // We can't tell from the name, so ask for an item ...
         try {
-            return getNode(path);
-        } catch (PathNotFoundException e) {
-            // A node was not found, so look for a node using the parent as the node's path ...
-            Path parentPath = path.getParent();
-            Name propertyName = path.getLastSegment().getName();
-            return getNode(parentPath).getProperty(propertyName.getString(namespaces()));
+            return cache.findJcrItem(null, rootPath, path.relativeTo(rootPath));
+        } catch (ItemNotFoundException e) {
+            throw new PathNotFoundException(e.getMessage(), e);
         }
     }
 
@@ -511,7 +508,11 @@ class JcrSession implements Session {
      */
     AbstractJcrNode getNode( Path path ) throws RepositoryException, PathNotFoundException {
         if (path.isRoot()) return cache.findJcrRootNode();
-        return cache.findJcrNode(null, path.relativeTo(rootPath));
+        try {
+            return cache.findJcrNode(null, path);
+        } catch (ItemNotFoundException e) {
+            throw new PathNotFoundException(e.getMessage());
+        }
     }
 
     /**
@@ -520,7 +521,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
      */
     public Node getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
-        return cache.findJcrNode(UUID.fromString(uuid));
+        return cache.findJcrNode(Location.create(UUID.fromString(uuid)));
     }
 
     /**

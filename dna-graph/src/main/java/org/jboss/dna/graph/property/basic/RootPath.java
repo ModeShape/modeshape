@@ -124,6 +124,16 @@ public class RootPath extends AbstractPath {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#relativeToRoot()
+     */
+    @Override
+    public Path relativeToRoot() {
+        return BasicPath.SELF_PATH;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.property.basic.AbstractPath#resolve(org.jboss.dna.graph.property.Path)
      */
     @Override

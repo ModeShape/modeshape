@@ -32,6 +32,7 @@ import static org.junit.Assert.fail;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -44,13 +45,16 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.session.GraphSession.Node;
 import org.jboss.dna.graph.session.GraphSession.Operations;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * 
  */
-public class GraphCacheTest {
+public class GraphSessionTest {
+
+    private static final Stopwatch LOADING_STOPWATCH = new Stopwatch();
 
     protected ExecutionContext context;
     protected InMemoryRepositorySource source;
@@ -78,12 +82,19 @@ public class GraphCacheTest {
         store = Graph.create(source.getName(), connectionFactory, context);
 
         // Load the store with content ...
+        LOADING_STOPWATCH.start();
         store.importXmlFrom(getClass().getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        LOADING_STOPWATCH.stop();
         numberOfConnections = 0; // reset the number of connections
 
         Operations<Object, Object> nodeOps = null; // use default
         String workspaceName = null; // use current
         cache = new GraphSession<Object, Object>(store, workspaceName, nodeOps);
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        System.out.println(LOADING_STOPWATCH);
     }
 
     @Test
@@ -291,9 +302,9 @@ public class GraphCacheTest {
             assertThat(utility.getParent(), is(cars));
 
             // Ensure that the changes were recorded appropriately ...
-            assertThat(cars.isChanged(false), is(true));
-            assertThat(sports.isChanged(false), is(false));
-            assertThat(utility.isChanged(false), is(true));
+            assertThat(cars.isChanged(false), is(true)); // 'sports' removed as child
+            assertThat(utility.isChanged(false), is(true)); // 'sports' added as child
+            assertThat(sports.isChanged(false), is(true)); // path has changed
             assertThat(cache.hasPendingChanges(), is(true));
             assertThat(cache.changeDependencies.size(), is(1));
             assertThat(cache.changeDependencies.get(sports.getNodeId()).getMovedFrom(), is(cars.getNodeId()));
@@ -351,9 +362,9 @@ public class GraphCacheTest {
             assertThat(utility.getParent(), is(cars));
 
             // Ensure that the changes were recorded appropriately ...
-            assertThat(cars.isChanged(false), is(true));
-            assertThat(sports.isChanged(false), is(false));
-            assertThat(utility.isChanged(false), is(true));
+            assertThat(cars.isChanged(false), is(true)); // 'sports' removed as child
+            assertThat(utility.isChanged(false), is(true)); // 'sports' added as child
+            assertThat(sports.isChanged(false), is(true)); // path has changed
             assertThat(cache.hasPendingChanges(), is(true));
             assertThat(cache.changeDependencies.size(), is(1));
             assertThat(cache.changeDependencies.get(sports.getNodeId()).getMovedFrom(), is(cars.getNodeId()));
@@ -419,9 +430,9 @@ public class GraphCacheTest {
         assertThat(utility.getParent(), is(cars));
 
         // Ensure that the changes were recorded appropriately ...
-        assertThat(cars.isChanged(false), is(true));
-        assertThat(sports.isChanged(false), is(false));
-        assertThat(utility.isChanged(false), is(true));
+        assertThat(cars.isChanged(false), is(true)); // 'sports' removed as child
+        assertThat(utility.isChanged(false), is(true)); // 'sports' added as child
+        assertThat(sports.isChanged(false), is(true)); // path has changed
         assertThat(cache.hasPendingChanges(), is(true));
         assertThat(cache.changeDependencies.size(), is(1));
         assertThat(cache.changeDependencies.get(sports.getNodeId()).getMovedFrom(), is(cars.getNodeId()));
@@ -454,6 +465,152 @@ public class GraphCacheTest {
         assertNoChanges();
 
         // System.out.println(cache.root.getSnapshot(false));
+    }
+
+    @Test
+    public void shouldRenameNodeByRemovingAndAddingAtEndOfChildren() {
+        Node<Object, Object> sports = cache.findNodeWith(path("/Cars/Sports"));
+        assertConnectionsUsed(1); // "Utility" was found because it is child of "Cars" loaded when "Sports" was loaded
+
+        sports.rename(name("non-sports")); // "Sports" was already loaded, as was "Cars"
+        assertNoMoreConnectionsUsed();
+
+        Node<Object, Object> cars = cache.findNodeWith(path("/Cars"));
+
+        assertChildren(cars, "Hybrid", "Luxury", "Utility", "non-sports");
+        assertThat(sports.getParent(), is(cars));
+
+        // Ensure that the changes were recorded appropriately ...
+        assertThat(cars.isChanged(false), is(true)); // 'sports' renamed as child
+        assertThat(sports.isChanged(false), is(true)); // path has changed
+        assertThat(cache.hasPendingChanges(), is(true));
+        assertThat(cache.operations.isExecuteRequired(), is(true));
+
+        // Save "/Cars" but keep the changes ...
+        assertConnectionsUsed(0);
+        cache.save(cars);
+        assertConnectionsUsed(2); // 1 to load children required by validation, 1 to perform save
+
+        // Now the state should reflect our changes, but we need to refind the nodes ...
+        Node<Object, Object> nonSports = cache.findNodeWith(path("/Cars/non-sports"));
+        assertConnectionsUsed(1);
+        assertNoMoreConnectionsUsed();
+
+        assertChildren(cars, "Hybrid", "Luxury", "Utility", "non-sports");
+        assertThat(nonSports.getParent(), is(cars));
+
+        // Now there should be no changes ...
+        assertNoChanges();
+
+        System.out.println(cache.root.getSnapshot(false));
+    }
+
+    @Test
+    public void shouldRenameNodeByRemovingAndAddingAtEndOfChildrenEvenWithSameNameSiblings() {
+        Node<Object, Object> sports = cache.findNodeWith(path("/Cars/Sports"));
+        assertConnectionsUsed(1); // "Utility" was found because it is child of "Cars" loaded when "Sports" was loaded
+
+        sports.rename(name("Utility")); // "Sports" was already loaded, as was "Cars"
+        assertNoMoreConnectionsUsed();
+
+        Node<Object, Object> cars = cache.findNodeWith(path("/Cars"));
+
+        assertChildren(cars, "Hybrid", "Luxury", "Utility", "Utility[2]");
+        assertThat(sports.getParent(), is(cars));
+
+        // Ensure that the changes were recorded appropriately ...
+        assertThat(cars.isChanged(false), is(true)); // 'sports' renamed as child
+        assertThat(sports.isChanged(false), is(true)); // path has changed
+        assertThat(cache.hasPendingChanges(), is(true));
+        assertThat(cache.operations.isExecuteRequired(), is(true));
+
+        // Save "/Cars" but keep the changes ...
+        assertConnectionsUsed(0);
+        cache.save(cars);
+        assertConnectionsUsed(2); // 1 to load children required by validation, 1 to perform save
+
+        // Now the state should reflect our changes, but we need to refind the nodes ...
+        Node<Object, Object> utility2 = cache.findNodeWith(path("/Cars/Utility[2]"));
+        assertConnectionsUsed(1);
+        assertNoMoreConnectionsUsed();
+
+        assertChildren(cars, "Hybrid", "Luxury", "Utility", "Utility[2]");
+        assertThat(utility2.getParent(), is(cars));
+
+        // Now there should be no changes ...
+        assertNoChanges();
+
+        System.out.println(cache.root.getSnapshot(false));
+    }
+
+    @Test
+    public void shouldReorderChildWithNoSnsIndexes() {
+        Node<Object, Object> sports = cache.findNodeWith(path("/Cars/Sports"));
+        Node<Object, Object> utility = cache.findNodeWith(path("/Cars/Utility"));
+        Node<Object, Object> cars = cache.findNodeWith(path("/Cars"));
+        assertConnectionsUsed(1); // "Utility" was found because it is child of "Cars" loaded when "Sports" was loaded
+
+        cars.orderChildBefore(utility.getSegment(), sports.getSegment());
+        assertNoMoreConnectionsUsed();
+
+        Node<Object, Object> root = cache.getRoot();
+
+        assertChildren(cars, "Hybrid", "Utility", "Sports", "Luxury");
+        assertThat(sports.getParent(), is(cars));
+        assertThat(utility.getParent(), is(cars));
+
+        // Save the changes ...
+        assertConnectionsUsed(0);
+        cache.save();
+        assertConnectionsUsed(2); // 1 to load children required by validation, 1 to perform save
+
+        // The affected nodes should now be stale ...
+        assertThat(sports.isStale(), is(true));
+        assertThat(utility.isStale(), is(true));
+        assertThat(cars.isStale(), is(false)); // not stale because it was unloaded
+        assertThat(cars.isLoaded(), is(false));
+        assertThat(root.isStale(), is(false)); // not touched during saves
+
+        // Now the state should reflect our changes ...
+        assertChildren(cars, "Hybrid", "Utility", "Sports", "Luxury");
+
+        // Now there should be no changes ...
+        assertNoChanges();
+    }
+
+    @Test
+    public void shouldReorderChildWithSnsIndexes() {
+        Node<Object, Object> sports = cache.findNodeWith(path("/Cars/Sports"));
+        Node<Object, Object> cars = cache.findNodeWith(path("/Cars"));
+        assertConnectionsUsed(1); // "Utility" was found because it is child of "Cars" loaded when "Sports" was loaded
+
+        Node<Object, Object> exp1 = cars.createChild(name("Experimental"));
+        Node<Object, Object> exp2 = cars.createChild(name("Experimental"));
+        Node<Object, Object> exp3 = cars.createChild(name("Experimental"));
+        assertThat(cache.hasPendingChanges(), is(true));
+        assertThat(exp1.getSegment().getIndex(), is(1));
+        assertThat(exp2.getSegment().getIndex(), is(2));
+        assertThat(exp3.getSegment().getIndex(), is(3));
+        assertChildren(cars, "Hybrid", "Sports", "Luxury", "Utility", "Experimental", "Experimental[2]", "Experimental[3]");
+
+        cars.orderChildBefore(exp3.getSegment(), sports.getSegment());
+        assertNoMoreConnectionsUsed();
+
+        assertThat(exp1.getSegment().getIndex(), is(2));
+        assertThat(exp2.getSegment().getIndex(), is(3));
+        assertThat(exp3.getSegment().getIndex(), is(1));
+        assertChildren(cars, "Hybrid", "Experimental", "Sports", "Luxury", "Utility", "Experimental[2]", "Experimental[3]");
+
+        // Save the changes ...
+        assertConnectionsUsed(0);
+        cache.save();
+        assertConnectionsUsed(2); // 1 to load children required by validation, 1 to perform save
+
+        // Now the state should reflect our changes ...
+        assertChildren(cars, "Hybrid", "Experimental", "Sports", "Luxury", "Utility", "Experimental[2]", "Experimental[3]");
+
+        // Now there should be no changes ...
+        assertNoChanges();
     }
 
     @Test
@@ -511,6 +668,27 @@ public class GraphCacheTest {
         assertThat(g37.isChanged(true), is(false));
         assertThat(cache.getRoot().isChanged(true), is(false));
         assertNoChanges();
+    }
+
+    @Test
+    public void shouldCreateChildren() {
+        Node<Object, Object> cars = cache.findNodeWith(path("/Cars")); // loads the node and all parents
+        assertChildren(cars, "Hybrid", "Sports", "Luxury", "Utility");
+        assertConnectionsUsed(1);
+
+        Node<Object, Object> experimental = cars.createChild(name("Experimental"));
+        assertThat(experimental.getParent(), is(sameInstance(cars)));
+        assertChildren(cars, "Hybrid", "Sports", "Luxury", "Utility", "Experimental");
+        assertThat(cars.isChanged(false), is(true));
+        assertThat(experimental.isNew(), is(true));
+        assertNoMoreConnectionsUsed();
+
+        Node<Object, Object> experimental2 = cars.createChild(name("Experimental"));
+        assertThat(experimental2.getParent(), is(sameInstance(cars)));
+        assertChildren(cars, "Hybrid", "Sports", "Luxury", "Utility", "Experimental[1]", "Experimental[2]");
+        assertThat(cars.isChanged(false), is(true));
+        assertThat(experimental2.isNew(), is(true));
+        assertNoMoreConnectionsUsed();
     }
 
     protected void assertChildren( Node<Object, Object> node,

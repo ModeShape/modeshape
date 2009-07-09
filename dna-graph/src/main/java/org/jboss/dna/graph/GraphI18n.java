@@ -124,7 +124,10 @@ public final class GraphI18n {
     /* Session */
     public static I18n unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
     public static I18n unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+    public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
     public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
+    public static I18n unableToMoveNodeToBeChildOfDecendent;
+    public static I18n childNotFound;
 
     static {
         try {

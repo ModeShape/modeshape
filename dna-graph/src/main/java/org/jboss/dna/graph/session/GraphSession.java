@@ -34,14 +34,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.ReadOnlyIterator;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -58,9 +56,10 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.ChangeRequest;
-import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.session.GraphSession.Authorizer.Action;
@@ -148,7 +147,7 @@ public class GraphSession<Payload, PropertyPayload> {
         } else {
             this.workspaceName = this.store.getCurrentWorkspaceName();
         }
-        this.nodeOperations = nodeOperations != null ? nodeOperations : new SimpleNodeOperations<Payload, PropertyPayload>();
+        this.nodeOperations = nodeOperations != null ? nodeOperations : new NodeOperations<Payload, PropertyPayload>();
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.authorizer = authorizer != null ? authorizer : new NoOpAuthorizer();
         // Create the NodeId factory ...
@@ -169,6 +168,22 @@ public class GraphSession<Payload, PropertyPayload> {
         this.requests = new LinkedList<Request>();
         this.requestBuilder = new BatchRequestBuilder(this.requests);
         this.operations = this.store.batch(this.requestBuilder);
+    }
+
+    final String readable( Name name ) {
+        return name.getString(context.getNamespaceRegistry());
+    }
+
+    final String readable( Path.Segment segment ) {
+        return segment.getString(context.getNamespaceRegistry());
+    }
+
+    final String readable( Path path ) {
+        return path.getString(context.getNamespaceRegistry());
+    }
+
+    final String readable( Location location ) {
+        return location.getString(context.getNamespaceRegistry());
     }
 
     /**
@@ -211,6 +226,26 @@ public class GraphSession<Payload, PropertyPayload> {
     }
 
     /**
+     * Find in the session the node with the supplied location. If the location does not have a path, this method must first query
+     * the actual persistent store, even if the session already has loaded the node. Thus, this method may not be the most
+     * efficient technique to find a node.
+     * 
+     * @param location the location of the node
+     * @return the cached node at the supplied location
+     * @throws PathNotFoundException if the node at the supplied location does not exist
+     * @throws AccessControlException if the user does not have permission to read the node given by the supplied location
+     * @throws IllegalArgumentException if the location is null
+     */
+    public Node<Payload, PropertyPayload> findNodeWith( Location location ) throws PathNotFoundException, AccessControlException {
+        if (!location.hasPath()) {
+            // Query for the actual location ...
+            location = store.getNodeAt(location).getLocation();
+        }
+        assert location.hasPath();
+        return findNodeWith(null, location.getPath());
+    }
+
+    /**
      * Find in the session the node with the supplied identifier.
      * 
      * @param id the identifier of the node
@@ -236,11 +271,13 @@ public class GraphSession<Payload, PropertyPayload> {
     public Node<Payload, PropertyPayload> findNodeWith( NodeId id,
                                                         Path path ) throws PathNotFoundException, AccessControlException {
         if (id == null && path == null) {
-            CheckArg.isNotNull(path, "path and id");
+            CheckArg.isNotNull(id, "id");
+            CheckArg.isNotNull(path, "path");
         }
         Node<Payload, PropertyPayload> result = nodes.get(id); // if found, the user should have read privilege since it was
         // already in the cache
-        if (result == null && path != null) {
+        if (result == null || result.isStale()) {
+            assert path != null;
             result = findNodeWith(path);
         }
         return result;
@@ -257,7 +294,26 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     public Node<Payload, PropertyPayload> findNodeWith( Path path ) throws PathNotFoundException, AccessControlException {
         if (path.isRoot()) return getRoot();
-        return findNodeRelativeTo(root, path.relativeTo(root.getPath()));
+        return findNodeRelativeTo(root, path.relativeTo(root.getPath()), true);
+    }
+
+    /**
+     * Find the node with the supplied path. This node quickly finds the node if it exists in the cache, or if it is not in the
+     * cache, it loads the nodes down the supplied path. However, if <code>loadIfRequired</code> is <code>false</code>, then any
+     * node along the path that is not loaded will result in this method returning null.
+     * 
+     * @param path the path to the node
+     * @param loadIfRequired true if any missing nodes should be loaded, or false if null should be returned if any nodes along
+     *        the path are not loaded
+     * @return the node information
+     * @throws PathNotFoundException if the node at the supplied path does not exist
+     * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
+     */
+    protected Node<Payload, PropertyPayload> findNodeWith( Path path,
+                                                           boolean loadIfRequired )
+        throws PathNotFoundException, AccessControlException {
+        if (path.isRoot()) return getRoot();
+        return findNodeRelativeTo(root, path.relativeTo(root.getPath()), loadIfRequired);
     }
 
     /**
@@ -273,9 +329,31 @@ public class GraphSession<Payload, PropertyPayload> {
      * @throws PathNotFoundException if the node at the supplied path does not exist
      * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
      */
-    @SuppressWarnings( "synthetic-access" )
     public Node<Payload, PropertyPayload> findNodeRelativeTo( Node<Payload, PropertyPayload> startingPoint,
                                                               Path relativePath )
+        throws PathNotFoundException, AccessControlException {
+        return findNodeRelativeTo(startingPoint, relativePath, true);
+    }
+
+    /**
+     * Find the node with the supplied path relative to another node. This node quickly finds the node by walking the supplied
+     * relative path starting at the supplied node. As soon as a cached node is found to not be fully loaded, the persistent
+     * information for that node and all remaining nodes along the relative path are read from the persistent store and inserted
+     * into the cache.
+     * 
+     * @param startingPoint the node from which the path is relative
+     * @param relativePath the relative path from the designated starting point to the desired node; may not be null and may not
+     *        be an {@link Path#isAbsolute() absolute} path
+     * @param loadIfRequired true if any missing nodes should be loaded, or false if null should be returned if any nodes along
+     *        the path are not loaded
+     * @return the node information, or null if the node was not yet loaded (and <code>loadRequired</code> was false)
+     * @throws PathNotFoundException if the node at the supplied path does not exist
+     * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
+     */
+    @SuppressWarnings( "synthetic-access" )
+    protected Node<Payload, PropertyPayload> findNodeRelativeTo( Node<Payload, PropertyPayload> startingPoint,
+                                                                 Path relativePath,
+                                                                 boolean loadIfRequired )
         throws PathNotFoundException, AccessControlException {
         Node<Payload, PropertyPayload> node = startingPoint;
         if (!relativePath.isRoot()) {
@@ -301,6 +379,7 @@ public class GraphSession<Payload, PropertyPayload> {
                         // The child is the next node we need to process ...
                         node = node.getChild(segment);
                     } else {
+                        if (!loadIfRequired) return null;
                         // The node has not yet been loaded into the cache, so read this node
                         // from the store as well as all nodes along the path to the node we're really
                         // interested in. We'll do this in a batch, so first create this batch ...
@@ -351,7 +430,7 @@ public class GraphSession<Payload, PropertyPayload> {
                                     node = previousNode;
                                 }
                             }
-                            nodeOperations.update(persistentNode, previousNode);
+                            nodeOperations.materialize(persistentNode, previousNode);
                             previousPath = path;
                         }
                     }
@@ -383,21 +462,29 @@ public class GraphSession<Payload, PropertyPayload> {
     }
 
     /**
-     * Move this node from its current location so that is is a child of the supplied parent, but do so immediately without
-     * enqueuing the operation within the session's operations.
+     * Move this node from its current location so that is is a child of the supplied parent, doing so immediately without
+     * enqueuing the operation within the session's operations. The current session is modified immediately to reflect the move
+     * result.
      * 
-     * @param nodeToMove the node that is to be moved; may not be null
-     * @param newParent the new parent for this node; may not be null
-     * @param newName the new name for the node, or null if the node is not to be renamed
-     * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+     * @param nodeToMove the path to the node that is to be moved; may not be null
+     * @param destination the desired new path; may not be null
      * @throws IllegalArgumentException if the node being moved is the root node
+     * @throws AccessControlException if the caller does not have the permission to perform the operation
+     * @throws RepositorySourceException if any error resulting while performing the operation
      */
-    public void immediateMove( Node<Payload, PropertyPayload> nodeToMove,
-                               Node<Payload, PropertyPayload> newParent,
-                               Name newName ) {
+    public void immediateMove( Path nodeToMove,
+                               Path destination ) throws AccessControlException, RepositorySourceException {
         CheckArg.isNotNull(nodeToMove, "nodeToMove");
-        CheckArg.isNotNull(newParent, "newParent");
-        nodeToMove.moveTo(newParent, newName, false);
+        CheckArg.isNotNull(destination, "destination");
+
+        Path newParentPath = destination.getParent();
+        Name newName = destination.getLastSegment().getName();
+
+        // Check authorization ...
+        authorizer.checkPermissions(newParentPath, Action.ADD_NODE);
+        authorizer.checkPermissions(nodeToMove.getParent(), Action.REMOVE);
+
+        store.move(nodeToMove).as(newName).into(newParentPath);
     }
 
     /**
@@ -410,11 +497,13 @@ public class GraphSession<Payload, PropertyPayload> {
      * </p>
      * 
      * @param source the path to the node that is to be copied; may not be null
-     * @param destination the path where the copy is to be placed; may not be null index
+     * @param destination the path where the copy is to be placed; may not be null
      * @throws IllegalArgumentException either path is null or invalid
+     * @throws AccessControlException if the caller does not have the permission to perform the operation
+     * @throws RepositorySourceException if any error resulting while performing the operation
      */
     public void immediateCopy( Path source,
-                               Path destination ) {
+                               Path destination ) throws AccessControlException, RepositorySourceException {
         immediateCopy(source, workspaceName, destination);
     }
 
@@ -430,54 +519,72 @@ public class GraphSession<Payload, PropertyPayload> {
      * @param source the path to the node that is to be copied; may not be null
      * @param sourceWorkspace the name of the workspace where the source node is to be found, or null if the current workspace
      *        should be used
-     * @param destination the path where the copy is to be placed; may not be null index
+     * @param destination the path where the copy is to be placed; may not be null
      * @throws IllegalArgumentException either path is null or invalid
+     * @throws PathNotFoundException if the node being copied or the parent of the destination path do not exist
      * @throws InvalidWorkspaceException if the source workspace name is invalid or does not exist
+     * @throws AccessControlException if the caller does not have the permission to perform the operation
+     * @throws RepositorySourceException if any error resulting while performing the operation
      */
     public void immediateCopy( Path source,
                                String sourceWorkspace,
-                               Path destination ) {
+                               Path destination )
+        throws InvalidWorkspaceException, AccessControlException, PathNotFoundException, RepositorySourceException {
         CheckArg.isNotNull(source, "source");
         CheckArg.isNotNull(destination, "destination");
         if (sourceWorkspace == null) sourceWorkspace = workspaceName;
 
+        // Check authorization ...
+        authorizer.checkPermissions(destination, Action.ADD_NODE);
+        authorizer.checkPermissions(source, Action.READ);
+
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent), but
         // but use a batch so that we can read the latest list of children ...
-        Results results = store.batch()
-                               .copy(source)
-                               .fromWorkspace(sourceWorkspace)
-                               .to(destination)
-                               .and()
-                               .readChildren()
-                               .of(destination.getParent())
-                               .execute();
+        Results results = store.batch().copy(source).fromWorkspace(sourceWorkspace).to(destination).execute();
 
-        // Now get the children of the destination's parent ...
-        Location parentLocation = results.getNode(destination).getLocation();
+        // Find the copy request to get the actual location of the copy ...
+        CopyBranchRequest request = (CopyBranchRequest)results.getRequests().get(0);
+        Location locationOfCopy = request.getActualLocationAfter();
+
         // Find the parent node in the session ...
-        Node<Payload, PropertyPayload> parent = this.findNodeWith(parentLocation.getPath());
-        if (parent.isLoaded()) {
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(locationOfCopy.getPath().getParent(), false);
+        if (parent != null && parent.isLoaded()) {
             // Update the children to make them match the latest snapshot from the store ...
-            List<Location> newChildren = results.getNode(parentLocation).getChildren();
-            parent.synchronize(newChildren);
+            parent.synchronizeWithNewlyPersistedNode(locationOfCopy);
         }
     }
 
     /**
      * Clone the supplied source branch and place into the destination location, optionally removing any existing copy that
-     * already exists in the destination location.
+     * already exists in the destination location, doing so immediately without enqueuing the operation within the session's
+     * operations. The current session is modified immediately to reflect the clone result.
      * 
-     * @param source
-     * @param sourceWorkspace
-     * @param destination
+     * @param source the path to the node that is to be cloned; may not be null
+     * @param sourceWorkspace the name of the workspace where the source node is to be found, or null if the current workspace
+     *        should be used
+     * @param destination the path for the new cloned copy; may not be null index
      * @param removeExisting true if the original should be removed, or false if the original should be left
+     * @throws IllegalArgumentException either path is null or invalid
+     * @throws InvalidWorkspaceException if the source workspace name is invalid or does not exist
      * @throws UuidAlreadyExistsException if copy could not be completed because the current workspace already includes at least
      *         one of the nodes at or below the <code>source</code> branch in the source workspace
+     * @throws PathNotFoundException if the node being clone or the destination node do not exist
+     * @throws AccessControlException if the caller does not have the permission to perform the operation
+     * @throws RepositorySourceException if any error resulting while performing the operation
      */
     public void immediateClone( Path source,
                                 String sourceWorkspace,
                                 Path destination,
-                                boolean removeExisting ) {
+                                boolean removeExisting )
+        throws InvalidWorkspaceException, AccessControlException, UuidAlreadyExistsException, PathNotFoundException,
+        RepositorySourceException {
+        CheckArg.isNotNull(source, "source");
+        CheckArg.isNotNull(destination, "destination");
+        if (sourceWorkspace == null) sourceWorkspace = workspaceName;
+
+        // Check authorization ...
+        authorizer.checkPermissions(destination.getParent(), Action.ADD_NODE);
+        authorizer.checkPermissions(source, Action.READ);
 
         // Perform the copy operation, but use the "to" form (not the "into", which takes the parent), but
         // but use a batch so that we can read the latest list of children ...
@@ -494,14 +601,15 @@ public class GraphSession<Payload, PropertyPayload> {
         // Now execute these two operations ...
         Results results = batch.execute();
 
-        // Now get the children of the destination's parent ...
-        Location parentLocation = results.getNode(destination).getLocation();
+        // Find the copy request to get the actual location of the copy ...
+        CopyBranchRequest request = (CopyBranchRequest)results.getRequests().get(0);
+        Location locationOfCopy = request.getActualLocationAfter();
+
         // Find the parent node in the session ...
-        Node<Payload, PropertyPayload> parent = this.findNodeWith(parentLocation.getPath());
-        if (parent.isLoaded()) {
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(locationOfCopy.getPath().getParent(), false);
+        if (parent != null && parent.isLoaded()) {
             // Update the children to make them match the latest snapshot from the store ...
-            List<Location> newChildren = results.getNode(parentLocation).getChildren();
-            parent.synchronize(newChildren);
+            parent.synchronizeWithNewlyPersistedNode(locationOfCopy);
         }
     }
 
@@ -528,9 +636,10 @@ public class GraphSession<Payload, PropertyPayload> {
             requests.clear();
             changeDependencies.clear();
             // And force the root node to be 'unloaded' (in an efficient way) ...
-            root.changed = false;
+            root.status = Status.UNCHANGED;
             root.childrenByName = null;
             root.expirationTime = Long.MAX_VALUE;
+            root.changedBelow = false;
         }
     }
 
@@ -571,7 +680,11 @@ public class GraphSession<Payload, PropertyPayload> {
                 }
                 // Execute the reads. No modifications have been made to the cache, so it is not a problem
                 // if this throws a repository exception.
-                readResults = batch.execute();
+                try {
+                    readResults = batch.execute();
+                } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+                    throw new InvalidStateException(e.getLocalizedMessage(), e);
+                }
             }
 
             // Phase 2: update the cache by unloading or refreshing the nodes ...
@@ -609,19 +722,33 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     public void save() throws PathNotFoundException, ValidationException, InvalidStateException {
         if (!operations.isExecuteRequired()) return;
-        assert root.isChanged(true);
+        if (!root.isChanged(true)) {
+            // Then a bunch of changes could have been made and rolled back manually, so recompute the change state ...
+            root.recomputeChangedBelow();
+            if (!root.isChanged(true)) {
+                // If still no changes, then simply do a refresh ...
+                refresh(false);
+                return;
+            }
+        }
 
         // Make sure that each of the changed node is valid. This process requires that all children of
         // all changed nodes are loaded, so in this process load all unloaded children in one batch ...
         root.onChangedNodes(new LoadAllChildrenVisitor() {
             @Override
             protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
-                nodeOperations.validate(node);
+                nodeOperations.preSave(node);
             }
         });
 
         // Execute the batched operations ...
-        operations.execute();
+        try {
+            operations.execute();
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+            throw new InvalidStateException(e.getLocalizedMessage(), e);
+        } catch (RuntimeException e) {
+            throw new RepositorySourceException(e.getLocalizedMessage(), e);
+        }
 
         // Create a new batch for future operations ...
         // LinkedList<Request> oldRequests = this.requests;
@@ -659,6 +786,11 @@ public class GraphSession<Payload, PropertyPayload> {
             I18n msg = GraphI18n.nodeHasAlreadyBeenRemovedFromThisSession;
             throw new InvalidStateException(msg.text(readableLocation, workspaceName));
         }
+        if (node.isNew()) {
+            String path = readable(node.getPath());
+            throw new RepositorySourceException(GraphI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(path,
+                                                                                                               workspaceName));
+        }
         if (!node.isChanged(true)) {
             // There are no changes within this branch
             return;
@@ -668,7 +800,7 @@ public class GraphSession<Payload, PropertyPayload> {
         if (!node.containsChangesWithExternalDependencies()) {
             I18n msg = GraphI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
             String path = node.getPath().getString(context.getNamespaceRegistry());
-            throw new InvalidStateException(msg.text(path, workspaceName));
+            throw new ValidationException(msg.text(path, workspaceName));
         }
 
         // Make sure that each of the changed node is valid. This process requires that all children of
@@ -676,7 +808,7 @@ public class GraphSession<Payload, PropertyPayload> {
         root.onChangedNodes(new LoadAllChildrenVisitor() {
             @Override
             protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
-                nodeOperations.validate(node);
+                nodeOperations.preSave(node);
             }
         });
 
@@ -687,22 +819,11 @@ public class GraphSession<Payload, PropertyPayload> {
         Path path = node.getPath();
         LinkedList<Request> branchRequests = new LinkedList<Request>();
         LinkedList<Request> nonBranchRequests = new LinkedList<Request>();
-        Set<UUID> branchUuids = new HashSet<UUID>();
         for (Request request : this.requests) {
             assert request instanceof ChangeRequest;
             ChangeRequest change = (ChangeRequest)request;
             if (change.changes(workspaceName, path)) {
                 branchRequests.add(request);
-                // Record the UUID of the node being saved now ...
-                UUID changedUuid = null;
-                if (change instanceof CreateNodeRequest) {
-                    // We want the parent UUID ...
-                    changedUuid = ((CreateNodeRequest)change).under().getUuid();
-                } else {
-                    changedUuid = change.changedLocation().getUuid();
-                }
-                assert changedUuid != null;
-                branchUuids.add(changedUuid);
             } else {
                 nonBranchRequests.add(request);
             }
@@ -711,7 +832,13 @@ public class GraphSession<Payload, PropertyPayload> {
 
         // Now execute the branch ...
         Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
-        branchBatch.execute();
+        try {
+            branchBatch.execute();
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+            throw new InvalidStateException(e.getLocalizedMessage(), e);
+        } catch (RuntimeException e) {
+            throw new RepositorySourceException(e.getLocalizedMessage(), e);
+        }
 
         // Still have non-branch related requests that we haven't executed ...
         this.requests = nonBranchRequests;
@@ -795,8 +922,8 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param persistentNode the persistent node that should be converted into a node info; never null
          * @param node the session's node representation that is to be updated; never null
          */
-        void update( org.jboss.dna.graph.Node persistentNode,
-                     Node<NodePayload, PropertyPayload> node );
+        void materialize( org.jboss.dna.graph.Node persistentNode,
+                          Node<NodePayload, PropertyPayload> node );
 
         /**
          * Signal that the node's {@link GraphSession.Node#getLocation() location} has been changed
@@ -804,8 +931,116 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param node the node with the new location
          * @param oldLocation the old location of the node
          */
-        void updateLocation( Node<NodePayload, PropertyPayload> node,
-                             Location oldLocation );
+        void postUpdateLocation( Node<NodePayload, PropertyPayload> node,
+                                 Location oldLocation );
+
+        void preSetProperty( Node<NodePayload, PropertyPayload> node,
+                             Name propertyName,
+                             PropertyInfo<PropertyPayload> newProperty ) throws ValidationException;
+
+        void postSetProperty( Node<NodePayload, PropertyPayload> node,
+                              Name propertyName,
+                              PropertyInfo<PropertyPayload> oldProperty );
+
+        void preRemoveProperty( Node<NodePayload, PropertyPayload> node,
+                                Name propertyName ) throws ValidationException;
+
+        void postRemoveProperty( Node<NodePayload, PropertyPayload> node,
+                                 Name propertyName,
+                                 PropertyInfo<PropertyPayload> oldProperty );
+
+        /**
+         * Notify that a new child with the supplied path segment is about to be created. When this method is called, the child
+         * has not yet been added to the parent node.
+         * 
+         * @param parentNode the parent node; never null
+         * @param newChild the path segment for the new child; never null
+         * @param properties the initial properties for the new child, which can be manipulated directly; never null
+         * @throws ValidationException if the parent may not have a child with the supplied name and the creation of the new node
+         *         should be aborted
+         */
+        void preCreateChild( Node<NodePayload, PropertyPayload> parentNode,
+                             Path.Segment newChild,
+                             Map<Name, PropertyInfo<PropertyPayload>> properties ) throws ValidationException;
+
+        /**
+         * Notify that a new child has been added to the supplied parent node. The child may have an initial set of properties
+         * specified at creation time, although none of the PropertyInfo objects will have a
+         * {@link GraphSession.PropertyInfo#getPayload() payload}.
+         * 
+         * @param parentNode the parent node; never null
+         * @param newChild the child that was just added to the parent node; never null
+         * @param properties the properties of the child, which can be manipulated directly; never null
+         * @throws ValidationException if the parent and child are not valid and the creation of the new node should be aborted
+         */
+        void postCreateChild( Node<NodePayload, PropertyPayload> parentNode,
+                              Node<NodePayload, PropertyPayload> newChild,
+                              Map<Name, PropertyInfo<PropertyPayload>> properties ) throws ValidationException;
+
+        /**
+         * Notify that an existing child will be moved from its current parent and placed under the supplied parent. When this
+         * method is called, the child node has not yet been moved.
+         * 
+         * @param nodeToBeMoved the existing node that is to be moved from its current parent to the supplied parent; never null
+         * @param newParentNode the new parent node; never null
+         * @throws ValidationException if the child should not be moved
+         */
+        void preMove( Node<NodePayload, PropertyPayload> nodeToBeMoved,
+                      Node<NodePayload, PropertyPayload> newParentNode ) throws ValidationException;
+
+        /**
+         * Notify that an existing child has been moved from the supplied previous parent into its new location. When this method
+         * is called, the child node has been moved and any same-name-siblings that were after the child in the old parent have
+         * had their SNS indexes adjusted.
+         * 
+         * @param movedNode the existing node that is was moved; never null
+         * @param oldParentNode the old parent node; never null
+         */
+        void postMove( Node<NodePayload, PropertyPayload> movedNode,
+                       Node<NodePayload, PropertyPayload> oldParentNode );
+
+        /**
+         * Notify that an existing child will be copied with the new copy being placed under the supplied parent. When this method
+         * is called, the copy has not yet been performed.
+         * 
+         * @param original the existing node that is to be copied; never null
+         * @param newParentNode the parent node where the copy is to be placed; never null
+         * @throws ValidationException if the copy is not valid
+         */
+        void preCopy( Node<NodePayload, PropertyPayload> original,
+                      Node<NodePayload, PropertyPayload> newParentNode ) throws ValidationException;
+
+        /**
+         * Notify that an existing child will be copied with the new copy being placed under the supplied parent. When this method
+         * is called, the copy has been performed, but the new copy will not be loaded nor will be capable of being loaded.
+         * 
+         * @param original the original node that was copied; never null
+         * @param copy the new copy that was made; never null
+         */
+        void postCopy( Node<NodePayload, PropertyPayload> original,
+                       Node<NodePayload, PropertyPayload> copy );
+
+        /**
+         * Notify that an existing child will be removed from the supplied parent. When this method is called, the child node has
+         * not yet been removed.
+         * 
+         * @param parentNode the parent node; never null
+         * @param child the child that is to be removed from the parent node; never null
+         * @throws ValidationException if the child should not be removed from the parent node
+         */
+        void preRemoveChild( Node<NodePayload, PropertyPayload> parentNode,
+                             Node<NodePayload, PropertyPayload> child ) throws ValidationException;
+
+        /**
+         * Notify that an existing child has been removed from the supplied parent. When this method is called, the child node has
+         * been removed and any same-name-siblings following the child have had their SNS indexes adjusted. Additionally, the
+         * removed child no longer has a parent and is considered {@link GraphSession.Node#isStale() stale}.
+         * 
+         * @param parentNode the parent node; never null
+         * @param removedChild the child that is to be removed from the parent node; never null
+         */
+        void postRemoveChild( Node<NodePayload, PropertyPayload> parentNode,
+                              Node<NodePayload, PropertyPayload> removedChild );
 
         /**
          * Validate a node for consistency and well-formedness.
@@ -813,7 +1048,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param node the node to be validated
          * @throws ValidationException if there is a problem during validation
          */
-        void validate( Node<NodePayload, PropertyPayload> node ) throws ValidationException;
+        void preSave( Node<NodePayload, PropertyPayload> node ) throws ValidationException;
     }
 
     @ThreadSafe
@@ -859,22 +1094,29 @@ public class GraphSession<Payload, PropertyPayload> {
         }
     }
 
+    /**
+     * A default implementation of {@link GraphSession.Operations} that provides all the basic functionality required by a graph
+     * session. In this implementation, only the {@link GraphSession.NodeOperations#materialize(org.jboss.dna.graph.Node, Node)
+     * materialize(...)} method does something.
+     * 
+     * @param <Payload> the type of node payload object
+     * @param <PropertyPayload> the type of property payload object
+     */
     @ThreadSafe
-    protected static class SimpleNodeOperations<Payload, PropertyPayload> implements Operations<Payload, PropertyPayload> {
+    public static class NodeOperations<Payload, PropertyPayload> implements Operations<Payload, PropertyPayload> {
         /**
          * {@inheritDoc}
          * 
-         * @see GraphSession.Operations#update(org.jboss.dna.graph.Node, GraphSession.Node)
+         * @see GraphSession.Operations#materialize(org.jboss.dna.graph.Node, GraphSession.Node)
          */
-        public void update( org.jboss.dna.graph.Node persistentNode,
-                            Node<Payload, PropertyPayload> node ) {
+        public void materialize( org.jboss.dna.graph.Node persistentNode,
+                                 Node<Payload, PropertyPayload> node ) {
             // Create the map of property info objects ...
             Map<Name, PropertyInfo<PropertyPayload>> properties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
             for (Property property : persistentNode.getProperties()) {
                 Name propertyName = property.getName();
-                PropertyId id = new PropertyId(node.getNodeId(), propertyName);
-                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(id, property, property.isMultiple(),
-                                                                                       PropertyStatus.UNCHANGED, null);
+                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(property, property.isMultiple(),
+                                                                                       Status.UNCHANGED, null);
                 properties.put(propertyName, info);
             }
             // Set only the children ...
@@ -884,19 +1126,148 @@ public class GraphSession<Payload, PropertyPayload> {
         /**
          * {@inheritDoc}
          * 
-         * @see GraphSession.Operations#updateLocation(GraphSession.Node, org.jboss.dna.graph.Location)
+         * @see GraphSession.Operations#postUpdateLocation(GraphSession.Node, org.jboss.dna.graph.Location)
          */
-        public void updateLocation( Node<Payload, PropertyPayload> node,
-                                    Location oldLocation ) {
+        public void postUpdateLocation( Node<Payload, PropertyPayload> node,
+                                        Location oldLocation ) {
             // do nothing here
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see GraphSession.Operations#validate(GraphSession.Node)
+         * @see GraphSession.Operations#preSave(GraphSession.Node)
          */
-        public void validate( Node<Payload, PropertyPayload> node ) {
+        public void preSave( Node<Payload, PropertyPayload> node ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preSetProperty(Node, Name, PropertyInfo)
+         */
+        public void preSetProperty( Node<Payload, PropertyPayload> node,
+                                    Name propertyName,
+                                    PropertyInfo<PropertyPayload> newProperty ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postSetProperty(Node, Name, PropertyInfo)
+         */
+        public void postSetProperty( Node<Payload, PropertyPayload> node,
+                                     Name propertyName,
+                                     PropertyInfo<PropertyPayload> oldProperty ) {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preRemoveProperty(Node, Name)
+         */
+        public void preRemoveProperty( Node<Payload, PropertyPayload> node,
+                                       Name propertyName ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postRemoveProperty(Node, Name, PropertyInfo)
+         */
+        public void postRemoveProperty( Node<Payload, PropertyPayload> node,
+                                        Name propertyName,
+                                        PropertyInfo<PropertyPayload> oldProperty ) {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preCreateChild(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.property.Path.Segment, java.util.Map)
+         */
+        public void preCreateChild( Node<Payload, PropertyPayload> parent,
+                                    Segment newChild,
+                                    Map<Name, PropertyInfo<PropertyPayload>> properties ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postCreateChild(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node, java.util.Map)
+         */
+        public void postCreateChild( Node<Payload, PropertyPayload> parent,
+                                     Node<Payload, PropertyPayload> childChild,
+                                     Map<Name, PropertyInfo<PropertyPayload>> properties ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preCopy(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void preCopy( Node<Payload, PropertyPayload> original,
+                             Node<Payload, PropertyPayload> newParent ) throws ValidationException {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postCopy(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void postCopy( Node<Payload, PropertyPayload> original,
+                              Node<Payload, PropertyPayload> copy ) throws ValidationException {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preMove(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void preMove( Node<Payload, PropertyPayload> nodeToBeMoved,
+                             Node<Payload, PropertyPayload> newParent ) throws ValidationException {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postMove(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void postMove( Node<Payload, PropertyPayload> movedNode,
+                              Node<Payload, PropertyPayload> oldParent ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#preRemoveChild(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void preRemoveChild( Node<Payload, PropertyPayload> parent,
+                                    Node<Payload, PropertyPayload> newChild ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Operations#postRemoveChild(org.jboss.dna.graph.session.GraphSession.Node,
+         *      org.jboss.dna.graph.session.GraphSession.Node)
+         */
+        public void postRemoveChild( Node<Payload, PropertyPayload> parent,
+                                     Node<Payload, PropertyPayload> oldChild ) {
             // do nothing here
         }
     }
@@ -908,16 +1279,16 @@ public class GraphSession<Payload, PropertyPayload> {
         private Node<Payload, PropertyPayload> parent;
         private long expirationTime = Long.MAX_VALUE;
         private Location location;
-        private boolean changed;
+        private Status status = Status.UNCHANGED;
         private boolean changedBelow;
         private Map<Name, PropertyInfo<PropertyPayload>> properties;
         private ListMultimap<Name, Node<Payload, PropertyPayload>> childrenByName;
         private Payload payload;
 
-        protected Node( GraphSession<Payload, PropertyPayload> cache,
-                        Node<Payload, PropertyPayload> parent,
-                        NodeId nodeId,
-                        Location location ) {
+        public Node( GraphSession<Payload, PropertyPayload> cache,
+                     Node<Payload, PropertyPayload> parent,
+                     NodeId nodeId,
+                     Location location ) {
             this.cache = cache;
             this.parent = parent;
             this.nodeId = nodeId;
@@ -929,6 +1300,15 @@ public class GraphSession<Payload, PropertyPayload> {
         }
 
         /**
+         * Get the session to which this node belongs.
+         * 
+         * @return the session; never null
+         */
+        public GraphSession<Payload, PropertyPayload> getSession() {
+            return cache;
+        }
+
+        /**
          * Get the time when this node expires.
          * 
          * @return the time in milliseconds past the epoch when this node's cached information expires, or {@link Long#MAX_VALUE
@@ -937,7 +1317,6 @@ public class GraphSession<Payload, PropertyPayload> {
          * @see #isLoaded()
          */
         public final long getExpirationTimeInMillis() {
-            assert !isStale();
             return expirationTime;
         }
 
@@ -975,11 +1354,19 @@ public class GraphSession<Payload, PropertyPayload> {
         /**
          * Method that causes the information for this node to be read from the store and loaded into the cache
          * 
+         * @throws AccessControlException if the caller does not have the permission to perform the operation
          * @throws RepositorySourceException if there is a problem reading the store
          */
         protected final void load() throws RepositorySourceException {
             if (isLoaded()) return;
             assert !isStale();
+            // If this node is new, then there's nothing to read ...
+            if (status == Status.NEW) {
+                this.childrenByName = cache.NO_CHILDREN;
+                this.properties = cache.NO_PROPERTIES;
+                return;
+            }
+
             // Check authorization before reading ...
             Path path = getPath();
             cache.authorizer.checkPermissions(path, Action.READ);
@@ -994,7 +1381,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     this.location = actualLocation;
                 }
                 // Update the persistent information ...
-                cache.nodeOperations.update(persistentNode, this);
+                cache.nodeOperations.materialize(persistentNode, this);
             } else {
                 // Then read the node from the store ...
                 Subgraph subgraph = cache.store.getSubgraphOfDepth(depth).at(getLocation());
@@ -1004,7 +1391,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     this.location = actualLocation;
                 }
                 // Update the persistent information ...
-                cache.nodeOperations.update(subgraph.getRoot(), this);
+                cache.nodeOperations.materialize(subgraph.getRoot(), this);
                 // Now update any nodes below this node ...
                 for (org.jboss.dna.graph.Node persistentNode : subgraph) {
                     // Find the node at the path ...
@@ -1012,7 +1399,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     Node<Payload, PropertyPayload> node = cache.findNodeRelativeTo(this, relativePath);
                     if (!node.isLoaded()) {
                         // Update the persistent information ...
-                        cache.nodeOperations.update(persistentNode, node);
+                        cache.nodeOperations.materialize(persistentNode, node);
                     }
                 }
             }
@@ -1023,7 +1410,7 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         protected final void unload() {
             assert !isStale();
-            assert !changed;
+            assert status == Status.UNCHANGED;
             assert !changedBelow;
             if (!isLoaded()) return;
             cache.recordUnloaded(this);
@@ -1084,8 +1471,8 @@ public class GraphSession<Payload, PropertyPayload> {
         protected final void refreshPhase2( RefreshState<Payload, PropertyPayload> refreshState,
                                             Results persistentInfoForRefreshedNodes ) {
             assert !isStale();
-            if (this.changed) {
-                // There's nothing to do ...
+            if (this.status != Status.UNCHANGED) {
+                // There are changes, so nothing to do ...
                 return;
             }
             if (refreshState.requiresRefresh(this)) {
@@ -1121,15 +1508,15 @@ public class GraphSession<Payload, PropertyPayload> {
                 return;
             }
             // This node can be unloaded (since it has no changes and isn't above a node with changes) ...
-            unload();
+            if (!this.changedBelow) unload();
         }
 
         /**
          * Define the persistent child information that this node is to be populated with. This method does not cause the node's
          * information to be read from the store.
          * <p>
-         * This method is intended to be called by the {@link GraphSession.Operations#update(org.jboss.dna.graph.Node, Node)}, and
-         * should not be called by other components.
+         * This method is intended to be called by the {@link GraphSession.Operations#materialize(org.jboss.dna.graph.Node, Node)}
+         * , and should not be called by other components.
          * </p>
          * 
          * @param children the children for this node; may not be null
@@ -1177,11 +1564,14 @@ public class GraphSession<Payload, PropertyPayload> {
         protected void updateLocation( Path.Segment segment ) {
             assert !isStale();
             Path newPath = null;
+            Path currentPath = getPath();
             if (segment != null) {
+                if (segment.equals(currentPath.getLastSegment())) return;
                 // Recompute the path based upon the parent path ...
                 Path parentPath = getParent().getPath();
                 newPath = cache.pathFactory.create(parentPath, segment);
             } else {
+                if (this.isRoot()) return;
                 // This must be the root ...
                 newPath = cache.pathFactory.createRootPath();
                 assert this.isRoot();
@@ -1190,7 +1580,7 @@ public class GraphSession<Payload, PropertyPayload> {
             if (newLocation != this.location) {
                 Location oldLocation = this.location;
                 this.location = newLocation;
-                cache.nodeOperations.updateLocation(this, oldLocation);
+                cache.nodeOperations.postUpdateLocation(this, oldLocation);
             }
 
             if (isLoaded() && childrenByName != cache.NO_CHILDREN) {
@@ -1206,19 +1596,61 @@ public class GraphSession<Payload, PropertyPayload> {
             }
         }
 
-        protected void synchronize( List<Location> actualChildren ) {
-            if (!isLoaded()) return;
-            for (Location actualChild : actualChildren) {
-                Path.Segment actualSegment = actualChild.getPath().getLastSegment();
-                Node<Payload, PropertyPayload> existingChild = parent.getChild(actualSegment);
-                if (existingChild == null) {
-                    // The child doesn't exist yet ...
-                    NodeId nodeId = cache.idFactory.create();
-                    Node<Payload, PropertyPayload> newChild = cache.createNode(this, nodeId, actualChild);
-                    parent.childrenByName.put(actualSegment.getName(), newChild);
+        /**
+         * This method is used to adjust the existing children by adding a child that was recently added to the persistent store
+         * (via clone or copy). The new child will appear at the end of the existing children, but before any children that were
+         * added to, moved into, created under this parent.
+         * 
+         * @param newChild the new child that was added
+         */
+        protected void synchronizeWithNewlyPersistedNode( Location newChild ) {
+            if (!this.isLoaded()) return;
+            Path childPath = newChild.getPath();
+            Name childName = childPath.getLastSegment().getName();
+            if (this.childrenByName.isEmpty()) {
+                // Just have to add the child ...
+                this.childrenByName = Multimaps.newLinkedListMultimap();
+                if (childPath.getLastSegment().hasIndex()) {
+                    // The child has a SNS index, but this is an only child ...
+                    newChild = newChild.with(cache.pathFactory.create(childPath.getParent(), childName));
                 }
+                Node<Payload, PropertyPayload> child = cache.createNode(this, cache.idFactory.create(), newChild);
+                this.childrenByName.put(childName, child);
+                return;
             }
 
+            // Unfortunately, there is no efficient way to insert into the multi-map, so we need to recreate it ...
+            ListMultimap<Name, Node<Payload, PropertyPayload>> children = Multimaps.newLinkedListMultimap();
+            boolean added = false;
+            for (Node<Payload, PropertyPayload> child : this.childrenByName.values()) {
+                if (!added && child.isNew()) {
+                    // Add the new child here ...
+                    Node<Payload, PropertyPayload> newChildNode = cache.createNode(this, cache.idFactory.create(), newChild);
+                    children.put(childName, newChildNode);
+                    added = true;
+                }
+                children.put(child.getName(), child);
+            }
+            if (!added) {
+                Node<Payload, PropertyPayload> newChildNode = cache.createNode(this, cache.idFactory.create(), newChild);
+                children.put(childName, newChildNode);
+            }
+
+            // Replace the children ...
+            this.childrenByName = children;
+
+            // Adjust the SNS indexes for those children with the same name as 'childToBeMoved' ...
+            List<Node<Payload, PropertyPayload>> childrenWithName = childrenByName.get(childName);
+            int snsIndex = 1;
+            for (Node<Payload, PropertyPayload> sns : childrenWithName) {
+                if (sns.getSegment().getIndex() != snsIndex) {
+                    // The SNS index is not correct, so fix it and update the location ...
+                    Path.Segment newSegment = cache.pathFactory.createSegment(childName, snsIndex);
+                    sns.updateLocation(newSegment);
+                    sns.markAsChanged();
+                }
+                ++snsIndex;
+            }
         }
 
         /**
@@ -1228,8 +1660,18 @@ public class GraphSession<Payload, PropertyPayload> {
          * @return true if there are changes in the specified scope, or false otherwise
          */
         public final boolean isChanged( boolean recursive ) {
-            assert !isStale();
-            return recursive ? this.changed || this.changedBelow : this.changed;
+            if (this.status == Status.UNCHANGED) return recursive && this.changedBelow;
+            return true;
+        }
+
+        /**
+         * Determine whether this node has been created since the last save. If this method returns true, then by definition the
+         * parent node will be marked as having {@link #isChanged(boolean) changed}.
+         * 
+         * @return true if this node is new, or false otherwise
+         */
+        public final boolean isNew() {
+            return this.status == Status.NEW;
         }
 
         /**
@@ -1295,8 +1737,8 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         public void clearChanges() {
             assert !isStale();
-            if (this.changed) {
-                this.changed = false;
+            if (this.status != Status.UNCHANGED) {
+                this.status = Status.UNCHANGED;
                 this.changedBelow = false;
                 unload();
             } else {
@@ -1317,11 +1759,31 @@ public class GraphSession<Payload, PropertyPayload> {
          * Mark this node as having changes.
          * 
          * @see #clearChanges()
+         * @see #markAsNew()
          */
         public final void markAsChanged() {
             assert !isStale();
-            this.changed = true;
+            if (this.status == Status.NEW) return;
+            this.status = Status.CHANGED;
             if (this.parent != null) this.parent.markAsChangedBelow();
+        }
+
+        public final void markAsCopied() {
+            assert !isStale();
+            this.status = Status.COPIED;
+            if (this.parent != null) this.parent.markAsChangedBelow();
+        }
+
+        /**
+         * Mark this node has having been created and not yet saved.
+         * 
+         * @see #clearChanges()
+         * @see #markAsChanged()
+         */
+        public final void markAsNew() {
+            assert !isStale();
+            this.status = Status.NEW;
+            if (this.parent != null) this.parent.markAsChanged();
         }
 
         protected final void markAsChangedBelow() {
@@ -1378,15 +1840,25 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param newNodeName the new name for the node, or null if the node should keep the same name
          * @param useBatch true if this operation should be performed using the session's current batch operation and executed
          *        upon {@link GraphSession#save()}, or false if the move should be performed immediately
+         * @throws ValidationException if the supplied parent node is a decendant of this node
          * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
          * @throws IllegalArgumentException if this is the root node
+         * @throws AccessControlException if the caller does not have the permission to perform the operation
          */
         protected void moveTo( Node<Payload, PropertyPayload> parent,
                                Name newNodeName,
                                boolean useBatch ) {
             final Node<Payload, PropertyPayload> child = this;
             assert !parent.isStale();
-            assert child.parent != this;
+            // Make sure the parent is not a decendant of the child ...
+            if (parent.isAtOrBelow(child)) {
+                String path = getPath().getString(cache.context.getNamespaceRegistry());
+                String parentPath = parent.getPath().getString(cache.context.getNamespaceRegistry());
+                String workspaceName = cache.workspaceName;
+                String msg = GraphI18n.unableToMoveNodeToBeChildOfDecendent.text(path, parentPath, workspaceName);
+                throw new ValidationException(msg);
+            }
+
             assert !child.isRoot();
             if (newNodeName == null) newNodeName = getName();
 
@@ -1395,13 +1867,9 @@ public class GraphSession<Payload, PropertyPayload> {
             cache.authorizer.checkPermissions(child.getPath().getParent(), Action.REMOVE);
 
             parent.load();
-            if (parent.childrenByName == cache.NO_CHILDREN) {
-                parent.childrenByName = Multimaps.newLinkedListMultimap();
-            }
-            Name childName = child.getName();
-            List<Node<Payload, PropertyPayload>> currentChildren = parent.childrenByName.get(childName);
-            currentChildren.add(child);
-            parent.markAsChanged();
+
+            cache.nodeOperations.preMove(child, parent);
+
             // Remove the child from it's existing parent ...
             final Node<Payload, PropertyPayload> oldParent = child.parent;
             // Record the operation ...
@@ -1418,25 +1886,46 @@ public class GraphSession<Payload, PropertyPayload> {
                     cache.store.move(child.getLocation()).as(newNodeName).into(parent.getLocation());
                 }
             }
-            cache.recordMove(child, oldParent, parent);
+            // Remove the child from the current location (even if its the same node; there's cleanup to do) ...
             child.remove();
-            // Set the new parent to this node ...
+            // Now add the child ...
+            if (parent.childrenByName == cache.NO_CHILDREN) {
+                parent.childrenByName = Multimaps.newLinkedListMultimap();
+            }
+            parent.childrenByName.put(newNodeName, child);
             child.parent = parent;
+            parent.markAsChanged();
             // Update the new child with the correct location ...
-            Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+            int snsIndex = parent.childrenByName.get(newNodeName).size();
+            Path.Segment segment = cache.pathFactory.createSegment(newNodeName, snsIndex);
             child.updateLocation(segment);
+            cache.recordMove(child, oldParent, parent);
+
+            cache.nodeOperations.postMove(child, oldParent);
+        }
+
+        /**
+         * Rename this node to have a different name.
+         * 
+         * @param newNodeName
+         */
+        public void rename( Name newNodeName ) {
+            moveTo(this.parent, newNodeName, true);
         }
 
         /**
          * Copy this node (and all nodes below it) and place the copy under the supplied parent location. The new copy will be
          * appended to any existing children of the supplied parent node, and will be given the appropriate same-name-sibling
-         * index.
+         * index. This method may not be called on the root node.
          * 
          * @param parent the new parent for the new copy; may not be null
          * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
-         * @throws IllegalArgumentException if this is the root node
+         * @throws IllegalArgumentException if the parent is null, or if this is the root node
+         * @throws AccessControlException if the caller does not have the permission to perform the operation
          */
         public void copyTo( Node<Payload, PropertyPayload> parent ) {
+            CheckArg.isNotNull(parent, "parent");
+            CheckArg.isEquals(this.isRoot(), "this.isRoot()", false, "false");
             final Node<Payload, PropertyPayload> child = this;
             assert !parent.isStale();
             assert child.parent != this;
@@ -1450,17 +1939,24 @@ public class GraphSession<Payload, PropertyPayload> {
             if (parent.childrenByName == cache.NO_CHILDREN) {
                 parent.childrenByName = Multimaps.newLinkedListMultimap();
             }
+
+            cache.nodeOperations.preCopy(this, parent);
+
             Name childName = child.getName();
             // Figure out the name and SNS of the new copy ...
             List<Node<Payload, PropertyPayload>> currentChildren = parent.childrenByName.get(childName);
-            Location copyLocation = Location.create(cache.pathFactory.create(parent.getPath(), childName, currentChildren.size()));
+            Location copyLocation = Location.create(cache.pathFactory.create(parent.getPath(),
+                                                                             childName,
+                                                                             currentChildren.size() + 1));
 
             // Perform the copy ...
             cache.operations.copy(child.getLocation()).to(copyLocation);
 
             // Add the child to the parent ...
-            cache.createNode(parent, cache.idFactory.create(), copyLocation);
-            parent.markAsChanged();
+            Node<Payload, PropertyPayload> copy = cache.createNode(parent, cache.idFactory.create(), copyLocation);
+            copy.markAsCopied(); // marks parent as changed
+
+            cache.nodeOperations.postCopy(this, copy);
         }
 
         /**
@@ -1477,6 +1973,68 @@ public class GraphSession<Payload, PropertyPayload> {
         }
 
         /**
+         * Move the specified child to be located immediately before the other supplied node.
+         * 
+         * @param childToBeMoved the path segment specifying the child that is to be moved
+         * @param before the path segment of the node before which the {@code childToBeMoved} should be placed, or null if the
+         *        child should be moved to the end
+         * @throws PathNotFoundException if the <code>childToBeMoved</code> or <code>before</code> segments do not specify an
+         *         existing child
+         * @throws IllegalArgumentException if either segment is null or does not specify an existing node
+         */
+        public void orderChildBefore( Path.Segment childToBeMoved,
+                                      Path.Segment before ) throws PathNotFoundException {
+            CheckArg.isNotNull(childToBeMoved, "childToBeMoved");
+
+            // Check authorization ...
+            cache.authorizer.checkPermissions(getPath(), Action.REMOVE);
+            cache.authorizer.checkPermissions(getPath(), Action.ADD_NODE);
+
+            // Find the node to be moved ...
+            Node<Payload, PropertyPayload> nodeToBeMoved = getChild(childToBeMoved);
+            Node<Payload, PropertyPayload> beforeNode = before != null ? getChild(before) : null;
+
+            if (beforeNode == null) {
+                // Moving the node into its parent will remove it from its current spot in the child list and re-add it to the end
+                cache.operations.move(nodeToBeMoved.getLocation()).into(this.location);
+            } else {
+                // Record the move ...
+                cache.operations.move(nodeToBeMoved.getLocation()).before(beforeNode.getLocation());
+            }
+
+            // Unfortunately, there is no efficient way to insert into the multi-map, so we need to recreate it ...
+            ListMultimap<Name, Node<Payload, PropertyPayload>> children = Multimaps.newLinkedListMultimap();
+            for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
+                if (child == nodeToBeMoved) continue;
+                if (before != null && child.getSegment().equals(before)) {
+                    children.put(nodeToBeMoved.getName(), nodeToBeMoved);
+                }
+                children.put(child.getName(), child);
+            }
+            if (before == null) {
+                children.put(nodeToBeMoved.getName(), nodeToBeMoved);
+            }
+
+            // Replace the children ...
+            this.childrenByName = children;
+            this.markAsChanged();
+
+            // Adjust the SNS indexes for those children with the same name as 'childToBeMoved' ...
+            Name movedName = nodeToBeMoved.getName();
+            List<Node<Payload, PropertyPayload>> childrenWithName = childrenByName.get(movedName);
+            int snsIndex = 1;
+            for (Node<Payload, PropertyPayload> sns : childrenWithName) {
+                if (sns.getSegment().getIndex() != snsIndex) {
+                    // The SNS index is not correct, so fix it and update the location ...
+                    Path.Segment newSegment = cache.pathFactory.createSegment(movedName, snsIndex);
+                    sns.updateLocation(newSegment);
+                    sns.markAsChanged();
+                }
+                ++snsIndex;
+            }
+        }
+
+        /**
          * Remove this node from it's parent. Note that locations are <i>not</i> updated, since they will be updated if this node
          * is added to a different parent. However, the locations of same-name-siblings under the parent <i>are</i> updated.
          */
@@ -1487,6 +2045,7 @@ public class GraphSession<Payload, PropertyPayload> {
             assert this.parent.childrenByName != null;
             assert this.parent.childrenByName != cache.NO_CHILDREN;
             this.parent.markAsChanged();
+            this.markAsChanged();
             Name name = getName();
             List<Node<Payload, PropertyPayload>> childrenWithSameName = this.parent.childrenByName.get(name);
             this.parent = null;
@@ -1514,15 +2073,21 @@ public class GraphSession<Payload, PropertyPayload> {
         /**
          * Remove this node from it's parent and destroy it's contents. The location of sibling nodes with the same name will be
          * updated, and the node and all nodes below it will be destroyed and removed from the cache.
+         * 
+         * @throws AccessControlException if the caller does not have the permission to perform the operation
          */
         public void destroy() {
             assert !isStale();
             // Check authorization ...
             cache.authorizer.checkPermissions(getPath(), Action.REMOVE);
+
+            final Node<Payload, PropertyPayload> parent = this.parent;
+            cache.nodeOperations.preRemoveChild(parent, this);
             // Remove the node from its parent ...
             remove();
             // This node was successfully removed, so now remove it from the cache ...
             cache.recordDelete(this);
+            cache.nodeOperations.postRemoveChild(parent, this);
         }
 
         public final boolean isRoot() {
@@ -1549,7 +2114,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * 
          * @return the parent node
          */
-        public final Node<Payload, PropertyPayload> getParent() {
+        public Node<Payload, PropertyPayload> getParent() {
             assert !isStale();
             return parent;
         }
@@ -1566,7 +2131,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * 
          * @return the name; never null
          */
-        public final Name getName() {
+        public Name getName() {
             return location.getPath().getLastSegment().getName();
         }
 
@@ -1595,6 +2160,161 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         public final Location getLocation() {
             return location;
+        }
+
+        /**
+         * Create a new child node with the supplied name. The same-name-sibling index will be determined based upon the existing
+         * children.
+         * 
+         * @param name the name of the new child node
+         * @return the new child node
+         * @throws IllegalArgumentException if the name is null
+         * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
+         */
+        public Node<Payload, PropertyPayload> createChild( Name name ) {
+            CheckArg.isNotNull(name, "name");
+            return doCreateChild(name, null, null);
+        }
+
+        /**
+         * Create a new child node with the supplied name and one initial property. The same-name-sibling index will be determined
+         * based upon the existing children.
+         * 
+         * @param name the name of the new child node
+         * @param property a property for the new node
+         * @return the new child node
+         * @throws IllegalArgumentException if the name or identification property is null
+         * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
+         */
+        public Node<Payload, PropertyPayload> createChild( Name name,
+                                                           Property property ) {
+            CheckArg.isNotNull(name, "name");
+            CheckArg.isNotNull(property, "property");
+            return doCreateChild(name, property, null);
+        }
+
+        /**
+         * Create a new child node with the supplied name and multiple initial properties. The same-name-sibling index will be
+         * determined based upon the existing children.
+         * 
+         * @param name the name of the new child node
+         * @param firstProperty the first identification property for the new node
+         * @param remainingProperties the remaining identification properties for the new node
+         * @return the new child node
+         * @throws IllegalArgumentException if the name or properties are null
+         * @throws ValidationException if the new node is not valid as a child
+         * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
+         */
+        public Node<Payload, PropertyPayload> createChild( Name name,
+                                                           Property firstProperty,
+                                                           Property... remainingProperties ) {
+            CheckArg.isNotNull(name, "name");
+            CheckArg.isNotNull(firstProperty, "firstProperty");
+            return doCreateChild(name, firstProperty, remainingProperties);
+        }
+
+        private Node<Payload, PropertyPayload> doCreateChild( Name name,
+                                                              Property firstProperty,
+                                                              Property[] remainingProperties ) throws ValidationException {
+            assert !isStale();
+
+            // Check permission here ...
+            Path path = getPath();
+            cache.authorizer.checkPermissions(path, Action.ADD_NODE);
+
+            // Now load if required ...
+            load();
+
+            // Figure out the name and SNS of the new copy ...
+            List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(name);
+            Path newPath = cache.pathFactory.create(path, name, currentChildren.size() + 1);
+            Location newChild = Location.create(newPath);
+
+            // Create the properties ...
+            Map<Name, PropertyInfo<PropertyPayload>> newProperties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
+            if (firstProperty != null) {
+                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(firstProperty, firstProperty.isMultiple(),
+                                                                                       Status.NEW, null);
+                newProperties.put(info.getName(), info);
+                if (remainingProperties != null) {
+                    for (Property property : remainingProperties) {
+                        PropertyInfo<PropertyPayload> info2 = new PropertyInfo<PropertyPayload>(property, property.isMultiple(),
+                                                                                                Status.NEW, null);
+                        newProperties.put(info2.getName(), info2);
+                    }
+                }
+            }
+
+            // Notify before the addition ...
+            cache.nodeOperations.preCreateChild(this, newPath.getLastSegment(), newProperties);
+
+            // Record the current state before any changes ...
+            Status statusBefore = this.status;
+            boolean changedBelowBefore = this.changedBelow;
+
+            // Add the child to the parent ...
+            Node<Payload, PropertyPayload> child = cache.createNode(this, cache.idFactory.create(), newChild);
+            child.markAsNew(); // marks parent as changed
+            if (childrenByName == cache.NO_CHILDREN) {
+                childrenByName = Multimaps.newLinkedListMultimap();
+            }
+            childrenByName.put(name, child);
+
+            // Set the properties on the new node, but in a private backdoor way ...
+            assert child.properties == null;
+            child.properties = newProperties;
+
+            try {
+                // The node has been changed, so try notifying before we record the creation (which can't be undone) ...
+                cache.nodeOperations.postCreateChild(this, child, child.properties);
+
+                // Notification was fine, so now do the create ...
+                Graph.Create<Graph.Batch> create = cache.operations.create(newChild.getPath());
+                if (!child.properties.isEmpty()) {
+                    // Process the property infos (in case some were added during the pre- or post- operations ...
+                    for (PropertyInfo<PropertyPayload> property : child.properties.values()) {
+                        create.with(property.getProperty());
+                    }
+                }
+                create.and();
+            } catch (ValidationException e) {
+                // Clean up the children ...
+                if (childrenByName.size() == 1) {
+                    childrenByName = cache.NO_CHILDREN;
+                } else {
+                    childrenByName.remove(child.getName(), child);
+                }
+                this.status = statusBefore;
+                this.changedBelow = changedBelowBefore;
+                throw e;
+            }
+            return child;
+        }
+
+        /**
+         * Determine whether this node has a child with the supplied name and SNS index.
+         * 
+         * @param segment the segment of the child
+         * @return true if there is a child, or false if there is no such child
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public boolean hasChild( Path.Segment segment ) {
+            return hasChild(segment.getName(), segment.getIndex());
+        }
+
+        /**
+         * Determine whether this node has a child with the supplied name and SNS index.
+         * 
+         * @param name the name of the child
+         * @param sns the same-name-sibling index; must be 1 or more
+         * @return true if there is a child, or false if there is no such child
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public boolean hasChild( Name name,
+                                 int sns ) {
+            load();
+            List<Node<Payload, PropertyPayload>> children = childrenByName.get(name); // never null
+            return children.size() >= sns; // SNS is 1-based, index is 0-based
         }
 
         /**
@@ -1727,28 +2447,34 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param isMultiValued true if the property is multi-valued
          * @param payload the optional payload for this property; may be null
          * @return the previous information for the property, or null if there was no previous property
+         * @throws AccessControlException if the caller does not have the permission to perform the operation
          */
         public PropertyInfo<PropertyPayload> setProperty( Property property,
                                                           boolean isMultiValued,
                                                           PropertyPayload payload ) {
-            load();
+            assert !isStale();
             cache.authorizer.checkPermissions(getPath(), Action.SET_PROPERTY);
+
+            load();
+            if (properties == cache.NO_PROPERTIES) {
+                properties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
+            }
+
             Name name = property.getName();
             PropertyInfo<PropertyPayload> previous = properties.get(name);
-            PropertyId id = null;
-            PropertyStatus status = null;
+            Status status = null;
             if (previous != null) {
-                id = previous.getPropertyId();
                 status = previous.getStatus(); // keep NEW or CHANGED status, but UNCHANGED -> CHANGED
-                if (status == PropertyStatus.UNCHANGED) status = PropertyStatus.CHANGED;
+                if (status == Status.UNCHANGED) status = Status.CHANGED;
             } else {
-                id = new PropertyId(getNodeId(), name);
-                status = PropertyStatus.NEW;
+                status = Status.NEW;
             }
-            PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(id, property, isMultiValued, status, payload);
+            PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(property, isMultiValued, status, payload);
+            cache.nodeOperations.preSetProperty(this, property.getName(), info);
             properties.put(name, info);
             cache.operations.set(property).on(location);
             markAsChanged();
+            cache.nodeOperations.postSetProperty(this, property.getName(), previous);
             return previous;
         }
 
@@ -1759,10 +2485,16 @@ public class GraphSession<Payload, PropertyPayload> {
          * @return the previous information for the property, or null if there was no previous property
          */
         public PropertyInfo<PropertyPayload> removeProperty( Name name ) {
+            assert !isStale();
+            cache.authorizer.checkPermissions(getPath(), Action.REMOVE);
+
             load();
+            if (!properties.containsKey(name)) return null;
+            cache.nodeOperations.preRemoveProperty(this, name);
             PropertyInfo<PropertyPayload> results = properties.remove(name);
             markAsChanged();
             cache.operations.remove(name).on(location);
+            cache.nodeOperations.postRemoveProperty(this, name, results);
             return results;
         }
 
@@ -1809,6 +2541,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * @return payload
          */
         public Payload getPayload() {
+            load();
             return payload;
         }
 
@@ -1840,6 +2573,7 @@ public class GraphSession<Payload, PropertyPayload> {
             if (obj == this) return true;
             if (obj instanceof Node) {
                 Node<Payload, PropertyPayload> that = (Node<Payload, PropertyPayload>)obj;
+                if (this.isStale() || that.isStale()) return false;
                 if (!this.nodeId.equals(that.nodeId)) return false;
                 return this.location.equals(that.location);
             }
@@ -1938,10 +2672,10 @@ public class GraphSession<Payload, PropertyPayload> {
                     Node<Payload, PropertyPayload> node = changedNodes.poll();
                     // Visit this node ...
                     boolean visitChildren = true;
-                    if (node.changed) {
+                    if (node.isChanged(false)) {
                         visitChildren = visitor.visit(node);
                     }
-                    if (visitChildren && node.changedBelow) {
+                    if (visitChildren && node.isChanged(true)) {
                         // Visit the children ...
                         int index = -1;
                         Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
@@ -1977,29 +2711,26 @@ public class GraphSession<Payload, PropertyPayload> {
         }
     }
 
-    public static enum PropertyStatus {
+    public static enum Status {
         NEW,
         CHANGED,
-        UNCHANGED;
+        UNCHANGED,
+        COPIED;
     }
 
     @Immutable
     public static final class PropertyInfo<PropertyPayload> {
-        private final PropertyId propertyId;
         private final Property property;
-        private final PropertyStatus status;
+        private final Status status;
         private final boolean multiValued;
         private final PropertyPayload payload;
 
-        protected PropertyInfo( PropertyId propertyId,
-                                Property property,
-                                boolean multiValued,
-                                PropertyStatus status,
-                                PropertyPayload payload ) {
-            assert propertyId != null;
+        public PropertyInfo( Property property,
+                             boolean multiValued,
+                             Status status,
+                             PropertyPayload payload ) {
             assert property != null;
             assert status != null;
-            this.propertyId = propertyId;
             this.property = property;
             this.status = status;
             this.multiValued = multiValued;
@@ -2011,8 +2742,26 @@ public class GraphSession<Payload, PropertyPayload> {
          * 
          * @return the current status; never null
          */
-        public PropertyStatus getStatus() {
+        public Status getStatus() {
             return status;
+        }
+
+        /**
+         * Determine whether this property has been modified since it was last saved.
+         * 
+         * @return true if the {@link #getStatus() status} is {@link Status#CHANGED changed}
+         */
+        public boolean isModified() {
+            return status != Status.UNCHANGED && status != Status.NEW;
+        }
+
+        /**
+         * Determine whether this property has been created since the last save.
+         * 
+         * @return true if the {@link #getStatus() status} is {@link Status#NEW new}
+         */
+        public boolean isNew() {
+            return status == Status.NEW;
         }
 
         /**
@@ -2021,7 +2770,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * @return the propert name; never null
          */
         public Name getName() {
-            return propertyId.getPropertyName();
+            return property.getName();
         }
 
         /**
@@ -2031,15 +2780,6 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         public Property getProperty() {
             return property;
-        }
-
-        /**
-         * Get the identifier for this property.
-         * 
-         * @return the property identifier; never null
-         */
-        public PropertyId getPropertyId() {
-            return propertyId;
         }
 
         /**
@@ -2067,7 +2807,7 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         @Override
         public int hashCode() {
-            return propertyId.hashCode();
+            return getName().hashCode();
         }
 
         /**
@@ -2080,7 +2820,7 @@ public class GraphSession<Payload, PropertyPayload> {
             if (obj == this) return true;
             if (obj instanceof PropertyInfo) {
                 PropertyInfo<?> that = (PropertyInfo<?>)obj;
-                return propertyId.equals(that.getPropertyId());
+                return getName().equals(that.getName());
             }
             return false;
         }
@@ -2093,7 +2833,7 @@ public class GraphSession<Payload, PropertyPayload> {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(propertyId);
+            sb.append(getName());
             if (payload != null) sb.append(payload);
             if (property.isSingle()) {
                 sb.append(" with value ");
@@ -2148,7 +2888,7 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param node the node that should be loaded (if it is not already)
          */
         protected void load( Node<Payload, PropertyPayload> node ) {
-            if (node != null && !node.isLoaded()) {
+            if (node != null && !node.isLoaded() && !node.isNew()) {
                 nodesToLoad.add(node);
                 batch.read(node.getLocation());
             }
@@ -2168,7 +2908,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 // Now load all of the children into the correct node ...
                 for (Node<Payload, PropertyPayload> childToBeRead : nodesToLoad) {
                     org.jboss.dna.graph.Node persistentNode = results.getNode(childToBeRead.getLocation());
-                    nodeOperations.update(persistentNode, childToBeRead);
+                    nodeOperations.materialize(persistentNode, childToBeRead);
                     finishNodeAfterLoading(childToBeRead);
                 }
             }
@@ -2488,75 +3228,4 @@ public class GraphSession<Payload, PropertyPayload> {
         }
     }
 
-    /**
-     * An immutable identifier for a property on a node, used within the {@link GraphSession}.
-     */
-    @Immutable
-    public final static class PropertyId {
-        private final NodeId nodeId;
-        private final Name propertyName;
-        private final int hc;
-
-        public PropertyId( NodeId nodeId,
-                           Name propertyName ) {
-            this.nodeId = nodeId;
-            this.propertyName = propertyName;
-            this.hc = HashCode.compute(this.nodeId, this.propertyName);
-        }
-
-        /**
-         * Get the identifier of the node on which the property exists.
-         * 
-         * @return the node identifier; never null
-         */
-        public NodeId getNodeId() {
-            return nodeId;
-        }
-
-        /**
-         * Get the name of the property.
-         * 
-         * @return the property name; never null
-         */
-        public Name getPropertyName() {
-            return propertyName;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
-        @Override
-        public int hashCode() {
-            return hc;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof PropertyId) {
-                PropertyId that = (PropertyId)obj;
-                if (this.hc != that.hc) return false;
-                if (!this.nodeId.equals(that.nodeId)) return false;
-                return this.propertyName.equals(that.propertyName);
-            }
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            return this.nodeId.toString() + '@' + this.propertyName.toString();
-        }
-    }
 }

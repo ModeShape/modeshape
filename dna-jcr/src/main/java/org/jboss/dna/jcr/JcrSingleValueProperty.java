@@ -34,7 +34,9 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
 
@@ -44,8 +46,9 @@ import org.jboss.dna.graph.property.ValueFactories;
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 
     JcrSingleValueProperty( SessionCache cache,
-                            PropertyId propertyId ) {
-        super(cache, propertyId);
+                            AbstractJcrNode node,
+                            Name name ) {
+        super(cache, node, name);
     }
 
     /**
@@ -139,7 +142,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             ValueFactories factories = context().getValueFactories();
             Reference dnaReference = factories.getReferenceFactory().create(property().getFirstValue());
             UUID uuid = factories.getUuidFactory().create(dnaReference);
-            return cache.findJcrNode(uuid);
+            return cache.findJcrNode(Location.create(uuid));
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -194,16 +197,16 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
             jcrValue.asType(this.getType());
-            
-            cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
+
+            editor().setProperty(name(), jcrValue);
             return;
         }
         if (value == null) {
             // Then we're to delete the property ...
-            cache.getEditorFor(propertyId.getNodeId()).removeProperty(propertyId.getPropertyName());
+            editor().removeProperty(name());
             return;
         }
-        
+
         // We have to convert from one Value implementation to ours ...
         switch (value.getType()) {
             case PropertyType.STRING:
@@ -241,7 +244,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     protected void setValue( JcrValue jcrValue )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert jcrValue != null;
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
+        editor().setProperty(name(), jcrValue);
     }
 
     /**
@@ -327,11 +330,11 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
-        
+
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(this.context().getNamespaceRegistry()))) {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
         }
-        
+
         String uuid = value.getUUID();
         setValue(createValue(uuid, PropertyType.REFERENCE).asType(this.getType()));
     }

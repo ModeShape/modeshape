@@ -23,12 +23,13 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.session.GraphSession.NodeId;
 
 /**
  * @author jverhaeg
@@ -37,8 +38,9 @@ import net.jcip.annotations.NotThreadSafe;
 final class JcrRootNode extends AbstractJcrNode {
 
     JcrRootNode( SessionCache cache,
-                 UUID nodeUuid ) {
-        super(cache, nodeUuid);
+                 NodeId nodeId,
+                 Location location ) {
+        super(cache, nodeId, location);
     }
 
     /**

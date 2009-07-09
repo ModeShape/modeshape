@@ -247,7 +247,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public static Location create( List<Property> idProperties ) {
         CheckArg.isNotEmpty(idProperties, "idProperties");
-        return new LocationWithPathAndProperties(null, idProperties);
+        return new LocationWithProperties(idProperties);
     }
 
     /**

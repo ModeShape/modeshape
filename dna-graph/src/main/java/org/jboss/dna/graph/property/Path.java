@@ -287,8 +287,8 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public boolean isAbsolute();
 
     /**
-     * Return whether this path is normalized and contains no "." segments and as few ".." segments as possible. For example, the
-     * path "../a" is normalized, while "/a/b/c/../d" is not normalized.
+     * Return whether this path is normalized and contains no unnecessary "." segments and as few ".." segments as possible. For
+     * example, the path "../a" is normalized, while "/a/b/c/../d" is not normalized.
      * 
      * @return true if this path is normalized, or false otherwise
      */
@@ -310,6 +310,14 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * @throws InvalidPathException if the path is not absolute and cannot be canonicalized
      */
     public Path getCanonicalPath();
+
+    /**
+     * Obtain a path that is relative to the root node. This is equivalent to calling {@link #relativeTo(Path)} with the root
+     * path.
+     * 
+     * @return the relative path from the root node; never null
+     */
+    public Path relativeToRoot();
 
     /**
      * Get a relative path from the supplied path to this path.

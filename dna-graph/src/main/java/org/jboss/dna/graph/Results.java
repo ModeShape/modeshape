@@ -23,8 +23,10 @@
  */
 package org.jboss.dna.graph;
 
+import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.request.Request;
 
 /**
  * A set of nodes returned from a {@link Graph graph}, with methods to access the properties and children of the nodes in the
@@ -89,5 +91,12 @@ public interface Results extends Graph.BaseResults<Node> {
      * @return true if these results includes the supplied location, or false otherwise
      */
     boolean includes( Location location );
+
+    /**
+     * Get the requests that were executed as part of these results.
+     * 
+     * @return the requests; never null, but possibly empty if there were no results when execute was called
+     */
+    List<Request> getRequests();
 
 }

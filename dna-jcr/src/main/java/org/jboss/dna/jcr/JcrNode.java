@@ -23,10 +23,11 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.session.GraphSession.NodeId;
 
 /**
  *
@@ -35,8 +36,9 @@ import net.jcip.annotations.NotThreadSafe;
 final class JcrNode extends AbstractJcrNode {
 
     JcrNode( SessionCache cache,
-             UUID nodeUuid ) {
-        super(cache, nodeUuid);
+             NodeId nodeId,
+             Location location ) {
+        super(cache, nodeId, location);
     }
 
     /**
@@ -55,7 +57,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Node#getIndex()
      */
     public int getIndex() throws RepositoryException {
-        return cache.getSnsIndexOf(nodeUuid);
+        return segment().getIndex();
     }
 
     /**
@@ -64,7 +66,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getName()
      */
     public String getName() throws RepositoryException {
-        return cache.getNameOf(nodeUuid).getString(namespaces());
+        return name().getString(namespaces());
     }
 
     /**
@@ -74,7 +76,7 @@ final class JcrNode extends AbstractJcrNode {
      */
     @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
-        return cache.findJcrNode(nodeInfo().getParent());
+        return nodeInfo().getParent().getPayload().getJcrNode();
     }
 
     /**
@@ -83,7 +85,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getPath()
      */
     public String getPath() throws RepositoryException {
-        return cache.getPathFor(nodeUuid).getString(namespaces());
+        return nodeInfo().getPath().getString(namespaces());
     }
 
     /**
@@ -92,6 +94,6 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws RepositoryException {
-        editorForParent().destroyChild(nodeUuid);
+        editorForParent().destroyChild(nodeInfo());
     }
 }

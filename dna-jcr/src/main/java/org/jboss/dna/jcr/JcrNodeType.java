@@ -490,6 +490,21 @@ class JcrNodeType implements NodeType {
         return this.thisAndAllSupertypesNames.contains(nodeTypeName);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof NodeType) {
+            NodeType that = (NodeType)obj;
+            return this.getName().equals(that.getName());
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return getName();

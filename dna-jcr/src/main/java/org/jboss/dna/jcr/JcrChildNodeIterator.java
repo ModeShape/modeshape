@@ -24,29 +24,22 @@
 package org.jboss.dna.jcr;
 
 import java.util.Iterator;
-import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.jcr.cache.ChildNode;
 
 /**
  */
 @Immutable
 final class JcrChildNodeIterator implements NodeIterator {
 
-    private final SessionCache cache;
-    private final Iterator<ChildNode> iterator;
+    private final Iterator<AbstractJcrNode> iterator;
     private int ndx;
     private int size;
 
-    JcrChildNodeIterator( SessionCache cache,
-                          Iterable<ChildNode> children,
+    JcrChildNodeIterator( Iterable<AbstractJcrNode> children,
                           int size ) {
-        assert cache != null;
         assert children != null;
-        this.cache = cache;
         iterator = children.iterator();
         this.size = size;
     }
@@ -92,14 +85,10 @@ final class JcrChildNodeIterator implements NodeIterator {
      * 
      * @see javax.jcr.NodeIterator#nextNode()
      */
-    public Node nextNode() {
-        ChildNode child = iterator.next();
+    public javax.jcr.Node nextNode() {
+        AbstractJcrNode child = iterator.next();
         ndx++;
-        try {
-            return cache.findJcrNode(child.getUuid());
-        } catch (RepositoryException error) {
-            throw new RuntimeException(error);
-        }
+        return child;
     }
 
     /**

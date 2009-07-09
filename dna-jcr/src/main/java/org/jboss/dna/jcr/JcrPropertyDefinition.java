@@ -32,6 +32,7 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
@@ -310,7 +311,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 throw new IllegalStateException("Invalid property type: " + type);
         }
     }
-    
+
     @Override
     public int hashCode() {
         return getId().toString().hashCode();
@@ -327,7 +328,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         } else if (!id.equals(other.id)) return false;
         return true;
     }
-    
 
     /**
      * Interface that encapsulates a reusable method that can test values to determine if they match a specific list of
@@ -564,7 +564,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             Node node = null;
             try {
                 UUID uuid = cache.factories().getUuidFactory().create(jcrValue.value());
-                node = cache.findJcrNode(uuid);
+                node = cache.findJcrNode(Location.create(uuid));
             } catch (RepositoryException re) {
                 return false;
             }
@@ -608,7 +608,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
+            Name name = jcrValue.sessionCache()
+                                .session()
+                                .getExecutionContext()
+                                .getValueFactories()
+                                .getNameFactory()
+                                .create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {

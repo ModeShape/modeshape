@@ -432,12 +432,25 @@ public abstract class AbstractPath implements Path {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.Path#relativeToRoot()
+     */
+    public Path relativeToRoot() {
+        return new BasicPath(getSegmentsList(), false);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Path relativeTo( Path startingPath ) {
         CheckArg.isNotNull(startingPath, "to");
         if (!this.isAbsolute()) {
             String msg = GraphI18n.pathIsNotAbsolute.text(this);
             throw new InvalidPathException(msg);
+        }
+        if (startingPath.isRoot()) {
+            // We just want a relative path containing the same segments ...
+            return relativeToRoot();
         }
         if (!startingPath.isAbsolute()) {
             String msg = GraphI18n.pathIsNotAbsolute.text(startingPath);

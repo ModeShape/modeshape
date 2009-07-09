@@ -2611,9 +2611,11 @@ public class Graph {
                                                    Locations from,
                                                    Location into,
                                                    Name copyName ) {
-                    String workspaceName = fromWorkspaceName != null ? fromWorkspaceName : getCurrentWorkspaceName();
+	
+                    String intoWorkspaceName = getCurrentWorkspaceName();
+                    if ( fromWorkspaceName == null ) fromWorkspaceName = intoWorkspaceName;
                     do {
-                        requestQueue.copyBranch(from.getLocation(), workspaceName, into, workspaceName, copyName, null);
+                        requestQueue.copyBranch(from.getLocation(), fromWorkspaceName, into, intoWorkspaceName, copyName, null);
                     } while ((from = from.next()) != null);
                     return and();
                 }
@@ -5440,8 +5442,11 @@ public class Graph {
     @Immutable
     class BatchResults implements Results {
         private final Map<Path, BatchResultsNode> nodes = new HashMap<Path, BatchResultsNode>();
+        private final List<Request> requests;
 
         /*package*/BatchResults( List<Request> requests ) {
+            this.requests = Collections.unmodifiableList(requests);
+            // Now create the results ...
             for (Request request : requests) {
                 if (request instanceof ReadAllPropertiesRequest) {
                     ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
@@ -5479,6 +5484,8 @@ public class Graph {
         }
 
         /*package*/BatchResults( Request request ) {
+            this.requests = Collections.singletonList(request);
+            // Now create the results ...
             if (request instanceof ReadAllPropertiesRequest) {
                 ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
                 DateTime expires = computeExpirationTime(read);
@@ -5513,7 +5520,17 @@ public class Graph {
             }
         }
 
-        /*package*/BatchResults() {
+        BatchResults() {
+            this.requests = Collections.emptyList();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Results#getRequests()
+         */
+        public List<Request> getRequests() {
+            return requests;
         }
 
         private BatchResultsNode getOrCreateNode( Location location,

@@ -74,7 +74,6 @@ public class JcrSessionTest extends AbstractJcrTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-
     }
 
     @Override
@@ -89,6 +88,17 @@ public class JcrSessionTest extends AbstractJcrTest {
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").and();
 
+        // Set up the session attributes ...
+        sessionAttributes = new HashMap<String, Object>();
+        sessionAttributes.put("attribute1", "value1");
+
+        // Now create the workspace ...
+        SecurityContext mockSecurityContext = new MockSecurityContext(null,
+                                                                      Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
+
+        // Create the session and log in ...
+        session = (JcrSession)workspace.getSession();
     }
 
     
@@ -126,7 +136,7 @@ public class JcrSessionTest extends AbstractJcrTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCheckPermissionWithNoPath() throws Exception {
-        session.checkPermission((String) null, "read");
+        session.checkPermission((String)null, "read");
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -224,7 +234,8 @@ public class JcrSessionTest extends AbstractJcrTest {
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
         LoginContext loginContext = mock(LoginContext.class);
         stub(loginContext.getSubject()).toReturn(subject);
-        Session session = new JcrSession(repository, workspace, context.with(new JaasSecurityContext(loginContext)), sessionAttributes);
+        Session session = new JcrSession(repository, workspace, context.with(new JaasSecurityContext(loginContext)),
+                                         sessionAttributes);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {
@@ -236,8 +247,6 @@ public class JcrSessionTest extends AbstractJcrTest {
     public void shouldProvideRootNode() throws Exception {
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
-        UUID uuid = ((JcrRootNode)root).internalUuid();
-        assertThat(uuid, notNullValue());
     }
 
     @Test
@@ -375,7 +384,8 @@ public class JcrSessionTest extends AbstractJcrTest {
     public void rootNodeShouldBeReferenceable() throws RepositoryException {
         Node rootNode = session.getRootNode();
 
-        assertTrue(rootNode.getPrimaryNodeType().isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
+        assertTrue(rootNode.getPrimaryNodeType()
+                           .isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
     }
 
     @Test
@@ -415,7 +425,7 @@ public class JcrSessionTest extends AbstractJcrTest {
         // The root node is referenceable in DNA
         Node rootNode = session.getRootNode();
 
-        UUID uuid = ((AbstractJcrNode)rootNode).internalUuid();
+        UUID uuid = ((AbstractJcrNode)rootNode).location.getUuid();
         assertThat(rootNode.getUUID(), is(uuid.toString()));
     }
 

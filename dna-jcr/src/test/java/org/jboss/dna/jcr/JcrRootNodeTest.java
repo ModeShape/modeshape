@@ -26,76 +26,53 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
-import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
-public class JcrRootNodeTest {
+public class JcrRootNodeTest extends AbstractJcrTest {
 
-    private UUID uuid;
-    private JcrRootNode root;
-    private ExecutionContext context;
-    @Mock
-    private SessionCache cache;
+    private AbstractJcrNode rootNode;
 
+    @Override
     @Before
-    public void before() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        uuid = UUID.randomUUID();
-        root = new JcrRootNode(cache, uuid);
-
-        context = new ExecutionContext();
-        stub(cache.context()).toReturn(context);
-    }
-
-    protected Name name( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
-    }
-
-    protected Path path( String path ) {
-        return context.getValueFactories().getPathFactory().create(path);
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        rootNode = cache.findJcrRootNode();
     }
 
     @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
-        root.getAncestor(1);
+        rootNode.getAncestor(1);
     }
 
     @Test
     public void shouldHaveZeroDepth() throws Exception {
-        assertThat(root.getDepth(), is(0));
+        assertThat(rootNode.getDepth(), is(0));
     }
 
     @Test
     public void shouldIndicateIndexIsOne() throws Exception {
-        assertThat(root.getIndex(), is(1));
+        assertThat(rootNode.getIndex(), is(1));
     }
 
     @Test
     public void shouldHaveEmptyName() throws Exception {
-        String name = root.getName();
+        String name = rootNode.getName();
         assertThat(name, notNullValue());
         assertThat(name.length(), is(0));
     }
 
     @Test( expected = ItemNotFoundException.class )
     public void shouldHaveNoParent() throws Exception {
-        root.getParent();
+        rootNode.getParent();
     }
 
     @Test
     public void shouldProvidePath() throws Exception {
-        assertThat(root.getPath(), is("/"));
+        assertThat(rootNode.getPath(), is("/"));
     }
 }

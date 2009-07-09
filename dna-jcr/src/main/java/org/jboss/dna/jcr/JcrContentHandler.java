@@ -29,15 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.UUID;
 import javax.jcr.ImportUUIDBehavior;
-import javax.jcr.ItemExistsException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
@@ -303,57 +300,58 @@ class JcrContentHandler extends DefaultHandler {
         }
 
         private void addNodeIfPending() throws SAXException {
-            if (currentNodeName != null) {
-                try {
-                    AbstractJcrNode parentNode = parentStack.peek();
-
-                    UUID uuid = null;
-                    List<Value> rawUuid = currentProps.get(uuidName);
-
-                    if (rawUuid != null) {
-                        assert rawUuid.size() == 1;
-                        uuid = UUID.fromString(rawUuid.get(0).getString());
-                    }
-
-                    String typeName = currentProps.get(primaryTypeName).get(0).getString();
-                    AbstractJcrNode newNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(currentNodeName),
-                                                                                                                 uuid,
-                                                                                                                 nameFor(typeName)).getUuid());
-
-                    for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
-                        if (entry.getKey().equals(primaryTypeName)) {
-                            continue;
-                        }
-
-                        if (entry.getKey().equals(mixinTypesName)) {
-                            for (Value value : entry.getValue()) {
-                                JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(value.getString()));
-                                newNode.editorFor(operations()).addMixin(mixinType);
-                            }
-                            continue;
-                        }
-
-                        if (entry.getKey().equals(uuidName)) {
-                            continue;
-                        }
-
-                        List<Value> values = entry.getValue();
-
-                        if (values.size() == 1) {
-                            newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()), (JcrValue)values.get(0));
-                        } else {
-                            newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()),
-                                                                        values.toArray(new Value[values.size()]),
-                                                                        PropertyType.UNDEFINED);
-                        }
-                    }
-
-                    parentStack.push(newNode);
-                    currentProps.clear();
-                } catch (RepositoryException re) {
-                    throw new EnclosingSAXException(re);
-                }
-            }
+            // if (currentNodeName != null) {
+            // try {
+            // AbstractJcrNode parentNode = parentStack.peek();
+            //
+            // UUID uuid = null;
+            // List<Value> rawUuid = currentProps.get(uuidName);
+            //
+            // if (rawUuid != null) {
+            // assert rawUuid.size() == 1;
+            // uuid = UUID.fromString(rawUuid.get(0).getString());
+            // }
+            //
+            // String typeName = currentProps.get(primaryTypeName).get(0).getString();
+            // AbstractJcrNode newNode =
+            // cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(currentNodeName),
+            // uuid,
+            // nameFor(typeName)).getUuid());
+            //
+            // for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
+            // if (entry.getKey().equals(primaryTypeName)) {
+            // continue;
+            // }
+            //
+            // if (entry.getKey().equals(mixinTypesName)) {
+            // for (Value value : entry.getValue()) {
+            // JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(value.getString()));
+            // newNode.editorFor(operations()).addMixin(mixinType);
+            // }
+            // continue;
+            // }
+            //
+            // if (entry.getKey().equals(uuidName)) {
+            // continue;
+            // }
+            //
+            // List<Value> values = entry.getValue();
+            //
+            // if (values.size() == 1) {
+            // newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()), (JcrValue)values.get(0));
+            // } else {
+            // newNode.editorFor(operations()).setProperty(nameFor(entry.getKey()),
+            // values.toArray(new Value[values.size()]),
+            // PropertyType.UNDEFINED);
+            // }
+            // }
+            //
+            // parentStack.push(newNode);
+            // currentProps.clear();
+            // } catch (RepositoryException re) {
+            // throw new EnclosingSAXException(re);
+            // }
+            // }
         }
 
         @Override
@@ -371,8 +369,9 @@ class JcrContentHandler extends DefaultHandler {
                         ByteArrayInputStream is = new ByteArrayInputStream(Base64.decode(s, Base64.URL_SAFE));
                         currentProps.get(currentPropName).add(session.getValueFactory().createValue(is));
                     } else {
-                        currentProps.get(currentPropName).add(session.getValueFactory().createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
-                                                                                                    currentPropType));
+                        currentProps.get(currentPropName).add(session.getValueFactory()
+                                                                     .createValue(SYSTEM_VIEW_NAME_DECODER.decode(s),
+                                                                                  currentPropType));
                     }
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
@@ -418,69 +417,69 @@ class JcrContentHandler extends DefaultHandler {
                                   String localName,
                                   String name,
                                   Attributes atts ) throws SAXException {
-            try {
-                String primaryTypeName = atts.getValue(JcrContentHandler.this.primaryTypeName);
-                String rawUuid = atts.getValue(uuidName);
-                UUID uuid = (rawUuid != null ? UUID.fromString(rawUuid) : null);
-                AbstractJcrNode parentNode = parentStack.peek();
-
-                if (uuid != null) {
-                    AbstractJcrNode existingNodeWithUuid = (AbstractJcrNode)session.getNodeByUUID(rawUuid);
-                    if (existingNodeWithUuid != null) {
-                        switch (uuidBehavior) {
-                            case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
-                                parentNode = existingNodeWithUuid.getParent();
-                                parentNode.editorFor(operations()).destroyChild(uuid);
-                                break;
-                            case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
-                                uuid = UUID.randomUUID();
-                                break;
-                            case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
-                                if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
-                                    throw new ConstraintViolationException();
-                                }
-                                AbstractJcrNode temp = existingNodeWithUuid.getParent();
-                                temp.editorFor(operations()).destroyChild(uuid);
-                                break;
-                            case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
-                                throw new ItemExistsException();
-                        }
-                    }
-                }
-
-                name = DOCUMENT_VIEW_NAME_DECODER.decode(name);
-                AbstractJcrNode currentNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(name),
-                                                                                                                 uuid,
-                                                                                                                 nameFor(primaryTypeName)).getUuid());
-
-                for (int i = 0; i < atts.getLength(); i++) {
-                    if (JcrContentHandler.this.primaryTypeName.equals(atts.getQName(i))) {
-                        continue;
-                    }
-
-                    if (mixinTypesName.equals(atts.getQName(i))) {
-                        JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(atts.getValue(i)));
-                        currentNode.editorFor(operations()).addMixin(mixinType);
-                        continue;
-                    }
-
-                    if (uuidName.equals(atts.getQName(i))) {
-                        continue;
-                    }
-
-                    // We may want to use the workspace context here so that we only use the permanent namespace mappings
-                    // Name propName = session.executionContext.getValueFactories().getNameFactory().create(atts.getQName(i));
-                    // String value = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getValue(i));
-                    String value = atts.getValue(i);
-                    String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                    currentNode.editorFor(operations()).setProperty(nameFor(propertyName),
-                                                                    (JcrValue)valueFor(value, PropertyType.STRING));
-                }
-
-                parentStack.push(currentNode);
-            } catch (RepositoryException re) {
-                throw new EnclosingSAXException(re);
-            }
+            // try {
+            // String primaryTypeName = atts.getValue(JcrContentHandler.this.primaryTypeName);
+            // String rawUuid = atts.getValue(uuidName);
+            // UUID uuid = (rawUuid != null ? UUID.fromString(rawUuid) : null);
+            // AbstractJcrNode parentNode = parentStack.peek();
+            //
+            // if (uuid != null) {
+            // AbstractJcrNode existingNodeWithUuid = (AbstractJcrNode)session.getNodeByUUID(rawUuid);
+            // if (existingNodeWithUuid != null) {
+            // switch (uuidBehavior) {
+            // case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
+            // parentNode = existingNodeWithUuid.getParent();
+            // parentNode.editorFor(operations()).destroyChild(uuid);
+            // break;
+            // case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
+            // uuid = UUID.randomUUID();
+            // break;
+            // case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
+            // if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
+            // throw new ConstraintViolationException();
+            // }
+            // AbstractJcrNode temp = existingNodeWithUuid.getParent();
+            // temp.editorFor(operations()).destroyChild(uuid);
+            // break;
+            // case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
+            // throw new ItemExistsException();
+            // }
+            // }
+            // }
+            //
+            // name = DOCUMENT_VIEW_NAME_DECODER.decode(name);
+            // AbstractJcrNode currentNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(nameFor(name),
+            // uuid,
+            // nameFor(primaryTypeName)).getUuid());
+            //
+            // for (int i = 0; i < atts.getLength(); i++) {
+            // if (JcrContentHandler.this.primaryTypeName.equals(atts.getQName(i))) {
+            // continue;
+            // }
+            //
+            // if (mixinTypesName.equals(atts.getQName(i))) {
+            // JcrNodeType mixinType = session.workspace().nodeTypeManager().getNodeType(nameFor(atts.getValue(i)));
+            // currentNode.editorFor(operations()).addMixin(mixinType);
+            // continue;
+            // }
+            //
+            // if (uuidName.equals(atts.getQName(i))) {
+            // continue;
+            // }
+            //
+            // // We may want to use the workspace context here so that we only use the permanent namespace mappings
+            // // Name propName = session.executionContext.getValueFactories().getNameFactory().create(atts.getQName(i));
+            // // String value = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getValue(i));
+            // String value = atts.getValue(i);
+            // String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
+            // currentNode.editorFor(operations()).setProperty(nameFor(propertyName),
+            // (JcrValue)valueFor(value, PropertyType.STRING));
+            // }
+            //
+            // parentStack.push(currentNode);
+            // } catch (RepositoryException re) {
+            // throw new EnclosingSAXException(re);
+            // }
 
         }
 
@@ -500,19 +499,20 @@ class JcrContentHandler extends DefaultHandler {
         public void characters( char[] ch,
                                 int start,
                                 int length ) throws SAXException {
-            try {
-                AbstractJcrNode parentNode = parentStack.peek();
-                AbstractJcrNode currentNode = cache().findJcrNode(parentNode.editorFor(operations()).createChild(JcrLexicon.XMLTEXT,
-                                                                                                                 null,
-                                                                                                                 JcrNtLexicon.UNSTRUCTURED).getUuid());
-
-                String s = new String(ch, start, length);
-                currentNode.editorFor(operations()).setProperty(JcrLexicon.XMLCHARACTERS,
-                                                                (JcrValue)valueFor(s, PropertyType.STRING));
-
-            } catch (RepositoryException re) {
-                throw new EnclosingSAXException(re);
-            }
+            // try {
+            // AbstractJcrNode parentNode = parentStack.peek();
+            // AbstractJcrNode currentNode =
+            // cache().findJcrNode(parentNode.editorFor(operations()).createChild(JcrLexicon.XMLTEXT,
+            // null,
+            // JcrNtLexicon.UNSTRUCTURED).getUuid());
+            //
+            // String s = new String(ch, start, length);
+            // currentNode.editorFor(operations()).setProperty(JcrLexicon.XMLCHARACTERS,
+            // (JcrValue)valueFor(s, PropertyType.STRING));
+            //
+            // } catch (RepositoryException re) {
+            // throw new EnclosingSAXException(re);
+            // }
         }
     }
 }

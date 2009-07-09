@@ -69,6 +69,7 @@ public class Vehicles {
         NodeTypeTemplate car = new JcrNodeTypeTemplate(context);
         car.setName("vehix:car");
         car.setOrderableChildNodes(true);
+        car.setPrimaryItemName("vehix:model");
 
         property = new JcrPropertyDefinitionTemplate(context);
         property.setName("vehix:maker");

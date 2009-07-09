@@ -39,26 +39,31 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.session.GraphSession.PropertyInfo;
+import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
-import org.jboss.dna.jcr.cache.PropertyInfo;
 
 /**
  * @author jverhaeg
  */
 @NotThreadSafe
-abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
+abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, Comparable<Property> {
 
-    protected final PropertyId propertyId;
+    protected final AbstractJcrNode node;
+    protected final Name name;
 
     AbstractJcrProperty( SessionCache cache,
-                         PropertyId propertyId ) {
+                         AbstractJcrNode node,
+                         Name name ) {
         super(cache);
-        assert propertyId != null;
-        this.propertyId = propertyId;
+        assert node != null;
+        assert name != null;
+        this.node = node;
+        this.name = name;
     }
 
     final NodeEditor editor() throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
-        return cache.getEditorFor(propertyId.getNodeId());
+        return node.editor();
     }
 
     abstract boolean isMultiple();
@@ -74,12 +79,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         visitor.visit(this);
     }
 
-    final PropertyInfo propertyInfo() throws PathNotFoundException, RepositoryException {
-        return cache.findPropertyInfo(propertyId);
+    final PropertyInfo<JcrPropertyPayload> propertyInfo() throws PathNotFoundException, RepositoryException {
+        return node.nodeInfo().getProperty(name);
     }
 
-    final Name name() throws RepositoryException {
-        return propertyInfo().getPropertyName();
+    final Name name() {
+        return name;
+    }
+
+    final JcrPropertyPayload payload() throws RepositoryException {
+        return propertyInfo().getPayload();
     }
 
     final org.jboss.dna.graph.property.Property property() throws RepositoryException {
@@ -87,7 +96,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     }
 
     JcrValue createValue( Object value ) throws RepositoryException {
-        return new JcrValue(context().getValueFactories(), this.cache, propertyInfo().getPropertyType(), value);
+        return new JcrValue(context().getValueFactories(), this.cache, payload().getPropertyType(), value);
     }
 
     final JcrValue createValue( Object value,
@@ -97,7 +106,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
     @Override
     Path path() throws RepositoryException {
-        return cache.getPathFor(propertyInfo());
+        return context().getValueFactories().getPathFactory().create(node.path(), name);
     }
 
     /**
@@ -106,7 +115,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Property#getType()
      */
     public int getType() throws RepositoryException {
-        return propertyInfo().getPropertyType();
+        return payload().getPropertyType();
     }
 
     /**
@@ -115,9 +124,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Property#getDefinition()
      */
     public final PropertyDefinition getDefinition() throws RepositoryException {
-        PropertyInfo info = propertyInfo();
-        PropertyDefinitionId definitionId = info.getDefinitionId();
-        return cache.session().nodeTypeManager().getPropertyDefinition(definitionId);
+        return cache.session().nodeTypeManager().getPropertyDefinition(payload().getPropertyDefinitionId());
     }
 
     /**
@@ -129,8 +136,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getName()
      */
-    public final String getName() throws RepositoryException {
-        return propertyInfo().getPropertyName().getString(namespaces());
+    public final String getName() {
+        return name.getString(namespaces());
     }
 
     /**
@@ -138,8 +145,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public final Node getParent() throws RepositoryException {
-        return cache.findJcrNode(propertyId.getNodeId());
+    public final Node getParent() {
+        return node;
     }
 
     /**
@@ -148,7 +155,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#getPath()
      */
     public final String getPath() throws RepositoryException {
-        return cache.getPathFor(propertyInfo()).getString(namespaces());
+        return path().getString(namespaces());
     }
 
     /**
@@ -159,8 +166,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     public final boolean isModified() {
         try {
             return propertyInfo().isModified();
-        }
-        catch (RepositoryException re) {
+        } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
@@ -173,8 +179,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     public final boolean isNew() {
         try {
             return propertyInfo().isNew();
-        }
-        catch (RepositoryException re) {
+        } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
@@ -222,7 +227,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        editor().removeProperty(propertyId.getPropertyName());
+        editor().removeProperty(name);
     }
 
     /**
@@ -233,5 +238,19 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      */
     public void save() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    public int compareTo( Property that ) {
+        if (that == this) return 0;
+        try {
+            return this.getName().compareTo(that.getName());
+        } catch (RepositoryException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * JBoss DNA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -24,81 +24,51 @@
 package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
-import java.util.UUID;
-import javax.jcr.ItemNotFoundException;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.cache.NodeInfo;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
- * @author jverhaeg
+ * 
  */
-public class JcrNodeTest {
+public class JcrNodeTest extends AbstractJcrTest {
 
-    private UUID uuid;
-    private JcrNode node;
-    private ExecutionContext context;
-    @Mock
-    private SessionCache cache;
+    private AbstractJcrNode hybrid;
+    private AbstractJcrNode altima;
 
+    @Override
     @Before
-    public void before() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        uuid = UUID.randomUUID();
-        node = new JcrNode(cache, uuid);
-
-        context = new ExecutionContext();
-        stub(cache.context()).toReturn(context);
-    }
-
-    protected Name name( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
-    }
-
-    protected Path path( String path ) {
-        return context.getValueFactories().getPathFactory().create(path);
-    }
-
-    @Test( expected = ItemNotFoundException.class )
-    public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
-        NodeInfo info = mock(NodeInfo.class);
-        stub(cache.findNodeInfo(uuid)).toReturn(info);
-        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/name[2]"));
-        node.getAncestor(6);
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
+        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
     }
 
     @Test
-    public void shouldProvideDepth() throws Exception {
-        NodeInfo info = mock(NodeInfo.class);
-        stub(cache.findNodeInfo(uuid)).toReturn(info);
-        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/name[2]"));
-        assertThat(node.getDepth(), is(4));
+    public void shouldHavePath() throws Exception {
+        assertThat(altima.getPath(), is("/Cars/Hybrid/Nissan Altima"));
+
+        javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
+        assertThat(altima2, is(notNullValue()));
+        assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
     }
 
     @Test
-    public void shouldProvideIndex() throws Exception {
-        stub(cache.getSnsIndexOf(uuid)).toReturn(1);
-        assertThat(node.getIndex(), is(1));
+    public void shouldHaveSameNameSiblingIndex() throws Exception {
+        assertThat(altima.getIndex(), is(1));
+
+        javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
+        assertThat(altima2, is(notNullValue()));
+        assertThat(altima2.getIndex(), is(2));
     }
 
     @Test
-    public void shouldProvideName() throws Exception {
-        stub(cache.getNameOf(uuid)).toReturn(name("name"));
-        assertThat(node.getName(), is("name"));
-    }
-
-    @Test
-    public void shouldProvidePath() throws Exception {
-        stub(cache.getPathFor(uuid)).toReturn(path("/a/b/c/name[2]"));
-        assertThat(node.getPath(), is("/a/b/c/name[2]"));
+    public void shouldHaveNameThatExcludesSameNameSiblingIndex() throws Exception {
+        assertThat(altima.getName(), is("Nissan Altima"));
+        javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
+        assertThat(altima2, is(notNullValue()));
+        assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
+        assertThat(altima2.getName(), is("Nissan Altima"));
     }
 }

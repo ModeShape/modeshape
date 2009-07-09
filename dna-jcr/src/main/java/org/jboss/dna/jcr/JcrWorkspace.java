@@ -26,11 +26,8 @@ package org.jboss.dna.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
@@ -53,26 +50,24 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
-import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
-import org.jboss.dna.graph.request.ReadBranchRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.session.GraphSession.Node;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrRepository.Option;
-import org.jboss.dna.jcr.cache.NodeInfo;
+import org.jboss.dna.jcr.SessionCache.JcrNodePayload;
+import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -312,132 +307,29 @@ final class JcrWorkspace implements Workspace {
         }
 
         try {
-            this.session.checkPermission(destPath.getParent(), "add_node");
+            // Use the session to verify that the node location has a definition and is valid with the new cloned child.
+            // This also performs the check permission for reading the parent ...
+            Name newNodeName = destPath.getLastSegment().getName();
+            SessionCache cache = this.session.cache();
+            Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
+            cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
+
+            // Now perform the clone, using the direct (non-session) method ...
+            cache.graphSession().immediateClone(srcPath, srcWorkspace, destPath, removeExisting);
+        } catch (ItemNotFoundException e) {
+            // The destination path was not found ...
+            throw new PathNotFoundException(e.getLocalizedMessage(), e);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+            throw new PathNotFoundException(e.getLocalizedMessage(), e);
+        } catch (UuidAlreadyExistsException e) {
+            throw new ItemExistsException(e.getLocalizedMessage(), e);
+        } catch (InvalidWorkspaceException e) {
+            throw new NoSuchWorkspaceException(e.getLocalizedMessage(), e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-
-        clone(srcWorkspace, srcPath, destPath, removeExisting, false);
-    }
-
-    void clone( String srcWorkspace,
-                Path srcPath,
-                Path destPath,
-                boolean removeExisting,
-                boolean destPathIncludesSegment )
-        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
-        LockException, RepositoryException {
-
-        /*
-         * Make sure that the node has a definition at the new location
-         */
-        SessionCache cache = this.session.cache();
-        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
-
-        // Skip the cache and load the latest parent info directly from the graph
-        NodeInfo parent = cache.loadFromGraph(null, cacheParent.getUuid());
-        Name newNodeName = destPath.getLastSegment().getName();
-        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
-
-        Subgraph sourceTree = null;
-        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
-        graph.useWorkspace(srcWorkspace);
-        Property primaryTypeProp;
-        Property uuidProp;
-        try {
-            Map<Name, Property> props;
-
-            if (removeExisting) {
-                sourceTree = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(srcPath);
-                props = sourceTree.getRoot().getPropertiesByName();
-            } else {
-                props = graph.getNodeAt(srcPath).getPropertiesByName();
-            }
-            primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
-            uuidProp = props.get(DnaLexicon.UUID);
-        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
-            String srcAbsPath = srcPath.getString(this.context.getNamespaceRegistry());
-            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(srcAbsPath, srcWorkspace));
-        } finally {
-            graph.useWorkspace(this.name);
-        }
-
-        assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
-        assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";
-
-        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
-        this.session.cache().findBestNodeDefinition(parent,
-                                                    parentPath,
-                                                    newNodeName,
-                                                    nameFactory.create(primaryTypeProp.getFirstValue()));
-
-        if (removeExisting) {
-            assert sourceTree != null;
-
-            // Find all of the UUIDS in the source tree
-            UuidFactory uuidFactory = context().getValueFactories().getUuidFactory();
-            PathFactory pathFactory = context().getValueFactories().getPathFactory();
-
-            Set<UUID> sourceUuids = new HashSet<UUID>();
-            LinkedList<SubgraphNode> nodesToVisit = new LinkedList<SubgraphNode>();
-            nodesToVisit.addFirst(sourceTree.getRoot());
-
-            while (!nodesToVisit.isEmpty()) {
-                SubgraphNode node = nodesToVisit.removeFirst();
-
-                UUID uuid = uuidFactory.create(node.getProperty(DnaLexicon.UUID).getFirstValue().toString());
-                if (uuid != null) {
-                    sourceUuids.add(uuid);
-                }
-                for (Path.Segment childSegment : node.getChildrenSegments()) {
-                    nodesToVisit.add(node.getNode(pathFactory.createRelativePath(childSegment)));
-                }
-            }
-
-            // See if the nodes exist in the current workspace outside of the current tree
-            for (UUID uuid : sourceUuids) {
-                NodeInfo nodeInfo = null;
-                try {
-                    nodeInfo = session.cache().findNodeInfo(uuid);
-                } catch (ItemNotFoundException infe) {
-                    continue;
-                }
-                assert nodeInfo != null;
-
-                NodeDefinitionId nodeDefnId = nodeInfo.getDefinitionId();
-
-                JcrNodeType nodeType = nodeTypeManager.getNodeType(nodeDefnId.getNodeTypeName());
-                JcrNodeDefinition nodeDefn = nodeType.childNodeDefinition(nodeDefnId);
-                if (nodeDefn.isMandatory()) {
-                    // We can't just remove a mandatory node... unless its parent will be removed too!
-                    String path = session.cache().getPathFor(nodeInfo).getString(context().getNamespaceRegistry());
-                    throw new ConstraintViolationException(JcrI18n.cannotRemoveNodeFromClone.text(path, uuid));
-
-                }
-            }
-
-            if (destPathIncludesSegment) {
-                graph.clone(srcPath).fromWorkspace(srcWorkspace).as(destPath.getLastSegment()).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
-            } else {
-                graph.clone(srcPath).fromWorkspace(srcWorkspace).as(newNodeName).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
-            }
-        } else {
-            try {
-                if (destPathIncludesSegment) {
-                    graph.clone(srcPath).fromWorkspace(srcWorkspace).as(destPath.getLastSegment()).into(destPath.getParent()).replacingExistingNodesWithSameUuids();
-                } else {
-                    graph.clone(srcPath).fromWorkspace(srcWorkspace).as(newNodeName).into(destPath.getParent()).failingIfAnyUuidsMatch();
-                }
-
-            } catch (UuidAlreadyExistsException uaee) {
-                throw new ItemExistsException(uaee.getMessage());
-            }
-        }
-
-        assert uuidProp.getFirstValue() instanceof UUID;
-        // Load the node that we just copied
-        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), null, (UUID)uuidProp.getFirstValue(), newNodeName);
-
     }
 
     /**
@@ -489,54 +381,29 @@ final class JcrWorkspace implements Workspace {
         }
 
         try {
-            this.session.checkPermission(destPath.getParent(), "add_node");
+            // Use the session to verify that the node location has a definition and is valid with the new cloned child.
+            // This also performs the check permission for reading the parent ...
+            Name newNodeName = destPath.getLastSegment().getName();
+            SessionCache cache = this.session.cache();
+            Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
+            cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
+
+            // Now perform the clone, using the direct (non-session) method ...
+            cache.graphSession().immediateCopy(srcPath, srcWorkspace, destPath);
+        } catch (ItemNotFoundException e) {
+            // The destination path was not found ...
+            throw new PathNotFoundException(e.getLocalizedMessage(), e);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+            throw new PathNotFoundException(e.getLocalizedMessage(), e);
+        } catch (UuidAlreadyExistsException e) {
+            throw new ItemExistsException(e.getLocalizedMessage(), e);
+        } catch (InvalidWorkspaceException e) {
+            throw new NoSuchWorkspaceException(e.getLocalizedMessage(), e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-
-        /*
-         * Make sure that the node has a definition at the new location
-         */
-        SessionCache cache = this.session.cache();
-        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
-
-        // Skip the cache and load the latest parent info directly from the graph
-        NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
-        Name newNodeName = destPath.getLastSegment().getName();
-        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
-
-        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
-        graph.useWorkspace(srcWorkspace);
-
-        Property primaryTypeProp;
-        Property uuidProp;
-        try {
-            Map<Name, Property> props = graph.getNodeAt(srcPath).getPropertiesByName();
-            primaryTypeProp = props.get(JcrLexicon.PRIMARY_TYPE);
-            uuidProp = props.get(DnaLexicon.UUID);
-        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
-            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(srcAbsPath, srcWorkspace));
-        } finally {
-            graph.useWorkspace(this.name);
-        }
-
-        assert primaryTypeProp != null : "Cannot have a node in a JCR repository with no jcr:primaryType property";
-        assert uuidProp != null : "Cannot have a node in a JCR repository with no UUID";
-
-        NameFactory nameFactory = this.context.getValueFactories().getNameFactory();
-        this.session.cache().findBestNodeDefinition(parent,
-                                                    parentPath,
-                                                    newNodeName,
-                                                    nameFactory.create(primaryTypeProp.getFirstValue()));
-
-        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        graph.copy(srcPath).fromWorkspace(srcWorkspace).to(destPath);
-
-        // Load the node that we just copied
-        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(),
-                                                null,
-                                                UUID.fromString(uuidProp.getFirstValue().toString()),
-                                                newNodeName);
     }
 
     /**
@@ -621,31 +488,38 @@ final class JcrWorkspace implements Workspace {
         }
 
         try {
-            this.session.checkPermission(srcAbsPath.substring(0, srcAbsPath.lastIndexOf('/')), "remove");
-            this.session.checkPermission(destAbsPath, "add_node");
+            // Use the session to verify that the node location has a definition and is valid with the new cloned child.
+            // This also performs the check permission for reading the parent ...
+            Name newNodeName = destPath.getLastSegment().getName();
+            SessionCache cache = this.session.cache();
+            Node<JcrNodePayload, JcrPropertyPayload> newParent = cache.findNode(null, destPath.getParent());
+            cache.findBestNodeDefinition(newParent, newNodeName, newParent.getPayload().getPrimaryTypeName());
+
+            // Now perform the clone, using the direct (non-session) method ...
+            cache.graphSession().immediateMove(srcPath, destPath);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
 
-        /*
-         * Make sure that the node has a definition at the new location
-         */
-        SessionCache cache = this.session.cache();
-        NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
-        NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
-        NodeInfo oldParent = cache.findNodeInfo(null, srcPath.getParent());
-
-        // Skip the cache and load the latest parent info directly from the graph
-        NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
-        Name newNodeName = destPath.getLastSegment().getName();
-        String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
-
-        // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
-        cache.findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
-
-        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        graph.move(srcPath).as(newNodeName).into(destPath.getParent());
-        cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), oldParent.getUuid(), nodeInfo.getUuid(), newNodeName);
+        // /*
+        // * Make sure that the node has a definition at the new location
+        // */
+        // SessionCache cache = this.session.cache();
+        // NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
+        // NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
+        // NodeInfo oldParent = cache.findNodeInfo(null, srcPath.getParent());
+        //
+        // // Skip the cache and load the latest parent info directly from the graph
+        // NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
+        // Name newNodeName = destPath.getLastSegment().getName();
+        // String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
+        //
+        // // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
+        // cache.findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
+        //
+        // // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+        // graph.move(srcPath).as(newNodeName).into(destPath.getParent());
+        // cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), oldParent.getUuid(), nodeInfo.getUuid(), newNodeName);
     }
 
     /**

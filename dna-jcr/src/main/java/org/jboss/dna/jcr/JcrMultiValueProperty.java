@@ -37,6 +37,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
 
 /**
@@ -48,8 +49,9 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     static final JcrValue[] EMPTY_VALUES = new JcrValue[] {};
 
     JcrMultiValueProperty( SessionCache cache,
-                           PropertyId propertyId ) {
-        super(cache, propertyId);
+                           AbstractJcrNode node,
+                           Name name ) {
+        super(cache, node, name);
     }
 
     /**
@@ -191,10 +193,10 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
 
         for (int i = 0; i < values.length; i++) {
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
-            if (values[i] != null) ((JcrValue) values[i]).asType(this.getType());
+            if (values[i] != null) ((JcrValue)values[i]).asType(this.getType());
         }
-        
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), values, PropertyType.UNDEFINED);
+
+        editor().setProperty(name(), values, PropertyType.UNDEFINED);
     }
 
     /**
@@ -228,7 +230,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             jcrValues = EMPTY_VALUES;
         }
 
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues, this.getType());
+        editor().setProperty(name(), jcrValues, this.getType());
     }
 
     /**
