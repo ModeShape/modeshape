@@ -105,8 +105,8 @@ public class PathNotFoundException extends RuntimeException {
     @Override
     public String getMessage() {
         if (this.lowestAncestorThatDoesExist != null) {
-            return GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(super.getMessage(),
-                                                                                   this.lowestAncestorThatDoesExist);
+            String locationPart = location.hasPath() ? location.getPath().toString() : location.toString();
+            return GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(locationPart, this.lowestAncestorThatDoesExist);
         }
         return super.getMessage();
     }

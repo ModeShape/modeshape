@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.collection.EmptyIterator;
@@ -63,6 +64,7 @@ import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
+import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
@@ -1819,13 +1821,15 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
+                                               .getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
+                                       .getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -3726,7 +3730,7 @@ public class Graph {
             assertNotExecuted();
             return new At<BatchConjunction>() {
                 public BatchConjunction at( Location location ) {
-                    requestQueue.readBranch(location, getCurrentWorkspaceName());
+                    requestQueue.readBranch(location, getCurrentWorkspaceName(), depth);
                     return Batch.this.nextRequests;
                 }
 
@@ -3831,6 +3835,11 @@ public class Graph {
             return getContext().getValueFactories().getReferenceFactory().create(uuid);
         }
         return value;
+    }
+
+    protected static DateTime computeExpirationTime( CacheableRequest request ) {
+        CachePolicy policy = request.getCachePolicy();
+        return policy == null ? null : request.getTimeLoaded().plus(policy.getTimeToLive(), TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -5363,6 +5372,11 @@ public class Graph {
             return request.getActualLocationOfNode();
         }
 
+        public DateTime getExpirationTime() {
+            CachePolicy policy = request.getCachePolicy();
+            return policy == null ? null : request.getTimeLoaded().plus(policy.getTimeToLive(), TimeUnit.MILLISECONDS);
+        }
+
         public Graph getGraph() {
             return Graph.this;
         }
@@ -5431,24 +5445,29 @@ public class Graph {
             for (Request request : requests) {
                 if (request instanceof ReadAllPropertiesRequest) {
                     ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
-                    getOrCreateNode(read.getActualLocationOfNode()).setProperties(read.getPropertiesByName());
+                    DateTime expires = computeExpirationTime(read);
+                    getOrCreateNode(read.getActualLocationOfNode(), expires).setProperties(read.getPropertiesByName());
                 } else if (request instanceof ReadPropertyRequest) {
                     ReadPropertyRequest read = (ReadPropertyRequest)request;
-                    getOrCreateNode(read.getActualLocationOfNode()).addProperty(read.getProperty());
+                    DateTime expires = computeExpirationTime(read);
+                    getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
                 } else if (request instanceof ReadNodeRequest) {
                     ReadNodeRequest read = (ReadNodeRequest)request;
-                    BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode());
+                    DateTime expires = computeExpirationTime(read);
+                    BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
                     node.setProperties(read.getPropertiesByName());
                     node.setChildren(read.getChildren());
                 } else if (request instanceof ReadBlockOfChildrenRequest) {
                     throw new IllegalStateException();
                 } else if (request instanceof ReadAllChildrenRequest) {
                     ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
-                    getOrCreateNode(read.getActualLocationOfNode()).setChildren(read.getChildren());
+                    DateTime expires = computeExpirationTime(read);
+                    getOrCreateNode(read.getActualLocationOfNode(), expires).setChildren(read.getChildren());
                 } else if (request instanceof ReadBranchRequest) {
                     ReadBranchRequest read = (ReadBranchRequest)request;
+                    DateTime expires = computeExpirationTime(read);
                     for (Location location : read) {
-                        BatchResultsNode node = getOrCreateNode(location);
+                        BatchResultsNode node = getOrCreateNode(location, expires);
                         node.setProperties(read.getPropertiesFor(location));
                         node.setChildren(read.getChildren(location));
                     }
@@ -5462,24 +5481,29 @@ public class Graph {
         /*package*/BatchResults( Request request ) {
             if (request instanceof ReadAllPropertiesRequest) {
                 ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
-                getOrCreateNode(read.getActualLocationOfNode()).setProperties(read.getPropertiesByName());
+                DateTime expires = computeExpirationTime(read);
+                getOrCreateNode(read.getActualLocationOfNode(), expires).setProperties(read.getPropertiesByName());
             } else if (request instanceof ReadPropertyRequest) {
                 ReadPropertyRequest read = (ReadPropertyRequest)request;
-                getOrCreateNode(read.getActualLocationOfNode()).addProperty(read.getProperty());
+                DateTime expires = computeExpirationTime(read);
+                getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
             } else if (request instanceof ReadNodeRequest) {
                 ReadNodeRequest read = (ReadNodeRequest)request;
-                BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode());
+                DateTime expires = computeExpirationTime(read);
+                BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
                 node.setProperties(read.getPropertiesByName());
                 node.setChildren(read.getChildren());
             } else if (request instanceof ReadBlockOfChildrenRequest) {
                 throw new IllegalStateException();
             } else if (request instanceof ReadAllChildrenRequest) {
                 ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
-                getOrCreateNode(read.getActualLocationOfNode()).setChildren(read.getChildren());
+                DateTime expires = computeExpirationTime(read);
+                getOrCreateNode(read.getActualLocationOfNode(), expires).setChildren(read.getChildren());
             } else if (request instanceof ReadBranchRequest) {
                 ReadBranchRequest read = (ReadBranchRequest)request;
+                DateTime expires = computeExpirationTime(read);
                 for (Location location : read) {
-                    BatchResultsNode node = getOrCreateNode(location);
+                    BatchResultsNode node = getOrCreateNode(location, expires);
                     node.setProperties(read.getPropertiesFor(location));
                     node.setChildren(read.getChildren(location));
                 }
@@ -5492,10 +5516,11 @@ public class Graph {
         /*package*/BatchResults() {
         }
 
-        private BatchResultsNode getOrCreateNode( Location location ) {
+        private BatchResultsNode getOrCreateNode( Location location,
+                                                  DateTime expirationTime ) {
             BatchResultsNode node = nodes.get(location);
             if (node == null) {
-                node = new BatchResultsNode(location);
+                node = new BatchResultsNode(location, expirationTime);
                 assert location.getPath() != null;
                 nodes.put(location.getPath(), node);
             }
@@ -5566,11 +5591,18 @@ public class Graph {
     @Immutable
     class BatchResultsNode implements Node {
         private final Location location;
+        private final DateTime expirationTime;
         private Map<Name, Property> properties;
         private List<Location> children;
 
-        BatchResultsNode( Location location ) {
+        BatchResultsNode( Location location,
+                          DateTime expirationTime ) {
             this.location = location;
+            this.expirationTime = expirationTime;
+        }
+
+        public DateTime getExpirationTime() {
+            return expirationTime;
         }
 
         void addProperty( Property property ) {
@@ -5739,7 +5771,10 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext()
+                                  .getValueFactories()
+                                  .getPathFactory()
+                                  .create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }
@@ -5775,6 +5810,10 @@ public class Graph {
                           ReadBranchRequest request ) {
             this.location = location;
             this.request = request;
+        }
+
+        public DateTime getExpirationTime() {
+            return computeExpirationTime(request);
         }
 
         public List<Location> getChildren() {

@@ -1,0 +1,2562 @@
+/*
+ * JBoss DNA (http://www.jboss.org/dna)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * JBoss DNA is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.jboss.dna.graph.session;
+
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import net.jcip.annotations.Immutable;
+import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.collection.ReadOnlyIterator;
+import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Results;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.BatchRequestBuilder;
+import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.session.GraphSession.Authorizer.Action;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
+
+/**
+ * This class represents an interactive session for working with the content within a graph. This session maintains a cache of
+ * content read from the repository, as well as transient changes that have been made to the nodes within this session that are
+ * then pushed to the graph when the session is {@link #save() saved}.
+ * <p>
+ * Like the other Graph APIs, the mutable objects in this session should not be held onto for very long periods of time. When the
+ * session is {@link #save() saved} or {{@link #refresh(boolean) refreshed} (or when a node is {@link #save(Node) saved} or
+ * {@link #refresh(Node, boolean) refreshed}), the session may {@link Node#unload() unload} and discard some of its nodes. Using
+ * nodes after they are discarded may result in assertion errors (assuming Java assertions are enabled).
+ * </p>
+ * 
+ * @param <Payload> the type of the payload object for each node, used to allow the nodes to hold additional cached information
+ * @param <PropertyPayload> the type of payload object for each property, used to allow the nodes to hold additional cached
+ *        information
+ */
+@NotThreadSafe
+public class GraphSession<Payload, PropertyPayload> {
+
+    protected final ListMultimap<Name, Node<Payload, PropertyPayload>> NO_CHILDREN = Multimaps.immutableMultimap();
+    protected final Map<Name, PropertyInfo<PropertyPayload>> NO_PROPERTIES = Collections.emptyMap();
+
+    protected final Authorizer authorizer;
+    protected final ExecutionContext context;
+    protected final Graph store;
+    protected final Node<Payload, PropertyPayload> root;
+    protected final Operations<Payload, PropertyPayload> nodeOperations;
+    protected final PathFactory pathFactory;
+    protected final NodeIdFactory idFactory;
+    protected final String workspaceName;
+    protected int loadDepth = 1;
+
+    /**
+     * A map of the nodes keyed by their identifier.
+     */
+    protected final Map<NodeId, Node<Payload, PropertyPayload>> nodes = new HashMap<NodeId, Node<Payload, PropertyPayload>>();
+    /**
+     * A map that records how the changes to a node are dependent upon other nodes.
+     */
+    protected final Map<NodeId, Dependencies> changeDependencies = new HashMap<NodeId, Dependencies>();
+
+    private LinkedList<Request> requests;
+    private BatchRequestBuilder requestBuilder;
+    protected Graph.Batch operations;
+
+    /**
+     * Create a session that uses the supplied graph and the supplied node operations.
+     * 
+     * @param graph the graph that this session is to use
+     * @param workspaceName the name of the workspace that is to be used, or null if the current workspace should be used
+     * @param nodeOperations the operations that are to be performed during various stages in the lifecycle of a node, or null if
+     *        there are no special operations that should be performed
+     */
+    public GraphSession( Graph graph,
+                         String workspaceName,
+                         Operations<Payload, PropertyPayload> nodeOperations ) {
+        this(graph, workspaceName, nodeOperations, null);
+    }
+
+    /**
+     * Create a session that uses the supplied graph and the supplied node operations.
+     * 
+     * @param graph the graph that this session is to use
+     * @param workspaceName the name of the workspace that is to be used, or null if the current workspace should be used
+     * @param nodeOperations the operations that are to be performed during various stages in the lifecycle of a node, or null if
+     *        there are no special operations that should be performed
+     * @param authorizer the authorizing component, or null if no special authorization is to be performed
+     * @throws IllegalArgumentException if the graph reference is null
+     * @throws IllegalArgumentException if the depth is not positive
+     */
+    public GraphSession( Graph graph,
+                         String workspaceName,
+                         Operations<Payload, PropertyPayload> nodeOperations,
+                         Authorizer authorizer ) {
+        assert graph != null;
+        this.store = graph;
+        this.context = store.getContext();
+        if (workspaceName != null) {
+            this.workspaceName = this.store.useWorkspace(workspaceName).getName();
+        } else {
+            this.workspaceName = this.store.getCurrentWorkspaceName();
+        }
+        this.nodeOperations = nodeOperations != null ? nodeOperations : new SimpleNodeOperations<Payload, PropertyPayload>();
+        this.pathFactory = context.getValueFactories().getPathFactory();
+        this.authorizer = authorizer != null ? authorizer : new NoOpAuthorizer();
+        // Create the NodeId factory ...
+        this.idFactory = new NodeIdFactory() {
+            private long nextId = 0L;
+
+            public NodeId create() {
+                return new NodeId(++nextId);
+            }
+        };
+        // Create the root node ...
+        Location rootLocation = Location.create(pathFactory.createRootPath());
+        NodeId rootId = idFactory.create();
+        this.root = createNode(null, rootId, rootLocation);
+        this.nodes.put(rootId, root);
+
+        // Create the batch operations ...
+        this.requests = new LinkedList<Request>();
+        this.requestBuilder = new BatchRequestBuilder(this.requests);
+        this.operations = this.store.batch(this.requestBuilder);
+    }
+
+    /**
+     * Get the subgraph depth that is read when a node is loaded from the persistence store. By default, this value is 1.
+     * 
+     * @return the loading depth; always positive
+     */
+    public int getDepthForLoadingNodes() {
+        return loadDepth;
+    }
+
+    /**
+     * Set the loading depth parameter, which controls how deep a subgraph should be read when a node is loaded from the
+     * persistence store. By default, this value is 1.
+     * 
+     * @param depth the depth that should be read whenever a single node is loaded
+     * @throws IllegalArgumentException if the depth is not positive
+     */
+    public void setDepthForLoadingNodes( int depth ) {
+        CheckArg.isPositive(depth, "depth");
+        this.loadDepth = depth;
+    }
+
+    /**
+     * Get the root node.
+     * 
+     * @return the root node; never null
+     */
+    public Node<Payload, PropertyPayload> getRoot() {
+        return root;
+    }
+
+    /**
+     * Get the path factory that should be used to adjust the path objects.
+     * 
+     * @return the path factory; never null
+     */
+    public PathFactory getPathFactory() {
+        return pathFactory;
+    }
+
+    /**
+     * Find in the session the node with the supplied identifier.
+     * 
+     * @param id the identifier of the node
+     * @return the identified node, or null if the session has no node with the supplied identifier
+     * @throws IllegalArgumentException if the identifier is null
+     */
+    public Node<Payload, PropertyPayload> findNodeWith( NodeId id ) {
+        CheckArg.isNotNull(id, "id");
+        return nodes.get(id);
+    }
+
+    /**
+     * Find the node with the supplied identifier or, if no such node is found, the node at the supplied path. Note that if a node
+     * was found by the identifier, the resulting may not have the same path as that supplied as a parameter.
+     * 
+     * @param id the identifier to the node; may be null if the node is to be found by path
+     * @param path the path that should be used to find the node only when the cache doesn't contain a node with the identifier
+     * @return the node with the supplied id and/or path
+     * @throws IllegalArgumentException if the identifier and path are both node
+     * @throws PathNotFoundException if the node at the supplied path does not exist
+     * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
+     */
+    public Node<Payload, PropertyPayload> findNodeWith( NodeId id,
+                                                        Path path ) throws PathNotFoundException, AccessControlException {
+        if (id == null && path == null) {
+            CheckArg.isNotNull(path, "path and id");
+        }
+        Node<Payload, PropertyPayload> result = nodes.get(id); // if found, the user should have read privilege since it was
+        // already in the cache
+        if (result == null && path != null) {
+            result = findNodeWith(path);
+        }
+        return result;
+    }
+
+    /**
+     * Find the node with the supplied path. This node quickly finds the node if it exists in the cache, or if it is not in the
+     * cache, it loads the nodes down the supplied path.
+     * 
+     * @param path the path to the node
+     * @return the node information
+     * @throws PathNotFoundException if the node at the supplied path does not exist
+     * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
+     */
+    public Node<Payload, PropertyPayload> findNodeWith( Path path ) throws PathNotFoundException, AccessControlException {
+        if (path.isRoot()) return getRoot();
+        return findNodeRelativeTo(root, path.relativeTo(root.getPath()));
+    }
+
+    /**
+     * Find the node with the supplied path relative to another node. This node quickly finds the node by walking the supplied
+     * relative path starting at the supplied node. As soon as a cached node is found to not be fully loaded, the persistent
+     * information for that node and all remaining nodes along the relative path are read from the persistent store and inserted
+     * into the cache.
+     * 
+     * @param startingPoint the node from which the path is relative
+     * @param relativePath the relative path from the designated starting point to the desired node; may not be null and may not
+     *        be an {@link Path#isAbsolute() absolute} path
+     * @return the node information
+     * @throws PathNotFoundException if the node at the supplied path does not exist
+     * @throws AccessControlException if the user does not have permission to read the nodes given by the supplied path
+     */
+    @SuppressWarnings( "synthetic-access" )
+    public Node<Payload, PropertyPayload> findNodeRelativeTo( Node<Payload, PropertyPayload> startingPoint,
+                                                              Path relativePath )
+        throws PathNotFoundException, AccessControlException {
+        Node<Payload, PropertyPayload> node = startingPoint;
+        if (!relativePath.isRoot()) {
+            // Find the absolute path, which ensures that the relative path is well-formed ...
+            Path absolutePath = relativePath.resolveAgainst(startingPoint.getPath());
+
+            // Verify that the user has the appropriate privileges to read these nodes...
+            authorizer.checkPermissions(absolutePath, Action.READ);
+
+            // Walk down the path ...
+            Iterator<Path.Segment> iter = relativePath.iterator();
+            while (iter.hasNext()) {
+                Path.Segment segment = iter.next();
+                try {
+                    if (segment.isSelfReference()) continue;
+                    if (segment.isParentReference()) {
+                        node = node.getParent();
+                        assert node != null; // since the relative path is well-formed
+                        continue;
+                    }
+
+                    if (node.isLoaded()) {
+                        // The child is the next node we need to process ...
+                        node = node.getChild(segment);
+                    } else {
+                        // The node has not yet been loaded into the cache, so read this node
+                        // from the store as well as all nodes along the path to the node we're really
+                        // interested in. We'll do this in a batch, so first create this batch ...
+                        Graph.Batch batch = store.batch();
+
+                        // Figure out which nodes along the path need to be loaded from the store ...
+                        Path firstPath = node.getPath();
+                        batch.read(firstPath);
+                        // Now add the path to the child (which is no longer on the iterator) ...
+                        Path nextPath = pathFactory.create(firstPath, segment);
+                        if (!iter.hasNext() && loadDepth > 1) {
+                            batch.readSubgraphOfDepth(loadDepth).at(nextPath);
+                        } else {
+                            batch.read(nextPath);
+                        }
+                        // Now add any remaining paths that are still on the iterator ...
+                        while (iter.hasNext()) {
+                            nextPath = pathFactory.create(nextPath, iter.next());
+                            if (!iter.hasNext() && loadDepth > 1) {
+                                batch.readSubgraphOfDepth(loadDepth).at(nextPath);
+                            } else {
+                                batch.read(nextPath);
+                            }
+                        }
+
+                        // Load all of the nodes (we should be reading at least 2 nodes) ...
+                        Results batchResults = batch.execute();
+
+                        // Add the children and properties in the lowest cached node ...
+                        Path previousPath = null;
+                        Node<Payload, PropertyPayload> topNode = node;
+                        Node<Payload, PropertyPayload> previousNode = node;
+                        for (org.jboss.dna.graph.Node persistentNode : batchResults) {
+                            Location location = persistentNode.getLocation();
+                            Path path = location.getPath();
+                            if (path.isRoot()) {
+                                previousNode = root;
+                                root.location = location;
+                            } else {
+                                if (path.getParent().equals(previousPath)) {
+                                    previousNode = previousNode.getChild(path.getLastSegment());
+                                } else {
+                                    Path subgraphPath = path.relativeTo(topNode.getPath());
+                                    previousNode = findNodeRelativeTo(topNode, subgraphPath);
+                                }
+                                // Set the node that we're looking for ...
+                                if (path.getLastSegment().equals(relativePath.getLastSegment()) && path.equals(absolutePath)) {
+                                    node = previousNode;
+                                }
+                            }
+                            nodeOperations.update(persistentNode, previousNode);
+                            previousPath = path;
+                        }
+                    }
+                } catch (PathNotFoundException e) {
+                    // Use the correct desired path ...
+                    throw new PathNotFoundException(Location.create(relativePath), e.getLowestAncestorThatDoesExist());
+                }
+            }
+        }
+        return node;
+    }
+
+    /**
+     * Returns whether the session cache has any pending changes that need to be executed.
+     * 
+     * @return true if there are pending changes, or false if there is currently no changes
+     */
+    public boolean hasPendingChanges() {
+        return root.isChanged(true);
+    }
+
+    /**
+     * Remove any cached information that has been marked as a transient change.
+     */
+    public void clearAllChangedNodes() {
+        root.clearChanges();
+        changeDependencies.clear();
+        requests.clear();
+    }
+
+    /**
+     * Move this node from its current location so that is is a child of the supplied parent, but do so immediately without
+     * enqueuing the operation within the session's operations.
+     * 
+     * @param nodeToMove the node that is to be moved; may not be null
+     * @param newParent the new parent for this node; may not be null
+     * @param newName the new name for the node, or null if the node is not to be renamed
+     * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+     * @throws IllegalArgumentException if the node being moved is the root node
+     */
+    public void immediateMove( Node<Payload, PropertyPayload> nodeToMove,
+                               Node<Payload, PropertyPayload> newParent,
+                               Name newName ) {
+        CheckArg.isNotNull(nodeToMove, "nodeToMove");
+        CheckArg.isNotNull(newParent, "newParent");
+        nodeToMove.moveTo(newParent, newName, false);
+    }
+
+    /**
+     * Copy the node at the supplied source path in the named workspace, and place the copy at the supplied location within the
+     * current workspace, doing so immediately without enqueuing the operation within the session's operations. The current
+     * session is modified immediately to reflect the copy result.
+     * <p>
+     * Note that the destination path should not include a same-name-sibling index, since this will be ignored and will always be
+     * recomputed (as the copy will be appended to any children already in the destination's parent).
+     * </p>
+     * 
+     * @param source the path to the node that is to be copied; may not be null
+     * @param destination the path where the copy is to be placed; may not be null index
+     * @throws IllegalArgumentException either path is null or invalid
+     */
+    public void immediateCopy( Path source,
+                               Path destination ) {
+        immediateCopy(source, workspaceName, destination);
+    }
+
+    /**
+     * Copy the node at the supplied source path in the named workspace, and place the copy at the supplied location within the
+     * current workspace, doing so immediately without enqueuing the operation within the session's operations. The current
+     * session is modified immediately to reflect the copy result.
+     * <p>
+     * Note that the destination path should not include a same-name-sibling index, since this will be ignored and will always be
+     * recomputed (as the copy will be appended to any children already in the destination's parent).
+     * </p>
+     * 
+     * @param source the path to the node that is to be copied; may not be null
+     * @param sourceWorkspace the name of the workspace where the source node is to be found, or null if the current workspace
+     *        should be used
+     * @param destination the path where the copy is to be placed; may not be null index
+     * @throws IllegalArgumentException either path is null or invalid
+     * @throws InvalidWorkspaceException if the source workspace name is invalid or does not exist
+     */
+    public void immediateCopy( Path source,
+                               String sourceWorkspace,
+                               Path destination ) {
+        CheckArg.isNotNull(source, "source");
+        CheckArg.isNotNull(destination, "destination");
+        if (sourceWorkspace == null) sourceWorkspace = workspaceName;
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent), but
+        // but use a batch so that we can read the latest list of children ...
+        Results results = store.batch()
+                               .copy(source)
+                               .fromWorkspace(sourceWorkspace)
+                               .to(destination)
+                               .and()
+                               .readChildren()
+                               .of(destination.getParent())
+                               .execute();
+
+        // Now get the children of the destination's parent ...
+        Location parentLocation = results.getNode(destination).getLocation();
+        // Find the parent node in the session ...
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(parentLocation.getPath());
+        if (parent.isLoaded()) {
+            // Update the children to make them match the latest snapshot from the store ...
+            List<Location> newChildren = results.getNode(parentLocation).getChildren();
+            parent.synchronize(newChildren);
+        }
+    }
+
+    /**
+     * Clone the supplied source branch and place into the destination location, optionally removing any existing copy that
+     * already exists in the destination location.
+     * 
+     * @param source
+     * @param sourceWorkspace
+     * @param destination
+     * @param removeExisting true if the original should be removed, or false if the original should be left
+     * @throws UuidAlreadyExistsException if copy could not be completed because the current workspace already includes at least
+     *         one of the nodes at or below the <code>source</code> branch in the source workspace
+     */
+    public void immediateClone( Path source,
+                                String sourceWorkspace,
+                                Path destination,
+                                boolean removeExisting ) {
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent), but
+        // but use a batch so that we can read the latest list of children ...
+        Graph.Batch batch = store.batch();
+        if (removeExisting) {
+            // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+            batch.copy(source).replacingExistingNodesWithSameUuids().fromWorkspace(sourceWorkspace).to(destination);
+        } else {
+            // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+            batch.copy(source).failingIfUuidsMatch().fromWorkspace(sourceWorkspace).to(destination);
+        }
+        // And read the children of the destination's parent ...
+        batch.readChildren().of(destination.getParent());
+        // Now execute these two operations ...
+        Results results = batch.execute();
+
+        // Now get the children of the destination's parent ...
+        Location parentLocation = results.getNode(destination).getLocation();
+        // Find the parent node in the session ...
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(parentLocation.getPath());
+        if (parent.isLoaded()) {
+            // Update the children to make them match the latest snapshot from the store ...
+            List<Location> newChildren = results.getNode(parentLocation).getChildren();
+            parent.synchronize(newChildren);
+        }
+    }
+
+    /**
+     * Refreshes (removes the cached state) for all cached nodes.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed, while all others will either be
+     * unloaded or changed to reflect the current state of the persistent store.
+     * </p>
+     * 
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     * @throws InvalidStateException if any error resulting while reading information from the repository
+     * @throws RepositorySourceException if any error resulting while reading information from the repository
+     */
+    @SuppressWarnings( "synthetic-access" )
+    public void refresh( boolean keepChanges ) throws InvalidStateException, RepositorySourceException {
+        if (keepChanges) {
+            refresh(root, keepChanges);
+        } else {
+            // Clear out all state ...
+            nodes.clear();
+            nodes.put(root.getNodeId(), root);
+            // Clear out all changes ...
+            requests.clear();
+            changeDependencies.clear();
+            // And force the root node to be 'unloaded' (in an efficient way) ...
+            root.changed = false;
+            root.childrenByName = null;
+            root.expirationTime = Long.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Refreshes (removes the cached state) for the given node and its descendants.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed, while all others will either be
+     * unloaded or changed to reflect the current state of the persistent store.
+     * </p>
+     * 
+     * @param node the node that is to be refreshed; may not be null
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     * @throws InvalidStateException if any error resulting while reading information from the repository
+     * @throws RepositorySourceException if any error resulting while reading information from the repository
+     */
+    public void refresh( Node<Payload, PropertyPayload> node,
+                         boolean keepChanges ) throws InvalidStateException, RepositorySourceException {
+        if (!node.isRoot() && node.isChanged(true)) {
+            // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
+            if (!node.containsChangesWithExternalDependencies()) {
+                I18n msg = GraphI18n.unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+                String path = node.getPath().getString(context.getNamespaceRegistry());
+                throw new InvalidStateException(msg.text(path, workspaceName));
+            }
+        }
+
+        if (keepChanges && node.isChanged(true)) {
+            // Perform the refresh while retaining changes ...
+            // Phase 1: determine which nodes can be unloaded, which must be refreshed, and which must be unchanged ...
+            RefreshState<Payload, PropertyPayload> refreshState = new RefreshState<Payload, PropertyPayload>();
+            node.refreshPhase1(refreshState);
+            // If there are any nodes to be refreshed, read then in a single batch ...
+            Results readResults = null;
+            if (!refreshState.getNodesToBeRefreshed().isEmpty()) {
+                Graph.Batch batch = store.batch();
+                for (Node<Payload, PropertyPayload> nodeToBeRefreshed : refreshState.getNodesToBeRefreshed()) {
+                    batch.read(nodeToBeRefreshed.getLocation());
+                }
+                // Execute the reads. No modifications have been made to the cache, so it is not a problem
+                // if this throws a repository exception.
+                readResults = batch.execute();
+            }
+
+            // Phase 2: update the cache by unloading or refreshing the nodes ...
+            node.refreshPhase2(refreshState, readResults);
+        } else {
+            // Get rid of all changes ...
+            node.clearChanges();
+            // And then unload the node ...
+            node.unload();
+
+            // Throw out the old pending operations
+            if (operations.isExecuteRequired()) {
+                // Make sure the builder has finished all the requests ...
+                this.requestBuilder.finishPendingRequest();
+
+                // Remove all of the enqueued requests for this branch ...
+                for (Iterator<Request> iter = this.requests.iterator(); iter.hasNext();) {
+                    Request request = iter.next();
+                    assert request instanceof ChangeRequest;
+                    ChangeRequest change = (ChangeRequest)request;
+                    if (change.changes(workspaceName, node.getPath())) {
+                        iter.remove();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Save any changes that have been accumulated by this session.
+     * 
+     * @throws PathNotFoundException if the state of this session is invalid and is attempting to change a node that doesn't exist
+     * @throws ValidationException if any of the changes being made result in an invalid node state
+     * @throws InvalidStateException if the supplied node is no longer a node within this cache (because it was unloaded)
+     */
+    public void save() throws PathNotFoundException, ValidationException, InvalidStateException {
+        if (!operations.isExecuteRequired()) return;
+        assert root.isChanged(true);
+
+        // Make sure that each of the changed node is valid. This process requires that all children of
+        // all changed nodes are loaded, so in this process load all unloaded children in one batch ...
+        root.onChangedNodes(new LoadAllChildrenVisitor() {
+            @Override
+            protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
+                nodeOperations.validate(node);
+            }
+        });
+
+        // Execute the batched operations ...
+        operations.execute();
+
+        // Create a new batch for future operations ...
+        // LinkedList<Request> oldRequests = this.requests;
+        this.requests = new LinkedList<Request>();
+        this.requestBuilder = new BatchRequestBuilder(this.requests);
+        operations = store.batch(this.requestBuilder);
+
+        // Remove all the cached items that have been changed or deleted ...
+        this.root.clearChanges();
+
+        // Remove all the changed and deleted infos ...
+        changeDependencies.clear();
+    }
+
+    /**
+     * Save any changes to the identified node or its descendants. The supplied node may not have been deleted or created in this
+     * session since the last save operation.
+     * 
+     * @param node the node being saved; may not be null
+     * @throws PathNotFoundException if the state of this session is invalid and is attempting to change a node that doesn't exist
+     * @throws ValidationException if any of the changes being made result in an invalid node state
+     * @throws InvalidStateException if the supplied node is no longer a node within this cache (because it was unloaded)
+     */
+    public void save( Node<Payload, PropertyPayload> node )
+        throws PathNotFoundException, ValidationException, InvalidStateException {
+        assert node != null;
+        if (node.isRoot()) {
+            // We're actually saving the root, so the other 'save' method is faster and more efficient ...
+            save();
+            return;
+        }
+        if (node.isStale()) {
+            // This node was deleted in this session ...
+            String readableLocation = node.getLocation().getString(context.getNamespaceRegistry());
+            I18n msg = GraphI18n.nodeHasAlreadyBeenRemovedFromThisSession;
+            throw new InvalidStateException(msg.text(readableLocation, workspaceName));
+        }
+        if (!node.isChanged(true)) {
+            // There are no changes within this branch
+            return;
+        }
+
+        // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
+        if (!node.containsChangesWithExternalDependencies()) {
+            I18n msg = GraphI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+            String path = node.getPath().getString(context.getNamespaceRegistry());
+            throw new InvalidStateException(msg.text(path, workspaceName));
+        }
+
+        // Make sure that each of the changed node is valid. This process requires that all children of
+        // all changed nodes are loaded, so in this process load all unloaded children in one batch ...
+        root.onChangedNodes(new LoadAllChildrenVisitor() {
+            @Override
+            protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
+                nodeOperations.validate(node);
+            }
+        });
+
+        // Make sure the builder has finished all the requests ...
+        this.requestBuilder.finishPendingRequest();
+
+        // Remove all of the enqueued requests for this branch ...
+        Path path = node.getPath();
+        LinkedList<Request> branchRequests = new LinkedList<Request>();
+        LinkedList<Request> nonBranchRequests = new LinkedList<Request>();
+        Set<UUID> branchUuids = new HashSet<UUID>();
+        for (Request request : this.requests) {
+            assert request instanceof ChangeRequest;
+            ChangeRequest change = (ChangeRequest)request;
+            if (change.changes(workspaceName, path)) {
+                branchRequests.add(request);
+                // Record the UUID of the node being saved now ...
+                UUID changedUuid = null;
+                if (change instanceof CreateNodeRequest) {
+                    // We want the parent UUID ...
+                    changedUuid = ((CreateNodeRequest)change).under().getUuid();
+                } else {
+                    changedUuid = change.changedLocation().getUuid();
+                }
+                assert changedUuid != null;
+                branchUuids.add(changedUuid);
+            } else {
+                nonBranchRequests.add(request);
+            }
+        }
+        if (branchRequests.isEmpty()) return;
+
+        // Now execute the branch ...
+        Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
+        branchBatch.execute();
+
+        // Still have non-branch related requests that we haven't executed ...
+        this.requests = nonBranchRequests;
+        this.requestBuilder = new BatchRequestBuilder(this.requests);
+        this.operations = store.batch(this.requestBuilder);
+
+        // Remove all the cached, changed or deleted items that were just saved ...
+        node.clearChanges();
+    }
+
+    protected Node<Payload, PropertyPayload> createNode( Node<Payload, PropertyPayload> parent,
+                                                         NodeId nodeId,
+                                                         Location location ) {
+        return new Node<Payload, PropertyPayload>(this, parent, nodeId, location);
+    }
+
+    protected long getCurrentTime() {
+        return System.currentTimeMillis();
+    }
+
+    protected void recordMove( Node<Payload, PropertyPayload> nodeBeingMoved,
+                               Node<Payload, PropertyPayload> oldParent,
+                               Node<Payload, PropertyPayload> newParent ) {
+        // Fix the cache's state ...
+        NodeId id = nodeBeingMoved.getNodeId();
+        Dependencies dependencies = changeDependencies.get(id);
+        if (dependencies == null) {
+            dependencies = new Dependencies();
+            dependencies.setMovedFrom(oldParent.getNodeId());
+            changeDependencies.put(id, dependencies);
+        } else {
+            dependencies.setMovedFrom(newParent.getNodeId());
+        }
+    }
+
+    /**
+     * Record the fact that the supplied node is in the process of being deleted, so any cached information (outside of the node
+     * object itself) should be cleaned up.
+     * 
+     * @param node the node being deleted; never null
+     */
+    protected void recordDelete( Node<Payload, PropertyPayload> node ) {
+        // Record the operation ...
+        operations.delete(node.getLocation());
+        // Fix the cache's state ...
+        nodes.remove(node.getNodeId());
+        changeDependencies.remove(node.getNodeId());
+        recordUnloaded(node);
+    }
+
+    /**
+     * Record the fact that the supplied node is in the process of being unloaded, so any cached information (outside of the node
+     * object itself) should be cleaned up.
+     * 
+     * @param node the node being unloaded; never null
+     */
+    protected void recordUnloaded( final Node<Payload, PropertyPayload> node ) {
+        if (node.isLoaded() && node.getChildrenCount() > 0) {
+            // Walk the branch and remove all nodes from the map of all nodes ...
+            node.onLoadedNodes(new NodeVisitor<Payload, PropertyPayload>() {
+                @SuppressWarnings( "synthetic-access" )
+                @Override
+                public boolean visit( Node<Payload, PropertyPayload> unloaded ) {
+                    if (unloaded != node) { // info for 'node' should not be removed
+                        nodes.remove(unloaded.getNodeId());
+                        changeDependencies.remove(unloaded.getNodeId());
+                        unloaded.parent = null;
+                    }
+                    return true;
+                }
+            });
+        }
+    }
+
+    @ThreadSafe
+    public static interface Operations<NodePayload, PropertyPayload> {
+
+        /**
+         * Update the node with the information from the persistent store.
+         * 
+         * @param persistentNode the persistent node that should be converted into a node info; never null
+         * @param node the session's node representation that is to be updated; never null
+         */
+        void update( org.jboss.dna.graph.Node persistentNode,
+                     Node<NodePayload, PropertyPayload> node );
+
+        /**
+         * Signal that the node's {@link GraphSession.Node#getLocation() location} has been changed
+         * 
+         * @param node the node with the new location
+         * @param oldLocation the old location of the node
+         */
+        void updateLocation( Node<NodePayload, PropertyPayload> node,
+                             Location oldLocation );
+
+        /**
+         * Validate a node for consistency and well-formedness.
+         * 
+         * @param node the node to be validated
+         * @throws ValidationException if there is a problem during validation
+         */
+        void validate( Node<NodePayload, PropertyPayload> node ) throws ValidationException;
+    }
+
+    @ThreadSafe
+    public static interface NodeIdFactory {
+        NodeId create();
+    }
+
+    @ThreadSafe
+    public static interface Authorizer {
+
+        public enum Action {
+            READ,
+            REMOVE,
+            ADD_NODE,
+            SET_PROPERTY;
+        }
+
+        /**
+         * Throws an {@link AccessControlException} if the current user is not able to perform the action on the node at the
+         * supplied path in the current workspace.
+         * 
+         * @param path the path on which the actions are occurring
+         * @param action the action to check
+         * @throws AccessControlException if the user does not have permission to perform the actions
+         */
+        void checkPermissions( Path path,
+                               Action action ) throws AccessControlException;
+    }
+
+    /**
+     * {@link Authorizer} implementation that does nothing.
+     */
+    @ThreadSafe
+    protected static class NoOpAuthorizer implements Authorizer {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.session.GraphSession.Authorizer#checkPermissions(org.jboss.dna.graph.property.Path,
+         *      org.jboss.dna.graph.session.GraphSession.Authorizer.Action)
+         */
+        public void checkPermissions( Path path,
+                                      Action action ) throws AccessControlException {
+        }
+    }
+
+    @ThreadSafe
+    protected static class SimpleNodeOperations<Payload, PropertyPayload> implements Operations<Payload, PropertyPayload> {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.Operations#update(org.jboss.dna.graph.Node, GraphSession.Node)
+         */
+        public void update( org.jboss.dna.graph.Node persistentNode,
+                            Node<Payload, PropertyPayload> node ) {
+            // Create the map of property info objects ...
+            Map<Name, PropertyInfo<PropertyPayload>> properties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
+            for (Property property : persistentNode.getProperties()) {
+                Name propertyName = property.getName();
+                PropertyId id = new PropertyId(node.getNodeId(), propertyName);
+                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(id, property, property.isMultiple(),
+                                                                                       PropertyStatus.UNCHANGED, null);
+                properties.put(propertyName, info);
+            }
+            // Set only the children ...
+            node.loadedWith(persistentNode.getChildren(), properties, persistentNode.getExpirationTime());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.Operations#updateLocation(GraphSession.Node, org.jboss.dna.graph.Location)
+         */
+        public void updateLocation( Node<Payload, PropertyPayload> node,
+                                    Location oldLocation ) {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.Operations#validate(GraphSession.Node)
+         */
+        public void validate( Node<Payload, PropertyPayload> node ) {
+            // do nothing here
+        }
+    }
+
+    @NotThreadSafe
+    public static class Node<Payload, PropertyPayload> {
+        private final GraphSession<Payload, PropertyPayload> cache;
+        private final NodeId nodeId;
+        private Node<Payload, PropertyPayload> parent;
+        private long expirationTime = Long.MAX_VALUE;
+        private Location location;
+        private boolean changed;
+        private boolean changedBelow;
+        private Map<Name, PropertyInfo<PropertyPayload>> properties;
+        private ListMultimap<Name, Node<Payload, PropertyPayload>> childrenByName;
+        private Payload payload;
+
+        protected Node( GraphSession<Payload, PropertyPayload> cache,
+                        Node<Payload, PropertyPayload> parent,
+                        NodeId nodeId,
+                        Location location ) {
+            this.cache = cache;
+            this.parent = parent;
+            this.nodeId = nodeId;
+            this.location = location;
+            assert this.cache != null;
+            assert this.nodeId != null;
+            assert this.location != null;
+            assert this.location.hasPath();
+        }
+
+        /**
+         * Get the time when this node expires.
+         * 
+         * @return the time in milliseconds past the epoch when this node's cached information expires, or {@link Long#MAX_VALUE
+         *         Long.MAX_VALUE} if there is no expiration or if the node has not been loaded
+         * @see #isExpired()
+         * @see #isLoaded()
+         */
+        public final long getExpirationTimeInMillis() {
+            assert !isStale();
+            return expirationTime;
+        }
+
+        /**
+         * Determine if this node's information has expired. This method will never return true if the node is not loaded. This
+         * method is idempotent.
+         * 
+         * @return true if this node's information has been read from the store and is expired
+         */
+        public final boolean isExpired() {
+            return expirationTime != Long.MAX_VALUE && expirationTime < cache.getCurrentTime();
+        }
+
+        /**
+         * Determine if this node is loaded and usable. Even though the node may have been loaded previously, this method may
+         * return false (and unloads the cached information) if the cached information has expired and thus is no longer usable.
+         * Note, however, that changes on or below this node will prevent the node from being unloaded.
+         * 
+         * @return true if the node's information has already been loaded and may be used, or false otherwise
+         */
+        public final boolean isLoaded() {
+            if (childrenByName == null) return false;
+            // Otherwise, it is already loaded. First see if this is expired ...
+            if (isExpired()) {
+                // It is expired, so we'd normally return false. But we should not unload if it has changes ...
+                if (isChanged(true)) return true;
+                // It is expired and contains no changes on this branch, so we can unload it ...
+                unload();
+                return false;
+            }
+            // Otherwise it is loaded and not expired ...
+            return true;
+        }
+
+        /**
+         * Method that causes the information for this node to be read from the store and loaded into the cache
+         * 
+         * @throws RepositorySourceException if there is a problem reading the store
+         */
+        protected final void load() throws RepositorySourceException {
+            if (isLoaded()) return;
+            assert !isStale();
+            // Check authorization before reading ...
+            Path path = getPath();
+            cache.authorizer.checkPermissions(path, Action.READ);
+            int depth = cache.getDepthForLoadingNodes();
+            if (depth == 1) {
+                // Then read the node from the store ...
+                org.jboss.dna.graph.Node persistentNode = cache.store.getNodeAt(getLocation());
+                // Check the actual location ...
+                Location actualLocation = persistentNode.getLocation();
+                if (!this.location.equals(actualLocation)) {
+                    // The actual location is changed, so update it ...
+                    this.location = actualLocation;
+                }
+                // Update the persistent information ...
+                cache.nodeOperations.update(persistentNode, this);
+            } else {
+                // Then read the node from the store ...
+                Subgraph subgraph = cache.store.getSubgraphOfDepth(depth).at(getLocation());
+                Location actualLocation = subgraph.getLocation();
+                if (!this.location.equals(actualLocation)) {
+                    // The actual location is changed, so update it ...
+                    this.location = actualLocation;
+                }
+                // Update the persistent information ...
+                cache.nodeOperations.update(subgraph.getRoot(), this);
+                // Now update any nodes below this node ...
+                for (org.jboss.dna.graph.Node persistentNode : subgraph) {
+                    // Find the node at the path ...
+                    Path relativePath = persistentNode.getLocation().getPath().relativeTo(path);
+                    Node<Payload, PropertyPayload> node = cache.findNodeRelativeTo(this, relativePath);
+                    if (!node.isLoaded()) {
+                        // Update the persistent information ...
+                        cache.nodeOperations.update(persistentNode, node);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Utility method to unload this cached node.
+         */
+        protected final void unload() {
+            assert !isStale();
+            assert !changed;
+            assert !changedBelow;
+            if (!isLoaded()) return;
+            cache.recordUnloaded(this);
+            childrenByName = null;
+            expirationTime = Long.MAX_VALUE;
+        }
+
+        /**
+         * Phase 1 of the process of refreshing the cached content while retaining changes. This phase walks the entire tree to
+         * determine which nodes have changes, which nodes can be unloaded, and which nodes have no changes but are ancestors of
+         * those nodes with changes (and therefore have to be refreshed). Each node has a {@link #isChanged(boolean) changed
+         * state}, and the supplied RefreshState tracks which nodes must be
+         * {@link GraphSession.RefreshState#markAsRequiringRefresh(Node) refreshed} in
+         * {@link #refreshPhase2(RefreshState, Results) phase 2}; all other nodes are able to be unloaded in
+         * {@link #refreshPhase2(RefreshState, Results) phase 2}.
+         * 
+         * @param refreshState the holder of the information about which nodes are to be unloaded or refreshed; may not be null
+         * @return true if the node could be (or already is) unloaded, or false otherwise
+         * @see #refreshPhase2(RefreshState, Results)
+         */
+        protected final boolean refreshPhase1( RefreshState<Payload, PropertyPayload> refreshState ) {
+            assert !isStale();
+            if (childrenByName == null) {
+                // This node is not yet loaded, so don't record it as needing to be unloaded but return true
+                return true;
+            }
+            // Perform phase 1 on each of the children ...
+            boolean canUnloadChildren = true;
+            for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
+                if (child.refreshPhase1(refreshState)) {
+                    // The child can be unloaded
+                    canUnloadChildren = false;
+                }
+            }
+
+            // If this node has changes, then we cannot do anything with this node ...
+            if (isChanged(false)) return false;
+
+            // Otherwise, this node contains no changes ...
+            if (canUnloadChildren) {
+                // Since all the children can be unloaded, we can completely unload this node ...
+                return true;
+            }
+            // Otherwise, we have to hold onto the children, so we can't unload and must be refreshed ...
+            refreshState.markAsRequiringRefresh(this);
+            return false;
+        }
+
+        /**
+         * Phase 2 of the process of refreshing the cached content while retaining changes. This phase walks the graph and either
+         * unloads the node or, if the node is an ancestor of changed nodes, refreshes the node state to reflect that of the
+         * persistent store.
+         * 
+         * @param refreshState
+         * @param persistentInfoForRefreshedNodes
+         * @see #refreshPhase1(RefreshState)
+         */
+        protected final void refreshPhase2( RefreshState<Payload, PropertyPayload> refreshState,
+                                            Results persistentInfoForRefreshedNodes ) {
+            assert !isStale();
+            if (this.changed) {
+                // There's nothing to do ...
+                return;
+            }
+            if (refreshState.requiresRefresh(this)) {
+                // This node must be refreshed since it has no changes but is an ancestor of a node that is changed.
+                // Therefore, update the children and properties with the just-read persistent information ...
+                assert childrenByName != null;
+                org.jboss.dna.graph.Node persistentNode = persistentInfoForRefreshedNodes.getNode(location);
+                assert !persistentNode.getChildren().isEmpty();
+                // Find the map of old Node objects keyed by their identifier ...
+                Map<NodeId, Node<Payload, PropertyPayload>> oldChildren = new HashMap<NodeId, Node<Payload, PropertyPayload>>();
+                for (Node<Payload, PropertyPayload> oldChild : childrenByName.values()) {
+                    oldChildren.put(oldChild.getNodeId(), oldChild);
+                }
+                childrenByName.clear();
+                for (Location location : persistentNode.getChildren()) {
+                    Name childName = location.getPath().getLastSegment().getName();
+                    NodeId nodeId = cache.idFactory.create();
+                    Node<Payload, PropertyPayload> child = oldChildren.remove(nodeId);
+                    if (child == null) {
+                        child = cache.createNode(this, nodeId, location);
+                        cache.nodes.put(child.getNodeId(), child);
+                        assert child.getName().equals(childName);
+                    }
+                    assert child.parent == this;
+                    List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(childName);
+                    currentChildren.add(child);
+                    // Create a segment with the SNS ...
+                    Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+                    child.updateLocation(segment);
+                    // TODO: Can the location be different? If so, doesn't that mean that the change requests
+                    // have to be updated???
+                }
+                return;
+            }
+            // This node can be unloaded (since it has no changes and isn't above a node with changes) ...
+            unload();
+        }
+
+        /**
+         * Define the persistent child information that this node is to be populated with. This method does not cause the node's
+         * information to be read from the store.
+         * <p>
+         * This method is intended to be called by the {@link GraphSession.Operations#update(org.jboss.dna.graph.Node, Node)}, and
+         * should not be called by other components.
+         * </p>
+         * 
+         * @param children the children for this node; may not be null
+         * @param properties the properties for this node; may not be null
+         * @param expirationTime the time that this cached information expires, or null if there is no expiration
+         */
+        public void loadedWith( List<Location> children,
+                                Map<Name, PropertyInfo<PropertyPayload>> properties,
+                                DateTime expirationTime ) {
+            assert !isStale();
+            // Load the children ...
+            if (children.isEmpty()) {
+                childrenByName = cache.NO_CHILDREN;
+            } else {
+                childrenByName = Multimaps.newLinkedListMultimap();
+                for (Location location : children) {
+                    NodeId id = cache.idFactory.create();
+                    Name childName = location.getPath().getLastSegment().getName();
+                    Node<Payload, PropertyPayload> child = cache.createNode(this, id, location);
+                    cache.nodes.put(child.getNodeId(), child);
+                    List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(childName);
+                    currentChildren.add(child);
+                    child.parent = this;
+                    // Create a segment with the SNS ...
+                    Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+                    child.updateLocation(segment);
+                }
+            }
+            // Load the properties ...
+            if (properties.isEmpty()) {
+                this.properties = cache.NO_PROPERTIES;
+            } else {
+                this.properties = new HashMap<Name, PropertyInfo<PropertyPayload>>(properties);
+            }
+
+            // Set the expiration time ...
+            this.expirationTime = expirationTime != null ? expirationTime.getMilliseconds() : Long.MAX_VALUE;
+        }
+
+        /**
+         * Reconstruct the location object for this node, given the information at the parent.
+         * 
+         * @param segment the path segment for this node; may be null only when this node is the root node
+         */
+        protected void updateLocation( Path.Segment segment ) {
+            assert !isStale();
+            Path newPath = null;
+            if (segment != null) {
+                // Recompute the path based upon the parent path ...
+                Path parentPath = getParent().getPath();
+                newPath = cache.pathFactory.create(parentPath, segment);
+            } else {
+                // This must be the root ...
+                newPath = cache.pathFactory.createRootPath();
+                assert this.isRoot();
+            }
+            Location newLocation = this.location.with(newPath);
+            if (newLocation != this.location) {
+                Location oldLocation = this.location;
+                this.location = newLocation;
+                cache.nodeOperations.updateLocation(this, oldLocation);
+            }
+
+            if (isLoaded() && childrenByName != cache.NO_CHILDREN) {
+                // Update all of the children ...
+                for (Map.Entry<Name, Collection<Node<Payload, PropertyPayload>>> entry : childrenByName.asMap().entrySet()) {
+                    Name childName = entry.getKey();
+                    int sns = 1;
+                    for (Node<Payload, PropertyPayload> child : entry.getValue()) {
+                        Path.Segment childSegment = cache.pathFactory.createSegment(childName, sns++);
+                        child.updateLocation(childSegment);
+                    }
+                }
+            }
+        }
+
+        protected void synchronize( List<Location> actualChildren ) {
+            if (!isLoaded()) return;
+            for (Location actualChild : actualChildren) {
+                Path.Segment actualSegment = actualChild.getPath().getLastSegment();
+                Node<Payload, PropertyPayload> existingChild = parent.getChild(actualSegment);
+                if (existingChild == null) {
+                    // The child doesn't exist yet ...
+                    NodeId nodeId = cache.idFactory.create();
+                    Node<Payload, PropertyPayload> newChild = cache.createNode(this, nodeId, actualChild);
+                    parent.childrenByName.put(actualSegment.getName(), newChild);
+                }
+            }
+
+        }
+
+        /**
+         * Determine whether this node has been marked as having changes.
+         * 
+         * @param recursive true if the nodes under this node should be checked, or false if only this node should be checked
+         * @return true if there are changes in the specified scope, or false otherwise
+         */
+        public final boolean isChanged( boolean recursive ) {
+            assert !isStale();
+            return recursive ? this.changed || this.changedBelow : this.changed;
+        }
+
+        /**
+         * This method determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside
+         * of this branch.
+         * 
+         * @return true if this branch has nodes with changes dependent on nodes outside of this branch
+         */
+        public boolean containsChangesWithExternalDependencies() {
+            assert !isStale();
+            if (!isChanged(true)) {
+                // There are no changes in this branch ...
+                return false;
+            }
+            // Need to make sure that nodes were not moved into or out of this branch, since that would mean that we
+            // cannot refresh this branch without also refreshing the other affected branches (per the JCR specification) ...
+            for (Map.Entry<NodeId, Dependencies> entry : cache.changeDependencies.entrySet()) {
+                Dependencies dependency = entry.getValue();
+                NodeId nodeId = entry.getKey();
+                Node<Payload, PropertyPayload> changedNode = cache.nodes.get(nodeId);
+
+                // First, check whether the changed node is within the branch ...
+                if (!changedNode.isAtOrBelow(this)) {
+                    // The node is not within this branch, so the original parent must not be at or below this node ...
+                    if (cache.nodes.get(dependency.getMovedFrom()).isAtOrBelow(this)) {
+                        return false;
+                    }
+                    // None of the other dependencies can be within this branch ...
+                    for (NodeId dependentId : dependency.getRequireChangesTo()) {
+                        // The dependent node must not be at or below this node ...
+                        if (cache.nodes.get(dependentId).isAtOrBelow(this)) {
+                            return false;
+                        }
+                    }
+                    // Otherwise, continue with the next change ...
+                    continue;
+                }
+                // The changed node is within this branch!
+
+                // Second, check whether this node was moved from outside this branch ...
+                if (dependency.getMovedFrom() != null) {
+                    Node<Payload, PropertyPayload> originalParent = cache.nodes.get(dependency.getMovedFrom());
+                    // The original parent must be at or below this node ...
+                    if (!originalParent.isAtOrBelow(this)) {
+                        return false;
+                    }
+                    // All of the other dependencies must be within this branch ...
+                    for (NodeId dependentId : dependency.getRequireChangesTo()) {
+                        // The dependent node must not be at or below this node ...
+                        if (!cache.nodes.get(dependentId).isAtOrBelow(this)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Clear any transient changes that have been accumulated in this node.
+         * 
+         * @see #markAsChanged()
+         */
+        public void clearChanges() {
+            assert !isStale();
+            if (this.changed) {
+                this.changed = false;
+                this.changedBelow = false;
+                unload();
+            } else {
+                if (!this.changedBelow) return;
+                // This node has not changed but something below has, so call to the children ...
+                if (childrenByName != null && childrenByName != cache.NO_CHILDREN) {
+                    for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
+                        child.clearChanges();
+                    }
+                }
+                this.changedBelow = false;
+            }
+            // Update the parent ...
+            if (this.parent != null) this.parent.recomputeChangedBelow();
+        }
+
+        /**
+         * Mark this node as having changes.
+         * 
+         * @see #clearChanges()
+         */
+        public final void markAsChanged() {
+            assert !isStale();
+            this.changed = true;
+            if (this.parent != null) this.parent.markAsChangedBelow();
+        }
+
+        protected final void markAsChangedBelow() {
+            if (!this.changedBelow) {
+                this.changedBelow = true;
+                if (this.parent != null) this.parent.markAsChangedBelow();
+            }
+        }
+
+        protected final void recomputeChangedBelow() {
+            if (!this.changedBelow) return; // we're done
+            // there are changes ...
+            assert childrenByName != null;
+            for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
+                if (child.isChanged(true)) {
+                    this.markAsChangedBelow();
+                    return;
+                }
+            }
+            // No changes found ...
+            this.changedBelow = false;
+            if (this.parent != null) this.parent.recomputeChangedBelow();
+        }
+
+        /**
+         * Move this node from its current location so that is is a child of the supplied parent.
+         * 
+         * @param parent the new parent for this node; may not be null
+         * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+         * @throws IllegalArgumentException if this is the root node
+         */
+        public void moveTo( Node<Payload, PropertyPayload> parent ) {
+            moveTo(parent, null, true);
+        }
+
+        /**
+         * Move this node from its current location so that is is a child of the supplied parent, renaming the node in the
+         * process.
+         * 
+         * @param parent the new parent for this node; may not be null
+         * @param newNodeName the new name for the node, or null if the node should keep the same name
+         * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+         * @throws IllegalArgumentException if this is the root node
+         */
+        public void moveTo( Node<Payload, PropertyPayload> parent,
+                            Name newNodeName ) {
+            moveTo(parent, newNodeName, true);
+        }
+
+        /**
+         * Move this node from its current location so that is is a child of the supplied parent.
+         * 
+         * @param parent the new parent for this node; may not be null
+         * @param newNodeName the new name for the node, or null if the node should keep the same name
+         * @param useBatch true if this operation should be performed using the session's current batch operation and executed
+         *        upon {@link GraphSession#save()}, or false if the move should be performed immediately
+         * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+         * @throws IllegalArgumentException if this is the root node
+         */
+        protected void moveTo( Node<Payload, PropertyPayload> parent,
+                               Name newNodeName,
+                               boolean useBatch ) {
+            final Node<Payload, PropertyPayload> child = this;
+            assert !parent.isStale();
+            assert child.parent != this;
+            assert !child.isRoot();
+            if (newNodeName == null) newNodeName = getName();
+
+            // Check authorization ...
+            cache.authorizer.checkPermissions(parent.getPath(), Action.ADD_NODE);
+            cache.authorizer.checkPermissions(child.getPath().getParent(), Action.REMOVE);
+
+            parent.load();
+            if (parent.childrenByName == cache.NO_CHILDREN) {
+                parent.childrenByName = Multimaps.newLinkedListMultimap();
+            }
+            Name childName = child.getName();
+            List<Node<Payload, PropertyPayload>> currentChildren = parent.childrenByName.get(childName);
+            currentChildren.add(child);
+            parent.markAsChanged();
+            // Remove the child from it's existing parent ...
+            final Node<Payload, PropertyPayload> oldParent = child.parent;
+            // Record the operation ...
+            if (useBatch) {
+                if (newNodeName.equals(getName())) {
+                    cache.operations.move(child.getLocation()).into(parent.getLocation());
+                } else {
+                    cache.operations.move(child.getLocation()).as(newNodeName).into(parent.getLocation());
+                }
+            } else {
+                if (newNodeName.equals(getName())) {
+                    cache.store.move(child.getLocation()).into(parent.getLocation());
+                } else {
+                    cache.store.move(child.getLocation()).as(newNodeName).into(parent.getLocation());
+                }
+            }
+            cache.recordMove(child, oldParent, parent);
+            child.remove();
+            // Set the new parent to this node ...
+            child.parent = parent;
+            // Update the new child with the correct location ...
+            Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+            child.updateLocation(segment);
+        }
+
+        /**
+         * Copy this node (and all nodes below it) and place the copy under the supplied parent location. The new copy will be
+         * appended to any existing children of the supplied parent node, and will be given the appropriate same-name-sibling
+         * index.
+         * 
+         * @param parent the new parent for the new copy; may not be null
+         * @throws RepositorySourceException if the parent node is to be loaded but a problem is encountered while doing so
+         * @throws IllegalArgumentException if this is the root node
+         */
+        public void copyTo( Node<Payload, PropertyPayload> parent ) {
+            final Node<Payload, PropertyPayload> child = this;
+            assert !parent.isStale();
+            assert child.parent != this;
+            assert !child.isRoot();
+
+            // Check authorization ...
+            cache.authorizer.checkPermissions(parent.getPath(), Action.ADD_NODE);
+            cache.authorizer.checkPermissions(child.getPath(), Action.READ);
+
+            parent.load();
+            if (parent.childrenByName == cache.NO_CHILDREN) {
+                parent.childrenByName = Multimaps.newLinkedListMultimap();
+            }
+            Name childName = child.getName();
+            // Figure out the name and SNS of the new copy ...
+            List<Node<Payload, PropertyPayload>> currentChildren = parent.childrenByName.get(childName);
+            Location copyLocation = Location.create(cache.pathFactory.create(parent.getPath(), childName, currentChildren.size()));
+
+            // Perform the copy ...
+            cache.operations.copy(child.getLocation()).to(copyLocation);
+
+            // Add the child to the parent ...
+            cache.createNode(parent, cache.idFactory.create(), copyLocation);
+            parent.markAsChanged();
+        }
+
+        /**
+         * Clone this node (and all nodes below it). The new copy will be appended to the existing children of the
+         * {@link #getParent() parent}, and will be given the appropriate same-name-sibling index.
+         * <p>
+         * This is equivalent to calling <code>node.copyTo(node.getParent())</code>
+         * </p>
+         * 
+         * @throws IllegalArgumentException if this is the root node
+         */
+        public void cloneNode() {
+            copyTo(getParent());
+        }
+
+        /**
+         * Remove this node from it's parent. Note that locations are <i>not</i> updated, since they will be updated if this node
+         * is added to a different parent. However, the locations of same-name-siblings under the parent <i>are</i> updated.
+         */
+        protected void remove() {
+            assert !isStale();
+            assert this.parent != null;
+            assert this.parent.isLoaded();
+            assert this.parent.childrenByName != null;
+            assert this.parent.childrenByName != cache.NO_CHILDREN;
+            this.parent.markAsChanged();
+            Name name = getName();
+            List<Node<Payload, PropertyPayload>> childrenWithSameName = this.parent.childrenByName.get(name);
+            this.parent = null;
+            if (childrenWithSameName.size() == 1) {
+                // No same-name-siblings ...
+                childrenWithSameName.clear();
+            } else {
+                // There is at least one other sibling with the same name ...
+                int lastIndex = childrenWithSameName.size() - 1;
+                assert lastIndex > 0;
+                int index = childrenWithSameName.indexOf(this);
+                // remove this node ...
+                childrenWithSameName.remove(index);
+                if (index != lastIndex) {
+                    // There are same-name-siblings that have higher SNS indexes that this node had ...
+                    for (int i = index; i != lastIndex; ++i) {
+                        Node<Payload, PropertyPayload> sibling = childrenWithSameName.get(i);
+                        Path.Segment segment = cache.pathFactory.createSegment(name, i + 1);
+                        sibling.updateLocation(segment);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Remove this node from it's parent and destroy it's contents. The location of sibling nodes with the same name will be
+         * updated, and the node and all nodes below it will be destroyed and removed from the cache.
+         */
+        public void destroy() {
+            assert !isStale();
+            // Check authorization ...
+            cache.authorizer.checkPermissions(getPath(), Action.REMOVE);
+            // Remove the node from its parent ...
+            remove();
+            // This node was successfully removed, so now remove it from the cache ...
+            cache.recordDelete(this);
+        }
+
+        public final boolean isRoot() {
+            return this.parent == null;
+        }
+
+        /**
+         * Determine whether this node is stale because it was dropped from the cache.
+         * 
+         * @return true if the node is stale and should no longer be used
+         */
+        public boolean isStale() {
+            // Find the root of this node ...
+            Node<?, ?> node = this;
+            while (node.parent != null) {
+                node = node.parent;
+            }
+            // The root of this branch MUST be the actual root of the cache
+            return node != cache.root;
+        }
+
+        /**
+         * Get this node's parent node.
+         * 
+         * @return the parent node
+         */
+        public final Node<Payload, PropertyPayload> getParent() {
+            assert !isStale();
+            return parent;
+        }
+
+        /**
+         * @return nodeId
+         */
+        public final NodeId getNodeId() {
+            return nodeId;
+        }
+
+        /**
+         * Get the name of this node, without any same-name-sibling index.
+         * 
+         * @return the name; never null
+         */
+        public final Name getName() {
+            return location.getPath().getLastSegment().getName();
+        }
+
+        /**
+         * Get the {@link Path.Segment path segment} for this node.
+         * 
+         * @return the path segment; never null
+         */
+        public final Path.Segment getSegment() {
+            return location.getPath().getLastSegment();
+        }
+
+        /**
+         * Get the current path to this node.
+         * 
+         * @return the current path; never null
+         */
+        public final Path getPath() {
+            return location.getPath();
+        }
+
+        /**
+         * Get the current location for this node.
+         * 
+         * @return the current location; never null
+         */
+        public final Location getLocation() {
+            return location;
+        }
+
+        /**
+         * Get the child with the supplied segment.
+         * 
+         * @param segment the segment of the child
+         * @return the child with the supplied name and SNS index, or null if the children have not yet been loaded
+         * @throws PathNotFoundException if the children have been loaded and the child does not exist
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public Node<Payload, PropertyPayload> getChild( Path.Segment segment ) {
+            return getChild(segment.getName(), segment.getIndex());
+        }
+
+        /**
+         * Get the first child matching the name and lowest SNS index
+         * 
+         * @param name the name of the child
+         * @return the first child with the supplied name, or null if the children have not yet been loaded
+         * @throws PathNotFoundException if the children have been loaded and the child does not exist
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public Node<Payload, PropertyPayload> getFirstChild( Name name ) {
+            return getChild(name, 1);
+        }
+
+        /**
+         * Get the child with the supplied name and SNS index.
+         * 
+         * @param name the name of the child
+         * @param sns the same-name-sibling index; must be 1 or more
+         * @return the child with the supplied name and SNS index; never null
+         * @throws PathNotFoundException if the children have been loaded and the child does not exist
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public Node<Payload, PropertyPayload> getChild( Name name,
+                                                        int sns ) {
+            load();
+            List<Node<Payload, PropertyPayload>> children = childrenByName.get(name); // never null
+            try {
+                return children.get(sns - 1); // SNS is 1-based, index is 0-based
+            } catch (IndexOutOfBoundsException e) {
+                Path missingPath = cache.pathFactory.create(getPath(), name, sns);
+                throw new PathNotFoundException(Location.create(missingPath), getPath());
+            }
+        }
+
+        /**
+         * Get an iterator over the children that have the supplied name.
+         * 
+         * @param name the of the child nodes to be returned; may not be null
+         * @return an unmodifiable iterator over the cached children that have the supplied name; never null but possibly empty
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public Iterable<Node<Payload, PropertyPayload>> getChildren( Name name ) {
+            load();
+            final Collection<Node<Payload, PropertyPayload>> children = childrenByName.get(name);
+            return new Iterable<Node<Payload, PropertyPayload>>() {
+                public Iterator<Node<Payload, PropertyPayload>> iterator() {
+                    return new ReadOnlyIterator<Node<Payload, PropertyPayload>>(children.iterator());
+                }
+            };
+        }
+
+        /**
+         * Get an iterator over the children.
+         * 
+         * @return an unmodifiable iterator over the cached children; never null
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public Iterable<Node<Payload, PropertyPayload>> getChildren() {
+            load();
+            final Collection<Node<Payload, PropertyPayload>> children = childrenByName.values();
+            return new Iterable<Node<Payload, PropertyPayload>>() {
+                public Iterator<Node<Payload, PropertyPayload>> iterator() {
+                    return new ReadOnlyIterator<Node<Payload, PropertyPayload>>(children.iterator());
+                }
+            };
+        }
+
+        /**
+         * Get the number of children.
+         * 
+         * @return the number of children in the cache
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public int getChildrenCount() {
+            load();
+            return childrenByName.size();
+        }
+
+        /**
+         * Get the number of children that have the same supplied name.
+         * 
+         * @param name the name of the children to count
+         * @return the number of children in the cache
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public int getChildrenCount( Name name ) {
+            load();
+            return childrenByName.get(name).size();
+        }
+
+        /**
+         * Determine if this node is a leaf node with no children.
+         * 
+         * @return true if this node has no children
+         * @throws RepositorySourceException if there is a problem loading this node's information from the store
+         */
+        public boolean isLeaf() {
+            load();
+            return childrenByName.isEmpty();
+        }
+
+        /**
+         * Get from this node the property with the supplied name.
+         * 
+         * @param name the property name; may not be null
+         * @return the property with the supplied name, or null if there is no such property on this node
+         */
+        public PropertyInfo<PropertyPayload> getProperty( Name name ) {
+            load();
+            return properties.get(name);
+        }
+
+        /**
+         * Set the supplied property information on this node.
+         * 
+         * @param property the new property; may not be null
+         * @param isMultiValued true if the property is multi-valued
+         * @param payload the optional payload for this property; may be null
+         * @return the previous information for the property, or null if there was no previous property
+         */
+        public PropertyInfo<PropertyPayload> setProperty( Property property,
+                                                          boolean isMultiValued,
+                                                          PropertyPayload payload ) {
+            load();
+            cache.authorizer.checkPermissions(getPath(), Action.SET_PROPERTY);
+            Name name = property.getName();
+            PropertyInfo<PropertyPayload> previous = properties.get(name);
+            PropertyId id = null;
+            PropertyStatus status = null;
+            if (previous != null) {
+                id = previous.getPropertyId();
+                status = previous.getStatus(); // keep NEW or CHANGED status, but UNCHANGED -> CHANGED
+                if (status == PropertyStatus.UNCHANGED) status = PropertyStatus.CHANGED;
+            } else {
+                id = new PropertyId(getNodeId(), name);
+                status = PropertyStatus.NEW;
+            }
+            PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(id, property, isMultiValued, status, payload);
+            properties.put(name, info);
+            cache.operations.set(property).on(location);
+            markAsChanged();
+            return previous;
+        }
+
+        /**
+         * Remove a property from this node.
+         * 
+         * @param name the name of the property to be removed; may not be null
+         * @return the previous information for the property, or null if there was no previous property
+         */
+        public PropertyInfo<PropertyPayload> removeProperty( Name name ) {
+            load();
+            PropertyInfo<PropertyPayload> results = properties.remove(name);
+            markAsChanged();
+            cache.operations.remove(name).on(location);
+            return results;
+        }
+
+        /**
+         * Get the names of the properties on this node.
+         * 
+         * @return the names of the properties; never null
+         */
+        public Set<Name> getPropertyNames() {
+            load();
+            return properties.keySet();
+        }
+
+        /**
+         * Get the information for each of the properties on this node.
+         * 
+         * @return the information for each of the properties; never null
+         */
+        public Collection<PropertyInfo<PropertyPayload>> getProperties() {
+            load();
+            return properties.values();
+        }
+
+        /**
+         * Get the number of properties owned by this node.
+         * 
+         * @return the number of properties; never negative
+         */
+        public int getPropertyCount() {
+            load();
+            return properties.size();
+        }
+
+        public boolean isAtOrBelow( Node<Payload, PropertyPayload> other ) {
+            Node<Payload, PropertyPayload> node = this;
+            while (node != null) {
+                if (node == other) return true;
+                node = node.getParent();
+            }
+            return false;
+        }
+
+        /**
+         * @return payload
+         */
+        public Payload getPayload() {
+            return payload;
+        }
+
+        /**
+         * @param payload Sets payload to the specified value.
+         */
+        public void setPayload( Payload payload ) {
+            this.payload = payload;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public final int hashCode() {
+            return nodeId.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Node) {
+                Node<Payload, PropertyPayload> that = (Node<Payload, PropertyPayload>)obj;
+                if (!this.nodeId.equals(that.nodeId)) return false;
+                return this.location.equals(that.location);
+            }
+            return false;
+        }
+
+        /**
+         * Utility method to obtain a string representation that uses the namespace prefixes where appropriate.
+         * 
+         * @param registry the namespace registry, or null if no prefixes should be used
+         * @return the string representation; never null
+         */
+        public String getString( NamespaceRegistry registry ) {
+            return "Cached node <" + nodeId + "> at " + location.getString(registry);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return getString(null);
+        }
+
+        /**
+         * Visit all nodes in the cache that are already loaded
+         * 
+         * @param visitor the visitor; may not be null
+         */
+        public void onLoadedNodes( NodeVisitor<Payload, PropertyPayload> visitor ) {
+            if (this.isLoaded()) {
+                // Create a queue. This queue will contain all the nodes to be visited,
+                // so if loading is not forced, then the queue should only contain already-loaded nodes...
+                LinkedList<Node<Payload, PropertyPayload>> queue = new LinkedList<Node<Payload, PropertyPayload>>();
+                queue.add(this);
+                while (!queue.isEmpty()) {
+                    Node<Payload, PropertyPayload> node = queue.poll();
+                    // Get an iterator over the children *before* we visit the node
+                    Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
+                    // Visit this node ...
+                    if (visitor.visit(node)) {
+                        // Visit the children ...
+                        int index = -1;
+                        while (iter.hasNext()) {
+                            Node<Payload, PropertyPayload> child = iter.next();
+                            if (child.isLoaded()) {
+                                queue.add(++index, child);
+                            }
+                        }
+                    }
+                }
+            }
+            visitor.finish();
+        }
+
+        /**
+         * Visit all loaded and unloaded nodes in the cache.
+         * 
+         * @param visitor the visitor; may not be null
+         */
+        public void onCachedNodes( NodeVisitor<Payload, PropertyPayload> visitor ) {
+            // Create a queue. This queue will contain all the nodes to be visited,
+            // so if loading is not forced, then the queue should only contain already-loaded nodes...
+            LinkedList<Node<Payload, PropertyPayload>> queue = new LinkedList<Node<Payload, PropertyPayload>>();
+            queue.add(this);
+            while (!queue.isEmpty()) {
+                Node<Payload, PropertyPayload> node = queue.poll();
+                // Get an iterator over the children *before* we visit the node
+                Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
+                // Visit this node ...
+                if (visitor.visit(node)) {
+                    // Visit the children ...
+                    int index = -1;
+                    while (iter.hasNext()) {
+                        Node<Payload, PropertyPayload> child = iter.next();
+                        queue.add(++index, child);
+                    }
+                }
+            }
+            visitor.finish();
+        }
+
+        /**
+         * Visit all changed nodes in the cache.
+         * 
+         * @param visitor the visitor; may not be null
+         */
+        public void onChangedNodes( NodeVisitor<Payload, PropertyPayload> visitor ) {
+            if (this.isChanged(true)) {
+                // Create a queue. This queue will contain all the nodes to be visited ...
+                LinkedList<Node<Payload, PropertyPayload>> changedNodes = new LinkedList<Node<Payload, PropertyPayload>>();
+                changedNodes.add(this);
+                while (!changedNodes.isEmpty()) {
+                    Node<Payload, PropertyPayload> node = changedNodes.poll();
+                    // Visit this node ...
+                    boolean visitChildren = true;
+                    if (node.changed) {
+                        visitChildren = visitor.visit(node);
+                    }
+                    if (visitChildren && node.changedBelow) {
+                        // Visit the children ...
+                        int index = -1;
+                        Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
+                        while (iter.hasNext()) {
+                            Node<Payload, PropertyPayload> child = iter.next();
+                            if (node.isChanged(true)) {
+                                changedNodes.add(++index, child);
+                            }
+                        }
+                    }
+                }
+            }
+            visitor.finish();
+        }
+
+        /**
+         * Obtain a snapshot of the structure below this node.
+         * 
+         * @param pathsOnly true if the snapshot should only include paths, or false if the entire locations should be included
+         * @return the snapshot
+         */
+        public StructureSnapshot<PropertyPayload> getSnapshot( final boolean pathsOnly ) {
+            final List<Snapshot<PropertyPayload>> snapshots = new ArrayList<Snapshot<PropertyPayload>>();
+            onCachedNodes(new NodeVisitor<Payload, PropertyPayload>() {
+                @Override
+                public boolean visit( Node<Payload, PropertyPayload> node ) {
+                    snapshots.add(new Snapshot<PropertyPayload>(node, pathsOnly, true));
+                    return node.isLoaded();
+                }
+            });
+            return new StructureSnapshot<PropertyPayload>(cache.context.getNamespaceRegistry(),
+                                                          Collections.unmodifiableList(snapshots));
+        }
+    }
+
+    public static enum PropertyStatus {
+        NEW,
+        CHANGED,
+        UNCHANGED;
+    }
+
+    @Immutable
+    public static final class PropertyInfo<PropertyPayload> {
+        private final PropertyId propertyId;
+        private final Property property;
+        private final PropertyStatus status;
+        private final boolean multiValued;
+        private final PropertyPayload payload;
+
+        protected PropertyInfo( PropertyId propertyId,
+                                Property property,
+                                boolean multiValued,
+                                PropertyStatus status,
+                                PropertyPayload payload ) {
+            assert propertyId != null;
+            assert property != null;
+            assert status != null;
+            this.propertyId = propertyId;
+            this.property = property;
+            this.status = status;
+            this.multiValued = multiValued;
+            this.payload = payload;
+        }
+
+        /**
+         * Get the status of this property.
+         * 
+         * @return the current status; never null
+         */
+        public PropertyStatus getStatus() {
+            return status;
+        }
+
+        /**
+         * Get the name of the property.
+         * 
+         * @return the propert name; never null
+         */
+        public Name getName() {
+            return propertyId.getPropertyName();
+        }
+
+        /**
+         * Get the Graph API property object containing the values.
+         * 
+         * @return the property object; never null
+         */
+        public Property getProperty() {
+            return property;
+        }
+
+        /**
+         * Get the identifier for this property.
+         * 
+         * @return the property identifier; never null
+         */
+        public PropertyId getPropertyId() {
+            return propertyId;
+        }
+
+        /**
+         * Get the payload for this property.
+         * 
+         * @return the payload; may be null if there is no payload
+         */
+        public PropertyPayload getPayload() {
+            return payload;
+        }
+
+        /**
+         * Determine whether this property has multiple values
+         * 
+         * @return multiValued
+         */
+        public boolean isMultiValued() {
+            return multiValued;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return propertyId.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof PropertyInfo) {
+                PropertyInfo<?> that = (PropertyInfo<?>)obj;
+                return propertyId.equals(that.getPropertyId());
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(propertyId);
+            if (payload != null) sb.append(payload);
+            if (property.isSingle()) {
+                sb.append(" with value ");
+            } else {
+                sb.append(" with values ");
+            }
+            sb.append(property.getValuesAsArray());
+            return sb.toString();
+        }
+    }
+
+    /**
+     * The node visitor.
+     * 
+     * @param <NodePayload> the type of node payload object
+     * @param <PropertyPayloadType> the type of property payload object
+     */
+    @NotThreadSafe
+    public static abstract class NodeVisitor<NodePayload, PropertyPayloadType> {
+        /**
+         * Visit the supplied node, returning whether the children should be visited.
+         * 
+         * @param node the node to be visited; never null
+         * @return true if the node's children should be visited, or false if no children should be visited
+         */
+        public abstract boolean visit( Node<NodePayload, PropertyPayloadType> node );
+
+        /**
+         * Method that should be called after all visiting has been done successfully (with no exceptions), including when no
+         * nodes were visited.
+         */
+        public void finish() {
+        }
+    }
+
+    /**
+     * An abstract base class for visitors that need to load nodes using a single batch for all read operations. To use, simply
+     * subclass and supply a {@link #visit(Node)} implementation that calls {@link #load(Node)} for each node that is to be
+     * loaded. When the visitor is {@link #finish() finished}, all of these nodes will be read from the store and loaded. The
+     * {@link #finishNodeAfterLoading(Node)} is called after each node is loaded, allowing the subclass to perform an operation on
+     * the newly-loaded nodes.
+     */
+    @NotThreadSafe
+    protected abstract class LoadNodesVisitor extends NodeVisitor<Payload, PropertyPayload> {
+        private Graph.Batch batch = GraphSession.this.store.batch();
+        private List<Node<Payload, PropertyPayload>> nodesToLoad = new LinkedList<Node<Payload, PropertyPayload>>();
+
+        /**
+         * Method that signals that the supplied node should be loaded (if it is not already loaded). This method should be called
+         * from within the {@link #visit(Node)} method of the subclass.
+         * 
+         * @param node the node that should be loaded (if it is not already)
+         */
+        protected void load( Node<Payload, PropertyPayload> node ) {
+            if (node != null && !node.isLoaded()) {
+                nodesToLoad.add(node);
+                batch.read(node.getLocation());
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.NodeVisitor#finish()
+         */
+        @Override
+        public void finish() {
+            super.finish();
+            if (!nodesToLoad.isEmpty()) {
+                // Read all of the children in one batch ...
+                Results results = batch.execute();
+                // Now load all of the children into the correct node ...
+                for (Node<Payload, PropertyPayload> childToBeRead : nodesToLoad) {
+                    org.jboss.dna.graph.Node persistentNode = results.getNode(childToBeRead.getLocation());
+                    nodeOperations.update(persistentNode, childToBeRead);
+                    finishNodeAfterLoading(childToBeRead);
+                }
+            }
+        }
+
+        /**
+         * Method that is called on each node loaded by this visitor. This method does nothing by default.
+         * 
+         * @param node the just-loaded node; never null
+         */
+        protected void finishNodeAfterLoading( Node<Payload, PropertyPayload> node ) {
+            // do nothing
+        }
+    }
+
+    /**
+     * A visitor that ensures that all children of a node are loaded, and provides a hook to {@link #finishNodeAfterLoading(Node)
+     * post-process the parent}.
+     */
+    @NotThreadSafe
+    protected class LoadAllChildrenVisitor extends LoadNodesVisitor {
+        private List<Node<Payload, PropertyPayload>> parentsVisited = new LinkedList<Node<Payload, PropertyPayload>>();
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.NodeVisitor#visit(GraphSession.Node)
+         */
+        @Override
+        public boolean visit( Node<Payload, PropertyPayload> node ) {
+            parentsVisited.add(node);
+            Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
+            while (iter.hasNext()) {
+                load(iter.next());
+            }
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.LoadNodesVisitor#finish()
+         */
+        @Override
+        public void finish() {
+            super.finish();
+            for (Node<Payload, PropertyPayload> parent : parentsVisited) {
+                finishParentAfterLoading(parent);
+            }
+        }
+
+        /**
+         * Method that is called at the end of the {@link #finish()} stage with each parent node whose children were all loaded.
+         * 
+         * @param parentNode the parent of the just-loaded children; never null
+         */
+        protected void finishParentAfterLoading( Node<Payload, PropertyPayload> parentNode ) {
+            // do nothing
+        }
+    }
+
+    protected static final class Snapshot<PropertyPayload> {
+        private final Location location;
+        private final boolean isLoaded;
+        private final boolean isChanged;
+        private final Collection<PropertyInfo<PropertyPayload>> properties;
+        private final NodeId id;
+
+        protected Snapshot( Node<?, PropertyPayload> node,
+                            boolean pathsOnly,
+                            boolean includeProperties ) {
+            this.location = pathsOnly && node.getLocation().hasIdProperties() ? Location.create(node.getLocation().getPath()) : node.getLocation();
+            this.isLoaded = node.isLoaded();
+            this.isChanged = node.isChanged(false);
+            this.id = node.getNodeId();
+            this.properties = includeProperties ? node.getProperties() : null;
+        }
+
+        /**
+         * @return location
+         */
+        public Location getLocation() {
+            return location;
+        }
+
+        /**
+         * @return isChanged
+         */
+        public boolean isChanged() {
+            return isChanged;
+        }
+
+        /**
+         * @return isLoaded
+         */
+        public boolean isLoaded() {
+            return isLoaded;
+        }
+
+        /**
+         * @return id
+         */
+        public NodeId getId() {
+            return id;
+        }
+
+        /**
+         * @return properties
+         */
+        public Collection<PropertyInfo<PropertyPayload>> getProperties() {
+            return properties;
+        }
+    }
+
+    /**
+     * A read-only visitor that walks the cache to obtain a snapshot of the cache structure. The resulting snapshot contains the
+     * location of each node in the tree, including unloaded nodes.
+     * 
+     * @param <PropertyPayload> the property payload
+     */
+    @Immutable
+    public static final class StructureSnapshot<PropertyPayload> implements Iterable<Snapshot<PropertyPayload>> {
+        private final List<Snapshot<PropertyPayload>> snapshotsInPreOrder;
+        private final NamespaceRegistry registry;
+
+        protected StructureSnapshot( NamespaceRegistry registry,
+                                     List<Snapshot<PropertyPayload>> snapshotsInPreOrder ) {
+            assert snapshotsInPreOrder != null;
+            this.snapshotsInPreOrder = snapshotsInPreOrder;
+            this.registry = registry;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Iterable#iterator()
+         */
+        public Iterator<Snapshot<PropertyPayload>> iterator() {
+            return snapshotsInPreOrder.iterator();
+        }
+
+        /**
+         * Get the Location for every node in this cache
+         * 
+         * @return the node locations (in pre-order)
+         */
+        public List<Snapshot<PropertyPayload>> getSnapshotsInPreOrder() {
+            return snapshotsInPreOrder;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            int maxLength = 0;
+            for (Snapshot<PropertyPayload> snapshot : this) {
+                String path = snapshot.getLocation().getPath().getString(registry);
+                maxLength = Math.max(maxLength, path.length());
+            }
+            StringBuilder sb = new StringBuilder();
+            for (Snapshot<PropertyPayload> snapshot : this) {
+                Location location = snapshot.getLocation();
+                sb.append(StringUtil.justifyLeft(location.getPath().getString(registry), maxLength, ' '));
+                // Append the node identifier ...
+                sb.append(StringUtil.justifyRight(snapshot.getId().toString(), 10, ' '));
+                // Append the various state flags
+                if (snapshot.isChanged()) sb.append(" (*)");
+                else if (!snapshot.isLoaded()) sb.append(" (-)");
+                else sb.append("    ");
+                // Append the location's identifier properties ...
+                if (location.hasIdProperties()) {
+                    sb.append("  ");
+                    if (location.getIdProperties().size() == 1 && location.getUuid() != null) {
+                        sb.append(location.getUuid());
+                    } else {
+                        boolean first = true;
+                        sb.append('[');
+                        for (Property property : location) {
+                            sb.append(property.getString(registry));
+                            if (first) first = false;
+                            else sb.append(", ");
+                        }
+                        sb.append(']');
+                    }
+                }
+                // Append the property information ...
+                if (snapshot.getProperties() != null) {
+                    boolean first = true;
+                    sb.append("  {");
+                    for (PropertyInfo<?> info : snapshot.getProperties()) {
+                        if (first) first = false;
+                        else sb.append("} {");
+                        sb.append(info.getProperty().getString(registry));
+                    }
+                    sb.append("}");
+                }
+                sb.append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    @NotThreadSafe
+    protected static final class RefreshState<Payload, PropertyPayload> {
+        private final Set<Node<Payload, PropertyPayload>> refresh = new HashSet<Node<Payload, PropertyPayload>>();
+
+        public void markAsRequiringRefresh( Node<Payload, PropertyPayload> node ) {
+            refresh.add(node);
+        }
+
+        public boolean requiresRefresh( Node<Payload, PropertyPayload> node ) {
+            return refresh.contains(node);
+        }
+
+        public Set<Node<Payload, PropertyPayload>> getNodesToBeRefreshed() {
+            return refresh;
+        }
+    }
+
+    @NotThreadSafe
+    protected final static class Dependencies {
+        private Set<NodeId> requireChangesTo;
+        private NodeId movedFrom;
+
+        public Dependencies() {
+        }
+
+        /**
+         * @return movedFrom
+         */
+        public NodeId getMovedFrom() {
+            return movedFrom;
+        }
+
+        /**
+         * Record that this node is being moved from one parent to another. This method only records the original parent, so
+         * subsequent calls to this method do nothing.
+         * 
+         * @param movedFrom the identifier of the original parent of this node
+         */
+        public void setMovedFrom( NodeId movedFrom ) {
+            if (this.movedFrom == null) this.movedFrom = movedFrom;
+        }
+
+        /**
+         * @return requireChangesTo
+         */
+        public Set<NodeId> getRequireChangesTo() {
+            return requireChangesTo != null ? requireChangesTo : Collections.<NodeId>emptySet();
+        }
+
+        /**
+         * @param other the other node that changes are dependent upon
+         */
+        public void addRequireChangesTo( NodeId other ) {
+            if (other == null) return;
+            if (requireChangesTo == null) {
+                requireChangesTo = new HashSet<NodeId>();
+            }
+            requireChangesTo.add(other);
+        }
+    }
+
+    /**
+     * An immutable identifier for a node, used within the {@link GraphSession}.
+     */
+    @Immutable
+    public final static class NodeId {
+
+        private final long nodeId;
+
+        /**
+         * Create a new node identifier.
+         * 
+         * @param nodeId unique identifier
+         */
+        public NodeId( long nodeId ) {
+            this.nodeId = nodeId;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return (int)nodeId;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof NodeId) {
+                NodeId that = (NodeId)obj;
+                return this.nodeId == that.nodeId;
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return Long.toString(nodeId);
+        }
+    }
+
+    /**
+     * An immutable identifier for a property on a node, used within the {@link GraphSession}.
+     */
+    @Immutable
+    public final static class PropertyId {
+        private final NodeId nodeId;
+        private final Name propertyName;
+        private final int hc;
+
+        public PropertyId( NodeId nodeId,
+                           Name propertyName ) {
+            this.nodeId = nodeId;
+            this.propertyName = propertyName;
+            this.hc = HashCode.compute(this.nodeId, this.propertyName);
+        }
+
+        /**
+         * Get the identifier of the node on which the property exists.
+         * 
+         * @return the node identifier; never null
+         */
+        public NodeId getNodeId() {
+            return nodeId;
+        }
+
+        /**
+         * Get the name of the property.
+         * 
+         * @return the property name; never null
+         */
+        public Name getPropertyName() {
+            return propertyName;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return hc;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof PropertyId) {
+                PropertyId that = (PropertyId)obj;
+                if (this.hc != that.hc) return false;
+                if (!this.nodeId.equals(that.nodeId)) return false;
+                return this.propertyName.equals(that.propertyName);
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return this.nodeId.toString() + '@' + this.propertyName.toString();
+        }
+    }
+}

@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -45,6 +46,13 @@ public interface Node extends Iterable<Location> {
      * @return the graph
      */
     Graph getGraph();
+
+    /**
+     * Get the time at which this node representation should no longer be used.
+     * 
+     * @return the expiration time, or null if there is none
+     */
+    DateTime getExpirationTime();
 
     /**
      * Get the location of the node.

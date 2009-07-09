@@ -121,6 +121,11 @@ public final class GraphI18n {
     public static I18n moveLimitedToBeWithinSingleSource;
     public static I18n cloneLimitedToBeWithinSingleSource;
 
+    /* Session */
+    public static I18n unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+    public static I18n unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+    public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
+
     static {
         try {
             I18n.initialize(GraphI18n.class);
