@@ -23,24 +23,28 @@
  */
 package org.jboss.dna.jcr;
 
-import java.net.URI;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.jboss.dna.common.collection.Problem;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.security.config.IDTrustConfiguration;
+import org.xml.sax.SAXException;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
  */
-public class InMemoryRepositoryStub extends RepositoryStub {
+public class DnaRepositoryStub extends RepositoryStub {
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
-    private JcrRepository repository;
+    private static String currentConfigurationName = "default";
+
+    private final Properties configProps;
+    private final JcrRepository repository;
 
     static {
 
@@ -55,56 +59,76 @@ public class InMemoryRepositoryStub extends RepositoryStub {
         }
     }
 
-    public InMemoryRepositoryStub( Properties env ) {
+    public DnaRepositoryStub( Properties env ) {
         super(env);
 
         // Create the in-memory (DNA) repository
         JcrConfiguration configuration = new JcrConfiguration();
-        // Define the single in-memory repository source ...
-        configuration.repositorySource("Store")
-                     .usingClass(InMemoryRepositorySource.class.getName())
-                     .loadedFromClasspath()
-                     .setDescription("JCR Repository persistent store");
-        // Define the JCR repository for the source ...
-        configuration.repository(REPOSITORY_SOURCE_NAME)
-                     .setSource("Store")
-                     .setOption(Option.PROJECT_NODE_TYPES, "false")
-                     .addNodeTypes(getClass().getClassLoader().getResource("tck_test_types.cnd"));
-        // Save and build the engine ...
-        configuration.save();
+        try {
+            configProps = new Properties();
+            String propsFileName = "/tck/" + currentConfigurationName + "/repositoryOverlay.properties";
+            InputStream propsStream = getClass().getResourceAsStream(propsFileName);
+            configProps.load(propsStream);
+
+            String configFileName = "/tck/" + currentConfigurationName + "/configRepository.xml";
+            configuration.loadFrom(getClass().getResourceAsStream(configFileName));
+
+            // Add the the node types for the source ...
+            configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream("/tck/tck_test_types.cnd"));
+        } catch (SAXException se) {
+            se.printStackTrace();
+            throw new IllegalStateException(se);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new IllegalStateException(ioe);
+        }
+
         JcrEngine engine = configuration.build();
         engine.start();
 
+        Problems problems = engine.getRepositoryService().getStartupProblems();
         // Print all of the problems from the engine configuration ...
-        for (Problem problem : engine.getProblems()) {
+        for (Problem problem : problems) {
             System.err.println(problem);
         }
-        if (engine.getProblems().hasErrors()) {
+        if (problems.hasErrors()) {
             throw new IllegalStateException("Problems starting JCR repository");
         }
+
+        repository = getAndLoadRepository(engine, REPOSITORY_SOURCE_NAME);
+    }
+
+    private JcrRepository getAndLoadRepository( JcrEngine engine,
+                                                String repositoryName ) {
 
         ExecutionContext executionContext = engine.getExecutionContext();
         executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
         try {
-            repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
+            JcrRepository repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
 
             // Set up some sample nodes in the graph to match the expected test configuration
             Graph graph = Graph.create(repository.getRepositorySourceName(),
                                        engine.getRepositoryConnectionFactory(),
                                        executionContext);
             Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
-            // URI xmlContent = new File("src/test/resources/repositoryForTckTests.xml").toURI();
-            URI xmlContent = getClass().getClassLoader().getResource("repositoryForTckTests.xml").toURI();
-            graph.importXmlFrom(xmlContent).into(destinationPath);
-            
+
+            InputStream xmlStream = getClass().getResourceAsStream("/tck/repositoryForTckTests.xml");
+            graph.importXmlFrom(xmlStream).into(destinationPath);
+
             graph.createWorkspace().named("otherWorkspace");
+            return repository;
 
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.
             ex.printStackTrace();
             throw new IllegalStateException("Failed to initialize the repository with text content.", ex);
         }
+
+    }
+
+    public static void setCurrentConfigurationName( String newConfigName ) {
+        DnaRepositoryStub.currentConfigurationName = newConfigName;
     }
 
     /**
@@ -116,4 +140,13 @@ public class InMemoryRepositoryStub extends RepositoryStub {
     public JcrRepository getRepository() {
         return repository;
     }
+
+    @Override
+    public String getProperty( String name ) {
+        String value = configProps.getProperty(name);
+        if (value != null) return value;
+
+        return super.getProperty(name);
+    }
+
 }

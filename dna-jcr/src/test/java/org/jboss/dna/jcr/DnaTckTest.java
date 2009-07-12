@@ -325,7 +325,7 @@ public class DnaTckTest extends AbstractJCRTest {
      * 
      * @throws Exception if an error occurs
      */
-    public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
+    public void failsFromDna466TestShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
         session = helper.getSuperuserSession("otherWorkspace");
         assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
 
@@ -337,14 +337,14 @@ public class DnaTckTest extends AbstractJCRTest {
         session.save();
         session.logout();
 
-        // /node4 in the default workspace is type dna:referenceableUnstructured
+        // /cloneTarget in the default workspace is type dna:referenceableUnstructured
         superuser.getRootNode().addNode("cloneTarget", nodetype1);
 
         // /node3 in the default workspace is type dna:referenceableUnstructured
         superuser.getRootNode().addNode(nodeName3, nodetype1);
         superuser.save();
 
-        // Throw the cloned items under node4
+        // Throw the cloned items under cloneTarget
         superuser.getWorkspace().clone("otherWorkspace", "/cloneSource", "/cloneTarget/cloneSource", false);
 
         superuser.refresh(false);

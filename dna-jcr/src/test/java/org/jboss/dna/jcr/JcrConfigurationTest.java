@@ -30,7 +30,7 @@ import static org.jboss.dna.graph.IsNodeWithChildren.hasChildren;
 import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
 import java.io.File;
-import java.net.URL;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -332,8 +332,8 @@ public class JcrConfigurationTest {
         assertThat(configuration.repository("Car Repository").getSource(), is("Cars"));
 
         // Load the node types from the CND file, and save the configuration ...
-        URL nodeTypesUrl = getClass().getClassLoader().getResource("tck_test_types.cnd");
-        configuration.repository("Car Repository").addNodeTypes(nodeTypesUrl);
+        InputStream nodeTypes = getClass().getResourceAsStream("/tck/tck_test_types.cnd");
+        configuration.repository("Car Repository").addNodeTypes(nodeTypes);
         configuration.save();
 
         // Verify there were no problems loading the CND file ...
