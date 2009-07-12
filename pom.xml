@@ -137,6 +137,7 @@
 		<module>extensions/dna-sequencer-zip</module>
 		<module>extensions/dna-connector-federation</module>
 		<module>extensions/dna-connector-filesystem</module>
+		<module>extensions/dna-connector-infinispan</module>
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
@@ -596,7 +597,7 @@
 			</plugin>
 	    </plugins>
 	</reporting>
-	
+
 	<repositories>
 	<repository>
       <id>apiviz.release</id>

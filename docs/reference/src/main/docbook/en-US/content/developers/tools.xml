@@ -488,8 +488,8 @@
 			<programlisting>$ svn checkout https://anonsvn.jboss.org/repos/dna/tags/dna-{release-number}/</programlisting>
 			<para>
 				Then, go into the new directory, and perform a Maven deploy:
-			<para>
-				<programlisting>$ mvn clean deploy</programlisting>
+			</para>
+			<programlisting>$ mvn clean deploy</programlisting>
 			<para>
 				This will rebuild all the artifacts (from your local copy of the <emphasis>tagged</emphasis> source) and deploy them
 				to the local file system, which is comprised of a local checkout of the JBoss Maven2 repository 

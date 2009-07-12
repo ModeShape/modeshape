@@ -188,6 +188,7 @@
 <!ENTITY SVNRepositorySource  				"<ulink url='&API;connector/svn/SVNRepositorySource.html'><classname>SVNRepositorySource</classname></ulink>">
 <!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">
 <!ENTITY JBossCacheSource  						"<ulink url='&API;connector/jbosscache/JBossCacheSource.html'><classname>JBossCacheSource</classname></ulink>">
+<!ENTITY InfinispanSource  						"<ulink url='&API;connector/infinispan/InfinispanSource.html'><classname>InfinispanSource</classname></ulink>">
 <!ENTITY ImageMetadataSequencer		  	"<ulink url='&API;sequencer/image/ImageMetadataSequencer.html'><classname>ImageMetadataSequencer</classname></ulink>">
 <!ENTITY ImageMetadata						  	"<ulink url='&API;sequencer/image/ImageMetadata.html'><classname>ImageMetadata</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">
