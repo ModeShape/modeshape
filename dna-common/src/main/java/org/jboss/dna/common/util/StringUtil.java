@@ -123,6 +123,12 @@ public class StringUtil {
                 matcher.appendReplacement(text, matcher.group());
             } else {
                 Object parameter = parameters[ndx];
+                
+                // Automatically pretty-print arrays
+                if (parameter != null && parameter.getClass().isArray()) {
+                    parameter = Arrays.asList((Object[])parameter);
+                }
+                
                 matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
             }
         }
