@@ -61,6 +61,7 @@ public class JcrResourcesTest {
         final String password ="password";
 
         Authenticator.setDefault(new Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication (login, password.toCharArray());
             }
@@ -87,6 +88,7 @@ public class JcrResourcesTest {
         final String password ="invalidpassword";
 
         Authenticator.setDefault(new Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication (login, password.toCharArray());
             }
@@ -112,6 +114,7 @@ public class JcrResourcesTest {
         final String password ="password";
 
         Authenticator.setDefault(new Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication (login, password.toCharArray());
             }
@@ -375,7 +378,7 @@ public class JcrResourcesTest {
         JSONObject properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(1));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:base"));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
         
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
@@ -399,7 +402,7 @@ public class JcrResourcesTest {
         JSONObject properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:base"));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
         assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
 
         JSONArray values = properties.getJSONArray("jcr:mixinTypes");
@@ -424,7 +427,7 @@ public class JcrResourcesTest {
         properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:base"));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
         assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
 
         values = properties.getJSONArray("jcr:mixinTypes");

@@ -51,5 +51,5 @@
 - * (undefined) multiple version
 - * (undefined) version
 + jcr:system (dna:system) = dna:system autocreated mandatory protected ignore
-+ * (nt:base) = nt:base multiple version
++ * (nt:base) = nt:unstructured multiple version
 
