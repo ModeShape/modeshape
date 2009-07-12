@@ -95,7 +95,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
     public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
 
     /**
-     * The initial {@link #getNameOfDefaultWorkspace() name of the default workspace} is "{@value} ", unless otherwise specified.
+     * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
@@ -365,7 +365,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
      * 
      * @return the name of the workspace that should be used by default; never null
      */
-    public String getNameOfDefaultWorkspace() {
+    public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
 
@@ -375,7 +375,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
      * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
      *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
      */
-    public synchronized void setNameOfDefaultWorkspace( String nameOfDefaultWorkspace ) {
+    public synchronized void setDefaultWorkspaceName( String nameOfDefaultWorkspace ) {
         this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     }
 
@@ -472,7 +472,8 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
             if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<UUID, MapNode>();
 
             // Now create the repository ...
-            this.repository = new JBossCacheRepository(getName(), this.rootNodeUuid, createNewCache(cacheFactory, getName()));
+            this.repository = new JBossCacheRepository(getName(), this.rootNodeUuid, this.defaultWorkspace,
+                                                       createNewCache(cacheFactory, getName()));
 
             // Create the set of initial names ...
             for (String initialName : getPredefinedWorkspaceNames())
@@ -576,7 +577,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(CACHE_FACTORY_JNDI_NAME, getCacheFactoryJndiName()));
         ref.add(new StringRefAddr(CACHE_CONFIGURATION_NAME, getCacheConfigurationName()));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
-        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getNameOfDefaultWorkspace()));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -654,7 +655,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
             }
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
-            if (defaultWorkspace != null) source.setNameOfDefaultWorkspace(defaultWorkspace);
+            if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;

@@ -54,7 +54,7 @@ public class JBossCacheConnectorReadableTest extends ReadableConnectorTest {
         JBossCacheSource source = new JBossCacheSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setNameOfDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
 
         // Set up the mock JNDI ...

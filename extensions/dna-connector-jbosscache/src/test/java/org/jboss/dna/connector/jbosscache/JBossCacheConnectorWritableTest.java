@@ -52,7 +52,7 @@ public class JBossCacheConnectorWritableTest extends WritableConnectorTest {
         JBossCacheSource source = new JBossCacheSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setNameOfDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
 
         // Set up the mock JNDI ...
