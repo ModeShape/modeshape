@@ -114,7 +114,8 @@ public class ImportExportTest {
                                    String targetPath,
                                    ExportType useSystemView,
                                    boolean skipBinary,
-                                   boolean noRecurse ) throws Exception {
+                                   boolean noRecurse,
+                                   boolean useWorkspace ) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         if (useSystemView == ExportType.SYSTEM) {
@@ -125,11 +126,17 @@ public class ImportExportTest {
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 
-        session.importXML(targetPath, bais, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        if (useWorkspace) {
+            // import via workspace ...
+            session.getWorkspace().importXML(targetPath, bais, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        } else {
+            // import via session ...
+            session.importXML(targetPath, bais, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        }
     }
 
     @Test
-    public void shouldImportExportEscapedXmlCharactersInSystemView() throws Exception {
+    public void shouldImportExportEscapedXmlCharactersInSystemViewUsingSession() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
@@ -140,7 +147,26 @@ public class ImportExportTest {
         assertThat(sourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
         sourceNode.addNode(BAD_CHARACTER_STRING);
 
-        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.SYSTEM, false, false);
+        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.SYSTEM, false, false, false);
+        Node newSourceNode = targetNode.getNode(testName + "Source");
+        newSourceNode.getNode(BAD_CHARACTER_STRING);
+        assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
+    }
+
+    @Test
+    public void shouldImportExportEscapedXmlCharactersInSystemViewUsingWorkspace() throws Exception {
+        String testName = "importExportEscapedXmlCharacters";
+        Node rootNode = session.getRootNode();
+        Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
+        Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
+
+        // Test data
+        sourceNode.setProperty("badcharacters", BAD_CHARACTER_STRING);
+        assertThat(sourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
+        sourceNode.addNode(BAD_CHARACTER_STRING);
+        session.save();
+
+        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.SYSTEM, false, false, true);
         Node newSourceNode = targetNode.getNode(testName + "Source");
         newSourceNode.getNode(BAD_CHARACTER_STRING);
         assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
@@ -148,7 +174,7 @@ public class ImportExportTest {
 
     @Ignore( "JR TCK is broken" )
     @Test
-    public void shouldImportExportEscapedXmlCharactersInDocumentView() throws Exception {
+    public void shouldImportExportEscapedXmlCharactersInDocumentViewUsingSession() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
@@ -159,7 +185,7 @@ public class ImportExportTest {
         assertThat(sourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
         sourceNode.addNode(BAD_CHARACTER_STRING);
 
-        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.DOCUMENT, false, false);
+        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.DOCUMENT, false, false, false);
         Node newSourceNode = targetNode.getNode(testName + "Source");
         newSourceNode.getNode(BAD_CHARACTER_STRING);
         assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));

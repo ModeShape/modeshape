@@ -49,6 +49,7 @@ import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.ConstraintViolationException;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
@@ -62,9 +63,11 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
+import org.jboss.dna.graph.session.GraphSession;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrNamespaceRegistry.Behavior;
+import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -811,5 +814,44 @@ class JcrSession implements Session {
      */
     public void save() throws RepositoryException {
         cache.save();
+    }
+
+    /**
+     * Get a snapshot of the current session state. This snapshot is immutable and will not reflect any future state changes in
+     * the session.
+     * 
+     * @return the snapshot; never null
+     */
+    public Snapshot getSnapshot() {
+        return new Snapshot(cache.graphSession().getRoot().getSnapshot(false));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return getSnapshot().toString();
+    }
+
+    @Immutable
+    public class Snapshot {
+        private final GraphSession.StructureSnapshot<JcrPropertyPayload> rootSnapshot;
+
+        protected Snapshot( GraphSession.StructureSnapshot<JcrPropertyPayload> snapshot ) {
+            this.rootSnapshot = snapshot;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return rootSnapshot.toString();
+        }
     }
 }

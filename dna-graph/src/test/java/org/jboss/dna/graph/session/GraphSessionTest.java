@@ -446,7 +446,7 @@ public class GraphSessionTest {
         // The affected nodes should now be stale ...
         assertThat(sports.isStale(), is(true));
         assertThat(utility.isStale(), is(true));
-        assertThat(cars.isStale(), is(false)); // not stale because it was unloaded
+        assertThat(cars.isStale(), is(true));
         assertThat(cars.isLoaded(), is(false));
         assertThat(root.isStale(), is(false)); // not touched during saves
 
@@ -454,6 +454,7 @@ public class GraphSessionTest {
         sports = cache.findNodeWith(path("/Cars/Utility/Sports"));
         assertConnectionsUsed(1);
         utility = cache.findNodeWith(path("/Cars/Utility"));
+        cars = cache.findNodeWith(path("/Cars"));
         assertNoMoreConnectionsUsed();
 
         assertChildren(cars, "Hybrid", "Luxury", "Utility");
@@ -567,11 +568,12 @@ public class GraphSessionTest {
         // The affected nodes should now be stale ...
         assertThat(sports.isStale(), is(true));
         assertThat(utility.isStale(), is(true));
-        assertThat(cars.isStale(), is(false)); // not stale because it was unloaded
+        assertThat(cars.isStale(), is(true));
         assertThat(cars.isLoaded(), is(false));
         assertThat(root.isStale(), is(false)); // not touched during saves
 
         // Now the state should reflect our changes ...
+        cars = cache.findNodeWith(path("/Cars"));
         assertChildren(cars, "Hybrid", "Utility", "Sports", "Luxury");
 
         // Now there should be no changes ...
@@ -607,6 +609,7 @@ public class GraphSessionTest {
         assertConnectionsUsed(2); // 1 to load children required by validation, 1 to perform save
 
         // Now the state should reflect our changes ...
+        cars = cache.findNodeWith(path("/Cars"));
         assertChildren(cars, "Hybrid", "Experimental", "Sports", "Luxury", "Utility", "Experimental[2]", "Experimental[3]");
 
         // Now there should be no changes ...

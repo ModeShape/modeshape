@@ -92,10 +92,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     final org.jboss.dna.graph.property.Property property() throws RepositoryException {
+        if (propertyInfo() == null) {
+            int x = 0;
+        }
         return propertyInfo().getProperty();
     }
 
     JcrValue createValue( Object value ) throws RepositoryException {
+        if (value == null) {
+            int x = 0;
+        }
         return new JcrValue(context().getValueFactories(), this.cache, payload().getPropertyType(), value);
     }
 

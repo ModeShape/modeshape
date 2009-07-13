@@ -243,18 +243,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an exception
      */
     public final boolean isNodeType( Name nodeTypeName ) throws RepositoryException {
-        JcrNodeType nodeType = getPrimaryNodeType();
-        if (nodeType.isNodeType(nodeTypeName)) {
-            return true;
-        }
-        JcrNodeTypeManager nodeTypes = session().nodeTypeManager();
-        for (Name mixinTypeName : getMixinTypeNames()) {
-            JcrNodeType mixinType = nodeTypes.getNodeType(mixinTypeName);
-            if (mixinType.isNodeType(nodeTypeName)) {
-                return true;
-            }
-        }
-        return false;
+        return cache.isNodeType(nodeInfo(), nodeTypeName);
     }
 
     /**
@@ -505,7 +494,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an error finding the property with the supplied name
      */
     public final Property getProperty( Name propertyName ) throws RepositoryException {
-        return cache.findJcrProperty(nodeId, location.getPath(), propertyName);
+        Property property = cache.findJcrProperty(nodeId, location.getPath(), propertyName);
+        // Must be referenceable in order to return this property ...
+        if (property != null && JcrLexicon.UUID.equals(propertyName) && !isReferenceable()) return null;
+        return property;
     }
 
     /**

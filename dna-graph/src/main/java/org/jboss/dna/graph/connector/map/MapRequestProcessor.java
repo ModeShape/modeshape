@@ -88,7 +88,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         MapNode node = getTargetNode(workspace, request, request.of());
         if (node == null) return;
-        Location actualLocation = getActualLocation(request.of().getPath(), node);
+        Location actualLocation = getActualLocation(request.of(), node);
         Path path = actualLocation.getPath();
         // Get the names of the children ...
         List<MapNode> children = node.getChildren();
@@ -107,7 +107,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode node = getTargetNode(workspace, request, request.at());
         if (node == null) return;
         // Get the properties of the node ...
-        Location actualLocation = getActualLocation(request.at().getPath(), node);
+        Location actualLocation = getActualLocation(request.at(), node);
         request.addProperty(propertyFactory.create(DnaLexicon.UUID, node.getUuid()));
         for (Property property : node.getProperties().values()) {
             request.addProperty(property);
@@ -140,7 +140,7 @@ public class MapRequestProcessor extends RequestProcessor {
                                               request.desiredSegment(),
                                               request.removeExisting());
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
-        Location oldLocation = getActualLocation(request.from().getPath(), node);
+        Location oldLocation = getActualLocation(request.from(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
         recordChange(request);
@@ -165,7 +165,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode newParent = newWorkspace.getNode(newParentPath);
         MapNode newNode = workspace.copyNode(getExecutionContext(), node, newWorkspace, newParent, desiredName, true);
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
-        Location oldLocation = getActualLocation(request.from().getPath(), node);
+        Location oldLocation = getActualLocation(request.from(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
         recordChange(request);
@@ -243,7 +243,7 @@ public class MapRequestProcessor extends RequestProcessor {
                 node.getProperties().put(propName, property);
             }
         }
-        Location actualLocation = getActualLocation(path, node);
+        Location actualLocation = getActualLocation(Location.create(path), node);
         request.setActualLocationOfNode(actualLocation);
         recordChange(request);
     }
@@ -260,7 +260,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode node = getTargetNode(workspace, request, request.at());
         if (node == null) return;
         workspace.removeNode(getExecutionContext(), node);
-        Location actualLocation = getActualLocation(request.at().getPath(), node);
+        Location actualLocation = getActualLocation(request.at(), node);
         request.setActualLocationOfNode(actualLocation);
         recordChange(request);
     }
@@ -301,7 +301,7 @@ public class MapRequestProcessor extends RequestProcessor {
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
         assert node.getParent() == newParent;
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
-        Location oldLocation = getActualLocation(request.from().getPath(), node);
+        Location oldLocation = getActualLocation(request.from(), node);
         Location newLocation = Location.create(newPath, node.getUuid());
         request.setActualLocations(oldLocation, newLocation);
         recordChange(request);
@@ -329,7 +329,7 @@ public class MapRequestProcessor extends RequestProcessor {
                 node.getProperties().put(propName, property);
             }
         }
-        Location actualLocation = getActualLocation(request.on().getPath(), node);
+        Location actualLocation = getActualLocation(request.on(), node);
         request.setActualLocationOfNode(actualLocation);
         recordChange(request);
     }
@@ -452,8 +452,9 @@ public class MapRequestProcessor extends RequestProcessor {
         }
     }
 
-    protected Location getActualLocation( Path path,
+    protected Location getActualLocation( Location location,
                                           MapNode node ) {
+        Path path = location.getPath();
         if (path == null) {
             // Find the path on the node ...
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
@@ -464,6 +465,11 @@ public class MapRequestProcessor extends RequestProcessor {
                 n = n.getParent();
             }
             path = pathFactory.createAbsolutePath(segments);
+        }
+        // If there is a UUID in the location, it should match the node's.
+        assert location.getUuid() == null || location.getUuid().equals(node.getUuid());
+        if (location.hasIdProperties()) {
+            return location.with(path);
         }
         return Location.create(path, node.getUuid());
     }

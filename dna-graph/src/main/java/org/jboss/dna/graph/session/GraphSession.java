@@ -275,7 +275,8 @@ public class GraphSession<Payload, PropertyPayload> {
             CheckArg.isNotNull(id, "id");
             CheckArg.isNotNull(path, "path");
         }
-        Node<Payload, PropertyPayload> result = nodes.get(id); // if found, the user should have read privilege since it was
+        Node<Payload, PropertyPayload> result = id != null ? nodes.get(id) : null; // if found, the user should have read
+        // privilege since it was
         // already in the cache
         if (result == null || result.isStale()) {
             assert path != null;
@@ -667,6 +668,7 @@ public class GraphSession<Payload, PropertyPayload> {
             root.childrenByName = null;
             root.expirationTime = Long.MAX_VALUE;
             root.changedBelow = false;
+            root.payload = null;
         }
     }
 
@@ -781,13 +783,11 @@ public class GraphSession<Payload, PropertyPayload> {
         // LinkedList<Request> oldRequests = this.requests;
         this.requests = new LinkedList<Request>();
         this.requestBuilder = new BatchRequestBuilder(this.requests);
-        operations = store.batch(this.requestBuilder);
+        this.operations = store.batch(this.requestBuilder);
 
-        // Remove all the cached items that have been changed or deleted ...
+        // Remove all the cached items ...
         this.root.clearChanges();
-
-        // Remove all the changed and deleted infos ...
-        changeDependencies.clear();
+        this.root.unload();
     }
 
     /**
@@ -874,6 +874,7 @@ public class GraphSession<Payload, PropertyPayload> {
 
         // Remove all the cached, changed or deleted items that were just saved ...
         node.clearChanges();
+        node.unload();
     }
 
     protected Node<Payload, PropertyPayload> createNode( Node<Payload, PropertyPayload> parent,
@@ -925,7 +926,7 @@ public class GraphSession<Payload, PropertyPayload> {
     protected void recordUnloaded( final Node<Payload, PropertyPayload> node ) {
         if (node.isLoaded() && node.getChildrenCount() > 0) {
             // Walk the branch and remove all nodes from the map of all nodes ...
-            node.onLoadedNodes(new NodeVisitor<Payload, PropertyPayload>() {
+            node.onCachedNodes(new NodeVisitor<Payload, PropertyPayload>() {
                 @SuppressWarnings( "synthetic-access" )
                 @Override
                 public boolean visit( Node<Payload, PropertyPayload> unloaded ) {
@@ -2204,20 +2205,39 @@ public class GraphSession<Payload, PropertyPayload> {
         }
 
         /**
-         * Create a new child node with the supplied name and one initial property. The same-name-sibling index will be determined
-         * based upon the existing children.
+         * Create a new child node with the supplied name and multiple initial properties. The same-name-sibling index will be
+         * determined based upon the existing children.
          * 
          * @param name the name of the new child node
-         * @param property a property for the new node
+         * @param properties the (non-identification) properties for the new node
          * @return the new child node
-         * @throws IllegalArgumentException if the name or identification property is null
+         * @throws IllegalArgumentException if the name or properties are null
+         * @throws ValidationException if the new node is not valid as a child
          * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
          */
         public Node<Payload, PropertyPayload> createChild( Name name,
-                                                           Property property ) {
+                                                           Property... properties ) {
             CheckArg.isNotNull(name, "name");
-            CheckArg.isNotNull(property, "property");
-            return doCreateChild(name, property, null);
+            CheckArg.isNotNull(properties, "properties");
+            return doCreateChild(name, null, properties);
+        }
+
+        /**
+         * Create a new child node with the supplied name and multiple initial identification properties. The same-name-sibling
+         * index will be determined based upon the existing children.
+         * 
+         * @param name the name of the new child node
+         * @param idProperties the identification properties for the new node
+         * @return the new child node
+         * @throws IllegalArgumentException if the name or properties are null
+         * @throws ValidationException if the new node is not valid as a child
+         * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
+         */
+        public Node<Payload, PropertyPayload> createChild( Name name,
+                                                           Collection<Property> idProperties ) {
+            CheckArg.isNotNull(name, "name");
+            CheckArg.isNotEmpty(idProperties, "idProperties");
+            return doCreateChild(name, idProperties, null);
         }
 
         /**
@@ -2225,23 +2245,23 @@ public class GraphSession<Payload, PropertyPayload> {
          * determined based upon the existing children.
          * 
          * @param name the name of the new child node
-         * @param firstProperty the first identification property for the new node
-         * @param remainingProperties the remaining identification properties for the new node
+         * @param idProperties the identification properties for the new node
+         * @param remainingProperties the remaining (non-identification) properties for the new node
          * @return the new child node
          * @throws IllegalArgumentException if the name or properties are null
          * @throws ValidationException if the new node is not valid as a child
          * @throws RepositorySourceException if this node must be loaded but doing so results in a problem
          */
         public Node<Payload, PropertyPayload> createChild( Name name,
-                                                           Property firstProperty,
+                                                           Collection<Property> idProperties,
                                                            Property... remainingProperties ) {
             CheckArg.isNotNull(name, "name");
-            CheckArg.isNotNull(firstProperty, "firstProperty");
-            return doCreateChild(name, firstProperty, remainingProperties);
+            CheckArg.isNotEmpty(idProperties, "idProperties");
+            return doCreateChild(name, idProperties, remainingProperties);
         }
 
         private Node<Payload, PropertyPayload> doCreateChild( Name name,
-                                                              Property firstProperty,
+                                                              Collection<Property> idProperties,
                                                               Property[] remainingProperties ) throws ValidationException {
             assert !isStale();
 
@@ -2255,20 +2275,22 @@ public class GraphSession<Payload, PropertyPayload> {
             // Figure out the name and SNS of the new copy ...
             List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(name);
             Path newPath = cache.pathFactory.create(path, name, currentChildren.size() + 1);
-            Location newChild = Location.create(newPath);
+            Location newChild = idProperties != null && !idProperties.isEmpty() ? Location.create(newPath, idProperties) : Location.create(newPath);
 
             // Create the properties ...
             Map<Name, PropertyInfo<PropertyPayload>> newProperties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
-            if (firstProperty != null) {
-                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(firstProperty, firstProperty.isMultiple(),
-                                                                                       Status.NEW, null);
-                newProperties.put(info.getName(), info);
-                if (remainingProperties != null) {
-                    for (Property property : remainingProperties) {
-                        PropertyInfo<PropertyPayload> info2 = new PropertyInfo<PropertyPayload>(property, property.isMultiple(),
-                                                                                                Status.NEW, null);
-                        newProperties.put(info2.getName(), info2);
-                    }
+            if (idProperties != null) {
+                for (Property idProp : idProperties) {
+                    PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(idProp, idProp.isMultiple(),
+                                                                                           Status.NEW, null);
+                    newProperties.put(info.getName(), info);
+                }
+            }
+            if (remainingProperties != null) {
+                for (Property property : remainingProperties) {
+                    PropertyInfo<PropertyPayload> info2 = new PropertyInfo<PropertyPayload>(property, property.isMultiple(),
+                                                                                            Status.NEW, null);
+                    newProperties.put(info2.getName(), info2);
                 }
             }
 
@@ -2671,6 +2693,10 @@ public class GraphSession<Payload, PropertyPayload> {
             queue.add(this);
             while (!queue.isEmpty()) {
                 Node<Payload, PropertyPayload> node = queue.poll();
+                if (!node.isLoaded()) {
+                    visitor.visit(node);
+                    continue;
+                }
                 // Get an iterator over the children *before* we visit the node
                 Iterator<Node<Payload, PropertyPayload>> iter = node.getChildren().iterator();
                 // Visit this node ...

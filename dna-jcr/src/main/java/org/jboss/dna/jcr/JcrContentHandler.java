@@ -125,7 +125,11 @@ class JcrContentHandler extends DefaultHandler {
         }
         assert cache != null;
 
-        this.currentNode = cache.findJcrNode(null, parentPath);
+        try {
+            this.currentNode = cache.findJcrNode(null, parentPath);
+        } catch (ItemNotFoundException e) {
+            throw new PathNotFoundException(e.getLocalizedMessage(), e);
+        }
         this.jcrValueFactory = session.getValueFactory();
         this.nodeTypes = session.nodeTypeManager();
         this.jcrNamespaceRegistry = session.workspace().getNamespaceRegistry();
@@ -342,6 +346,7 @@ class JcrContentHandler extends DefaultHandler {
 
                     String typeName = currentProps.get(primaryTypeName).get(0).getString();
                     AbstractJcrNode newNode = parentNode.editor().createChild(nameFor(currentNodeName), uuid, nameFor(typeName));
+                    SessionCache.NodeEditor newNodeEditor = newNode.editor();
 
                     for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
                         if (entry.getKey().equals(primaryTypeName)) {
@@ -351,7 +356,7 @@ class JcrContentHandler extends DefaultHandler {
                         if (entry.getKey().equals(mixinTypesName)) {
                             for (Value value : entry.getValue()) {
                                 JcrNodeType mixinType = nodeTypeFor(value.getString());
-                                newNode.editor().addMixin(mixinType);
+                                newNodeEditor.addMixin(mixinType);
                             }
                             continue;
                         }
@@ -363,11 +368,11 @@ class JcrContentHandler extends DefaultHandler {
                         List<Value> values = entry.getValue();
 
                         if (values.size() == 1) {
-                            newNode.editor().setProperty(nameFor(entry.getKey()), (JcrValue)values.get(0));
+                            newNodeEditor.setProperty(nameFor(entry.getKey()), (JcrValue)values.get(0));
                         } else {
-                            newNode.editor().setProperty(nameFor(entry.getKey()),
-                                                         values.toArray(new Value[values.size()]),
-                                                         PropertyType.UNDEFINED);
+                            newNodeEditor.setProperty(nameFor(entry.getKey()),
+                                                      values.toArray(new Value[values.size()]),
+                                                      PropertyType.UNDEFINED);
                         }
                     }
 
@@ -448,10 +453,12 @@ class JcrContentHandler extends DefaultHandler {
 
                 if (uuid != null) {
                     try {
+                        // Deal with any existing node ...
                         AbstractJcrNode existingNodeWithUuid = cache().findJcrNode(Location.create(uuid));
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
-                                existingNodeWithUuid.editor().destroy();
+                                parentNode = existingNodeWithUuid.getParent();
+                                existingNodeWithUuid.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
                                 uuid = UUID.randomUUID();
@@ -460,18 +467,19 @@ class JcrContentHandler extends DefaultHandler {
                                 if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
                                     throw new ConstraintViolationException();
                                 }
-                                existingNodeWithUuid.editor().destroy();
+                                existingNodeWithUuid.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
                                 throw new ItemExistsException();
                         }
                     } catch (ItemNotFoundException e) {
-                        // don't care
+                        // there wasn't an existing item, so just continue
                     }
                 }
 
                 name = DOCUMENT_VIEW_NAME_DECODER.decode(name);
                 AbstractJcrNode currentNode = parentNode.editor().createChild(nameFor(name), uuid, nameFor(primaryTypeName));
+                SessionCache.NodeEditor currentNodeEditor = currentNode.editor();
 
                 for (int i = 0; i < atts.getLength(); i++) {
                     if (JcrContentHandler.this.primaryTypeName.equals(atts.getQName(i))) {
@@ -480,7 +488,7 @@ class JcrContentHandler extends DefaultHandler {
 
                     if (mixinTypesName.equals(atts.getQName(i))) {
                         JcrNodeType mixinType = nodeTypeFor(atts.getValue(i));
-                        currentNode.editor().addMixin(mixinType);
+                        currentNodeEditor.addMixin(mixinType);
                         continue;
                     }
 
@@ -493,7 +501,7 @@ class JcrContentHandler extends DefaultHandler {
                     // String value = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getValue(i));
                     String value = atts.getValue(i);
                     String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                    currentNode.editor().setProperty(nameFor(propertyName), (JcrValue)valueFor(value, PropertyType.STRING));
+                    currentNodeEditor.setProperty(nameFor(propertyName), (JcrValue)valueFor(value, PropertyType.STRING));
                 }
 
                 parentStack.push(currentNode);

@@ -362,13 +362,13 @@ class SessionCache {
         try {
             graphSession.save();
         } catch (ValidationException e) {
-            throw new ConstraintViolationException(e.getLocalizedMessage(), e.getCause());
+            throw new ConstraintViolationException(e.getLocalizedMessage(), e);
         } catch (InvalidStateException e) {
-            throw new InvalidItemStateException(e.getLocalizedMessage(), e.getCause());
+            throw new InvalidItemStateException(e.getLocalizedMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getLocalizedMessage(), e.getCause());
+            throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -393,13 +393,13 @@ class SessionCache {
             assert node != null;
             graphSession.save(node);
         } catch (ValidationException e) {
-            throw new ConstraintViolationException(e.getLocalizedMessage(), e.getCause());
+            throw new ConstraintViolationException(e.getLocalizedMessage(), e);
         } catch (InvalidStateException e) {
-            throw new InvalidItemStateException(e.getLocalizedMessage(), e.getCause());
+            throw new InvalidItemStateException(e.getLocalizedMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getLocalizedMessage(), e.getCause());
+            throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -420,11 +420,11 @@ class SessionCache {
         try {
             return graphSession.findNodeWith(id, absolutePath);
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new ItemNotFoundException(e.getMessage(), e.getCause());
+            throw new ItemNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -451,11 +451,11 @@ class SessionCache {
         try {
             return graphSession.findNodeRelativeTo(referenceNode, relativePath);
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new PathNotFoundException(e.getMessage(), e.getCause());
+            throw new PathNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -484,11 +484,11 @@ class SessionCache {
         try {
             return graphSession.findNodeWith(location).getPayload().getJcrNode();
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new ItemNotFoundException(e.getMessage(), e.getCause());
+            throw new ItemNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -535,11 +535,11 @@ class SessionCache {
             // Find the reference node ...
             return graphSession.findNodeRelativeTo(referenceNode, relativePath).getPayload().getJcrNode();
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new PathNotFoundException(e.getMessage(), e.getCause());
+            throw new PathNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -562,6 +562,7 @@ class SessionCache {
         Node<JcrNodePayload, JcrPropertyPayload> node = findNode(id, absolutePath);
         PropertyInfo<JcrPropertyPayload> propertyInfo = node.getProperty(propertyName);
         if (propertyInfo != null) {
+            if (propertyName.equals(JcrLexicon.UUID) && !isReferenceable(node)) return null;
             return propertyInfo.getPayload().getJcrProperty();
         }
         return null;
@@ -585,17 +586,18 @@ class SessionCache {
             Collection<AbstractJcrProperty> result = new ArrayList<AbstractJcrProperty>(node.getPropertyCount());
             for (org.jboss.dna.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> property : node.getProperties()) {
                 Name propertyName = property.getName();
+                if (propertyName.equals(JcrLexicon.UUID) && !isReferenceable(node)) continue;
                 if (!propertyName.getNamespaceUri().equals(DnaIntLexicon.Namespace.URI)) {
                     result.add(property.getPayload().getJcrProperty());
                 }
             }
             return result;
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new PathNotFoundException(e.getMessage(), e.getCause());
+            throw new PathNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
     }
 
@@ -655,11 +657,11 @@ class SessionCache {
                 parent = graphSession.findNodeRelativeTo(fromNode, relativePath.getParent());
             }
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            throw new ItemNotFoundException(e.getMessage(), e.getCause());
+            throw new ItemNotFoundException(e.getMessage(), e);
         } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getMessage(), e.getCause());
+            throw new RepositoryException(e.getMessage(), e);
         } catch (AccessControlException e) {
-            throw new AccessDeniedException(e.getMessage(), e.getCause());
+            throw new AccessDeniedException(e.getMessage(), e);
         }
 
         // JSR-170 doesn't allow children and proeprties to have the same name, but this is relaxed in JSR-283.
@@ -692,6 +694,37 @@ class SessionCache {
                                                                          workspaceName);
         }
         throw new ItemNotFoundException(msg);
+    }
+
+    /**
+     * Determine whether the node's primary type or any of the mixins are or extend the node type with the supplied name. This
+     * method is semantically equivalent to but slightly more efficient than the {@link javax.jcr.Node#isNodeType(String)
+     * equivalent in the JCR API}.
+     * 
+     * @param node the node to be evaluated
+     * @param nodeType the name of the node type
+     * @return true if this node is of the node type given by the supplied name, or false otherwise
+     * @throws RepositoryException if there is an exception
+     */
+    public final boolean isNodeType( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                     Name nodeType ) throws RepositoryException {
+        Name primaryTypeName = node.getPayload().getPrimaryTypeName();
+        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+        if (primaryType.isNodeType(nodeType)) {
+            return true;
+        }
+        JcrNodeTypeManager nodeTypes = session().nodeTypeManager();
+        for (Name mixinTypeName : node.getPayload().getMixinTypeNames()) {
+            JcrNodeType mixinType = nodeTypes.getNodeType(mixinTypeName);
+            if (mixinType.isNodeType(nodeType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isReferenceable( Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
+        return isNodeType(node, JcrMixLexicon.REFERENCEABLE);
     }
 
     /**
@@ -939,11 +972,11 @@ class SessionCache {
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
                 return jcrProp;
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1118,11 +1151,11 @@ class SessionCache {
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
                 return jcrProp;
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1138,11 +1171,11 @@ class SessionCache {
             try {
                 return node.removeProperty(name) != null;
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1161,11 +1194,11 @@ class SessionCache {
             try {
                 node.orderChildBefore(childToBeMoved, before);
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1222,11 +1255,11 @@ class SessionCache {
                 }
                 return existingChild;
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1292,9 +1325,9 @@ class SessionCache {
                     setProperty(JcrLexicon.UUID, value, false);
                 }
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1386,12 +1419,16 @@ class SessionCache {
 
                 // Now add the "jcr:uuid" property if and only if referenceable ...
                 Node<JcrNodePayload, JcrPropertyPayload> result = null;
-                if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
+                boolean isReferenceable = primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE);
+                Property uuidProperty = null;
+                if (desiredUuid != null || isReferenceable) {
                     if (desiredUuid == null) {
                         desiredUuid = UUID.randomUUID();
                     }
-                    Property uuidProperty = propertyFactory.create(JcrLexicon.UUID, desiredUuid);
-                    result = node.createChild(name, uuidProperty, primaryTypeProp, nodeDefinitionProp);
+                    uuidProperty = propertyFactory.create(JcrLexicon.UUID, desiredUuid);
+                }
+                if (uuidProperty != null) {
+                    result = node.createChild(name, Collections.singleton(uuidProperty), primaryTypeProp, nodeDefinitionProp);
                 } else {
                     result = node.createChild(name, primaryTypeProp, nodeDefinitionProp);
                 }
@@ -1400,11 +1437,11 @@ class SessionCache {
                 // Finally, return the jcr node ...
                 return (JcrNode)result.getPayload().getJcrNode();
             } catch (ValidationException e) {
-                throw new ConstraintViolationException(e.getMessage(), e.getCause());
+                throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
-                throw new RepositoryException(e.getMessage(), e.getCause());
+                throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
         }
 
@@ -1423,7 +1460,7 @@ class SessionCache {
             try {
                 child.destroy();
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
             return true;
         }
@@ -1439,7 +1476,7 @@ class SessionCache {
             try {
                 node.destroy();
             } catch (AccessControlException e) {
-                throw new AccessDeniedException(e.getMessage(), e.getCause());
+                throw new AccessDeniedException(e.getMessage(), e);
             }
             return true;
         }
@@ -2337,7 +2374,15 @@ class SessionCache {
             Set<JcrNodeDefinition> satisfiedChildNodes = new HashSet<JcrNodeDefinition>();
             Set<JcrPropertyDefinition> satisfiedProperties = new HashSet<JcrPropertyDefinition>();
 
+            // Is this node referenceable ...
+            boolean referenceable = false;
+            try {
+                referenceable = isReferenceable(node);
+            } catch (RepositoryException e) {
+                throw new ValidationException(e.getLocalizedMessage());
+            }
             for (org.jboss.dna.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> property : node.getProperties()) {
+                if (property.getName().equals(JcrLexicon.UUID) && !referenceable) continue;
                 JcrPropertyPayload propPayload = property.getPayload();
                 JcrPropertyDefinition definition = findBestPropertyDefintion(primaryTypeName,
                                                                              mixinTypeNames,
@@ -2447,13 +2492,13 @@ class SessionCache {
             // Now update the property infos for the two mandatory properties ...
             JcrNodeType ntBase = nodeTypes().getNodeType(JcrNtLexicon.BASE);
             assert ntBase != null;
-            primaryTypeInfo = createPropertyInfo(parent.getPayload(),
+            primaryTypeInfo = createPropertyInfo(child.getPayload(),
                                                  primaryTypeInfo.getProperty(),
                                                  ntBase.allPropertyDefinitions(JcrLexicon.PRIMARY_TYPE).iterator().next(),
                                                  PropertyType.NAME,
                                                  primaryTypeInfo);
             properties.put(primaryTypeInfo.getName(), primaryTypeInfo);
-            nodeDefnInfo = createPropertyInfo(parent.getPayload(),
+            nodeDefnInfo = createPropertyInfo(child.getPayload(),
                                               nodeDefnInfo.getProperty(),
                                               ntBase.allPropertyDefinitions(DnaIntLexicon.NODE_DEFINITON).iterator().next(),
                                               PropertyType.STRING,
@@ -2465,7 +2510,7 @@ class SessionCache {
             if (uuidInfo != null) {
                 JcrNodeType mixRef = nodeTypes().getNodeType(JcrMixLexicon.REFERENCEABLE);
                 assert mixRef != null;
-                uuidInfo = createPropertyInfo(parent.getPayload(),
+                uuidInfo = createPropertyInfo(child.getPayload(),
                                               uuidInfo.getProperty(),
                                               mixRef.allPropertyDefinitions(JcrLexicon.UUID).iterator().next(),
                                               PropertyType.STRING,

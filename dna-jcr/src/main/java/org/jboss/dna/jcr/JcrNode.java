@@ -94,6 +94,6 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws RepositoryException {
-        editorForParent().destroyChild(nodeInfo());
+        editor().destroy();
     }
 }

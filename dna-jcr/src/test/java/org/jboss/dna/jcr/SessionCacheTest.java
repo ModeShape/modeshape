@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -40,6 +41,7 @@ import java.util.Set;
 import java.util.UUID;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.jboss.dna.graph.Location;
@@ -253,6 +255,56 @@ public class SessionCacheTest extends AbstractJcrTest {
 
         // The new child should still exist ...
         assertThat(hybrid.hasNode("child"), is(true));
+    }
+
+    @Test
+    public void shouldNotExposeUuidPropertyOnNonReferenceableNodes() throws Exception {
+        AbstractJcrNode highlander = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Highlander"));
+        assertNotReferenceable(highlander);
+    }
+
+    @Test
+    public void shouldExposeUuidPropertyOnReferenceableNodes() throws Exception {
+        AbstractJcrNode hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
+        hybrid.addMixin("mix:referenceable"); // we don't have any referenceable nodes in our tests
+        assertReferenceable(hybrid);
+    }
+
+    @Test
+    public void shouldExposeUuidPropertyOnlyWhenNonReferenceableNodeTransitionsToReferenceable() throws Exception {
+        AbstractJcrNode highlander = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Highlander"));
+        assertNotReferenceable(highlander);
+        highlander.addMixin("mix:referenceable");
+        assertReferenceable(highlander);
+    }
+
+    protected void assertNotReferenceable( AbstractJcrNode node ) throws RepositoryException {
+        assertThat(node.isReferenceable(), is(false));
+        try {
+            node.getUUID();
+            fail("should not return UUID if the node is not referenceable");
+        } catch (UnsupportedRepositoryOperationException e) {
+            // expected
+        }
+        // Should not have a "jcr:uuid" property ...
+        assertThat(node.hasProperty(JcrLexicon.UUID), is(false));
+        assertThat(node.getProperty(JcrLexicon.UUID), is(nullValue()));
+    }
+
+    protected void assertReferenceable( AbstractJcrNode node ) throws RepositoryException {
+        assertThat(node.isReferenceable(), is(true));
+        String uuidValue = null;
+        try {
+            uuidValue = node.getUUID();
+            assertThat(uuidValue, is(notNullValue()));
+        } catch (UnsupportedOperationException e) {
+            fail("should return UUID if the node is referenceable");
+        }
+        // Should have a "jcr:uuid" property ...
+        assertThat(node.hasProperty(JcrLexicon.UUID), is(true));
+        javax.jcr.Property uuidProp = node.getProperty(JcrLexicon.UUID);
+        assertThat(uuidProp, is(notNullValue()));
+        assertThat(uuidProp.getString(), is(uuidValue));
     }
 
     protected void assertProperty( AbstractJcrProperty property,
