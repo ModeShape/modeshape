@@ -66,6 +66,7 @@ import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Binary;
@@ -215,12 +216,57 @@ public class BasicRequestProcessor extends RequestProcessor {
             // We need to look for an existing UUID property in the request,
             // so since we have to iterate through the properties, go ahead an serialize them right away ...
             String uuidString = null;
+            UUID uuid = null;
             for (Property property : request.properties()) {
                 if (property.getName().equals(DnaLexicon.UUID)) {
+                    uuid = uuidFactory.create(property.getFirstValue());
                     uuidString = stringFactory.create(property.getFirstValue());
                     break;
                 }
             }
+
+            switch (request.conflictBehavior()) {
+                case DO_NOT_REPLACE:
+                case UPDATE:
+                    if (uuid != null) {
+                        ActualLocation existing = getActualLocation(workspace, Location.create(uuid));
+
+                        if (existing != null) {
+                            if (NodeConflictBehavior.UPDATE.equals(request.conflictBehavior())) {
+                                createProperties(workspace, uuidString, request.properties());
+                            }
+
+                            request.setActualLocationOfNode(existing.location);
+                            return;
+                        }
+                    }
+
+                    Name newName = request.named();
+                    for (Location childLocation : getAllChildren(workspaceId, actual)) {
+                        if (newName.equals(childLocation.getPath().getLastSegment().getName())) {
+                            if (NodeConflictBehavior.UPDATE.equals(request.conflictBehavior())) {
+                                createProperties(workspace, uuidString, request.properties());
+                            }
+                            request.setActualLocationOfNode(childLocation);
+                            return;
+                        }
+                    }
+
+                    break;
+
+                case REPLACE:
+                    if (uuid != null) {
+                        ActualLocation existing = getActualLocation(workspace, Location.create(uuid));
+
+                        if (existing != null) {
+                            delete(request, existing.location, workspace.getName(), true);
+                        }
+                    }
+                    break;
+                case APPEND:
+                    break;
+            }
+
             if (uuidString == null) uuidString = UUID.randomUUID().toString();
             assert uuidString != null;
             createProperties(workspace, uuidString, request.properties());
