@@ -3,115 +3,54 @@
 /.metadata
 /target
 
-# /dna-common/
 /dna-common/.settings
 /dna-common/target
 
-# /dna-graph/
 /dna-graph/.settings
 /dna-graph/target
 
-# /dna-cnd/
 /dna-cnd/.settings
 /dna-cnd/target
 
-# /dna-integration-tests/
 /dna-integration-tests/.settings
 /dna-integration-tests/target
 
-# /dna-jcr/
 /dna-jcr/.settings
 /dna-jcr/target
 
-# /dna-jcr-tck/
 /dna-jcr-tck/.settings
 /dna-jcr-tck/target
 
-# /dna-repository/
 /dna-repository/.settings
 /dna-repository/target
 
-# /docs/
 /docs/target
-
-# /docs/examples/gettingstarted/repositories/
 /docs/examples/gettingstarted/repositories/target
-
-# /docs/examples/gettingstarted/sequencers/
 /docs/examples/gettingstarted/sequencers/target
-
-# /docs/gettingstarted/
 /docs/gettingstarted/target
-
-# /docs/presentations/
 /docs/presentations/*.key
-
-# /docs/reference/
 /docs/reference/target
 
-# /extensions/dna-web-jcr-rest/
 /extensions/dna-web-jcr-rest/target/
-
-# /extensions/dna-web-jcr-rest-war/
 /extensions/dna-web-jcr-rest-war/target/
-
-# /extensions/dna-classloader-maven/
 /extensions/dna-classloader-maven/target
-
-# /extensions/dna-common-jdbc/
 /extensions/dna-common-jdbc/target
-
-# /extensions/dna-connector-federation/
 /extensions/dna-connector-federation/target
-
-# /extensions/dna-connector-filesystem/
 /extensions/dna-connector-filesystem/target
-
-# /extensions/dna-connector-inmemory/
 /extensions/dna-connector-inmemory/target
-
-# /extensions/dna-connector-jbosscache/
 /extensions/dna-connector-jbosscache/target
-
-# /extensions/dna-connector-infinispan/
 /extensions/dna-connector-infinispan/target
-
-# /extensions/dna-connector-jdbc-metadata/
 /extensions/dna-connector-jdbc-metadata/target
-
-# /extensions/dna-connector-store-jpa/
 /extensions/dna-connector-store-jpa/target
-
-# /extensions/dna-connector-svn/
 /extensions/dna-connector-svn/target
-
-# /extensions/dna-mimetype-detector-aperture/
 /extensions/dna-mimetype-detector-aperture/.settings
 /extensions/dna-mimetype-detector-aperture/target
-
-# /extensions/dna-sequencer-cnd/
 /extensions/dna-sequencer-cnd/target
-
-# /extensions/dna-sequencer-esbMessage/
 /extensions/dna-sequencer-esbMessage/target
-
-# /extensions/dna-sequencer-images/
 /extensions/dna-sequencer-images/target
-
-# /extensions/dna-sequencer-java/
 /extensions/dna-sequencer-java/target
-
-# /extensions/dna-sequencer-jbpm-jpdl/
 /extensions/dna-sequencer-jbpm-jpdl/target
-
-# /extensions/dna-sequencer-mp3/
 /extensions/dna-sequencer-mp3/target
-
-# /extensions/dna-sequencer-msoffice/
 /extensions/dna-sequencer-msoffice/target
-
-# /extensions/dna-sequencer-xml/
 /extensions/dna-sequencer-xml/target
-
-# /extensions/dna-sequencer-zip/
 /extensions/dna-sequencer-zip/target
