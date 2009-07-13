@@ -43,7 +43,7 @@ import javax.jcr.version.VersionException;
 import org.databene.model.consumer.AbstractConsumer;
 import org.databene.model.data.Entity;
 import org.jboss.dna.graph.SecurityContext;
-import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
 import org.jboss.dna.jcr.SecurityContextCredentials;
@@ -51,7 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A Utility that writes the generated content as nodes to a DNA JCR repository.<br/> 
+ * A Utility that writes the generated content as nodes to a DNA JCR repository.<br/>
  * 
  * @author Serge Pagop
  */
@@ -71,31 +71,44 @@ public class JCRDataMassGen extends AbstractConsumer<Entity> {
 
     // Constructor -----------------------------------------------------------------------------------------------------
 
-    public JCRDataMassGen( String username,
-                                String sourceName,
-                                String sourceDescription,
-                                String repositoryName,
-                                String workspaceName,
-                                boolean printContent ) throws RepositoryException {
+    /**
+     * Construct a Data Mass Generator, that may be used to generate test data.
+     * @param sourceName - the name of the source.
+     * @param description - the configuration description.
+     * @param beanPropertyName - the name of the bean property.
+     * @param workspaceName - the workspace name.
+     * @param repositoryName - the repository name.
+     * @param repositorySource - 
+     * @param username
+     * @param printContent
+     * @throws Exception
+     */
+    @SuppressWarnings( "unchecked" )
+    public JCRDataMassGen( String sourceName,
+                           String description,
+                           String beanPropertyName,
+                           String workspaceName,
+                           String repositoryName,
+                           String repositorySource,
+                           String username,
+                           boolean printContent ) throws Exception {
         this.printContent = printContent;
 
         // setting up the JcrConfiguration
         configuration = new JcrConfiguration();
-        configuration.repositorySource(sourceName).usingClass(InMemoryRepositorySource.class).setDescription(sourceDescription).setProperty("defaultWorkspaceName",workspaceName);
+        Class<? extends RepositorySource> clazz = (Class<? extends RepositorySource>)Class.forName(repositorySource);
+        configuration.repositorySource(sourceName).usingClass(clazz).setDescription(description).setProperty(beanPropertyName,
+                                                                                                             workspaceName);
         // repository
         configuration.repository(repositoryName).setSource(sourceName);
-
         // Start the engine
         engine = configuration.build();
         engine.start();
-        
-        
         // Obtain a JCR Repository instance by name
         repository = engine.getRepository(repositoryName);
         SecurityContext securityContext = new MyCustomSecurityContext(username);
         SecurityContextCredentials credentials = new SecurityContextCredentials(securityContext);
         this.session = repository.login(credentials, workspaceName);
-
         this.currentNode = session.getRootNode();
     }
 
@@ -180,8 +193,8 @@ public class JCRDataMassGen extends AbstractConsumer<Entity> {
             Property property = (Property)propIt.next();
             log.info(indent + '\t' + '\t' + property.getName());
             Value value = property.getValue();
-                log.info(indent + '\t' + '\t' + '\t' + value.getString());
-            
+            log.info(indent + '\t' + '\t' + '\t' + value.getString());
+
         }
         NodeIterator iterator = node.getNodes();
         while (iterator.hasNext())
@@ -190,9 +203,11 @@ public class JCRDataMassGen extends AbstractConsumer<Entity> {
 
     protected class MyCustomSecurityContext implements SecurityContext {
         private String username;
+
         public MyCustomSecurityContext( String username ) {
             this.username = username;
         }
+
         /**
          * @see org.jboss.dna.graph.SecurityContext#getUserName()
          */
