@@ -18,6 +18,6 @@ Java HotSpot(TM) 64-Bit Server VM (build 11.3-b02-83, mixed mode)
          * /dna-jcr-gen/src/test/resources/benerator/bank.properties
          * /dna-jcr-gen/src/test/resources/benerator/benerator.xml
  -- Use "mvn benerator:generate" command to generate data into you Source (For now only test on 
-    nMemoryRepositorySource source)
+    InMemoryRepositorySource source)
  
  
