@@ -345,7 +345,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 // The cache had the complete list of children for the parent node, which means
                 // we know about all of the children and can walk the children to figure out the next indexes.
                 nextIndexInParent = childrenOfParent.size();
-                if (nextIndexInParent > 1) {
+                if (nextIndexInParent > 0) {
                     // Since we want the last indexes, process the list backwards ...
                     ListIterator<Location> iter = childrenOfParent.listIterator(childrenOfParent.size());
                     while (iter.hasPrevious()) {
@@ -2548,7 +2548,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
     protected class LargeValueSerializer implements LargeValues {
         private final PropertiesEntity properties;
-        private Set<String> written;
+        private final Set<String> written;
 
         public LargeValueSerializer( PropertiesEntity entity ) {
             this.properties = entity;
