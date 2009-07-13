@@ -8,10 +8,13 @@
 	<import domain="address" />
 	
 	<!-- My consumer for my InMmemery repos. source -->
-	<bean id="dnaJcrConsumer" spec="org.jboss.dna.jcr.gen.JCRDataMassGen('toto', 'firstSource',
+	<bean id="dnaJcrConsumer" spec="org.jboss.dna.jcr.gen.JCRDataMassGen('firstSource',
                                 'this is only my first jcr repos source with some test data',
-                                'test repository',
-                                'WS1',true)"/>
+                                'defaultWorkspaceName',
+                                 'WS1',
+                                 'test repository',
+                                 'org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource',
+                                 'username',true)"/>
     
     <!-- Some extras data -->
 	<include uri="bank.properties"/>
