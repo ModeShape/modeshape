@@ -25,6 +25,7 @@ package org.jboss.dna.graph.property.basic;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
@@ -42,6 +43,7 @@ public class BasicPathSegment implements Path.Segment {
     private static final long serialVersionUID = 4367349287846075157L;
     private final Name name;
     private final int index;
+    private final int hc;
 
     /**
      * @param name the segment name
@@ -51,6 +53,7 @@ public class BasicPathSegment implements Path.Segment {
         assert name != null;
         this.name = name;
         this.index = Path.DEFAULT_INDEX;
+        hc = HashCode.compute(name, index);
     }
 
     /**
@@ -64,6 +67,7 @@ public class BasicPathSegment implements Path.Segment {
         assert index >= Path.DEFAULT_INDEX;
         this.name = name;
         this.index = (this.isSelfReference() || this.isParentReference()) ? Path.DEFAULT_INDEX : index;
+        hc = HashCode.compute(name, index);
     }
 
     /**
@@ -116,7 +120,7 @@ public class BasicPathSegment implements Path.Segment {
      */
     @Override
     public int hashCode() {
-        return this.name.hashCode();
+        return hc;
     }
 
     /**
