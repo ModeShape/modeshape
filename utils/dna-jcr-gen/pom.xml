@@ -30,6 +30,8 @@
 					<descriptor>
 						src/test/resources/benerator/benerator.xml
 					</descriptor>
+					<!-- If you use benerator offline -->
+					<validate>false</validate>
 				</configuration>
 			</plugin>
 		</plugins>
