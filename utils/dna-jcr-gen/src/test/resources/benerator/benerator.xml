@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<setup xmlns="http://databene.org/benerator/0.5.9-SR1"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://databene.org/benerator/0.5.9-SR1 benerator-0.5.9-SR1.xsd">
+
+	<!-- Already existed generator -->
+	<import domain="person" />
+	<import domain="address" />
+	
+	<!-- My consumer for my InMmemery repos. source -->
+	<bean id="dnaJcrConsumer" spec="org.jboss.dna.jcr.gen.JCRDataMassGen('toto', 'firstSource',
+                                'this is only my first jcr repos source with some test data',
+                                'test repository',
+                                'WS1',true)"/>
+    
+    <!-- Some extras data -->
+	<include uri="bank.properties"/>
+		
+    <!-- My Model -->
+	<create-entities name="Bank" consumer="dnaJcrConsumer" count="{${bankCount}}">
+		<attribute name="nodeName" type="string" pattern="[A-Z]{3} Bank" unique="true"/>
+		
+		<create-entities name="Product" consumer="dnaJcrConsumer" minCount="{${minProd}}" maxCount="{${maxProd}}">
+			<attribute name="nodeName" type="string" pattern="[A-Z]{3} Credit" unique="true"/>
+			
+			<create-entities name="Contract" consumer="dnaJcrConsumer" minCount="{${minCont}}" maxCount="{${maxCont}}">
+				<id name="id" strategy="increment(100000)"/>
+				<attribute name="nodeName" script="{Contract #${Contract.id}}"/>
+				<attribute name="amount" type="float" min="1000" max="20000" distribution="cumulated"/>
+				<attribute name="interest" type="big_decimal" min="7" max="12" precision="0.05"/>
+				
+				<create-entities name="Person" consumer="dnaJcrConsumer" count="1">
+					<variable name="person" generator="PersonGenerator" dataset="US" locale="en"/>
+					<attribute name="nodeName" script="{${person.givenName} ${person.familyName}}"/>
+					<attribute name="salutation" script="{${person.salutation}}"/>
+					<attribute name="firstName" script="{${person.givenName}}"/>
+					<attribute name="surname" script="{${person.familyName}}"/>
+					<attribute name="birthDate" type="date" source="person.birthDate"/>
+				</create-entities>
+				
+				<create-entities name="Address" consumer="dnaJcrConsumer" count="1">
+					<variable name="address" generator="AddressGenerator" dataset="US"/>
+					<id name="id" strategy="increment(100000)"/>
+					<attribute name="nodeName" script="{Address #${Address.id}}"/>
+					<attribute name="street" script="{${address.street} ${address.houseNumber}}"/>
+					<attribute name="zipCode" script="{${address.zipCode}}"/>
+					<attribute name="city" script="{${address.city}}"/>
+					<attribute name="country" script="{${address.country}}"/>
+				</create-entities>
+			</create-entities>
+		</create-entities>
+	</create-entities>
+
+</setup>

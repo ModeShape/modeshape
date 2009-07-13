@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jboss.dna</groupId>
+    <artifactId>dna</artifactId>
+    <version>0.6-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+	<artifactId>dna-jcr-gen</artifactId>
+	<packaging>jar</packaging>
+	<name>JBoss DNA JCR data mass generator</name>
+	<description>
+		A Utilty to generate mass of data for a jcr repository
+		and then write them into the source. For Performance testing,
+		for dummy daten for a start up project.
+	</description>
+	<url>http://labs.jboss.org/dna</url>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.databene</groupId>
+				<artifactId>maven-benerator-plugin</artifactId>
+				<version>0.5.9-SR1</version>
+				<configuration>
+					<descriptor>
+						src/test/resources/benerator/benerator.xml
+					</descriptor>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!--
+		Define the dependencies.  Note that all version and scopes default to those 
+		defined in the dependencyManagement section of the parent pom.
+	-->
+	<dependencies>
+		<dependency>
+			<groupId>org.databene</groupId>
+			<artifactId>databene-benerator</artifactId>
+			<version>0.5.9-SR1</version>
+		</dependency>
+		<!-- 
+			Java Content Repository API 
+		-->
+		<dependency>
+			<groupId>javax.jcr</groupId>
+			<artifactId>jcr</artifactId>
+			<version>1.0.1</version>
+			<scope>compile</scope>
+		</dependency>
+		<!-- 
+			JBoss DNA JCR  (JCR Implementation) for repository implementation
+		-->
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-jcr</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-repository</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!-- 
+			Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+		-->
+		<!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.14</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.google-collections</groupId>
+			<artifactId>google-collect</artifactId>
+			<version>snapshot-20080530</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jboss-idtrust</artifactId>
+			<version>2.0.2.CR1</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jboss-security-spi-bare</artifactId>
+			<version>2.0.2.SP6</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jbosssx-bare</artifactId>
+			<version>2.0.2.SP6</version>
+			<exclusions>
+				<exclusion>
+					<groupId>apache-xalan</groupId>
+					<artifactId>xalan</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>apache-xalan</groupId>
+					<artifactId>serializer</artifactId>
+				</exclusion>
+			</exclusions>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
