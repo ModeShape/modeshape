@@ -73,6 +73,9 @@
 # /extensions/dna-connector-jbosscache/
 /extensions/dna-connector-jbosscache/target
 
+# /extensions/dna-connector-infinispan/
+/extensions/dna-connector-infinispan/target
+
 # /extensions/dna-connector-jdbc-metadata/
 /extensions/dna-connector-jdbc-metadata/target
 
