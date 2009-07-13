@@ -341,7 +341,13 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
         if (obj == this) return true;
         if (obj instanceof JodaDateTime) {
             JodaDateTime that = (JodaDateTime)obj;
-            return this.instance.equals(that.instance);
+
+            /*
+             * The equals semantics for JodaDateTimes are very strict, implying that not only are the two instants represented
+             * by the JodaDateTimes logically equivalent, but also that the Chronology and DateTimeZone are the same.  
+             * Instead, use isEqual, which only checks that the two JodaDateTimes are logically equivalent.
+             */
+            return this.instance.isEqual(that.instance);
         }
         if (obj instanceof DateTime) {
             return this.instance.equals(obj);
@@ -389,7 +395,18 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      * @see org.jboss.dna.graph.property.DateTime#isSameAs(org.jboss.dna.graph.property.DateTime)
      */
     public boolean isSameAs( org.jboss.dna.graph.property.DateTime other ) {
-        return this.compareTo(other) == 0;
+        if (other == this) return true;
+        if (other instanceof JodaDateTime) {
+            JodaDateTime that = (JodaDateTime)other;
+
+            /*
+             * The equals semantics for JodaDateTimes are very strict, implying that not only are the two instants represented
+             * by the JodaDateTimes logically equivalent, but also that the Chronology and DateTimeZone are the same.  
+             * Here we use equals to ensure that the two DateTimes are equivalent.
+             */
+            return this.instance.equals(that.instance);
+        }
+        return this.instance.equals(other);
     }
 
     /**

@@ -263,7 +263,9 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
     boolean isAfter( DateTime other );
 
     /**
-     * Return whether this date-time is at the same time as the supplied date-time.
+     * Return whether this date-time is exactly the the same as the supplied date-time. This differs from {@link #equals(Object)
+     * the equals method} in that it can be arbitrarily more strict, checking, for example, not only the logical equivalence of
+     * the other date time, but also arbitrary additional fields such as the time zone.
      * 
      * @param other the date-time to compare with
      * @return true if this date-time is later than the other, or false otherwise
