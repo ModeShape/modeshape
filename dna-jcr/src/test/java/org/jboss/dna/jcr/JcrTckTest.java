@@ -28,6 +28,7 @@ import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.JCRTestSuite;
 import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.CheckPermissionTest;
+import org.apache.jackrabbit.test.api.DocumentViewImportTest;
 import org.apache.jackrabbit.test.api.ImpersonateTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
 import org.apache.jackrabbit.test.api.NodeAddMixinTest;
@@ -40,6 +41,7 @@ import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
+import org.apache.jackrabbit.test.api.SerializationTest;
 import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
 import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
 import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;
@@ -230,8 +232,8 @@ public class JcrTckTest {
             addTestSuite(ImpersonateTest.class);
             addTestSuite(CheckPermissionTest.class);
 
-            // dna-466 addTestSuite(DocumentViewImportTest.class);
-            // dna-466 addTestSuite(SerializationTest.class);
+            addTestSuite(DocumentViewImportTest.class);
+            addTestSuite(SerializationTest.class);
 
             addTestSuite(ValueFactoryTest.class);
         }

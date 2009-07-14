@@ -750,13 +750,19 @@ public class GraphSession<Payload, PropertyPayload> {
      * @throws InvalidStateException if the supplied node is no longer a node within this cache (because it was unloaded)
      */
     public void save() throws PathNotFoundException, ValidationException, InvalidStateException {
-        if (!operations.isExecuteRequired()) return;
+        if (!operations.isExecuteRequired()) {
+            // Remove all the cached items ...
+            this.root.clearChanges();
+            this.root.unload();
+            return;
+        }
         if (!root.isChanged(true)) {
             // Then a bunch of changes could have been made and rolled back manually, so recompute the change state ...
             root.recomputeChangedBelow();
             if (!root.isChanged(true)) {
                 // If still no changes, then simply do a refresh ...
-                refresh(false);
+                this.root.clearChanges();
+                this.root.unload();
                 return;
             }
         }

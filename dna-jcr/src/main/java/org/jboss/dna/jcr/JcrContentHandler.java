@@ -83,6 +83,7 @@ class JcrContentHandler extends DefaultHandler {
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
     private final javax.jcr.NamespaceRegistry jcrNamespaceRegistry;
+    private final SaveMode saveMode;
     protected final int uuidBehavior;
 
     protected final String primaryTypeName;
@@ -115,7 +116,8 @@ class JcrContentHandler extends DefaultHandler {
         this.nameFactory = context.getValueFactories().getNameFactory();
         this.uuidBehavior = uuidBehavior;
 
-        switch (saveMode) {
+        this.saveMode = saveMode;
+        switch (this.saveMode) {
             case SESSION:
                 cache = session.cache();
                 break;
@@ -188,10 +190,12 @@ class JcrContentHandler extends DefaultHandler {
      */
     @Override
     public void endDocument() throws SAXException {
-        try {
-            cache.save();
-        } catch (RepositoryException e) {
-            throw new EnclosingSAXException(e);
+        if (saveMode == SaveMode.WORKSPACE) {
+            try {
+                cache.save();
+            } catch (RepositoryException e) {
+                throw new EnclosingSAXException(e);
+            }
         }
         super.endDocument();
     }
