@@ -25,8 +25,9 @@ package org.jboss.dna.test.integration;
 
 import junit.framework.Test;
 
-public class InfinispanRepositoryTckTest {
+public class JpaRepositoryTckTest {
+
     public static Test suite() {
-        return AbstractRepositoryTckTest.readWriteRepositorySuite("infinispan");
+        return AbstractRepositoryTckTest.readWriteRepositorySuite("jpa");
     }
 }

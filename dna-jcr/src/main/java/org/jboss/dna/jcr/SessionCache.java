@@ -139,7 +139,7 @@ class SessionCache {
     protected final Path rootPath;
     protected final Name residualName;
 
-    private GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession;
+    private final GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession;
 
     public SessionCache( JcrSession session ) {
         this(session, session.workspace().getName(), session.getExecutionContext(), session.nodeTypeManager(), session.graph());
@@ -1320,6 +1320,7 @@ class SessionCache {
                 if (JcrMixLexicon.REFERENCEABLE.equals(mixinCandidateType.getInternalName())) {
                     // This node is now referenceable, so make sure there is a UUID property ...
                     UUID uuid = node.getLocation().getUuid();
+                    if (uuid == null) uuid = (UUID)node.getLocation().getIdProperty(JcrLexicon.UUID).getFirstValue();
                     if (uuid == null) uuid = UUID.randomUUID();
                     JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
                     setProperty(JcrLexicon.UUID, value, false);

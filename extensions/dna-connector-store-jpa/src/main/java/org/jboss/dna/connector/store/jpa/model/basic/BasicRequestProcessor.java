@@ -76,6 +76,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
@@ -116,6 +117,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     protected final EntityManager entities;
     protected final ValueFactory<String> stringFactory;
     protected final PathFactory pathFactory;
+    protected final PropertyFactory propertyFactory;
     protected final NameFactory nameFactory;
     protected final UuidFactory uuidFactory;
     protected final Namespaces namespaces;
@@ -138,7 +140,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         REPLACE_EXISTING_NODE,
         THROW_EXCEPTION
     }
-    
+
     /**
      * @param sourceName
      * @param context
@@ -171,6 +173,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         ValueFactories valuesFactory = context.getValueFactories();
         this.stringFactory = valuesFactory.getStringFactory();
         this.pathFactory = valuesFactory.getPathFactory();
+        this.propertyFactory = context.getPropertyFactory();
         this.nameFactory = valuesFactory.getNameFactory();
         this.uuidFactory = valuesFactory.getUuidFactory();
         this.namespaces = new Namespaces(entityManager);
@@ -460,7 +463,9 @@ public class BasicRequestProcessor extends RequestProcessor {
             actualLocation = actual.location;
 
             // Record the UUID as a property, since it's not stored in the serialized properties...
-            request.addProperty(actualLocation.getIdProperty(DnaLexicon.UUID));
+            // This gets pulled from the actual location uuid instead of the property to avoid the
+            // having to add the dna:uuid onto locations that already have a jcr:uuid
+            request.addProperty(propertyFactory.create(DnaLexicon.UUID, UUID.fromString(parentUuidString)));
 
             // Find the properties entity for this node ...
             Query query = entities.createNamedQuery("PropertiesEntity.findByUuid");
@@ -828,7 +833,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             // Small optimization ...
             final Name propertyName = request.named();
-            if (DnaLexicon.UUID.equals(propertyName)) {
+            if (DnaLexicon.UUID.equals(propertyName) || JcrLexicon.UUID.equals(propertyName)) {
                 try {
                     // Just get the UUID ...
                     Location location = request.on();
@@ -918,8 +923,16 @@ public class BasicRequestProcessor extends RequestProcessor {
                 boolean compressed = entity.isCompressed();
                 byte[] originalData = entity.getData();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
-                ObjectOutputStream oos = new ObjectOutputStream(os);
+                ObjectOutputStream oos;
+                GZIPOutputStream gos = null;
+                if (compressed) {
+                    gos = new GZIPOutputStream(baos);
+                    oos = new ObjectOutputStream(gos);
+                } else {
+                    oos = new ObjectOutputStream(baos);
+                }
+                // OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
+                // oos = new ObjectOutputStream(os);
                 int numProps = 0;
                 LargeValueSerializer largeValues = null;
                 Map<Name, Property> props = request.properties();
@@ -928,6 +941,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     largeValues = new LargeValueSerializer(entity);
                     numProps = props.size();
                     serializer.serializeProperties(oos, numProps, props.values(), largeValues, refs);
+                    if (gos != null) gos.finish();
                 } else {
                     boolean hadLargeValues = !entity.getLargeValues().isEmpty();
                     Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
@@ -939,6 +953,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     try {
                         Serializer.ReferenceValues refValues = refs != null ? refs : Serializer.NO_REFERENCES_VALUES;
                         numProps = serializer.reserializeProperties(ois, oos, props, largeValues, removedValues, refValues);
+                        if (gos != null) gos.finish();
                     } finally {
                         try {
                             ois.close();
@@ -946,6 +961,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                             oos.close();
                         }
                     }
+                    
                     // The new large values were recorded and associated with the properties entity during reserialization.
                     // However, any values no longer used now need to be removed ...
                     if (hadLargeValues) {
@@ -1806,12 +1822,232 @@ public class BasicRequestProcessor extends RequestProcessor {
         }
     }
 
+    private Location moveNodeToLastChild( WorkspaceEntity workspace,
+                                          ActualLocation actualFromLocation,
+                                          ActualLocation actualIntoLocation,
+                                          Name desiredName ) {
+        long workspaceId = workspace.getId();
+        Path oldPath = actualFromLocation.location.getPath();
+
+        ChildEntity fromEntity = actualFromLocation.childEntity;
+
+        // Now we know that the new parent is not the existing parent ...
+        final int oldIndex = fromEntity.getIndexInParent();
+        final String oldParentUuid = fromEntity.getParentUuidString();
+
+        String toUuidString = actualIntoLocation.uuid;
+
+        // Make sure the child name is set correctly ...
+        String childOldLocalName = fromEntity.getChildName();
+        String childLocalName = null;
+        NamespaceEntity ns = null;
+        Name childName = desiredName;
+        if (childName != null) {
+            childLocalName = desiredName.getLocalName();
+            String childNsUri = childName.getNamespaceUri();
+            ns = namespaces.get(childNsUri, true);
+        } else {
+            childName = oldPath.getLastSegment().getName();
+            childLocalName = fromEntity.getChildName();
+            ns = fromEntity.getChildNamespace();
+        }
+
+        int nextSnsIndex = 1;
+        int nextIndexInParent = 1;
+
+        // Find the largest SNS index in the existing ChildEntity objects with the same name ...
+        Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("parentUuid", toUuidString);
+        query.setParameter("ns", ns.getId());
+        query.setParameter("childName", childLocalName);
+        try {
+            Integer index = (Integer)query.getSingleResult();
+            if (index != null) nextSnsIndex = index.intValue() + 1;
+        } catch (NoResultException e) {
+        }
+
+        // Find the largest child index in the existing ChildEntity objects ...
+        query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("parentUuid", toUuidString);
+        try {
+            Integer index = (Integer)query.getSingleResult();
+            if (index != null) nextIndexInParent = index + 1;
+        } catch (NoResultException e) {
+        }
+
+        fromEntity.setParentUuidString(toUuidString);
+        fromEntity.setChildName(childLocalName);
+        fromEntity.setChildNamespace(ns);
+        fromEntity.setIndexInParent(nextIndexInParent);
+        fromEntity.setSameNameSiblingIndex(nextSnsIndex);
+
+        // Flush the entities to the database ...
+        entities.flush();
+
+        // Determine the new location ...
+        Path newParentPath = actualIntoLocation.location.getPath();
+        Path newPath = pathFactory.create(newParentPath, childName, nextSnsIndex);
+        Location newLocation = actualFromLocation.location.with(newPath);
+
+        // And adjust the SNS index and indexes ...
+        ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
+                                                            workspaceId,
+                                                            oldParentUuid,
+                                                            childOldLocalName,
+                                                            ns.getId(),
+                                                            oldIndex);
+
+        // Update the cache ...
+        cache.moveNode(workspaceId, actualFromLocation.location, oldIndex, newLocation);
+
+        return newLocation;
+    }
+
+    @SuppressWarnings( "unchecked" )
+    private Location moveNodeBefore( WorkspaceEntity workspace,
+                                     ActualLocation actualFromLocation,
+                                     ActualLocation actualIntoLocation,
+                                     ActualLocation actualBeforeLocation ) {
+
+        long workspaceId = workspace.getId();
+
+        ChildEntity fromEntity = actualFromLocation.childEntity;
+        assert fromEntity != null;
+
+        Path oldPath = actualFromLocation.location.getPath();
+        String oldParentUuid = fromEntity.getParentUuidString();
+
+        String toUuidString = actualIntoLocation.uuid;
+        Location beforeLocation = actualBeforeLocation.location;
+        ChildEntity beforeEntity = actualBeforeLocation.childEntity;
+
+        /*
+         * getActualLocation (which populates actualBeforeLocation) can return null for the childEntity
+         * if the location was retrieved from the cache.  Since we need the beforeEntity, try to force the load.
+         */
+        if (beforeEntity == null) {
+            beforeEntity = findNode(workspaceId, actualBeforeLocation.uuid);
+        }
+
+        assert beforeEntity != null;
+        
+        Name childName = oldPath.getLastSegment().getName();
+        String childLocalName = fromEntity.getChildName();
+        NamespaceEntity ns = fromEntity.getChildNamespace();
+
+        boolean sameParent = oldParentUuid.equals(toUuidString);
+
+        if (sameParent) {
+            int oldIndex;
+            if (fromEntity.getIndexInParent() < beforeEntity.getIndexInParent()) {
+                oldIndex = beforeEntity.getIndexInParent();
+
+                int snsCount = ChildEntity.adjustSnsIndexesAndIndexes(entities,
+                                                                      workspaceId,
+                                                                      fromEntity.getParentUuidString(),
+                                                                      fromEntity.getIndexInParent(),
+                                                                      beforeEntity.getIndexInParent(),
+                                                                      fromEntity.getChildNamespace().getId(),
+                                                                      fromEntity.getChildName(),
+                                                                      -1);
+
+                fromEntity.setIndexInParent(oldIndex);
+                fromEntity.setSameNameSiblingIndex(fromEntity.getSameNameSiblingIndex() + snsCount);
+            } else {
+                oldIndex = beforeEntity.getIndexInParent();
+
+                int snsCount = ChildEntity.adjustSnsIndexesAndIndexes(entities,
+                                                                      workspaceId,
+                                                                      fromEntity.getParentUuidString(),
+                                                                      beforeEntity.getIndexInParent() - 1,
+                                                                      fromEntity.getIndexInParent() - 1,
+                                                                      fromEntity.getChildNamespace().getId(),
+                                                                      fromEntity.getChildName(),
+                                                                      +1);
+
+                fromEntity.setIndexInParent(oldIndex);
+                fromEntity.setSameNameSiblingIndex(fromEntity.getSameNameSiblingIndex() - snsCount);
+
+            }
+
+            Path newPath = pathFactory.create(oldPath.getParent(),
+                                              pathFactory.createSegment(fromEntity.getChildName(),
+                                                                        fromEntity.getSameNameSiblingIndex()));
+            return actualFromLocation.location.with(newPath);
+        }
+
+        int oldIndex = fromEntity.getIndexInParent();
+
+        /*
+         * This is a sub-optimal approach, particularly for inserts to the front
+         * of a long list of child nodes, but it guarantees that we won't have
+         * the JPA-cached entities and the database out of sync.
+         */
+
+        Query query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("parentUuidString", toUuidString);
+
+        int nextIndexInParent = 0;
+        int nextSnsIndex = 1;
+        try {
+            List<ChildEntity> children = query.getResultList();
+            Path beforePath = beforeLocation.getPath();
+            Path.Segment beforeSegment = beforePath.getLastSegment();
+
+            boolean foundBefore = false;
+            for (ChildEntity child : children) {
+                NamespaceEntity namespace = child.getChildNamespace();
+                if (namespace.getUri().equals(ns.getUri()) && child.getChildName().equals(childLocalName)
+                    && child.getSameNameSiblingIndex() == beforeSegment.getIndex()) {
+                    foundBefore = true;
+                    nextIndexInParent = child.getIndexInParent();
+                    nextSnsIndex = beforeSegment.getIndex();
+                }
+
+                if (foundBefore) {
+                    child.setIndexInParent(child.getIndexInParent() + 1);
+                    if (child.getChildName().equals(childLocalName) && namespace.getUri().equals(ns.getUri())) {
+                        child.setSameNameSiblingIndex(child.getSameNameSiblingIndex() + 1);
+                    }
+                    entities.persist(child);
+                }
+            }
+
+        } catch (NoResultException e) {
+        }
+
+        fromEntity.setParentUuidString(toUuidString);
+        fromEntity.setChildName(childLocalName);
+        fromEntity.setChildNamespace(ns);
+        fromEntity.setIndexInParent(nextIndexInParent);
+        fromEntity.setSameNameSiblingIndex(nextSnsIndex);
+
+        // Flush the entities to the database ...
+        entities.flush();
+
+        // Determine the new location ...
+        Path newParentPath = actualIntoLocation.location.getPath();
+        Path newPath = pathFactory.create(newParentPath, childName, nextSnsIndex);
+        Location oldLocation = actualFromLocation.location;
+        Location newLocation = oldLocation.with(newPath);
+
+        // And adjust the SNS index and indexes ...
+        ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities, workspaceId, oldParentUuid, childLocalName, ns.getId(), -1);
+
+        // Update the cache ...
+        cache.moveNode(workspaceId, oldLocation, oldIndex, newLocation);
+
+        return newLocation;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
-    @SuppressWarnings( "unchecked" )
     @Override
     public void process( MoveBranchRequest request ) {
         logger.trace(request.toString());
@@ -1835,143 +2071,25 @@ public class BasicRequestProcessor extends RequestProcessor {
                 throw new InvalidRequestException(msg);
             }
 
-            // Find the ChildEntity of the existing 'from' node ...
-            ChildEntity fromEntity = actualLocation.childEntity;
-            final String oldParentUuid = fromEntity.getParentUuidString();
-
-            // Find the actual new location ...
-            Location toLocation = request.into();
-            Location beforeLocation = request.before();
-
-            if (beforeLocation != null) {
-                if (beforeLocation.hasPath()) {
-                    toLocation = Location.create(beforeLocation.getPath().getParent());
-                } else {
-                    ActualLocation actualBeforeLocation = getActualLocation(workspace, beforeLocation);
-
-                    // Ensure that the beforeLocation has a path - actualBeforeLocation has a path
-                    beforeLocation = actualBeforeLocation.location;
-                    toLocation = Location.create(actualBeforeLocation.location.getPath().getParent());
-                }
-            }
-
-            String toUuidString = null;
             if (request.hasNoEffect()) {
                 actualNewLocation = actualOldLocation;
             } else {
                 // We have to proceed as normal ...
-                ActualLocation actualIntoLocation = getActualLocation(workspace, toLocation);
-                toUuidString = actualIntoLocation.uuid;
-                if (!toUuidString.equals(oldParentUuid)) {
-                    // Now we know that the new parent is not the existing parent ...
-                    final int oldIndex = fromEntity.getIndexInParent();
 
-                    // Make sure the child name is set correctly ...
-                    String childOldLocalName = fromEntity.getChildName();
-                    String childLocalName = null;
-                    NamespaceEntity ns = null;
-                    Name childName = request.desiredName();
-                    if (childName != null) {
-                        childLocalName = request.desiredName().getLocalName();
-                        String childNsUri = childName.getNamespaceUri();
-                        ns = namespaces.get(childNsUri, true);
-                    } else {
-                        childName = oldPath.getLastSegment().getName();
-                        childLocalName = fromEntity.getChildName();
-                        ns = fromEntity.getChildNamespace();
-                    }
+                Location beforeLocation = request.before();
+                if (beforeLocation == null) {
+                    ActualLocation actualIntoLocation = getActualLocation(workspace, request.into());
 
-                    int nextSnsIndex = 1;
-                    int nextIndexInParent = 1;
-                    if (beforeLocation == null) {
-                        // Find the largest SNS index in the existing ChildEntity objects with the same name ...
-                        Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
-                        query.setParameter("workspaceId", workspaceId);
-                        query.setParameter("parentUuid", toUuidString);
-                        query.setParameter("ns", ns.getId());
-                        query.setParameter("childName", childLocalName);
-                        try {
-                            Integer index = (Integer)query.getSingleResult();
-                            if (index != null) nextSnsIndex = index.intValue() + 1;
-                        } catch (NoResultException e) {
-                        }
+                    actualNewLocation = moveNodeToLastChild(workspace, actualLocation, actualIntoLocation, request.desiredName());
+                } else {
 
-                        // Find the largest child index in the existing ChildEntity objects ...
-                        query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
-                        query.setParameter("workspaceId", workspaceId);
-                        query.setParameter("parentUuid", toUuidString);
-                        try {
-                            Integer index = (Integer)query.getSingleResult();
-                            if (index != null) nextIndexInParent = index + 1;
-                        } catch (NoResultException e) {
-                        }
-                    } else {
-                        /*
-                         * This is a sub-optimal approach, particularly for inserts to the front
-                         * of a long list of child nodes, but it guarantees that we won't have
-                         * the JPA-cached entities and the database out of sync.
-                         */
+                    ActualLocation actualBeforeLocation = getActualLocation(workspace, beforeLocation);
+                    ActualLocation actualIntoLocation = getActualLocation(workspace,
+                                                                          Location.create(beforeLocation.getPath().getParent()));
 
-                        Query query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
-                        query.setParameter("workspaceId", workspaceId);
-                        query.setParameter("parentUuidString", toUuidString);
-                        try {
-                            List<ChildEntity> children = query.getResultList();
-                            Path beforePath = beforeLocation.getPath();
-                            Path.Segment beforeSegment = beforePath.getLastSegment();
-
-                            boolean foundBefore = false;
-                            for (ChildEntity child : children) {
-                                NamespaceEntity namespace = child.getChildNamespace();
-                                if (namespace.getUri().equals(ns.getUri()) && child.getChildName().equals(childLocalName)
-                                    && child.getSameNameSiblingIndex() == beforeSegment.getIndex()) {
-                                    foundBefore = true;
-                                    nextIndexInParent = child.getIndexInParent();
-                                    nextSnsIndex = beforeSegment.getIndex();
-                                }
-
-                                if (foundBefore) {
-                                    child.setIndexInParent(child.getIndexInParent() + 1);
-                                    if (child.getChildName().equals(childLocalName) && namespace.getUri().equals(ns.getUri())) {
-                                        child.setSameNameSiblingIndex(child.getSameNameSiblingIndex() + 1);
-                                    }
-                                    entities.persist(child);
-                                }
-                            }
-
-                        } catch (NoResultException e) {
-                        }
-
-                    }
-
-                    fromEntity.setParentUuidString(toUuidString);
-                    fromEntity.setChildName(childLocalName);
-                    fromEntity.setChildNamespace(ns);
-                    fromEntity.setIndexInParent(nextIndexInParent);
-                    fromEntity.setSameNameSiblingIndex(nextSnsIndex);
-
-                    // Flush the entities to the database ...
-                    entities.flush();
-
-                    // Determine the new location ...
-                    Path newParentPath = actualIntoLocation.location.getPath();
-                    Path newPath = pathFactory.create(newParentPath, childName, nextSnsIndex);
-                    actualNewLocation = actualOldLocation.with(newPath);
-
-                    // And adjust the SNS index and indexes ...
-                    ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
-                                                                        workspaceId,
-                                                                        oldParentUuid,
-                                                                        childOldLocalName,
-                                                                        ns.getId(),
-                                                                        oldIndex);
-
-                    // Update the cache ...
-                    cache.moveNode(workspaceId, actualOldLocation, oldIndex, actualNewLocation);
+                    actualNewLocation = moveNodeBefore(workspace, actualLocation, actualIntoLocation, actualBeforeLocation);
                 }
-
             }
-
         } catch (Throwable e) { // Includes PathNotFoundException
             System.err.flush();
             System.out.flush();
@@ -2311,7 +2429,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             props.setData(baos.toByteArray());
             props.setPropertyCount(numProperties);
-
+            
             // Record the changes to the references ...
             if (refs != null && refs.hasWritten()) {
                 for (Reference reference : refs.getWritten()) {
@@ -2402,7 +2520,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             // See if the location is already in the cache ...
             Location cached = cache.getLocationFor(workspaceId, path);
             if (cached != null) {
-                return new ActualLocation(cached, cached.getUuid().toString(), null);
+                return new ActualLocation(original, cached.getUuid().toString(), null);
             }
         }
 
@@ -2437,7 +2555,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
             Path fullPath = pathFactory.createAbsolutePath(segments);
-            Location newLocation = Location.create(fullPath, uuidProperty);
+            Location newLocation = original.with(fullPath); 
             cache.addNewNode(workspaceId, newLocation);
             return new ActualLocation(newLocation, nodeUuidString, originalEntity);
         }
@@ -2460,10 +2578,17 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (cachedParent != null) {
             // We know the UUID of the parent, so we can find the child a little faster ...
             ChildEntity child = findByPathSegment(workspaceId, cachedParent.getUuid().toString(), path.getLastSegment());
+            
+            // If there is no matching child, throw an exception
+            if (child == null) {
+                // Could not find the node given the supplied path, so find the lowest path that does exist ...
+                throw new PathNotFoundException(original, cachedParent.getPath(), JpaConnectorI18n.nodeDoesNotExist.text(path));
+            }
+            
             uuidString = child.getId().getChildUuidString();
             Location newLocation = original.with(UUID.fromString(uuidString));
             cache.addNewNode(workspaceId, newLocation);
-            return new ActualLocation(newLocation, uuidString, child);
+            return new ActualLocation(original, uuidString, child);
         }
 
         // We couldn't find the parent, so we need to search by path ...
@@ -2489,6 +2614,18 @@ public class BasicRequestProcessor extends RequestProcessor {
         return new ActualLocation(newLocation, uuidString, child);
     }
 
+    protected ChildEntity findNode( long workspaceId, String uuidString) {
+        Query query = entities.createNamedQuery("ChildEntity.findByChildUuid");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("childUuidString", uuidString);
+        try {
+            // Find the parent of the UUID ...
+            return (ChildEntity)query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+    
     /**
      * Find the node with the supplied path segment that is a child of the supplied parent.
      * 

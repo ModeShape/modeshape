@@ -1055,6 +1055,46 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     }
 
     @Test
+    public void shouldMoveNodeBeforeSibling() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        // Move last node to front ...
+        graph.move("/node3").before("/node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node3"), segment("node1"), segment("node2")));
+
+        // Move last node to front ...
+        graph.move("/node3").before("/node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node2"), segment("node3"), segment("node1")));
+
+    }
+
+    @Test
+    public void shouldMoveNodeBeforeSelf() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 3;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        // Move node before itself (trivial change) ...
+        graph.move("/node2").before("/node2");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+    }    
+
+    @Test
     public void shouldMoveNodes() {
         // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
         // /

@@ -357,6 +357,13 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         assert this.getRoot().equals(node) != true;
         MapNode oldParent = node.getParent();
         Name oldName = node.getName().getName();
+        
+        if (this.equals(newAbstractMapWorkspace) && node.getParent().getUuid().equals(newParent.getUuid())
+            && node.equals(beforeNode)) {
+            // Trivial move of a node to its parent before itself
+            return;
+        }
+        
         if (oldParent != null) {
             boolean removed = oldParent.getChildren().remove(node);
             assert removed == true;

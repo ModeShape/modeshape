@@ -442,6 +442,11 @@ final class JcrValue implements Value {
         }
     }
 
+    @Override
+    public String toString() {
+        return (value == null ? "null" : value.toString()) + " (" + PropertyType.nameFromValue(type) + ")";
+    }
+    
     private enum State {
         NEVER_CONSUMED,
         INPUT_STREAM_CONSUMED,

@@ -58,7 +58,7 @@ public class JpaSourceTest {
         this.source.setNumberOfConnectionsToAcquireAsNeeded(1);
         this.source.setMaximumSizeOfStatementCache(100);
         this.source.setMaximumConnectionIdleTimeInSeconds(0);
-        this.source.setNameOfDefaultWorkspace("default");
+        this.source.setDefaultWorkspaceName("default");
         this.source.setCreatingWorkspacesAllowed(true);
     }
 

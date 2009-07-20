@@ -6,8 +6,8 @@
  * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
- * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
- * is licensed to you under the terms of the GNU Lesser General Public License as
+ * Unless otherwise indicated, all code in JBoss DNA is licensed
+ * to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
@@ -21,12 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.test.integration;
+package org.jboss.dna.graph;
 
-import junit.framework.Test;
 
-public class InfinispanRepositoryTckTest {
-    public static Test suite() {
-        return AbstractRepositoryTckTest.readWriteRepositorySuite("infinispan");
+/**
+ * A lexicon of internal and implementation-specific information
+ */
+public class DnaIntLexicon {
+
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna/internal/1.0";
+        public static final String PREFIX = "dnaint";
     }
 }

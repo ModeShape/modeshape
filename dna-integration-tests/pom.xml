@@ -75,10 +75,32 @@
 			<version>${pom.version}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- 
+          JPA Connector Dependencies
+          -->
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-store-jpa</artifactId>
 			<version>${pom.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-entitymanager</artifactId>
+			<version>3.4.0.GA</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-c3p0</artifactId>
+			<version>3.3.1.GA</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>1.8.0.2</version>
 			<scope>test</scope>
 		</dependency>
 

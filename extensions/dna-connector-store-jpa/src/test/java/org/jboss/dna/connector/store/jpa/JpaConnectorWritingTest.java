@@ -57,6 +57,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
         source.setMaximumConnectionIdleTimeInSeconds(0);
         source.setReferentialIntegrityEnforced(true);
         source.setLargeValueSizeInBytes(150);
+        source.setCompressData(true);
 
         return source;
     }

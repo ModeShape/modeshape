@@ -282,7 +282,7 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     private class SystemViewContentHandler extends DefaultHandler {
-        private Stack<AbstractJcrNode> parentStack;
+        private final Stack<AbstractJcrNode> parentStack;
 
         private final String svNameName;
         private final String svTypeName;
@@ -292,7 +292,7 @@ class JcrContentHandler extends DefaultHandler {
         private int currentPropType;
 
         private StringBuffer valueBuffer;
-        private Map<String, List<Value>> currentProps;
+        private final Map<String, List<Value>> currentProps;
 
         /**
          * @param currentNode
@@ -346,6 +346,31 @@ class JcrContentHandler extends DefaultHandler {
                     if (rawUuid != null) {
                         assert rawUuid.size() == 1;
                         uuid = UUID.fromString(rawUuid.get(0).getString());
+                        
+                        try {
+                            // Deal with any existing node ...
+                            AbstractJcrNode existingNodeWithUuid = cache().findJcrNode(Location.create(uuid));
+                            switch (uuidBehavior) {
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
+                                    parentNode = existingNodeWithUuid.getParent();
+                                    existingNodeWithUuid.remove();
+                                    break;
+                                case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
+                                    uuid = UUID.randomUUID();
+                                    break;
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
+                                    if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
+                                        throw new ConstraintViolationException();
+                                    }
+                                    existingNodeWithUuid.remove();
+                                    break;
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
+                                    throw new ItemExistsException();
+                            }
+                        } catch (ItemNotFoundException e) {
+                            // there wasn't an existing item, so just continue
+                        }
+                        
                     }
 
                     String typeName = currentProps.get(primaryTypeName).get(0).getString();
@@ -427,7 +452,7 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     private class DocumentViewContentHandler extends DefaultHandler {
-        private Stack<AbstractJcrNode> parentStack;
+        private final Stack<AbstractJcrNode> parentStack;
 
         /**
          * @param currentNode

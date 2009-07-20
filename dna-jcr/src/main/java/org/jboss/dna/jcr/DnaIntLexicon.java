@@ -29,13 +29,7 @@ import org.jboss.dna.graph.property.basic.BasicName;
 /**
  * A lexicon of internal and implementation-specific information
  */
-public class DnaIntLexicon {
-
-    public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna/internal/1.0";
-        public static final String PREFIX = "dnaint";
-    }
-
+public class DnaIntLexicon extends org.jboss.dna.graph.DnaIntLexicon {
     public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
     public static final Name MULTI_VALUED_PROPERTIES = new BasicName(Namespace.URI, "multiValuedProperties");
 }

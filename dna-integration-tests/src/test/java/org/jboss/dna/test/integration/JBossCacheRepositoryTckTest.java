@@ -24,21 +24,10 @@
 package org.jboss.dna.test.integration;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.jboss.dna.jcr.DnaRepositoryStub;
-import org.jboss.dna.jcr.DnaTckTest;
-import org.jboss.dna.jcr.JcrTckTest;
 
-public class JBossCacheRepositoryTckTest extends JcrTckTest {
+public class JBossCacheRepositoryTckTest {
 
-    private static final String NAME = "jbosscache";
-    
     public static Test suite() {
-        DnaRepositoryStub.setCurrentConfigurationName(NAME);
-        TestSuite suite = new TestSuite("TCK Tests for " + NAME);
-        suite.addTest(JcrTckTest.suite());
-        suite.addTestSuite(DnaTckTest.class);
-        
-        return suite;
+        return AbstractRepositoryTckTest.readWriteRepositorySuite("jbosscache");
     }
 }

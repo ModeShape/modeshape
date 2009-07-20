@@ -327,6 +327,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         namespaceRegistry.register(JcrMixLexicon.Namespace.PREFIX, JcrMixLexicon.Namespace.URI);
         namespaceRegistry.register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
         namespaceRegistry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
+        namespaceRegistry.register(DnaIntLexicon.Namespace.PREFIX, DnaIntLexicon.Namespace.URI);
         // namespaceRegistry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
         // namespaceRegistry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
     }

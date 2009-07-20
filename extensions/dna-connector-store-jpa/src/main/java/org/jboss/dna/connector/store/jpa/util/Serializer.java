@@ -217,7 +217,7 @@ public class Serializer {
         final Name name = property.getName();
         if (this.excludeUuidProperty && DnaLexicon.UUID.equals(name)) return false;
         // Write the name ...
-        stream.writeObject(name.getString());
+        stream.writeObject(name.getString(Path.NO_OP_ENCODER));
         // Write the number of values ...
         stream.writeInt(property.size());
         for (Object value : property) {
@@ -277,7 +277,7 @@ public class Serializer {
                 }
             } else if (value instanceof Name) {
                 stream.writeChar('N');
-                stream.writeObject(((Name)value).getString());
+                stream.writeObject(((Name)value).getString(Path.NO_OP_ENCODER));
             } else if (value instanceof Path) {
                 stream.writeChar('P');
                 stream.writeObject(((Path)value).getString());

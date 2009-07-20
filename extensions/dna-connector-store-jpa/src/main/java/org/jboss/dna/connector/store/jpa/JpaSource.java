@@ -142,6 +142,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
     /**
+     * This source does not output executed SQL by default, but this can be overridden by calling {@link #setShowSql(boolean)}.
+     */
+    public static final boolean DEFAULT_SHOW_SQL = false;
+    /**
      * This source does support creating workspaces.
      */
     public static final boolean DEFAULT_SUPPORTS_CREATING_WORKSPACES = true;
@@ -152,7 +156,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     public static final String DEFAULT_ROOT_NODE_UUID = "1497b6fe-8c7e-4bbb-aaa2-24f3d4942668";
 
     /**
-     * The initial {@link #getNameOfDefaultWorkspace() name of the default workspace} is "{@value} ", unless otherwise specified.
+     * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
@@ -192,6 +196,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
     private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private volatile long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+    private volatile boolean showSql = DEFAULT_SHOW_SQL;
     private volatile boolean compressData = DEFAULT_COMPRESS_DATA;
     private volatile boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
@@ -263,6 +268,24 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get whether this source outputs the SQL that it executes
+     * 
+     * @return whether this source outputs the SQL that it executes
+     */
+    public boolean getShowSql() {
+        return this.showSql;
+    }
+
+    /**
+     * Sets whether this source should output the SQL that it executes
+     * 
+     * @param showSql true if this source should output the SQL that it executes, otherwise false
+     */
+    public synchronized void setShowSql( boolean showSql ) {
+        this.showSql = showSql;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
@@ -324,7 +347,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @return the name of the workspace that should be used by default, or null if there is no default workspace
      */
-    public String getNameOfDefaultWorkspace() {
+    public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
 
@@ -334,7 +357,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
      *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
      */
-    public synchronized void setNameOfDefaultWorkspace( String nameOfDefaultWorkspace ) {
+    public synchronized void setDefaultWorkspaceName( String nameOfDefaultWorkspace ) {
         this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     }
 
@@ -733,7 +756,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, Long.toString(getLargeValueSizeInBytes())));
         ref.add(new StringRefAddr(COMPRESS_DATA, Boolean.toString(isCompressData())));
         ref.add(new StringRefAddr(ENFORCE_REFERENTIAL_INTEGRITY, Boolean.toString(isReferentialIntegrityEnforced())));
-        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getNameOfDefaultWorkspace()));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -819,7 +842,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (largeModelSize != null) source.setLargeValueSizeInBytes(Long.parseLong(largeModelSize));
             if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
             if (refIntegrity != null) source.setReferentialIntegrityEnforced(Boolean.parseBoolean(refIntegrity));
-            if (defaultWorkspace != null) source.setNameOfDefaultWorkspace(defaultWorkspace);
+            if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;
@@ -886,7 +909,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, "hibernate.connection.url", this.url);
                 setProperty(configurator, "hibernate.connection.max_fetch_depth", DEFAULT_MAXIMUM_FETCH_DEPTH);
                 setProperty(configurator, "hibernate.connection.pool_size", 0); // don't use the built-in pool
-                setProperty(configurator, "hibernate.show_sql", "false");
+                setProperty(configurator, "hibernate.show_sql", String.valueOf(this.showSql));
             }
 
             entityManagerFactory = configurator.buildEntityManagerFactory();

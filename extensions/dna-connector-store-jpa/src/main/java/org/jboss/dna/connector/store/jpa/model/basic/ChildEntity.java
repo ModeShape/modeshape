@@ -310,4 +310,38 @@ public class ChildEntity {
         }
     }
 
+    @SuppressWarnings( "unchecked" )
+    public static int adjustSnsIndexesAndIndexes( EntityManager entities,
+                                                   Long workspaceId,
+                                                   String uuidParent,
+                                                   int afterIndex,
+                                                   int untilIndex,
+                                                   long childNamespaceIndex,
+                                                   String childName,
+                                                   int modifier ) {
+        int snsCount = 0;
+        
+        // Decrement the 'indexInParent' index values for all nodes above the previously removed sibling ...
+        Query query = entities.createNamedQuery("ChildEntity.findChildrenAfterIndexUnderParent");
+        query.setParameter("workspaceId", workspaceId);
+        query.setParameter("parentUuidString", uuidParent);
+        query.setParameter("afterIndex", afterIndex);
+
+        int index = afterIndex;
+        for (ChildEntity entity : (List<ChildEntity>)query.getResultList()) {
+            if (++index > untilIndex) {
+                break;
+            }
+
+            // Decrement the index in parent ...
+            entity.setIndexInParent(entity.getIndexInParent() + modifier);
+            if (entity.getChildName().equals(childName) && entity.getChildNamespace().getId() == childNamespaceIndex) {
+                // The name matches, so decrement the SNS index ...
+                entity.setSameNameSiblingIndex(entity.getSameNameSiblingIndex() + modifier);
+                snsCount++;
+            }
+        }
+
+        return snsCount;
+    }
 }

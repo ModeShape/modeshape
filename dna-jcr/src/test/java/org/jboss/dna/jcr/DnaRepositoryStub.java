@@ -43,8 +43,10 @@ public class DnaRepositoryStub extends RepositoryStub {
 
     private static String currentConfigurationName = "default";
 
-    private final Properties configProps;
-    private final JcrRepository repository;
+    private Properties configProps;
+    private String repositoryConfigurationName;
+    private JcrRepository repository;
+    
 
     static {
 
@@ -62,15 +64,21 @@ public class DnaRepositoryStub extends RepositoryStub {
     public DnaRepositoryStub( Properties env ) {
         super(env);
 
+        configureRepository();
+    }
+
+    private void configureRepository() {
+        repositoryConfigurationName = currentConfigurationName;
+        
         // Create the in-memory (DNA) repository
         JcrConfiguration configuration = new JcrConfiguration();
         try {
             configProps = new Properties();
-            String propsFileName = "/tck/" + currentConfigurationName + "/repositoryOverlay.properties";
+            String propsFileName = "/tck/" + repositoryConfigurationName + "/repositoryOverlay.properties";
             InputStream propsStream = getClass().getResourceAsStream(propsFileName);
             configProps.load(propsStream);
 
-            String configFileName = "/tck/" + currentConfigurationName + "/configRepository.xml";
+            String configFileName = "/tck/" + repositoryConfigurationName + "/configRepository.xml";
             configuration.loadFrom(getClass().getResourceAsStream(configFileName));
 
             // Add the the node types for the source ...
@@ -86,8 +94,8 @@ public class DnaRepositoryStub extends RepositoryStub {
         JcrEngine engine = configuration.build();
         engine.start();
 
-        // Problems problems = engine.getRepositoryService().getStartupProblems();
-        Problems problems = engine.getProblems();
+        Problems problems = engine.getRepositoryService().getStartupProblems();
+        // Problems problems = engine.getProblems();
         // Print all of the problems from the engine configuration ...
         for (Problem problem : problems) {
             System.err.println(problem);
@@ -96,17 +104,11 @@ public class DnaRepositoryStub extends RepositoryStub {
             throw new IllegalStateException("Problems starting JCR repository");
         }
 
-        repository = getAndLoadRepository(engine, REPOSITORY_SOURCE_NAME);
-    }
-
-    private JcrRepository getAndLoadRepository( JcrEngine engine,
-                                                String repositoryName ) {
-
         ExecutionContext executionContext = engine.getExecutionContext();
         executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
         try {
-            JcrRepository repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
+            repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
 
             // Set up some sample nodes in the graph to match the expected test configuration
             Graph graph = Graph.create(repository.getRepositorySourceName(),
@@ -118,13 +120,13 @@ public class DnaRepositoryStub extends RepositoryStub {
             graph.importXmlFrom(xmlStream).into(destinationPath);
 
             graph.createWorkspace().named("otherWorkspace");
-            return repository;
 
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.
             ex.printStackTrace();
             throw new IllegalStateException("Failed to initialize the repository with text content.", ex);
         }
+
 
     }
 
@@ -139,6 +141,9 @@ public class DnaRepositoryStub extends RepositoryStub {
      */
     @Override
     public JcrRepository getRepository() {
+        if (!currentConfigurationName.equals(repositoryConfigurationName)) {
+            configureRepository();
+        }
         return repository;
     }
 
