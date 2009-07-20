@@ -106,6 +106,8 @@ public class RepositoryService implements AdministeredService {
     private final Path pathToConfigurationRoot;
     private final Administrator administrator = new Administrator();
     private final AtomicBoolean started = new AtomicBoolean(false);
+    /** The problem sink used when encountering problems while starting repositories */
+    private final Problems problems;
 
     /**
      * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the supplied
@@ -117,16 +119,19 @@ public class RepositoryService implements AdministeredService {
      * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
      *        service as the root of the service's configuration; if null, then "/dna:system" is used
      * @param context the execution context in which this service should run
+     * @param problems the {@link Problems} instance that this service should use to report problems starting repositories
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
     public RepositoryService( RepositorySource configurationSource,
                               String configurationWorkspaceName,
                               Path pathToConfigurationRoot,
-                              ExecutionContext context ) {
+                              ExecutionContext context,
+                              Problems problems ) {
         CheckArg.isNotNull(configurationSource, "configurationSource");
         CheckArg.isNotNull(context, "context");
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = pathFactory.create("/dna:system");
+        if (problems == null) problems = new SimpleProblems();
         Path sourcesPath = pathFactory.create(pathToConfigurationRoot, DnaLexicon.SOURCES);
 
         this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context);
@@ -135,6 +140,7 @@ public class RepositoryService implements AdministeredService {
         this.configurationSourceName = configurationSource.getName();
         this.configurationWorkspaceName = configurationWorkspaceName;
         this.context = context;
+        this.problems = problems;
     }
 
     /**
@@ -180,9 +186,7 @@ public class RepositoryService implements AdministeredService {
     }
 
     protected synchronized void startService() {
-        if (this.started.get() == false) {
-            Problems problems = new SimpleProblems();
-
+        if (this.started.get() == false) {            
             // ------------------------------------------------------------------------------------
             // Read the configuration ...
             // ------------------------------------------------------------------------------------
@@ -207,6 +211,7 @@ public class RepositoryService implements AdministeredService {
             } catch (Throwable err) {
                 throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text(), err);
             }
+            
             this.started.set(true);
         }
     }

@@ -32,6 +32,8 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -59,6 +61,7 @@ public class RepositoryServiceTest {
     private InMemoryRepositorySource configRepositorySource;
     private ExecutionContext context;
     private Path root;
+    private Problems problems;
     @Mock
     private RepositoryLibrary sources;
 
@@ -76,7 +79,8 @@ public class RepositoryServiceTest {
         RepositoryConnection configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
         root = context.getValueFactories().getPathFactory().createRootPath();
-        service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context);
+        problems = new SimpleProblems();
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context, problems);
     }
 
     @After
@@ -189,7 +193,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldConfigureRepositorySourceWithSetterThatTakesArrayButWithSingleValues() {
         Path configPath = context.getValueFactories().getPathFactory().create("/dna:system");
-        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context);
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, problems);
 
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");

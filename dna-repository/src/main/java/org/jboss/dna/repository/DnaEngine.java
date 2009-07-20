@@ -106,7 +106,7 @@ public class DnaEngine {
         Path pathToConfigurationRoot = this.configuration.getPath();
         String configWorkspaceName = this.configuration.getWorkspace();
         final RepositorySource configSource = this.configuration.getRepositorySource();
-        repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context);
+        repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context, problems);
 
         // Create the sequencing service ...
         executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now
