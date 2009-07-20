@@ -94,8 +94,8 @@ public class DnaRepositoryStub extends RepositoryStub {
         JcrEngine engine = configuration.build();
         engine.start();
 
-        Problems problems = engine.getRepositoryService().getStartupProblems();
-        // Problems problems = engine.getProblems();
+        // Problems problems = engine.getRepositoryService().getStartupProblems();
+        Problems problems = engine.getProblems();
         // Print all of the problems from the engine configuration ...
         for (Problem problem : problems) {
             System.err.println(problem);
