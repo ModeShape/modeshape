@@ -156,10 +156,7 @@ class JcrSession implements Session {
         this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
-        this.graph = Graph.create(this.repository.getRepositorySourceName(),
-                                  this.repository.getConnectionFactory(),
-                                  this.executionContext);
-        this.graph.useWorkspace(workspace.getName());
+        this.graph = repository.createWorkspaceGraph(workspace.getName());
 
         this.cache = new SessionCache(this);
         this.isLive = true;

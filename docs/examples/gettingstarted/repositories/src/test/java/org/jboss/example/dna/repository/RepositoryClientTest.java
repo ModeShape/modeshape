@@ -243,6 +243,7 @@ public class RepositoryClientTest {
         client.startRepositories();
 
         getNodeInfo("Vehicles", "/");
+        // The non-JCR configuration does not have a "jcr:system"
         // assertThat(children, hasItems("Vehicles", "jcr:system"));
 
         getNodeInfo("Vehicles", "/Vehicles");

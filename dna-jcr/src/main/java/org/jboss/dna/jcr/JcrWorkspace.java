@@ -62,17 +62,13 @@ import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.session.GraphSession;
 import org.jboss.dna.graph.session.GraphSession.Node;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
-import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.jcr.SessionCache.JcrNodePayload;
 import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.xml.sax.ContentHandler;
@@ -102,8 +98,8 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * The reference to the {@link JcrRepository} instance that owns this {@link Workspace} instance. Very few methods on this
-     * repository object are used; mainly {@link JcrRepository#getConnectionFactory()} and
-     * {@link JcrRepository#getRepositorySourceName()}.
+     * repository object are used; mainly {@link JcrRepository#createWorkspaceGraph(String)},
+     * {@link JcrRepository#getPersistentRegistry()} and {@link JcrRepository#getRepositorySourceName()}.
      */
     private final JcrRepository repository;
 
@@ -149,48 +145,46 @@ final class JcrWorkspace implements Workspace {
         this.name = workspaceName;
         this.repository = repository;
 
-        // Set up the execution context for this workspace, which should use the namespace registry that persists
-        // the namespaces in the graph ...
-        Graph namespaceGraph = Graph.create(this.repository.getRepositorySourceName(),
-                                            this.repository.getConnectionFactory(),
-                                            context);
-        namespaceGraph.useWorkspace(workspaceName);
+        // // Set up the execution context for this workspace, which should use the namespace registry that persists
+        // // the namespaces in the graph ...
+        // Graph namespaceGraph = Graph.create(this.repository.getRepositorySourceName(),
+        // this.repository.getConnectionFactory(),
+        // context);
+        // namespaceGraph.useWorkspace(workspaceName);
+        //
+        // // Make sure the "/jcr:system" node exists ...
+        // PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        // Path root = pathFactory.createRootPath();
+        // Path systemPath = pathFactory.create(root, JcrLexicon.SYSTEM);
+        // Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
+        // namespaceGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
+        //
+        // Name uriProperty = DnaLexicon.NAMESPACE_URI;
+        // Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);
+        // PropertyFactory propertyFactory = context.getPropertyFactory();
+        // Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
+        // org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
+        // namespacesPath,
+        // uriProperty, namespaceType);
+        this.context = context;
 
-        // Make sure the "/jcr:system" node exists ...
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        Path root = pathFactory.createRootPath();
-        Path systemPath = pathFactory.create(root, JcrLexicon.SYSTEM);
-        Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
-        namespaceGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
-
-        Name uriProperty = DnaLexicon.NAMESPACE_URI;
-        Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);
-        PropertyFactory propertyFactory = context.getPropertyFactory();
-        Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
-        org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
-                                                                                                       namespacesPath,
-                                                                                                       uriProperty, namespaceType);
-        this.context = context.with(persistentRegistry);
-
-        // Now create a graph with this new execution context ...
-        this.graph = Graph.create(this.repository.getRepositorySourceName(), this.repository.getConnectionFactory(), this.context);
-        this.graph.useWorkspace(workspaceName);
+        // Now create a graph for the session ...
+        this.graph = this.repository.createWorkspaceGraph(workspaceName);
 
         // Set up the session for this workspace ...
         this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
 
         // This must be initialized after the session
-        RepositoryNodeTypeManager repoTypeManager = repository.getRepositoryTypeManager();
-        this.nodeTypeManager = new JcrNodeTypeManager(session, repoTypeManager);
+        this.nodeTypeManager = new JcrNodeTypeManager(session, this.repository.getRepositoryTypeManager());
         this.queryManager = new JcrQueryManager(this.session);
 
-        if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
-            Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
-            repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
-        }
-
+        // if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
+        // Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
+        // repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
+        // }
+        //
         // Set up and initialize the persistent JCR namespace registry ...
-        this.workspaceRegistry = new JcrNamespaceRegistry(persistentRegistry, this.session);
+        this.workspaceRegistry = new JcrNamespaceRegistry(this.repository.getPersistentRegistry(), this.session);
 
     }
 

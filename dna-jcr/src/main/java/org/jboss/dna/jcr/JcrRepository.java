@@ -28,9 +28,11 @@ import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
@@ -49,8 +51,25 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.federation.FederatedRepositorySource;
+import org.jboss.dna.graph.connector.federation.Projection;
+import org.jboss.dna.graph.connector.federation.ProjectionParser;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.Changes;
+import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 
 /**
@@ -161,6 +180,11 @@ public class JcrRepository implements Repository {
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
     private final Map<Option, String> options;
+    private final RepositorySource systemSource;
+    private final Projection systemSourceProjection;
+    private final FederatedRepositorySource federatedSource;
+    private final Observer observer;
+    private final NamespaceRegistry persistentRegistry;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -198,9 +222,6 @@ public class JcrRepository implements Repository {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
-        this.executionContext = executionContext;
-        this.connectionFactory = connectionFactory;
-        this.sourceName = repositorySourceName;
         Map<String, String> modifiableDescriptors;
         if (descriptors == null) {
             modifiableDescriptors = new HashMap<String, String>();
@@ -234,9 +255,53 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
         this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
 
-        this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext);
+        // Set up the options ...
+        if (options == null) {
+            this.options = DEFAULT_OPTIONS;
+        } else {
+            // Initialize with defaults, then add supplied options ...
+            EnumMap<Option, String> localOptions = new EnumMap<Option, String>(DEFAULT_OPTIONS);
+            localOptions.putAll(options);
+            this.options = Collections.unmodifiableMap(localOptions);
+        }
 
+        // Initialize the observer, which receives events from all repository sources ...
+        this.observer = new RepositoryObserver();
+
+        // Create the in-memory repository source that we'll use for the "/jcr:system" branch in this repository.
+        // All workspaces will be set up with a federation connector that projects this system repository into
+        // "/jcr:system", and all other content is projected to the repositories actual source (and workspace).
+        // (The federation connector refers to this configuration as an "offset mirror".)
+        InMemoryRepositorySource systemSource = new InMemoryRepositorySource();
+        String systemWorkspaceName = "jcr:system";
+        String systemSourceName = "jcr:system source";
+        systemSource.setName(systemSourceName);
+        systemSource.setDefaultWorkspaceName(systemWorkspaceName);
+        this.systemSource = systemSource;
+        this.connectionFactory = new ConnectionFactoryWithSystem(connectionFactory, this.systemSource);
+
+        // Set up the "/jcr:system" branch ...
+        Graph systemGraph = Graph.create(this.systemSource, executionContext);
+        systemGraph.useWorkspace(systemWorkspaceName);
+        initializeSystemContent(systemGraph);
+        this.sourceName = repositorySourceName;
+
+        // Create the namespace registry and corresponding execution context.
+        // Note that this persistent registry has direct access to the system workspace.
+        Name uriProperty = DnaLexicon.NAMESPACE_URI;
+        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
+        Path systemPath = pathFactory.create(JcrLexicon.SYSTEM);
+        Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);
+        PropertyFactory propertyFactory = executionContext.getPropertyFactory();
+        Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
+
+        // Now create the registry implementation ...
+        this.persistentRegistry = new GraphNamespaceRegistry(systemGraph, namespacesPath, uriProperty, namespaceType);
+        this.executionContext = executionContext.with(persistentRegistry);
+
+        // Set up the repository type manager ...
         try {
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext);
             this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
                 "/org/jboss/dna/jcr/jsr_170_builtins.cnd", "/org/jboss/dna/jcr/dna_builtins.cnd"}));
         } catch (RepositoryException re) {
@@ -246,15 +311,45 @@ public class JcrRepository implements Repository {
             ioe.printStackTrace();
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
-
-        if (options == null) {
-            this.options = DEFAULT_OPTIONS;
-        } else {
-            // Initialize with defaults, then add supplied options ...
-            EnumMap<Option, String> localOptions = new EnumMap<Option, String>(DEFAULT_OPTIONS);
-            localOptions.putAll(options);
-            this.options = Collections.unmodifiableMap(localOptions);
+        if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
+            // Note that the node types are written directly to the system workspace.
+            Path parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
+            this.repositoryTypeManager.projectOnto(systemGraph, parentOfTypeNodes);
         }
+
+        // Create the projection for the system repository ...
+        ProjectionParser projectionParser = ProjectionParser.getInstance();
+        String rule = "/jcr:system => /jcr:system";
+        Projection.Rule[] systemProjectionRules = projectionParser.rulesFromString(this.executionContext, rule);
+        this.systemSourceProjection = new Projection(systemSourceName, systemWorkspaceName, true, systemProjectionRules);
+
+        // Define the federated repository source. Use the same name as the repository, since this federated source
+        // will not be in the connection factory ...
+        this.federatedSource = new FederatedRepositorySource();
+        this.federatedSource.setName("JCR " + repositorySourceName);
+        this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
+    }
+
+    protected void initializeSystemContent( Graph systemGraph ) {
+        // Make sure the "/jcr:system" node exists ...
+        ExecutionContext context = systemGraph.getContext();
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        Path systemPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM);
+        Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
+        systemGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
+
+        // Right now, the other nodes will be created as needed
+    }
+
+    Graph createWorkspaceGraph( String workspaceName ) {
+        Graph graph = Graph.create(this.federatedSource, this.executionContext);
+        graph.useWorkspace(workspaceName);
+        return graph;
+    }
+
+    Graph createSystemGraph() {
+        // The default workspace should be the system workspace ...
+        return Graph.create(this.systemSource, this.executionContext);
     }
 
     /**
@@ -279,19 +374,32 @@ public class JcrRepository implements Repository {
      * Get the name of the repository source that this repository is using.
      * 
      * @return the name of the RepositorySource
-     * @see #getConnectionFactory()
      */
     String getRepositorySourceName() {
         return sourceName;
     }
 
     /**
-     * Get the connection factory that this repository is using.
-     * 
-     * @return the connection factory; never null
+     * @return executionContext
      */
-    RepositoryConnectionFactory getConnectionFactory() {
-        return this.connectionFactory;
+    ExecutionContext getExecutionContext() {
+        return executionContext;
+    }
+
+    /**
+     * @return persistentRegistry
+     */
+    NamespaceRegistry getPersistentRegistry() {
+        return persistentRegistry;
+    }
+
+    /**
+     * The observer to which all source events are sent.
+     * 
+     * @return the current observer, or null if there is no observer
+     */
+    Observer getObserver() {
+        return observer;
     }
 
     /**
@@ -412,7 +520,8 @@ public class JcrRepository implements Repository {
             }
         }
 
-        // Ensure valid workspace name
+        // Ensure valid workspace name by talking directly to the source ...
+        boolean isDefault = false;
         Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
         if (workspaceName == null) {
             try {
@@ -421,15 +530,19 @@ public class JcrRepository implements Repository {
             } catch (RepositorySourceException e) {
                 throw new RepositoryException(JcrI18n.errorObtainingDefaultWorkspaceName.text(sourceName, e.getMessage()), e);
             }
+            isDefault = true;
         } else {
+            // There is a non-null workspace name ...
             try {
                 // Verify that the workspace exists (or can be created) ...
                 Set<String> workspaces = graph.getWorkspaces();
                 if (!workspaces.contains(workspaceName)) {
+                    // Make sure there isn't a federated workspace ...
+                    this.federatedSource.removeWorkspace(workspaceName);
                     // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
                     throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
-                
+
                 graph.useWorkspace(workspaceName);
             } catch (InvalidWorkspaceException e) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), e);
@@ -439,17 +552,28 @@ public class JcrRepository implements Repository {
             }
         }
 
+        synchronized (this.federatedSource) {
+            if (!this.federatedSource.hasWorkspace(workspaceName)) {
+                // Add the workspace to the federated source ...
+                ProjectionParser projectionParser = ProjectionParser.getInstance();
+                Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
+                List<Projection> projections = new ArrayList<Projection>(2);
+                projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
+                projections.add(this.systemSourceProjection);
+                this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
+            }
+        }
+
         // Create the workspace, which will create its own session ...
         sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
         JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
-        
-        JcrSession session = (JcrSession) workspace.getSession();
-        
+
+        JcrSession session = (JcrSession)workspace.getSession();
+
         // Need to make sure that the user has access to this session
         try {
             session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
-        }
-        catch (AccessControlException ace) {
+        } catch (AccessControlException ace) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
         }
         return session;
@@ -464,4 +588,84 @@ public class JcrRepository implements Repository {
     String getName() {
         return this.sourceName;
     }
+
+    protected class FederatedRepositoryContext implements RepositoryContext {
+        private final RepositoryConnectionFactory connectionFactory;
+
+        protected FederatedRepositoryContext( RepositoryConnectionFactory nonFederatingConnectionFactory ) {
+            this.connectionFactory = nonFederatingConnectionFactory;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration(int)
+         */
+        public Subgraph getConfiguration( int depth ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
+         */
+        public ExecutionContext getExecutionContext() {
+            return JcrRepository.this.getExecutionContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
+         */
+        public Observer getObserver() {
+            return JcrRepository.this.getObserver();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
+         */
+        public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+            return connectionFactory;
+        }
+    }
+
+    protected class ConnectionFactoryWithSystem implements RepositoryConnectionFactory {
+        private final RepositoryConnectionFactory delegate;
+        private final RepositorySource system;
+
+        protected ConnectionFactoryWithSystem( RepositoryConnectionFactory delegate,
+                                               RepositorySource source ) {
+            assert delegate != null;
+            this.delegate = delegate;
+            this.system = source;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
+         */
+        public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+            if (this.system.getName().equals(sourceName)) {
+                return this.system.getConnection();
+            }
+            return delegate.createConnection(sourceName);
+        }
+    }
+
+    protected class RepositoryObserver implements Observer {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
+         */
+        public void notify( Changes changes ) {
+            // does nothing at the moment, but eventually will fire to all of the listeners on the appropriate sessions
+        }
+    }
+
 }

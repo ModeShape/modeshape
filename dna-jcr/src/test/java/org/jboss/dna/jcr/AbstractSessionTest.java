@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.util.Collections;
@@ -40,9 +41,12 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  * Abstract test class that sets up a working JcrSession environment, albeit with a mocked JcrRepository.
@@ -80,9 +84,18 @@ public abstract class AbstractSessionTest {
         context = new ExecutionContext();
         // Register the test namespace
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         // Set up the initial content ...
         graph = Graph.create(source, context);
+
+        // Make sure the path to the namespaces exists ...
+        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
+        graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
+
+        graph.create("/jcr:system/dna:namespaces").and();
+        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
+
         initializeContent();
 
         // Stub out the connection factory ...
@@ -112,10 +125,16 @@ public abstract class AbstractSessionTest {
             ioe.printStackTrace();
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
+        this.repoTypeManager.projectOnto(graph, pathFactory.create("/jcr:system/jcr:nodeTypes"));
 
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
+        stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
+        stub(repository.createWorkspaceGraph(anyString())).toAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
+            }
+        });
 
         initializeOptions();
         stub(repository.getOptions()).toReturn(options);

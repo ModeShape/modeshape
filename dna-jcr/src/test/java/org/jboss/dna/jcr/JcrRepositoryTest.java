@@ -33,6 +33,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
@@ -42,12 +43,14 @@ import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.MockSecurityContext;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.security.config.IDTrustConfiguration;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -55,7 +58,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 /**
- * @author jverhaeg
  */
 public class JcrRepositoryTest {
 
@@ -66,6 +68,9 @@ public class JcrRepositoryTest {
     private Map<String, String> descriptors;
     private RepositoryConnectionFactory connectionFactory;
     private Credentials credentials;
+    private Graph sourceGraph;
+    private Graph systemGraph;
+    private JcrSession session;
 
     @BeforeClass
     public static void beforeClass() {
@@ -106,13 +111,26 @@ public class JcrRepositoryTest {
             }
         };
 
-        // Make sure the path to the namespaces exists ...
-        Graph graph = Graph.create(source, context);
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
-
         // Set up the repository ...
         descriptors = new HashMap<String, String>();
         repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+
+        // Set up the graph that goes directly to the source ...
+        sourceGraph = Graph.create(source, context);
+
+        // Set up the graph that goes directly to the system source ...
+        systemGraph = repository.createSystemGraph();
+    }
+
+    @After
+    public void afterEach() {
+        if (session != null) {
+            try {
+                session.logout();
+            } finally {
+                session = null;
+            }
+        }
     }
 
     @Test
@@ -258,6 +276,67 @@ public class JcrRepositoryTest {
                 return null;
             }
         });
+    }
+
+    @Test
+    public void shouldHaveRootNode() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        String uuid = root.getUUID();
+
+        // Get the root via the direct graph ...
+        Node dnaRoot = sourceGraph.getNodeAt("/");
+        UUID dnaRootUuid = dnaRoot.getLocation().getUuid();
+
+        // They should have the same UUID ...
+        assertThat(uuid, is(dnaRootUuid.toString()));
+
+        // Get the children of the root node ...
+        javax.jcr.NodeIterator iter = root.getNodes();
+        javax.jcr.Node system = iter.nextNode();
+        assertThat(system.getName(), is("jcr:system"));
+
+        // Add a child node ...
+        javax.jcr.Node childA = root.addNode("childA", "nt:unstructured");
+        assertThat(childA, is(notNullValue()));
+        iter = root.getNodes();
+        javax.jcr.Node system2 = iter.nextNode();
+        javax.jcr.Node childA2 = iter.nextNode();
+        assertThat(system2.getName(), is("jcr:system"));
+        assertThat(childA2.getName(), is("childA"));
+    }
+
+    @Test
+    public void shouldHaveSystemBranch() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+        UUID uuid = system.location.getUuid();
+
+        for (int i = 0; i != 3; ++i) {
+            // Get the same node via the direct graph ...
+            Node dnaSystem = systemGraph.getNodeAt("/jcr:system");
+            UUID dnaSystemUuid = dnaSystem.getLocation().getUuid();
+
+            // They should have the same UUID ...
+            assertThat(uuid, is(dnaSystemUuid));
+        }
+    }
+
+    protected JcrSession createSession() throws Exception {
+        LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        login.login();
+
+        Subject subject = login.getSubject();
+        JcrSession session = (JcrSession)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+
+            @SuppressWarnings( "synthetic-access" )
+            public Session run() throws Exception {
+                return repository.login();
+            }
+
+        }, AccessController.getContext());
+        return session;
     }
 
     private void testDescriptorKeys( Repository repository ) {

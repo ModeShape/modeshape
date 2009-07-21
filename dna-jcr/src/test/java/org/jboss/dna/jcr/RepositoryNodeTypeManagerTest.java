@@ -57,20 +57,13 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-
-        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
-
     }
 
     @Override
     protected void initializeContent() {
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
-        graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
-
+        super.initializeContent();
         graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
-
     }
 
     @Override
@@ -78,7 +71,6 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         // Stub out the repository options ...
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
-
     }
 
     @After

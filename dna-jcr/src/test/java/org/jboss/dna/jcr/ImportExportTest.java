@@ -31,7 +31,6 @@ import java.util.Collections;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.MockSecurityContext;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -76,20 +75,8 @@ public class ImportExportTest {
         // Register the test namespace
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        // Set up the initial content ...
-        Graph graph = Graph.create(source, context);
-
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
-        graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
-
         // Stub out the connection factory ...
         RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
             @SuppressWarnings( "synthetic-access" )
             public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                 return source.getConnection();
@@ -157,6 +144,7 @@ public class ImportExportTest {
     public void shouldImportExportEscapedXmlCharactersInSystemViewUsingWorkspace() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
+        System.out.println(session);
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
         Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
 

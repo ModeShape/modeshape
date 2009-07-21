@@ -32,7 +32,6 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.MockSecurityContext;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -53,7 +52,7 @@ public abstract class AbstractJcrAccessTest {
     private InMemoryRepositorySource source;
     private JcrSession session;
     private JcrRepository repository;
-    
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -70,13 +69,6 @@ public abstract class AbstractJcrAccessTest {
         // Register the test namespace
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        // Set up the initial content ...
-        Graph graph = Graph.create(source, context);
-
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
-        graph.set("jcr:primaryType").on("/jcr:system").to(DnaLexicon.SYSTEM);
-
         // Stub out the connection factory ...
         RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
             /**
@@ -92,8 +84,9 @@ public abstract class AbstractJcrAccessTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused");
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
-        session = (JcrSession) repository.login(new SecurityContextCredentials(mockSecurityContext));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
+                                                                      Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));
+        session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
     }
 
     @After
@@ -102,34 +95,35 @@ public abstract class AbstractJcrAccessTest {
             session.logout();
         }
     }
-    
+
     protected JcrSession session() {
         return this.session;
     }
-    
-    private String getRandomString(int length) {
+
+    private String getRandomString( int length ) {
         StringBuffer buff = new StringBuffer(length);
-        
+
         for (int i = 0; i < length; i++) {
-            buff.append((char) ((Math.random() *26) + 'a'));
+            buff.append((char)((Math.random() * 26) + 'a'));
         }
-        
+
         return buff.toString();
     }
-    
-    private int createChildren(Node parent, int numProperties, int width, int depth) 
-        throws Exception
-    {
+
+    private int createChildren( Node parent,
+                                int numProperties,
+                                int width,
+                                int depth ) throws Exception {
         if (depth < 1) {
             return 0;
-            
+
         }
 
         int count = width;
-        
+
         for (int i = 0; i < width; i++) {
             Node newNode = parent.addNode(getRandomString(9), "nt:unstructured");
-            
+
             for (int j = 0; j < numProperties; j++) {
                 newNode.setProperty(getRandomString(8), getRandomString(16));
             }
@@ -138,7 +132,7 @@ public abstract class AbstractJcrAccessTest {
         }
         return count;
     }
-    
+
     protected int createSubgraph( JcrSession session,
                                   String initialPath,
                                   int depth,
@@ -147,9 +141,7 @@ public abstract class AbstractJcrAccessTest {
                                   boolean oneBatch,
                                   Stopwatch stopwatch,
                                   PrintStream output,
-                                  String description )
-        throws Exception
-    {
+                                  String description ) throws Exception {
         // Calculate the number of nodes that we'll created, but subtract 1 since it doesn't create the root
         long totalNumber = calculateTotalNumberOfNodesInTree(numberOfChildrenPerNode, depth, false);
         if (initialPath == null) initialPath = "";
@@ -160,22 +152,18 @@ public abstract class AbstractJcrAccessTest {
 
         if (output != null) output.println(description + " (" + totalNumber + " nodes):");
         long totalNumberCreated = 0;
-        
+
         PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
         Node parentNode = session.getNode(pathFactory.create(initialPath));
-        
+
         if (stopwatch != null) stopwatch.start();
 
-        totalNumberCreated += createChildren(parentNode,
-                                             numberOfPropertiesPerNode,
-                                             numberOfChildrenPerNode,
-                                             depth);
+        totalNumberCreated += createChildren(parentNode, numberOfPropertiesPerNode, numberOfChildrenPerNode, depth);
 
         assertThat(totalNumberCreated, is(totalNumber));
 
         session.save();
 
-        
         if (stopwatch != null) {
             stopwatch.stop();
             if (output != null) {
@@ -187,16 +175,14 @@ public abstract class AbstractJcrAccessTest {
     }
 
     protected int traverseSubgraph( JcrSession session,
-                                  String initialPath,
-                                  int depth,
-                                  int numberOfChildrenPerNode,
-                                  int numberOfPropertiesPerNode,
-                                  boolean oneBatch,
-                                  Stopwatch stopwatch,
-                                  PrintStream output,
-                                  String description )
-        throws Exception
-    {
+                                    String initialPath,
+                                    int depth,
+                                    int numberOfChildrenPerNode,
+                                    int numberOfPropertiesPerNode,
+                                    boolean oneBatch,
+                                    Stopwatch stopwatch,
+                                    PrintStream output,
+                                    String description ) throws Exception {
         // Calculate the number of nodes that we'll created, but subtract 1 since it doesn't create the root
         long totalNumber = calculateTotalNumberOfNodesInTree(numberOfChildrenPerNode, depth, false);
         if (initialPath == null) initialPath = "";
@@ -207,10 +193,10 @@ public abstract class AbstractJcrAccessTest {
 
         if (output != null) output.println(description + " (" + totalNumber + " nodes):");
         long totalNumberTraversed = 0;
-        
+
         PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
         Node parentNode = session.getNode(pathFactory.create(initialPath));
-        
+
         if (stopwatch != null) stopwatch.start();
 
         totalNumberTraversed += traverseChildren(parentNode);
@@ -219,7 +205,6 @@ public abstract class AbstractJcrAccessTest {
 
         session.save();
 
-        
         if (stopwatch != null) {
             stopwatch.stop();
             if (output != null) {
@@ -230,20 +215,20 @@ public abstract class AbstractJcrAccessTest {
 
     }
 
-    protected int traverseChildren(Node parentNode) throws Exception {
+    protected int traverseChildren( Node parentNode ) throws Exception {
 
         int childCount = 0;
         NodeIterator children = parentNode.getNodes();
 
         while (children.hasNext()) {
             childCount++;
-            
+
             childCount += traverseChildren(children.nextNode());
         }
-        
+
         return childCount;
     }
-    
+
     protected String getTotalAndAverageDuration( Stopwatch stopwatch,
                                                  long numNodes ) {
         long totalDurationInMilliseconds = TimeUnit.NANOSECONDS.toMillis(stopwatch.getTotalDuration().longValue());
@@ -269,7 +254,5 @@ public abstract class AbstractJcrAccessTest {
         }
         return countRoot ? totalNumber : totalNumber - 1;
     }
-    
-    
 
 }
