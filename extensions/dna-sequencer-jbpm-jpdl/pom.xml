@@ -44,12 +44,6 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.dna</groupId>
-			<artifactId>dna-integration-tests</artifactId>
-			<version>${pom.version}</version>
-			<scope>test</scope>
-		</dependency>
 		<!-- 
 			jBPM jPDL 
 		-->
