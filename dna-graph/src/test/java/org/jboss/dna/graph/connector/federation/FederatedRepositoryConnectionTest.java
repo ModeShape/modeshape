@@ -34,6 +34,7 @@ import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -92,6 +93,7 @@ public class FederatedRepositoryConnectionTest {
         assertThat(connection.shouldProcessSynchronously(request), is(true));
     }
 
+    @Ignore
     @Test
     public void shouldProcessCompositeRequestWithMultipleRequestsAsynchronously() {
         CompositeRequest request = mock(CompositeRequest.class);

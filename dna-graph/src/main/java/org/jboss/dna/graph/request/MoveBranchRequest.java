@@ -141,7 +141,7 @@ public class MoveBranchRequest extends ChangeRequest {
     /**
      * Get the location defining the parent where the branch is to be placed
      * 
-     * @return the to location; never null
+     * @return the to location; or null if the node is being reordered within the same parent
      */
     public Location into() {
         return into;

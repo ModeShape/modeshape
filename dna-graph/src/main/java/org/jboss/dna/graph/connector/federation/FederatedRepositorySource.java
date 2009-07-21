@@ -40,6 +40,7 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -384,6 +385,93 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             I18n msg = GraphI18n.errorReadingConfigurationForFederatedRepositorySource;
             throw new RepositorySourceException(getName(), msg.text(name), t);
         }
+    }
+
+    /**
+     * Add a federated workspace to this source. If a workspace with the supplied name already exists, it will be replaced with
+     * the new one.
+     * 
+     * @param workspaceName the name of the new federated workspace
+     * @param projections the projections that should be used in the workspace
+     * @param isDefault true if this workspace should be used as the default workspace, or false otherwise
+     * @return the federated workspace
+     * @throws IllegalArgumentException if the workspace name or the projections reference are null
+     */
+    public synchronized FederatedWorkspace addWorkspace( String workspaceName,
+                                                         Iterable<Projection> projections,
+                                                         boolean isDefault ) {
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        CheckArg.isNotNull(projections, "projections");
+
+        // Check all the properties of this source ...
+        String name = getName();
+        if (name == null) {
+            I18n msg = GraphI18n.namePropertyIsRequiredForFederatedRepositorySource;
+            throw new RepositorySourceException(getName(), msg.text("name"));
+        }
+        RepositoryContext context = getRepositoryContext();
+        if (context == null) {
+            I18n msg = GraphI18n.federatedRepositorySourceMustBeInitialized;
+            throw new RepositorySourceException(getName(), msg.text("name", name));
+        }
+
+        // Now set up or get the existing components needed by the workspace ...
+        RepositoryConnectionFactory connectionFactory = null;
+        ExecutorService executor = null;
+        LinkedList<FederatedWorkspace> workspaces = new LinkedList<FederatedWorkspace>();
+        CachePolicy defaultCachePolicy = null;
+        if (this.configuration != null) {
+            connectionFactory = this.configuration.getConnectionFactory();
+            executor = this.configuration.getExecutor();
+            defaultCachePolicy = this.configuration.getDefaultCachePolicy();
+            for (String existingWorkspaceName : this.configuration.getWorkspaceNames()) {
+                if (existingWorkspaceName.equals(workspaceName)) continue;
+                workspaces.add(this.configuration.getWorkspace(existingWorkspaceName));
+            }
+        } else {
+            connectionFactory = context.getRepositoryConnectionFactory();
+            executor = Executors.newCachedThreadPool();
+        }
+
+        // Add the new workspace ...
+        FederatedWorkspace newWorkspace = new FederatedWorkspace(context, name, workspaceName, projections, defaultCachePolicy);
+        if (isDefault) {
+            workspaces.addFirst(newWorkspace);
+        } else {
+            workspaces.add(newWorkspace);
+        }
+        // Update the configuration ...
+        this.configuration = new FederatedRepository(name, connectionFactory, workspaces, defaultCachePolicy, executor);
+        return newWorkspace;
+    }
+
+    /**
+     * Remove the named workspace from the repository source.
+     * 
+     * @param workspaceName the name of the workspace to remove
+     * @return true if the workspace was removed, or false otherwise
+     * @throws IllegalArgumentException if the workspace name is null
+     */
+    public synchronized boolean removeWorkspace( String workspaceName ) {
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        if (this.configuration == null) return false;
+        FederatedWorkspace workspace = this.configuration.getWorkspace(workspaceName);
+        if (workspace == null) return false;
+        List<FederatedWorkspace> workspaces = new LinkedList<FederatedWorkspace>();
+        for (String existingWorkspaceName : this.configuration.getWorkspaceNames()) {
+            if (existingWorkspaceName.equals(workspaceName)) continue;
+            workspaces.add(this.configuration.getWorkspace(existingWorkspaceName));
+        }
+        RepositoryConnectionFactory connectionFactory = this.configuration.getConnectionFactory();
+        ExecutorService executor = this.configuration.getExecutor();
+        CachePolicy defaultCachePolicy = this.configuration.getDefaultCachePolicy();
+        this.configuration = new FederatedRepository(name, connectionFactory, workspaces, defaultCachePolicy, executor);
+        return true;
+    }
+
+    public synchronized boolean hasWorkspace( String workspaceName ) {
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        return this.configuration != null && this.configuration.getWorkspaceNames().contains(workspaceName);
     }
 
     /**

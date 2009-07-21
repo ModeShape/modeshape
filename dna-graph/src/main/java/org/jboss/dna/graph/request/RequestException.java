@@ -28,7 +28,7 @@ package org.jboss.dna.graph.request;
  * 
  * @author Randall Hauch
  */
-public class InvalidRequestException extends RequestException {
+public class RequestException extends RuntimeException {
 
     /**
      */
@@ -37,13 +37,13 @@ public class InvalidRequestException extends RequestException {
     /**
      * 
      */
-    public InvalidRequestException() {
+    public RequestException() {
     }
 
     /**
      * @param message
      */
-    public InvalidRequestException( String message ) {
+    public RequestException( String message ) {
         super(message);
 
     }
@@ -51,7 +51,7 @@ public class InvalidRequestException extends RequestException {
     /**
      * @param cause
      */
-    public InvalidRequestException( Throwable cause ) {
+    public RequestException( Throwable cause ) {
         super(cause);
 
     }
@@ -60,7 +60,7 @@ public class InvalidRequestException extends RequestException {
      * @param message
      * @param cause
      */
-    public InvalidRequestException( String message,
+    public RequestException( String message,
                                     Throwable cause ) {
         super(message, cause);
 

@@ -72,6 +72,8 @@ import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
+import org.jboss.dna.graph.request.RemovePropertyRequest;
+import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
@@ -118,7 +120,7 @@ class ForkRequestProcessor extends RequestProcessor {
      * A pseudo Request that allows addition of a request that, when processed, will decrement a latch. Since the latch is
      * supplied by the submitter, this is useful when the submitter wishes to block until a particular request is processed. The
      * submitter merely creates a {@link CountDownLatch}, submits their real request wrapped by a BlockedRequest, and calls
-     * {@link CountDownLatch#await()} on the latch. When <code>await()</code> returns, the first request has been completed.
+     * {@link CountDownLatch#await()} on the latch. When <code>await()</code> returns, the request has been completed.
      * 
      * @see ForkRequestProcessor#submit(Request, String, CountDownLatch)
      * @see ForkRequestProcessor#submitAndAwait(Request, String)
@@ -142,6 +144,27 @@ class ForkRequestProcessor extends RequestProcessor {
         @Override
         public boolean isCancelled() {
             return original.isCancelled();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.request.Request#setError(java.lang.Throwable)
+         */
+        @Override
+        public void setError( Throwable error ) {
+            original.setError(error);
+            if (this.latch != null) this.latch.countDown();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.request.Request#hasError()
+         */
+        @Override
+        public boolean hasError() {
+            return original.hasError();
         }
     }
 
@@ -172,6 +195,7 @@ class ForkRequestProcessor extends RequestProcessor {
         protected Future<String> future;
         /** Flag that defines whether the channel has processed all requests */
         protected final AtomicBoolean done = new AtomicBoolean(false);
+        protected Throwable compositeError = null;
 
         /**
          * Create a new channel that operates against the supplied source.
@@ -224,6 +248,27 @@ class ForkRequestProcessor extends RequestProcessor {
                 @Override
                 public void cancel() {
                     done.set(true);
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.request.Request#setError(java.lang.Throwable)
+                 */
+                @Override
+                public void setError( Throwable error ) {
+                    compositeError = error;
+                    super.setError(error);
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.request.Request#hasError()
+                 */
+                @Override
+                public boolean hasError() {
+                    return compositeError != null || super.hasError();
                 }
             };
         }
@@ -1077,6 +1122,41 @@ class ForkRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertyRequest)
+     */
+    @Override
+    public void process( RemovePropertyRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.from(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                RemovePropertyRequest pushDownRequest = new RemovePropertyRequest(proxy.location(), proxy.workspaceName(),
+                                                                                  request.propertyName());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.from()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdatePropertiesRequest)
      */
     @Override
@@ -1147,6 +1227,33 @@ class ForkRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // A delete should be executed against any ProxyNode that applies ...
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        boolean submit = deleteBranch(federatedRequest, projectedNode, workspace, getExecutionContext(), false);
+        if (submit) {
+            // Submit the requests for processing and then STOP ...
+            submit(federatedRequest);
+        } else {
+            // Unable to perform this delete ...
+            String msg = GraphI18n.unableToDeletePlaceholder.text(readable(request.at()), request.inWorkspace(), getSourceName());
+            request.setError(new UnsupportedRequestException(msg));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
      */
     @Override
@@ -1160,7 +1267,7 @@ class ForkRequestProcessor extends RequestProcessor {
 
         // A delete should be executed against any ProxyNode that applies ...
         FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
-        boolean submit = deleteBranch(federatedRequest, projectedNode, workspace, getExecutionContext());
+        boolean submit = deleteBranch(federatedRequest, projectedNode, workspace, getExecutionContext(), true);
         if (submit) {
             // Submit the requests for processing and then STOP ...
             submit(federatedRequest);
@@ -1174,13 +1281,14 @@ class ForkRequestProcessor extends RequestProcessor {
     protected boolean deleteBranch( FederatedRequest federatedRequest,
                                     ProjectedNode projectedNode,
                                     FederatedWorkspace workspace,
-                                    ExecutionContext context ) {
+                                    ExecutionContext context,
+                                    boolean includeParent ) {
         boolean submit = false;
         while (projectedNode != null) {
             if (projectedNode.isProxy()) {
                 ProxyNode proxy = projectedNode.asProxy();
                 // Is this proxy represent the top level node of the projection?
-                if (proxy.isTopLevelNode()) {
+                if (proxy.isTopLevelNode() || !includeParent) {
                     // Then we want to delete everything *underneath* the node, but we don't want to delete
                     // the node itself since it is the node being projected and must exist in order for the
                     // projection to work.
@@ -1194,17 +1302,19 @@ class ForkRequestProcessor extends RequestProcessor {
                 submit = true;
             } else if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
-                // Create a delete for this placeholder, but mark it completed. This is needed to know
-                // which placeholders were being deleted.
-                DeleteBranchRequest delete = new DeleteBranchRequest(placeholder.location(), workspace.getName());
-                delete.setActualLocationOfNode(placeholder.location());
-                federatedRequest.add(delete, true, true, null);
+                if (includeParent) {
+                    // Create a delete for this placeholder, but mark it completed. This is needed to know
+                    // which placeholders were being deleted.
+                    DeleteBranchRequest delete = new DeleteBranchRequest(placeholder.location(), workspace.getName());
+                    delete.setActualLocationOfNode(placeholder.location());
+                    federatedRequest.add(delete, true, true, null);
+                }
                 // Create and submit a request for each proxy below this placeholder ...
                 // For each child of the placeholder node ...
                 for (ProjectedNode child : placeholder.children()) {
                     while (child != null && child.isProxy()) {
                         // Call recursively ...
-                        submit = deleteBranch(federatedRequest, child.asProxy(), workspace, context);
+                        submit = deleteBranch(federatedRequest, child.asProxy(), workspace, context, true);
                         child = child.next();
                     }
                 }
@@ -1341,57 +1451,111 @@ class ForkRequestProcessor extends RequestProcessor {
         // Figure out where the 'from' is projected ...
         ProjectedNode projectedFromNode = project(request.from(), request.inWorkspace(), request, true);
         if (projectedFromNode == null) return;
-        ProjectedNode projectedIntoNode = project(request.into(), request.inWorkspace(), request, true);
-        if (projectedIntoNode == null) return;
+
         ProjectedNode projectedBeforeNode = request.before() != null ? project(request.before(),
                                                                                request.inWorkspace(),
                                                                                request,
                                                                                true) : null;
 
-        // Limitation: only able to project the move if the 'from' and 'into' are in the same source & projection ...
-        while (projectedFromNode != null) {
-            if (projectedFromNode.isProxy()) {
-                ProxyNode fromProxy = projectedFromNode.asProxy();
-                // Look for a projectedIntoNode that has the same source/projection ...
-                while (projectedIntoNode != null) {
-                    if (projectedIntoNode.isProxy()) {
-                        // Both are proxies, so compare the projection ...
-                        ProxyNode intoProxy = projectedIntoNode.asProxy();
-                        if (fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName())) break;
+        boolean sameLocation = true;
+        if (request.into() != null) {
+            // Look at where the node is being moved; it must be within the same source/projection ...
+            ProjectedNode projectedIntoNode = project(request.into(), request.inWorkspace(), request, true);
+            if (projectedIntoNode == null) return;
+            // Limitation: only able to project the move if the 'from' and 'into' are in the same source & projection ...
+            while (projectedFromNode != null) {
+                if (projectedFromNode.isProxy()) {
+                    ProxyNode fromProxy = projectedFromNode.asProxy();
+                    // Look for a projectedIntoNode that has the same source/projection ...
+                    while (projectedIntoNode != null) {
+                        if (projectedIntoNode.isProxy()) {
+                            // Both are proxies, so compare the projection ...
+                            ProxyNode intoProxy = projectedIntoNode.asProxy();
+                            if (fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName())) break;
+                        }
+                        projectedIntoNode = projectedIntoNode.next();
                     }
-                    projectedIntoNode = projectedIntoNode.next();
+                    if (projectedIntoNode != null) break;
                 }
-                if (projectedIntoNode != null) break;
+                projectedFromNode = projectedFromNode.next();
             }
-            projectedFromNode = projectedFromNode.next();
-        }
-        if (projectedFromNode == null || projectedIntoNode == null) {
-            // The move is not done within a single source ...
-            String msg = GraphI18n.moveLimitedToBeWithinSingleSource.text(readable(request.from()),
-                                                                          request.inWorkspace(),
-                                                                          readable(request.into()),
-                                                                          request.inWorkspace(),
-                                                                          getSourceName());
-            request.setError(new UnsupportedRequestException(msg));
-            return;
-        }
+            if (projectedFromNode == null || projectedIntoNode == null) {
+                // The move is not done within a single source ...
+                String msg = GraphI18n.moveLimitedToBeWithinSingleSource.text(readable(request.from()),
+                                                                              request.inWorkspace(),
+                                                                              readable(request.into()),
+                                                                              request.inWorkspace(),
+                                                                              getSourceName());
+                request.setError(new UnsupportedRequestException(msg));
+                return;
+            }
 
-        ProxyNode fromProxy = projectedFromNode.asProxy();
-        ProxyNode intoProxy = projectedIntoNode.asProxy();
-        ProxyNode beforeProxy = request.before() != null ? projectedBeforeNode.asProxy() : null;
-        assert fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName());
-        boolean sameLocation = fromProxy.isSameLocationAsOriginal() && intoProxy.isSameLocationAsOriginal();
+            ProxyNode fromProxy = projectedFromNode.asProxy();
+            ProxyNode intoProxy = projectedIntoNode.asProxy();
+            ProxyNode beforeProxy = request.before() != null ? projectedBeforeNode.asProxy() : null;
+            assert fromProxy.projection().getSourceName().equals(intoProxy.projection().getSourceName());
+            sameLocation = fromProxy.isSameLocationAsOriginal() && intoProxy.isSameLocationAsOriginal();
 
-        // Create the pushed-down request ...
-        MoveBranchRequest pushDown = new MoveBranchRequest(fromProxy.location(), intoProxy.location(), beforeProxy.location(),
-                                                           intoProxy.workspaceName(), request.desiredName(),
-                                                           request.conflictBehavior());
+            // Create the pushed-down request ...
+            Location beforeProxyLocation = beforeProxy != null ? beforeProxy.location() : null;
+            MoveBranchRequest pushDown = new MoveBranchRequest(fromProxy.location(), intoProxy.location(), beforeProxyLocation,
+                                                               intoProxy.workspaceName(), request.desiredName(),
+                                                               request.conflictBehavior());
+            // Create the federated request ...
+            FederatedRequest federatedRequest = new FederatedRequest(request);
+            federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());
+
+            // Submit the requests for processing and then STOP ...
+            submit(federatedRequest);
+        } else {
+            ProxyNode fromProxy = projectedFromNode.asProxy();
+            ProxyNode beforeProxy = request.before() != null ? projectedBeforeNode.asProxy() : null;
+            Location beforeProxyLocation = beforeProxy != null ? beforeProxy.location() : null;
+            MoveBranchRequest pushDown = new MoveBranchRequest(fromProxy.location(), null, beforeProxyLocation,
+                                                               fromProxy.workspaceName(), request.desiredName(),
+                                                               request.conflictBehavior());
+            // Create the federated request ...
+            FederatedRequest federatedRequest = new FederatedRequest(request);
+            federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection());
+
+            // Submit the requests for processing and then STOP ...
+            submit(federatedRequest);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RenameNodeRequest)
+     */
+    @Override
+    public void process( RenameNodeRequest request ) {
+        // Figure out where the 'at' is projected ...
+        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
-        federatedRequest.add(pushDown, sameLocation, false, fromProxy.projection(), intoProxy.projection());
 
-        // Submit the requests for processing and then STOP ...
-        submit(federatedRequest);
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                RenameNodeRequest pushDownRequest = new RenameNodeRequest(proxy.location(), proxy.workspaceName(),
+                                                                          request.toName());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.at()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
     }
 
     /**

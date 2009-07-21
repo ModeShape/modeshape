@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 
 /**
  * A request that wraps multiple other requests, allowing multiple requests to be treated as a single request.
@@ -255,6 +256,50 @@ public class CompositeRequest extends Request implements Iterable<Request> {
     @Override
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    /**
+     * Check the set of requests for errors. Calling this method will always result in the {@link #getError() existing error}
+     * being reset to a new error or null if there are no errors.
+     */
+    public void checkForErrors() {
+        Throwable firstError = null;
+        LinkedList<Throwable> additionalErrors = null;
+        for (Request request : requests) {
+            if (request.hasError()) {
+                if (firstError == null) {
+                    firstError = request.getError();
+                } else {
+                    if (additionalErrors == null) additionalErrors = new LinkedList<Throwable>();
+                    additionalErrors.add(request.getError());
+                }
+            }
+        }
+        if (firstError != null) {
+            // There is at least one error ...
+            if (additionalErrors == null) {
+                // but only one ...
+                setError(firstError);
+                return;
+            }
+            // More than one ...
+            additionalErrors.addFirst(firstError);
+            // Now build a single composite error message ...
+            StringBuilder str = new StringBuilder();
+            for (Throwable error : additionalErrors) {
+                str.append("\n");
+                str.append("\t" + error.getMessage());
+            }
+            String msg = null;
+            int numberOfErrors = additionalErrors.size();
+            int numberOfRequests = size();
+            if (numberOfRequests == CompositeRequest.UNKNOWN_NUMBER_OF_REQUESTS) {
+                msg = GraphI18n.multipleErrorsWhileExecutingManyRequests.text(numberOfErrors, str.toString());
+            } else {
+                msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, numberOfRequests, str.toString());
+            }
+            setError(new RequestException(msg));
+        }
     }
 
     /**

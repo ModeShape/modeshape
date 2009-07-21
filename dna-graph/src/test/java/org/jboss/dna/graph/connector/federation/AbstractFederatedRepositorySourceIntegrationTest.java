@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.connector.federation;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.stub;
@@ -38,6 +39,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Results;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -340,6 +342,17 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         if (extraChildren.length == 0) {
             // Can only compare the graphs when there are no extra children ...
             AbstractConnectorTest.assertEquivalentSubgraphs(fedSubgraph, sourceSubgraph, true, false);
+        }
+    }
+
+    protected void assertReadUsingBatch( String... pathsInFederated ) {
+        Graph.Batch batch = federated.batch();
+        for (String pathInFederated : pathsInFederated) {
+            batch.read(pathInFederated).and();
+        }
+        Results results = batch.execute();
+        for (String pathInFederated : pathsInFederated) {
+            assertThat(results.getNode(pathInFederated), is(notNullValue()));
         }
     }
 }

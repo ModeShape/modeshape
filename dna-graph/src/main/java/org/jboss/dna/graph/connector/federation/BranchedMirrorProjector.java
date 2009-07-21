@@ -120,6 +120,7 @@ final class BranchedMirrorProjector extends ProjectorWithPlaceholders {
     public ProjectedNode project( ExecutionContext context,
                                   Location location,
                                   boolean requiresUpdate ) {
+        assert location != null;
         if (location.hasPath()) {
             Path path = location.getPath();
             if (path.isRoot()) {

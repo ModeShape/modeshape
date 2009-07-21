@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.jboss.dna.graph.ExecutionContext;
@@ -143,6 +144,40 @@ public class ForkRequestProcessorChannelTest {
 
         // Wait until the channel has completed ...
         channel.await();
+
+        // Verify that all the requests to the channel were processed ...
+        Iterator<Request> iter = executedRequests.iterator();
+        for (Request expected : requests) {
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.next(), is(sameInstance(expected)));
+        }
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldSubmitBlockedRequestsToConnection() throws Exception {
+        // Start the channel ...
+        channel.start(executor, context, connectionFactory);
+
+        // Submit the requests to the channel ...
+        List<CountDownLatch> latches = new ArrayList<CountDownLatch>();
+        for (Request request : requests) {
+            CountDownLatch latch = new CountDownLatch(1);
+            latches.add(latch);
+            channel.add(request, latch);
+        }
+
+        // Mark the channel as done ...
+        channel.done();
+
+        // Wait until the channel has completed ...
+        channel.await();
+
+        // Verify that all of the latches were decremented ...
+        for (CountDownLatch latch : latches) {
+            latch.await();
+            assertThat(latch.getCount(), is(0L));
+        }
 
         // Verify that all the requests to the channel were processed ...
         Iterator<Request> iter = executedRequests.iterator();

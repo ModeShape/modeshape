@@ -28,7 +28,7 @@ package org.jboss.dna.graph.request;
  * 
  * @author Randall Hauch
  */
-public class UnsupportedRequestException extends RuntimeException {
+public class UnsupportedRequestException extends RequestException {
 
     /**
      */

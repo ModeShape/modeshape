@@ -138,6 +138,11 @@ public class FederatedRepositorySourceUsingMirrorAndBranchProjectionsTest
     }
 
     @Test
+    public void shouldPerformBatchOperationsAgainstFederatedSource() {
+        assertReadUsingBatch("/Aircraft", "/Aircraft/Business", "/Cars");
+    }
+
+    @Test
     public void shouldCreateNodeUnderRootInMirrorSource() {
         federated.createAt("/Hovercraft").with("prop1", "value1").and();
         assertMirrorNode("/Hovercraft");

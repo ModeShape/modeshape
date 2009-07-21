@@ -134,13 +134,14 @@ class FederatedRepositoryConnection implements RepositoryConnection {
     }
 
     protected boolean shouldProcessSynchronously( Request request ) {
-        if (request instanceof CompositeRequest) {
-            CompositeRequest composite = (CompositeRequest)request;
-            if (composite.size() == 1) return true;
-            return false;
-        }
-        // Otherwise, its just a single request ...
         return true;
+        // if (request instanceof CompositeRequest) {
+        // CompositeRequest composite = (CompositeRequest)request;
+        // if (composite.size() == 1) return true;
+        // return false;
+        // }
+        // // Otherwise, its just a single request ...
+        // return true;
     }
 
     /**
@@ -180,7 +181,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                 } finally {
                     fork.close();
                 }
-                if (!awaitAllSubtasks) requests.add(new NoMoreFederatedRequests());
+                requests.add(new NoMoreFederatedRequests());
                 // At this point, all submitted requests have been processed/forked, so we can continue with
                 // the join process, starting with the first submitted request. Note that the subtasks may
                 // still be executing, but as the join process operates on a forked request, it will wait
@@ -195,7 +196,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                         } finally {
                             fork.close();
                         }
-                        if (!awaitAllSubtasks) requests.add(new NoMoreFederatedRequests());
+                        requests.add(new NoMoreFederatedRequests());
                     }
                 });
 

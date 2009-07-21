@@ -28,7 +28,7 @@ package org.jboss.dna.graph.request;
  * 
  * @author Randall Hauch
  */
-public class InvalidWorkspaceException extends RuntimeException {
+public class InvalidWorkspaceException extends RequestException {
 
     /**
      */
@@ -61,7 +61,7 @@ public class InvalidWorkspaceException extends RuntimeException {
      * @param cause
      */
     public InvalidWorkspaceException( String message,
-                                    Throwable cause ) {
+                                      Throwable cause ) {
         super(message, cause);
 
     }

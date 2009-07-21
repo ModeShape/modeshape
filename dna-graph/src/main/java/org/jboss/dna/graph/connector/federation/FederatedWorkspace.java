@@ -71,6 +71,7 @@ class FederatedWorkspace {
         CheckArg.isNotNull(repositoryContext, "repositoryContext");
         CheckArg.isNotNull(sourceName, "sourceName");
         CheckArg.isNotNull(workspaceName, "workspaceName");
+        CheckArg.isNotNull(projections, "projections");
         this.repositoryContext = repositoryContext;
         this.workspaceName = workspaceName;
         this.sourceName = sourceName;

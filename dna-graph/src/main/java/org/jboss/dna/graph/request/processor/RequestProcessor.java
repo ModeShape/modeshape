@@ -34,7 +34,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
@@ -283,39 +282,18 @@ public abstract class RequestProcessor {
      */
     public void process( CompositeRequest request ) {
         if (request == null) return;
-        int numberOfErrors = 0;
-        List<Throwable> errors = null;
+        boolean hasErrors = false;
         // Iterate over the requests in this composite, but only iterate once so that
         for (Request embedded : request) {
             assert embedded != null;
             if (embedded.isCancelled()) return;
             process(embedded);
-            if (embedded.hasError()) {
-                if (numberOfErrors == 0) {
-                    errors = new LinkedList<Throwable>();
-                }
-                assert errors != null;
-                errors.add(embedded.getError());
-                ++numberOfErrors;
+            if (!hasErrors && embedded.hasError()) {
+                hasErrors = true;
             }
         }
-        if (numberOfErrors == 0) return;
-        assert errors != null;
-        if (numberOfErrors == 1) {
-            request.setError(errors.get(0));
-        } else {
-            StringBuilder errorString = new StringBuilder();
-            for (Throwable error : errors) {
-                errorString.append("\n");
-                errorString.append("\t" + error.getMessage());
-            }
-            String msg = null;
-            if (request.size() == CompositeRequest.UNKNOWN_NUMBER_OF_REQUESTS) {
-                msg = GraphI18n.multipleErrorsWhileExecutingManyRequests.text(numberOfErrors, errorString.toString());
-            } else {
-                msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, request.size(), errorString.toString());
-            }
-            request.setError(new RepositorySourceException(getSourceName(), msg));
+        if (hasErrors) {
+            request.checkForErrors();
         }
     }
 
@@ -732,6 +710,9 @@ public abstract class RequestProcessor {
             request.setError(update.getError());
         }
         // Set the actual location ...
+        if (update.getActualLocationOfNode() == null) {
+            int x = 0;
+        }
         request.setActualLocationOfNode(update.getActualLocationOfNode());
     }
 

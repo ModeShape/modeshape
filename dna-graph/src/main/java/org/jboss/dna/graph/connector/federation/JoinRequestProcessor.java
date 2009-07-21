@@ -47,6 +47,7 @@ import org.jboss.dna.graph.property.ValueComparators;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
+import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
@@ -61,6 +62,8 @@ import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
+import org.jboss.dna.graph.request.RemovePropertyRequest;
+import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
@@ -104,14 +107,19 @@ class JoinRequestProcessor extends RequestProcessor {
      * 
      * @param completedFederatedRequests the collection of {@link FederatedRequest} whose projected requests have already been
      *        processed; may not be null
+     * @return the exception that occurred while processing these requests (analogous to {@link CompositeRequest#getError()} where
+     *         the composite's requests are these errors), or null if there was none
      * @see FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.request.Request)
      */
-    public void process( final Iterable<FederatedRequest> completedFederatedRequests ) {
+    public Throwable process( final Iterable<FederatedRequest> completedFederatedRequests ) {
         for (FederatedRequest federatedRequest : completedFederatedRequests) {
             // No need to await for the forked request, since it will be done
-            this.federatedRequest = federatedRequest;
-            process(federatedRequest.original());
+            process(federatedRequest);
+            if (federatedRequest.original().hasError()) {
+                return federatedRequest.original().getError();
+            }
         }
+        return null;
     }
 
     /**
@@ -130,40 +138,8 @@ class JoinRequestProcessor extends RequestProcessor {
                 forked = federatedRequestQueue.take();
                 if (forked instanceof NoMoreFederatedRequests) return;
                 forked.await();
-
-                // Determine whether this is a single mirror request ...
-                Request original = forked.original();
-                ProjectedRequest projectedRequest = forked.getFirstProjectedRequest();
-                boolean sameLocation = projectedRequest != null && !projectedRequest.hasNext()
-                                       && projectedRequest.isSameLocation();
-
-                // Set the cachable information ...
-                if (original instanceof CacheableRequest) {
-                    CacheableRequest cacheableOriginal = (CacheableRequest)original;
-                    cacheableOriginal.setCachePolicy(getDefaultCachePolicy());
-                    while (projectedRequest != null) {
-                        Request requestToSource = projectedRequest.getRequest();
-                        if (cacheableOriginal != null) {
-                            setCacheableInfo(cacheableOriginal, ((CacheableRequest)requestToSource).getCachePolicy());
-                        }
-                        projectedRequest = projectedRequest.next();
-                    }
-                }
-
-                // Now do the join on this request ...
-                if (sameLocation) {
-                    Request sourceRequest = forked.getFirstProjectedRequest().getRequest();
-                    if (sourceRequest.hasError()) {
-                        original.setError(sourceRequest.getError());
-                    } else if (sourceRequest.isCancelled()) {
-                        original.cancel();
-                    }
-                    mirrorProcessor.setFederatedRequest(forked);
-                    mirrorProcessor.process(original);
-                } else {
-                    this.federatedRequest = forked;
-                    process(original);
-                }
+                // Now process ...
+                process(forked);
             }
         } catch (InterruptedException e) {
             // This happens when the federated connector has been told to shutdown now, and it shuts down
@@ -177,6 +153,41 @@ class JoinRequestProcessor extends RequestProcessor {
                 // Clear the interrupted status of the thread ...
                 Thread.interrupted();
             }
+        }
+    }
+
+    protected final void process( FederatedRequest forked ) {
+        // Determine whether this is a single mirror request ...
+        Request original = forked.original();
+        ProjectedRequest projectedRequest = forked.getFirstProjectedRequest();
+        boolean sameLocation = projectedRequest != null && !projectedRequest.hasNext() && projectedRequest.isSameLocation();
+
+        // Set the cachable information ...
+        if (original instanceof CacheableRequest) {
+            CacheableRequest cacheableOriginal = (CacheableRequest)original;
+            cacheableOriginal.setCachePolicy(getDefaultCachePolicy());
+            while (projectedRequest != null) {
+                Request requestToSource = projectedRequest.getRequest();
+                if (cacheableOriginal != null) {
+                    setCacheableInfo(cacheableOriginal, ((CacheableRequest)requestToSource).getCachePolicy());
+                }
+                projectedRequest = projectedRequest.next();
+            }
+        }
+
+        // Now do the join on this request ...
+        if (sameLocation) {
+            Request sourceRequest = forked.getFirstProjectedRequest().getRequest();
+            if (sourceRequest.hasError()) {
+                original.setError(sourceRequest.getError());
+            } else if (sourceRequest.isCancelled()) {
+                original.cancel();
+            }
+            mirrorProcessor.setFederatedRequest(forked);
+            mirrorProcessor.process(original);
+        } else {
+            this.federatedRequest = forked;
+            process(original);
         }
     }
 
@@ -850,6 +861,21 @@ class JoinRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertyRequest)
+     */
+    @Override
+    public void process( RemovePropertyRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        assert !projected.hasNext();
+        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        Location sourceLocation = source.getActualLocationOfNode();
+        request.setActualLocationOfNode(projectToFederated(request.from(), projected.getProjection(), sourceLocation, request));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
      */
     @Override
@@ -880,6 +906,51 @@ class JoinRequestProcessor extends RequestProcessor {
         }
         assert highest != null;
         request.setActualLocationOfNode(highest);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Go through the projected requests, and look for the top-most node ...
+        Location highest = null;
+        while (projected != null) {
+            // The projected request should a DeleteChildrenRequest ...
+            Request sourceRequest = projected.getRequest();
+            DeleteChildrenRequest source = (DeleteChildrenRequest)projected.getRequest();
+            Location actual = source.getActualLocationOfNode();
+            if (checkErrorOrCancel(request, sourceRequest)) return;
+            if (!projected.isSameLocation() && projected.getProjection() != null) {
+                actual = projectToFederated(request.at(), projected.getProjection(), actual, request);
+            }
+            if (highest == null) highest = actual;
+            else if (highest.getPath().isDecendantOf(actual.getPath())) highest = actual;
+            projected = projected.next();
+        }
+        assert highest != null;
+        request.setActualLocationOfNode(highest);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RenameNodeRequest)
+     */
+    @Override
+    public void process( RenameNodeRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        assert !projected.hasNext();
+        RenameNodeRequest source = (RenameNodeRequest)projected.getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        Location locationBefore = source.getActualLocationBefore();
+        Location locationAfter = source.getActualLocationBefore();
+        locationBefore = projectToFederated(request.at(), projected.getProjection(), locationBefore, request);
+        locationAfter = projectToFederated(request.at(), projected.getSecondProjection(), locationAfter, request);
+        request.setActualLocations(locationBefore, locationAfter);
     }
 
     /**
@@ -932,7 +1003,9 @@ class JoinRequestProcessor extends RequestProcessor {
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
         locationBefore = projectToFederated(request.from(), projected.getProjection(), locationBefore, request);
-        locationAfter = projectToFederated(request.into(), projected.getSecondProjection(), locationAfter, request);
+        Projection afterProjection = projected.getSecondProjection();
+        if (afterProjection == null) projected.getProjection();
+        locationAfter = projectToFederated(request.into(), afterProjection, locationAfter, request);
         request.setActualLocations(locationBefore, locationAfter);
     }
 
