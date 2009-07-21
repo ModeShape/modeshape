@@ -117,58 +117,6 @@ class ForkRequestProcessor extends RequestProcessor {
     }
 
     /**
-     * A pseudo Request that allows addition of a request that, when processed, will decrement a latch. Since the latch is
-     * supplied by the submitter, this is useful when the submitter wishes to block until a particular request is processed. The
-     * submitter merely creates a {@link CountDownLatch}, submits their real request wrapped by a BlockedRequest, and calls
-     * {@link CountDownLatch#await()} on the latch. When <code>await()</code> returns, the request has been completed.
-     * 
-     * @see ForkRequestProcessor#submit(Request, String, CountDownLatch)
-     * @see ForkRequestProcessor#submitAndAwait(Request, String)
-     */
-    protected static class BlockedRequest extends Request {
-        private static final long serialVersionUID = 1L;
-        protected final Request original;
-        protected final transient CountDownLatch latch;
-
-        protected BlockedRequest( Request original,
-                                  CountDownLatch latch ) {
-            this.original = original;
-            this.latch = latch;
-        }
-
-        @Override
-        public boolean isReadOnly() {
-            return original.isReadOnly();
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return original.isCancelled();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.request.Request#setError(java.lang.Throwable)
-         */
-        @Override
-        public void setError( Throwable error ) {
-            original.setError(error);
-            if (this.latch != null) this.latch.countDown();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.request.Request#hasError()
-         */
-        @Override
-        public boolean hasError() {
-            return original.hasError();
-        }
-    }
-
-    /**
      * Represents the channel for a specific source into which this processor submits the requests for that source. To use, create
      * a Channel, {@link Channel#start(ExecutorService, ExecutionContext, RepositoryConnectionFactory) start it}, and then
      * {@link Channel#add(Request) add} requests (optionally with a {@link Channel#add(Request, CountDownLatch) latch} or via a
@@ -281,15 +229,9 @@ class ForkRequestProcessor extends RequestProcessor {
         protected Iterator<Request> createIterator() {
             final BlockingQueue<Request> queue = this.queue;
             return new Iterator<Request>() {
-                private BlockedRequest previousBlocked;
                 private Request next;
 
                 public boolean hasNext() {
-                    // If the previous request was a blocked request, then we need to decrement its latch ...
-                    if (previousBlocked != null && previousBlocked.latch != null) {
-                        previousBlocked.latch.countDown();
-                    }
-
                     // If next still has a request, then 'hasNext()' has been called multiple times in a row
                     if (next != null) return true;
 
@@ -331,19 +273,12 @@ class ForkRequestProcessor extends RequestProcessor {
                             }
                         }
                     }
-                    // If this request is a blocked request, we need to return the wrapped request and record the blocked request
-                    if (next instanceof BlockedRequest) {
-                        previousBlocked = (BlockedRequest)next;
-                        next = null;
-                        return previousBlocked.original;
+                    if (next == null) {
+                        throw new NoSuchElementException();
                     }
-                    previousBlocked = null;
-                    if (next != null) {
-                        Request result = next;
-                        next = null;
-                        return result;
-                    }
-                    throw new NoSuchElementException();
+                    Request result = next;
+                    next = null;
+                    return result;
                 }
 
                 public void remove() {
@@ -424,7 +359,8 @@ class ForkRequestProcessor extends RequestProcessor {
             assert latch != null;
             // Submit the request for processing ...
             this.allRequests.add(request);
-            this.queue.add(new BlockedRequest(request, latch));
+            request.setLatchForFreezing(latch);
+            this.queue.add(request);
             return latch;
         }
 
@@ -707,12 +643,13 @@ class ForkRequestProcessor extends RequestProcessor {
             ProjectedRequest projected = request.getFirstProjectedRequest();
             while (projected != null) {
                 if (!projected.isComplete()) {
+                    // Submit to the appropriate source channel for execution ...
                     submit(projected.getRequest(), projected.getProjection().getSourceName(), request.getLatch());
                 }
                 projected = projected.next();
             }
         }
-        // Record this federated request ...
+        // Record this federated request, ready for the join processor ...
         this.federatedRequestQueue.add(request);
     }
 
@@ -723,7 +660,7 @@ class ForkRequestProcessor extends RequestProcessor {
      */
     @Override
     protected void completeRequest( Request request ) {
-        // Do nothing here, as this is the federated request
+        // Do nothing here, since this is the federated request which will be frozen in the join processor
     }
 
     /**

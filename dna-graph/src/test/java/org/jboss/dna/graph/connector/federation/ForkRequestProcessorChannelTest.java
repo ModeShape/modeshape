@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -69,10 +68,10 @@ public class ForkRequestProcessorChannelTest {
         sourceName = "SourceA";
         channel = new ForkRequestProcessor.Channel(sourceName);
         requests = new ArrayList<Request>();
-        requests.add(mock(Request.class));
-        requests.add(mock(Request.class));
-        requests.add(mock(Request.class));
-        requests.add(mock(Request.class));
+        requests.add(new MockRequest());
+        requests.add(new MockRequest());
+        requests.add(new MockRequest());
+        requests.add(new MockRequest());
 
         // Create the mock connection ...
         executedRequests = new LinkedList<Request>(); // this is where requests submitted to the connection will go
@@ -83,6 +82,15 @@ public class ForkRequestProcessorChannelTest {
 
         // Create the executor ...
         executor = Executors.newSingleThreadExecutor();
+    }
+
+    protected static class MockRequest extends Request {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public boolean isReadOnly() {
+            return false;
+        }
     }
 
     @Test

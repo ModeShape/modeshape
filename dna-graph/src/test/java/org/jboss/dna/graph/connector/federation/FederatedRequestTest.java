@@ -103,10 +103,9 @@ public class FederatedRequestTest {
 
     @Test
     public void shouldAddMultipleProjectedRequestsAddedInMethodChain() {
-        request.add(projectedRequest[0], false, false, projection[0]).add(projectedRequest[1], false, true, projection[1]).add(projectedRequest[2],
-                                                                                                                               false,
-                                                                                                                               false,
-                                                                                                                               projection[2]);
+        request.add(projectedRequest[0], false, false, projection[0])
+               .add(projectedRequest[1], false, true, projection[1])
+               .add(projectedRequest[2], false, false, projection[2]);
         assertThat(request.hasIncompleteRequests(), is(true));
 
         ProjectedRequest first = request.getFirstProjectedRequest();
@@ -134,7 +133,6 @@ public class FederatedRequestTest {
     @Test
     public void shouldCreateCountDownLatchUponFreezeIfNumberOfIncompleteProjectedRequestsIsNonZero() {
         request.add(projectedRequest[0], false, false, projection[0]);
-        assertThat(request.getLatch(), is(nullValue()));
         request.freeze();
         assertThat(request.getLatch(), is(notNullValue()));
         assertThat(request.getLatch().getCount(), is(1L));
@@ -142,11 +140,10 @@ public class FederatedRequestTest {
     }
 
     @Test
-    public void shouldNotCreateCountDownLatchUponFreezeIfNumberOfIncompleteProjectedRequestsIsZero() {
+    public void shouldUseClosedLatchUponFreezeIfNumberOfIncompleteProjectedRequestsIsZero() {
         request.add(projectedRequest[0], false, true, projection[0]);
-        assertThat(request.getLatch(), is(nullValue()));
         request.freeze();
-        assertThat(request.getLatch(), is(nullValue()));
+        assertThat(request.getLatch(), is(sameInstance(FederatedRequest.CLOSED_LATCH)));
         assertThat(request.hasIncompleteRequests(), is(false));
     }
 

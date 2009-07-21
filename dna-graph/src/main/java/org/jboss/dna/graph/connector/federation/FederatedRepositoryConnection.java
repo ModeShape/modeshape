@@ -226,6 +226,12 @@ class FederatedRepositoryConnection implements RepositoryConnection {
             } finally {
                 join.close();
             }
+            if (request instanceof CompositeRequest) {
+                // The composite request will not have any errors set, since the fork/join approach puts the
+                // contained requests into a separate CompositeRequest object for processing.
+                // So, look at the requests for any errors
+                ((CompositeRequest)request).checkForErrors();
+            }
         } catch (InterruptedException e) {
             abort = true;
             request.setError(e);

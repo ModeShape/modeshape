@@ -24,9 +24,12 @@
 package org.jboss.dna.graph.connector.federation;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Set;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -102,6 +105,44 @@ public class FederatedRepositorySourceUsingMirrorAndBranchProjectionsTest
         Set<String> workspaces = federated.getWorkspaces();
         assertThat(workspaces.contains("fedSpace"), is(true));
         assertThat(workspaces.size(), is(1));
+    }
+
+    @Test
+    public void shouldReturnRootNodeInMirrorProjection() {
+        // Get the root node of the mirror projection using the actual graph ...
+        Graph mirrorGraph = graphFor(mirrorSourceName, mirrorWorkspaceName);
+        Node mirrorRoot = mirrorGraph.getNodeAt("/");
+        Location mirrorRootLocation = mirrorRoot.getLocation();
+        assertThat(mirrorRootLocation.hasIdProperties(), is(true));
+        assertThat(mirrorRootLocation.getUuid(), is(notNullValue()));
+
+        // Get the same node through the federation source ...
+        Node fedRoot = federated.getNodeAt("/");
+        Location fedRootLocation = fedRoot.getLocation();
+        assertThat(fedRootLocation.hasIdProperties(), is(true));
+        assertThat(fedRootLocation.getUuid(), is(notNullValue()));
+
+        // The UUIDs of the nodes must be the same ...
+        assertThat(fedRootLocation.getUuid(), is(mirrorRootLocation.getUuid()));
+    }
+
+    @Test
+    public void shouldReturnRootNodeInBranchProjection() {
+        // Get the top node of the branch projection using the actual graph ...
+        Graph branchGraph = graphFor(branchSourceName, branchWorkspaceName);
+        Node branchNode = branchGraph.getNodeAt("/Aircraft");
+        Location branchNodeLocation = branchNode.getLocation();
+        assertThat(branchNodeLocation.hasIdProperties(), is(true));
+        assertThat(branchNodeLocation.getUuid(), is(notNullValue()));
+
+        // Get the same node through the federation source ...
+        Node fedNode = federated.getNodeAt("/Aircraft");
+        Location fedNodeLocation = fedNode.getLocation();
+        assertThat(fedNodeLocation.hasIdProperties(), is(true));
+        assertThat(fedNodeLocation.getUuid(), is(notNullValue()));
+
+        // The UUIDs of the nodes must be the same ...
+        assertThat(fedNodeLocation.getUuid(), is(branchNodeLocation.getUuid()));
     }
 
     @Test

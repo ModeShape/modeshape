@@ -47,7 +47,6 @@ import org.jboss.dna.graph.property.ValueComparators;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
-import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
@@ -107,19 +106,13 @@ class JoinRequestProcessor extends RequestProcessor {
      * 
      * @param completedFederatedRequests the collection of {@link FederatedRequest} whose projected requests have already been
      *        processed; may not be null
-     * @return the exception that occurred while processing these requests (analogous to {@link CompositeRequest#getError()} where
-     *         the composite's requests are these errors), or null if there was none
      * @see FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.request.Request)
      */
-    public Throwable process( final Iterable<FederatedRequest> completedFederatedRequests ) {
+    public void process( final Iterable<FederatedRequest> completedFederatedRequests ) {
         for (FederatedRequest federatedRequest : completedFederatedRequests) {
             // No need to await for the forked request, since it will be done
             process(federatedRequest);
-            if (federatedRequest.original().hasError()) {
-                return federatedRequest.original().getError();
-            }
         }
-        return null;
     }
 
     /**
@@ -137,6 +130,7 @@ class JoinRequestProcessor extends RequestProcessor {
             for (;;) {
                 forked = federatedRequestQueue.take();
                 if (forked instanceof NoMoreFederatedRequests) return;
+                // Block until this forked request has completed
                 forked.await();
                 // Now process ...
                 process(forked);

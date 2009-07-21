@@ -35,6 +35,7 @@ class NoMoreFederatedRequests extends FederatedRequest {
      */
     NoMoreFederatedRequests() {
         super(null);
+        freeze();
     }
 
 }

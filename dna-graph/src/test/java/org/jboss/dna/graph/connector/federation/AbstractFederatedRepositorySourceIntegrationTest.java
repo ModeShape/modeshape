@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
@@ -289,6 +290,12 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
                                                                                                 .getLastSegment()
                                                                                                 .getName()));
         }
+
+        // The UUID should match ...
+        UUID fedUuid = fedNode.getLocation().getUuid();
+        UUID sourceUuid = sourceNode.getLocation().getUuid();
+        assertThat(fedUuid, is(sourceUuid));
+
         // The children should match ...
         List<Path.Segment> fedChildren = new ArrayList<Path.Segment>();
         List<Path.Segment> sourceChildren = new ArrayList<Path.Segment>();

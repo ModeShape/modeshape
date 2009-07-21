@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.request;
 
 import java.io.Serializable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -40,8 +41,14 @@ public abstract class Request implements Serializable {
     private Throwable error;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private final AtomicBoolean frozen = new AtomicBoolean(false);
+    private transient CountDownLatch freezingLatch = null;
 
     protected Request() {
+    }
+
+    public void setLatchForFreezing( CountDownLatch latch ) {
+        checkNotFrozen();
+        this.freezingLatch = latch;
     }
 
     /**
@@ -148,7 +155,11 @@ public abstract class Request implements Serializable {
      * Freeze this request to prevent any further modification. This method does nothing if the request is already frozen.
      */
     public void freeze() {
-        frozen.set(true);
+        if (frozen.compareAndSet(false, true)) {
+            // Was not already frozen, so decrement the latch (atomically)
+            CountDownLatch latch = this.freezingLatch;
+            if (latch != null) latch.countDown();
+        }
     }
 
     /**

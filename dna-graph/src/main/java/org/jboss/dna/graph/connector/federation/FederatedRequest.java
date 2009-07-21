@@ -33,6 +33,8 @@ import org.jboss.dna.graph.request.Request;
  */
 @NotThreadSafe
 class FederatedRequest {
+    static final CountDownLatch CLOSED_LATCH = new CountDownLatch(0);
+
     private final Request original;
     private CountDownLatch forkLatch;
     private int incompleteCount;
@@ -51,6 +53,7 @@ class FederatedRequest {
                                        boolean isComplete,
                                        Projection projection,
                                        Projection secondProjection ) {
+        assert forkLatch == null;
         if (!isComplete) ++incompleteCount;
         if (first == null) {
             if (isSameLocationAsOriginal) {
@@ -72,8 +75,8 @@ class FederatedRequest {
     }
 
     public void freeze() {
-        if (incompleteCount > 0 && forkLatch == null) {
-            forkLatch = new CountDownLatch(incompleteCount);
+        if (forkLatch == null) {
+            forkLatch = incompleteCount > 0 ? new CountDownLatch(incompleteCount) : CLOSED_LATCH;
         }
     }
 
@@ -86,6 +89,7 @@ class FederatedRequest {
     }
 
     public CountDownLatch getLatch() {
+        freeze();
         return forkLatch;
     }
 
@@ -102,7 +106,6 @@ class FederatedRequest {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Federated request: ").append(original).append("\n");
-        sb.append("  projected to: ").append("\n");
         ProjectedRequest projected = first;
         while (projected != null) {
             sb.append("  - ").append(projected).append("\n");
@@ -128,19 +131,19 @@ class FederatedRequest {
             this.projection2 = secondProjection;
         }
 
-        public Projection getProjection() {
+        public final Projection getProjection() {
             return projection;
         }
 
-        public Projection getSecondProjection() {
+        public final Projection getSecondProjection() {
             return projection2;
         }
 
-        public Request getRequest() {
+        public final Request getRequest() {
             return request;
         }
 
-        public boolean isComplete() {
+        public final boolean isComplete() {
             return isComplete;
         }
 
@@ -148,11 +151,11 @@ class FederatedRequest {
             return false;
         }
 
-        public ProjectedRequest next() {
+        public final ProjectedRequest next() {
             return next;
         }
 
-        public boolean hasNext() {
+        public final boolean hasNext() {
             return next != null;
         }
 
@@ -172,6 +175,30 @@ class FederatedRequest {
                                                   boolean isComplete,
                                                   Projection projection ) {
             return addNext(request, isComplete, projection, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Projects to: ");
+            sb.append(request);
+            if (projection != null) {
+                sb.append(" using ");
+                sb.append(projection);
+                if (projection2 != null) {
+                    sb.append(" and ");
+                    sb.append(projection2);
+                }
+            }
+            if (isComplete) {
+                sb.append(" (complete)");
+            }
+            return sb.toString();
         }
     }
 

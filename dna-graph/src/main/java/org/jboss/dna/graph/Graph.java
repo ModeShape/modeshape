@@ -5451,23 +5451,14 @@ public class Graph {
                 if (request instanceof ReadAllPropertiesRequest) {
                     ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
                     DateTime expires = computeExpirationTime(read);
-                    if (read.getActualLocationOfNode() == null) {
-                        int x = 0;
-                    }
                     getOrCreateNode(read.getActualLocationOfNode(), expires).setProperties(read.getPropertiesByName());
                 } else if (request instanceof ReadPropertyRequest) {
                     ReadPropertyRequest read = (ReadPropertyRequest)request;
                     DateTime expires = computeExpirationTime(read);
-                    if (read.getActualLocationOfNode() == null) {
-                        int x = 0;
-                    }
                     getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
                 } else if (request instanceof ReadNodeRequest) {
                     ReadNodeRequest read = (ReadNodeRequest)request;
                     DateTime expires = computeExpirationTime(read);
-                    if (read.getActualLocationOfNode() == null) {
-                        int x = 0;
-                    }
                     BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
                     node.setProperties(read.getPropertiesByName());
                     node.setChildren(read.getChildren());
@@ -5476,17 +5467,11 @@ public class Graph {
                 } else if (request instanceof ReadAllChildrenRequest) {
                     ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
                     DateTime expires = computeExpirationTime(read);
-                    if (read.getActualLocationOfNode() == null) {
-                        int x = 0;
-                    }
                     getOrCreateNode(read.getActualLocationOfNode(), expires).setChildren(read.getChildren());
                 } else if (request instanceof ReadBranchRequest) {
                     ReadBranchRequest read = (ReadBranchRequest)request;
                     DateTime expires = computeExpirationTime(read);
                     for (Location location : read) {
-                        if (location == null) {
-                            int x = 0;
-                        }
                         BatchResultsNode node = getOrCreateNode(location, expires);
                         node.setProperties(read.getPropertiesFor(location));
                         node.setChildren(read.getChildren(location));
@@ -5512,9 +5497,6 @@ public class Graph {
             } else if (request instanceof ReadNodeRequest) {
                 ReadNodeRequest read = (ReadNodeRequest)request;
                 DateTime expires = computeExpirationTime(read);
-                if (read.getActualLocationOfNode() == null) {
-                    int x = 0;
-                }
                 BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
                 node.setProperties(read.getPropertiesByName());
                 node.setChildren(read.getChildren());
@@ -5555,9 +5537,6 @@ public class Graph {
                                                   DateTime expirationTime ) {
             BatchResultsNode node = nodes.get(location);
             if (node == null) {
-                if (location == null) {
-                    int x = 0;
-                }
                 node = new BatchResultsNode(location, expirationTime);
                 assert location != null;
                 assert location.getPath() != null;

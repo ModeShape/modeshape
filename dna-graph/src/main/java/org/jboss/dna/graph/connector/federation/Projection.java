@@ -475,9 +475,9 @@ public class Projection implements Comparable<Projection>, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.sourceName);
-        sb.append("::");
         sb.append(this.workspaceName);
+        sb.append('@');
+        sb.append(this.sourceName);
         sb.append(" { ");
         boolean first = true;
         for (Rule rule : this.getRules()) {

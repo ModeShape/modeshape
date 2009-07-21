@@ -262,6 +262,8 @@ public abstract class RequestProcessor {
             } else {
                 processUnknownRequest(request);
             }
+        } catch (RuntimeException e) {
+            request.setError(e);
         } finally {
             completeRequest(request);
         }
@@ -710,9 +712,6 @@ public abstract class RequestProcessor {
             request.setError(update.getError());
         }
         // Set the actual location ...
-        if (update.getActualLocationOfNode() == null) {
-            int x = 0;
-        }
         request.setActualLocationOfNode(update.getActualLocationOfNode());
     }
 
