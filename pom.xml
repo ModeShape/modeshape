@@ -146,15 +146,21 @@
 		<module>extensions/dna-connector-jdbc-metadata</module> 
 		<module>extensions/dna-web-jcr-rest</module> 
 		<module>extensions/dna-web-jcr-rest-war</module> 
-		<module>dna-integration-tests</module>
-		<module>docs/examples/gettingstarted</module>
 	</modules>
 
 	<profiles>
 		<profile>
 			<id>release</id>
 			<modules>
+				<module>dna-integration-tests</module>
 				<module>docs</module>
+        <module>docs/examples/gettingstarted</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>integration</id>
+			<modules>
+				<module>dna-integration-tests</module>
         <module>docs/examples/gettingstarted</module>
 			</modules>
 		</profile>
@@ -177,6 +183,7 @@
 	      </activation>
 	      <modules>
 	        <module>docs</module>
+					<module>docs/examples/gettingstarted</module>
 	      </modules>
 		  <reporting>
 		    <plugins>
