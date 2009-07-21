@@ -96,6 +96,11 @@ public abstract class AbstractSessionTest {
         graph.create("/jcr:system/dna:namespaces").and();
         graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(DnaLexicon.NAMESPACES);
 
+        // Add the built-ins, ensuring we overwrite any badly-initialized values ...
+        for (Map.Entry<String, String> builtIn : JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {
+            context.getNamespaceRegistry().register(builtIn.getKey(), builtIn.getValue());
+        }
+
         initializeContent();
 
         // Stub out the connection factory ...

@@ -299,6 +299,11 @@ public class JcrRepository implements Repository {
         this.persistentRegistry = new GraphNamespaceRegistry(systemGraph, namespacesPath, uriProperty, namespaceType);
         this.executionContext = executionContext.with(persistentRegistry);
 
+        // Add the built-ins, ensuring we overwrite any badly-initialized values ...
+        for (Map.Entry<String, String> builtIn : JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {
+            this.persistentRegistry.register(builtIn.getKey(), builtIn.getValue());
+        }
+
         // Set up the repository type manager ...
         try {
             this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext);

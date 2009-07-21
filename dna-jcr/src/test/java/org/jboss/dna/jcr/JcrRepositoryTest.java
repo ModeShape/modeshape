@@ -323,6 +323,33 @@ public class JcrRepositoryTest {
         }
     }
 
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesNeedeByDna() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("dna"), is("http://www.jboss.org/dna/1.0"));
+        assertThat(session.getNamespaceURI("dnaint"), is("http://www.jboss.org/dna/internal/1.0"));
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrSpecification() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("dna"), is("http://www.jboss.org/dna/1.0"));
+        assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
+        assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
+        assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
+        assertThat(session.getNamespaceURI(""), is(""));
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
+        assertThat(session.getNamespaceURI("xmlns"), is("http://www.w3.org/2000/xmlns/"));
+    }
+
     protected JcrSession createSession() throws Exception {
         LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
         login.login();

@@ -94,29 +94,6 @@ public class JcrNamespaceRegistryTest {
         }
     }
 
-    @Test
-    public void shouldBeInitializedWithNamespacesDefinedByTheJcrSpecification() throws Exception {
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThatNamespaceIsRegistered("jcr", "http://www.jcp.org/jcr/1.0");
-        assertThatNamespaceIsRegistered("nt", "http://www.jcp.org/jcr/nt/1.0");
-        assertThatNamespaceIsRegistered("mix", "http://www.jcp.org/jcr/mix/1.0");
-        assertThatNamespaceIsRegistered("xml", "http://www.w3.org/XML/1998/namespace");
-        assertThatNamespaceIsRegistered("", "");
-    }
-
-    @Test
-    public void shouldBeInitializedWithNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThatNamespaceIsRegistered("sv", "http://www.jcp.org/jcr/sv/1.0");
-        assertThatNamespaceIsRegistered("xmlns", "http://www.w3.org/2000/xmlns/");
-    }
-
-    @Test
-    public void shouldBeInitializedWithNamespacesSpecificToDna() throws Exception {
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThatNamespaceIsRegistered("dna", "http://www.jboss.org/dna/1.0");
-    }
-
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowRegisteringNullPrefix() throws Exception {
         registry.registerNamespace("foo", null);

@@ -188,6 +188,10 @@ final class JcrWorkspace implements Workspace {
 
     }
 
+    final Graph graph() {
+        return this.graph;
+    }
+
     final String getSourceName() {
         return this.repository.getRepositorySourceName();
     }

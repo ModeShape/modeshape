@@ -126,10 +126,6 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         this.workspaceRegistry = workspaceRegistry;
         this.session = session;
 
-        // Add the built-ins, ensuring we overwrite any badly-initialized values ...
-        for (Map.Entry<String, String> builtIn : STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {
-            this.registry.register(builtIn.getKey(), builtIn.getValue());
-        }
         assert this.behavior != null;
         assert this.registry != null;
         assert this.workspaceRegistry != null;
