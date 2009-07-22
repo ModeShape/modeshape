@@ -45,9 +45,12 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JaasSecurityContext;
@@ -115,7 +118,21 @@ public class JcrRepository implements Repository {
          * The {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name} that specifies which
          * login modules should be used to validate credentials.
          */
-        JAAS_LOGIN_CONFIG_NAME;
+        JAAS_LOGIN_CONFIG_NAME,
+
+        /**
+         * The name of the source (and optionally the workspace in the source) where the "/jcr:system" branch should be stored.
+         * The format is "<code>name of workspace@name of source</code>", or simply "<code>name of source</code>" if the default
+         * workspace is to be used. If this option is not used, a transient in-memory source will be used.
+         * <p>
+         * Note that all leading and trailing whitespace is removed for both the source name and workspace name. Thus, a value of
+         * "<code>@</code>" implies a zero-length workspace name and zero-length source name.
+         * </p>
+         * <p>
+         * Also, any use of the '@' character in source and workspace names must be escaped with a preceding backslash.
+         * </p>
+         */
+        SYSTEM_SOURCE_NAME;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -180,7 +197,8 @@ public class JcrRepository implements Repository {
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
     private final Map<Option, String> options;
-    private final RepositorySource systemSource;
+    private final String systemSourceName;
+    private final String systemWorkspaceName;
     private final Projection systemSourceProjection;
     private final FederatedRepositorySource federatedSource;
     private final Observer observer;
@@ -268,20 +286,63 @@ public class JcrRepository implements Repository {
         // Initialize the observer, which receives events from all repository sources ...
         this.observer = new RepositoryObserver();
 
-        // Create the in-memory repository source that we'll use for the "/jcr:system" branch in this repository.
-        // All workspaces will be set up with a federation connector that projects this system repository into
-        // "/jcr:system", and all other content is projected to the repositories actual source (and workspace).
-        // (The federation connector refers to this configuration as an "offset mirror".)
-        InMemoryRepositorySource systemSource = new InMemoryRepositorySource();
-        String systemWorkspaceName = "jcr:system";
-        String systemSourceName = "jcr:system source";
-        systemSource.setName(systemSourceName);
-        systemSource.setDefaultWorkspaceName(systemWorkspaceName);
-        this.systemSource = systemSource;
-        this.connectionFactory = new ConnectionFactoryWithSystem(connectionFactory, this.systemSource);
+        // Set up the system source ...
+        String systemSourceNameValue = this.options.get(Option.SYSTEM_SOURCE_NAME);
+        String systemSourceName = null;
+        String systemWorkspaceName = null;
+        RepositoryConnectionFactory connectionFactoryWithSystem = connectionFactory;
+        if (systemSourceNameValue != null) {
+            // Find an existing source with the given name containing the named workspace ...
+            try {
+                SourceWorkspacePair pair = new SourceWorkspacePair(systemSourceNameValue);
+                // Look for a source with the given name ...
+                RepositoryConnection conn = connectionFactory.createConnection(pair.getSourceName());
+                if (conn != null) {
+                    // We found a source that we can use for the system ...
+                    systemSourceName = pair.getSourceName();
+                    if (pair.getWorkspaceName() != null) {
+                        // There should be the named workspace ...
+                        Graph temp = Graph.create(conn, executionContext);
+                        temp.useWorkspace(pair.getWorkspaceName());
+                        // found it ...
+                        systemWorkspaceName = pair.getWorkspaceName();
+                    }
+                } else {
+                    I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceExistingSource;
+                    Logger.getLogger(getClass()).warn(msg, systemSourceNameValue, systemSourceName);
+                }
+            } catch (InvalidWorkspaceException e) {
+                // Bad workspace name ...
+                systemSourceName = null;
+                I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
+                Logger.getLogger(getClass()).warn(msg, systemSourceNameValue, systemSourceName);
+            } catch (IllegalArgumentException e) {
+                // Invalid format ...
+                systemSourceName = null;
+                I18n msg = JcrI18n.systemSourceNameOptionValueIsNotFormattedCorrectly;
+                Logger.getLogger(getClass()).warn(msg, systemSourceNameValue);
+            }
+        }
+        if (systemSourceName == null) {
+            // Create the in-memory repository source that we'll use for the "/jcr:system" branch in this repository.
+            // All workspaces will be set up with a federation connector that projects this system repository into
+            // "/jcr:system", and all other content is projected to the repositories actual source (and workspace).
+            // (The federation connector refers to this configuration as an "offset mirror".)
+            systemWorkspaceName = "jcr:system";
+            systemSourceName = "jcr:system source";
+            InMemoryRepositorySource transientSystemSource = new InMemoryRepositorySource();
+            transientSystemSource.setName(systemSourceName);
+            transientSystemSource.setDefaultWorkspaceName(systemWorkspaceName);
+            connectionFactoryWithSystem = new ConnectionFactoryWithSystem(connectionFactory, transientSystemSource);
+        }
+        this.systemWorkspaceName = systemWorkspaceName;
+        this.systemSourceName = systemSourceName;
+        this.connectionFactory = connectionFactoryWithSystem;
+        assert this.systemSourceName != null;
+        assert this.connectionFactory != null;
 
         // Set up the "/jcr:system" branch ...
-        Graph systemGraph = Graph.create(this.systemSource, executionContext);
+        Graph systemGraph = Graph.create(this.systemSourceName, this.connectionFactory, executionContext);
         systemGraph.useWorkspace(systemWorkspaceName);
         initializeSystemContent(systemGraph);
         this.sourceName = repositorySourceName;
@@ -353,8 +414,15 @@ public class JcrRepository implements Repository {
     }
 
     Graph createSystemGraph() {
+        assert this.systemSourceName != null;
+        assert this.connectionFactory != null;
+        assert this.executionContext != null;
         // The default workspace should be the system workspace ...
-        return Graph.create(this.systemSource, this.executionContext);
+        Graph result = Graph.create(this.systemSourceName, this.connectionFactory, this.executionContext);
+        if (this.systemWorkspaceName != null) {
+            result.useWorkspace(systemWorkspaceName);
+        }
+        return result;
     }
 
     /**
@@ -462,7 +530,8 @@ public class JcrRepository implements Repository {
      *         <li>provides neither a <code>getLoginContext()</code> nor a <code>getAccessControlContext()</code> method and is
      *         not an instance of {@code SimpleCredentials}.</li>
      *         <li>provides a <code>getLoginContext()</code> method that doesn't return a {@link LoginContext}.
-     *         <li>provides a <code>getLoginContext()</code> method that returns a <code>null</code> {@link LoginContext}.
+     *         <li>provides a <code>getLoginContext()</code> method that returns a <code>
+     *         null</code> {@link LoginContext}.
      *         <li>does not provide a <code>getLoginContext()</code> method, but provides a <code>getAccessControlContext()</code>
      *         method that doesn't return an {@link AccessControlContext}.
      *         <li>does not provide a <code>getLoginContext()</code> method, but provides a <code>getAccessControlContext()</code>
@@ -659,6 +728,72 @@ public class JcrRepository implements Repository {
                 return this.system.getConnection();
             }
             return delegate.createConnection(sourceName);
+        }
+    }
+
+    @Immutable
+    protected static class SourceWorkspacePair {
+        private final String sourceName;
+        private final String workspaceName;
+
+        protected SourceWorkspacePair( String sourceAndWorkspaceName ) {
+            assert sourceAndWorkspaceName != null;
+            sourceAndWorkspaceName = sourceAndWorkspaceName.trim();
+            assert sourceAndWorkspaceName.length() != 0;
+            sourceAndWorkspaceName = sourceAndWorkspaceName.trim();
+            // Look for the first '@' not preceded by a '\' ...
+            int maxIndex = sourceAndWorkspaceName.length() - 1;
+            int index = sourceAndWorkspaceName.indexOf('@');
+            while (index > 0 && index < maxIndex && sourceAndWorkspaceName.charAt(index - 1) == '\\') {
+                index = sourceAndWorkspaceName.indexOf('@', index + 1);
+            }
+            if (index > 0) {
+                // There is a workspace and source name ...
+                workspaceName = sourceAndWorkspaceName.substring(0, index).trim().replaceAll("\\\\@", "@");
+                if (index < maxIndex) sourceName = sourceAndWorkspaceName.substring(index + 1).trim().replaceAll("\\\\@", "@");
+                else throw new IllegalArgumentException("The source name is invalid");
+            } else if (index == 0) {
+                // The '@' was used, but the workspace is empty
+                if (sourceAndWorkspaceName.length() == 1) {
+                    sourceName = "";
+                } else {
+                    sourceName = sourceAndWorkspaceName.substring(1).trim().replaceAll("\\\\@", "@");
+                }
+                workspaceName = "";
+            } else {
+                // There is just a source name...
+                workspaceName = null;
+                sourceName = sourceAndWorkspaceName.replaceAll("\\\\@", "@");
+            }
+            assert this.sourceName != null;
+        }
+
+        /**
+         * @return sourceName
+         */
+        public String getSourceName() {
+            return sourceName;
+        }
+
+        /**
+         * @return workspaceName
+         */
+        public String getWorkspaceName() {
+            return workspaceName;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            if (sourceName == null) return "";
+            if (workspaceName != null) {
+                return workspaceName + '@' + sourceName;
+            }
+            return sourceName;
         }
     }
 

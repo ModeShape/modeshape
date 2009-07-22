@@ -475,8 +475,10 @@ public class Projection implements Comparable<Projection>, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.workspaceName);
-        sb.append('@');
+        if (this.workspaceName != null) {
+            sb.append(this.workspaceName);
+            sb.append('@');
+        }
         sb.append(this.sourceName);
         sb.append(" { ");
         boolean first = true;

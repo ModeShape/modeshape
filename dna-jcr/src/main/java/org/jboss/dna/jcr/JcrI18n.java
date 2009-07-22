@@ -99,6 +99,10 @@ public final class JcrI18n {
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
 
+    public static I18n systemSourceNameOptionValueDoesNotReferenceExistingSource;
+    public static I18n systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
+    public static I18n systemSourceNameOptionValueIsNotFormattedCorrectly;
+
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
     public static I18n tooDeep;

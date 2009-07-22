@@ -350,6 +350,47 @@ public class JcrRepositoryTest {
         assertThat(session.getNamespaceURI("xmlns"), is("http://www.w3.org/2000/xmlns/"));
     }
 
+    @Test
+    public void shouldParseSourceNameOptionWithOnlySourceName() {
+        assertSourceWorkspacePair("source name", "source name", null);
+        assertSourceWorkspacePair(" \t source name \n ", "source name", null);
+        assertSourceWorkspacePair(" \t source \\@ name \n ", "source @ name", null);
+    }
+
+    @Test
+    public void shouldParseSourceNameOptionWithWorkspaceNameAndSourceName() {
+        assertSourceWorkspacePair("workspace@source", "source", "workspace");
+        assertSourceWorkspacePair(" \t workspace\t@ \t source \t \n", "source", "workspace");
+        assertSourceWorkspacePair(" \t workspace\\@ name \t@ \t source\\@name \t \n", "source@name", "workspace@ name");
+        assertSourceWorkspacePair("@ \t source \\@ name \n ", "source @ name", "");
+        assertSourceWorkspacePair("   @ \t source \\@ name \n ", "source @ name", "");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToParseSourceNameOptionThatHasZeroLengthSource() {
+        new JcrRepository.SourceWorkspacePair("workspace@");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToParseSourceNameOptionThatHasBlankSource() {
+        new JcrRepository.SourceWorkspacePair("workspace@  ");
+    }
+
+    @Test
+    public void shouldParseSourceNameOptionThatHasBlankSourceAndWorkspace() {
+        assertSourceWorkspacePair("@", "", "");
+        assertSourceWorkspacePair(" @ ", "", "");
+    }
+
+    protected void assertSourceWorkspacePair( String value,
+                                              String expectedSourceName,
+                                              String expectedWorkspaceName ) {
+        JcrRepository.SourceWorkspacePair pair = new JcrRepository.SourceWorkspacePair(value);
+        assertThat(pair, is(notNullValue()));
+        assertThat(pair.getSourceName(), is(expectedSourceName));
+        assertThat(pair.getWorkspaceName(), is(expectedWorkspaceName));
+    }
+
     protected JcrSession createSession() throws Exception {
         LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
         login.login();
