@@ -73,14 +73,8 @@
 						a special way.</entry>
 				</row>
 				<row>
-					<entry>uuidPropertyName</entry>
-					<entry>Optional property that, if used, defines the property that should be used to find the UUID value for each node
-						in the cache.  "<code>dna:uuid</code>" is the default.</entry>
-				</row>
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. The default value is '0'.</entry>
+					<entry>creatingWorkspacesAllowed</entry>
+					<entry>Optional property that is by default 'true' that defines whether clients can create new workspaces.</entry>
 				</row>
 				<row>
 					<entry>defaultCachePolicy</entry>
@@ -89,7 +83,7 @@
 						duration for caching information provided by this repository source.</entry>
 				</row>
 				<row>
-					<entry>nameOfDefaultWorkspace</entry>
+					<entry>defaultWorkspaceName</entry>
 					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
 						if none is specified.</entry>
 				</row>
@@ -98,11 +92,36 @@
 					<entry>Optional property that defines the names of the workspaces that exist and that are available for use without having to create them.</entry>
 				</row>
 				<row>
-					<entry>creatingWorkspacesAllowed</entry>
-					<entry>Optional property that is by default 'true' that defines whether clients can create new workspaces.</entry>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
 				</row>
+				<row>
+					<entry>rootNodeUuid</entry>
+					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a random UUID is generated each time that the repository is started.</entry>
+				</row>	
+				<row>
+					<entry>uuidPropertyName</entry>
+					<entry>Optional property that, if used, defines the property that should be used to find the UUID value for each node
+						in the cache.  "<code>dna:uuid</code>" is the default.</entry>
+				</row>
+				
 			</tbody>
 		</tgroup>
 	</table>
-</chapter>
+	<para>
+		The JBoss Cache connector is used by creating in the &JcrConfiguration; a repository source that uses the &JBossCacheSource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("source A")
+      .usingClass(JBossCacheSource.class)
+      .setDescription("The repository for our content")      
+      .setProperty("defaultWorkspaceName", "prod")
+      .setProperty("rootNodeUuid", UUID.fromString("12083e7e-2b55-4c8d-954d-627a9f5c45c2"))
+      .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"});
+ ]]></programlisting>
+ </chapter>
 

@@ -35,7 +35,16 @@
 		The connector considers a workspace name to be the path to the directory on the file system that represents the root of that
 		workspace. Each connector can define whether it allows new workspaces can be created, but if so the names of the new workspaces
 		must represent valid paths to existing directories.
-  </para>
+		<note>
+			<para>
+			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.
+			The <code>jcr:content</code> node will have a primary type of <code>dna:resource</code>.  The <code>dna:resource</code> node type is equivalent
+			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
+			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will not move or delete the files outside of DNA.
+			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
+			</para>
+		</note>
+	</para>
 	<para>
 		The &FileSystemSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
@@ -56,20 +65,25 @@
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
-					<entry>directoryForDefaultWorkspace</entry>
-					<entry>Optional property that, if used, specifies the file system path to the existing directory that should be used for the 
-						default workspace. If null (or not specified), the source will use the current working directory of this virtual machine
-						(as defined by <code>new File(".").getAbsolutePath()</code>.</entry>
+					<entry>cacheTimeToLiveInMilliseconds</entry>
+					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
+						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
+						duration for caching information.</entry>
 				</row>
 				<row>
-					<entry>predefinedWorkspaceNames</entry>
-					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
-						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
-					</entry>
+					<entry>defaultWorkspaceName</entry>
+					<entry>Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
 				</row>
 				<row>
 					<entry>creatingWorkspaceAllowed</entry>
 					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
 					</entry>
 				</row>
 				<row>
@@ -78,16 +92,31 @@
 						following a communication failure. The default value is '0'.</entry>
 				</row>
 				<row>
-					<entry>cacheTimeToLiveInMilliseconds</entry>
-					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
-						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
-						duration for caching information.</entry>
-				</row>
+					<entry>rootNodeUuid</entry>
+					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a random UUID is generated each time that the repository is started.</entry>
+				</row>	
+				<row>
+					<entry>workspaceRootPath</entry>
+					<entry>
+					<para>Optional property that, if used, specifies a path on the local file system to the root of all workspaces.  The source will will 
+					use the name of the workspace as a relative path from the <code>workspaceRootPath</code> to determine the path for a particular workspace.  
+					If no value (or a <code>null</code> value) is specified, the source will use the name of the workspace as a relative path from the current working 
+					directory of this virtual machine (as defined by <code>new File(".")</code>.
+					</para>
+					<para>As an example for a workspace named <code>"default/foo"</code>,
+					the source will use <code>new File(workspaceRootPath, "default/foo")</code> as the source directory for the connector if <code>workspaceRootPath</code> is set
+					to a non-null value, or <code>new File(".", "default/foo")</code> as the source directory for the connector if <code>workspaceRootPath</code> is
+					set to <code>null</code>.
+					</para>
+					</entry>
+				</row>	
+				
 			</tbody>
 		</tgroup>
 	</table>
 	<para>
-		Using the file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
+		The file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
@@ -95,7 +124,10 @@ JcrConfiguration config = ...
 config.repositorySource("source A")
       .usingClass(FileSystemSource.class)
       .setDescription("The repository for our content")
-      .setProperty("directoryForDefaultWorkspace", "file://some/file/path")
+      .setProperty("workspaceRootPath", "/home/content/someApp")
+      .setProperty("defaultWorkspaceName", "prod")
+      .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"})
+      .setProperty("rootNodeUuid", UUID.fromString("fd129c12-81a8-42ed-aa4b-820dba49e6f0")
       .setProperty("creatingWorkspaceAllowed", "false");
  ]]></programlisting>
 </chapter>
