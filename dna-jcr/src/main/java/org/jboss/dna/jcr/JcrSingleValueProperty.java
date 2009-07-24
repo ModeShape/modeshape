@@ -116,7 +116,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLengths()
      */
     public long[] getLengths() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
     /**
@@ -237,7 +237,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 setValue(value.getString());
                 break;
             default:
-                throw new RepositoryException();
+                throw new RepositoryException(JcrI18n.invalidPropertyType.text(value.getType()));
         }
     }
 
@@ -346,7 +346,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValues()
      */
     public Value[] getValues() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
     /**
@@ -355,7 +355,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(javax.jcr.Value[])
      */
     public void setValue( Value[] values ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
     /**
@@ -364,6 +364,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(java.lang.String[])
      */
     public void setValue( String[] values ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 }

@@ -40,6 +40,7 @@ public final class JcrI18n {
     public static I18n nonInputStreamConsumed;
     public static I18n pathNotFound;
     public static I18n pathNotFoundRelativeTo;
+    public static I18n pathCannotHaveSameNameSiblingIndex;
     public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
@@ -47,6 +48,7 @@ public final class JcrI18n {
     public static I18n fileDoesNotExist;
 
     public static I18n rootNodeHasNoParent;
+    public static I18n childNodeAlreadyExists;
 
     public static I18n noNamespaceWithPrefix;
     public static I18n noNamespaceWithUri;
@@ -71,6 +73,7 @@ public final class JcrI18n {
     public static I18n primaryItemNameForPrimaryTypeIsNotValid;
     public static I18n primaryItemDoesNotExist;
     public static I18n itemNotFoundWithUuid;
+    public static I18n itemAlreadyExistsWithUuid;
     public static I18n itemNotFoundAtPath;
     public static I18n itemNotFoundAtPathRelativeToReferenceNode;
     public static I18n propertyNotFoundOnNode;
@@ -87,10 +90,15 @@ public final class JcrI18n {
     public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
     public static I18n unableToSetMultiValuedPropertyUsingSingleValue;
     public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
+    public static I18n invalidMethodForSingleValuedProperty;
+    public static I18n invalidMethodForMultiValuedProperty;
     public static I18n unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
     public static I18n unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
     public static I18n allPropertyValuesMustHaveSameType;
     public static I18n cannotRemoveNodeFromClone;
+
+    public static I18n cannotRemoveParentNodeOfTarget;
+    public static I18n invalidPropertyType;
 
     public static I18n unableToRemoveRootNode;
     public static I18n unableToMoveNodeToBeChildOfDecendent;
@@ -146,11 +154,16 @@ public final class JcrI18n {
     public static I18n allNodeTypeTemplatesMustComeFromSameSession;
 
     public static I18n nodeNotReferenceable;
+    public static I18n nodeNotReferenceableUuid;
     public static I18n noPendingChangesAllowed;
 
     public static I18n cannotUnregisterSupertype;
     public static I18n cannotUnregisterRequiredPrimaryType;
     public static I18n cannotUnregisterDefaultPrimaryType;
+
+    public static I18n cannotAddMixin;
+    public static I18n invalidMixinTypeForNode;
+    public static I18n notOrderable;
 
     static {
         try {

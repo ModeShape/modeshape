@@ -279,7 +279,7 @@ final class JcrValue implements Value {
                     case PropertyType.REFERENCE:
                         return this.getString().equals(that.getString());
                     default:
-                        throw new SystemFailureException();
+                        throw new SystemFailureException(JcrI18n.invalidPropertyType.text(this.type));
                 }
             } catch (RepositoryException e) {
                 return false;
@@ -310,7 +310,7 @@ final class JcrValue implements Value {
                     case PropertyType.REFERENCE:
                         return this.getString().equals(that.getString());
                     default:
-                        throw new SystemFailureException();
+                        throw new SystemFailureException(JcrI18n.invalidPropertyType.text(this.type));
                 }
             } catch (IOException e) {
                 return false;

@@ -307,7 +307,7 @@ final class JcrWorkspace implements Workspace {
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
-            throw new RepositoryException();
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {
@@ -431,7 +431,7 @@ final class JcrWorkspace implements Workspace {
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
-            throw new RepositoryException();
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {
@@ -538,7 +538,7 @@ final class JcrWorkspace implements Workspace {
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
-            throw new RepositoryException();
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {

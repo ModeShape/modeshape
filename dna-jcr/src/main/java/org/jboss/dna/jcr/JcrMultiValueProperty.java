@@ -71,7 +71,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getBoolean()
      */
     public boolean getBoolean() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -81,7 +81,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDate()
      */
     public Calendar getDate() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -91,7 +91,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDouble()
      */
     public double getDouble() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -100,7 +100,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getNode()
      */
     public Node getNode() throws ValueFormatException, RepositoryException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -110,7 +110,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLength()
      */
     public long getLength() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -135,7 +135,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLong()
      */
     public long getLong() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -145,7 +145,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getStream()
      */
     public InputStream getStream() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -155,7 +155,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getString()
      */
     public String getString() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -240,7 +240,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValue()
      */
     public Value getValue() throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -250,7 +250,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(javax.jcr.Value)
      */
     public final void setValue( Value value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -260,7 +260,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(java.lang.String)
      */
     public final void setValue( String value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -270,7 +270,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(java.io.InputStream)
      */
     public final void setValue( InputStream value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -280,7 +280,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(long)
      */
     public final void setValue( long value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -290,7 +290,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(double)
      */
     public final void setValue( double value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -300,7 +300,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(java.util.Calendar)
      */
     public final void setValue( Calendar value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -310,7 +310,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(boolean)
      */
     public final void setValue( boolean value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
     /**
@@ -320,7 +320,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(javax.jcr.Node)
      */
     public final void setValue( Node value ) throws ValueFormatException {
-        throw new ValueFormatException();
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
 }

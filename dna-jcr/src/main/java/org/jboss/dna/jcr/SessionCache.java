@@ -937,7 +937,12 @@ class SessionCache {
                                                                 true,
                                                                 skipProtected);
                 if (definition == null) {
-                    throw new ConstraintViolationException();
+                    throw new ConstraintViolationException(
+                                                           JcrI18n.noDefinition.text("property",
+                                                                                     readable(name),
+                                                                                     readable(node.getPath()),
+                                                                                     readable(payload.getPrimaryTypeName()),
+                                                                                     readable(payload.getMixinTypeNames())));
                 }
             }
             // Create the DNA property ...
@@ -1109,7 +1114,12 @@ class SessionCache {
                                                                 newValues,
                                                                 skipProtected);
                 if (definition == null) {
-                    throw new ConstraintViolationException();
+                    throw new ConstraintViolationException(
+                                                           JcrI18n.noDefinition.text("property",
+                                                                                     readable(name),
+                                                                                     readable(node.getPath()),
+                                                                                     readable(payload.getPrimaryTypeName()),
+                                                                                     readable(payload.getMixinTypeNames())));
                 }
             }
             // Create the DNA property ...
@@ -1239,8 +1249,8 @@ class SessionCache {
                     // The node definition changed, so try to set the property ...
                     NodeEditor newChildEditor = getEditorFor(existingChild);
                     try {
-                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, defn.getId()
-                                                                                                               .getString());
+                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                      defn.getId().getString());
                         newChildEditor.setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                     } catch (ConstraintViolationException e) {
                         // We can't set this property on the node (according to the node definition).

@@ -202,7 +202,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public String getUUID() throws RepositoryException {
         // Return "jcr:uuid" only if node is referenceable
         if (!isReferenceable()) {
-            throw new UnsupportedRepositoryOperationException();
+            throw new UnsupportedRepositoryOperationException(JcrI18n.nodeNotReferenceable.text());
         }
         PropertyInfo<JcrPropertyPayload> uuidProp = nodeInfo().getProperty(JcrLexicon.UUID);
         if (uuidProp == null) {
@@ -361,7 +361,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return false;
     }
 
-    public CorrespondenceId getCorrespondenceId() throws RepositoryException {
+    protected CorrespondenceId getCorrespondenceId() throws RepositoryException {
         if (this.isReferenceable()) return new CorrespondenceId(getUUID());
         assert !this.isRoot(); // the root must be referenceable
 
@@ -829,7 +829,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         }
 
         if (!canAddMixin(mixinName)) {
-            throw new ConstraintViolationException();
+            throw new ConstraintViolationException(JcrI18n.cannotAddMixin.text(mixinName));
         }
 
         this.editor().addMixin(mixinCandidateType);
@@ -864,13 +864,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         Property existingMixinProperty = getProperty(JcrLexicon.MIXIN_TYPES);
 
         if (existingMixinProperty == null) {
-            throw new NoSuchNodeTypeException();
+            throw new NoSuchNodeTypeException(JcrI18n.invalidMixinTypeForNode.text(mixinName, getPath()));
         }
 
         Value[] existingMixinValues = existingMixinProperty.getValues();
 
         if (existingMixinValues.length == 0) {
-            throw new NoSuchNodeTypeException();
+            throw new NoSuchNodeTypeException(JcrI18n.invalidMixinTypeForNode.text(mixinName, getPath()));
         }
 
         // ------------------------------------------------------------------------------
@@ -889,7 +889,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                     newMixinValues[j++] = existingMixinValues[i];
                     newMixinNames.add(cache.nameFactory.create(existingMixinValues[i].getString()));
                 } else {
-                    throw new NoSuchNodeTypeException();
+                    throw new NoSuchNodeTypeException(JcrI18n.invalidMixinTypeForNode.text(mixinName, getPath()));
                 }
             }
         }
@@ -922,7 +922,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 }
 
                 if (match == null) {
-                    throw new ConstraintViolationException();
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
+                                                                                     property.getName(),
+                                                                                     getPath(),
+                                                                                     primaryTypeName,
+                                                                                     newMixinNames));
                 }
             }
         }
@@ -946,7 +950,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                                                                     true);
 
                 if (match == null) {
-                    throw new ConstraintViolationException();
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("child node",
+                                                                                     node.getName(),
+                                                                                     getPath(),
+                                                                                     primaryTypeName,
+                                                                                     newMixinNames));
                 }
             }
         }
@@ -1556,13 +1564,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                    String destChildRelPath ) throws UnsupportedRepositoryOperationException, RepositoryException {
         // This implementation is correct, except for not calling the SessionCache or graph layer to do the re-order
         if (!getPrimaryNodeType().hasOrderableChildNodes()) {
-            throw new UnsupportedRepositoryOperationException();
+            throw new UnsupportedRepositoryOperationException(
+                                                              JcrI18n.notOrderable.text(getPrimaryNodeType().getName(), getPath()));
         }
 
         PathFactory pathFactory = this.cache.pathFactory();
         Path srcPath = pathFactory.create(srcChildRelPath);
         if (srcPath.isAbsolute() || srcPath.size() != 1) {
-            throw new ItemNotFoundException();
+            throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath.getString(cache.context().getNamespaceRegistry()),
+                                                                      cache.session().workspace().getName()));
         }
         // getLastSegment should return the only segment, since we verified that size() == 1
         Path.Segment sourceSegment = srcPath.getLastSegment();
@@ -1578,7 +1588,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException();
+                throw new ItemNotFoundException(
+                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
+                                                                          cache.session().workspace().getName()));
             }
 
             destSegment = destPath.getLastSegment();

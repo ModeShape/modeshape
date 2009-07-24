@@ -564,7 +564,7 @@ class JcrSession implements Session {
 
             public Value createValue( Node value ) throws RepositoryException {
                 if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
-                    throw new RepositoryException();
+                    throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
                 }
                 String uuid = valueFactories.getStringFactory().create(value.getUUID());
                 return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, uuid);
@@ -772,14 +772,15 @@ class JcrSession implements Session {
         Path.Segment newNodeName = destPath.getSegment(destPath.size() - 1);
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
-            throw new RepositoryException();
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
         AbstractJcrNode newParentNode = getNode(destPath.getParent());
 
+        String newNodeNameAsString = newNodeName.getString(executionContext.getNamespaceRegistry());
         if (newParentNode.hasNode(newNodeName.getString(executionContext.getNamespaceRegistry()))) {
-            throw new ItemExistsException();
+            throw new ItemExistsException(JcrI18n.childNodeAlreadyExists.text(newNodeNameAsString, newParentNode.getPath()));
         }
 
         newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());

@@ -360,12 +360,18 @@ class JcrContentHandler extends DefaultHandler {
                                     break;
                                 case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
                                     if (existingNodeWithUuid.path().isAtOrAbove(parentStack.firstElement().path())) {
-                                        throw new ConstraintViolationException();
+                                        throw new ConstraintViolationException(
+                                                                               JcrI18n.cannotRemoveParentNodeOfTarget.text(existingNodeWithUuid.getPath(),
+                                                                                                                           uuid,
+                                                                                                                           parentStack.firstElement().getPath()));
                                     }
                                     existingNodeWithUuid.remove();
                                     break;
                                 case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
-                                    throw new ItemExistsException();
+                                    throw new ItemExistsException(
+                                                                  JcrI18n.itemAlreadyExistsWithUuid.text(uuid,
+                                                                                                         cache().session().workspace().getName(),
+                                                                                                         existingNodeWithUuid.getPath()));
                             }
                         } catch (ItemNotFoundException e) {
                             // there wasn't an existing item, so just continue
