@@ -26,7 +26,6 @@ package org.jboss.dna.connector.filesystem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.io.File;
 import java.util.List;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -50,13 +49,13 @@ public class FileSystemConnectorReadableTest extends ReadableConnectorTest {
     @Override
     protected RepositorySource setUpSource() {
         // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
-        String path = new File(".").getAbsolutePath() + "/src/test/resources/repositories/";
+        String path = "./src/test/resources/repositories/";
         String[] predefinedWorkspaceNames = new String[] {path + "airplanes", path + "cars"};
         FileSystemSource source = new FileSystemSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
-        source.setCreatingWorkspacesAllowed(false);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
+        source.setCreatingWorkspacesAllowed(true);
 
         return source;
     }

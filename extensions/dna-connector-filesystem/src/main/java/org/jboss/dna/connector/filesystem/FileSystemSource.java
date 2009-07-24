@@ -31,7 +31,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
@@ -40,6 +41,7 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
@@ -64,10 +66,16 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
+
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String CACHE_TIME_TO_LIVE_IN_MILLISECONDS = "cacheTimeToLiveInMilliseconds";
     protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
+    protected static final String WORKSPACE_ROOT = "workspaceRootPath";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
 
@@ -84,7 +92,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean DEFAULT_SUPPORTS_CREATING_WORKSPACES = true;
     /**
-     * This source does not support udpates by default, but each instance may be configured to be read-only or updateable}.
+     * This source does not support updates by default, but each instance may be configured to be read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
 
@@ -99,8 +107,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     private volatile String name;
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
     private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
-    private volatile String defaultWorkspace;
+    private volatile String defaultWorkspaceName = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+    private volatile String workspaceRootPath;
     private volatile String[] predefinedWorkspaces = new String[] {};
+    private volatile UUID rootNodeUuid = UUID.randomUUID();
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
@@ -108,7 +118,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
     private transient CachePolicy cachePolicy;
-    private transient CopyOnWriteArraySet<String> availableWorkspaceNames;
+    private transient Map<String, File> availableWorkspaces;
 
     /**
      * 
@@ -170,27 +180,61 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     // }
 
     /**
-     * Get the file system path to the existing directory that should be used for the default workspace. If the default is
-     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
-     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * Get the relative root directory for the workspaces. If this property is set, workspaces can be given as relative paths from
+     * this directory and all workspace paths must be ancestors of this path.
      * 
-     * @return the file system path to the directory representing the default workspace, or null if the default should be the
-     *         current working directory
+     * @return the root directory for workspaces
      */
-    public String getDirectoryForDefaultWorkspace() {
-        return defaultWorkspace;
+    public String getWorkspaceRootPath() {
+        return workspaceRootPath;
     }
 
     /**
-     * Set the file system path to the existing directory that should be used for the default workspace. If the default is
-     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
-     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * Sets the relative root directory for workspaces
      * 
-     * @param pathToDirectoryForDefaultWorkspace the valid and resolvable file system path to the directory representing the
-     *        default workspace, or null if the current working directory should be used as the default workspace
+     * @param workspaceRootPath the relative root directory for workspaces. If this value is non-null, all workspace paths will be
+     *        treated as paths relative to this directory
      */
-    public synchronized void setDirectoryForDefaultWorkspace( String pathToDirectoryForDefaultWorkspace ) {
-        this.defaultWorkspace = pathToDirectoryForDefaultWorkspace;
+    public synchronized void setWorkspaceRootPath( String workspaceRootPath ) {
+        this.workspaceRootPath = workspaceRootPath;
+    }
+
+    /**
+     * Get the UUID that is used for the root node of each workspace
+     * 
+     * @return the UUID that is used for the root node of each workspace
+     */
+    public UUID getRootNodeUuid() {
+        return rootNodeUuid;
+    }
+
+    /**
+     * Set the {@code jcr:uuid} property of the root node in each workspace to the given value.
+     * 
+     * @param rootNodeUuid the UUID to use for the root nodes of all workspaces
+     */
+    public synchronized void setRootNodeUuid( String rootNodeUuid ) {
+        CheckArg.isNotNull(rootNodeUuid, "rootNodeUuid");
+        this.rootNodeUuid = UUID.fromString(rootNodeUuid);
+    }
+
+    /**
+     * Get the name of the default workspace.
+     * 
+     * @return the name of the workspace that should be used by default; never null
+     */
+    public String getDefaultWorkspaceName() {
+        return defaultWorkspaceName;
+    }
+
+    /**
+     * Set the name of the workspace that should be used when clients don't specify a workspace.
+     * 
+     * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
+     *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
+     */
+    public synchronized void setDefaultWorkspaceName( String nameOfDefaultWorkspace ) {
+        this.defaultWorkspaceName = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     }
 
     /**
@@ -310,7 +354,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         }
         ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Integer.toString(getCacheTimeToLiveInMilliseconds())));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
-        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDirectoryForDefaultWorkspace()));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -356,12 +400,24 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             if (sourceName != null) source.setName(sourceName);
             if (cacheTtlInMillis != null) source.setCacheTimeToLiveInMilliseconds(Integer.parseInt(cacheTtlInMillis));
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
-            if (defaultWorkspace != null) source.setDirectoryForDefaultWorkspace(defaultWorkspace);
+            if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;
         }
         return null;
+    }
+
+    private String pathFor( String workspaceName ) {
+        String path = workspaceName;
+        if (this.workspaceRootPath != null) {
+            if (this.workspaceRootPath.charAt(workspaceRootPath.length() - 1) == File.separatorChar) {
+                path = this.workspaceRootPath + workspaceName;
+            }
+            path = this.workspaceRootPath + File.separatorChar + workspaceName;
+        }
+
+        return path;
     }
 
     /**
@@ -376,54 +432,42 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
 
-        boolean reportWarnings = false;
-        if (this.availableWorkspaceNames == null) {
+        if (this.availableWorkspaces == null) {
             // Set up the predefined workspace names ...
-            this.availableWorkspaceNames = new CopyOnWriteArraySet<String>();
+            this.availableWorkspaces = new ConcurrentHashMap<String, File>();
             for (String predefined : this.predefinedWorkspaces) {
-                this.availableWorkspaceNames.add(predefined);
-            }
-
-            // Report the warnings for non-existant predefined workspaces
-            reportWarnings = true;
-            for (String path : this.availableWorkspaceNames) {
                 // Look for the file at this path ...
-                File file = new File(path);
+                File file = new File(pathFor(predefined));
                 if (!file.exists()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, path, name);
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, predefined, name);
                 } else if (!file.isDirectory()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, path, name);
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, predefined, name);
                 } else if (!file.canRead()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, path, name);
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, predefined, name);
                 }
+                
+                
+                this.availableWorkspaces.put(predefined, file);
             }
         }
 
-        FilenameFilter filenameFilter = null;
-        boolean supportsUpdates = getSupportsUpdates();
-        File defaultWorkspace = new File(".");
-        String path = getDirectoryForDefaultWorkspace();
-        if (path != null) {
+        if (defaultWorkspaceName != null) { 
             // Look for the file at this path ...
-            File file = new File(path);
-            I18n warning = null;
+            File file = new File(pathFor(defaultWorkspaceName));
             if (!file.exists()) {
-                warning = FileSystemI18n.pathForDefaultWorkspaceDoesNotExist;
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, defaultWorkspaceName, name);
             } else if (!file.isDirectory()) {
-                warning = FileSystemI18n.pathForDefaultWorkspaceIsNotDirectory;
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, defaultWorkspaceName, name);
             } else if (!file.canRead()) {
-                warning = FileSystemI18n.pathForDefaultWorkspaceCannotBeRead;
-            } else {
-                // good to use!
-                defaultWorkspace = file;
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, defaultWorkspaceName, name);
             }
-            if (reportWarnings && warning != null) {
-                Logger.getLogger(getClass()).warn(warning, path, name);
-            }
+            
+            
+            this.availableWorkspaces.put(defaultWorkspaceName, file);
         }
-        this.availableWorkspaceNames.add(defaultWorkspace.getPath());
-        return new FileSystemConnection(name, defaultWorkspace, availableWorkspaceNames, isCreatingWorkspacesAllowed(),
-                                        cachePolicy, filenameFilter, supportsUpdates);
+        
+        return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
+                                        cachePolicy, rootNodeUuid, workspaceRootPath, (FilenameFilter) null, getSupportsUpdates());
     }
 
     @Immutable

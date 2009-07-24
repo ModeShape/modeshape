@@ -39,6 +39,9 @@ import org.xml.sax.SAXException;
  * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
  */
 public class DnaRepositoryStub extends RepositoryStub {
+
+    public static final String DNA_SKIP_IMPORT = "javax.jcr.tck.dnaSkipImport";
+    
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
     private static String currentConfigurationName = "default";
@@ -46,7 +49,6 @@ public class DnaRepositoryStub extends RepositoryStub {
     private Properties configProps;
     private String repositoryConfigurationName;
     private JcrRepository repository;
-    
 
     static {
 
@@ -69,7 +71,7 @@ public class DnaRepositoryStub extends RepositoryStub {
 
     private void configureRepository() {
         repositoryConfigurationName = currentConfigurationName;
-        
+
         // Create the in-memory (DNA) repository
         JcrConfiguration configuration = new JcrConfiguration();
         try {
@@ -94,7 +96,6 @@ public class DnaRepositoryStub extends RepositoryStub {
         JcrEngine engine = configuration.build();
         engine.start();
 
-        // Problems problems = engine.getRepositoryService().getStartupProblems();
         Problems problems = engine.getProblems();
         // Print all of the problems from the engine configuration ...
         for (Problem problem : problems) {
@@ -110,23 +111,26 @@ public class DnaRepositoryStub extends RepositoryStub {
         try {
             repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
 
-            // Set up some sample nodes in the graph to match the expected test configuration
-            Graph graph = Graph.create(repository.getRepositorySourceName(),
-                                       engine.getRepositoryConnectionFactory(),
-                                       executionContext);
-            Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+            // This needs to check configProps directly to avoid an infinite loop
+            String skipImport = (String)configProps.get(DNA_SKIP_IMPORT);
+            if (!Boolean.valueOf(skipImport)) {
 
-            InputStream xmlStream = getClass().getResourceAsStream("/tck/repositoryForTckTests.xml");
-            graph.importXmlFrom(xmlStream).into(destinationPath);
+                // Set up some sample nodes in the graph to match the expected test configuration
+                Graph graph = Graph.create(repository.getRepositorySourceName(),
+                                           engine.getRepositoryConnectionFactory(),
+                                           executionContext);
+                Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
 
-            graph.createWorkspace().named("otherWorkspace");
+                InputStream xmlStream = getClass().getResourceAsStream("/tck/repositoryForTckTests.xml");
+                graph.importXmlFrom(xmlStream).into(destinationPath);
 
+                graph.createWorkspace().named("otherWorkspace");
+            }
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.
             ex.printStackTrace();
             throw new IllegalStateException("Failed to initialize the repository with text content.", ex);
         }
-
 
     }
 

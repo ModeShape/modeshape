@@ -2067,43 +2067,7 @@ class SessionCache {
                     uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
                 }
             }
-            if (uuidProperty == null) {
-                org.jboss.dna.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> uuidInfo = node.getProperty(JcrLexicon.UUID);
-                if (uuidInfo != null) {
-                    uuidProperty = uuidInfo.getProperty();
-                }
-                if (uuidProperty != null) {
-                    // Grab the first 'good' UUID value ...
-                    for (Object uuidValue : uuidProperty) {
-                        try {
-                            uuid = factories.getUuidFactory().create(uuidValue);
-                            break;
-                        } catch (ValueFormatException e) {
-                            // Ignore; just continue with the next property value
-                        }
-                    }
-                }
-                if (uuid == null) {
-                    // Look for the DNA UUID property ...
-                    uuidInfo = node.getProperty(DnaLexicon.UUID);
-                    if (uuidInfo != null) {
-                        uuidProperty = uuidInfo.getProperty();
-                    }
-                    if (uuidProperty != null) {
-                        // Grab the first 'good' UUID value ...
-                        for (Object uuidValue : uuidProperty) {
-                            try {
-                                uuid = factories.getUuidFactory().create(uuidValue);
-                                break;
-                            } catch (ValueFormatException e) {
-                                // Ignore; just continue with the next property value
-                            }
-                        }
-                    }
-                }
-            }
-            if (uuid == null) uuid = UUID.randomUUID();
-            if (uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
+            if (uuid != null && uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
 
             // Look for the primary type of the node ...
             Map<Name, Property> graphProperties = persistentNode.getPropertiesByName();

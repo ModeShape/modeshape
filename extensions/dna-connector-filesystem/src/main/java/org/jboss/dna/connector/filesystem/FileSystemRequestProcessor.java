@@ -31,8 +31,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
@@ -77,43 +80,68 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     private static final String DEFAULT_MIME_TYPE = "application/octet";
 
     private final String defaultNamespaceUri;
-    private final Set<String> availableWorkspaceNames;
+    private final Map<String, File> availableWorkspaces;
     private final boolean creatingWorkspacesAllowed;
-    private final File defaultWorkspace;
+    private final String defaultWorkspaceName;
+    private final File workspaceRootPath;
     private final FilenameFilter filenameFilter;
     private final boolean updatesAllowed;
     private final MimeTypeDetector mimeTypeDetector;
+    private final UUID rootNodeUuid;
 
     /**
      * @param sourceName
-     * @param defaultWorkspace
-     * @param availableWorkspaceNames
+     * @param defaultWorkspaceName
+     * @param availableWorkspaces
      * @param creatingWorkspacesAllowed
      * @param context
+     * @param rootNodeUuid the UUID for the root node in this workspace; may be null. If not specified, a random UUID will be
+     *        generated each time that the repository is started.
+     * @param workspaceRootPath the path to the workspace root directory; may be null. If specified, all workspace names will be
+     *        treated as relative paths from this directory.
      * @param filenameFilter the filename filter to use to restrict the allowable nodes, or null if all files/directories are to
      *        be exposed by this connector
      * @param updatesAllowed true if this connector supports updating the file system, or false if the connector is readonly
      */
     protected FileSystemRequestProcessor( String sourceName,
-                                          File defaultWorkspace,
-                                          Set<String> availableWorkspaceNames,
+                                          String defaultWorkspaceName,
+                                          Map<String, File> availableWorkspaces,
                                           boolean creatingWorkspacesAllowed,
+                                          UUID rootNodeUuid,
+                                          String workspaceRootPath,
                                           ExecutionContext context,
                                           FilenameFilter filenameFilter,
                                           boolean updatesAllowed ) {
         super(sourceName, context, null);
-        assert defaultWorkspace != null;
-        assert defaultWorkspace.exists();
-        assert defaultWorkspace.canRead();
-        assert defaultWorkspace.isDirectory();
-        assert availableWorkspaceNames != null;
-        this.availableWorkspaceNames = availableWorkspaceNames;
+        assert defaultWorkspaceName != null;
+        assert availableWorkspaces != null;
+        assert rootNodeUuid != null;
+        this.availableWorkspaces = availableWorkspaces;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
+        this.rootNodeUuid = rootNodeUuid;
         this.filenameFilter = filenameFilter;
-        this.defaultWorkspace = defaultWorkspace;
+        this.defaultWorkspaceName = defaultWorkspaceName;
         this.updatesAllowed = updatesAllowed;
         this.mimeTypeDetector = context.getMimeTypeDetector();
+
+        if (workspaceRootPath != null) {
+            this.workspaceRootPath = new File(workspaceRootPath);
+            if (!this.workspaceRootPath.exists()) {
+                throw new IllegalStateException(FileSystemI18n.pathForWorkspaceRootDoesNotExist.text(workspaceRootPath,
+                                                                                                     sourceName));
+            }
+            if (!this.workspaceRootPath.isDirectory()) {
+                throw new IllegalStateException(FileSystemI18n.pathForWorkspaceRootIsNotDirectory.text(workspaceRootPath,
+                                                                                                       sourceName));
+            }
+            if (!this.workspaceRootPath.canRead()) {
+                throw new IllegalStateException(FileSystemI18n.pathForWorkspaceRootCannotBeRead.text(workspaceRootPath,
+                                                                                                     sourceName));
+            }
+        } else {
+            this.workspaceRootPath = null;
+        }
     }
 
     /**
@@ -134,6 +162,11 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         // Find the existing file for the parent ...
         Location location = request.of();
         Path parentPath = getPathFor(location, request);
+
+        if (parentPath.isRoot()) {
+            if (!location.hasPath()) location = location.with(parentPath);
+        }
+
         File parent = getExistingFileFor(workspaceRoot, parentPath, location, request);
         if (parent == null) {
             // An error was set on the request
@@ -180,13 +213,20 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             return;
         }
 
+        PropertyFactory factory = getExecutionContext().getPropertyFactory();
+
         // Find the existing file for the parent ...
         Location location = request.at();
         Path path = getPathFor(location, request);
         if (path.isRoot()) {
-            // There are no properties on the root ...
+            // Root nodes can be requested by UUID, path, or both
+            if (!location.hasPath()) location = location.with(path);
+            if (location.getUuid() == null) location = location.with(rootNodeUuid);
+
+            request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.ROOT));
             request.setActualLocationOfNode(location);
             setCacheableInfo(request);
+
             return;
         }
 
@@ -197,7 +237,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             return;
         }
         // Generate the properties for this File object ...
-        PropertyFactory factory = getExecutionContext().getPropertyFactory();
         DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
         // Note that we don't have 'created' timestamps, just last modified, so we'll have to use them
         if (file.isDirectory()) {
@@ -209,7 +248,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             // It is a file, but ...
             if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
                 // The request is to get properties of the "jcr:content" child node ...
-                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
+                // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
+                // since we cannot assume that we control all access to this file and can track its movements
+                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE));
                 request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(file.lastModified())));
                 // Don't really know the encoding, either ...
                 // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
@@ -330,23 +371,19 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     public void process( VerifyWorkspaceRequest request ) {
         // If the request contains a null name, then we use the default ...
         String workspaceName = request.workspaceName();
-        if (workspaceName == null) workspaceName = getCanonicalWorkspaceName(defaultWorkspace);
+        if (workspaceName == null) workspaceName = defaultWorkspaceName;
 
         if (!this.creatingWorkspacesAllowed) {
             // Then the workspace name must be one of the available names ...
+
             boolean found = false;
-            for (String available : this.availableWorkspaceNames) {
+            for (String available : this.availableWorkspaces.keySet()) {
                 if (workspaceName.equals(available)) {
                     found = true;
                     break;
                 }
-                File directory = new File(available);
-                if (directory.exists() && directory.isDirectory() && directory.canRead()
-                    && getCanonicalWorkspaceName(directory).equals(workspaceName)) {
-                    found = true;
-                    break;
-                }
             }
+
             if (!found) {
                 request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
                 return;
@@ -354,9 +391,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             // We know it is an available workspace, so just continue ...
         }
         // Verify that there is a directory at the path given by the workspace name ...
-        File directory = new File(workspaceName);
+        File directory = availableWorkspaces.get(workspaceName);
         if (directory.exists() && directory.isDirectory() && directory.canRead()) {
-            request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
+            request.setActualWorkspaceName(workspaceName);
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
@@ -372,12 +409,13 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     public void process( GetWorkspacesRequest request ) {
         // Return the set of available workspace names, even if new workspaces can be created ...
         Set<String> names = new HashSet<String>();
-        for (String name : this.availableWorkspaceNames) {
-            File directory = new File(name);
+        for (Map.Entry<String, File> entry : this.availableWorkspaces.entrySet()) {
+            File directory = entry.getValue();
             if (directory.exists() && directory.isDirectory() && directory.canRead()) {
-                names.add(getCanonicalWorkspaceName(directory));
+                names.add(entry.getKey());
             }
         }
+
         request.setAvailableWorkspaceNames(Collections.unmodifiableSet(names));
     }
 
@@ -389,6 +427,12 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     protected String getCanonicalWorkspaceName( File directory ) {
         try {
+            if (this.workspaceRootPath != null) {
+                String directoryCanonicalPath = directory.getCanonicalPath();
+                String rootCanonicalPath = workspaceRootPath.getCanonicalPath();
+                assert directoryCanonicalPath.startsWith(rootCanonicalPath);
+                return directoryCanonicalPath.substring(rootCanonicalPath.length() + 1);
+            }
             return directory.getCanonicalPath();
         } catch (IOException e) {
             return directory.getAbsolutePath();
@@ -424,7 +468,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         if (directory.exists() && directory.isDirectory() && directory.canRead()) {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
-            availableWorkspaceNames.add(workspaceName);
+            availableWorkspaces.put(workspaceName, directory);
             recordChange(request);
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
@@ -444,7 +488,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             request.setError(new InvalidRequestException(msg));
         }
         // This doesn't delete the file/directory; rather, it just remove the workspace from the available set ...
-        if (!this.availableWorkspaceNames.remove(workspaceName)) {
+        if (this.availableWorkspaces.remove(workspaceName) == null) {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
         } else {
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
@@ -470,6 +514,11 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     protected Path getPathFor( Location location,
                                Request request ) {
         Path path = location.getPath();
+
+        if (location.getUuid() != null && rootNodeUuid.equals(location.getUuid())) {
+            return pathFactory().createRootPath();
+        }
+
         if (path == null) {
             I18n msg = FileSystemI18n.locationInRequestMustHavePath;
             throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
@@ -478,13 +527,11 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     }
 
     protected File getWorkspaceDirectory( String workspaceName ) {
-        File workspace = defaultWorkspace;
-        if (workspaceName != null) {
-            File directory = new File(workspaceName);
-            if (directory.exists() && directory.isDirectory() && directory.canRead()) workspace = directory;
-            else return null;
-        }
-        return workspace;
+        if (workspaceName == null) workspaceName = defaultWorkspaceName;
+
+        File directory = this.workspaceRootPath == null ? new File(workspaceName) : new File(workspaceRootPath, workspaceName);
+        if (directory.exists() && directory.isDirectory() && directory.canRead()) return directory;
+        return null;
     }
 
     /**

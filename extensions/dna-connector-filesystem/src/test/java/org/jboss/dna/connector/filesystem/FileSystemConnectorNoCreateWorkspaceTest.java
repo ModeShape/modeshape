@@ -49,7 +49,7 @@ public class FileSystemConnectorNoCreateWorkspaceTest extends WorkspaceConnector
         FileSystemSource source = new FileSystemSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
 
         return source;

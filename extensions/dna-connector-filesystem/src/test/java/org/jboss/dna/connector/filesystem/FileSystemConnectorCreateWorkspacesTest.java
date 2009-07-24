@@ -25,7 +25,6 @@ package org.jboss.dna.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -56,7 +55,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
         FileSystemSource source = new FileSystemSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
 
         return source;
@@ -101,10 +100,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
             workspaceNames.add(workspace.getName());
         }
         // The actual names should be the absolute paths to the directories representing the root ...
-        String absolutePathToRepositories = new File("./src/test/resources/repositories/").getCanonicalPath();
-        
-        // getCanonicalPath strips the trailing separator character, so we need to re-added it for each case
-        absolutePathToRepositories += File.separatorChar;	
+        String absolutePathToRepositories = "./src/test/resources/repositories/";
         
         assertThat(workspaceNames.remove(absolutePathToRepositories + "airplanes"), is(true));
         assertThat(workspaceNames.remove(absolutePathToRepositories + "cars"), is(true));

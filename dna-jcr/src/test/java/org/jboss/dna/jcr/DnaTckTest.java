@@ -13,6 +13,8 @@ import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.ConstraintViolationException;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 
@@ -23,6 +25,25 @@ public class DnaTckTest extends AbstractJCRTest {
 
     Session session;
 
+    public DnaTckTest( String testName ) {
+        super();
+
+        this.setName(testName);
+        this.isReadOnly = true;
+    }
+    
+    public static Test readOnlySuite() {
+        TestSuite suite = new TestSuite("DNA JCR API tests");
+
+        suite.addTest(new DnaTckTest("testShouldAllowAdminSessionToRead"));
+        suite.addTest(new DnaTckTest("testShouldAllowReadOnlySessionToRead"));
+        suite.addTest(new DnaTckTest("testShouldAllowReadWriteSessionToRead"));
+        suite.addTest(new DnaTckTest("testShouldNotSeeWorkspacesWithoutReadPermission"));
+        suite.addTest(new DnaTckTest("testShouldMapReadRolesToWorkspacesWhenSpecified"));
+
+        return suite;
+    }
+    
     @Override
     protected void tearDown() throws Exception {
         try {
@@ -254,7 +275,31 @@ public class DnaTckTest extends AbstractJCRTest {
      * 
      * @throws Exception
      */
-    public void testShouldMapRolesToWorkspacesWhenSpecified() throws Exception {
+    public void testShouldMapReadRolesToWorkspacesWhenSpecified() throws Exception {
+        Credentials creds = new SimpleCredentials("defaultonly", "defaultonly".toCharArray());
+        session = helper.getRepository().login(creds);
+
+        testRead(session);
+
+        session.logout();
+
+        session = helper.getRepository().login(creds, "otherWorkspace");
+        testRead(session);
+        try {
+            testWrite(session);
+            fail("User 'defaultuser' should not have write access to 'otherWorkspace'");
+        } catch (AccessDeniedException expected) {
+        }
+        session.logout();
+    }
+
+    /**
+     * User defaultuser is configured to have readwrite in "otherWorkspace" and readonly in the default workspace. This test makes
+     * sure both work.
+     * 
+     * @throws Exception
+     */
+    public void testShouldMapWriteRolesToWorkspacesWhenSpecified() throws Exception {
         Credentials creds = new SimpleCredentials("defaultonly", "defaultonly".toCharArray());
         session = helper.getRepository().login(creds);
 

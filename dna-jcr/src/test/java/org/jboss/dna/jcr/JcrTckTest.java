@@ -107,6 +107,23 @@ public class JcrTckTest {
     }
 
     /**
+     * Wrapper for read-only tests
+     * 
+     * @return a new instance of {@link JCRTestSuite}.
+     */
+    public static Test readOnlySuite() {
+        // Uncomment this to execute all tests
+        // return new JCRTestSuite();
+
+        // Or uncomment the following lines to execute the different sets/suites of tests ...
+        TestSuite suite = new TestSuite("JCR 1.0 API tests");
+
+        suite.addTest(new LevelOneFeatureTests());
+
+        return suite;
+    }
+
+    /**
      * Test suite that includes the Level 1 JCR TCK API tests from the Jackrabbit project.
      */
     private static class LevelOneFeatureTests extends TestSuite {

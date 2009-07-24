@@ -40,6 +40,9 @@ public final class FileSystemI18n {
     public static I18n pathForPredefinedWorkspaceDoesNotExist;
     public static I18n pathForPredefinedWorkspaceIsNotDirectory;
     public static I18n pathForPredefinedWorkspaceCannotBeRead;
+    public static I18n pathForWorkspaceRootDoesNotExist;
+    public static I18n pathForWorkspaceRootIsNotDirectory;
+    public static I18n pathForWorkspaceRootCannotBeRead;
     public static I18n propertyIsRequired;
     public static I18n locationInRequestMustHavePath;
     public static I18n sameNameSiblingsAreNotAllowed;

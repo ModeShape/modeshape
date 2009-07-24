@@ -53,3 +53,8 @@
 + jcr:system (dna:system) = dna:system autocreated mandatory protected ignore
 + * (nt:base) = nt:unstructured multiple version
 
+[dna:resource] > nt:base
+- jcr:data (binary) primary mandatory
+- jcr:encoding (string) copy
+- jcr:lastModified (date) mandatory ignore
+- jcr:mimeType (string) copy mandatory

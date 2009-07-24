@@ -25,7 +25,8 @@ package org.jboss.dna.connector.filesystem;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Set;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.graph.ExecutionContext;
@@ -44,28 +45,35 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 public class FileSystemConnection implements RepositoryConnection {
 
     private final String sourceName;
-    private final File defaultWorkspace;
+    private final String defaultWorkspaceName;
     private final CachePolicy cachePolicy;
-    private final Set<String> availableWorkspaceNames;
+    private final Map<String, File> availableWorkspaces;
     private final boolean creatingWorkspacesAllowed;
     private final FilenameFilter filenameFilter;
+    private final UUID rootNodeUuid;
+    private final String workspaceRootPath;
     private final boolean updatesAllowed;
 
     FileSystemConnection( String sourceName,
-                          File defaultWorkspace,
-                          Set<String> availableWorkspaceNames,
+                          String defaultWorkspaceName,
+                          Map<String, File> availableWorkspaces,
                           boolean creatingWorkspacesAllowed,
                           CachePolicy cachePolicy,
+                          UUID rootNodeUuid,
+                          String workspaceRootPath,
                           FilenameFilter filenameFilter,
                           boolean updatesAllowed ) {
         assert sourceName != null;
         assert sourceName.trim().length() != 0;
-        assert availableWorkspaceNames != null;
+        assert availableWorkspaces != null;
+        assert rootNodeUuid != null;
         this.sourceName = sourceName;
-        this.defaultWorkspace = defaultWorkspace;
-        this.availableWorkspaceNames = availableWorkspaceNames;
+        this.defaultWorkspaceName = defaultWorkspaceName;
+        this.availableWorkspaces = availableWorkspaces;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.cachePolicy = cachePolicy;
+        this.rootNodeUuid = rootNodeUuid;
+        this.workspaceRootPath = workspaceRootPath;
         this.filenameFilter = filenameFilter;
         this.updatesAllowed = updatesAllowed;
     }
@@ -115,8 +123,9 @@ public class FileSystemConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspace, availableWorkspaceNames,
-                                                               creatingWorkspacesAllowed, context, filenameFilter, updatesAllowed);
+        RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspaceName, availableWorkspaces,
+                                                               creatingWorkspacesAllowed, rootNodeUuid, workspaceRootPath,
+                                                               context, filenameFilter, updatesAllowed);
         try {
             proc.process(request);
         } finally {

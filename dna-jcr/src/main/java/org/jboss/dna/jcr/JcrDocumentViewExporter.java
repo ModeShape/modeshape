@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
@@ -39,6 +40,7 @@ import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
+import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -55,6 +57,8 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 @NotThreadSafe
 class JcrDocumentViewExporter extends AbstractJcrExporter {
+
+    private static final int ENCODE_BUFFER_SIZE = 2 << 15;
 
     private static final TextEncoder VALUE_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
 
@@ -99,13 +103,18 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         while (properties.hasNext()) {
             Property prop = properties.nextProperty();
 
-            if (skipBinary && PropertyType.BINARY == prop.getType()) {
-                continue;
-            }
-
             Name propName = ((AbstractJcrProperty)prop).name();
 
             String localPropName = getPrefixedName(propName);
+
+            if (skipBinary && PropertyType.BINARY == prop.getType()) {
+                atts.addAttribute(propName.getNamespaceUri(),
+                                  propName.getLocalName(),
+                                  localPropName,
+                                  PropertyType.nameFromValue(prop.getType()),
+                                  "");
+                continue;
+            }
 
             Value value;
             if (prop instanceof JcrSingleValueProperty) {
@@ -115,11 +124,31 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 // 6.4.2.5
                 value = prop.getValues()[0];
             }
+
+            String valueAsString;
+            if (PropertyType.BINARY == prop.getType()) {
+                StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
+                try {
+                    Base64.InputStream is = new Base64.InputStream(value.getStream(), Base64.ENCODE);
+
+                    byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
+                    int len;
+                    while (-1 != (len = is.read(bytes, 0, ENCODE_BUFFER_SIZE))) {
+                        buff.append(new String(bytes, 0, len));
+                    }
+                } catch (IOException ioe) {
+                    throw new RepositoryException(ioe);
+                }
+                valueAsString = buff.toString();
+            } else {
+                valueAsString = VALUE_ENCODER.encode(value.getString());
+            }
+
             atts.addAttribute(propName.getNamespaceUri(),
                               propName.getLocalName(),
                               localPropName,
                               PropertyType.nameFromValue(prop.getType()),
-                              VALUE_ENCODER.encode(value.getString()));
+                              valueAsString);
         }
 
         Name name;
@@ -148,8 +177,10 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
      * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification. XML text nodes
      * are nodes that have the name &quot;jcr:xmltext&quot; and only one property (besides the mandatory
      * &quot;jcr:primaryType&quot;). The property must have a property name of &quot;jcr:xmlcharacters&quot;, a type of
-     * <code>String</code>, and does not have multiple values.<p/> In practice, this is handled in DNA by making XML text nodes
-     * have a type of &quot;dna:xmltext&quot;, which enforces these property characteristics.
+     * <code>String</code>, and does not have multiple values.
+     * <p/>
+     * In practice, this is handled in DNA by making XML text nodes have a type of &quot;dna:xmltext&quot;, which enforces these
+     * property characteristics.
      * 
      * @param node the node to test
      * @return whether this node is a special xml text node
@@ -224,6 +255,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
      * underscore characters that might otherwise suggest an encoding, as defined in {@link XmlNameEncoder}.
      */
     protected static class JcrDocumentViewPropertyEncoder extends XmlNameEncoder {
+
         private static final Set<Character> MAPPED_CHARACTERS;
 
         static {

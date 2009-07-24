@@ -56,6 +56,7 @@ final class JcrValue implements Value {
     private final ValueFactories valueFactories;
     private final int type;
     private final Object value;
+    private InputStream asStream = null;
 
     JcrValue( ValueFactories valueFactories,
               SessionCache sessionCache,
@@ -187,10 +188,12 @@ final class JcrValue implements Value {
             throw new IllegalStateException(JcrI18n.nonInputStreamConsumed.text());
         }
         try {
-            Binary binary = valueFactories.getBinaryFactory().create(value);
-            InputStream convertedValue = new SelfClosingInputStream(binary);
-            state = State.INPUT_STREAM_CONSUMED;
-            return convertedValue;
+            if (asStream == null) {
+                Binary binary = valueFactories.getBinaryFactory().create(value);
+                asStream = new SelfClosingInputStream(binary);
+                state = State.INPUT_STREAM_CONSUMED;
+            }
+            return asStream;
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }

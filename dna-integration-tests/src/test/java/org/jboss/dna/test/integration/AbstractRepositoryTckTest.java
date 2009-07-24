@@ -53,8 +53,8 @@ public abstract class AbstractRepositoryTckTest {
     public static TestSuite readOnlyRepositorySuite( String name ) {
         TestSuite suite = new TestSuite("Tests for " + name + "(read-only)");
         suite.addTest(new ChangeRepositoryTestCase(name));
-        suite.addTest(JcrTckTest.suite());
-        suite.addTestSuite(DnaTckTest.class);
+        suite.addTest(JcrTckTest.readOnlySuite());
+        suite.addTest(DnaTckTest.readOnlySuite());
 
         return suite;
     }
