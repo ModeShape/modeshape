@@ -1849,4 +1849,101 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
                                                                          "The quick brown fox jumped over the moon. What? "));
     }
 
+    @Test
+    public void shouldAddValuesToExistingProperty() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 1;
+        int numPropertiesPerNode = 1;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
+        assertThat(subgraph, is(notNullValue()));
+
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+
+        graph.addValue("foo").andValue("bar").to("property1").on("node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+        subgraph = graph.getSubgraphOfDepth(2).at("/");
+        assertThat(subgraph, is(notNullValue()));
+
+        assertThat(subgraph.getNode("node1"), hasProperty("property1",
+                                                          "The quick brown fox jumped over the moon. What? ",
+                                                          "foo",
+                                                          "bar"));
+    }
+
+    @Test
+    public void shouldAddValuesToNonExistantProperty() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 1;
+        int numPropertiesPerNode = 1;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+
+        graph.addValue("foo").andValue("bar").to("newProperty").on("node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
+        assertThat(subgraph, is(notNullValue()));
+
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("newProperty", "foo", "bar"));
+
+    }
+
+    @Test
+    public void shouldRemoveValuesFromExistingProperty() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 1;
+        int numPropertiesPerNode = 1;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+
+        graph.removeValue("The quick brown fox jumped over the moon. What? ").andValue("bar").from("property1").on("node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
+        assertThat(subgraph, is(notNullValue()));
+
+        assertThat(subgraph.getNode("node1"), hasProperty("property1"));
+    }
+
+    @Test
+    public void shouldNotRemoveValuesFromNonExistantProperty() {
+
+        String initialPath = "";
+        int depth = 1;
+        int numChildrenPerNode = 1;
+        int numPropertiesPerNode = 1;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+
+        graph.removeValue("The quick brown fox jumped over the moon. What? ").from("noSuchProperty").on("node1");
+
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
+        assertThat(subgraph, is(notNullValue()));
+
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+    }
+
 }

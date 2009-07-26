@@ -57,6 +57,7 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
@@ -1214,6 +1215,34 @@ public class Graph {
                 Name child = nameFactory.create(name);
                 requests.createNode(parent, getCurrentWorkspaceName(), child, properties.iterator());
                 return nextGraph;
+            }
+        };
+    }
+
+    public AddValue<Graph> addValue( Object value ) {
+        return new AddValueAction<Graph>(this, this.getCurrentWorkspaceName(), value) {
+
+            @Override
+            protected Graph submit( String workspaceName,
+                                    Location on,
+                                    Name property,
+                                    List<Object> values ) {
+                requests.addValues(workspaceName, on, property, values);
+                return nextGraph.and();
+            }
+        };
+    }
+
+    public RemoveValue<Graph> removeValue( Object value ) {
+        return new RemoveValueAction<Graph>(this, this.getCurrentWorkspaceName(), value) {
+
+            @Override
+            protected Graph submit( String workspaceName,
+                                    Location on,
+                                    Name property,
+                                    List<Object> values ) {
+                requests.removeValues(workspaceName, on, property, values);
+                return nextGraph.and();
             }
         };
     }
@@ -3002,6 +3031,34 @@ public class Graph {
             };
         }
 
+        public AddValue<Batch> addValue( Object value ) {
+            return new AddValueAction<Batch>(this, this.getCurrentWorkspaceName(), value) {
+
+                @Override
+                protected Batch submit( String workspaceName,
+                                                   Location on,
+                                                   Name property,
+                                                   List<Object> values ) {
+                    requests.addValues(workspaceName, on, property, values);
+                    return nextRequests.and();
+                }
+            };
+        }
+
+        public RemoveValue<Batch> removeValue( Object value ) {
+            return new RemoveValueAction<Batch>(this, this.getCurrentWorkspaceName(), value) {
+
+                @Override
+                protected Batch submit( String workspaceName,
+                                                   Location on,
+                                                   Name property,
+                                                   List<Object> values ) {
+                    requests.removeValues(workspaceName, on, property, values);
+                    return nextRequests.and();
+                }
+            };
+        }
+       
         /**
          * Set the properties on a node.
          * 
@@ -4080,6 +4137,32 @@ public class Graph {
     }
 
     /**
+     * A component that defines the name of a property to which a value should be added.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     */
+    public interface ToName<Next> {
+
+        public Next to( String name );
+
+        public Next to( Name name );
+
+    }
+
+    /**
+     * A component that defines the name of a property from which a value should be removed.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     */
+    public interface FromName<Next> {
+
+        public Next from( String name );
+
+        public Next from( Name name );
+
+    }
+
+    /**
      * A component that defines the location to which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
@@ -4942,6 +5025,189 @@ public class Graph {
          */
         Next under( Property firstIdProperty,
                     Property... additionalIdProperties );
+    }
+
+    /**
+     * The interface for defining the node on which an {@link Graph#addValue(Object)} operation applies and what additional values
+     * (if any) should be added.
+     * 
+     * @param <Next> The interface that is to be returned when the request is completed
+     */
+    public interface AddValue<Next> extends ToName<On<Next>> {
+        /**
+         * Specifies an additional value to be added
+         * 
+         * @param value the value to be added
+         * @return an object that allows additional values to be specified for removal or for their location to be specified
+         */
+        AddValue<Next> andValue( Object value );
+
+    }
+
+    /**
+     * The interface for defining the node on which an {@link Graph#removeValue(Object)} operation applies and what additional
+     * values (if any) should be removed.
+     * 
+     * @param <Next> The interface that is to be returned when the request is completed
+     */
+    public interface RemoveValue<Next> extends FromName<On<Next>> {
+
+        /**
+         * Specifies an additional value to be removed
+         * 
+         * @param value the value to be removed
+         * @return an object that allows additional values to be specified for removal or for their location to be specified
+         */
+        RemoveValue<Next> andValue( Object value );
+
+    }
+
+    public abstract class AddValueAction<T> extends AbstractAction<T> implements AddValue<T> {
+
+        private final String workspaceName;
+        private final List<Object> values = new LinkedList<Object>();
+
+        protected AddValueAction( T afterConjunction,
+                                     String workspaceName,
+                                     Object firstValue ) {
+            super(afterConjunction);
+
+            this.workspaceName = workspaceName;
+            this.values.add(firstValue);
+        }
+
+        public AddValue<T> andValue( Object nextValue ) {
+            this.values.add(nextValue);
+            return this;
+        }
+
+        public On<T> to( String name ) {
+            NameFactory nameFactory = context.getValueFactories().getNameFactory();
+
+            return to(nameFactory.create(name));
+        }
+
+        public On<T> to( final Name name ) {
+            return new On<T>() {
+
+                @Override
+                public T on( Iterable<Property> idProperties ) {
+                    return on(Location.create(idProperties));
+                }
+
+                @Override
+                public T on( Location to ) {
+                    return submit(workspaceName, to, name, values);
+                }
+
+                @Override
+                public T on( Path to ) {
+                    return on(Location.create(to));
+                }
+
+                @Override
+                public T on( Property firstIdProperty,
+                             Property... additionalIdProperties ) {
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
+                }
+
+                @Override
+                public T on( Property idProperty ) {
+                    return on(Location.create(idProperty));
+                }
+
+                @Override
+                public T on( String toPath ) {
+                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
+                    return on(Location.create(pathFactory.create(toPath)));
+                }
+
+                @Override
+                public T on( UUID to ) {
+                    return on(Location.create(to));
+                }
+            };
+        }
+
+        protected abstract T submit( String workspaceName,
+                                     Location on,
+                                     Name property,
+                                     List<Object> values );
+
+    }
+
+    public abstract class RemoveValueAction<T> extends AbstractAction<T> implements RemoveValue<T> {
+
+        private final String workspaceName;
+        private final List<Object> values = new LinkedList<Object>();
+
+        protected RemoveValueAction( T afterConjunction,
+                                     String workspaceName,
+                                     Object firstValue ) {
+            super(afterConjunction);
+
+            this.workspaceName = workspaceName;
+            this.values.add(firstValue);
+        }
+
+        public RemoveValue<T> andValue( Object nextValue ) {
+            this.values.add(nextValue);
+            return this;
+        }
+
+        public On<T> from( String name ) {
+            NameFactory nameFactory = context.getValueFactories().getNameFactory();
+
+            return from(nameFactory.create(name));
+        }
+
+        public On<T> from( final Name name ) {
+            return new On<T>() {
+
+                @Override
+                public T on( Iterable<Property> idProperties ) {
+                    return on(Location.create(idProperties));
+                }
+
+                @Override
+                public T on( Location to ) {
+                    return submit(workspaceName, to, name, values);
+                }
+
+                @Override
+                public T on( Path to ) {
+                    return on(Location.create(to));
+                }
+
+                @Override
+                public T on( Property firstIdProperty,
+                             Property... additionalIdProperties ) {
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
+                }
+
+                @Override
+                public T on( Property idProperty ) {
+                    return on(Location.create(idProperty));
+                }
+
+                @Override
+                public T on( String toPath ) {
+                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
+                    return on(Location.create(pathFactory.create(toPath)));
+                }
+
+                @Override
+                public T on( UUID to ) {
+                    return on(Location.create(to));
+                }
+            };
+        }
+        
+        protected abstract T submit( String workspaceName,
+                                        Location on,
+                                        Name property,
+                                        List<Object> values );
+        
     }
 
     /**

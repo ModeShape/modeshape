@@ -23,7 +23,10 @@
  */
 package org.jboss.dna.graph.request.processor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +71,7 @@ import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 
@@ -259,6 +263,8 @@ public abstract class RequestProcessor {
                 process((CloneWorkspaceRequest)request);
             } else if (request instanceof DestroyWorkspaceRequest) {
                 process((DestroyWorkspaceRequest)request);
+            } else if (request instanceof UpdateValuesRequest) {
+                process((UpdateValuesRequest)request);
             } else {
                 processUnknownRequest(request);
             }
@@ -747,6 +753,59 @@ public abstract class RequestProcessor {
      * @param request the remove request
      */
     public abstract void process( UpdatePropertiesRequest request );
+
+    /**
+     * Process a request to add and/or remove the specified values from a property on the given node.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the remove request
+     */
+    public void process( UpdateValuesRequest request ) {
+        String workspaceName = request.inWorkspace();
+        Location on = request.on();
+        Name propertyName = request.property();
+
+        // Read in the current values
+        ReadPropertyRequest readProperty = new ReadPropertyRequest(on, workspaceName, propertyName);
+        process(readProperty);
+
+        if (readProperty.hasError()) {
+            request.setError(readProperty.getError());
+            return;
+        }
+
+        Property property = readProperty.getProperty();
+        List<Object> actualRemovedValues = new ArrayList<Object>(request.removedValues().size());
+        List<Object> newValues = property == null ? new LinkedList<Object>() : new LinkedList<Object>(
+                                                                                          Arrays.asList(property.getValuesAsArray()));
+        // Calculate what the new values should be
+        for (Object removedValue : request.removedValues()) {
+            for (Iterator<Object> iter = newValues.iterator(); iter.hasNext();) {
+                if (iter.next().equals(removedValue)) {
+                    iter.remove();
+                    actualRemovedValues.add(removedValue);
+                    break;
+                }
+            }
+        }
+
+        newValues.addAll(request.addedValues());
+        Property newProperty = getExecutionContext().getPropertyFactory().create(propertyName, newValues);
+        
+        // Update the current values
+        SetPropertyRequest setProperty = new SetPropertyRequest(on, workspaceName, newProperty);
+        process(setProperty);
+
+        if (setProperty.hasError()) {
+            request.setError(setProperty.getError());
+        } else {
+            // Set the actual location ...
+            request.setActualLocation(setProperty.getActualLocationOfNode(), request.addedValues(), actualRemovedValues);
+        }
+
+    }
 
     /**
      * Process a request to rename a node specified location into a different location.

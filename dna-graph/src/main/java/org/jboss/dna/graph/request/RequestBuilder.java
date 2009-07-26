@@ -25,6 +25,7 @@ package org.jboss.dna.graph.request;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
@@ -578,4 +579,41 @@ public abstract class RequestBuilder {
                                              String workspaceName ) {
         return process(new DeleteBranchRequest(at, workspaceName));
     }
+
+    /**
+     * Add a request to add values to a property on an existing node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param on the location of the node; may not be null
+     * @param property the name of the property; may not be null
+     * @param values the new values to add; may not be null
+     * @return the request; never null
+     */
+    public UpdateValuesRequest addValues( String workspaceName,
+                                          Location on,
+                                          Name property,
+                                          List<Object> values ) {
+        UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, on, property, values, null);
+        process(request);
+        return request;
+    }
+
+    /**
+     * Add a request to remove values from a property on an existing node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param on the location of the node; may not be null
+     * @param property the name of the property; may not be null
+     * @param values the new values to remove; may not be null
+     * @return the request; never null
+     */
+    public UpdateValuesRequest removeValues( String workspaceName,
+                                             Location on,
+                                             Name property,
+                                             List<Object> values ) {
+        UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, on, property, null, values);
+        process(request);
+        return request;
+    }
+
 }
