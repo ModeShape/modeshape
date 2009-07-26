@@ -254,7 +254,7 @@ public class SequencingClient {
                 }
                 
                 while (!nodesToVisit.isEmpty()) {
-                    Node node = nodesToVisit.pop();
+                    Node node = nodesToVisit.remove();
                     
                     String nodeType = "nt:file".equals(node.getPrimaryNodeType()) ? "file" : "folder";
                     infos.add(new MediaInfo(node.getPath(), node.getName(), nodeType, new Properties()));
