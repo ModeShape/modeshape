@@ -26,6 +26,7 @@ package org.jboss.example.dna.sequencer;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -245,6 +246,25 @@ public class SequencingClient {
                 }
 
             }
+            if (root.hasNode("zips")) {
+                LinkedList<Node> nodesToVisit = new LinkedList<Node>();
+
+                for (NodeIterator i = root.getNode("zips").getNodes(); i.hasNext();) {
+                    nodesToVisit.addLast(i.nextNode());
+                }
+                
+                while (!nodesToVisit.isEmpty()) {
+                    Node node = nodesToVisit.pop();
+                    
+                    String nodeType = "nt:file".equals(node.getPrimaryNodeType()) ? "file" : "folder";
+                    infos.add(new MediaInfo(node.getPath(), node.getName(), nodeType, new Properties()));
+
+                    for (NodeIterator i = node.getNodes(); i.hasNext();) {
+                        nodesToVisit.addLast(i.nextNode());
+                    }
+                
+                }
+            }
             if (root.hasNode("java")) {
                 Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
                 // Find the compilation unit node ...
@@ -443,6 +463,7 @@ public class SequencingClient {
         if (filename.endsWith(".jpeg")) return "image/jpeg";
         if (filename.endsWith(".ras")) return "image/x-cmu-raster";
         if (filename.endsWith(".mp3")) return "audio/mpeg";
+        if (filename.endsWith(".jar")) return "application/java-archive";
         if (filename.endsWith(".java")) return "text/x-java-source";
         return null;
     }

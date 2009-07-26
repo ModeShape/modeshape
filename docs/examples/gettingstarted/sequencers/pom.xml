@@ -46,6 +46,12 @@
       <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-sequencer-zip</artifactId>
+      <version>${pom.version}</version>
+      <scope>test</scope>
+    </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
     -->

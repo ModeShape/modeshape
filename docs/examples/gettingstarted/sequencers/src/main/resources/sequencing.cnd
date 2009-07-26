@@ -4,6 +4,7 @@
 <image='http://jboss.org/dna/images/1.0'>
 <mp3='http://jboss.org/dna/mp3/1.0'>
 <java='http://www.jboss.org/dna/java/1.0'>
+<zip='http://jboss.org/dna/zip/1.0'>
 
 // ----------------------------------------------------------
 // JCR Pre-defined Mixin Types that are not loaded by default
@@ -263,4 +264,23 @@
  + java:package (java:packageDeclaration) = java:packageDeclaration
  + java:import (java:importDeclaration) = java:importDeclaration
  + java:unitType (java:classDeclaration, java:interfaceDeclaration)
+ 
+
+// -------------------
+// DNA Zip Sequencer
+// -------------------
+
+/**
+ * JCR Pre-defined Mixin Types that are not loaded by default
+ */
+[mix:mimeType] mixin
+  - jcr:mimeType (string)
+  - jcr:encoding (string)
+
+/**
+ * Primary type for root of generated structure
+ */
+[zip:content] > nt:unstructured, mix:mimeTyped
+  + * (nt:folder)
+  + * (nt:file)
  

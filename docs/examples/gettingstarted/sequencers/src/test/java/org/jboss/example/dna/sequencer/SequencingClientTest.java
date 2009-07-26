@@ -37,6 +37,7 @@ import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
 import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
+import org.jboss.dna.sequencer.zip.ZipSequencer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +51,7 @@ public class SequencingClientTest {
     private URL pictImageUrl;
     private URL jpegImageUrl;
     private URL mp3Url;
+    private URL jarUrl;
     private URL javaSourceUrl;
     private SequencingClient client;
 
@@ -59,6 +61,7 @@ public class SequencingClientTest {
         this.pictImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.pict");
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");
         this.mp3Url = Thread.currentThread().getContextClassLoader().getResource("sample1.mp3");
+        this.jarUrl = Thread.currentThread().getContextClassLoader().getResource("test.jar");
         // Get the URL of source (MySource.java), that have to be sequencing
         this.javaSourceUrl = FileUtil.convertFileToURL("workspace/project1/src/org/acme/MySource.java");
 
@@ -88,6 +91,12 @@ public class SequencingClientTest {
               .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");
+        // Set up the zip sequencer ...
+        config.sequencer("Zip Sequencer")
+              .usingClass(ZipSequencer.class)
+              .setDescription("Sequences Zip, WAR, and JAR files to extract the contents")
+              .sequencingFrom("//(*.(zip|war|jar)[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/zips/$1");
         // Set up the Java source file sequencer ...
         config.sequencer("Java Sequencer")
               .usingClass(JavaMetadataSequencer.class)
@@ -148,6 +157,19 @@ public class SequencingClientTest {
     @Test
     public void shouldUploadAndSequenceMp3File() throws Exception {
         client.setUserInterface(new MockUserInterface(this.mp3Url, "/a/b/test.mp3", 1));
+        client.startRepository();
+        client.uploadFile();
+
+        waitUntilSequencedNodesIs(1);
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+    }
+
+    @Test
+    public void shouldUploadAndSequenceZipFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.jarUrl, "/a/b/test.jar", 168));
         client.startRepository();
         client.uploadFile();
 
