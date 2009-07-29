@@ -25,17 +25,17 @@ package org.jboss.dna.web.jcr.rest;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import org.jboss.dna.web.jcr.rest.spi.RepositoryProvider;
 import net.jcip.annotations.NotThreadSafe;
-
+import org.jboss.dna.web.jcr.rest.spi.RepositoryProvider;
 
 /**
- * Servlet context listener that is responsible for {@link RepositoryFactory#initialize(javax.servlet.ServletContext) initializing}
- * the {@link RepositoryFactory repository factory}.
+ * Servlet context listener that is responsible for {@link RepositoryFactory#initialize(javax.servlet.ServletContext)
+ * initializing} the {@link RepositoryFactory repository factory}.
  * <p>
- * This class is not thread safe, but in practice this does not matter as the servlet container must ensure that only
- * a single instance of this exists per web context and that it is only called in a single-threaded manner.
+ * This class is not thread safe, but in practice this does not matter as the servlet container must ensure that only a single
+ * instance of this exists per web context and that it is only called in a single-threaded manner.
  * </p>
+ * 
  * @see RepositoryFactory
  */
 @NotThreadSafe
@@ -43,6 +43,8 @@ public class DnaJcrDeployer implements ServletContextListener {
 
     /**
      * Alerts the repository factory that the web application is shutting down
+     * 
+     * @param event the servlet context event
      * @see RepositoryFactory#shutdown()
      * @see RepositoryProvider#shutdown()
      */
@@ -52,6 +54,8 @@ public class DnaJcrDeployer implements ServletContextListener {
 
     /**
      * Initializes the repository factory
+     * 
+     * @param event the servlet context event
      * @see RepositoryFactory#initialize(javax.servlet.ServletContext)
      */
     public void contextInitialized( ServletContextEvent event ) {

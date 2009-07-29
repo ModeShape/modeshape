@@ -128,7 +128,7 @@ public class JcrResources {
      */
     private Session getSession( HttpServletRequest request,
                                 String rawRepositoryName,
-                                String rawWorkspaceName ) throws NotFoundException, RepositoryException {
+                                String rawWorkspaceName ) throws RepositoryException {
         assert request != null;
         assert request.getUserPrincipal() != null : "Request must be authorized";
 
@@ -477,21 +477,21 @@ public class JcrResources {
                 values[i] = jsonValues.getString(i);
             }
         } else {
-            values = new String[] { (String)value };
+            values = new String[] {(String)value};
         }
 
         if (propName.equals(JcrResources.MIXIN_TYPES_PROPERTY)) {
             Set<String> toBeMixins = new HashSet<String>(Arrays.asList(values));
             Set<String> asIsMixins = new HashSet<String>();
-            
+
             for (NodeType nodeType : node.getMixinNodeTypes()) {
                 asIsMixins.add(nodeType.getName());
             }
-            
+
             Set<String> mixinsToAdd = new HashSet<String>(toBeMixins);
             mixinsToAdd.removeAll(asIsMixins);
             asIsMixins.removeAll(toBeMixins);
-            
+
             for (String nodeType : mixinsToAdd) {
                 node.addMixin(nodeType);
             }
@@ -502,9 +502,8 @@ public class JcrResources {
         } else {
             if (values.length == 1) {
                 node.setProperty(propName, values[0]);
-                
-            }
-            else {
+
+            } else {
                 node.setProperty(propName, values);
             }
         }

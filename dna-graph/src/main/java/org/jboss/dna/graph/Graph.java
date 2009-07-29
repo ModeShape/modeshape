@@ -57,7 +57,6 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
@@ -3036,9 +3035,9 @@ public class Graph {
 
                 @Override
                 protected Batch submit( String workspaceName,
-                                                   Location on,
-                                                   Name property,
-                                                   List<Object> values ) {
+                                        Location on,
+                                        Name property,
+                                        List<Object> values ) {
                     requests.addValues(workspaceName, on, property, values);
                     return nextRequests.and();
                 }
@@ -3050,15 +3049,15 @@ public class Graph {
 
                 @Override
                 protected Batch submit( String workspaceName,
-                                                   Location on,
-                                                   Name property,
-                                                   List<Object> values ) {
+                                        Location on,
+                                        Name property,
+                                        List<Object> values ) {
                     requests.removeValues(workspaceName, on, property, values);
                     return nextRequests.and();
                 }
             };
         }
-       
+
         /**
          * Set the properties on a node.
          * 
@@ -5064,12 +5063,12 @@ public class Graph {
 
     public abstract class AddValueAction<T> extends AbstractAction<T> implements AddValue<T> {
 
-        private final String workspaceName;
-        private final List<Object> values = new LinkedList<Object>();
+        protected final String workspaceName;
+        protected final List<Object> values = new LinkedList<Object>();
 
         protected AddValueAction( T afterConjunction,
-                                     String workspaceName,
-                                     Object firstValue ) {
+                                  String workspaceName,
+                                  Object firstValue ) {
             super(afterConjunction);
 
             this.workspaceName = workspaceName;
@@ -5082,9 +5081,7 @@ public class Graph {
         }
 
         public On<T> to( String name ) {
-            NameFactory nameFactory = context.getValueFactories().getNameFactory();
-
-            return to(nameFactory.create(name));
+            return to(createName(name));
         }
 
         public On<T> to( final Name name ) {
@@ -5112,8 +5109,7 @@ public class Graph {
                 }
 
                 public T on( String toPath ) {
-                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
-                    return on(Location.create(pathFactory.create(toPath)));
+                    return on(Location.create(createPath(toPath)));
                 }
 
                 public T on( UUID to ) {
@@ -5131,8 +5127,8 @@ public class Graph {
 
     public abstract class RemoveValueAction<T> extends AbstractAction<T> implements RemoveValue<T> {
 
-        private final String workspaceName;
-        private final List<Object> values = new LinkedList<Object>();
+        protected final String workspaceName;
+        protected final List<Object> values = new LinkedList<Object>();
 
         protected RemoveValueAction( T afterConjunction,
                                      String workspaceName,
@@ -5149,9 +5145,7 @@ public class Graph {
         }
 
         public On<T> from( String name ) {
-            NameFactory nameFactory = context.getValueFactories().getNameFactory();
-
-            return from(nameFactory.create(name));
+            return from(createName(name));
         }
 
         public On<T> from( final Name name ) {
@@ -5179,8 +5173,7 @@ public class Graph {
                 }
 
                 public T on( String toPath ) {
-                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
-                    return on(Location.create(pathFactory.create(toPath)));
+                    return on(Location.create(createPath(toPath)));
                 }
 
                 public T on( UUID to ) {
@@ -5188,12 +5181,12 @@ public class Graph {
                 }
             };
         }
-        
+
         protected abstract T submit( String workspaceName,
-                                        Location on,
-                                        Name property,
-                                        List<Object> values );
-        
+                                     Location on,
+                                     Name property,
+                                     List<Object> values );
+
     }
 
     /**

@@ -25,7 +25,6 @@ package org.jboss.dna.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import org.jboss.dna.graph.Graph;
@@ -92,7 +91,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
     }
 
     @Test
-    public void shouldReturnListOfWorkspacesMatchingAbsoluteCanonicalPathsToDirectories() throws IOException {
+    public void shouldReturnListOfWorkspacesMatchingAbsoluteCanonicalPathsToDirectories() {
         // The the actual names of the workspaces ...
         Set<String> workspaceNames = new HashSet<String>();
         for (String workspaceName : graph.getWorkspaces()) {
@@ -101,7 +100,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
         }
         // The actual names should be the absolute paths to the directories representing the root ...
         String absolutePathToRepositories = "./src/test/resources/repositories/";
-        
+
         assertThat(workspaceNames.remove(absolutePathToRepositories + "airplanes"), is(true));
         assertThat(workspaceNames.remove(absolutePathToRepositories + "cars"), is(true));
         assertThat(workspaceNames.isEmpty(), is(true));
