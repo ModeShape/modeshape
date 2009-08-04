@@ -88,6 +88,7 @@ public final class CommonI18n {
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
     public static I18n requiredToSuppliedParameterMismatch;
+    public static I18n unableToAccessResourceFileFromClassLoader;
 
     static {
         try {
