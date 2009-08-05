@@ -35,7 +35,7 @@
       <scope>runtime</scope>
     </dependency>
     <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for running) 
     -->
     <dependency>
       <groupId>org.slf4j</groupId>
