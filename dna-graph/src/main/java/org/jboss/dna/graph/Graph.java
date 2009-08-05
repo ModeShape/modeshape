@@ -4225,6 +4225,15 @@ public class Graph {
          * @return the interface for additional requests or actions
          */
         Next as( Name newName );
+        
+        /**
+         * Finish the request by specifying the name of the new child node. This method indicates that the child should be added
+         * as a new node with the given name at the end of the parents children
+         * 
+         * @param newName the new name
+         * @return the interface for additional requests or actions
+         */
+        Next as( String newName );        
     }
 
     /**
@@ -6473,6 +6482,11 @@ public class Graph {
                             return source.submit(workspaceName, from, intoWorkspaceName, into, name, null, removeExisting);
                         }
                     };
+
+                }
+
+                public Into<WithUuids<T>> as( final String name ) {
+                    return as(context.getValueFactories().getNameFactory().create(name));
                 }
 
                 public Into<WithUuids<T>> as( final Segment segment ) {

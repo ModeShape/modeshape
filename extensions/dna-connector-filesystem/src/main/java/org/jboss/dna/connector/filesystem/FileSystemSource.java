@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
@@ -78,6 +79,9 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     protected static final String WORKSPACE_ROOT = "workspaceRootPath";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
+    protected static final String MAX_PATH_LENGTH = "maxPathLength";
+    protected static final String EXCLUSION_PATTERN = "exclusionPattern";
+    protected static final String ALLOW_UPDATES = "allowUpdates";
 
     /**
      * This source supports events.
@@ -103,6 +107,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
 
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
+    public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
+    public static final String DEFAULT_EXCLUSION_PATTERN = null;
 
     private volatile String name;
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
@@ -111,6 +117,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     private volatile String workspaceRootPath;
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile UUID rootNodeUuid = UUID.randomUUID();
+    private volatile int maxPathLength = DEFAULT_MAX_PATH_LENGTH;
+    private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
@@ -200,6 +208,25 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
+     * 
+     * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
+     */
+    public String getExclusionPattern() {
+        return exclusionPattern;
+    }
+
+    /**
+     * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
+     * 
+     * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
+     *        should be ignored. If this pattern is {@code null}, no files will be excluded.
+     */
+    public synchronized void setExclusionPattern( String exclusionPattern ) {
+        this.exclusionPattern = exclusionPattern;
+    }
+
+    /**
      * Get the UUID that is used for the root node of each workspace
      * 
      * @return the UUID that is used for the root node of each workspace
@@ -216,6 +243,31 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     public synchronized void setRootNodeUuid( String rootNodeUuid ) {
         CheckArg.isNotNull(rootNodeUuid, "rootNodeUuid");
         this.rootNodeUuid = UUID.fromString(rootNodeUuid);
+    }
+
+    /**
+     * Get the UUID that is used for the root node of each workspace
+     * 
+     * @return the UUID that is used for the root node of each workspace
+     */
+    public int getMaxPathLength() {
+        return maxPathLength;
+    }
+
+    /**
+     * Set the maximum absolute path length supported by this source.
+     * <p>
+     * The length of any path is calculated relative to the file system root, NOT the repository root. That is, if a workspace
+     * {@code foo} is mapped to the {@code /tmp/foo/bar} directory on the file system, then the path {@code /node1/node2} in the
+     * {@code foo} workspace has an effective length of 23 for the purposes of the {@code maxPathLength} calculation ({@code
+     * /tmp/foo/bar} has length 11, {@code /node1/node2} has length 12, 11 + 12 = 23).
+     * </p>
+     * 
+     * @param maxPathLength the maximum absolute path length supported by this source; must be non-negative
+     */
+    public synchronized void setMaxPathLength( int maxPathLength ) {
+        CheckArg.isNonNegative(maxPathLength, "maxPathLength");
+        this.maxPathLength = maxPathLength;
     }
 
     /**
@@ -292,6 +344,29 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get whether this source allows updates.
+     * 
+     * @return true if this source allows updates by clients, or false if no updates are allowed
+     * @see #setUpdatesAllowed(boolean)
+     */
+    public boolean areUpdatesAllowed() {
+        return capabilities.supportsUpdates();
+    }
+
+    /**
+     * Set whether this source allows updates to data within workspaces
+     * 
+     * @param allowUpdates true if this source allows updates to data within workspaces clients, or false if updates are not
+     *        allowed.
+     * @see #areUpdatesAllowed()
+     */
+    public synchronized void setUpdatesAllowed( boolean allowUpdates ) {
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowUpdates,
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
+                                                        capabilities.supportsReferences());
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
@@ -356,6 +431,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        ref.add(new StringRefAddr(EXCLUSION_PATTERN, exclusionPattern));
+        ref.add(new StringRefAddr(MAX_PATH_LENGTH, String.valueOf(maxPathLength)));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
@@ -387,6 +464,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             String retryLimit = values.get(RETRY_LIMIT);
             String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
+            String exclusionPattern = values.get(DEFAULT_EXCLUSION_PATTERN);
+            String maxPathLength = values.get(DEFAULT_MAX_PATH_LENGTH);
 
             String combinedWorkspaceNames = values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -403,6 +482,8 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
+            if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
+            if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
             return source;
         }
         return null;
@@ -445,29 +526,48 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                 } else if (!file.canRead()) {
                     Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, predefined, name);
                 }
-                
-                
+
                 this.availableWorkspaces.put(predefined, file);
             }
         }
 
-        if (defaultWorkspaceName != null) { 
+        if (defaultWorkspaceName != null) {
             // Look for the file at this path ...
             File file = new File(pathFor(defaultWorkspaceName));
             if (!file.exists()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, defaultWorkspaceName, name);
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist,
+                                                  defaultWorkspaceName,
+                                                  name);
             } else if (!file.isDirectory()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, defaultWorkspaceName, name);
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory,
+                                                  defaultWorkspaceName,
+                                                  name);
             } else if (!file.canRead()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, defaultWorkspaceName, name);
+                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead,
+                                                  defaultWorkspaceName,
+                                                  name);
             }
-            
-            
+
             this.availableWorkspaces.put(defaultWorkspaceName, file);
+        }
+
+        FilenameFilter filenameFilter = null;
+        if (exclusionPattern != null) {
+            final String filterPattern = exclusionPattern;
+            filenameFilter = new FilenameFilter() {
+                Pattern filter = Pattern.compile(filterPattern);
+
+                @Override
+                public boolean accept( File dir,
+                                       String name ) {
+                    return !filter.matcher(name).matches();
+                }
+            };
         }
         
         return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
-                                        cachePolicy, rootNodeUuid, workspaceRootPath, (FilenameFilter) null, getSupportsUpdates());
+                                        cachePolicy, rootNodeUuid, workspaceRootPath, maxPathLength, filenameFilter,
+                                        getSupportsUpdates());
     }
 
     @Immutable

@@ -41,6 +41,8 @@
         	dna:defaultWorkspaceName="defaultWorkspace"
         	dna:predefinedWorkspaceNames="otherWorkspace"
         	dna:creatingWorkspacesAllowed="false"
+        	dna:updatesAllowed="true"
+        	dna:exclusionPattern="\.svn"
         	/>    
         <!-- 
         <dna:source jcr:name="Store" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" />

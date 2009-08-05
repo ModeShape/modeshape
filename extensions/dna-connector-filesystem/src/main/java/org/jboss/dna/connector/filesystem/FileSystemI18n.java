@@ -46,9 +46,27 @@ public final class FileSystemI18n {
     public static I18n propertyIsRequired;
     public static I18n locationInRequestMustHavePath;
     public static I18n sameNameSiblingsAreNotAllowed;
+    public static I18n nodeOrderingNotSupported;
     public static I18n onlyTheDefaultNamespaceIsAllowed;
     public static I18n sourceIsReadOnly;
+    public static I18n pathIsReadOnly;
     public static I18n unableToCreateWorkspaces;
+    
+    // Writable messages
+    public static I18n parentIsReadOnly;
+    public static I18n fileAlreadyExists;
+    public static I18n couldNotCreateFile;
+    public static I18n unsupportedPrimaryType;
+    public static I18n invalidNameForResource;
+    public static I18n invalidPathForResource;
+    public static I18n invalidPropertyNames;
+    public static I18n couldNotWriteData;
+    public static I18n couldNotUpdateData;
+    public static I18n missingRequiredProperty;
+    public static I18n deleteFailed;
+    public static I18n copyFailed;
+    public static I18n getCanonicalPathFailed;
+    public static I18n maxPathLengthExceeded;
 
     static {
         try {

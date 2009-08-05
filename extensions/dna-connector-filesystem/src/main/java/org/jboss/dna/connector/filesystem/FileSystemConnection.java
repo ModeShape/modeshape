@@ -51,6 +51,7 @@ public class FileSystemConnection implements RepositoryConnection {
     private final boolean creatingWorkspacesAllowed;
     private final FilenameFilter filenameFilter;
     private final UUID rootNodeUuid;
+    private final int maxPathLength;
     private final String workspaceRootPath;
     private final boolean updatesAllowed;
 
@@ -61,6 +62,7 @@ public class FileSystemConnection implements RepositoryConnection {
                           CachePolicy cachePolicy,
                           UUID rootNodeUuid,
                           String workspaceRootPath,
+                          int maxPathLength,
                           FilenameFilter filenameFilter,
                           boolean updatesAllowed ) {
         assert sourceName != null;
@@ -74,6 +76,7 @@ public class FileSystemConnection implements RepositoryConnection {
         this.cachePolicy = cachePolicy;
         this.rootNodeUuid = rootNodeUuid;
         this.workspaceRootPath = workspaceRootPath;
+        this.maxPathLength = maxPathLength;
         this.filenameFilter = filenameFilter;
         this.updatesAllowed = updatesAllowed;
     }
@@ -125,7 +128,7 @@ public class FileSystemConnection implements RepositoryConnection {
                          Request request ) throws RepositorySourceException {
         RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspaceName, availableWorkspaces,
                                                                creatingWorkspacesAllowed, rootNodeUuid, workspaceRootPath,
-                                                               context, filenameFilter, updatesAllowed);
+                                                               maxPathLength, context, filenameFilter, updatesAllowed);
         try {
             proc.process(request);
         } finally {

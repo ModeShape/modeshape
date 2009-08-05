@@ -23,6 +23,9 @@
  */
 package org.jboss.dna.graph;
 
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.basic.BasicName;
+
 
 /**
  * A lexicon of internal and implementation-specific information
@@ -33,4 +36,7 @@ public class DnaIntLexicon {
         public static final String URI = "http://www.jboss.org/dna/internal/1.0";
         public static final String PREFIX = "dnaint";
     }
+    
+    public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
+    
 }

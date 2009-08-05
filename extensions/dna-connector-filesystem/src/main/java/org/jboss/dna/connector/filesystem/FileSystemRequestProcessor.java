@@ -26,30 +26,44 @@ package org.jboss.dna.connector.filesystem;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.FileUtil;
+import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.BinaryFactory;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.UuidFactory;
+import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -79,11 +93,37 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
     private static final String DEFAULT_MIME_TYPE = "application/octet";
 
+    /**
+     * Only certain properties are tolerated when writing content (dna:resource or jcr:resource) nodes. These properties are
+     * implicitly stored (primary type, data) or silently ignored (encoded, mimetype, last modified). The silently ignored
+     * properties must be accepted to stay compatible with the JCR specification.
+     */
+    private static final Set<Name> ALLOWABLE_PROPERTIES_FOR_CONTENT = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                                    Arrays.asList(new Name[] {
+                                                                                                                        JcrLexicon.PRIMARY_TYPE,
+                                                                                                                        JcrLexicon.DATA,
+                                                                                                                        JcrLexicon.ENCODED,
+                                                                                                                        JcrLexicon.MIMETYPE,
+                                                                                                                        JcrLexicon.LAST_MODIFIED,
+                                                                                                                        JcrLexicon.UUID,
+                                                                                                                        DnaIntLexicon.NODE_DEFINITON})));
+    /**
+     * Only certain properties are tolerated when writing files (nt:file) or folders (nt:folder) nodes. These properties are
+     * implicitly stored in the file or folder (primary type, created).
+     */
+    private static final Set<Name> ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                                           Arrays.asList(new Name[] {
+                                                                                                                               JcrLexicon.PRIMARY_TYPE,
+                                                                                                                               JcrLexicon.CREATED,
+                                                                                                                               JcrLexicon.UUID,
+                                                                                                                               DnaIntLexicon.NODE_DEFINITON})));
+
     private final String defaultNamespaceUri;
     private final Map<String, File> availableWorkspaces;
     private final boolean creatingWorkspacesAllowed;
     private final String defaultWorkspaceName;
     private final File workspaceRootPath;
+    private final int maxPathLength;
     private final FilenameFilter filenameFilter;
     private final boolean updatesAllowed;
     private final MimeTypeDetector mimeTypeDetector;
@@ -99,6 +139,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      *        generated each time that the repository is started.
      * @param workspaceRootPath the path to the workspace root directory; may be null. If specified, all workspace names will be
      *        treated as relative paths from this directory.
+     * @param maxPathLength the maximum absolute path length supported by this processor
      * @param filenameFilter the filename filter to use to restrict the allowable nodes, or null if all files/directories are to
      *        be exposed by this connector
      * @param updatesAllowed true if this connector supports updating the file system, or false if the connector is readonly
@@ -109,6 +150,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                           boolean creatingWorkspacesAllowed,
                                           UUID rootNodeUuid,
                                           String workspaceRootPath,
+                                          int maxPathLength,
                                           ExecutionContext context,
                                           FilenameFilter filenameFilter,
                                           boolean updatesAllowed ) {
@@ -120,6 +162,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
         this.rootNodeUuid = rootNodeUuid;
+        this.maxPathLength = maxPathLength;
         this.filenameFilter = filenameFilter;
         this.defaultWorkspaceName = defaultWorkspaceName;
         this.updatesAllowed = updatesAllowed;
@@ -178,8 +221,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             // Create a Location for each file and directory contained by the parent directory ...
             PathFactory pathFactory = pathFactory();
             NameFactory nameFactory = nameFactory();
-            for (String localName : parent.list(filenameFilter)) {
-                Name childName = nameFactory.create(defaultNamespaceUri, localName);
+            for (File child : parent.listFiles(filenameFilter)) {
+                if (!child.canRead()) continue;
+                Name childName = nameFactory.create(defaultNamespaceUri, child.getName());
                 Path childPath = pathFactory.create(parentPath, childName);
                 request.addChild(Location.create(childPath));
             }
@@ -299,7 +343,213 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        Path parentPath = getPathFor(request.under(), request);
+        if (parentPath == null) return;
+
+        File workspace = getWorkspaceDirectory(request.inWorkspace());
+        assert workspace != null;
+
+        File parent = getExistingFileFor(workspace, parentPath, request.under(), request);
+        assert parent != null;
+
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        String newName = request.named().getString(registry);
+        File newFile = new File(parent, newName);
+
+        Map<Name, Property> properties = new HashMap<Name, Property>(request.properties().size());
+        for (Property property : request.properties()) {
+            properties.put(property.getName(), property);
+        }
+
+        Property primaryTypeProp = properties.get(JcrLexicon.PRIMARY_TYPE);
+        Name primaryType = primaryTypeProp == null ? null : nameFactory().create(primaryTypeProp.getFirstValue());
+
+        if (JcrNtLexicon.FILE.equals(primaryType)) {
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+
+            // The FILE node is represented by the existence of the file
+            if (!parent.canWrite()) {
+                I18n msg = FileSystemI18n.parentIsReadOnly;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName())));
+                return;
+            }
+
+            try {
+                ensureValidPathLength(newFile);
+                boolean skipWrite = false;
+
+                if (newFile.exists()) {
+                    if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
+                        I18n msg = FileSystemI18n.sameNameSiblingsAreNotAllowed;
+                        throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
+                    } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
+                        skipWrite = true;
+                    }
+                }
+
+                // Don't try to write if the node conflict behavior is DO_NOT_REPLACE
+                if (!skipWrite) {
+                    if (!newFile.createNewFile()) {
+                        I18n msg = FileSystemI18n.fileAlreadyExists;
+                        request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                                 request.inWorkspace(),
+                                                                                                 getSourceName())));
+                        return;
+                    }
+                }
+            } catch (IOException ioe) {
+                I18n msg = FileSystemI18n.couldNotCreateFile;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName(),
+                                                                                         ioe.getMessage()), ioe));
+                return;
+            }
+        } else if (JcrNtLexicon.RESOURCE.equals(primaryType) || DnaLexicon.RESOURCE.equals(primaryType)) {
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+            if (!JcrLexicon.CONTENT.equals(request.named())) {
+                I18n msg = FileSystemI18n.invalidNameForResource;
+                String nodeName = request.named().getString(registry);
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName(),
+                                                                                         nodeName)));
+                return;
+            }
+
+            if (!parent.isFile()) {
+                I18n msg = FileSystemI18n.invalidPathForResource;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName())));
+                return;
+            }
+
+            if (!parent.canWrite()) {
+                I18n msg = FileSystemI18n.parentIsReadOnly;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName())));
+                return;
+            }
+
+            boolean skipWrite = false;
+
+            if (parent.exists()) {
+                if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
+                    I18n msg = FileSystemI18n.sameNameSiblingsAreNotAllowed;
+                    throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
+                } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
+                    // The content node logically maps to the file contents. If there are file contents, don't replace them.
+                    FileInputStream checkForContents = null;
+                    try {
+                        checkForContents = new FileInputStream(parent);
+                        if (-1 != checkForContents.read()) skipWrite = true;
+
+                    } catch (IOException ignore) {
+
+                    } finally {
+                        try {
+                            checkForContents.close();
+                        } catch (Exception ignore) {
+                        }
+                    }
+                    skipWrite = true;
+                }
+            }
+
+            if (!skipWrite) {
+                // Copy over data into a temp file, then move it to the correct location
+                FileOutputStream fos = null;
+                try {
+                    File temp = File.createTempFile("dna", null);
+                    fos = new FileOutputStream(temp);
+
+                    Property dataProp = properties.get(JcrLexicon.DATA);
+                    if (dataProp == null) {
+                        I18n msg = FileSystemI18n.missingRequiredProperty;
+                        String dataPropName = JcrLexicon.DATA.getString(registry);
+                        request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                                 request.inWorkspace(),
+                                                                                                 getSourceName(),
+                                                                                                 dataPropName)));
+                        return;
+                    }
+
+                    BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                    Binary binary = binaryFactory.create(properties.get(JcrLexicon.DATA).getFirstValue());
+                    InputStream is = binary.getStream();
+
+                    final int BUFF_SIZE = 2 << 15;
+                    byte[] buff = new byte[BUFF_SIZE];
+                    int len;
+                    while (-1 != (len = is.read(buff, 0, BUFF_SIZE))) {
+                        fos.write(buff, 0, len);
+                    }
+                    fos.flush();
+                    fos.close();
+                    is.close();
+
+                    if (!FileUtil.delete(parent)) {
+                        I18n msg = FileSystemI18n.deleteFailed;
+                        request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                                 request.inWorkspace(),
+                                                                                                 getSourceName())));
+                        return;
+                    }
+
+                    if (!temp.renameTo(parent)) {
+                        I18n msg = FileSystemI18n.couldNotUpdateData;
+                        request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                                 request.inWorkspace(),
+                                                                                                 getSourceName())));
+                        return;
+
+                    }
+                } catch (IOException ioe) {
+                    I18n msg = FileSystemI18n.couldNotWriteData;
+                    request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                             request.inWorkspace(),
+                                                                                             getSourceName(),
+                                                                                             ioe.getMessage()), ioe));
+                    return;
+
+                } finally {
+                    try {
+                        if (fos != null) fos.close();
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+
+        } else if (JcrNtLexicon.FOLDER.equals(primaryType) || primaryType == null) {
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            ensureValidPathLength(newFile);
+
+            if (!newFile.mkdir()) {
+                I18n msg = FileSystemI18n.couldNotCreateFile;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
+                                                                                         request.inWorkspace(),
+                                                                                         getSourceName(),
+                                                                                         primaryType.getString(registry))));
+                return;
+            }
+        } else {
+            // Set error and return
+            I18n msg = FileSystemI18n.unsupportedPrimaryType;
+            request.setError(new RepositorySourceException(getSourceName(), msg.text(primaryType.getString(registry),
+                                                                                     parent.getPath(),
+                                                                                     request.inWorkspace(),
+                                                                                     getSourceName())));
+            return;
+        }
+
+        Path newPath = pathFactory().create(parentPath, request.named());
+        request.setActualLocationOfNode(Location.create(newPath));
     }
 
     /**
@@ -309,7 +559,24 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        File workspace = getWorkspaceDirectory(request.inWorkspace());
+        File target = getExistingFileFor(workspace, request.on().getPath(), request.on(), request);
+
+        if (!target.exists()) {
+            // getExistingFile fills in the PathNotFoundException for non-existent files
+            assert request.hasError();
+            return;
+        }
+
+        if (target.isFile()) {
+            ensureValidProperties(request.properties().values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+        } else {
+            ensureValidProperties(request.properties().values(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+        }
+
+        request.setActualLocationOfNode(request.on());
     }
 
     /**
@@ -319,7 +586,96 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        File fromWorkspace = getWorkspaceDirectory(request.fromWorkspace());
+        File intoWorkspace = getWorkspaceDirectory(request.intoWorkspace());
+        Path fromPath = getPathFor(request.from(), request);
+        if (fromPath == null) return;
+        File from = getExistingFileFor(fromWorkspace, fromPath, request.from(), request);
+
+        Path intoPath = getPathFor(request.into(), request);
+        if (intoPath == null) return;
+        File into = getExistingFileFor(intoWorkspace, intoPath, request.into(), request);
+
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        Name desiredName = request.desiredName();
+        String fileName = desiredName != null ? desiredName.getString(registry) : fromPath.getLastSegment().getString(registry);
+        File target = new File(into, fileName);
+        File tempInto = null;
+
+        Location actualFrom = null;
+        Location actualTo = null;
+        try {
+            actualFrom = locationFor(fromWorkspace, from);
+            actualTo = locationFor(intoWorkspace, target);
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text(), ioe);
+        }
+
+        try {
+            int pathLenDelta = into.getCanonicalPath().length() - from.getCanonicalFile().getParent().length();
+            if (pathLenDelta > 0) {
+                ensureValidPathLength(from, pathLenDelta);
+            }
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text(), ioe);
+        }
+
+        if (target.exists() && from.isFile()) {
+            try {
+                tempInto = File.createTempFile("dna", null, into);
+            } catch (IOException ioe) {
+                throw new RepositorySourceException(this.getSourceName(),
+                                                    FileSystemI18n.couldNotCreateFile.text("temporary file",
+                                                                                           request.intoWorkspace(),
+                                                                                           getSourceName(),
+                                                                                           ioe.getMessage()), ioe);
+            }
+
+            try {
+                FileUtil.copy(from, tempInto);
+            } catch (IOException ioe) {
+                FileUtil.delete(tempInto);
+                throw new RepositorySourceException(this.getSourceName(), FileSystemI18n.copyFailed.text(from.getPath(),
+                                                                                                         request.fromWorkspace(),
+                                                                                                         tempInto.getPath(),
+                                                                                                         request.intoWorkspace(),
+                                                                                                         getSourceName()), ioe);
+            }
+
+            // If everything worked, delete whatever was there and rename
+            if (target.exists()) {
+                if (!FileUtil.delete(target)) {
+                    I18n msg = FileSystemI18n.deleteFailed;
+                    request.setError(new RepositorySourceException(getSourceName(), msg.text(target.getPath(),
+                                                                                             request.intoWorkspace(),
+                                                                                             getSourceName())));
+                    FileUtil.delete(tempInto);
+                    return;
+                }
+            }
+
+            if (!tempInto.renameTo(target)) {
+                I18n msg = FileSystemI18n.couldNotUpdateData;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(target.getPath(),
+                                                                                         request.intoWorkspace(),
+                                                                                         getSourceName())));
+                FileUtil.delete(tempInto);
+                return;
+            }
+        } else {
+            if (!from.renameTo(target)) {
+                I18n msg = FileSystemI18n.couldNotUpdateData;
+                request.setError(new RepositorySourceException(getSourceName(), msg.text(target.getPath(),
+                                                                                         request.intoWorkspace(),
+                                                                                         getSourceName())));
+                return;
+            }
+
+        }
+        request.setActualLocations(actualFrom, actualTo);
+
     }
 
     /**
@@ -329,7 +685,19 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneBranchRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        CopyBranchRequest copy = new CopyBranchRequest(request.from(), request.fromWorkspace(), request.into(),
+                                                       request.intoWorkspace(), request.desiredName());
+
+        process(copy);
+
+        if (copy.hasError()) {
+            request.setError(copy.getError());
+            return;
+        }
+
+        request.setActualLocations(copy.getActualLocationBefore(), copy.getActualLocationAfter());
     }
 
     /**
@@ -339,7 +707,30 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        File workspace = getWorkspaceDirectory(request.inWorkspace());
+        Path targetPath = getPathFor(request.at(), request);
+        if (targetPath == null) return;
+
+        File target = getExistingFileFor(workspace, targetPath, request.at(), request);
+        Location actual = null;
+
+        try {
+            actual = locationFor(workspace, target);
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text(), ioe);
+        }
+
+        if (!FileUtil.delete(target)) {
+            request.setError(new RepositorySourceException(this.getSourceName(),
+                                                           FileSystemI18n.deleteFailed.text(target.getPath(),
+                                                                                            request.inWorkspace(),
+                                                                                            getSourceName())));
+            return;
+        }
+
+        request.setActualLocationOfNode(actual);
     }
 
     /**
@@ -349,7 +740,56 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
-        updatesAllowed(request);
+        if (!updatesAllowed(request)) return;
+
+        /* This connector does not support node ordering */
+        if (request.before() != null) {
+            throw new InvalidRequestException(FileSystemI18n.nodeOrderingNotSupported.text(this.getSourceName()));
+        }
+
+        File workspace = getWorkspaceDirectory(request.inWorkspace());
+        Path fromPath = getPathFor(request.from(), request);
+        if (fromPath == null) return;
+        File from = getExistingFileFor(workspace, fromPath, request.from(), request);
+
+        Path intoPath = getPathFor(request.into(), request);
+        if (intoPath == null) return;
+        File into = getExistingFileFor(workspace, intoPath, request.into(), request);
+
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        Name desiredName = request.desiredName();
+        String fileName = desiredName != null ? desiredName.getString(registry) : fromPath.getLastSegment().getString(registry);
+        File target = new File(into, fileName);
+
+        Location actualFrom = null;
+        Location actualTo = null;
+        try {
+            actualFrom = locationFor(workspace, from);
+            actualTo = locationFor(workspace, target);
+        } catch (IOException ioe) {
+            request.setError(new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text()));
+            return;
+        }
+
+        try {
+            int pathLenDelta = into.getCanonicalPath().length() - from.getCanonicalFile().getParent().length();
+            if (pathLenDelta > 0) {
+                ensureValidPathLength(from, pathLenDelta);
+            }
+        } catch (IOException ioe) {
+            request.setError(new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text()));
+            return;
+        }
+
+        if (!from.renameTo(target)) {
+            I18n msg = FileSystemI18n.couldNotUpdateData;
+            request.setError(new RepositorySourceException(getSourceName(),
+                                                           msg.text(target.getPath(), workspace, getSourceName())));
+            return;
+        }
+
+        request.setActualLocations(actualFrom, actualTo);
+
     }
 
     /**
@@ -359,7 +799,41 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RenameNodeRequest request ) {
-        if (updatesAllowed(request)) super.process(request);
+        if (!updatesAllowed(request)) return;
+
+        super.process(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
+     */
+    @Override
+    public void process( CloneWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
+        CreateWorkspaceRequest create = new CreateWorkspaceRequest(request.desiredNameOfTargetWorkspace(),
+                                                                   request.targetConflictBehavior());
+        process(create);
+
+        if (create.hasError()) {
+            request.setError(create.getError());
+            return;
+        }
+
+        File fromWorkspace = getWorkspaceDirectory(request.nameOfWorkspaceToBeCloned());
+        assert fromWorkspace != null;
+        File toWorkspace = getWorkspaceDirectory(create.getActualWorkspaceName());
+        assert toWorkspace != null;
+
+        try {
+            FileUtil.copy(fromWorkspace, toWorkspace);
+            request.setActualWorkspaceName(create.getActualWorkspaceName());
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath(), this.rootNodeUuid));
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(this.getSourceName(), ioe.getMessage());
+        }
     }
 
     /**
@@ -442,16 +916,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
-     */
-    @Override
-    public void process( CloneWorkspaceRequest request ) {
-        updatesAllowed(request);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
      */
     @Override
@@ -464,7 +928,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         }
         // This doesn't create the directory representing the workspace (it must already exist), but it will add
         // the workspace name to the available names ...
-        File directory = new File(workspaceName);
+        File directory = getWorkspaceDirectory(workspaceName);
         if (directory.exists() && directory.isDirectory() && directory.canRead()) {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
             request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
@@ -503,6 +967,19 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         return !request.hasError();
     }
 
+    private UUID uuidFor( Location location ) {
+        if (location.getUuid() != null) return location.getUuid();
+        if (!location.hasIdProperties()) return null;
+
+        for (Property idProperty : location.getIdProperties()) {
+            if (JcrLexicon.UUID.equals(idProperty.getName())) {
+                return uuidFactory().create(idProperty.getFirstValue());
+            }
+        }
+
+        return null;
+    }
+
     protected NameFactory nameFactory() {
         return getExecutionContext().getValueFactories().getNameFactory();
     }
@@ -511,19 +988,105 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         return getExecutionContext().getValueFactories().getPathFactory();
     }
 
+    protected UuidFactory uuidFactory() {
+        return getExecutionContext().getValueFactories().getUuidFactory();
+    }
+
+    /**
+     * Checks that the collection of {@code properties} only contains properties with allowable names.
+     * 
+     * @param properties
+     * @param validPropertyNames
+     * @throws RepositorySourceException if {@code properties} contains a
+     * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
+     * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
+     */
+    protected void ensureValidProperties( Collection<Property> properties,
+                                          Set<Name> validPropertyNames ) {
+        List<String> invalidNames = new LinkedList<String>();
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+
+        for (Property property : properties) {
+            if (!validPropertyNames.contains(property.getName())) {
+                invalidNames.add(property.getName().getString(registry));
+            }
+        }
+
+        if (!invalidNames.isEmpty()) {
+            throw new RepositorySourceException(this.getSourceName(),
+                                                FileSystemI18n.invalidPropertyNames.text(invalidNames.toString()));
+        }
+    }
+
+    protected void ensureValidPathLength( File root ) {
+        ensureValidPathLength(root, 0);
+    }
+
+    /**
+     * Recursively checks if any of the files in the tree rooted at {@code root} would exceed the {@link #maxPathLength maximum
+     * path length for the processor} if their paths were {@code delta} characters longer. If any files would exceed this length,
+     * a {@link RepositorySourceException} is thrown.
+     * 
+     * @param root the root of the tree to check; may be a file or directory but may not be null
+     * @param delta the change in the length of the path to check. Used to preemptively check whether moving a file or directory
+     *        to a new path would violate path length rules
+     * @throws RepositorySourceException if any files in the tree rooted at {@code root} would exceed this {@link #maxPathLength
+     *         the maximum path length for this processor}
+     */
+    protected void ensureValidPathLength( File root,
+                                          int delta ) {
+        try {
+            int len = root.getCanonicalPath().length();
+            if (len > maxPathLength - delta) {
+                String msg = FileSystemI18n.maxPathLengthExceeded.text(this.maxPathLength,
+                                                                       this.getSourceName(),
+                                                                       root.getCanonicalPath());
+                throw new RepositorySourceException(this.getSourceName(), msg);
+            }
+
+            if (root.isDirectory()) {
+                for (File child : root.listFiles(filenameFilter)) {
+                    ensureValidPathLength(child, delta);
+                }
+
+            }
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(this.getSourceName(), FileSystemI18n.getCanonicalPathFailed.text(), ioe);
+        }
+    }
+
+    protected Location locationFor( File workspaceRoot,
+                                    File path ) throws IOException {
+        assert workspaceRoot != null;
+        assert path != null;
+        assert path.getCanonicalPath().startsWith(workspaceRoot.getCanonicalPath());
+
+        String relativePath = path.getCanonicalPath().substring(workspaceRoot.getCanonicalPath().length());
+        PathFactory pathFactory = pathFactory();
+        List<Segment> segments = new LinkedList<Segment>();
+
+        String sepString = File.separator.equals("\\") ? "\\\\" : File.separator;
+        assert relativePath.charAt(0) == File.separatorChar;
+        for (String segment : relativePath.substring(1).split(sepString)) {
+            segments.add(pathFactory.createSegment(segment, 1));
+        }
+
+        return Location.create(pathFactory().createAbsolutePath(segments));
+    }
+
     protected Path getPathFor( Location location,
                                Request request ) {
-        Path path = location.getPath();
 
-        if (location.getUuid() != null && rootNodeUuid.equals(location.getUuid())) {
+        if (location.hasPath()) return location.getPath();
+
+        UUID uuid = uuidFor(location);
+        if (rootNodeUuid.equals(uuid)) {
             return pathFactory().createRootPath();
         }
 
-        if (path == null) {
-            I18n msg = FileSystemI18n.locationInRequestMustHavePath;
-            throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
-        }
-        return path;
+        I18n msg = FileSystemI18n.locationInRequestMustHavePath;
+        request.setError(new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request)));
+        return null;
     }
 
     protected File getWorkspaceDirectory( String workspaceName ) {
