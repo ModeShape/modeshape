@@ -41,5 +41,9 @@ public class WorkspaceResources {
     public String getWorkspaces() {
         return baseUri + "/items";
     }
+
+    public void setWorkspaces(String workspaces) {
+        this.baseUri = workspaces;
+    }
 }
 

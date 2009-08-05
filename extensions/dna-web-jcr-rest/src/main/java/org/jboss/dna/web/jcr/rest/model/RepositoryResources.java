@@ -40,5 +40,9 @@ public class RepositoryResources {
     public String getWorkspaces() {
         return baseUri;
     }
+
+    public void setWorkspaces(String workspaces) {
+        this.baseUri = workspaces;
+    }
 }
 

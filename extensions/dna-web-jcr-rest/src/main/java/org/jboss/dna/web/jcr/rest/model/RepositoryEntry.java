@@ -48,8 +48,16 @@ public class RepositoryEntry {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @XmlElement
     public RepositoryResources getResources() {
         return resources;
+    }
+
+    public void setResources(RepositoryResources resources) {
+        this.resources = resources;
     }
 }

@@ -49,9 +49,17 @@ public class WorkspaceEntry {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @XmlElement
     public WorkspaceResources getResources() {
         return resources;
+    }
+
+    public void setResources(WorkspaceResources resources) {
+        this.resources = resources;
     }
 }
 
