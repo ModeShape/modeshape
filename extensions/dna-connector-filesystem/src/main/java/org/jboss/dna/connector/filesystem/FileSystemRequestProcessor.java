@@ -457,6 +457,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
                     } finally {
                         try {
+                            if (checkForContents != null) checkForContents.close();
                             checkForContents.close();
                         } catch (Exception ignore) {
                         }
@@ -535,10 +536,12 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
             if (!newFile.mkdir()) {
                 I18n msg = FileSystemI18n.couldNotCreateFile;
-                request.setError(new RepositorySourceException(getSourceName(), msg.text(parent.getPath(),
-                                                                                         request.inWorkspace(),
-                                                                                         getSourceName(),
-                                                                                         primaryType.getString(registry))));
+                request.setError(new RepositorySourceException(
+                                                               getSourceName(),
+                                                               msg.text(parent.getPath(),
+                                                                        request.inWorkspace(),
+                                                                        getSourceName(),
+                                                                        primaryType == null ? "null" : primaryType.getString(registry))));
                 return;
             }
         } else {
