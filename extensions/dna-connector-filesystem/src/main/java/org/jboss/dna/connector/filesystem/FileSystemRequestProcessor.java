@@ -1040,7 +1040,8 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             if (len > maxPathLength - delta) {
                 String msg = FileSystemI18n.maxPathLengthExceeded.text(this.maxPathLength,
                                                                        this.getSourceName(),
-                                                                       root.getCanonicalPath());
+                                                                       root.getCanonicalPath(),
+                                                                       delta);
                 throw new RepositorySourceException(this.getSourceName(), msg);
             }
 
