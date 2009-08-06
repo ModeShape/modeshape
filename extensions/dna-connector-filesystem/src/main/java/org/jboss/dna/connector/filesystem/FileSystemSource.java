@@ -557,7 +557,6 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             filenameFilter = new FilenameFilter() {
                 Pattern filter = Pattern.compile(filterPattern);
 
-                @Override
                 public boolean accept( File dir,
                                        String name ) {
                     return !filter.matcher(name).matches();
