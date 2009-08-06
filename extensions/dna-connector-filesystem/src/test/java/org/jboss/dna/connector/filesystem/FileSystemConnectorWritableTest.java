@@ -46,15 +46,24 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
     public static final String ARBITRARY_PROPERTIES_NOT_SUPPORTED = "This connector does not support setting arbitrary properties";
 
-    private static final String REPO_PATH = "./src/test/resources/repositories/";
+    private static final String REPO_PATH = "./target/repositories/";
+    private static final String REPO_SOURCE_PATH = "./src/test/resources/repositories/";
     private final String TEST_CONTENT = "Test content";
 
     protected File testWorkspaceRoot;
     protected File otherWorkspaceRoot;
     protected File newWorkspaceRoot;
+    protected File scratchDirectory;
 
     @Override
-    protected RepositorySource setUpSource() {
+    protected RepositorySource setUpSource() throws Exception {
+        // Copy the directories into the target ...
+        File sourceRepo = new File(REPO_SOURCE_PATH);
+        scratchDirectory = new File(REPO_PATH);
+        scratchDirectory.mkdirs();
+        FileUtil.delete(scratchDirectory);
+        FileUtil.copy(sourceRepo, scratchDirectory);
+
         // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
         String[] predefinedWorkspaceNames = new String[] {"test", "otherWorkspace", "airplanes", "cars"};
         FileSystemSource source = new FileSystemSource();
@@ -67,7 +76,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         testWorkspaceRoot = new File(REPO_PATH, "test");
         testWorkspaceRoot.mkdir();
-        
+
         otherWorkspaceRoot = new File(REPO_PATH, "otherWorkspace");
         otherWorkspaceRoot.mkdir();
 
@@ -84,9 +93,8 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
     @Override
     public void afterEach() throws Exception {
-        FileUtil.delete(testWorkspaceRoot);
-        FileUtil.delete(otherWorkspaceRoot);
-        FileUtil.delete(newWorkspaceRoot);
+        FileUtil.delete(scratchDirectory);
+
         super.afterEach();
     }
 
@@ -132,13 +140,14 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     }
 
     @Test
-    public void shouldBeAbleToAddChildrenToFolder() {
+    public void shouldBeAbleToAddChildrenToFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
 
         File newFolder = new File(testWorkspaceRoot, "testFolder");
         assertThat(newFolder.exists(), is(true));
         assertThat(newFolder.isDirectory(), is(true));
-
+        System.out.println("Created new folder at: " + newFolder.getCanonicalPath());
+        
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testfile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
                                                                                                                 TEST_CONTENT.getBytes()).orReplace().and();
@@ -350,7 +359,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         assertContents(newFile, TEST_CONTENT);
         File newFile2 = new File(testWorkspaceRoot, "testFolder/testFile2");
         assertContents(newFile2, TEST_CONTENT);
-        
+
         graph.move("/testFolder/testFile2").before("/testFolder/testFile");
     }
 
@@ -418,7 +427,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         newFile = new File(newWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
-        
+
     }
 
     @Test
