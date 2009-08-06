@@ -149,7 +149,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         System.out.println("Created new folder at: " + newFolder.getCanonicalPath());
         
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testfile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
+        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
                                                                                                                 TEST_CONTENT.getBytes()).orReplace().and();
 
         File newFile = new File(testWorkspaceRoot, "testFolder/testFile");
