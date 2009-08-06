@@ -352,6 +352,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         assert workspace != null;
 
         File parent = getExistingFileFor(workspace, parentPath, request.under(), request);
+        if (parent == null) {
+            System.out.println(workspace.getPath() + " <=> " + parentPath.getString());
+        }
         assert parent != null : workspace.getPath() + " <=> " + parentPath.getString();
 
         NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
