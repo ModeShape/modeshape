@@ -425,7 +425,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCreateDeepPath() {
         String pathName = "";
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 20; i++) {
             pathName += "/test";
             graph.create(pathName).orReplace().and();
         }
