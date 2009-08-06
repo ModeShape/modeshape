@@ -163,7 +163,7 @@ public class Graph {
 
     private final String sourceName;
     private final RepositoryConnectionFactory connectionFactory;
-    private final ExecutionContext context;
+    protected final ExecutionContext context;
     protected final RequestBuilder requests;
     protected final Conjunction<Graph> nextGraph;
     private Workspace currentWorkspace;
@@ -4225,7 +4225,7 @@ public class Graph {
          * @return the interface for additional requests or actions
          */
         Next as( Name newName );
-        
+
         /**
          * Finish the request by specifying the name of the new child node. This method indicates that the child should be added
          * as a new node with the given name at the end of the parents children
@@ -4233,7 +4233,7 @@ public class Graph {
          * @param newName the new name
          * @return the interface for additional requests or actions
          */
-        Next as( String newName );        
+        Next as( String newName );
     }
 
     /**
