@@ -44,12 +44,6 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.dna</groupId>
-			<artifactId>dna-integration-tests</artifactId>
-			<version>0.6-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
 		<!-- 
 			Testing (note the scope)
 		-->
