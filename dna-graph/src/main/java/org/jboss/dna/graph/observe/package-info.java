@@ -48,7 +48,7 @@
  * <p>
  * Components that are to recieve notifications of changes are called <i>observers</i>.  To create an observer, simply extend 
  * the {@link ChangeObserver} abstract class and provide an implementation of the {@link ChangeObserver#notify(Changes)} method.
- * Then, register the observer with an {@link Observable} using its {@link Observable#register(ChangeObserver)} method.
+ * Then, register the observer with an {@link Observable} using its {@link Observable#register(Observer)} method.
  * The observer's {@link ChangeObserver#notify(Changes)} method will then be called with the changes that have
  * been made to the Observable.
  * </p>
@@ -56,7 +56,7 @@
  * it was registered.  The {@link ChangeObserver} class automatically tracks which {@link Observable} instances it is
  * registered with, and calling the observer's {@link ChangeObserver#unregister()} will unregister the observer from
  * all of these Observables.  Alternatively, an observer can be unregistered from a single Observable using the
- * Observable's {@link Observable#unregister(ChangeObserver)} method.
+ * Observable's {@link Observable#unregister(Observer)} method.
  * </p>
  * <h3>Changes</h3>
  * <p>

@@ -147,7 +147,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
     /**
      * Method that is called for each net change.
      * 
-     * @param change
+     * @param change the net change; never null
      */
     protected abstract void notify( NetChange change );
 
@@ -228,22 +228,30 @@ public abstract class NetChangeObserver extends ChangeObserver {
             return this.hc;
         }
 
-        public boolean includesAll( ChangeType... jcrEventTypes ) {
+        /**
+         * Determine whether this net change includes all of the supplied types.
+         * 
+         * @param jcrEventTypes the types to check for
+         * @return true if all of the supplied events are included in this net change, or false otherwise
+         */
+        public boolean includesAllOf( ChangeType... jcrEventTypes ) {
             for (ChangeType jcrEventType : jcrEventTypes) {
                 if (!this.eventTypes.contains(jcrEventType)) return false;
             }
             return true;
         }
 
+        /**
+         * Determine whether this net change includes any of the supplied types.
+         * 
+         * @param jcrEventTypes the types to check for
+         * @return true if any of the supplied events are included in this net change, or false otherwise
+         */
         public boolean includes( ChangeType... jcrEventTypes ) {
             for (ChangeType jcrEventType : jcrEventTypes) {
                 if (this.eventTypes.contains(jcrEventType)) return true;
             }
             return false;
-        }
-
-        public boolean is( ChangeType jcrEventTypes ) {
-            return this.eventTypes.contains(jcrEventTypes);
         }
 
         public boolean isSameNode( NetChange that ) {

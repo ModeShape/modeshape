@@ -46,11 +46,11 @@ public class ChangeObservers implements Observable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
+     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
-    public boolean register( ChangeObserver observer ) {
+    public boolean register( Observer observer ) {
         if (observer != null && !shutdown.get() && observers.addIfAbsent(new ObserverReference(observer))) {
-            observer.registeredWith(this);
+            if (observer instanceof ChangeObserver) ((ChangeObserver)observer).registeredWith(this);
             return true;
         }
         return false;
@@ -59,11 +59,11 @@ public class ChangeObservers implements Observable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.ChangeObserver)
+     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
      */
-    public boolean unregister( ChangeObserver observer ) {
+    public boolean unregister( Observer observer ) {
         if (observer != null && observers.remove(observer)) {
-            observer.unregisteredWith(this);
+            if (observer instanceof ChangeObserver) ((ChangeObserver)observer).unregisteredWith(this);
             return true;
         }
         return false;
@@ -79,7 +79,10 @@ public class ChangeObservers implements Observable {
             observers.clear();
             while (iter.hasNext()) {
                 ObserverReference reference = iter.next();
-                if (reference.get() != null) reference.get().unregisteredWith(this);
+                if (reference.get() != null) {
+                    Observer observer = reference.get();
+                    if (observer instanceof ChangeObserver) ((ChangeObserver)observer).unregisteredWith(this);
+                }
             }
         }
     }
@@ -102,7 +105,7 @@ public class ChangeObservers implements Observable {
     public void broadcast( Changes changes ) {
         CheckArg.isNotNull(changes, "changes");
         for (ObserverReference observerReference : observers) {
-            ChangeObserver observer = observerReference.get();
+            Observer observer = observerReference.get();
             if (observer == null) {
                 observers.remove(observerReference);
                 continue;
@@ -118,10 +121,10 @@ public class ChangeObservers implements Observable {
     /**
      * A {@link WeakReference} implementation that provides a valid
      */
-    protected final class ObserverReference extends WeakReference<ChangeObserver> {
+    protected final class ObserverReference extends WeakReference<Observer> {
         final int hc;
 
-        protected ObserverReference( ChangeObserver source ) {
+        protected ObserverReference( Observer source ) {
             super(source);
             this.hc = source.hashCode();
         }
@@ -146,12 +149,12 @@ public class ChangeObservers implements Observable {
             if (obj == this) return true;
             if (obj instanceof ObserverReference) {
                 ObserverReference that = (ObserverReference)obj;
-                ChangeObserver thisSource = this.get();
-                ChangeObserver thatSource = that.get();
+                Observer thisSource = this.get();
+                Observer thatSource = that.get();
                 return thisSource == thatSource; // reference equality, not object equality!
             }
-            if (obj instanceof ChangeObserver) {
-                ChangeObserver that = (ChangeObserver)obj;
+            if (obj instanceof Observer) {
+                Observer that = (Observer)obj;
                 return this.get() == that; // reference equality, not object equality!
             }
             return false;

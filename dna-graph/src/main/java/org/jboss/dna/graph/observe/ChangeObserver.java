@@ -30,7 +30,7 @@ import org.jboss.dna.common.util.Logger;
 
 /**
  * Abstract class that is used to signal that a change set has occurred. This class is typically subclassed by those that wish to
- * observe changes in content, and {@link Observable#register(ChangeObserver) registered} with a {@link Observable}.
+ * observe changes in content, and {@link Observable#register(Observer) registered} with a {@link Observable}.
  * <p>
  * This class maintains a (weak) reference to the ChangeSource instances with which it is registered. Therefore, the observers
  * will not keep a ChangeSource from being garbage collected. And, if a change source is garbage collected, calling
@@ -65,7 +65,7 @@ public abstract class ChangeObserver implements Observer {
 
     /**
      * Unregister this listener from all {@link Observable sources} that it was registered with. This is preferred over calling
-     * {@link Observable#unregister(ChangeObserver)} directly.
+     * {@link Observable#unregister(Observer)} directly.
      */
     public void unregister() {
         doUnregister();

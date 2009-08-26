@@ -42,6 +42,9 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.observe.Changes;
+import org.jboss.dna.graph.observe.NetChangeObserver;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -58,7 +61,7 @@ import org.jboss.dna.repository.service.ServiceAdministrator;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RepositoryService implements AdministeredService {
+public class RepositoryService implements AdministeredService, Observer {
 
     /**
      * The administrative component for this service.
@@ -104,6 +107,7 @@ public class RepositoryService implements AdministeredService {
     private final String configurationSourceName;
     private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;
+    private final ConfigurationChangeObserver configurationChangeObserver;
     private final Administrator administrator = new Administrator();
     private final AtomicBoolean started = new AtomicBoolean(false);
     /** The problem sink used when encountering problems while starting repositories */
@@ -141,26 +145,27 @@ public class RepositoryService implements AdministeredService {
         this.configurationWorkspaceName = configurationWorkspaceName;
         this.context = context;
         this.problems = problems;
+        this.configurationChangeObserver = new ConfigurationChangeObserver();
     }
 
     /**
      * {@inheritDoc}
      */
-    public ServiceAdministrator getAdministrator() {
+    public final ServiceAdministrator getAdministrator() {
         return this.administrator;
     }
 
     /**
      * @return configurationSourceName
      */
-    public String getConfigurationSourceName() {
+    public final String getConfigurationSourceName() {
         return configurationSourceName;
     }
 
     /**
      * @return configurationWorkspaceName
      */
-    public String getConfigurationWorkspaceName() {
+    public final String getConfigurationWorkspaceName() {
         return configurationWorkspaceName;
     }
 
@@ -169,14 +174,21 @@ public class RepositoryService implements AdministeredService {
      * 
      * @return the RepositorySource library; never null
      */
-    public RepositoryLibrary getRepositoryLibrary() {
+    public final RepositoryLibrary getRepositoryLibrary() {
         return sources;
+    }
+
+    /**
+     * @return pathToConfigurationRoot
+     */
+    protected final Path getPathToConfigurationRoot() {
+        return pathToConfigurationRoot;
     }
 
     /**
      * @return env
      */
-    public ExecutionContext getExecutionEnvironment() {
+    public final ExecutionContext getExecutionEnvironment() {
         return context;
     }
 
@@ -186,7 +198,7 @@ public class RepositoryService implements AdministeredService {
     }
 
     protected synchronized void startService() {
-        if (this.started.get() == false) {            
+        if (this.started.get() == false) {
             // ------------------------------------------------------------------------------------
             // Read the configuration ...
             // ------------------------------------------------------------------------------------
@@ -211,7 +223,7 @@ public class RepositoryService implements AdministeredService {
             } catch (Throwable err) {
                 throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text(), err);
             }
-            
+
             this.started.set(true);
         }
     }
@@ -403,5 +415,59 @@ public class RepositoryService implements AdministeredService {
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
+     */
+    public void notify( Changes changes ) {
+        // Forward the changes to the net change observer ...
+        this.configurationChangeObserver.notify(changes);
+    }
+
+    protected class ConfigurationChangeObserver extends NetChangeObserver {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChange)
+         */
+        @Override
+        protected void notify( NetChange change ) {
+            if (!getConfigurationSourceName().equals(change.getRepositorySourceName())) return;
+            if (!getConfigurationWorkspaceName().equals(change.getRepositoryWorkspaceName())) return;
+            Path changedPath = change.getPath();
+            Path configPath = getPathToConfigurationRoot();
+            if (!changedPath.isAtOrBelow(getPathToConfigurationRoot())) return;
+            boolean changedNodeIsPotentiallySource = configPath.size() + 1 == changedPath.size();
+
+            // At this point, we know that something inside the configuration changed, so figure out what happened ...
+            if (changedNodeIsPotentiallySource && change.includes(ChangeType.NODE_REMOVED)) {
+                // Then potentially a source with the supplied name has been removed ...
+                String sourceName = changedPath.getLastSegment().getName().getLocalName();
+                getRepositoryLibrary().removeSource(sourceName);
+            } else {
+                // The add/change/remove is either at or below a source, so try to create a new source for it ...
+                Path sourcePath = changedNodeIsPotentiallySource ? changedPath : changedPath.subpath(0, configPath.size() + 1);
+                Problems problems = new SimpleProblems();
+                // Now read the node and create the source ...
+                Graph graph = Graph.create(getConfigurationSourceName(), getRepositoryLibrary(), getExecutionEnvironment());
+                try {
+                    String workspaceName = getConfigurationWorkspaceName();
+                    if (workspaceName != null) graph.useWorkspace(workspaceName);
+                    Map<Name, Property> properties = graph.getPropertiesByName().on(sourcePath);
+                    RepositorySource source = createRepositorySource(sourcePath, properties, problems);
+                    if (source != null) {
+                        // It was the config for a source, so try to add or replace an existing source ...
+                        getRepositoryLibrary().addSource(source, true);
+                    }
+                } catch (PathNotFoundException e) {
+                    // No source was found, and this is okay (since it may just been deleted)...
+                    String sourceName = changedPath.getLastSegment().getName().getLocalName();
+                    getRepositoryLibrary().removeSource(sourceName);
+                }
+            }
+        }
     }
 }

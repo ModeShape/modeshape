@@ -71,6 +71,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-connector-filesystem</artifactId>
+			<version>${pom.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-infinispan</artifactId>
 			<version>${pom.version}</version>
 			<scope>test</scope>

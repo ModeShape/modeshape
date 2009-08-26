@@ -46,12 +46,14 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetectorConfig;
 import org.jboss.dna.graph.mimetype.MimeTypeDetectors;
+import org.jboss.dna.graph.observe.ObservationBus;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathExpression;
@@ -102,11 +104,19 @@ public class DnaEngine {
         detectors.addDetector(new MimeTypeDetectorConfig("ExtensionDetector", "Extension-based MIME type detector",
                                                          ExtensionBasedMimeTypeDetector.class));
 
+        // Create the RepositoryContext that the configuration repository source should use ...
+        ObservationBus configurationChangeBus = new ObservationBus();
+        RepositoryContext configContext = new SimpleRepositoryContext(context, configurationChangeBus, null);
+        final RepositorySource configSource = this.configuration.getRepositorySource();
+        configSource.initialize(configContext);
+
         // Create the RepositoryService, pointing it to the configuration repository ...
         Path pathToConfigurationRoot = this.configuration.getPath();
         String configWorkspaceName = this.configuration.getWorkspace();
-        final RepositorySource configSource = this.configuration.getRepositorySource();
         repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context, problems);
+
+        // Now register the repository service to be notified of changes to the configuration ...
+        configurationChangeBus.register(repositoryService);
 
         // Create the sequencing service ...
         executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now

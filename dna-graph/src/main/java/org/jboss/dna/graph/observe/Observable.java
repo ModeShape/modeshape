@@ -39,7 +39,7 @@ public interface Observable {
      * @return true if the observer was added, or false if the observer was null, if the observer was already registered, or if
      *         the observer could not be added
      */
-    boolean register( ChangeObserver observer );
+    boolean register( Observer observer );
 
     /**
      * Unregister the supplied observer. This method does nothing if the observer reference is null.
@@ -48,6 +48,6 @@ public interface Observable {
      * @return true if the observer was removed, or false if the observer was null or if the observer was not registered on this
      *         source
      */
-    boolean unregister( ChangeObserver observer );
+    boolean unregister( Observer observer );
 
 }

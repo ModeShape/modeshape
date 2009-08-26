@@ -25,11 +25,11 @@ package org.jboss.dna.repository;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -43,10 +43,8 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryConnectionPool;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
-import org.jboss.dna.graph.observe.ChangeObserver;
-import org.jboss.dna.graph.observe.ChangeObservers;
-import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observable;
+import org.jboss.dna.graph.observe.ObservationBus;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
@@ -110,10 +108,10 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
 
     private final ServiceAdministrator administrator = new Administrator();
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
-    private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
+    private final Map<String, RepositoryConnectionPool> pools = new HashMap<String, RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
     private final ExecutionContext executionContext;
-    private final ObservationBus observationBus = new InMemoryObservationBus();
+    private final ObservationBus observationBus = new ObservationBus();
     private final RepositorySource configurationSource;
     private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;
@@ -167,19 +165,26 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This can be used to register observers for all of the repository sources managed by this library. The supplied observer
+     * will receive all of the changes originating from these sources.
+     * </p>
      * 
-     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
+     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
-    public boolean register( ChangeObserver observer ) {
+    public boolean register( Observer observer ) {
         return observationBus.register(observer);
     }
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This can be used to unregister observers for all of the repository sources managed by this library.
+     * </p>
      * 
-     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.ChangeObserver)
+     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
      */
-    public boolean unregister( ChangeObserver observer ) {
+    public boolean unregister( Observer observer ) {
         return observationBus.unregister(observer);
     }
 
@@ -212,7 +217,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         // Close all connections to the pools. This is done inside the pools write lock.
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool pool : this.pools) {
+            for (RepositoryConnectionPool pool : this.pools.values()) {
                 pool.shutdown();
             }
         } finally {
@@ -236,7 +241,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         // Check whether all source pools are shut down. This is done inside the pools write lock.
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool pool : this.pools) {
+            for (RepositoryConnectionPool pool : this.pools.values()) {
                 if (!pool.awaitTermination(timeout, unit)) return false;
             }
             return true;
@@ -258,7 +263,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     public boolean isTerminating() {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool pool : this.pools) {
+            for (RepositoryConnectionPool pool : this.pools.values()) {
                 if (pool.isTerminating()) return true;
             }
             return false;
@@ -276,7 +281,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     public boolean isTerminated() {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool pool : this.pools) {
+            for (RepositoryConnectionPool pool : this.pools.values()) {
                 if (!pool.isTerminated()) return false;
             }
             return true;
@@ -291,11 +296,12 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * @return the pools
      */
     public Collection<String> getSourceNames() {
-        Set<String> sourceNames = new HashSet<String>();
-        for (RepositoryConnectionPool pool : this.pools) {
-            sourceNames.add(pool.getRepositorySource().getName());
+        try {
+            this.sourcesLock.readLock().lock();
+            return Collections.unmodifiableCollection(new HashSet<String>(this.pools.keySet()));
+        } finally {
+            this.sourcesLock.readLock().unlock();
         }
-        return Collections.unmodifiableCollection(sourceNames);
     }
 
     /**
@@ -305,10 +311,15 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      */
     public Collection<RepositorySource> getSources() {
         List<RepositorySource> sources = new LinkedList<RepositorySource>();
-        for (RepositoryConnectionPool pool : this.pools) {
-            sources.add(pool.getRepositorySource());
+        try {
+            this.sourcesLock.readLock().lock();
+            for (RepositoryConnectionPool pool : this.pools.values()) {
+                sources.add(pool.getRepositorySource());
+            }
+            return Collections.unmodifiableCollection(sources);
+        } finally {
+            this.sourcesLock.readLock().unlock();
         }
-        return Collections.unmodifiableCollection(sources);
     }
 
     /**
@@ -320,14 +331,11 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     public RepositorySource getSource( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool existingPool : this.pools) {
-                RepositorySource source = existingPool.getRepositorySource();
-                if (source.getName().equals(sourceName)) return source;
-            }
+            RepositoryConnectionPool existingPool = this.pools.get(sourceName);
+            return existingPool == null ? null : existingPool.getRepositorySource();
         } finally {
             this.sourcesLock.readLock().unlock();
         }
-        return null;
     }
 
     /**
@@ -339,14 +347,10 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     public RepositoryConnectionPool getConnectionPool( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool existingPool : this.pools) {
-                RepositorySource source = existingPool.getRepositorySource();
-                if (source.getName().equals(sourceName)) return existingPool;
-            }
+            return this.pools.get(sourceName);
         } finally {
             this.sourcesLock.readLock().unlock();
         }
-        return null;
     }
 
     /**
@@ -357,68 +361,99 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      *         supplied name.
      */
     public boolean addSource( RepositorySource source ) {
+        return addSource(source, false);
+    }
+
+    /**
+     * Add the supplied federated source. This method returns false if the source is null.
+     * <p>
+     * If a source with the same name already exists, it will be replaced only if <code>replaceIfExisting</code> is true. If this
+     * is the case, then the existing source will be removed from the connection pool, and that pool will be
+     * {@link RepositoryConnectionPool#shutdown() shutdown} (allowing any in-use connections to be used and finished normally).
+     * </p>
+     * 
+     * @param source the source to add
+     * @param replaceIfExisting true if an existing source should be replaced, or false if this method should return false if
+     *        there is already an existing source with the supplied name.
+     * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
+     *         supplied name.
+     */
+    public boolean addSource( RepositorySource source,
+                              boolean replaceIfExisting ) {
         if (source == null) return false;
+        final String sourceName = source.getName();
+        if (!replaceIfExisting) {
+            // Don't want to replace existing, so make sure there isn't one already ...
+            try {
+                this.sourcesLock.readLock().lock();
+                if (this.pools.containsKey(sourceName)) return false;
+            } finally {
+                this.sourcesLock.readLock().unlock();
+            }
+        }
+        // Create a repository context for this source ...
+        final ObservationBus observationBus = this.observationBus;
+        RepositoryContext repositoryContext = new RepositoryContext() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
+             */
+            public ExecutionContext getExecutionContext() {
+                return RepositoryLibrary.this.getExecutionContext();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
+             */
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return RepositoryLibrary.this;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
+             */
+            public Observer getObserver() {
+                return observationBus.hasObservers() ? observationBus : null;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration(int)
+             */
+            public Subgraph getConfiguration( int depth ) {
+                Subgraph result = null;
+                RepositorySource configSource = getConfigurationSource();
+                if (configSource != null) {
+                    Graph config = Graph.create(configSource, getExecutionContext());
+                    String workspaceName = getConfigurationWorkspaceName();
+                    if (workspaceName != null) {
+                        config.useWorkspace(workspaceName);
+                    }
+                    Path configPath = getPathToConfigurationRoot();
+                    Path sourcePath = getExecutionContext().getValueFactories().getPathFactory().create(configPath, sourceName);
+                    result = config.getSubgraphOfDepth(depth).at(sourcePath);
+                }
+                return result;
+            }
+        };
+        // Do this before we remove the existing pool ...
+        source.initialize(repositoryContext);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
         try {
             this.sourcesLock.writeLock().lock();
-            final String sourceName = source.getName();
-            for (RepositoryConnectionPool existingPool : this.pools) {
-                if (existingPool.getRepositorySource().getName().equals(sourceName)) return false;
+            // Need to first remove any existing one ...
+            RepositoryConnectionPool existingPool = this.pools.remove(sourceName);
+            if (existingPool != null) {
+                // Then shut down the source gracefully (and don't wait) ...
+                existingPool.shutdown();
             }
-            // Create a repository context for this source ...
-            final ObservationBus observationBus = this.observationBus;
-            RepositoryContext repositoryContext = new RepositoryContext() {
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
-                 */
-                public ExecutionContext getExecutionContext() {
-                    return RepositoryLibrary.this.getExecutionContext();
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
-                 */
-                public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                    return RepositoryLibrary.this;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getObserver()
-                 */
-                public Observer getObserver() {
-                    return observationBus.hasObservers() ? observationBus : null;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.connector.RepositoryContext#getConfiguration(int)
-                 */
-                public Subgraph getConfiguration( int depth ) {
-                    Subgraph result = null;
-                    RepositorySource configSource = getConfigurationSource();
-                    if (configSource != null) {
-                        Graph config = Graph.create(configSource, getExecutionContext());
-                        String workspaceName = getConfigurationWorkspaceName();
-                        if (workspaceName != null) {
-                            config.useWorkspace(workspaceName);
-                        }
-                        Path configPath = getPathToConfigurationRoot();
-                        Path sourcePath = getExecutionContext().getValueFactories().getPathFactory().create(configPath,
-                                                                                                            sourceName);
-                        result = config.getSubgraphOfDepth(depth).at(sourcePath);
-                    }
-                    return result;
-                }
-            };
-            source.initialize(repositoryContext);
-            RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
-            this.pools.add(pool);
+            this.pools.put(sourceName, pool);
             return true;
         } finally {
             this.sourcesLock.writeLock().unlock();
@@ -450,6 +485,32 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     /**
      * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
      * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
+     * connections from being used. However, this method never waits until the connections are all closed, and is equivalent to
+     * calling <code>removeSource(name,0,TimeUnit.SECONDS)</code>.
+     * 
+     * @param name the name of the source to be removed
+     * @return the source with the supplied name that was removed, or null if no existing source matching the supplied name could
+     *         be found
+     * @see #removeSource(String, long, TimeUnit)
+     */
+    public RepositorySource removeSource( String name ) {
+        try {
+            this.sourcesLock.writeLock().lock();
+            RepositoryConnectionPool existingPool = this.pools.remove(name);
+            if (existingPool != null) {
+                // Then shut down the source gracefully (and don't wait) ...
+                existingPool.shutdown();
+                return existingPool.getRepositorySource();
+            }
+        } finally {
+            this.sourcesLock.writeLock().unlock();
+        }
+        return null;
+    }
+
+    /**
+     * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
+     * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
      * connections from being used.
      * 
      * @param name the name of the source to be removed
@@ -459,18 +520,18 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * @return the source with the supplied name that was removed, or null if no existing source matching the supplied name could
      *         be found
      * @throws InterruptedException if the thread is interrupted while awaiting closing of the connections
+     * @see #removeSource(String)
      */
     public RepositorySource removeSource( String name,
                                           long timeToAwait,
                                           TimeUnit unit ) throws InterruptedException {
         try {
             this.sourcesLock.writeLock().lock();
-            for (RepositoryConnectionPool existingPool : this.pools) {
-                if (existingPool.getRepositorySource().getName().equals(name)) {
-                    // Shut down the source ...
-                    existingPool.shutdown();
-                    if (timeToAwait > 0L) existingPool.awaitTermination(timeToAwait, unit);
-                }
+            RepositoryConnectionPool existingPool = this.pools.remove(name);
+            if (existingPool != null) {
+                // Then shut down the source gracefully (and don't wait) ...
+                existingPool.shutdown();
+                if (timeToAwait > 0L) existingPool.awaitTermination(timeToAwait, unit);
                 return existingPool.getRepositorySource();
             }
         } finally {
@@ -487,10 +548,8 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     public RepositoryConnection createConnection( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositoryConnectionPool existingPool : this.pools) {
-                RepositorySource source = existingPool.getRepositorySource();
-                if (source.getName().equals(sourceName)) return existingPool.getConnection();
-            }
+            RepositoryConnectionPool existingPool = this.pools.get(sourceName);
+            if (existingPool != null) return existingPool.getConnection();
             RepositoryConnectionFactory delegate = this.delegate;
             if (delegate != null) {
                 return delegate.createConnection(sourceName);
@@ -499,66 +558,5 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
             this.sourcesLock.readLock().unlock();
         }
         return null;
-    }
-
-    protected interface ObservationBus extends Observable, Observer {
-        boolean hasObservers();
-
-        void shutdown();
-    }
-
-    protected class InMemoryObservationBus implements ObservationBus {
-        private final ChangeObservers observers = new ChangeObservers();
-
-        protected InMemoryObservationBus() {
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.ChangeObserver)
-         */
-        public boolean register( ChangeObserver observer ) {
-            return observers.register(observer);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.ChangeObserver)
-         */
-        public boolean unregister( ChangeObserver observer ) {
-            return observers.unregister(observer);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
-         */
-        public void notify( Changes changes ) {
-            if (changes != null) {
-                // Broadcast the changes to the registered observers ...
-                observers.broadcast(changes);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.RepositoryLibrary.ObservationBus#hasObservers()
-         */
-        public boolean hasObservers() {
-            return !observers.isEmpty();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.repository.RepositoryLibrary.ObservationBus#shutdown()
-         */
-        public void shutdown() {
-            observers.shutdown();
-        }
     }
 }
