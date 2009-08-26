@@ -458,7 +458,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                     } finally {
                         try {
                             if (checkForContents != null) checkForContents.close();
-                            checkForContents.close();
                         } catch (Exception ignore) {
                         }
                     }

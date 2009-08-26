@@ -101,8 +101,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToCreateFileWithContent() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -111,11 +114,17 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldRespectConflictBehaviorOnCreate() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     "Should not overwrite".getBytes()).ifAbsent().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, "Should not overwrite".getBytes())
+             .ifAbsent()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -147,10 +156,13 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         assertThat(newFolder.exists(), is(true));
         assertThat(newFolder.isDirectory(), is(true));
         System.out.println("Created new folder at: " + newFolder.getCanonicalPath());
-        
+
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFolder/testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -170,8 +182,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToCopyFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -185,8 +200,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCopyFolder() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFolder/testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -203,8 +221,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToMoveFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -222,8 +243,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToMoveFolder() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFolder/testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -245,8 +269,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToDeleteFolderWithContents() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFolder = new File(testWorkspaceRoot, "testFolder");
         assertTrue(newFolder.exists());
@@ -264,8 +291,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToDeleteFile() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFolder = new File(testWorkspaceRoot, "testFolder");
         assertTrue(newFolder.exists());
@@ -289,8 +319,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.useWorkspace("otherWorkspace");
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(otherWorkspaceRoot, "testFolder/testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -313,8 +346,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCloneFile() {
         graph.useWorkspace("otherWorkspace");
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(otherWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -345,11 +381,17 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldNotBeAbleToReorderFile() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         graph.create("/testFolder/testFile2").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile2/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                 TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile2/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFolder = new File(testWorkspaceRoot, "testFolder");
         assertTrue(newFolder.exists());
@@ -367,8 +409,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToRenameFolder() {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFolder/testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -387,8 +432,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToRenameFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -407,8 +455,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.useWorkspace("newWorkspace");
 
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(newWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -417,8 +468,11 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToCloneWorkspace() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertContents(newFile, TEST_CONTENT);
@@ -474,9 +528,13 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
             fail(ioe.getMessage());
             return;
         } finally {
-            try {
-                fis.close();
-            } catch (Exception ignore) {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (Exception ignore) {
+                } finally {
+                    fis = null;
+                }
             }
         }
     }
