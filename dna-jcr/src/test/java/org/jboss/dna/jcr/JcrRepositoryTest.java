@@ -203,6 +203,7 @@ public class JcrRepositoryTest {
         repository.login();
     }
 
+    @SuppressWarnings( "cast" )
     @Test
     public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
         LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
@@ -210,7 +211,7 @@ public class JcrRepositoryTest {
 
         Subject subject = login.getSubject();
 
-        Session session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+        Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
 
             @SuppressWarnings( "synthetic-access" )
             public Session run() throws Exception {
