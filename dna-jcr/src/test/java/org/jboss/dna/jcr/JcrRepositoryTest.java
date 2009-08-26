@@ -210,7 +210,7 @@ public class JcrRepositoryTest {
 
         Subject subject = login.getSubject();
 
-        Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+        Session session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
 
             @SuppressWarnings( "synthetic-access" )
             public Session run() throws Exception {
