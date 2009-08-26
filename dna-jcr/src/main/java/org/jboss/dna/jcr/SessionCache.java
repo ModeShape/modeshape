@@ -76,6 +76,7 @@ import org.jboss.dna.graph.session.GraphSession.Node;
 import org.jboss.dna.graph.session.GraphSession.NodeId;
 import org.jboss.dna.graph.session.GraphSession.PropertyInfo;
 import org.jboss.dna.graph.session.GraphSession.Status;
+import org.jboss.dna.jcr.JcrRepository.Option;
 
 /**
  * The class that manages the session's information that has been locally-cached after reading from the underlying {@link Graph
@@ -172,6 +173,12 @@ class SessionCache {
         // Create the graph session, customized for JCR ...
         this.graphSession = new GraphSession<JcrNodePayload, JcrPropertyPayload>(this.store, this.workspaceName,
                                                                                  new JcrNodeOperations(), new JcrAuthorizer());
+        // Set the read-depth if we can...
+        try {
+            int depth = Integer.parseInt(session.repository().getOptions().get(Option.READ_DEPTH));
+            if (depth > 0) this.graphSession.setDepthForLoadingNodes(depth);
+        } catch (RuntimeException e) {
+        }
     }
 
     final GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession() {
@@ -937,8 +944,7 @@ class SessionCache {
                                                                 true,
                                                                 skipProtected);
                 if (definition == null) {
-                    throw new ConstraintViolationException(
-                                                           JcrI18n.noDefinition.text("property",
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
                                                                                      readable(payload.getPrimaryTypeName()),
@@ -1114,8 +1120,7 @@ class SessionCache {
                                                                 newValues,
                                                                 skipProtected);
                 if (definition == null) {
-                    throw new ConstraintViolationException(
-                                                           JcrI18n.noDefinition.text("property",
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
                                                                                      readable(payload.getPrimaryTypeName()),
@@ -1249,8 +1254,8 @@ class SessionCache {
                     // The node definition changed, so try to set the property ...
                     NodeEditor newChildEditor = getEditorFor(existingChild);
                     try {
-                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                      defn.getId().getString());
+                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, defn.getId()
+                                                                                                               .getString());
                         newChildEditor.setProperty(DnaIntLexicon.NODE_DEFINITON, value);
                     } catch (ConstraintViolationException e) {
                         // We can't set this property on the node (according to the node definition).

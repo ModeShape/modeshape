@@ -132,7 +132,12 @@ public class JcrRepository implements Repository {
          * Also, any use of the '@' character in source and workspace names must be escaped with a preceding backslash.
          * </p>
          */
-        SYSTEM_SOURCE_NAME;
+        SYSTEM_SOURCE_NAME,
+
+        /**
+         * The depth of the subgraphs that should be loaded the connectors. The default value is 1.
+         */
+        READ_DEPTH;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -176,6 +181,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
          */
         public static final String JAAS_LOGIN_CONFIG_NAME = "dna-jcr";
+
+        /**
+         * The default value for the {@link Option#READ_DEPTH} option is {@value} .
+         */
+        public static final String READ_DEPTH = "1";
     }
 
     /**
@@ -188,6 +198,7 @@ public class JcrRepository implements Repository {
         EnumMap<Option, String> defaults = new EnumMap<Option, String>(Option.class);
         defaults.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
         defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
+        defaults.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 

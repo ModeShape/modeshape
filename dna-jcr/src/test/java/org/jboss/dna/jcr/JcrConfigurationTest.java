@@ -48,6 +48,7 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.JcrRepository.DefaultOption;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.repository.DnaConfiguration;
 import org.jboss.dna.repository.DnaLexicon;
@@ -246,7 +247,8 @@ public class JcrConfigurationTest {
 
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(Option.JAAS_LOGIN_CONFIG_NAME, "test");
-        options.put(Option.PROJECT_NODE_TYPES, "false");
+        options.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
+        options.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
         assertThat(repository.getOptions(), is(options));
     }
 

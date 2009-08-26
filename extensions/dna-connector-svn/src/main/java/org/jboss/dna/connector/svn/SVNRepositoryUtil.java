@@ -1,6 +1,7 @@
 package org.jboss.dna.connector.svn;
 
 import java.util.Collection;
+import java.util.Collections;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.tmatesoft.svn.core.SVNDirEntry;
@@ -159,16 +160,15 @@ public class SVNRepositoryUtil {
     /**
      * @param repos
      * @param path
-     * @return a collect of entry from directory path.
+     * @return a collect of entry from directory path; never null
      */
     @SuppressWarnings( "unchecked" )
     public static Collection<SVNDirEntry> getDir( SVNRepository repos,
                                                   String path ) {
-        Collection<SVNDirEntry> entries = null;
         try {
             return repos.getDir(path, -1, null, (Collection<SVNDirEntry>)null);
         } catch (SVNException e) {
-            return entries;
+            return Collections.emptyList();
         }
     }
 

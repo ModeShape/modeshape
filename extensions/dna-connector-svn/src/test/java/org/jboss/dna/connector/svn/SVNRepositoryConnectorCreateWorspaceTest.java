@@ -85,4 +85,10 @@ public class SVNRepositoryConnectorCreateWorspaceTest extends WorkspaceConnector
         assertThat(workspaceNames.isEmpty(), is(true));
     }
 
+    @Test
+    @Override
+    public void shouldReadTheChildrenOfTheRootNodeInEachWorkspace() {
+        super.shouldReadTheChildrenOfTheRootNodeInEachWorkspace();
+    }
+
 }

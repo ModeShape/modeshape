@@ -29,6 +29,8 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
@@ -63,6 +65,7 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
@@ -128,6 +131,146 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         this.accessData = accessData;
     }
 
+    protected boolean readNode( String workspaceName,
+                                Location myLocation,
+                                List<Property> properties,
+                                List<Location> children,
+                                Request request ) {
+
+        // Get the SVNRepository object that represents the workspace ...
+        SVNRepository workspaceRoot = getWorkspaceDirectory(workspaceName);
+        if (workspaceRoot == null) {
+            request.setError(new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(workspaceName)));
+            return false;
+        }
+        Path requestedPath = getPathFor(myLocation, request);
+        checkThePath(requestedPath, request); // same-name-sibling indexes are not supported
+
+        if (requestedPath.isRoot()) {
+            // workspace root must be a directory
+            if (children != null) {
+                final Collection<SVNDirEntry> entries = SVNRepositoryUtil.getDir(workspaceRoot, "");
+                for (SVNDirEntry entry : entries) {
+                    // All of the children of a directory will be another directory or a file, but never a "jcr:content" node ...
+                    String localName = entry.getName();
+                    Name childName = nameFactory().create(defaultNamespaceUri, localName);
+                    Path childPath = pathFactory().create(requestedPath, childName);
+                    children.add(Location.create(childPath));
+                }
+            }
+            // There are no properties on the root ...
+        } else {
+            try {
+                // Generate the properties for this File object ...
+                PropertyFactory factory = getExecutionContext().getPropertyFactory();
+                DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
+
+                // Figure out the kind of node this represents ...
+                SVNNodeKind kind = getNodeKind(workspaceRoot, requestedPath, accessData.getRepositoryRootUrl(), workspaceName);
+                if (kind == SVNNodeKind.DIR) {
+                    String directoryPath = getPathAsString(requestedPath);
+                    if (!accessData.getRepositoryRootUrl().equals(workspaceName)) {
+                        directoryPath = directoryPath.substring(1);
+                    }
+                    if (children != null) {
+                        // Decide how to represent the children ...
+                        Collection<SVNDirEntry> dirEntries = SVNRepositoryUtil.getDir(workspaceRoot, directoryPath);
+                        for (SVNDirEntry entry : dirEntries) {
+                            // All of the children of a directory will be another directory or a file,
+                            // but never a "jcr:content" node ...
+                            String localName = entry.getName();
+                            Name childName = nameFactory().create(defaultNamespaceUri, localName);
+                            Path childPath = pathFactory().create(requestedPath, childName);
+                            children.add(Location.create(childPath));
+                        }
+                    }
+                    if (properties != null) {
+                        // Load the properties for this directory ......
+                        properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+                        SVNDirEntry entry = getEntryInfo(workspaceRoot, directoryPath);
+                        if (entry != null) {
+                            properties.add(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
+                        }
+                    }
+                } else {
+                    // It's not a directory, so must be a file; the only child of an nt:file is the "jcr:content" node
+                    // ...
+                    if (requestedPath.endsWith(JcrLexicon.CONTENT)) {
+                        // There are never any children of these nodes, just properties ...
+                        if (properties != null) {
+                            String contentPath = getPathAsString(requestedPath.getParent());
+                            if (!accessData.getRepositoryRootUrl().equals(workspaceName)) {
+                                contentPath = contentPath.substring(1);
+                            }
+                            SVNDirEntry entry = getEntryInfo(workspaceRoot, contentPath);
+                            if (entry != null) {
+                                // The request is to get properties of the "jcr:content" child node ...
+                                properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
+                                properties.add(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
+                            }
+
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            SVNProperties fileProperties = new SVNProperties();
+                            getData(contentPath, fileProperties, os);
+                            String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
+                            if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
+                            properties.add(factory.create(JcrLexicon.MIMETYPE, mimeType));
+
+                            if (os.toByteArray().length > 0) {
+                                // Now put the file's content into the "jcr:data" property ...
+                                BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                                properties.add(factory.create(JcrLexicon.DATA, binaryFactory.create(os.toByteArray())));
+                            }
+                        }
+                    } else {
+                        // Determine the corresponding file path for this object ...
+                        String filePath = getPathAsString(requestedPath);
+                        if (!accessData.getRepositoryRootUrl().equals(workspaceName)) {
+                            filePath = filePath.substring(1);
+                        }
+                        if (children != null) {
+                            // Not a "jcr:content" child node but rather an nt:file node, so add the child ...
+                            Path contentPath = pathFactory().create(requestedPath, JcrLexicon.CONTENT);
+                            children.add(Location.create(contentPath));
+                        }
+                        if (properties != null) {
+                            // Now add the properties to "nt:file" ...
+                            properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            SVNProperties fileProperties = new SVNProperties();
+                            getData(filePath, fileProperties, os);
+                            String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
+                            if (created != null) {
+                                properties.add(factory.create(JcrLexicon.CREATED, dateFactory.create(created)));
+                            }
+                        }
+                    }
+                }
+            } catch (SVNException e) {
+                request.setError(e);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadNodeRequest)
+     */
+    @Override
+    public void process( ReadNodeRequest request ) {
+        logger.trace(request.toString());
+        List<Location> children = new LinkedList<Location>();
+        List<Property> properties = new LinkedList<Property>();
+        if (readNode(request.inWorkspace(), request.at(), properties, children, request)) {
+            request.addChildren(children);
+            request.addProperties(properties);
+            request.setActualLocationOfNode(request.at());
+            setCacheableInfo(request);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -136,91 +279,13 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     @Override
     public void process( ReadAllChildrenRequest request ) {
         logger.trace(request.toString());
+        List<Location> children = new LinkedList<Location>();
+        if (readNode(request.inWorkspace(), request.of(), null, children, request)) {
+            request.addChildren(children);
+            request.setActualLocationOfNode(request.of());
+            setCacheableInfo(request);
+        }
 
-        // Get the SVNRepository object that represents the workspace ...
-        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
-        if (workspaceRoot == null) {
-            request.setError(new InvalidWorkspaceException(
-                                                           SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(request.inWorkspace())));
-            return;
-        }
-        Location myLocation = request.of();
-        Path requestedPath = getPathFor(myLocation, request);
-        // svn connector does not support same name sibling
-        checkThePath(requestedPath, request);
-        // requested path is the root
-        if (requestedPath.isRoot()) {
-            // workspace root must be a directory
-            final Collection<SVNDirEntry> entries = SVNRepositoryUtil.getDir(workspaceRoot, "");
-            for (SVNDirEntry entry : entries) {
-                // Decide how to represent the children ...
-                if (entry.getKind() == SVNNodeKind.DIR) {
-                    // Create a Location for each file and directory contained by the parent directory ...
-                    String localName = entry.getName();
-                    Name childName = nameFactory().create(defaultNamespaceUri, localName);
-                    Path childPath = pathFactory().create(requestedPath, childName);
-                    request.addChild(Location.create(childPath));
-                } else if (entry.getKind() == SVNNodeKind.FILE) {
-                    // The parent is a file, and the path may refer to the node that is either the "nt:file" parent
-                    // node, or the child "jcr:content" node...
-                    String localName = entry.getName();
-                    Path contentPath = pathFactory().create(BACK_SLASH + localName);
-                    if (!contentPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                        Location location = Location.create(pathFactory().create(contentPath, JcrLexicon.CONTENT));
-                        request.addChild(location);
-                    }
-                }
-            }
-        } else {
-            try {
-                SVNNodeKind kind = getNodeKind(workspaceRoot,
-                                               requestedPath,
-                                               accessData.getRepositoryRootUrl(),
-                                               request.inWorkspace());
-                if (kind == SVNNodeKind.DIR) {
-                    String directoryPath = getPathAsString(requestedPath);
-                    // Decide how to represent the children ...
-                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
-                        directoryPath = directoryPath.substring(1);
-                    }
-                    Collection<SVNDirEntry> dirEntries = SVNRepositoryUtil.getDir(workspaceRoot, directoryPath);
-                    for (SVNDirEntry entry : dirEntries) {
-                        // Decide how to represent the children ...
-                        if (entry.getKind() == SVNNodeKind.DIR) {
-                            // Create a Location for each file and directory contained by the parent directory ...
-                            String localName = entry.getName();
-                            Name childName = nameFactory().create(defaultNamespaceUri, localName);
-                            Path childPath = pathFactory().create(requestedPath, childName);
-                            request.addChild(Location.create(childPath));
-                        } else if (entry.getKind() == SVNNodeKind.FILE) {
-                            // The parent is a file, and the path may refer to the node that is either the "nt:file" parent
-                            // node, or the child "jcr:content" node...
-                            String localName = entry.getName();
-                            Path contentPath = pathFactory().create(getPathAsString(requestedPath) + BACK_SLASH + localName);
-                            Location content = Location.create(pathFactory().create(contentPath, JcrLexicon.CONTENT));
-                            request.addChild(content);
-                        }
-                    }
-                } else {
-                    if (!requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                        // Use leading '/' on the requested path
-                        // repository root URL is exactly the same as the workspace
-                        // Get the parent path
-                        String filePath = getPathAsString(requestedPath);
-                        if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
-                            filePath = filePath.substring(1);
-                        }
-                        Path contentPath = pathFactory().create(requestedPath, JcrLexicon.CONTENT);
-                        Location content = Location.create(contentPath);
-                        request.addChild(content);
-                    }
-                }
-            } catch (SVNException e) {
-                request.setError(e);
-            }
-        }
-        request.setActualLocationOfNode(myLocation);
-        setCacheableInfo(request);
     }
 
     /**
@@ -231,85 +296,11 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     @Override
     public void process( ReadAllPropertiesRequest request ) {
         logger.trace(request.toString());
-
-        // Get the SVNRepository object that represents the workspace ...
-        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
-        if (workspaceRoot == null) {
-            request.setError(new InvalidWorkspaceException(
-                                                           SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(request.inWorkspace())));
-            return;
-        }
-
-        // Find the existing file for the parent ...
-        Location myLocation = request.at();
-        Path requestedPath = getPathFor(myLocation, request);
-        if (requestedPath.isRoot()) {
-            // There are no properties on the root ...
-            request.setActualLocationOfNode(myLocation);
+        List<Property> properties = new LinkedList<Property>();
+        if (readNode(request.inWorkspace(), request.at(), properties, null, request)) {
+            request.addProperties(properties);
+            request.setActualLocationOfNode(request.at());
             setCacheableInfo(request);
-            return;
-        }
-
-        try {
-
-            SVNNodeKind kind = getNodeKind(workspaceRoot, requestedPath, accessData.getRepositoryRootUrl(), request.inWorkspace());
-            // Generate the properties for this File object ...
-            PropertyFactory factory = getExecutionContext().getPropertyFactory();
-            DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
-            // Note that we don't have 'created' timestamps, just last modified, so we'll have to use them
-            if (kind == SVNNodeKind.DIR) {
-                String directoryPath = getPathAsString(requestedPath);
-                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
-                    directoryPath = directoryPath.substring(1);
-                }
-                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
-                SVNDirEntry entry = getEntryInfo(workspaceRoot, directoryPath);
-                request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
-            } else {
-                if (requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                    String contentPath = getPathAsString(requestedPath.getParent());
-                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
-                        contentPath = contentPath.substring(1);
-                    }
-                    SVNDirEntry entry = getEntryInfo(workspaceRoot, contentPath);
-                    // The request is to get properties of the "jcr:content" child node ...
-                    request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
-                    request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
-
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    SVNProperties fileProperties = new SVNProperties();
-                    getData(contentPath, fileProperties, os);
-                    String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
-                    if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
-                    request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
-
-                    if (os.toByteArray().length > 0) {
-                        // Now put the file's content into the "jcr:data" property ...
-                        BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
-                        request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(os.toByteArray())));
-                    }
-
-                } else {
-                    String filePath = getPathAsString(requestedPath);
-                    if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
-                        filePath = filePath.substring(1);
-                    }
-                    // The request is to get properties for the node representing the file
-                    request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    SVNProperties fileProperties = new SVNProperties();
-                    getData(filePath, fileProperties, os);
-                    String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
-                    if (created != null) {
-                        request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(created)));
-                    }
-                }
-            }
-            request.setActualLocationOfNode(myLocation);
-            setCacheableInfo(request);
-
-        } catch (SVNException e) {
-            request.setError(e);
         }
     }
 
@@ -626,7 +617,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         String myPath;
         if (getPathAsString(requestedPath).trim().equals("/")) {
             myPath = getPathAsString(requestedPath);
-        } else if (requestedPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+        } else if (requestedPath.endsWith(JcrLexicon.CONTENT)) {
             myPath = getPathAsString(requestedPath.getParent());
         } else {
             // directory and file
@@ -663,7 +654,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * 
      * @param repos
      * @param path - the path
-     * @return - the {@link SVNDirEntry}.
+     * @return - the {@link SVNDirEntry}, or null if there is no such entry
      */
     protected SVNDirEntry getEntryInfo( SVNRepository repos,
                                         String path ) {
@@ -1025,7 +1016,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         assert repositoryRootUrl != null;
         assert inWorkspace != null;
         // See if the path is a "jcr:content" node ...
-        if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+        if (path.endsWith(JcrLexicon.CONTENT)) {
             // We only want to use the parent path to find the actual file ...
             path = path.getParent();
         }

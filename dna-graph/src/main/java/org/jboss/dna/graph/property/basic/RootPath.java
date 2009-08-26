@@ -32,6 +32,7 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.InvalidPathException;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 
@@ -109,6 +110,27 @@ public class RootPath extends AbstractPath {
     @Override
     public Segment getLastSegment() {
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#endsWith(org.jboss.dna.graph.property.Name)
+     */
+    @Override
+    public boolean endsWith( Name nameOfLastSegment ) {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#endsWith(org.jboss.dna.graph.property.Name, int)
+     */
+    @Override
+    public boolean endsWith( Name nameOfLastSegment,
+                             int snsIndex ) {
+        return false;
     }
 
     /**

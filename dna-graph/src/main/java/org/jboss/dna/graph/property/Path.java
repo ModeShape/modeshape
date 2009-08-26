@@ -398,6 +398,25 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public Segment getLastSegment();
 
     /**
+     * Determine if the path's {@link #getLastSegment()} has the supplied name and no {@link Segment#getIndex() SNS index}.
+     * 
+     * @param nameOfLastSegment the name
+     * @return return true if the supplied name is the name in the path's last segment (and there is no SNS index), or false
+     *         otherwise
+     */
+    public boolean endsWith( Name nameOfLastSegment );
+
+    /**
+     * Determine if the path's {@link #getLastSegment()} has the supplied name and {@link Segment#getIndex() SNS index}.
+     * 
+     * @param nameOfLastSegment the name
+     * @param snsIndex the SNS index
+     * @return return true if the path's last segment has the supplied name and SNS, or false otherwise
+     */
+    public boolean endsWith( Name nameOfLastSegment,
+                             int snsIndex );
+
+    /**
      * Get the segment at the supplied index.
      * 
      * @param index the index

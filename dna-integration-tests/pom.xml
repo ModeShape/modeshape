@@ -81,6 +81,12 @@
 			<version>${pom.version}</version>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.jboss.dna</groupId>
+            <artifactId>dna-connector-svn</artifactId>
+            <version>${pom.version}</version>
+            <scope>test</scope>
+        </dependency>
 
 		<!-- 
           JPA Connector Dependencies

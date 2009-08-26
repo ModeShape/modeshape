@@ -35,6 +35,7 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.InvalidPathException;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 
@@ -182,6 +183,27 @@ public abstract class AbstractPath implements Path {
      */
     public Path.Segment getLastSegment() {
         return this.getSegmentsList().get(size() - 1);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.Path#endsWith(org.jboss.dna.graph.property.Name)
+     */
+    public boolean endsWith( Name nameOfLastSegment ) {
+        Segment segment = getLastSegment();
+        return segment != null && segment.getName().equals(nameOfLastSegment) && !segment.hasIndex();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.Path#endsWith(org.jboss.dna.graph.property.Name, int)
+     */
+    public boolean endsWith( Name nameOfLastSegment,
+                             int snsIndex ) {
+        Segment segment = getLastSegment();
+        return segment != null && segment.getName().equals(nameOfLastSegment) && segment.getIndex() == snsIndex;
     }
 
     /**
