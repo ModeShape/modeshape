@@ -1588,8 +1588,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(
-                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
+                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
+                                                                                                  .getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 
@@ -1670,7 +1670,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Item#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) throws RepositoryException {
-        this.cache.refresh(this.nodeId, keepChanges);
+        this.cache.refresh(this.nodeId, location.getPath(), keepChanges);
     }
 
     /**

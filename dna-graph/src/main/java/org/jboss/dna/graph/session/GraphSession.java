@@ -1515,29 +1515,53 @@ public class GraphSession<Payload, PropertyPayload> {
                 assert childrenByName != null;
                 org.jboss.dna.graph.Node persistentNode = persistentInfoForRefreshedNodes.getNode(location);
                 assert !persistentNode.getChildren().isEmpty();
-                // Find the map of old Node objects keyed by their identifier ...
-                Map<NodeId, Node<Payload, PropertyPayload>> oldChildren = new HashMap<NodeId, Node<Payload, PropertyPayload>>();
-                for (Node<Payload, PropertyPayload> oldChild : childrenByName.values()) {
-                    oldChildren.put(oldChild.getNodeId(), oldChild);
+
+                // We need to keep the children that have been modified (or are ancestors of modified children),
+                // so build a list of the children that SHOULD NOT be replaced with the persistent info ...
+                Map<Location, Node<Payload, PropertyPayload>> childrenToKeep = new HashMap<Location, Node<Payload, PropertyPayload>>();
+                for (Node<Payload, PropertyPayload> existing : childrenByName.values()) {
+                    if (existing.isChanged(true)) {
+                        childrenToKeep.put(existing.getLocation(), existing);
+                    } else {
+                        // Otherwise, remove the child from the cache since we won't be needing it anymore ...
+                        cache.nodes.remove(existing.getNodeId());
+                        assert !cache.changeDependencies.containsKey(existing.getNodeId());
+                        existing.parent = null;
+                    }
                 }
+
+                // Now, clear the children ...
                 childrenByName.clear();
+
+                // And add the persistent children ...
                 for (Location location : persistentNode.getChildren()) {
                     Name childName = location.getPath().getLastSegment().getName();
-                    NodeId nodeId = cache.idFactory.create();
-                    Node<Payload, PropertyPayload> child = oldChildren.remove(nodeId);
-                    if (child == null) {
-                        child = cache.createNode(this, nodeId, location);
-                        cache.nodes.put(child.getNodeId(), child);
-                        assert child.getName().equals(childName);
-                    }
-                    assert child.parent == this;
                     List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(childName);
-                    currentChildren.add(child);
-                    // Create a segment with the SNS ...
-                    Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
-                    child.updateLocation(segment);
-                    // TODO: Can the location be different? If so, doesn't that mean that the change requests
-                    // have to be updated???
+                    // Find if there was an existing child that is supposed to stay ...
+                    Node<Payload, PropertyPayload> existingChild = childrenToKeep.get(location);
+                    if (existingChild != null) {
+                        // The existing child is supposed to stay, since it has changes ...
+                        currentChildren.add(existingChild);
+                        if (currentChildren.size() != existingChild.getPath().getLastSegment().getIndex()) {
+                            // Make sure the SNS index is correct ...
+                            Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+                            existingChild.updateLocation(segment);
+                            // TODO: Can the location be different? If so, doesn't that mean that the change requests
+                            // have to be updated???
+                        }
+                    } else {
+                        // The existing child (if there was one) is to be refreshed ...
+                        NodeId nodeId = cache.idFactory.create();
+                        Node<Payload, PropertyPayload> replacementChild = cache.createNode(this, nodeId, location);
+                        cache.nodes.put(replacementChild.getNodeId(), replacementChild);
+                        assert replacementChild.getName().equals(childName);
+                        assert replacementChild.parent == this;
+                        // Add it to the parent node ...
+                        currentChildren.add(replacementChild);
+                        // Create a segment with the SNS ...
+                        Path.Segment segment = cache.pathFactory.createSegment(childName, currentChildren.size());
+                        replacementChild.updateLocation(segment);
+                    }
                 }
                 return;
             }

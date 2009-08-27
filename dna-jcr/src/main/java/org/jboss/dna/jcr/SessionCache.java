@@ -281,17 +281,21 @@ class SessionCache {
      * </p>
      * 
      * @param nodeId the identifier of the node that is to be saved; may not be null
+     * @param absolutePath the absolute path to the node; may not be null
      * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
      * @throws InvalidItemStateException if the node being refreshed no longer exists
      * @throws RepositoryException if any error resulting while saving the changes to the repository
      */
     public void refresh( NodeId nodeId,
+                         Path absolutePath,
                          boolean keepChanges ) throws InvalidItemStateException, RepositoryException {
         assert nodeId != null;
         try {
-            Node<JcrNodePayload, JcrPropertyPayload> node = graphSession.findNodeWith(nodeId);
+            Node<JcrNodePayload, JcrPropertyPayload> node = graphSession.findNodeWith(nodeId, absolutePath);
             graphSession.refresh(node, keepChanges);
         } catch (InvalidStateException e) {
+            throw new InvalidItemStateException(e.getLocalizedMessage());
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
             throw new InvalidItemStateException(e.getLocalizedMessage());
         } catch (RepositorySourceException e) {
             throw new RepositoryException(e.getLocalizedMessage());
