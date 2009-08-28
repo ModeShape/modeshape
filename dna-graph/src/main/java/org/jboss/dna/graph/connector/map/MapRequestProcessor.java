@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.connector.map;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -132,17 +133,20 @@ public class MapRequestProcessor extends RequestProcessor {
         // Look up the new parent, which must exist ...
         Path newParentPath = request.into().getPath();
         MapNode newParent = newWorkspace.getNode(newParentPath);
+        Set<Location> removedExistingNodes = new HashSet<Location>();
         MapNode newNode = workspace.cloneNode(getExecutionContext(),
                                               node,
                                               newWorkspace,
                                               newParent,
                                               request.desiredName(),
                                               request.desiredSegment(),
-                                              request.removeExisting());
+                                              request.removeExisting(),
+                                              removedExistingNodes);
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
         Location oldLocation = getActualLocation(request.from(), node);
         Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
+        request.setRemovedNodes(Collections.unmodifiableSet(removedExistingNodes));
         recordChange(request);
     }
 
@@ -278,6 +282,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode beforeNode = request.before() != null ? getTargetNode(workspace, request, request.before()) : null;
         MapNode node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
+        if (request.hasError()) return; // if beforeNode could not be found
         // Look up the new parent, which must exist ...
         Path newParentPath;
 
@@ -298,6 +303,12 @@ public class MapRequestProcessor extends RequestProcessor {
         }
 
         MapNode newParent = workspace.getNode(newParentPath);
+        if (newParent == null) {
+            Path lowestExisting = workspace.getLowestExistingPath(newParentPath);
+            request.setError(new PathNotFoundException(request.into(), lowestExisting,
+                                                       GraphI18n.inMemoryNodeDoesNotExist.text(newParentPath)));
+            return;
+        }
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
         assert node.getParent() == newParent;
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());

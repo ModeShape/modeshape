@@ -961,7 +961,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                             oos.close();
                         }
                     }
-                    
+
                     // The new large values were recorded and associated with the properties entity during reserialization.
                     // However, any values no longer used now need to be removed ...
                     if (hadLargeValues) {
@@ -1427,6 +1427,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         logger.trace(request.toString());
         Location actualFromLocation = null;
         Location actualToLocation = null;
+        Set<Location> removedLocations = null;
         try {
             // Find the workspaces ...
             WorkspaceEntity fromWorkspace = getExistingWorkspace(request.fromWorkspace(), request);
@@ -1652,6 +1653,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                         }
                         // Remove from the cache of children locations all entries for deleted nodes ...
                         cache.removeBranch(intoWorkspaceId, deletedLocations.values());
+                        removedLocations = Collections.unmodifiableSet(new HashSet<Location>(deletedLocations.values()));
                     }
                     LargeValueEntity.deleteUnused(entities);
                 }
@@ -1668,6 +1670,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualFromLocation, actualToLocation);
+        request.setRemovedNodes(removedLocations);
         recordChange(request);
     }
 
@@ -1932,7 +1935,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         }
 
         assert beforeEntity != null;
-        
+
         Name childName = oldPath.getLastSegment().getName();
         String childLocalName = fromEntity.getChildName();
         NamespaceEntity ns = fromEntity.getChildNamespace();
@@ -2084,8 +2087,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                 } else {
 
                     ActualLocation actualBeforeLocation = getActualLocation(workspace, beforeLocation);
-                    ActualLocation actualIntoLocation = getActualLocation(workspace,
-                                                                          Location.create(beforeLocation.getPath().getParent()));
+                    ActualLocation actualIntoLocation = getActualLocation(workspace, Location.create(beforeLocation.getPath()
+                                                                                                                   .getParent()));
 
                     actualNewLocation = moveNodeBefore(workspace, actualLocation, actualIntoLocation, actualBeforeLocation);
                 }
@@ -2429,7 +2432,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             props.setData(baos.toByteArray());
             props.setPropertyCount(numProperties);
-            
+
             // Record the changes to the references ...
             if (refs != null && refs.hasWritten()) {
                 for (Reference reference : refs.getWritten()) {
@@ -2555,7 +2558,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
             Path fullPath = pathFactory.createAbsolutePath(segments);
-            Location newLocation = original.with(fullPath); 
+            Location newLocation = original.with(fullPath);
             cache.addNewNode(workspaceId, newLocation);
             return new ActualLocation(newLocation, nodeUuidString, originalEntity);
         }
@@ -2578,13 +2581,13 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (cachedParent != null) {
             // We know the UUID of the parent, so we can find the child a little faster ...
             ChildEntity child = findByPathSegment(workspaceId, cachedParent.getUuid().toString(), path.getLastSegment());
-            
+
             // If there is no matching child, throw an exception
             if (child == null) {
                 // Could not find the node given the supplied path, so find the lowest path that does exist ...
                 throw new PathNotFoundException(original, cachedParent.getPath(), JpaConnectorI18n.nodeDoesNotExist.text(path));
             }
-            
+
             uuidString = child.getId().getChildUuidString();
             Location newLocation = original.with(UUID.fromString(uuidString));
             cache.addNewNode(workspaceId, newLocation);
@@ -2614,7 +2617,8 @@ public class BasicRequestProcessor extends RequestProcessor {
         return new ActualLocation(newLocation, uuidString, child);
     }
 
-    protected ChildEntity findNode( long workspaceId, String uuidString) {
+    protected ChildEntity findNode( long workspaceId,
+                                    String uuidString ) {
         Query query = entities.createNamedQuery("ChildEntity.findByChildUuid");
         query.setParameter("workspaceId", workspaceId);
         query.setParameter("childUuidString", uuidString);
@@ -2625,7 +2629,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return null;
         }
     }
-    
+
     /**
      * Find the node with the supplied path segment that is a child of the supplied parent.
      * 

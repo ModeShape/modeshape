@@ -62,6 +62,7 @@ import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.session.GraphSession.Authorizer.Action;
 import com.google.common.collect.ListMultimap;
@@ -486,7 +487,17 @@ public class GraphSession<Payload, PropertyPayload> {
         authorizer.checkPermissions(newParentPath, Action.ADD_NODE);
         authorizer.checkPermissions(nodeToMove.getParent(), Action.REMOVE);
 
-        store.move(nodeToMove).as(newName).into(newParentPath);
+        // Perform the move operation, but use a batch so that we can read the latest list of children ...
+        Results results = store.batch().move(nodeToMove).as(newName).into(newParentPath).execute();
+        MoveBranchRequest moveRequest = (MoveBranchRequest)results.getRequests().get(0);
+        Location locationAfter = moveRequest.getActualLocationAfter();
+
+        // Find the parent node in the session ...
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(locationAfter.getPath().getParent(), false);
+        if (parent != null && parent.isLoaded()) {
+            // Update the children to make them match the latest snapshot from the store ...
+            parent.synchronizeWithNewlyPersistedNode(locationAfter);
+        }
     }
 
     /**
@@ -632,6 +643,12 @@ public class GraphSession<Payload, PropertyPayload> {
         // Find the copy request to get the actual location of the copy ...
         CloneBranchRequest request = (CloneBranchRequest)results.getRequests().get(0);
         Location locationOfCopy = request.getActualLocationAfter();
+
+        // Remove from the session all of the nodes that were removed as part of this clone ...
+        for (Location removed : request.getRemovedNodes()) {
+            Node<Payload, PropertyPayload> removedNode = findNodeWith(removed.getPath(), false);
+            if (removedNode != null) removedNode.remove(false);
+        }
 
         // Find the parent node in the session ...
         Node<Payload, PropertyPayload> parent = this.findNodeWith(locationOfCopy.getPath().getParent(), false);
@@ -2097,13 +2114,26 @@ public class GraphSession<Payload, PropertyPayload> {
          * is added to a different parent. However, the locations of same-name-siblings under the parent <i>are</i> updated.
          */
         protected void remove() {
+            remove(true);
+        }
+
+        /**
+         * Remove this node from it's parent. Note that locations are <i>not</i> updated, since they will be updated if this node
+         * is added to a different parent. However, the locations of same-name-siblings under the parent <i>are</i> updated.
+         * 
+         * @param markParentAsChanged true if the parent should be marked as being changed (i.e., when changes are initiated from
+         *        within this session), or false otherwise (i.e., when changes are made to reflect the persistent state)
+         */
+        protected void remove( boolean markParentAsChanged ) {
             assert !isStale();
             assert this.parent != null;
             assert this.parent.isLoaded();
             assert this.parent.childrenByName != null;
             assert this.parent.childrenByName != cache.NO_CHILDREN;
-            this.parent.markAsChanged();
-            this.markAsChanged();
+            if (markParentAsChanged) {
+                this.parent.markAsChanged();
+                this.markAsChanged();
+            }
             Name name = getName();
             List<Node<Payload, PropertyPayload>> childrenWithSameName = this.parent.childrenByName.get(name);
             this.parent = null;

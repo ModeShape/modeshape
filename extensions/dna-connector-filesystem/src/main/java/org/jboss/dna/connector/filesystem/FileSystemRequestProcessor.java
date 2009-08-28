@@ -703,6 +703,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         }
 
         request.setActualLocations(copy.getActualLocationBefore(), copy.getActualLocationAfter());
+        request.setRemovedNodes(null);
     }
 
     /**

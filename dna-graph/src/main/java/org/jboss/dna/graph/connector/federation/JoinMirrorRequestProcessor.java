@@ -174,7 +174,8 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadNextBlockOfChildrenRequest request ) {
-        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        ReadNextBlockOfChildrenRequest source = (ReadNextBlockOfChildrenRequest)federatedRequest.getFirstProjectedRequest()
+                                                                                                .getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocationOfStartingAfterNode(source.getActualLocationOfStartingAfterNode());
         for (Location childInSource : source.getChildren()) {
@@ -324,6 +325,7 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
         CloneBranchRequest source = (CloneBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocations(source.getActualLocationBefore(), source.getActualLocationAfter());
+        request.setRemovedNodes(source.getRemovedNodes());
     }
 
     /**

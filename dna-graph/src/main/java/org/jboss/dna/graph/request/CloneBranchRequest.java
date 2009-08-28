@@ -1,5 +1,7 @@
 package org.jboss.dna.graph.request;
 
+import java.util.Collections;
+import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
@@ -33,6 +35,7 @@ public class CloneBranchRequest extends ChangeRequest {
     private final Name desiredName;
     private final Path.Segment desiredSegment;
     private final boolean removeExisting;
+    private Set<Location> removedExistingNodes;
     private Location actualFromLocation;
     private Location actualIntoLocation;
 
@@ -222,6 +225,24 @@ public class CloneBranchRequest extends ChangeRequest {
      */
     public Location getActualLocationAfter() {
         return actualIntoLocation;
+    }
+
+    /**
+     * Set the locations of the nodes that were removed by this operation, if {@link #removeExisting()} is true.
+     * 
+     * @param existingNodesThatWereRemoved the (immutable) set of existing node locations; may be null
+     */
+    public void setRemovedNodes( Set<Location> existingNodesThatWereRemoved ) {
+        this.removedExistingNodes = existingNodesThatWereRemoved;
+    }
+
+    /**
+     * Get the set of nodes that were removed because of this clone operation.
+     * 
+     * @return the immutable set of locations of the nodes that were removed; never null but possibly empty
+     */
+    public Set<Location> getRemovedNodes() {
+        return removedExistingNodes != null ? removedExistingNodes : Collections.<Location>emptySet();
     }
 
     /**

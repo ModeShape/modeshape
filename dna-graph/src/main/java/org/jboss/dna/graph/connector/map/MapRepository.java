@@ -248,7 +248,7 @@ public abstract class MapRepository {
             // Loop over each child and call this method to copy the immediate children (and below).
             // Note that this makes the copy have the same UUID as the original.
             for (MapNode originalNode : origRoot.getChildren()) {
-                original.cloneNode(context, originalNode, workspace, root, originalNode.getName().getName(), null, true);
+                original.cloneNode(context, originalNode, workspace, root, originalNode.getName().getName(), null, true, null);
             }
         }
 

@@ -1001,7 +1001,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.create("/segmentTestUuids/node1", propFactory.create(name("identifier"), "backup copy")).and();
 
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
-        // This should remove /newUuids/node1/shouldBeRemoved
+        // This should remove /segmentTestUuids/node1[1]
         graph.clone("/node1")
              .fromWorkspace(workspaceName)
              .as(segment("node1[1]"))
@@ -1011,7 +1011,9 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         /*
          * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
          */
-        // /newUuids/node1 should have been removed when the new node was added with the same UUID
+        // /segmentTestUuids/node1[1] should have been removed when the new node was added with the same UUID
+        // Now "/segmentTestUuids/node1[1]" (which was "/segmentTestUuids/node1[2]") should have same UUID as the
+        // node with "identifier=backup copy" property
         assertThat(graph.getNodeAt("/segmentTestUuids").getChildren(), hasChildren(segment("node1"), segment("node1[2]")));
         assertThat(graph.getNodeAt("/segmentTestUuids/node1[1]").getProperty("identifier"), is(nullValue()));
         assertThat(graph.getNodeAt("/segmentTestUuids/node1[2]").getProperty("identifier").getFirstValue().toString(),
@@ -1092,7 +1094,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.move("/node2").before("/node2");
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
-    }    
+    }
 
     @Test
     public void shouldMoveNodes() {
@@ -1859,7 +1861,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
-        
+
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
         Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
         assertThat(subgraph, is(notNullValue()));
@@ -1888,7 +1890,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
-        
+
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 
         graph.addValue("foo").andValue("bar").to("newProperty").on("node1");
@@ -1912,7 +1914,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
-        
+
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 
         graph.removeValue("The quick brown fox jumped over the moon. What? ").andValue("bar").from("property1").on("node1");
@@ -1934,7 +1936,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
-        
+
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 
         graph.removeValue("The quick brown fox jumped over the moon. What? ").from("noSuchProperty").on("node1");

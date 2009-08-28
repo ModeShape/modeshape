@@ -23,8 +23,10 @@
  */
 package org.jboss.dna.graph.connector.map;
 
+import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -162,6 +164,8 @@ public interface MapWorkspace {
      * @param removeExisting true if existing nodes in the new workspace with the same UUIDs as nodes in the branch rooted at
      *        {@code original} should be removed; if false, a UuidAlreadyExistsException will be thrown if a UUID conflict is
      *        detected
+     * @param removedExistingNodes the set into which should be placed all of the existing nodes that were removed as a result of
+     *        this clone operation, or null if these nodes need not be collected
      * @return the new node, which is the top of the new subgraph
      * @throws UuidAlreadyExistsException if {@code removeExisting} is true and and a UUID in the source tree already exists in
      *         the new workspace
@@ -172,7 +176,8 @@ public interface MapWorkspace {
                        MapNode newParent,
                        Name desiredName,
                        Path.Segment desiredSegment,
-                       boolean removeExisting ) throws UuidAlreadyExistsException;
+                       boolean removeExisting,
+                       Set<Location> removedExistingNodes ) throws UuidAlreadyExistsException;
 
     /**
      * Find the lowest existing node along the path.

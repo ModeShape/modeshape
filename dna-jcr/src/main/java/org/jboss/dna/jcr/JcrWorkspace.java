@@ -346,6 +346,12 @@ final class JcrWorkspace implements Workspace {
                             String path = node.getPath().getString(context.getNamespaceRegistry());
                             throw new ConstraintViolationException(JcrI18n.cannotRemoveNodeFromClone.text(path, uuid));
                         }
+                        // Check whether the node has any local changes ...
+                        if (node.isChanged(true)) {
+                            // This session has changes on nodes that will be removed as a result of the clone ...
+                            String path = node.getPath().getString(context.getNamespaceRegistry());
+                            throw new RepositoryException(JcrI18n.cannotRemoveNodeFromCloneDueToChangesInSession.text(path, uuid));
+                        }
                     }
                 }
             }

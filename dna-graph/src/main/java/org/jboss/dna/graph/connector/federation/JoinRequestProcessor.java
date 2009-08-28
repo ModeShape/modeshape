@@ -24,11 +24,14 @@
 package org.jboss.dna.graph.connector.federation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
@@ -768,7 +771,7 @@ class JoinRequestProcessor extends RequestProcessor {
      * Project the supplied location in a source into its federated location. The projection is used to find the location under
      * the supplied ancestor. Any errors are recorded on the original request.
      * 
-     * @param ancestorInFederation the ancestor in the federated repository; may not be nul
+     * @param ancestorInFederation the ancestor in the federated repository; may not be null
      * @param projection the projection that should be used; may not be null
      * @param actualSourceLocation the actual location in the source that is to be projected back into the federated repository;
      *        may not be null
@@ -786,6 +789,31 @@ class JoinRequestProcessor extends RequestProcessor {
             if (path.isAtOrBelow(ancestorPath)) {
                 return actualSourceLocation.with(path);
             }
+        }
+        // Record that there was an error projecting the results ...
+        String whereInSource = actualSourceLocation.getString(getExecutionContext().getNamespaceRegistry());
+        String msg = GraphI18n.unableToProjectSourceInformationIntoWorkspace.text(whereInSource, getSourceName(), projection);
+        originalRequest.setError(new InvalidRequestException(msg));
+        return null;
+    }
+
+    /**
+     * Project the supplied location in a source into its federated location. The projection is used to find the location under
+     * the supplied ancestor. Any errors are recorded on the original request.
+     * 
+     * @param projection the projection that should be used; may not be null
+     * @param actualSourceLocation the actual location in the source that is to be projected back into the federated repository;
+     *        may not be null
+     * @param originalRequest the original request, if there are errors; may not be null
+     * @return the location in the federated repository
+     */
+    protected Location projectToFederated( Projection projection,
+                                           Location actualSourceLocation,
+                                           Request originalRequest ) {
+        Path actualPathInSource = actualSourceLocation.getPath();
+        // Project the actual location ...
+        for (Path path : projection.getPathsInRepository(actualPathInSource, pathFactory)) {
+            return actualSourceLocation.with(path);
         }
         // Record that there was an error projecting the results ...
         String whereInSource = actualSourceLocation.getString(getExecutionContext().getNamespaceRegistry());
@@ -981,6 +1009,13 @@ class JoinRequestProcessor extends RequestProcessor {
         locationBefore = projectToFederated(request.from(), projected.getProjection(), locationBefore, request);
         locationAfter = projectToFederated(request.into(), projected.getSecondProjection(), locationAfter, request);
         request.setActualLocations(locationBefore, locationAfter);
+        if (source.removeExisting()) {
+            Set<Location> removed = new HashSet<Location>();
+            for (Location location : request.getRemovedNodes()) {
+                removed.add(projectToFederated(projected.getSecondProjection(), location, request));
+            }
+            request.setRemovedNodes(Collections.unmodifiableSet(removed));
+        }
     }
 
     /**

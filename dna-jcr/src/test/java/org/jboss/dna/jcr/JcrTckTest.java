@@ -65,6 +65,7 @@ import org.apache.jackrabbit.test.api.SetValueStringTest;
 import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
@@ -74,6 +75,7 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesVersionableT
 import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
+import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 
@@ -230,7 +232,7 @@ public class JcrTckTest {
             addTestSuite(NodeCanAddMixinTest.class);
             addTestSuite(NodeRemoveMixinTest.class);
 
-            // dna-466 addTestSuite(WorkspaceCloneReferenceableTest.class);
+            addTestSuite(WorkspaceCloneReferenceableTest.class);
             addTestSuite(WorkspaceCloneSameNameSibsTest.class);
             // addTestSuite(WorkspaceCloneTest.class);
             addTestSuite(WorkspaceCloneVersionableTest.class);
@@ -242,7 +244,7 @@ public class JcrTckTest {
             addTestSuite(WorkspaceCopySameNameSibsTest.class);
             // addTestSuite(WorkspaceCopyTest.class);
             addTestSuite(WorkspaceCopyVersionableTest.class);
-            // dna-466 addTestSuite(WorkspaceMoveReferenceableTest.class);
+            addTestSuite(WorkspaceMoveReferenceableTest.class);
             addTestSuite(WorkspaceMoveSameNameSibsTest.class);
             // addTestSuite(WorkspaceMoveTest.class);
             addTestSuite(WorkspaceMoveVersionableTest.class);

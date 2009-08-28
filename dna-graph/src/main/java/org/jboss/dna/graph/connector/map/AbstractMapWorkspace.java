@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -357,13 +358,13 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         assert this.getRoot().equals(node) != true;
         MapNode oldParent = node.getParent();
         Name oldName = node.getName().getName();
-        
+
         if (this.equals(newAbstractMapWorkspace) && node.getParent().getUuid().equals(newParent.getUuid())
             && node.equals(beforeNode)) {
             // Trivial move of a node to its parent before itself
             return;
         }
-        
+
         if (oldParent != null) {
             boolean removed = oldParent.getChildren().remove(node);
             assert removed == true;
@@ -526,7 +527,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     /**
      * {@inheritDoc}
      * 
-     * @see MapWorkspace#cloneNode(ExecutionContext, MapNode, MapWorkspace, MapNode, Name, Segment, boolean)
+     * @see MapWorkspace#cloneNode(ExecutionContext, MapNode, MapWorkspace, MapNode, Name, Segment, boolean, Set)
      */
     public MapNode cloneNode( ExecutionContext context,
                               MapNode original,
@@ -534,7 +535,8 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
                               MapNode newParent,
                               Name desiredName,
                               Segment desiredSegment,
-                              boolean removeExisting ) throws UuidAlreadyExistsException {
+                              boolean removeExisting,
+                              Set<Location> removedExistingNodes ) throws UuidAlreadyExistsException {
         assert context != null;
         assert original != null;
         assert newWorkspace != null;
@@ -543,17 +545,23 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         Set<UUID> uuidsInFromBranch = getUuidsUnderNode(original);
         MapNode existing;
 
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+
         // TODO: Need to handle removing/throwing root node
         if (removeExisting) {
-
+            // Remove all of the nodes that have a UUID from under the original node, but DO NOT yet remove
+            // a node that has the UUID of the original node (as this will be handled later) ...
             for (UUID uuid : uuidsInFromBranch) {
                 if (null != (existing = newWorkspace.getNode(uuid))) {
                     newWorkspace.removeNode(context, existing);
+                    if (removedExistingNodes != null) {
+                        Path path = pathFor(pathFactory, existing);
+                        removedExistingNodes.add(Location.create(path, uuid));
+                    }
                 }
             }
         } else {
-            PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            uuidsInFromBranch.add(original.getUuid());
+            uuidsInFromBranch.add(original.getUuid()); // uuidsInFromBranch does not include the UUID of the original
             for (UUID uuid : uuidsInFromBranch) {
                 if (null != (existing = newWorkspace.getNode(uuid))) {
                     NamespaceRegistry namespaces = context.getNamespaceRegistry();
@@ -589,17 +597,21 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             return newRoot;
         }
 
+        // Now deal with an existing node that has the same UUID as the original node ...
         existing = newWorkspace.getNode(original.getUuid());
-
         if (existing != null) {
             newWorkspace.removeNode(context, existing);
+            if (removedExistingNodes != null) {
+                Path path = pathFor(pathFactory, existing);
+                removedExistingNodes.add(Location.create(path, original.getUuid()));
+            }
         }
         return copyNode(context, original, newWorkspace, newParent, desiredName, true, (Map<UUID, UUID>)null);
     }
 
     /**
-     * Returns all of the UUIDs in the branch rooted at {@code node}. The UUID of {@code node} will not be included in the set of
-     * returned UUIDs.
+     * Returns all of the UUIDs in the branch rooted at {@code node}. The UUID of {@code node} <i>will</i> be included in the set
+     * of returned UUIDs.
      * 
      * @param node the root of the branch
      * @return all of the UUIDs in the branch rooted at {@code node}
@@ -607,7 +619,6 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     public Set<UUID> getUuidsUnderNode( MapNode node ) {
         Set<UUID> uuids = new HashSet<UUID>();
         uuidsUnderNode(node, uuids);
-
         return uuids;
     }
 
