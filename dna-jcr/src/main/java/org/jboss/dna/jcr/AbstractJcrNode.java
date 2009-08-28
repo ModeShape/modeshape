@@ -1690,7 +1690,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             StringBuffer propertyBuff = new StringBuffer();
             while (iter.hasNext()) {
                 AbstractJcrProperty prop = (AbstractJcrProperty)iter.nextProperty();
-                propertyBuff.append(prop.toString()).append(", ");
+                propertyBuff.append(prop).append(", ");
             }
             return this.getPath() + " {" + propertyBuff.toString() + "}";
         } catch (RepositoryException re) {

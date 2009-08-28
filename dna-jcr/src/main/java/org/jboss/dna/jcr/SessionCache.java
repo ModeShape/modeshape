@@ -599,7 +599,8 @@ class SessionCache {
                 Name propertyName = property.getName();
                 if (propertyName.equals(JcrLexicon.UUID) && !isReferenceable(node)) continue;
                 if (!propertyName.getNamespaceUri().equals(DnaIntLexicon.Namespace.URI)) {
-                    result.add(property.getPayload().getJcrProperty());
+                    AbstractJcrProperty prop = property.getPayload().getJcrProperty();
+                    if (prop != null) result.add(prop);
                 }
             }
             return result;

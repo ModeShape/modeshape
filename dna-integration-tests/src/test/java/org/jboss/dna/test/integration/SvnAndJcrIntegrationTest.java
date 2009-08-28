@@ -83,10 +83,11 @@ public class SvnAndJcrIntegrationTest {
 
     @Test
     public void shouldIterateOverChildrenOfRoot() throws Exception {
+        System.out.println("Getting the root node and it's children ...");
         NodeIterator nodeIterator = this.session.getRootNode().getNodes();
 
         while (nodeIterator.hasNext()) {
-            System.out.println(nodeIterator.nextNode().getPath());
+            System.out.println(nodeIterator.nextNode());
         }
         assertThat(this.session.getRootNode().getNode("dna-graph"), is(notNullValue()));
     }

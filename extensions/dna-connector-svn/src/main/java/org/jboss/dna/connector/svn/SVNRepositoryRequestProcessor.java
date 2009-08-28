@@ -131,6 +131,15 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         this.accessData = accessData;
     }
 
+    protected void addProperty( List<Property> properties,
+                                PropertyFactory factory,
+                                Name propertyName,
+                                Object value ) {
+        if (value != null) {
+            properties.add(factory.create(propertyName, value));
+        }
+    }
+
     protected boolean readNode( String workspaceName,
                                 Location myLocation,
                                 List<Property> properties,
@@ -186,10 +195,10 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                     }
                     if (properties != null) {
                         // Load the properties for this directory ......
-                        properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+                        addProperty(properties, factory, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
                         SVNDirEntry entry = getEntryInfo(workspaceRoot, directoryPath);
                         if (entry != null) {
-                            properties.add(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
+                            addProperty(properties, factory, JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate()));
                         }
                     }
                 } else {
@@ -205,8 +214,8 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                             SVNDirEntry entry = getEntryInfo(workspaceRoot, contentPath);
                             if (entry != null) {
                                 // The request is to get properties of the "jcr:content" child node ...
-                                properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
-                                properties.add(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
+                                addProperty(properties, factory, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
+                                addProperty(properties, factory, JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate()));
                             }
 
                             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -214,12 +223,12 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                             getData(contentPath, fileProperties, os);
                             String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
                             if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
-                            properties.add(factory.create(JcrLexicon.MIMETYPE, mimeType));
+                            addProperty(properties, factory, JcrLexicon.MIMETYPE, mimeType);
 
                             if (os.toByteArray().length > 0) {
                                 // Now put the file's content into the "jcr:data" property ...
                                 BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
-                                properties.add(factory.create(JcrLexicon.DATA, binaryFactory.create(os.toByteArray())));
+                                addProperty(properties, factory, JcrLexicon.DATA, binaryFactory.create(os.toByteArray()));
                             }
                         }
                     } else {
@@ -235,14 +244,12 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                         }
                         if (properties != null) {
                             // Now add the properties to "nt:file" ...
-                            properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+                            addProperty(properties, factory, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE);
                             ByteArrayOutputStream os = new ByteArrayOutputStream();
                             SVNProperties fileProperties = new SVNProperties();
                             getData(filePath, fileProperties, os);
                             String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
-                            if (created != null) {
-                                properties.add(factory.create(JcrLexicon.CREATED, dateFactory.create(created)));
-                            }
+                            addProperty(properties, factory, JcrLexicon.CREATED, dateFactory.create(created));
                         }
                     }
                 }
