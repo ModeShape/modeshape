@@ -90,6 +90,19 @@ public final class CommonI18n {
     public static I18n requiredToSuppliedParameterMismatch;
     public static I18n unableToAccessResourceFileFromClassLoader;
 
+    // TokenStream
+    public static I18n noMoreContent;
+    public static I18n noMoreContentButWasExpectingToken;
+    public static I18n unexpectedToken;
+    public static I18n noMoreContentButWasExpectingCharacter;
+    public static I18n unexpectedCharacter;
+    public static I18n noMoreContentButWasExpectingTokenType;
+    public static I18n unexpectedTokenType;
+    public static I18n startMethodMustBeCalledBeforeNext;
+    public static I18n startMethodMustBeCalledBeforeConsumingOrMatching;
+    public static I18n noMatchingDoubleQuoteFound;
+    public static I18n noMatchingSingleQuoteFound;
+
     static {
         try {
             I18n.initialize(CommonI18n.class);
