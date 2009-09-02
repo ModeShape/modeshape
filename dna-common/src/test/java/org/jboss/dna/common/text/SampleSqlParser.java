@@ -36,6 +36,7 @@ public class SampleSqlParser {
     public List<Statement> parse( String ddl ) {
         TokenStream tokens = new TokenStream(ddl, TokenStream.basicTokenizer(false), false);
         List<Statement> statements = new LinkedList<Statement>();
+        tokens.start();
 
         while (tokens.hasNext()) {
             if (tokens.matches("SELECT")) {

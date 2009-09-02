@@ -319,4 +319,32 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume("FROM", "THIS", "TABLE"), is(true));
         assertThat(tokens.hasNext(), is(false));
     }
+
+    @Test
+    public void shouldConsumeMultipleTokensWithAnyValueConstant() {
+        makeCaseInsensitive();
+        // Unable to consume unless they all match ...
+        tokens.consume("SELECT", "ALL", TokenStream.ANY_VALUE);
+        tokens.consume("FROM", "THIS", "TABLE");
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldConsumeTokenWithAnyValueConstant() {
+        makeCaseInsensitive();
+        // Unable to consume unless they all match ...
+        tokens.consume("SELECT", "ALL");
+        tokens.consume(TokenStream.ANY_VALUE);
+        tokens.consume("FROM", "THIS", "TABLE");
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromCanConsumeMultipleTokensWithAnyValueConstant() {
+        makeCaseInsensitive();
+        // Unable to consume unless they all match ...
+        assertThat(tokens.canConsume("SELECT", "ALL", TokenStream.ANY_VALUE, "FRM", "THIS", "TABLE"), is(false));
+        assertThat(tokens.canConsume("SELECT", "ALL", "COLUMNS", "FROM", TokenStream.ANY_VALUE, "TABLE"), is(true));
+        assertThat(tokens.hasNext(), is(false));
+    }
 }

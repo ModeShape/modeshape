@@ -127,6 +127,7 @@ import org.jboss.dna.common.util.CheckArg;
  *     public List&lt;Statement&gt; parse( String ddl ) {
  *         TokenStream tokens = new TokenStream(ddl, new SqlTokenizer(), false);
  *         List&lt;Statement&gt; statements = new LinkedList&lt;Statement&gt;();
+ *         token.start();
  *         while (tokens.hasNext()) {
  *             if (tokens.matches(&quot;SELECT&quot;)) {
  *                 statements.add(parseSelect(tokens));
@@ -361,6 +362,21 @@ import org.jboss.dna.common.util.CheckArg;
 @NotThreadSafe
 public class TokenStream {
 
+    /**
+     * A constant that can be used with the {@link #matches(String)}, {@link #matches(String, String...)},
+     * {@link #consume(String)}, {@link #consume(String, String...)}, {@link #canConsume(String)} and
+     * {@link #canConsume(String, String...)} methods to signal that any value is allowed to be matched.
+     * <p>
+     * Note that this exact instance must be used; an equivalent string will not work.
+     * </p>
+     */
+    public static final String ANY_VALUE = "any value";
+    /**
+     * A constant that can be used with the {@link #matches(int)}, {@link #matches(int, int...)}, {@link #consume(int)}, and
+     * {@link #canConsume(int)} methods to signal that any token type is allowed to be matched.
+     */
+    public static final int ANY_TYPE = Integer.MIN_VALUE;
+
     protected final String inputString;
     protected final String inputUppercased;
     private final char[] inputContent;
@@ -425,6 +441,9 @@ public class TokenStream {
     /**
      * Attempt to consume this current token as long as it matches the expected value, or throw an exception if the token does not
      * match.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param expected the expected value of the current token
      * @throws ParsingException if the current token doesn't match the supplied value
@@ -436,7 +455,7 @@ public class TokenStream {
             throw new ParsingException(tokens.get(tokens.size() - 1).position(), msg);
         }
         // Get the value from the current token ...
-        if (!currentToken().matches(expected)) {
+        if (expected != ANY_VALUE && !currentToken().matches(expected)) {
             String found = currentToken().value();
             Position pos = currentToken().position();
             String fragment = generateFragment();
@@ -473,6 +492,9 @@ public class TokenStream {
     /**
      * Attempt to consume this current token as long as it matches the expected character, or throw an exception if the token does
      * not match.
+     * <p>
+     * The {@link #ANY_TYPE ANY_TYPE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param expectedType the expected token type of the current token
      * @throws ParsingException if the current token doesn't match the supplied value
@@ -484,7 +506,7 @@ public class TokenStream {
             throw new ParsingException(tokens.get(tokens.size() - 1).position(), msg);
         }
         // Get the value from the current token ...
-        if (currentToken().type() != expectedType) {
+        if (expectedType != ANY_TYPE && currentToken().type() != expectedType) {
             String found = currentToken().value();
             Position pos = currentToken().position();
             String fragment = generateFragment();
@@ -497,6 +519,9 @@ public class TokenStream {
     /**
      * Attempt to consume this current token as the next tokens as long as they match the expected values, or throw an exception
      * if the token does not match.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param expected the expected value of the current token
      * @param expectedForNextTokens the expected values fo the following tokens
@@ -505,10 +530,6 @@ public class TokenStream {
      */
     public void consume( String expected,
                          String... expectedForNextTokens ) throws ParsingException, IllegalStateException {
-        if (completed) {
-            String msg = CommonI18n.noMoreContentButWasExpectingToken.text(expected);
-            throw new ParsingException(tokens.get(tokens.size() - 1).position(), msg);
-        }
         consume(expected);
         for (String nextExpected : expectedForNextTokens) {
             consume(nextExpected);
@@ -518,6 +539,9 @@ public class TokenStream {
     /**
      * Attempt to consume this current token if it matches the expected value, and return whether this method was indeed able to
      * consume the token.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected value as a wildcard.
+     * </p>
      * 
      * @param expected the expected value of the current token token
      * @return true if the current token did match and was consumed, or false if the current token did not match and therefore was
@@ -525,7 +549,7 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean canConsume( String expected ) throws IllegalStateException {
-        if (completed || !matches(expected)) return false;
+        if (!matches(expected)) return false;
         moveToNextToken();
         return true;
     }
@@ -540,7 +564,7 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean canConsume( char expected ) throws IllegalStateException {
-        if (completed || !matches(expected)) return false;
+        if (!matches(expected)) return false;
         moveToNextToken();
         return true;
     }
@@ -548,6 +572,9 @@ public class TokenStream {
     /**
      * Attempt to consume this current token if it matches the expected token type, and return whether this method was indeed able
      * to consume the token.
+     * <p>
+     * The {@link #ANY_TYPE ANY_TYPE} constant can be used in the expected type as a wildcard.
+     * </p>
      * 
      * @param expectedType the expected token type of the current token
      * @return true if the current token did match and was consumed, or false if the current token did not match and therefore was
@@ -555,7 +582,7 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean canConsume( int expectedType ) throws IllegalStateException {
-        if (completed || !matches(expectedType)) return false;
+        if (!matches(expectedType)) return false;
         moveToNextToken();
         return true;
     }
@@ -576,6 +603,9 @@ public class TokenStream {
      * 
      * </pre>
      * </p>
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param currentExpected the expected value of the current token
      * @param expectedForNextTokens the expected values fo the following tokens
@@ -589,10 +619,11 @@ public class TokenStream {
         ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
         if (!iter.hasNext()) return false;
         Token token = iter.next();
-        if (!token.matches(currentExpected)) return false;
+        if (currentExpected != ANY_VALUE && !token.matches(currentExpected)) return false;
         for (String nextExpected : expectedForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
             if (!token.matches(nextExpected)) return false;
         }
         this.tokenIterator = iter;
@@ -602,13 +633,16 @@ public class TokenStream {
 
     /**
      * Determine if the current token matches the expected value.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used as a wildcard.
+     * </p>
      * 
      * @param expected the expected value of the current token token
      * @return true if the current token did match, or false if the current token did not match
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean matches( String expected ) throws IllegalStateException {
-        return !completed && currentToken().matches(expected);
+        return !completed && (expected == ANY_VALUE || currentToken().matches(expected));
     }
 
     /**
@@ -630,11 +664,14 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean matches( int expectedType ) throws IllegalStateException {
-        return !completed && currentToken().type() == expectedType;
+        return !completed && (expectedType == ANY_TYPE || currentToken().type() == expectedType);
     }
 
     /**
      * Determine if the next few tokens match the expected values.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param currentExpected the expected value of the current token
      * @param expectedForNextTokens the expected values for the following tokens
@@ -647,10 +684,11 @@ public class TokenStream {
         ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
         if (!iter.hasNext()) return false;
         Token token = iter.next();
-        if (!token.matches(currentExpected)) return false;
+        if (currentExpected != ANY_VALUE || !token.matches(currentExpected)) return false;
         for (String nextExpected : expectedForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
             if (!token.matches(nextExpected)) return false;
         }
         return true;
@@ -658,6 +696,9 @@ public class TokenStream {
 
     /**
      * Determine if the next few tokens have the supplied types.
+     * <p>
+     * The {@link #ANY_TYPE ANY_TYPE} constant can be used in the expected values as a wildcard.
+     * </p>
      * 
      * @param currentExpectedType the expected type of the current token
      * @param expectedTypeForNextTokens the expected type for the following tokens
@@ -670,10 +711,11 @@ public class TokenStream {
         ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
         if (!iter.hasNext()) return false;
         Token token = iter.next();
-        if (currentToken().type() != currentExpectedType) return false;
+        if (currentExpectedType != ANY_TYPE || currentToken().type() != currentExpectedType) return false;
         for (int nextExpectedType : expectedTypeForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
+            if (nextExpectedType == ANY_TYPE) continue;
             if (token.type() != nextExpectedType) return false;
         }
         return true;
