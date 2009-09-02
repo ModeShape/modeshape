@@ -880,7 +880,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass())
+                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
 
@@ -938,11 +939,13 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     setModel(actualModelName);
                 } catch (Throwable e) {
                     // The actual model name doesn't match what's available in the software ...
+                    entityManager.close();
                     entityManagerFactory.close();
                     String msg = JpaConnectorI18n.existingStoreSpecifiesUnknownModel.text(name, actualModelName);
                     throw new RepositorySourceException(msg);
                 }
             }
+            entityManager.close();
             entityManagerFactory.close();
 
             // Now, create another entity manager with the classes from the correct model

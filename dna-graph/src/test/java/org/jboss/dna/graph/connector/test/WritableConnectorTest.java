@@ -47,6 +47,7 @@ import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -74,6 +75,12 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         validLargeValues = new String[] {IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum1.txt")),
             IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum2.txt")),
             IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum3.txt"))};
+    }
+
+    @Override
+    @After
+    public void afterEach() throws Exception {
+        super.afterEach();
     }
 
     /**

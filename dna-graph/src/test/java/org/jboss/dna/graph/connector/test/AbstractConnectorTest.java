@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.statistic.Stopwatch;
+import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -161,11 +163,28 @@ public abstract class AbstractConnectorTest {
                     connection.close();
                 }
             } finally {
+                openConnections = null;
                 running = false;
                 rootLocation = null;
                 rootUuid = null;
             }
         }
+        if (source != null) {
+            try {
+                Reflection reflection = new Reflection(source.getClass());
+                reflection.invokeBestMethodOnTarget(new String[] {"close"}, source);
+            } catch (NoSuchMethodException err) {
+                // do nothing (method did not exist)
+            } catch (IllegalAccessException err) {
+            } catch (InvocationTargetException err) {
+            } finally {
+                source = null;
+            }
+        }
+        graph = null;
+        context = null;
+        configSource = null;
+        connectionFactory = null;
     }
 
     /**
