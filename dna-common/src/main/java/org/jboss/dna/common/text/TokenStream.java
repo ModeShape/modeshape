@@ -23,8 +23,8 @@
  */
 package org.jboss.dna.common.text;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
@@ -1071,6 +1071,16 @@ public class TokenStream {
         protected String matchString() {
             return inputString;
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return value();
+        }
     }
 
     @Immutable
@@ -1093,7 +1103,7 @@ public class TokenStream {
     }
 
     protected abstract class TokenFactory implements Tokens {
-        protected final List<Token> tokens = new LinkedList<Token>();
+        protected final List<Token> tokens = new ArrayList<Token>();
 
         /**
          * {@inheritDoc}
