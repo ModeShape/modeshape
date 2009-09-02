@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import org.jboss.dna.common.text.TokenStream.BasicTokenizer;
 import org.jboss.dna.common.text.TokenStream.CharacterArrayStream;
 import org.jboss.dna.common.text.TokenStream.ParsingException;
+import org.jboss.dna.common.text.TokenStream.Position;
 import org.jboss.dna.common.text.TokenStream.Tokens;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,20 +49,23 @@ public class TokenStreamBasicTokenizerTest {
         final LinkedList<int[]> tokenValues = new LinkedList<int[]>();
         tokenFactory = new Tokens() {
             @Override
-            public void addToken( int index ) {
+            public void addToken( Position position,
+                                  int index ) {
                 int[] token = new int[] {index, index + 1, 0};
                 tokenValues.add(token);
             }
 
             @Override
-            public void addToken( int startIndex,
+            public void addToken( Position position,
+                                  int startIndex,
                                   int endIndex ) {
                 int[] token = new int[] {startIndex, endIndex, 0};
                 tokenValues.add(token);
             }
 
             @Override
-            public void addToken( int startIndex,
+            public void addToken( Position position,
+                                  int startIndex,
                                   int endIndex,
                                   int type ) {
                 int[] token = new int[] {startIndex, endIndex, type};

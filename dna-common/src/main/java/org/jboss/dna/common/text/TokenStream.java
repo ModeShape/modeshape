@@ -923,9 +923,11 @@ public class TokenStream {
          * Create a single-character token at the supplied index in the character stream. The token type is set to 0, meaning this
          * is equivalent to calling <code>addToken(index,index+1)</code> or <code>addToken(index,index+1,0)</code>.
          * 
+         * @param position the position (line and column numbers) of this new token; may not be null
          * @param index the index of the character to appear in the token; must be a valid index in the stream
          */
-        void addToken( int index );
+        void addToken( Position position,
+                       int index );
 
         /**
          * Create a single- or multi-character token with the characters in the range given by the starting and ending index in
@@ -933,10 +935,12 @@ public class TokenStream {
          * practice when using 0-based indexes). The token type is set to 0, meaning this is equivalent to calling <code>
          * addToken(startIndex,endIndex,0)</code> .
          * 
+         * @param position the position (line and column numbers) of this new token; may not be null
          * @param startIndex the index of the first character to appear in the token; must be a valid index in the stream
          * @param endIndex the index just past the last character to appear in the token; must be a valid index in the stream
          */
-        void addToken( int startIndex,
+        void addToken( Position position,
+                       int startIndex,
                        int endIndex );
 
         /**
@@ -944,11 +948,13 @@ public class TokenStream {
          * starting and ending index in the character stream. The character at the ending index is <i>not</i> included in the
          * token (as this is standard practice when using 0-based indexes).
          * 
+         * @param position the position (line and column numbers) of this new token; may not be null
          * @param startIndex the index of the first character to appear in the token; must be a valid index in the stream
          * @param endIndex the index just past the last character to appear in the token; must be a valid index in the stream
          * @param type the type of the token
          */
-        void addToken( int startIndex,
+        void addToken( Position position,
+                       int startIndex,
                        int endIndex,
                        int type );
     }
@@ -980,13 +986,16 @@ public class TokenStream {
         private final int startIndex;
         private final int endIndex;
         private final int type;
+        private final Position position;
 
         public CaseSensitiveToken( int startIndex,
                                    int endIndex,
-                                   int type ) {
+                                   int type,
+                                   Position position ) {
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             this.type = type;
+            this.position = position;
         }
 
         /**
@@ -1065,7 +1074,7 @@ public class TokenStream {
          */
         @Override
         public Position position() {
-            return null;
+            return position;
         }
 
         protected String matchString() {
@@ -1087,8 +1096,9 @@ public class TokenStream {
     protected class CaseInsensitiveToken extends CaseSensitiveToken {
         public CaseInsensitiveToken( int startIndex,
                                      int endIndex,
-                                     int type ) {
-            super(startIndex, endIndex, type);
+                                     int type,
+                                     Position position ) {
+            super(startIndex, endIndex, type, position);
         }
 
         /**
@@ -1108,22 +1118,24 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(int)
+         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(org.jboss.dna.common.text.TokenStream.Position, int)
          */
         @Override
-        public final void addToken( int index ) {
-            addToken(index, index + 1, 0);
+        public void addToken( Position position,
+                              int index ) {
+            addToken(position, index, index + 1, 0);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(int, int)
+         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(Position, int, int)
          */
         @Override
-        public final void addToken( int startIndex,
+        public final void addToken( Position position,
+                                    int startIndex,
                                     int endIndex ) {
-            addToken(startIndex, endIndex, 0);
+            addToken(position, startIndex, endIndex, 0);
         }
 
         /**
@@ -1138,13 +1150,14 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(int, int, int)
+         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(Position,int, int, int)
          */
         @Override
-        public void addToken( int startIndex,
+        public void addToken( Position position,
+                              int startIndex,
                               int endIndex,
                               int type ) {
-            tokens.add(new CaseSensitiveToken(startIndex, endIndex, type));
+            tokens.add(new CaseSensitiveToken(startIndex, endIndex, type, position));
         }
     }
 
@@ -1152,13 +1165,14 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(int, int, int)
+         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(Position,int, int, int)
          */
         @Override
-        public void addToken( int startIndex,
+        public void addToken( Position position,
+                              int startIndex,
                               int endIndex,
                               int type ) {
-            tokens.add(new CaseInsensitiveToken(startIndex, endIndex, type));
+            tokens.add(new CaseInsensitiveToken(startIndex, endIndex, type, position));
         }
     }
 
@@ -1500,10 +1514,10 @@ public class TokenStream {
                     case '|':
                     case '=':
                     case ':':
-                        tokens.addToken(input.index(), input.index() + 1, SYMBOL);
+                        tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
                         break;
                     case '.':
-                        tokens.addToken(input.index(), input.index() + 1, DECIMAL);
+                        tokens.addToken(input.position(), input.index(), input.index() + 1, DECIMAL);
                         break;
                     case '\"':
                         int startIndex = input.index();
@@ -1524,7 +1538,7 @@ public class TokenStream {
                             throw new ParsingException(startingPosition, msg);
                         }
                         int endIndex = input.index() + 1; // beyond last character read
-                        tokens.addToken(startIndex, endIndex, DOUBLE_QUOTED_STRING);
+                        tokens.addToken(input.position(), startIndex, endIndex, DOUBLE_QUOTED_STRING);
                         break;
                     case '\'':
                         startIndex = input.index();
@@ -1545,7 +1559,7 @@ public class TokenStream {
                             throw new ParsingException(startingPosition, msg);
                         }
                         endIndex = input.index() + 1; // beyond last character read
-                        tokens.addToken(startIndex, endIndex, SINGLE_QUOTED_STRING);
+                        tokens.addToken(input.position(), startIndex, endIndex, SINGLE_QUOTED_STRING);
                         break;
                     case '/':
                         startIndex = input.index();
@@ -1563,7 +1577,7 @@ public class TokenStream {
                             if (!foundLineTerminator) ++endIndex; // must point beyond last char
                             if (c == '\r' && input.isNext('\n')) input.next();
                             if (useComments) {
-                                tokens.addToken(startIndex, endIndex, COMMENT);
+                                tokens.addToken(input.position(), startIndex, endIndex, COMMENT);
                             }
                         } else if (input.isNext('*')) {
                             // Multi-line comment ...
@@ -1574,11 +1588,11 @@ public class TokenStream {
                             if (input.hasNext()) input.next(); // consume the '/'
                             if (useComments) {
                                 endIndex = input.index() + 1; // the token will include the '/' and '*' characters
-                                tokens.addToken(startIndex, endIndex, COMMENT);
+                                tokens.addToken(input.position(), startIndex, endIndex, COMMENT);
                             }
                         } else {
                             // just a regular slash ...
-                            tokens.addToken(startIndex, startIndex + 1, SYMBOL);
+                            tokens.addToken(input.position(), startIndex, startIndex + 1, SYMBOL);
                         }
                         break;
                     default:
@@ -1588,7 +1602,7 @@ public class TokenStream {
                             c = input.next();
                         }
                         endIndex = input.index() + 1; // beyond last character that was included
-                        tokens.addToken(startIndex, endIndex, WORD);
+                        tokens.addToken(input.position(), startIndex, endIndex, WORD);
                 }
             }
         }
