@@ -98,7 +98,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
                      .setProperty("largeValueSizeInBytes", 150)
                      .setProperty("compressData", true)
                      .setProperty("referentialIntegrityEnforced", true)
-                     .setProperty("autoDdl", "create")
+                     .setProperty("autoGenerateSchema", "create")
                      .setProperty("showSql", false);
 
         // Set up the JCR repository ...

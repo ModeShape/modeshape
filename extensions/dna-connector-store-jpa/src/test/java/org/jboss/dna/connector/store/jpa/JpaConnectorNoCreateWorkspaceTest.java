@@ -67,6 +67,7 @@ public class JpaConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
         source.setLargeValueSizeInBytes(150);
         source.setCreatingWorkspacesAllowed(false);
         source.setPredefinedWorkspaceNames(predefinedWorkspaces);
+        source.setAutoGenerateSchema("create");
 
         return source;
     }

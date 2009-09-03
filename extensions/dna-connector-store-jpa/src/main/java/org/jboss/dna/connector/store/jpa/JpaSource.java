@@ -43,6 +43,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.Immutable;
+import org.hibernate.SessionFactory;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
@@ -123,6 +124,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
+    protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
 
     /**
      * This source supports events.
@@ -174,6 +176,12 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
     /**
+     * The initial {@link #getAutoGenerateSchema() automatic schema generation setting} is "{@value} ", unless otherwise
+     * specified.
+     */
+    public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
+
+    /**
      * The first serialized version of this source.
      */
     private static final long serialVersionUID = 1L;
@@ -199,6 +207,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private volatile boolean showSql = DEFAULT_SHOW_SQL;
     private volatile boolean compressData = DEFAULT_COMPRESS_DATA;
     private volatile boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
+    private volatile String autoGenerateSchema = DEFAULT_AUTO_GENERATE_SCHEMA;
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
@@ -283,6 +292,40 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setShowSql( boolean showSql ) {
         this.showSql = showSql;
+    }
+
+    /**
+     * Get the Hibernate setting dictating what it does with the database schema upon first connection. For more information, see
+     * {@link #setAutoGenerateSchema(String)}.
+     * 
+     * @return the setting; never null
+     */
+    public String getAutoGenerateSchema() {
+        return this.autoGenerateSchema;
+    }
+
+    /**
+     * Sets the Hibernate setting dictating what it does with the database schema upon first connection. Valid values are as
+     * follows (though the value is not checked):
+     * <ul>
+     * <li>"<code>create</code>" - Create the database schema objects when the {@link EntityManagerFactory} is created (actually
+     * when Hibernate's {@link SessionFactory} is created by the entity manager factory). If a file named "import.sql" exists in
+     * the root of the class path (e.g., '/import.sql') Hibernate will read and execute the SQL statements in this file after it
+     * has created the database objects. Note that Hibernate first delete all tables, constraints, or any other database object
+     * that is going to be created in the process of building the schema.</li>
+     * <li>"<code>create-drop</code>" - Same as "<code>create</code>", except that the schema will be dropped after the
+     * {@link EntityManagerFactory} is closed.</li>
+     * <li>"<code>update</code>" - Attempt to update the database structure to the current mapping (but does not read and invoke
+     * the SQL statements from "import.sql"). <i>Use with caution.</i></li>
+     * <li>"<code>validate</code>" - Validates the existing schema with the current entities configuration, but does not make any
+     * changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is often the proper setting
+     * to use in production, and thus this is the default value.</li>
+     * </ul>
+     * 
+     * @param autoGenerateSchema the setting for the auto-generation, or null if the default should be used
+     */
+    public synchronized void setAutoGenerateSchema( String autoGenerateSchema ) {
+        this.autoGenerateSchema = autoGenerateSchema != null ? autoGenerateSchema.trim() : DEFAULT_AUTO_GENERATE_SCHEMA;
     }
 
     /**
@@ -758,6 +801,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(ENFORCE_REFERENTIAL_INTEGRITY, Boolean.toString(isReferentialIntegrityEnforced())));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        ref.add(new StringRefAddr(AUTO_GENERATE_SCHEMA, getAutoGenerateSchema()));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
@@ -811,6 +855,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String refIntegrity = values.get(ENFORCE_REFERENTIAL_INTEGRITY);
             String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
+            String autoGenerateSchema = values.get(AUTO_GENERATE_SCHEMA);
 
             String combinedWorkspaceNames = values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -845,6 +890,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
+            if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
             return source;
         }
         return null;
@@ -1007,7 +1053,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         // setProperty(configuration, "hibernate.show_sql", "true"); // writes all SQL statements to console
         setProperty(configuration, "hibernate.format_sql", "true");
         setProperty(configuration, "hibernate.use_sql_comments", "true");
-        setProperty(configuration, "hibernate.hbm2ddl.auto", "create");
+        setProperty(configuration, "hibernate.hbm2ddl.auto", this.autoGenerateSchema);
     }
 
     protected void setProperty( Ejb3Configuration configurator,

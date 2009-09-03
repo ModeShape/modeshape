@@ -47,6 +47,7 @@
         	dna:compressData="true"
         	dna:predefinedWorkspaceNames="default"
         	dna:showSql="false"
+            dna:autoGenerateSchema="create"
         	dna:defaultWorkspaceName="default"/>    
     </dna:sources>
     <!-- 

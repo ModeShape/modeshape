@@ -207,6 +207,27 @@
 					</entry>
 				</row>
 				<row>
+					<entry>autoGenerateSchema</entry>
+					<entry>
+			      Sets the Hibernate setting dictating what it does with the database schema upon first connection. Valid values are as
+			      follows (though the value is not checked):
+			      <itemizedlist>
+			      <listitem><para>"<code>create</code>" - Create the database schema objects when the &EntityManagerFactory; is created (actually
+			      when Hibernate's SessionFactory is created by the entity manager factory). If a file named "import.sql" exists in
+			      the root of the class path (e.g., '/import.sql') Hibernate will read and execute the SQL statements in this file after it
+			      has created the database objects. Note that Hibernate first delete all tables, constraints, or any other database object
+			      that is going to be created in the process of building the schema.</para></listitem>
+			      <listitem><para>"<code>create-drop</code>" - Same as "<code>create</code>", except that the schema will be dropped after the
+			      &EntityManagerFactory; is closed.</para></listitem>
+			      <listitem><para>"<code>update</code>" - Attempt to update the database structure to the current mapping (but does not read and invoke
+			      the SQL statements from "import.sql"). <emphasis>Use with caution.</emphasis></para></listitem>
+			      <listitem><para>"<code>validate</code>" - Validates the existing schema with the current entities configuration, but does not make any
+			      changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is often the proper setting
+			      to use in production, and thus this is the default value.</para></listitem>
+			      </itemizedlist>
+					</entry>
+				</row>
+				<row>
 					<entry>retryLimit</entry>
 					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
 						following a communication failure. 
@@ -235,7 +256,8 @@ config.repositorySource("source A")
       .setDescription("The database store for our content")
       .setProperty("dialect", "org.hibernate.dialect.MySQLDialect")
       .setProperty("dataSourceJndiName", "java:/MyDataSource")
-      .setProperty("nameOfDefaultWorkspace", "My Default Workspace");
+      .setProperty("nameOfDefaultWorkspace", "My Default Workspace")
+      .setProperty("autoGenerateSchema", "validate");
  ]]></programlisting>
 	<para>
 		Of course, setting other more advanced properties would entail calling <code>setProperty(...)</code> for each.  Since almost all

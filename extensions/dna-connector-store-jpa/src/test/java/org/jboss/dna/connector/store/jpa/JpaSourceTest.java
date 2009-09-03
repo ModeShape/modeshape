@@ -60,6 +60,7 @@ public class JpaSourceTest {
         this.source.setMaximumConnectionIdleTimeInSeconds(0);
         this.source.setDefaultWorkspaceName("default");
         this.source.setCreatingWorkspacesAllowed(true);
+        this.source.setAutoGenerateSchema("create");
     }
 
     @After

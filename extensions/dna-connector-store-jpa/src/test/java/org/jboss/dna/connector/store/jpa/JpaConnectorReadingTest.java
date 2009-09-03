@@ -55,6 +55,7 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         source.setMaximumSizeOfStatementCache(100);
         source.setMaximumConnectionIdleTimeInSeconds(0);
         source.setLargeValueSizeInBytes(150);
+        source.setAutoGenerateSchema("create");
 
         // Create a graph and look up the root node. We do this to initialize the connection pool and
         // force the database to be setup at this point. By doing it now, we don't include this overhead
