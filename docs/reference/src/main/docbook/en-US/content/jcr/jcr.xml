@@ -65,22 +65,35 @@
   <sect1 id="jcr-sessions">
     <title>Creating JCR Sessions</title>
 		<para>Once you have obtained a reference to the JCR &Repository;, you can create a JCR session using one of its
-			<code>login(...)</code> methods.  The <ulink url="&JSR170;">JSR-170</ulink> specification provides four login methods.
+			<code>login(...)</code> methods.  The <ulink url="&JSR170;">JSR-170</ulink> specification provides four login methods, but the
+			behavior of these methods depends on the kind of authentication system your application is using.
 		</para>
-		<para>The first method allows the implementation to choose its own security context to create a session in the default workspace
-		for the repository.  The JBoss DNA JCR implementation uses the security context from the current &AccessControlContext;.  This implies
+	  <sect2 id="jcr-sessions-jaas">
+	    <title>Using JAAS</title>
+		<para>The <code>login()</code> method allows the implementation to choose its own security context to create a session in the default workspace
+		for the repository.  The JBoss DNA JCR implementation uses the security context from the current JAAS &AccessControlContext;.  This implies
 		that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction;.  Here is one example of how this might  
 		work:
     <programlisting>
 Subject subject = ...;
-&Session; session = (&Session;) Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
+&Session; session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
     public Session run() throws Exception {
         return repository.login();
     }
 }, AccessController.getContext());
 </programlisting>	
-		This approach will yield a session with the same user name and roles as <code>subject</code>.  There is a comparable
-		version of <code>login(...)</code> that allows the workspace to be specified by name.
+		Another variant of this is to use the AccessControlContext directly, which then operates against the current Subject:
+    <programlisting>
+&Session; session = AccessController.doPrivileged( new PrivilegedExceptionAction&lt;&Session;&gt;() {
+    public Session run() throws Exception {
+        return repository.login();
+    }
+});
+</programlisting>	
+	</para>
+	<para>
+		Either of these approaches will yield a session with the same user name and roles as <code>subject</code>.  The <code>login(String workspaceName)</code>
+		method is comparable and allows the workspace to be specified by name:
     <programlisting>
 Subject subject = ...;
 final &String; workspaceName = ...;
@@ -90,16 +103,16 @@ final &String; workspaceName = ...;
     }}, AccessController.getContext());
 </programlisting>	
 		</para>
-		<para>It is also possible to supply the &Credentials; directly as part of the login process, although JBoss DNA imposes
-		some requirements on what types of &Credentials; may be supplied.  The simplest way is to provide a &SimpleCredentials; object.
-		These credentials will be validated against the JAAS realm named "dna-jcr" unless another realm name is provided as an option 
+		<para>The JCR API also allows supplying a JCR &Credentials; object directly as part of the login process, although JBoss DNA imposes
+		some requirements on what types of &Credentials; may be supplied.  The simplest way is to provide a JCR &SimpleCredentials; object.
+		These credentials will be validated against the JAAS realm named "dna-jcr", unless another realm name is provided as an option 
 		during the JCR repository configuration.  For example:
 	    <programlisting>
 &String; userName = ...;
 char[] password = ...;
 &Session; session = repository.login(new &SimpleCredentials;(userName, password));
 </programlisting>	
-		The credentials-based <code>login(...)</code> method also supports an optional workspace name.
+		Similarly, the <code>login(Credentials credentials, String workspaceName)</code> method enables passing the credentials and a workspace name:
 	    <programlisting>
 &String; userName = ...;
 char[] password = ...;
@@ -116,19 +129,47 @@ final &LoginContext; loginContext = ...;
 		return loginContext;
 	}
 }, workspaceName);
-</programlisting>			
-		Servlet-based applications may wish to reuse the authentication information from &HttpServletRequest; instead.  Please note that 
+</programlisting>
+      </para>
+	  </sect2>
+		<sect2 id="jcr-sessions-custom">
+  		<title>Using Custom security</title>
+			<para>
+		Not all applications can or want to use JAAS for their authentication system, so JBoss DNA provides a way to integrate your own custom
+		security provider.  The first step is to provide a custom implementation of &SecurityContext; that integrates with your application security, allowing
+		JBoss DNA to discover the authenticated user's name, determine whether the authenticated user has been assigned particular roles
+		(see the <ulink linkend="dna_jcr_security">JCR Security section</ulink>), and to notify your application security system that the
+		authenticated session (for JCR) has ended.
+		</para>
+		<para>
+			The next step is to wrap your &SecurityContext; instance within an instance of &SecurityContextCredentials;, and pass it as the Credentials
+			parameter in one of the two <code>login(...)</code> methods:
+			<programlisting>
+&SecurityContext; securityContext = new CustomSecurityContext(...);
+&Session; session = repository.login(new &SecurityContextCredentials;(securityContext));
+			</programlisting>			
+      Once the &Session; is obtained, the repository content can be accessed and modified like any other JCR repository.
+		</para>
+		<para>
+		  At this time, no roles are required to connect to any workspace, but restrictions on workspace connections will likely be added to JBoss DNA in the near future.  
+		  Please see the <ulink linkend="dna_jcr_security">JCR Security section</ulink> for more details on how access is controlled.
+		</para>
+	</sect2>
+		<sect2 id="jcr-sessions-servlet">
+  		<title>Using HTTP Servlet security</title>
+			<para>
+		Servlet-based applications can make use of the servlet's existing authentication mechanism from &HttpServletRequest;.  Please note that 
 		the example below assumes that the servlet has a security constraint that prevents unauthenticated access.
 	    <programlisting>
 &HttpServletRequest; request = ...;
-&ServletSecurityContext; securityContext = new ServletSecurityContext(request);
-&Session; session = repository.login(new &SecurityContextCredentials;(securityContext);
-</programlisting>			
-		Once the &Session; is obtained, the repository content can be accessed and modified like any other JCR repository.  No roles are required to connect
-		to any workspace at this time.  Restrictions on workspace connections will likely be added to JBoss DNA in the near future.  The roles from the JAAS
-		information or the &HttpServletRequest; are used to control read and write access to the repository.  Please see the <ulink linkend="dna_jcr_security">JCR Security section</ulink>
-		for more details on how access is controlled.
+&SecurityContext; securityContext = new &ServletSecurityContext;(request);
+&Session; session = repository.login(new &SecurityContextCredentials;(securityContext));
+</programlisting>
+    You'll note that this is just a specialization of the <ulink linkend="jcr-sessions-custom">custom security context</ulink> approach, since
+    the &ServletSecurityContext; just implements the &SecurityContext; interface and delegates to the &HttpServletRequest;.  Feel free to use
+    this class in your servlet-based applications.
 		</para>
+	</sect2>
 	</sect1>
 	<sect1>
 		<title>JCR Specification Support</title>

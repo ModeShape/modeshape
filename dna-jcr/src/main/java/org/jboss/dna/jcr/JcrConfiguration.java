@@ -79,7 +79,8 @@ public class JcrConfiguration extends DnaConfiguration {
      * 
      * @param <ReturnType>
      */
-    public interface RepositoryDefinition<ReturnType> extends Returnable<ReturnType>, Removable<ReturnType> {
+    public interface RepositoryDefinition<ReturnType>
+        extends Returnable<ReturnType>, Removable<ReturnType>, SetDescription<RepositoryDefinition<ReturnType>> {
 
         /**
          * Specify the name of the repository source that is to be used by this JCR repository.
@@ -107,6 +108,61 @@ public class JcrConfiguration extends DnaConfiguration {
          */
         RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
                                                     String value );
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    boolean value );
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    int value );
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    long value );
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    float value );
+
+        /**
+         * Specify the repository option that is to be set.
+         * 
+         * @param option the option to be set
+         * @param value the new value for the option
+         * @return the interface used to set the value for the property; never null
+         * @throws IllegalArgumentException if either parameter is null
+         */
+        RepositoryDefinition<ReturnType> setOption( JcrRepository.Option option,
+                                                    double value );
 
         /**
          * Get the value for the repository option.
@@ -496,6 +552,31 @@ public class JcrConfiguration extends DnaConfiguration {
             createIfMissing(DnaLexicon.OPTIONS, option.name()).with(DnaLexicon.VALUE, value.trim()).and();
             optionValues.put(option, value);
             return this;
+        }
+
+        public RepositoryDefinition<ReturnType> setOption( Option option,
+                                                           boolean value ) {
+            return setOption(option, Boolean.toString(value));
+        }
+
+        public RepositoryDefinition<ReturnType> setOption( Option option,
+                                                           int value ) {
+            return setOption(option, Integer.toString(value));
+        }
+
+        public RepositoryDefinition<ReturnType> setOption( Option option,
+                                                           long value ) {
+            return setOption(option, Long.toString(value));
+        }
+
+        public RepositoryDefinition<ReturnType> setOption( Option option,
+                                                           float value ) {
+            return setOption(option, Float.toString(value));
+        }
+
+        public RepositoryDefinition<ReturnType> setOption( Option option,
+                                                           double value ) {
+            return setOption(option, Double.toString(value));
         }
 
         public String getOption( Option option ) {

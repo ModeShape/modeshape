@@ -420,6 +420,9 @@ public class RepositoryService implements AdministeredService, Observer {
             }
             return false;
         } catch (Exception e) {
+            // Log that the property was not found ...
+            Logger.getLogger(getClass())
+                  .debug("Unknown property '{0}' on '{1}' class", propertyName, target.getClass().getName());
             return false;
         }
     }

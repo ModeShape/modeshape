@@ -671,6 +671,18 @@ public class DnaConfiguration {
                                 String value );
 
         /**
+         * Set the property value to a string.
+         * 
+         * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
+         * @param value the first string value for the property
+         * @param additionalValues the additional string values for the property
+         * @return the next component to continue configuration; never null
+         */
+        ReturnType setProperty( String beanPropertyName,
+                                String value,
+                                String... additionalValues );
+
+        /**
          * Set the property value to an object.
          * 
          * @param beanPropertyName the name of the JavaBean-style property (e.g., "retryLimit")
@@ -1102,6 +1114,15 @@ public class DnaConfiguration {
         public ThisType setProperty( String beanPropertyName,
                                      String value ) {
             return setProperty(beanPropertyName, (Object)value);
+        }
+
+        public ThisType setProperty( String beanPropertyName,
+                                     String firstValue,
+                                     String... additionalValues ) {
+            Object[] values = new Object[1 + additionalValues.length];
+            values[0] = firstValue;
+            System.arraycopy(additionalValues, 0, values, 1, additionalValues.length);
+            return setProperty(beanPropertyName, values);
         }
 
         public Property getProperty( String beanPropertyName ) {
