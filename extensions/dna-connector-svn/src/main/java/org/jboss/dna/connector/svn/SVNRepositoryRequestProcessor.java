@@ -36,6 +36,7 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionFactory;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
@@ -214,7 +215,11 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                             SVNDirEntry entry = getEntryInfo(workspaceRoot, contentPath);
                             if (entry != null) {
                                 // The request is to get properties of the "jcr:content" child node ...
-                                addProperty(properties, factory, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
+                                // Do NOT use "nt:resource", since it extends "mix:referenceable". The JCR spec
+                                // does not require that "jcr:content" is of type "nt:resource", but rather just
+                                // suggests it. Therefore, we can use "dna:resource", which is identical to
+                                // "nt:resource" except it does not extend "mix:referenceable"
+                                addProperty(properties, factory, JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE);
                                 addProperty(properties, factory, JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate()));
                             }
 

@@ -26,7 +26,10 @@ package org.jboss.dna.test.integration.svn;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
 import org.jboss.dna.connector.svn.SVNRepositorySource;
 import org.jboss.dna.graph.SecurityContext;
@@ -90,6 +93,18 @@ public class SvnAndJcrIntegrationTest {
             System.out.println(nodeIterator.nextNode());
         }
         assertThat(this.session.getRootNode().getNode("dna-graph"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldProvideAccessToJcrDataNodeUnderFileNode() throws Exception {
+        System.out.println("Getting /pom.xml/jcr:content and then walking its properties ...");
+        Node resourceNodeOfPomFile = this.session.getRootNode().getNode("pom.xml/jcr:content");
+        assertThat(resourceNodeOfPomFile, is(notNullValue()));
+
+        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
+            Property property = iter.nextProperty();
+            assertThat(property.getName(), is(notNullValue()));
+        }
     }
 
     protected class MyCustomSecurityContext implements SecurityContext {
