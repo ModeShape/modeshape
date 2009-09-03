@@ -684,7 +684,7 @@ public class TokenStream {
         ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
         if (!iter.hasNext()) return false;
         Token token = iter.next();
-        if (currentExpected != ANY_VALUE || !token.matches(currentExpected)) return false;
+        if (currentExpected != ANY_VALUE && !token.matches(currentExpected)) return false;
         for (String nextExpected : expectedForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
