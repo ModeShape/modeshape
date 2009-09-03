@@ -193,4 +193,20 @@ public interface RepositorySource extends Referenceable, Serializable {
      */
     RepositorySourceCapabilities getCapabilities();
 
+    /**
+     * Signal this source that it is no longer needed and should begin the process of reclaiming or closing all resources that it
+     * has acquired. Because {@link #getConnection() connections} may still be in use, this method may not necessarily close all
+     * resources immediately.
+     * <p>
+     * This is a required method, and must be called when this source is no longer needed if one or more {@link #getConnection()
+     * connections} have been obtained since the previous call to this method.
+     * </p>
+     * <p>
+     * Note that calling this method also does not preclude {@link #getConnection() obtaining more connections} after this method
+     * is called. If that happens, this source should simply reacquire any resources necessary to provide additional connections,
+     * and this method needs to be called once again.
+     * </p>
+     */
+    void close();
+
 }

@@ -50,6 +50,7 @@ public final class JpaConnectorI18n {
     public static I18n workspaceAlreadyExists;
     public static I18n workspaceDoesNotExist;
     public static I18n unableToCreateWorkspaces;
+    public static I18n connectionIsNoLongerOpen;
 
     public static I18n basicModelDescription;
 

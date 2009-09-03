@@ -70,11 +70,6 @@ public class CndNodeTypeRegistrationTest {
 
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullTypeSource() throws Exception {
-        repoTypeManager.registerNodeTypes((JcrNodeTypeSource)null);
-    }
-
     @Test( expected = RepositoryException.class )
     public void shouldNotAllowRedefinitionOfExistingType() throws Exception {
         nodeTypes = new CndNodeTypeSource(CND_LOCATION + "existingType.cnd");

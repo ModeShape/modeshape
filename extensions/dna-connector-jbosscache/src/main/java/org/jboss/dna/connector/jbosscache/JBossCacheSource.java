@@ -485,6 +485,16 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        // Null the reference to the repository; open connections still reference it and can continue to work ...
+        this.repository = null;
+    }
+
+    /**
      * Method that is responsible for attempting to create a new cache given the supplied workspace name. Note that this is
      * probably called at most once for each workspace name (except if this method fails to create a cache for a given workspace
      * name).

@@ -563,10 +563,19 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                 }
             };
         }
-        
+
         return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
                                         cachePolicy, rootNodeUuid, workspaceRootPath, maxPathLength, filenameFilter,
                                         getSupportsUpdates());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        this.availableWorkspaces = null;
     }
 
     @Immutable

@@ -70,7 +70,7 @@ public class StreamSequencerAdapterTest {
     private StreamSequencerAdapter sequencer;
     private final String[] validExpressions = {"/a/* => /output"};
     private final SequencerConfig validConfig = new SequencerConfig("name", "desc", Collections.<String, Object>emptyMap(),
-                                                              "something.class", null, validExpressions);
+                                                                    "something.class", null, validExpressions);
     private SequencerOutputMap sequencerOutput;
     private final String sampleData = "The little brown fox didn't something bad.";
     private ExecutionContext context;
@@ -420,28 +420,6 @@ public class StreamSequencerAdapterTest {
                 assertThat(context, notNullValue());
             }
         });
-    }
-
-    @Test( expected = java.lang.AssertionError.class )
-    public void shouldNotAllowNullInputNode() throws Exception {
-        sequencer.createStreamSequencerContext(null, sequencedProperty, seqContext, problems);
-    }
-
-    @Test( expected = java.lang.AssertionError.class )
-    public void shouldNotAllowNullSequencedProperty() throws Exception {
-
-        graph.create("/a").and();
-        Node input = graph.getNodeAt("/a");
-        sequencer.createStreamSequencerContext(input, null, seqContext, problems);
-    }
-
-    @Test( expected = java.lang.AssertionError.class )
-    public void shouldNotAllowNullExecutionContext() throws Exception {
-
-        this.sequencedProperty = mock(Property.class);
-        graph.create("/a").and();
-        Node input = graph.getNodeAt("/a");
-        sequencer.createStreamSequencerContext(input, sequencedProperty, null, problems);
     }
 
     @Test

@@ -64,12 +64,8 @@ public class JpaSourceTest {
 
     @After
     public void afterEach() throws Exception {
-        try {
-            if (this.connection != null) {
-                this.connection.close();
-            }
-        } finally {
-            this.source.close();
+        if (this.connection != null) {
+            this.connection.close();
         }
     }
 

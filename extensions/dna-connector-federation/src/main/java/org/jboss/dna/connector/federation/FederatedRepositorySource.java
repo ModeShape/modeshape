@@ -467,6 +467,15 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public void close() {
+        // do nothing ...
+    }
+
+    /**
      * Get the {@link FederatedRepository} instance that this source is using. This method uses the following logic:
      * <ol>
      * <li>If a {@link FederatedRepository} already was obtained from a prior call, the same instance is returned.</li>

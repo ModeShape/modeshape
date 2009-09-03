@@ -79,6 +79,15 @@ public class FakeRepositorySource implements RepositorySource {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public void close() {
+        // do nothing
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getName()
      */
     public String getName() {

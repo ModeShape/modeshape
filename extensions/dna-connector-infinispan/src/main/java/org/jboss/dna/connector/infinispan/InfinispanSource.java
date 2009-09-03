@@ -420,6 +420,16 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        // Null the reference to the repository; open connections still reference it and can continue to work ...
+        this.repository = null;
+    }
+
+    /**
      * @return repositoryContext
      */
     public RepositoryContext getRepositoryContext() {
@@ -430,7 +440,7 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
         return repositoryContext != null ? repositoryContext.getObserver() : null;
     }
 
-    protected Context getContext() {
+    protected synchronized Context getContext() {
         return this.jndiContext;
     }
 

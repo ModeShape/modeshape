@@ -191,6 +191,18 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public void close() {
+        synchronized (this) {
+            // Release the configuration ...
+            this.configuration = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.naming.Referenceable#getReference()
      */
     public Reference getReference() {

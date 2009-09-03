@@ -66,16 +66,6 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nameFactory = context.getValueFactories().getNameFactory();
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullDefinition() throws Exception {
-        repoTypeManager.registerNodeType(null, true);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowTemplateWithNullContext() throws Exception {
-        repoTypeManager.registerNodeType(new JcrNodeTypeTemplate(null), true);
-    }
-
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowNodeTypeWithNoName() throws Exception {
         ntTemplate.setName(null);

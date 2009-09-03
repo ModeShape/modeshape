@@ -210,7 +210,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private volatile String modelName;
     private transient Model model;
     private transient DataSource dataSource;
-    private transient EntityManagerFactory entityManagerFactory;
+    private transient EntityManagers entityManagers;
     private transient CachePolicy cachePolicy;
     private transient RepositoryContext repositoryContext;
     private transient UUID rootUuid = UUID.fromString(rootNodeUuid);
@@ -861,14 +861,12 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         }
         assert rootNodeUuid != null;
         assert rootUuid != null;
-        EntityManager entityManager = null;
-        if (entityManagerFactory == null || !entityManagerFactory.isOpen()) {
+        if (entityManagers == null) {
             // Create the JPA EntityManagerFactory by programmatically configuring Hibernate Entity Manager ...
             Ejb3Configuration configurator = new Ejb3Configuration();
 
             // Configure the entity classes ...
             configurator.addAnnotatedClass(StoreOptionEntity.class);
-            if (model != null) model.configure(configurator);
 
             // Configure additional properties, which may be overridden by subclasses ...
             configure(configurator);
@@ -913,53 +911,72 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, "hibernate.show_sql", String.valueOf(this.showSql));
             }
 
-            entityManagerFactory = configurator.buildEntityManagerFactory();
-
-            // Establish a connection and obtain the store options...
-            entityManager = entityManagerFactory.createEntityManager();
-
-            // Find and update/set the root node's UUID ...
-            StoreOptions options = new StoreOptions(entityManager);
-            UUID actualUuid = options.getRootNodeUuid();
-            if (actualUuid != null) {
-                this.setRootNodeUuid(actualUuid.toString());
-            } else {
-                options.setRootNodeUuid(this.rootUuid);
-            }
-
-            // Find or set the type of model that will be used.
-            String actualModelName = options.getModelName();
-            if (actualModelName == null) {
-                // This is a new store, so set to the specified model ...
-                if (model == null) setModel(Models.DEFAULT.getName());
-                assert model != null;
-                options.setModelName(model);
-            } else {
+            EntityManagerFactory entityManagerFactory = configurator.buildEntityManagerFactory();
+            try {
+                // Establish a connection and obtain the store options...
+                EntityManager entityManager = entityManagerFactory.createEntityManager();
                 try {
-                    setModel(actualModelName);
-                } catch (Throwable e) {
-                    // The actual model name doesn't match what's available in the software ...
-                    entityManager.close();
-                    entityManagerFactory.close();
-                    String msg = JpaConnectorI18n.existingStoreSpecifiesUnknownModel.text(name, actualModelName);
-                    throw new RepositorySourceException(msg);
-                }
-            }
-            entityManager.close();
-            entityManagerFactory.close();
 
-            // Now, create another entity manager with the classes from the correct model
+                    // Find and update/set the root node's UUID ...
+                    StoreOptions options = new StoreOptions(entityManager);
+                    UUID actualUuid = options.getRootNodeUuid();
+                    if (actualUuid != null) {
+                        this.setRootNodeUuid(actualUuid.toString());
+                    } else {
+                        options.setRootNodeUuid(this.rootUuid);
+                    }
+
+                    // Find or set the type of model that will be used.
+                    String actualModelName = options.getModelName();
+                    if (actualModelName == null) {
+                        // This is a new store, so set to the specified model ...
+                        if (model == null) setModel(Models.DEFAULT.getName());
+                        assert model != null;
+                        options.setModelName(model);
+                    } else {
+                        // Set the model to the what's listed in the database ...
+                        try {
+                            setModel(actualModelName);
+                        } catch (Throwable e) {
+                            // The actual model name doesn't match what's available in the software ...
+                            String msg = JpaConnectorI18n.existingStoreSpecifiesUnknownModel.text(name, actualModelName);
+                            throw new RepositorySourceException(msg);
+                        }
+                    }
+                } finally {
+                    entityManager.close();
+                }
+            } finally {
+                entityManagerFactory.close();
+            }
+
+            // The model has not yet configured itself, so do that now ...
             model.configure(configurator);
-            entityManagerFactory = configurator.buildEntityManagerFactory();
-            entityManager = entityManagerFactory.createEntityManager();
-        }
-        if (entityManager == null) {
-            entityManager = entityManagerFactory.createEntityManager();
+
+            // Now, create another entity manager with the classes from the correct model and without changing the schema...
+            entityManagers = new EntityManagers(configurator);
         }
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        return new JpaConnection(getName(), observer, cachePolicy, entityManager, model, rootUuid, defaultWorkspace,
+        return new JpaConnection(getName(), observer, cachePolicy, entityManagers, model, rootUuid, defaultWorkspace,
                                  getPredefinedWorkspaceNames(), largeValueSizeInBytes, isCreatingWorkspacesAllowed(),
                                  compressData, referentialIntegrityEnforced);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        if (entityManagers != null) {
+            try {
+                // Close this object; existing connections will continue to work, and the last connection closed
+                // will actually shut the lights off...
+                entityManagers.close();
+            } finally {
+                entityManagers = null;
+            }
+        }
     }
 
     /**
@@ -991,19 +1008,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         setProperty(configuration, "hibernate.format_sql", "true");
         setProperty(configuration, "hibernate.use_sql_comments", "true");
         setProperty(configuration, "hibernate.hbm2ddl.auto", "create");
-    }
-
-    /**
-     * Close any resources held by this source. This will ensure that all connections are closed.
-     */
-    public synchronized void close() {
-        if (entityManagerFactory != null) {
-            try {
-                entityManagerFactory.close();
-            } finally {
-                entityManagerFactory = null;
-            }
-        }
     }
 
     protected void setProperty( Ejb3Configuration configurator,

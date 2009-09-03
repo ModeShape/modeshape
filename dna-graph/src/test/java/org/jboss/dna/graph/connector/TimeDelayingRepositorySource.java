@@ -182,6 +182,15 @@ public class TimeDelayingRepositorySource implements RepositorySource {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public void close() {
+        // Do not do anything, since when the connections are closed they'll be removed from the 'openConnections' set
+    }
+
+    /**
      * Factory method that can be overridden by subclasses. This method implementation simply creates a mock {@link XAResource}.
      * 
      * @param connectionName the name of the connection

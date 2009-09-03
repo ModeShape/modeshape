@@ -218,7 +218,10 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         try {
             this.sourcesLock.readLock().lock();
             for (RepositoryConnectionPool pool : this.pools.values()) {
+                // Shutdown the pool of connections ...
                 pool.shutdown();
+                // Now close the source (still allows in-use connections to be used) ...
+                pool.getRepositorySource().close();
             }
         } finally {
             this.sourcesLock.readLock().unlock();

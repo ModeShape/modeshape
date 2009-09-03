@@ -94,6 +94,17 @@ public class RepositoryService implements AdministeredService, Observer {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.repository.service.AbstractServiceAdministrator#doShutdown(org.jboss.dna.repository.service.ServiceAdministrator.State)
+         */
+        @Override
+        protected void doShutdown( State fromState ) {
+            super.doShutdown(fromState);
+            shutdownService();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.repository.service.ServiceAdministrator#awaitTermination(long, java.util.concurrent.TimeUnit)
          */
         public boolean awaitTermination( long timeout,
@@ -226,6 +237,11 @@ public class RepositoryService implements AdministeredService, Observer {
 
             this.started.set(true);
         }
+    }
+
+    protected synchronized void shutdownService() {
+        // Close the repository library ...
+        this.sources.getAdministrator().shutdown();
     }
 
     /**

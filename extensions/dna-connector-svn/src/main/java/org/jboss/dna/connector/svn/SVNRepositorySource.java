@@ -440,33 +440,32 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
-    public RepositoryConnection getConnection() throws RepositorySourceException {
-        
+    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
+
         String sourceName = getName();
         if (sourceName == null || sourceName.trim().length() == 0) {
             I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        
+
         String sourceUsername = getUsername();
         if (sourceUsername == null || sourceUsername.trim().length() == 0) {
             I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getUsername(), msg.text("username"));
         }
-        
+
         String sourcePassword = getPassword();
         if (sourcePassword == null) {
             I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getPassword(), msg.text("password"));
         }
-        
+
         String repositoryRootURL = getRepositoryRootURL();
         if (repositoryRootURL == null || repositoryRootURL.trim().length() == 0) {
             I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getRepositoryRootURL(), msg.text("repositoryRootURL"));
         }
-        
-        
+
         SVNRepository repos = null;
         // Report the warnings for non-existant predefined workspaces
         boolean reportWarnings = false;
@@ -494,7 +493,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
                                                       url,
                                                       name);
                 }
-                if (!SVNRepositoryUtil.isDirectory(repos,"")) {
+                if (!SVNRepositoryUtil.isDirectory(repos, "")) {
                     Logger.getLogger(getClass()).warn(SVNRepositoryConnectorI18n.pathForPredefinedWorkspaceIsNotDirectory,
                                                       url,
                                                       name);
@@ -515,13 +514,11 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
         String defaultURL = getDirectoryForDefaultWorkspace();
         if (defaultURL != null) {
             // Look for the entry at this path .....
-            SVNRepository repository = SVNRepositoryUtil.createRepository(defaultURL,
-                                                                         sourceUsername,
-                                                                         sourcePassword);
+            SVNRepository repository = SVNRepositoryUtil.createRepository(defaultURL, sourceUsername, sourcePassword);
             I18n warning = null;
             if (!SVNRepositoryUtil.exist(repository)) {
                 warning = SVNRepositoryConnectorI18n.pathForPredefinedWorkspaceDoesNotExist;
-            } else if (!SVNRepositoryUtil.isDirectory(repository,"")) {
+            } else if (!SVNRepositoryUtil.isDirectory(repository, "")) {
                 warning = SVNRepositoryConnectorI18n.pathForPredefinedWorkspaceIsNotDirectory;
             } else {
                 // is a directory and is good to use!
@@ -535,6 +532,15 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
         return new SVNRepositoryConnection(name, defaultWorkspace, availableWorspaceNames, isCreatingWorkspacesAllowed(),
                                            cachePolicy, supportsUpdates, new RepositoryAccessData(getRepositoryRootURL(),
                                                                                                   sourceUsername, sourcePassword));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        this.availableWorspaceNames = null;
     }
 
     @Immutable

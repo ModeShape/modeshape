@@ -98,26 +98,6 @@ public class JcrSessionTest extends AbstractSessionTest {
         }
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullRepository() throws Exception {
-        new JcrSession(null, workspace, context, sessionAttributes);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullWorkspace() throws Exception {
-        new JcrSession(repository, null, context, sessionAttributes);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrSession(repository, workspace, null, sessionAttributes);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullSessionAttributesMap() throws Exception {
-        new JcrSession(repository, workspace, context, null);
-    }
-
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowAddLockToken() throws Exception {
         session.addLockToken(null);

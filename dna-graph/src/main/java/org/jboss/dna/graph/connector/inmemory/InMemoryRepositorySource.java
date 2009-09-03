@@ -256,11 +256,21 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
-    public RepositoryConnection getConnection() throws RepositorySourceException {
+    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
             repository = new InMemoryRepository(name, rootNodeUuid, defaultWorkspaceName);
         }
         return new MapRepositoryConnection(this, repository);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#close()
+     */
+    public synchronized void close() {
+        // Null the reference to the in-memory repository; open connections still reference it and can continue to work ...
+        this.repository = null;
     }
 
     /**

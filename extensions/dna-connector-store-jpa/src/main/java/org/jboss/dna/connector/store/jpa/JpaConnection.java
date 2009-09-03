@@ -42,7 +42,8 @@ public class JpaConnection implements RepositoryConnection {
 
     private final String name;
     private final CachePolicy cachePolicy;
-    private final EntityManager entityManager;
+    private final EntityManagers entityManagers;
+    private EntityManager entityManager;
     private final Model model;
     private final UUID rootNodeUuid;
     private final String nameOfDefaultWorkspace;
@@ -56,7 +57,7 @@ public class JpaConnection implements RepositoryConnection {
     /*package*/JpaConnection( String sourceName,
                                Observer observer,
                                CachePolicy cachePolicy,
-                               EntityManager entityManager,
+                               EntityManagers entityManagers,
                                Model model,
                                UUID rootNodeUuid,
                                String nameOfDefaultWorkspace,
@@ -66,13 +67,15 @@ public class JpaConnection implements RepositoryConnection {
                                boolean compressData,
                                boolean enforceReferentialIntegrity ) {
         assert sourceName != null;
-        assert entityManager != null;
+        assert entityManagers != null;
         assert model != null;
         assert rootNodeUuid != null;
         this.observer = observer;
         this.name = sourceName;
         this.cachePolicy = cachePolicy; // may be null
-        this.entityManager = entityManager;
+        this.entityManagers = entityManagers;
+        this.entityManager = entityManagers.checkout();
+        assert this.entityManagers != null;
         this.model = model;
         this.rootNodeUuid = rootNodeUuid;
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
@@ -117,7 +120,7 @@ public class JpaConnection implements RepositoryConnection {
      */
     public boolean ping( long time,
                          TimeUnit unit ) {
-        return entityManager.isOpen();
+        return entityManager != null ? entityManager.isOpen() : false;
     }
 
     /**
@@ -129,6 +132,9 @@ public class JpaConnection implements RepositoryConnection {
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         long size = largeValueMinimumSizeInBytes;
+        if (entityManager == null) {
+            throw new RepositorySourceException(JpaConnectorI18n.connectionIsNoLongerOpen.text(name));
+        }
         RequestProcessor proc = model.createRequestProcessor(name,
                                                              context,
                                                              observer,
@@ -153,6 +159,14 @@ public class JpaConnection implements RepositoryConnection {
      * @see org.jboss.dna.graph.connector.RepositoryConnection#close()
      */
     public void close() {
+        if (entityManager != null) {
+            // Do this only once ...
+            try {
+                entityManagers.checkin(entityManager);
+            } finally {
+                entityManager = null;
+            }
+        }
     }
 
 }
