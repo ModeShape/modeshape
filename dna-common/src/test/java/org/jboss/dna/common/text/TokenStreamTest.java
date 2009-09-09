@@ -292,6 +292,14 @@ public class TokenStreamTest {
     }
 
     @Test
+    public void shouldReturnTrueFromCanConsumeArrayOfTokensIfTheyAllMatch() {
+        makeCaseInsensitive();
+        assertThat(tokens.matches(new String[] {"SELECT", "ALL", "COLUMNS", "FROM", "THIS", "TABLE"}), is(true));
+        assertThat(tokens.canConsume(new String[] {"SELECT", "ALL", "COLUMNS", "FROM", "THIS", "TABLE"}), is(true));
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @Test
     public void shouldReturnTrueFromCanConsumeMultipleTokensIfTheyDoNotAllMatch() {
         makeCaseInsensitive();
         // Unable to consume unless they all match ...

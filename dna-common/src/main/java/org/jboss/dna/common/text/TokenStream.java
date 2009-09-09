@@ -537,6 +537,40 @@ public class TokenStream {
     }
 
     /**
+     * Attempt to consume this current token as the next tokens as long as they match the expected values, or throw an exception
+     * if the token does not match.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected values for the next tokens
+     * @throws ParsingException if the current token doesn't match the supplied value
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public void consume( String[] nextTokens ) throws ParsingException, IllegalStateException {
+        for (String nextExpected : nextTokens) {
+            consume(nextExpected);
+        }
+    }
+
+    /**
+     * Attempt to consume this current token as the next tokens as long as they match the expected values, or throw an exception
+     * if the token does not match.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected values for the next tokens
+     * @throws ParsingException if the current token doesn't match the supplied value
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public void consume( Iterable<String> nextTokens ) throws ParsingException, IllegalStateException {
+        for (String nextExpected : nextTokens) {
+            consume(nextExpected);
+        }
+    }
+
+    /**
      * Attempt to consume this current token if it matches the expected value, and return whether this method was indeed able to
      * consume the token.
      * <p>
@@ -632,6 +666,86 @@ public class TokenStream {
     }
 
     /**
+     * Attempt to consume this current token and the next tokens if and only if they match the expected values, and return whether
+     * this method was indeed able to consume all of the supplied tokens.
+     * <p>
+     * This is <i>not</i> the same as calling {@link #canConsume(String)} for each of the supplied arguments, since this method
+     * ensures that <i>all</i> of the supplied values can be consumed.
+     * </p>
+     * <p>
+     * This method <i>is</i> equivalent to calling the following:
+     * 
+     * <pre>
+     * 
+     * if ( tokens.matches(currentExpected,expectedForNextTokens) ) { tokens.consume(currentExpected,expectedForNextTokens); }
+     * 
+     * </pre>
+     * </p>
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected values of the next tokens
+     * @return true if the current token did match and was consumed, or false if the current token did not match and therefore was
+     *         not consumed
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsume( String[] nextTokens ) throws IllegalStateException {
+        if (completed) return false;
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        Token token = null;
+        for (String nextExpected : nextTokens) {
+            if (!iter.hasNext()) return false;
+            token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
+            if (!token.matches(nextExpected)) return false;
+        }
+        this.tokenIterator = iter;
+        this.currentToken = tokenIterator.hasNext() ? tokenIterator.next() : null;
+        return true;
+    }
+
+    /**
+     * Attempt to consume this current token and the next tokens if and only if they match the expected values, and return whether
+     * this method was indeed able to consume all of the supplied tokens.
+     * <p>
+     * This is <i>not</i> the same as calling {@link #canConsume(String)} for each of the supplied arguments, since this method
+     * ensures that <i>all</i> of the supplied values can be consumed.
+     * </p>
+     * <p>
+     * This method <i>is</i> equivalent to calling the following:
+     * 
+     * <pre>
+     * 
+     * if ( tokens.matches(currentExpected,expectedForNextTokens) ) { tokens.consume(currentExpected,expectedForNextTokens); }
+     * 
+     * </pre>
+     * </p>
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected values of the next tokens
+     * @return true if the current token did match and was consumed, or false if the current token did not match and therefore was
+     *         not consumed
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsume( Iterable<String> nextTokens ) throws IllegalStateException {
+        if (completed) return false;
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        Token token = null;
+        for (String nextExpected : nextTokens) {
+            if (!iter.hasNext()) return false;
+            token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
+            if (!token.matches(nextExpected)) return false;
+        }
+        this.tokenIterator = iter;
+        this.currentToken = tokenIterator.hasNext() ? tokenIterator.next() : null;
+        return true;
+    }
+
+    /**
      * Determine if the current token matches the expected value.
      * <p>
      * The {@link #ANY_VALUE ANY_VALUE} constant can be used as a wildcard.
@@ -695,6 +809,52 @@ public class TokenStream {
     }
 
     /**
+     * Determine if the next few tokens match the expected values.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected value of the next tokens
+     * @return true if the tokens did match, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matches( String[] nextTokens ) throws IllegalStateException {
+        if (completed) return false;
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        Token token = null;
+        for (String nextExpected : nextTokens) {
+            if (!iter.hasNext()) return false;
+            token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
+            if (!token.matches(nextExpected)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Determine if the next few tokens match the expected values.
+     * <p>
+     * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param nextTokens the expected value of the next tokens
+     * @return true if the tokens did match, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matches( Iterable<String> nextTokens ) throws IllegalStateException {
+        if (completed) return false;
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        Token token = null;
+        for (String nextExpected : nextTokens) {
+            if (!iter.hasNext()) return false;
+            token = iter.next();
+            if (nextExpected == ANY_VALUE) continue;
+            if (!token.matches(nextExpected)) return false;
+        }
+        return true;
+    }
+
+    /**
      * Determine if the next few tokens have the supplied types.
      * <p>
      * The {@link #ANY_TYPE ANY_TYPE} constant can be used in the expected values as a wildcard.
@@ -713,6 +873,29 @@ public class TokenStream {
         Token token = iter.next();
         if (currentExpectedType != ANY_TYPE || currentToken().type() != currentExpectedType) return false;
         for (int nextExpectedType : expectedTypeForNextTokens) {
+            if (!iter.hasNext()) return false;
+            token = iter.next();
+            if (nextExpectedType == ANY_TYPE) continue;
+            if (token.type() != nextExpectedType) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Determine if the next few tokens have the supplied types.
+     * <p>
+     * The {@link #ANY_TYPE ANY_TYPE} constant can be used in the expected values as a wildcard.
+     * </p>
+     * 
+     * @param typesForNextTokens the expected type for each of the next tokens
+     * @return true if the tokens did match, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matches( int[] typesForNextTokens ) throws IllegalStateException {
+        if (completed) return false;
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        Token token = null;
+        for (int nextExpectedType : typesForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
             if (nextExpectedType == ANY_TYPE) continue;
@@ -741,6 +924,38 @@ public class TokenStream {
     }
 
     /**
+     * Determine if the next token matches one of the supplied values.
+     * 
+     * @param options the options for the value of the current token
+     * @return true if the current token's value did match one of the suplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matchesAnyOf( String[] options ) throws IllegalStateException {
+        if (completed) return false;
+        Token current = currentToken();
+        for (String option : options) {
+            if (current.matches(option)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the next token matches one of the supplied values.
+     * 
+     * @param options the options for the value of the current token
+     * @return true if the current token's value did match one of the suplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matchesAnyOf( Iterable<String> options ) throws IllegalStateException {
+        if (completed) return false;
+        Token current = currentToken();
+        for (String option : options) {
+            if (current.matches(option)) return true;
+        }
+        return false;
+    }
+
+    /**
      * Determine if the next token have one of the supplied types.
      * 
      * @param firstTypeOption the first option for the type of the current token
@@ -754,6 +969,22 @@ public class TokenStream {
         int currentType = currentToken().type();
         if (currentType == firstTypeOption) return true;
         for (int nextTypeOption : additionalTypeOptions) {
+            if (currentType == nextTypeOption) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the next token have one of the supplied types.
+     * 
+     * @param typeOptions the options for the type of the current token
+     * @return true if the current token's type matched one of the supplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean matchesAnyOf( int[] typeOptions ) throws IllegalStateException {
+        if (completed) return false;
+        int currentType = currentToken().type();
+        for (int nextTypeOption : typeOptions) {
             if (currentType == nextTypeOption) return true;
         }
         return false;
