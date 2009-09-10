@@ -247,60 +247,66 @@ final &LoginContext; loginContext = ...;
 				Both type registration mechanisms are supported equally within JBoss DNA, although the CND approach for defining node types is recommended.
 				<note>
 					<para>JBoss DNA also supports defining custom node types to load at startup.  This is discussed in more detail
-					in the next chapter.
+					in the <link linkend="programmatically_configuring_repositories">previous chapter</link>.
 					</para>
 				</note>
 			</para>
 			<para>
-				Although the JSR-283 specification is not yet final, it does provide a useful means of programatically defining JCR node types.  JBoss DNA supports a comparable
-				node type definition API that implements the functionality from the specification, albeit with classes in an <code>org.jboss.dna.jcr</code> package.  The intent
-				is to deprecate these classes and replace their usage with the JSR-283 equivalents after JBoss DNA fully supports in the JSR-283 specification in a future release.
+				Although the JSR-283 specification is not yet final, it does provide a useful means of programmatically defining JCR node types.  JBoss DNA supports a comparable
+				node type definition API that implements the functionality from the specification, albeit with interfaces in the <code>org.jboss.dna.jcr.nodetype</code> package.  
+				The intent is to deprecate these classes and replace their usage with the JSR-283 equivalents when JBoss DNA fully supports
+				the JSR-283 final adopted specification in a future release.
+			</para>
+			<para>
 				Node types can be defined like so:
 	    <programlisting>
 &Session; session = ... ;
-NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+// Obtain the DNA-specific node type manager ...
+&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) session.getWorkspace().getNodeTypeManager();
 
 // Declare a mixin node type named "searchable" (with no namespace)
-NodeTypeTemplate nodeType = nodeTypeManager.createNodeTypeTemplate();
+&NodeTypeTemplate; nodeType = nodeTypeManager.createNodeTypeTemplate();
 nodeType.setName("searchable");
 nodeType.setMixin(true);
-nodeType.getNodeDefinitionTemplates().add(childNode);
 
 // Add a mandatory child named "source" with a required primary type of "nt:file" 
-NodeDefinitionTemplate childNode = nodeTypeManager.createNodeDefinitionTemplate();
+&NodeDefinitionTemplate; childNode = nodeTypeManager.createNodeDefinitionTemplate();
 childNode.setName("source");
 childNode.setMandatory(true);
-childNode.setRequiredPrimaryTypeNames(new String[] { "nt:file" });
+childNode.setRequiredPrimaryTypes(new String[] { "nt:file" });
 childNode.setDefaultPrimaryType("nt:file");
+nodeType.getNodeDefinitionTemplates().add(childNode);
 
 // Add a multi-valued STRING property named "keywords"
-PropertyDefinitionTemplate property = nodeTypeManager.createPropertyDefinitionTemplate();
+&PropertyDefinitionTemplate; property = nodeTypeManager.createPropertyDefinitionTemplate();
 property.setName("keywords");
 property.setMultiple(true);
 property.setRequiredType(PropertyType.STRING);
 nodeType.getPropertyDefinitionTemplates().add(property);
 
 // Register the custom node type
-nodeTypeManager.registerNodeType(nodeType);
+nodeTypeManager.registerNodeType(nodeType,false);
 </programlisting>	
 			Residual properties and child node definitions can also be defined simply by not calling <code>setName</code> on 
 			the template.
 			</para>
 			<para>
 			Custom node types can be defined more succinctly through the &CND; file format.  In fact, this is how JBoss
-			DNA defines its built-in node types.  An example CND file that declares the same node type as above would be:
+			DNA defines its built-in node types. An example CND file that declares the same node type as above would be:
 <programlisting>
 [searchable] mixin
 - keywords (string) multiple
 + source (nt:file) = nt:file
 </programlisting>	
-			This definition could then be registered with the following code snippet.
+			This definition could then be registered as part of the repository configuration, using the &JcrConfiguration; class
+			(see the <link linkend="programmatically_configuring_repositories">previous chapter</link>).  Or, you can also
+			use a Session to declare the node types in a CDN file, but this also requires DNA-specific interfaces and classes:
 <programlisting>
-
 String pathToCndFileInClassLoader = ...;
-CndNodeTypeSource nodeTypeSource = new CndNodeTypeSource(pathToCndFileInClassLoader);
+&CndNodeTypeSource; nodeTypeSource = new &CndNodeTypeSource;(pathToCndFileInClassLoader);
 
-for (Problem problem : nodeTypeSource.getProblems()) {
+for (&Problem; problem : nodeTypeSource.getProblems()) {
     System.err.println(problem);
 }
 if (!nodeTypeSource.isValid()) {
@@ -308,9 +314,12 @@ if (!nodeTypeSource.isValid()) {
 }
 
 &Session; session = ... ;
-NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+// Obtain the DNA-specific node type manager ...
+&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) session.getWorkspace().getNodeTypeManager();
 nodeTypeManager.registerNodeTypes(nodeTypeSource);
 </programlisting>
+    The &CndNodeTypeSource; class actually implements the &JcrNodeTypeSource; interface, so other implementations can actually be defined.
+    For more information, see the JavaDoc for &JcrNodeTypeSource;.
 				<note>
 					<para> JBoss DNA does not yet support a simple means of unregistering types at this time, so be careful before registering types outside of a 
 					sandboxed environment.

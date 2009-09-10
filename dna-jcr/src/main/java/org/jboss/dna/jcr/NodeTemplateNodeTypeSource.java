@@ -48,7 +48,7 @@ import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * Class to convert one or more {@link NodeTypeTemplate node type templates} containing custom node type definitions into a format
- * that can be registered with the {@link RepositoryNodeTypeManager}.
+ * that can be registered with the {@link JcrNodeTypeManager}.
  * <p>
  * As the JSR-283 specification mandates that node type templates be the standard basis for custom type registration, the
  * {@link RepositoryNodeTypeManager#registerNodeTypes(java.util.Collection, boolean)} method should be used in preference to

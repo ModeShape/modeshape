@@ -40,7 +40,7 @@ import org.jboss.dna.graph.property.PathFactory;
 
 /**
  * Class to parse one or more Compact Node Definition (CND) files containing custom node type definitions into a format that can
- * be registered with the {@link RepositoryNodeTypeManager}.
+ * be registered with the {@link JcrNodeTypeManager}.
  * <p>
  * The class contains methods for determining whether the CND files were parsed successfully and what errors occurred. Typically,
  * the class will be used like this:
@@ -55,7 +55,7 @@ import org.jboss.dna.graph.property.PathFactory;
  *      // Report problems
  *  }
  *  else {
- *      repositoryNodeTypeManager.registerNodeTypes(nodeTypeSource);
+ *      jcrNodeTypeManager.registerNodeTypes(nodeTypeSource);
  *  }
  * }
  * catch (IOException ioe) {

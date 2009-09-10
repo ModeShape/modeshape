@@ -180,6 +180,13 @@
 <!ENTITY JcrRepository			       		"<ulink url='&API;jcr/JcrRepository.html'><classname>JcrRepository</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
 <!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
+<!ENTITY JcrNodeTypeManager       		"<ulink url='&API;jcr/JcrNodeTypeManager.html'><classname>JcrNodeTypeManager</classname></ulink>">
+<!ENTITY NodeTypeTemplate          		"<ulink url='&API;jcr/nodetype/NodeTypeTemplate.html'><interface>NodeTypeTemplate</interface></ulink>">
+<!ENTITY PropertyDefinitionTemplate		"<ulink url='&API;jcr/nodetype/PropertyDefinitionTemplate.html'><interface>PropertyDefinitionTemplate</interface></ulink>">
+<!ENTITY NodeDefinitionTemplate    		"<ulink url='&API;jcr/nodetype/NodeDefinitionTemplate.html'><interface>NodeDefinitionTemplate</interface></ulink>">
+<!ENTITY NodeTypeDefinition        		"<ulink url='&API;jcr/nodetype/NodeTypeDefinition.html'><interface>NodeTypeDefinition</interface></ulink>">
+<!ENTITY JcrNodeTypeSource        		"<ulink url='&API;jcr/JcrNodeTypeSource.html'><interface>JcrNodeTypeSource</interface></ulink>">
+<!ENTITY CndNodeTypeSource        		"<ulink url='&API;jcr/CndNodeTypeSource.html'><classname>CndNodeTypeSource</classname></ulink>">
 
 <!-- Types in extensions/ -->
 
