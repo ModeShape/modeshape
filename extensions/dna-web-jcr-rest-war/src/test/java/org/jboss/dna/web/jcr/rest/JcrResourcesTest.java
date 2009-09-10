@@ -41,12 +41,11 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
- * Test of the DNA JCR REST resource.  Note that this test case uses a very low-level API to construct
- * requests and deconstruct the responses.  Users are encouraged to use a higher-level library to communicate
- * with the REST server (e.g., Apache HTTP Commons).
- *
+ * Test of the DNA JCR REST resource. Note that this test case uses a very low-level API to construct requests and deconstruct the
+ * responses. Users are encouraged to use a higher-level library to communicate with the REST server (e.g., Apache HTTP Commons).
  */
 public class JcrResourcesTest {
 
@@ -57,17 +56,17 @@ public class JcrResourcesTest {
     public void beforeEach() {
 
         // Configured in pom
-        final String login ="dnauser";
-        final String password ="password";
+        final String login = "dnauser";
+        final String password = "password";
 
         Authenticator.setDefault(new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication (login, password.toCharArray());
+                return new PasswordAuthentication(login, password.toCharArray());
             }
         });
     }
-    
+
     private String getResponseFor( HttpURLConnection connection ) throws IOException {
         StringBuffer buff = new StringBuffer();
 
@@ -84,13 +83,13 @@ public class JcrResourcesTest {
     @Test
     public void shouldNotServeContentToUnauthorizedUser() throws Exception {
 
-        final String login ="dnauser";
-        final String password ="invalidpassword";
+        final String login = "dnauser";
+        final String password = "invalidpassword";
 
         Authenticator.setDefault(new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication (login, password.toCharArray());
+                return new PasswordAuthentication(login, password.toCharArray());
             }
         });
 
@@ -110,13 +109,13 @@ public class JcrResourcesTest {
     public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
 
         // Configured in pom
-        final String login ="unauthorizeduser";
-        final String password ="password";
+        final String login = "unauthorizeduser";
+        final String password = "password";
 
         Authenticator.setDefault(new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication (login, password.toCharArray());
+                return new PasswordAuthentication(login, password.toCharArray());
             }
         });
 
@@ -323,7 +322,7 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
         String body = getResponseFor(connection);
-        assertThat(body, is("\"dna:system\""));
+        assertThat(body, is("{\"jcr:primaryType\":\"dna:system\"}"));
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
     }
@@ -339,7 +338,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 
@@ -355,7 +354,7 @@ public class JcrResourcesTest {
         assertThat(values.length(), is(2));
         assertThat(values.getString(0), is("value1"));
         assertThat(values.getString(1), is("value2"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
     }
@@ -371,15 +370,15 @@ public class JcrResourcesTest {
 
         String payload = "{}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
-        
+
         JSONObject properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(1));
         assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
     }
@@ -395,10 +394,10 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:mixinTypes\": \"mix:referenceable\"}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
-        
+
         JSONObject properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(3));
@@ -409,7 +408,7 @@ public class JcrResourcesTest {
         assertThat(values, is(notNullValue()));
         assertThat(values.length(), is(1));
         assertThat(values.getString(0), is("mix:referenceable"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
@@ -423,7 +422,7 @@ public class JcrResourcesTest {
         body = new JSONObject(getResponseFor(connection));
 
         assertThat(body.length(), is(1));
-        
+
         properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(3));
@@ -434,10 +433,10 @@ public class JcrResourcesTest {
         assertThat(values, is(notNullValue()));
         assertThat(values.length(), is(1));
         assertThat(values.getString(0), is("mix:referenceable"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
-    
+
     }
 
     @Test
@@ -448,7 +447,7 @@ public class JcrResourcesTest {
         connection.setDoOutput(true);
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
-                
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
         connection.disconnect();
 
@@ -465,7 +464,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"invalidType\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
         connection.disconnect();
 
@@ -491,7 +490,7 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]},"
-           + " \"children\": { \"childNode\" : { \"properties\": {\"nestedProperty\": \"nestedValue\"}}}}";
+                         + " \"children\": { \"childNode\" : { \"properties\": {\"nestedProperty\": \"nestedValue\"}}}}";
 
         connection.getOutputStream().write(payload.getBytes());
 
@@ -508,7 +507,7 @@ public class JcrResourcesTest {
         JSONObject body = new JSONObject(getResponseFor(connection));
 
         assertThat(body.length(), is(2));
-        
+
         JSONObject properties = body.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(3));
@@ -521,22 +520,22 @@ public class JcrResourcesTest {
         assertThat(values.length(), is(2));
         assertThat(values.getString(0), is("value1"));
         assertThat(values.getString(1), is("value2"));
-        
+
         JSONObject children = body.getJSONObject("children");
         assertThat(children, is(notNullValue()));
         assertThat(children.length(), is(1));
-        
+
         JSONObject child = children.getJSONObject("childNode");
         assertThat(child, is(notNullValue()));
         assertThat(child.length(), is(1));
-        
+
         properties = child.getJSONObject("properties");
         assertThat(properties, is(notNullValue()));
         assertThat(properties.length(), is(2));
         // Parent primary type is nt:unstructured, so this should default to nt:unstructured primary type
         assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
         assertThat(properties.getString("nestedProperty"), is("nestedValue"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
 
@@ -552,9 +551,9 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]},"
-           + " \"children\": { \"childNode\" : { \"properties\": {\"jcr:primaryType\": \"invalidType\"}}}}";
+                         + " \"children\": { \"childNode\" : { \"properties\": {\"jcr:primaryType\": \"invalidType\"}}}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
         connection.disconnect();
 
@@ -565,13 +564,13 @@ public class JcrResourcesTest {
         connection.setDoOutput(true);
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
         connection.disconnect();
-        
+
     }
 
-    @Test 
+    @Test
     public void shouldNotDeleteNonExistentItem() throws Exception {
         URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/invalidItemForDelete");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
@@ -579,12 +578,12 @@ public class JcrResourcesTest {
         connection.setDoOutput(true);
         connection.setRequestMethod("DELETE");
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
         connection.disconnect();
     }
 
-    @Test 
+    @Test
     public void shouldDeleteExtantNode() throws Exception {
 
         // Create the node
@@ -597,7 +596,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 
@@ -613,7 +612,7 @@ public class JcrResourcesTest {
         assertThat(values.length(), is(2));
         assertThat(values.getString(0), is("value1"));
         assertThat(values.getString(1), is("value2"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
@@ -651,7 +650,7 @@ public class JcrResourcesTest {
         connection.disconnect();
     }
 
-    @Test 
+    @Test
     public void shouldDeleteExtantProperty() throws Exception {
         URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
@@ -662,10 +661,10 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
-        
+
         // Confirm that it exists
         postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/propertyForDeletion");
         connection = (HttpURLConnection)postUrl.openConnection();
@@ -723,7 +722,7 @@ public class JcrResourcesTest {
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
-        
+
     }
 
     @Test
@@ -738,7 +737,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"firstProperty\": \"someValue\" }";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
         connection.disconnect();
     }
@@ -754,7 +753,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\" }}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
@@ -765,9 +764,9 @@ public class JcrResourcesTest {
         connection.setRequestMethod("PUT");
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
-        payload = "\"someOtherValue\"";
+        payload = "{\"testProperty\":\"someOtherValue\"}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 
@@ -776,14 +775,82 @@ public class JcrResourcesTest {
         assertThat(properties.length(), is(2));
         assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
         assertThat(properties.getString("testProperty"), is("someOtherValue"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
-    
+
     }
 
     @Test
-    public void shouldNotBeAbleToPutPropertiesToNode() throws Exception {
+    public void shouldBeAbleToPutBinaryValueToProperty() throws Exception {
+        URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutBinaryProperty");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        // Base64-encode a value ...
+        String encodedValue = Base64.encode("propertyValue".getBytes("UTF-8"));
+
+        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty/base64/\": \""
+                         + encodedValue + "\" }}";
+        connection.getOutputStream().write(payload.getBytes());
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
+        connection.disconnect();
+
+        URL putUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutBinaryProperty/testProperty");
+        connection = (HttpURLConnection)putUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        String otherValue = "someOtherValue";
+        payload = "{\"testProperty/base64/\":\"" + Base64.encode(otherValue.getBytes("UTF-8")) + "\"}";
+        connection.getOutputStream().write(payload.getBytes());
+
+        JSONObject body = new JSONObject(getResponseFor(connection));
+        assertThat(body.length(), is(1));
+
+        JSONObject properties = body.getJSONObject("properties");
+        assertThat(properties, is(notNullValue()));
+        assertThat(properties.length(), is(2));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
+        String responseEncodedValue = properties.getString("testProperty/base64/");
+        String decodedValue = new String(Base64.decode(responseEncodedValue), "UTF-8");
+        assertThat(decodedValue, is(otherValue));
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        connection.disconnect();
+
+        // Try putting a non-binary value ...
+        connection = (HttpURLConnection)putUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        String anotherValue = "yetAnotherValue";
+        payload = "{\"testProperty\":\"" + anotherValue + "\"}";
+        connection.getOutputStream().write(payload.getBytes());
+
+        body = new JSONObject(getResponseFor(connection));
+        assertThat(body.length(), is(1));
+
+        properties = body.getJSONObject("properties");
+        assertThat(properties, is(notNullValue()));
+        assertThat(properties.length(), is(2));
+        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
+        assertThat(properties.getString("testProperty"), is(anotherValue));
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        connection.disconnect();
+    }
+
+    @Test
+    public void shouldBeAbleToPutPropertiesToNode() throws Exception {
 
         URL postUrl = new URL(SERVER_URL + "/dna%3arepository/default/items/nodeForPutProperties");
         HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
@@ -794,7 +861,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
@@ -807,7 +874,7 @@ public class JcrResourcesTest {
 
         payload = "{\"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 
@@ -823,10 +890,10 @@ public class JcrResourcesTest {
         assertThat(values.length(), is(2));
         assertThat(values.getString(0), is("value1"));
         assertThat(values.getString(1), is("value2"));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
-    
+
     }
 
     @Test
@@ -841,7 +908,7 @@ public class JcrResourcesTest {
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
         connection.disconnect();
 
@@ -853,7 +920,7 @@ public class JcrResourcesTest {
 
         payload = "{\"jcr:mixinTypes\": \"mix:referenceable\"}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         JSONObject body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 
@@ -867,7 +934,7 @@ public class JcrResourcesTest {
         assertThat(mixinTypes.length(), is(1));
         assertThat(mixinTypes.getString(0), is("mix:referenceable"));
         assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
-        
+
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
 
@@ -879,7 +946,7 @@ public class JcrResourcesTest {
 
         payload = "{\"jcr:mixinTypes\": []}";
         connection.getOutputStream().write(payload.getBytes());
-        
+
         body = new JSONObject(getResponseFor(connection));
         assertThat(body.length(), is(1));
 

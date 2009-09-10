@@ -23,9 +23,10 @@
  */
 package org.jboss.dna.web.jcr.rest;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,9 +39,11 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.servlet.http.HttpServletRequest;
@@ -64,6 +67,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.jboss.dna.common.text.UrlEncoder;
+import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.web.jcr.rest.model.RepositoryEntry;
 import org.jboss.dna.web.jcr.rest.model.WorkspaceEntry;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -99,6 +103,55 @@ import org.jboss.resteasy.spi.UnauthorizedException;
  * <td>ALL</td>
  * </tr>
  * </table>
+ * <h3>Binary data</h3>
+ * <p>
+ * There are several ways to transfer binary property values, but all involve encoding the binary value into ASCII characters
+ * using a {@link Base64} notation and denoting this by adding annotating the property name with a suffix defining the type of
+ * encoding. Currently, only "base64" encoding is supported.
+ * </p>
+ * <p>
+ * For example, if the "jcr:data" property contains a single binary value of "propertyValue", then the JSON object representing
+ * that property will be:
+ * 
+ * <pre>
+ *   &quot;jcr:data/base64/&quot; : &quot;cHJvcGVydHlWYWx1ZQ==&quot;
+ * </pre>
+ * 
+ * Likewise, if the "jcr:data" property contains two binary values each being "propertyValue", then the JSON object representing
+ * that property will be:
+ * 
+ * <pre>
+ *   &quot;jcr:data/base64/&quot; : [ &quot;cHJvcGVydHlWYWx1ZQ==&quot;, &quot;cHJvcGVydHlWYWx1ZQ==&quot; ]
+ * </pre>
+ * 
+ * Note that JCR 1.0.1 does not allow property names to and with a '/' character (among others), while JCR 2.0 does not allow
+ * property names to contain an unescaped or unencoded '/' character. Therefore, the "/{encoding}/" suffix can never appear in a
+ * valid JCR property name, and will always identify an encoded property.
+ * </p>
+ * <p>
+ * Here are the details:
+ * <ul>
+ * <li>Getting a node with <code>GET /resources/{repositoryName}/item/{pathToNode}</code> obtains the JSON object representing the
+ * node, and each property is represented as a nested JSON object where the name is the property name and the value(s) are
+ * represented as either a single string value or an array of string values. If the property has a binary value, then the property
+ * name is appended with "/base64/" and the string representation of each value is encoded in Base64.</li>
+ * <li>Getting a property with <code>GET /resources/{repositoryName}/item/{pathToProperty}</code> allows only the value(s) for the
+ * one property to be included in the response. If any of the values is a binary value, then <i>all</i> of the values will be
+ * encoded in Base64.</li>
+ * <li>Setting a property with <code>PUT /resources/{repositoryName}/item/{pathToProperty}</code> allows setting the property to a
+ * single value, and only that value needs to be included in the body of the request. If the value is binary, the value
+ * <i>must</i> be {@link Base64 encoded} by the client and the "Content-Transfer-Encoding" header must be set to "base64" (case
+ * does not matter). When the request is received, the value is decoded before the property value is updated on the node.</li>
+ * <li>Creating a node with <code>POST /resources/{repositoryName}/item/{pathToNode}</code> requires a request that is structured
+ * in the same way as the response from getting a node: the resulting JSON object represents the node, with nested JSON objects
+ * for the properties and children. If any property of the new node has a binary value, then the name of the property <i>must</i>
+ * be appended with "/base64/" and the string representation of each value are to be encoded in Base64.</li>
+ * <li>Updating a node with <code>PUT /resources/{repositoryName}/item/{pathToNode}</code> requires a request that is structured
+ * in the same way as the response from getting or posting a node: the resulting JSON object represents the node, with nested JSON
+ * objects for the properties and children. If any property of the new node has a binary value, then the name of the property
+ * <i>must</i> be appended with "/base64/" and the string representation of each value are to be encoded in Base64.</li>
+ * </ul>
+ * </p>
  */
 @Immutable
 @Path( "/" )
@@ -251,30 +304,84 @@ public class JcrResources {
         if (item instanceof Node) {
             return jsonFor((Node)item, depth).toString();
         }
-        return jsonFor((Property)item);
+        return jsonFor((Property)item).toString();
     }
 
     /**
-     * Returns the JSON-encoded version of the given property. If the property is single-valued, the returned string is {@code
-     * property.getValue().getString()} encoded as a JSON string. If the property is multi-valued with {@code N} values, this
-     * method returns a JSON array containing {@code property.getValues()[N].getString()} for all values of {@code N}.
+     * Returns the JSON-encoded version of the given property. If the property is single-valued, the returned string is the value
+     * of the property encoded as a JSON string, including the name. If the property is multi-valued with {@code N} values, this
+     * method returns a JSON array containing the JSON string for each value.
+     * <p>
+     * Note that if any of the values are binary, then <i>all</i> values will be first encoded as {@link Base64} string values.
+     * However, if no values are binary, then all values will simply be the {@link Value#getString() string} representation of the
+     * value.
+     * </p>
      * 
      * @param property the property to be encoded
      * @return the JSON-encoded version of the property
+     * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if an error occurs accessing the property, its values, or its definition.
      * @see Property#getDefinition()
      * @see PropertyDefinition#isMultiple()
      */
-    private String jsonFor( Property property ) throws RepositoryException {
+    private JSONObject jsonFor( Property property ) throws JSONException, RepositoryException {
+        boolean encoded = false;
+        Object valueObject = null;
         if (property.getDefinition().isMultiple()) {
             Value[] values = property.getValues();
-            List<String> list = new ArrayList<String>(values.length);
-            for (int i = 0; i < values.length; i++) {
-                list.add(values[i].getString());
+            for (Value value : values) {
+                if (value.getType() == PropertyType.BINARY) {
+                    encoded = true;
+                    break;
+                }
             }
-            return new JSONArray(list).toString();
+            List<String> list = new ArrayList<String>(values.length);
+            if (encoded) {
+                for (Value value : values) {
+                    list.add(jsonEncodedStringFor(value));
+                }
+            } else {
+                for (Value value : values) {
+                    list.add(value.getString());
+                }
+            }
+            valueObject = new JSONArray(list);
+        } else {
+            Value value = property.getValue();
+            encoded = value.getType() == PropertyType.BINARY;
+            valueObject = encoded ? jsonEncodedStringFor(value) : value.getString();
         }
-        return JSONObject.quote(property.getValue().getString());
+        String propertyName = property.getName();
+        if (encoded) propertyName = propertyName + "/base64/";
+        JSONObject jsonProperty = new JSONObject();
+        jsonProperty.put(propertyName, valueObject);
+        return jsonProperty;
+    }
+
+    /**
+     * Return the JSON-compatible string representation of the given property value. If the value is a {@link PropertyType#BINARY
+     * binary} value, then this method returns the Base-64 encoding of that value. Otherwise, it just returns the string
+     * representation of the value.
+     * 
+     * @param value the property value; may not be null
+     * @return the string representation of the value
+     * @throws RepositoryException if there is a problem accessing the value
+     */
+    private String jsonEncodedStringFor( Value value ) throws RepositoryException {
+        // Encode the binary value in Base64 ...
+        InputStream stream = value.getStream();
+        try {
+            return Base64.encode(stream);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // Error accessing the value, so throw this ...
+                    throw new RepositoryException(e);
+                }
+            }
+        }
     }
 
     /**
@@ -296,16 +403,29 @@ public class JcrResources {
             Property prop = iter.nextProperty();
             String propName = prop.getName();
 
+            boolean encoded = false;
+
             if (prop.getDefinition().isMultiple()) {
                 Value[] values = prop.getValues();
+                // Do any of the property values need to be encoded ?
+                for (Value value : values) {
+                    if (value.getType() == PropertyType.BINARY) {
+                        encoded = true;
+                        break;
+                    }
+                }
+                if (encoded) propName = propName + "/base64/";
                 JSONArray array = new JSONArray();
                 for (int i = 0; i < values.length; i++) {
-                    array.put(values[i].getString());
+                    array.put(encoded ? jsonEncodedStringFor(values[i]) : values[i].getString());
                 }
                 properties.put(propName, array);
 
             } else {
-                properties.put(propName, prop.getValue().getString());
+                Value value = prop.getValue();
+                encoded = value.getType() == PropertyType.BINARY;
+                if (encoded) propName = propName + "/base64/";
+                properties.put(propName, encoded ? jsonEncodedStringFor(value) : value.getString());
             }
 
         }
@@ -454,6 +574,22 @@ public class JcrResources {
         return newNode;
     }
 
+    private Value decodeValue( String encodedValue,
+                               ValueFactory valueFactory ) throws RepositoryException {
+        byte[] binaryValue = Base64.decode(encodedValue);
+        InputStream stream = new ByteArrayInputStream(binaryValue);
+        try {
+            return valueFactory.createValue(stream);
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // Error accessing the value, so throw this ...
+                throw new RepositoryException(e);
+            }
+        }
+    }
+
     /**
      * Sets the named property on the given node. This method expects {@code value} to be either a JSON string or a JSON array of
      * JSON strings. If {@code value} is a JSON array, {@code Node#setProperty(String, String[]) the multi-valued property setter}
@@ -468,20 +604,41 @@ public class JcrResources {
     private void setPropertyOnNode( Node node,
                                     String propName,
                                     Object value ) throws RepositoryException, JSONException {
-        String[] values;
+        // Are the property values encoded ?
+        boolean encoded = propName.endsWith("/base64/");
+        if (encoded) {
+            int newLength = propName.length() - "/base64/".length();
+            propName = newLength > 0 ? propName.substring(0, newLength) : "";
+        }
+
+        Value[] values;
+        ValueFactory valueFactory = node.getSession().getValueFactory();
         if (value instanceof JSONArray) {
             JSONArray jsonValues = (JSONArray)value;
-            values = new String[jsonValues.length()];
+            values = new Value[jsonValues.length()];
 
             for (int i = 0; i < values.length; i++) {
-                values[i] = jsonValues.getString(i);
+                String strValue = jsonValues.getString(i);
+                if (encoded) {
+                    values[i] = decodeValue(strValue, valueFactory);
+                } else {
+                    values[i] = valueFactory.createValue(strValue);
+                }
             }
         } else {
-            values = new String[] {(String)value};
+            String strValue = (String)value;
+            if (encoded) {
+                values = new Value[] {decodeValue(strValue, valueFactory)};
+            } else {
+                values = new Value[] {valueFactory.createValue(strValue)};
+            }
         }
 
         if (propName.equals(JcrResources.MIXIN_TYPES_PROPERTY)) {
-            Set<String> toBeMixins = new HashSet<String>(Arrays.asList(values));
+            Set<String> toBeMixins = new HashSet<String>();
+            for (Value theValue : values) {
+                toBeMixins.add(theValue.getString());
+            }
             Set<String> asIsMixins = new HashSet<String>();
 
             for (NodeType nodeType : node.getMixinNodeTypes()) {
@@ -564,6 +721,7 @@ public class JcrResources {
      * @throws UnauthorizedException if the user does not have the access required to create the node at this path
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
+     * @throws IOException if there is a problem reading the value
      */
     @PUT
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
@@ -572,7 +730,7 @@ public class JcrResources {
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
-                           String requestContent ) throws UnauthorizedException, JSONException, RepositoryException {
+                           String requestContent ) throws UnauthorizedException, JSONException, RepositoryException, IOException {
 
         assert path != null;
         assert rawRepositoryName != null;
@@ -603,14 +761,15 @@ public class JcrResources {
 
         } else {
             /*
-             * The incoming content should be a JSON string or a JSON array. Wrap it into an object so it can be parsed more easily
+             * The incoming content should be a JSON object containing the property name and a value that is either a JSON
+             * string or a JSON array.
              */
-
-            JSONObject properties = new JSONObject("{ \"value\": " + requestContent + "}");
             Property property = (Property)item;
+            String propertyName = property.getName();
+            JSONObject jsonProperty = new JSONObject(requestContent);
+            String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + "/base64/";
             node = property.getParent();
-
-            setPropertyOnNode(node, property.getName(), properties.get("value"));
+            setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
         }
         node.save();
         return jsonFor(node, 0).toString();

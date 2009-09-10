@@ -26,6 +26,9 @@ package org.jboss.dna.common.util;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 
 /**
@@ -66,6 +69,28 @@ public class Base64Test {
         for (int i = 0; i < decBytes.length; i++)
             System.out.print(decBytes[i] + " ");
         System.out.println();
+    }
+
+    @Test
+    public void shouldEncodeStringValue() throws UnsupportedEncodingException {
+        String actualValue = "propertyValue";
+        String encoded = Base64.encodeBytes(actualValue.getBytes("UTF-8"));
+        byte[] decoded = Base64.decode(encoded);
+        String decodedValue = new String(decoded, "UTF-8");
+        assertThat(decodedValue, is(actualValue));
+    }
+
+    @Test
+    public void shouldEncodeStreamableValue() {
+        String actualValue = "propertyValue";
+        byte[] actualBytes = actualValue.getBytes();
+        InputStream actualStream = new ByteArrayInputStream(actualBytes);
+        String encoded = Base64.encode(actualStream);
+        String encoded2 = Base64.encodeBytes(actualBytes);
+        assertThat(encoded, is(encoded2));
+        byte[] decoded = Base64.decode(encoded);
+        String decodedValue = new String(decoded);
+        assertThat(decodedValue, is(actualValue));
     }
 
     @Test( expected = NullPointerException.class )

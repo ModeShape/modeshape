@@ -671,6 +671,75 @@ public class Base64 {
 
     }
 
+    /**
+     * Encodes content of the supplied InputStream into Base64 notation. Does not GZip-compress data.
+     * 
+     * @param source The data to convert
+     * @return the encoded bytes
+     */
+    public static String encode( java.io.InputStream source ) {
+        return encode(source, NO_OPTIONS);
+    }
+
+    /**
+     * Encodes the content of the supplied InputStream into Base64 notation.
+     * <p>
+     * Valid options:
+     * 
+     * <pre>
+     *   GZIP: gzip-compresses object before encoding it.
+     *   DONT_BREAK_LINES: don't break lines at 76 characters
+     *     &lt;i&gt;Note: Technically, this makes your encoding non-compliant.&lt;/i&gt;
+     * </pre>
+     * <p>
+     * Example: <code>encodeBytes( myData, Base64.GZIP )</code> or
+     * <p>
+     * Example: <code>encodeBytes( myData, Base64.GZIP | Base64.DONT_BREAK_LINES )</code>
+     * 
+     * @param source The data to convert
+     * @param options Specified options- the alphabet type is pulled from this (standard, url-safe, ordered)
+     * @return the encoded bytes
+     * @see Base64#GZIP
+     * @see Base64#DONT_BREAK_LINES
+     */
+    public static String encode( java.io.InputStream source,
+                                 int options ) {
+        CheckArg.isNotNull(source, "source");
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        Base64.OutputStream b64os = new Base64.OutputStream(baos, ENCODE | options);
+        BufferedInputStream input = new BufferedInputStream(source);
+        java.io.OutputStream output = b64os;
+
+        boolean error = false;
+        try {
+            if ((options & GZIP) == GZIP) {
+                output = new java.util.zip.GZIPOutputStream(output);
+            }
+            int numRead = 0;
+            byte[] buffer = new byte[1024];
+            while ((numRead = input.read(buffer)) > -1) {
+                output.write(buffer, 0, numRead);
+            }
+            output.close();
+        } catch (IOException e) {
+            error = true;
+            throw new SystemFailureException(e); // error using reading from byte array!
+        } finally {
+            try {
+                input.close();
+            } catch (IOException e) {
+                if (!error) new SystemFailureException(e); // error closing input stream
+            }
+        }
+
+        // Return value according to relevant encoding.
+        try {
+            return new String(baos.toByteArray(), PREFERRED_ENCODING);
+        } catch (java.io.UnsupportedEncodingException uue) {
+            return new String(baos.toByteArray());
+        }
+    }
+
     /* ********  D E C O D I N G   M E T H O D S  ******** */
 
     /**
