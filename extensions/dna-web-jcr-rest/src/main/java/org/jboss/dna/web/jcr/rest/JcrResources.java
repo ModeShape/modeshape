@@ -157,6 +157,8 @@ import org.jboss.resteasy.spi.UnauthorizedException;
 @Path( "/" )
 public class JcrResources {
 
+    private static final String BASE64_ENCODING_SUFFIX = "/base64/";
+
     private static final UrlEncoder URL_ENCODER = new UrlEncoder();
 
     private static final String PROPERTIES_HOLDER = "properties";
@@ -352,7 +354,7 @@ public class JcrResources {
             valueObject = encoded ? jsonEncodedStringFor(value) : value.getString();
         }
         String propertyName = property.getName();
-        if (encoded) propertyName = propertyName + "/base64/";
+        if (encoded) propertyName = propertyName + BASE64_ENCODING_SUFFIX;
         JSONObject jsonProperty = new JSONObject();
         jsonProperty.put(propertyName, valueObject);
         return jsonProperty;
@@ -414,7 +416,7 @@ public class JcrResources {
                         break;
                     }
                 }
-                if (encoded) propName = propName + "/base64/";
+                if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
                 JSONArray array = new JSONArray();
                 for (int i = 0; i < values.length; i++) {
                     array.put(encoded ? jsonEncodedStringFor(values[i]) : values[i].getString());
@@ -424,7 +426,7 @@ public class JcrResources {
             } else {
                 Value value = prop.getValue();
                 encoded = value.getType() == PropertyType.BINARY;
-                if (encoded) propName = propName + "/base64/";
+                if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
                 properties.put(propName, encoded ? jsonEncodedStringFor(value) : value.getString());
             }
 
@@ -605,9 +607,9 @@ public class JcrResources {
                                     String propName,
                                     Object value ) throws RepositoryException, JSONException {
         // Are the property values encoded ?
-        boolean encoded = propName.endsWith("/base64/");
+        boolean encoded = propName.endsWith(BASE64_ENCODING_SUFFIX);
         if (encoded) {
-            int newLength = propName.length() - "/base64/".length();
+            int newLength = propName.length() - BASE64_ENCODING_SUFFIX.length();
             propName = newLength > 0 ? propName.substring(0, newLength) : "";
         }
 
@@ -767,7 +769,7 @@ public class JcrResources {
             Property property = (Property)item;
             String propertyName = property.getName();
             JSONObject jsonProperty = new JSONObject(requestContent);
-            String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + "/base64/";
+            String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
             node = property.getParent();
             setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
         }
