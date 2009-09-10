@@ -39,9 +39,9 @@ import java.util.Set;
 import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.jboss.dna.common.util.Base64;
 import org.junit.Before;
 import org.junit.Test;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
  * Test of the DNA JCR REST resource. Note that this test case uses a very low-level API to construct requests and deconstruct the
@@ -791,7 +791,7 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
         // Base64-encode a value ...
-        String encodedValue = Base64.encode("propertyValue".getBytes("UTF-8"));
+        String encodedValue = Base64.encodeBytes("propertyValue".getBytes("UTF-8"));
 
         String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty/base64/\": \""
                          + encodedValue + "\" }}";
@@ -808,7 +808,7 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
         String otherValue = "someOtherValue";
-        payload = "{\"testProperty/base64/\":\"" + Base64.encode(otherValue.getBytes("UTF-8")) + "\"}";
+        payload = "{\"testProperty/base64/\":\"" + Base64.encodeBytes(otherValue.getBytes("UTF-8")) + "\"}";
         connection.getOutputStream().write(payload.getBytes());
 
         JSONObject body = new JSONObject(getResponseFor(connection));
