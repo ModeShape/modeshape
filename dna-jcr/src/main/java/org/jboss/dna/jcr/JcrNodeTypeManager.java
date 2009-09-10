@@ -441,6 +441,37 @@ class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
+     * Registers the node types from the given {@code JcrNodeTypeSource}. This method is used to register or update a set of node
+     * types with mutual dependencies. Returns an iterator over the resulting {@code NodeType} objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
+     * </p>
+     * 
+     * @param source the new node types to register
+     * @return the {@code newly created node types}
+     * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
+     * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
+     *         specifies a node type name that already exists
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; DNA does not allow updating node types at
+     *         this time.
+     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#DNA_REGISTER_TYPE_PERMISSION
+     *         register type permission}.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeTypeIterator registerNodeTypes( JcrNodeTypeSource source )
+        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+        AccessDeniedException, RepositoryException {
+
+        try {
+            session.checkPermission((Path)null, JcrSession.DNA_REGISTER_TYPE_PERMISSION);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
+        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(source));
+    }
+
+    /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
      * <p>
