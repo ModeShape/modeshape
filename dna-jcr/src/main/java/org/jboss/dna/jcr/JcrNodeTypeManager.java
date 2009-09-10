@@ -59,7 +59,7 @@ import org.jboss.dna.jcr.nodetype.PropertyDefinitionTemplate;
  * @see RepositoryNodeTypeManager
  */
 @Immutable
-class JcrNodeTypeManager implements NodeTypeManager {
+public class JcrNodeTypeManager implements NodeTypeManager {
 
     private final JcrSession session;
     private final RepositoryNodeTypeManager repositoryTypeManager;
