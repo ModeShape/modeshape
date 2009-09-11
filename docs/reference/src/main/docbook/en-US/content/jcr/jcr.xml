@@ -182,16 +182,16 @@ final &LoginContext; loginContext = ...;
 			<title>L1 and L2 Features</title>
 			<para>
 				JBoss DNA currently supports most of the Level 1 and Level 2 feature set defined by the <ulink url="&JSR170;">JSR-170</ulink> specification.
-				Queries, which are part of Level 1, are not implemented.  Some of the L2 features such as workspace cloning and updating, corresponding nodes, 
-				and referential integrity for <code>REFERENCE</code> properties are also not yet implemented.  As the current implementation does provide many 
-				of the features that may be needed by an application, we really hope that this release will allow you to give us some feedback on what we have so far.
+				Queries, which are part of Level 1, are not implemented.  Referential integrity for <code>REFERENCE</code> properties, a Level 2 feature, is also not yet implemented.  
+				As the current implementation does provide many of the features that may be needed by an application, we really hope that this release will allow you to give us 
+				some feedback on what we have so far.
 			</para>
 		</sect2>
 		<sect2>
 			<title>Optional Features</title>
 			<para>
 				JBoss DNA does not currently support any of the optional JCR features.  Currently, the observation optional feature is planned to be complete prior
-				to the 1.0 release.  The locking optional feature <emphasis>may</emphasis> be implemented in this timeframe as well.  
+				to the 1.0 release.  The locking optional feature <emphasis>may</emphasis> be implemented in this time frame as well.  
 				<note>
 					<para>The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
 					</para>
@@ -206,24 +206,117 @@ final &LoginContext; loginContext = ...;
 				and workspace level.
 			</para>
 			<para>
-				JBoss DNA currently defines two permissions: <code>READONLY</code> and <code>READWRITE</code>.  If the &Credentials; passed into <code>Session.login(...)</code>
-				(or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) has either role, the session will have
-				the corresponding access to all workspaces within the repository.  That is, having the <code>READONLY</code> role implies that <code>Session.checkPermission(path, "read")</code>
-				will not throw an &AccessDeniedException;  for any value of <code>path</code> in any workspace in the repository.  Similarly, having the <code>READWRITE</code> 
-				role implies that <code>Session.checkPermission(path, actions)</code> will not throw an &AccessDeniedException; for any values of <code>path</code> and 
-				<code>actions</code>.
+				JBoss DNA has extended the set of JCR-defined actions ("add_node", "set_property", "remove", and "read") with additional actions ("register_type" and 
+				"register_namespace") that restrict the ability to register (and unregister) types and namespaces, respectively.  Permissions to perform these actions are aggregated in roles that
+				can be assigned to users. 
+			</para>
+			<para>
+				JBoss DNA currently defines three roles: <code>READONLY</code>, <code>READWRITE</code>, and <code>ADMIN</code>.  If the &Credentials; passed into 
+				<code>Session.login(...)</code> (or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) have any of these roles, 
+				the session will have the corresponding access to all workspaces within the repository.  The mapping from the roles to the actions that they allow is provided below.
+				for any values of <code>path</code>.  
+				  
+				<table frame='all'>
+		<title>Role / Action Mapping</title>
+		<tgroup cols='4' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+      <colspec colname='c3' colwidth="1*"/>
+      <colspec colname='c4' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Action Name</entry>
+		  		<entry>READONLY</entry>
+		  		<entry>READWRITE</entry>
+		  		<entry>ADMIN</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>read</entry>
+					<entry>Allows</entry>
+					<entry>Allows</entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>add_node</entry>
+					<entry></entry>
+					<entry>Allows</entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>set_property</entry>
+					<entry></entry>
+					<entry>Allows</entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>remove</entry>
+					<entry></entry>
+					<entry>Allows</entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>register_namespace</entry>
+					<entry></entry>
+					<entry></entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>register_type</entry>
+					<entry></entry>
+					<entry></entry>
+					<entry>Allows</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
 				  
 				<note>
-					<para> In this release, JBoss DNA does not properly check for actions or even check that the <code>actions</code> parameter passed into 
-						<code>Session.checkPermission(...)</code> is even valid.  This will be corrected prior to the 1.0 release.
+					<para> In this release, JBoss DNA does not check that the <code>actions</code> parameter passed into 
+						<code>Session.checkPermission(...)</code> contains only valid actions.  This will be corrected prior to the 1.0 release.
 					</para>
 				</note> 
 				
-				It is also possible to grant access only to one or more named workspaces.  For a workspace named "staging", this can be done by assigning a role named 
-				<code>READONLY.staging</code>.  Appending <code>"." + workspaceName</code> to the <code>READWRITE</code> role works as well.
+				It is also possible to grant access only to one or more repositories on a single DNA server or to one or more named workspaces within a repository.  The format for 
+				role names is defined below:
+			</para>
+				<table frame='all'>
+		<title>Role Formats</title>
+		<tgroup cols='3' align='left' colsep='1' rowsep='1'>
+			<thead>
+				<row>
+		  		<entry>Role Pattern</entry>
+		  		<entry>Examples</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>ROLE_NAME</entry>
+					<entry><code>READONLY</code>, <code>ADMIN</code></entry>
+					<entry>Grants the named role to the assigned user on every workspace in any repository on the DNA server.</entry>
+				</row>
+				<row>
+					<entry>ROLE_NAME.REPOSITORY_NAME</entry>
+					<entry><code>READONLY.dna_repo</code>, <code>ADMIN.localRepository</code></entry>
+					<entry>Grants the named role to the assigned user on every workspace in the named repository on the DNA server.</entry>
+				</row>
+				<row>
+					<entry>ROLE_NAME.REPOSITORY_NAME.WORKSPACE_NAME</entry>
+					<entry><code>READONLY.dna_repo.jsmith</code>, <code>ADMIN.localRepository.default</code></entry>
+					<entry>Grants the named role to the assigned user on the named workspace in the named repository on the DNA server.</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>			
+			<para>
+				It is also possible to grant more than one role to the same user.  For example, the user jsmith could be granted the roles READ_ONLY.production, READ_WRITE.production.jsmith,
+				and READ_WRITE.staging to allow read-only access to any workspace on a production repository, read/write access to a personal workspace on the same production repository,
+				and read/write access to any workspace in a staging repository.    
 			</para>
 			<para>
-				As a final note, the JBoss DNA JCR implementation will likely have additional security roles added prior to the 1.0 release.  A <code>CONNECT</code> role
+				As a final note, the JBoss DNA JCR implementation may have additional security roles added prior to the 1.0 release.  A <code>CONNECT</code> role
 				is already being used by the DNA REST Server to control whether users have access to the repository through that means.   
 			</para>
 		</sect2>
