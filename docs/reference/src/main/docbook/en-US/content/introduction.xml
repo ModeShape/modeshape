@@ -490,6 +490,12 @@
             library to determine the best MIME type from the filename and file contents.
           </para>
         </listitem>
+      </itemizedlist>
+      The following modules make up the various web application projects (and are located in the source
+      under the
+      <code>web/</code>
+      directory):
+      <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">dna-web-jcr-rest</emphasis>
