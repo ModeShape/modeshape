@@ -176,7 +176,8 @@ final &LoginContext; loginContext = ...;
 		<para>
 		The JBoss DNA JCR implementation will not be JCR-compliant prior to the 1.0 release.  Additionally, the JCR 
 		specification allows some latitude to implementors for some implementation details.  The sections below
-		clarify JBoss DNA's current and planned behavior.
+		clarify JBoss DNA's current and planned behavior.  <emphasis>As always, please consult the 
+		<ulink url="&Roadmap;">current list of known issues and bugs</ulink>.</emphasis>
 		</para> 
 		<sect2>
 			<title>L1 and L2 Features</title>
