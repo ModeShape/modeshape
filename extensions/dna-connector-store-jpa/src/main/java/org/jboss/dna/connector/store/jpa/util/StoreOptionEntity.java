@@ -47,10 +47,10 @@ import org.jboss.dna.connector.store.jpa.Model;
 public class StoreOptionEntity {
 
     @Id
-    @Column( name = "NAME", nullable = false, unique = true, length = 512 )
+    @Column( name = "NAME", nullable = false, length = 512 )
     private String name;
 
-    @Column( name = "VALUE", nullable = false, unique = false, length = 512 )
+    @Column( name = "VALUE", nullable = false, length = 512 )
     private String value;
 
     /**
