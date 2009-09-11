@@ -400,6 +400,16 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">dna-connector-infinispan</emphasis>
+            is a DNA repository connector that stores content in a deployed instance of <ulink url="http://infinispan.org">Infinispan</ulink>.
+            Infinispan is an extremely scalable, highly available data grid platform that distributes the data across the nodes 
+            in the grid.  This connector makes it possible for repository content to be stored in a very efficient, fast,
+            higly-concurrent (essentially lock- and synchronization-free) and reliable manner, 
+            even when the content size grows to massive sizes.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">dna-connector-store-jpa</emphasis>
             is a DNA sequencer that provides for persistent storage and access of DNA content in a relational database.  This connector
             is based on JPA technology.

@@ -32,9 +32,9 @@
   <title>Infinispan Connector</title>
   <para>
   	The Infinispan repository connector allows a <ulink url="http://www.jboss.org/infinispan/">Infinispan</ulink> instance to be 
-		used as a JBoss DNA (and thus JCR) repository.  This provides a repository that is an effective, scalable, and distributed cache,
-		and is often paired with other repository sources to provide a local or <link linkend="federation-connector">federated</link>
-		repository.
+		used as a JBoss DNA (and thus JCR) repository.  This provides a way for the content in a repository to be stored in an
+		effective, scalable, and distributed data grid.  Like other connectors, this can be paired with other repository sources
+		to provide a local or <link linkend="federation-connector">federated</link> repository.
   </para>
 	<para>
 		The &InfinispanSource; class provides a number of JavaBean properties that control its behavior:

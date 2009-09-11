@@ -79,11 +79,13 @@
 					<entry>directoryForDefaultWorkspace</entry>
 					<entry>Optional property that, if used, specifies the relative path of the directory in the repository that should be
 						exposed as the default workspace.
+						Each workspace name is the URL of the portion of the SVN repository being exposed (e.g., "http://acme.com/repo/trunk").
 					</entry>
 				</row>
 				<row>
 					<entry>predefinedWorkspaceNames</entry>
 					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+						Each workspace name is the URL of the portion of the SVN repository being exposed (e.g., "http://acme.com/repo/trunk").
 						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
 					</entry>
 				</row>
@@ -116,7 +118,15 @@ config.repositorySource("SVN repository for JBoss DNA")
       .usingClass(SVNRepositorySource.class)
       .setDescription("The DNA SVN repository (anonymous access)")
       .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/dna");
-      .setProperty("directoryForDefaultWorkspace", "trunk");
-      .setProperty("predefinedWorkspaceNames", new  String[]{"trunk","tags/0.1","/tags/0.2", "/tags/0.3", "/tags/0.4", "/tags/0.5");
+      .setProperty("directoryForDefaultWorkspace", "http://anonsvn.jboss.org/repos/dna/trunk");
+      .setProperty("predefinedWorkspaceNames", new String[] {
+                        "http://anonsvn.jboss.org/repos/dna/trunk",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.1",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.2",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.3",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.4",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.5",
+                        "http://anonsvn.jboss.org/repos/dna/tags/0.6"
+                  });
  ]]></programlisting>
 </chapter>

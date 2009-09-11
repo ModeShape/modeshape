@@ -204,11 +204,15 @@ POST http://www.example.com/resources/dna%3arepository/default/items/newNode
 		</para>
 		<para>
 		The PUT method allows for updates of nodes and properties.  If the URI points to a property, the body of the
-		request should be the new JSON-encoded value for the property.
+		request should be the new JSON-encoded value for the property, which includes the property name (allowing
+		proper determination of whether the values are binary; see the 
+		<link linkend="binary_properties_in_rest_representations">next section"</link>").
 <programlisting><![CDATA[
 PUT http://www.example.com/resources/dna%3arepository/default/items/newNode/someProperty
 
-"bar"
+{
+	"someProperty" : "bar"
+}
 ]]></programlisting>
 		Setting multiple properties at once can be performed by providing a URI to a node instead of a property. The
 		body of the request should then be a JSON object that maps property names to their new values.
@@ -228,6 +232,37 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 			</para>
 		</note>
 		</para>
+		<sect2 id="binary_properties_in_rest_representations">
+			<title>Binary properties</title>
+			<para>
+		    Binary property values are included in any of the the responses or requests, but are represented 
+		    string values containing the <ulink url="&Wikipedia;Base64">Base 64 encoding</ulink> of the binary content.  
+		    Any such property is explicitly annotated such that "/base64/" is appended to the property name.  
+		    First of all, this makes it very clear to the client and service which properties are encoded, allowing them 
+		    to properly decode the values before use.  Secondly, the "/base64/" suffix was carefully chosen because it 
+		    cannot be used in a real property name (without escaping).  Here's an example of a node containing a "jcr:primaryType" 
+		    property with a single string value, a "jcr:uuid" property with another single UUID value, another 
+		    "options" property that has two integer values, and a fourth "content" property that has a single
+		    binary value:
+<programlisting><![CDATA[
+{
+	"properties": {
+		"jcr:primaryType": "nt:unstructured",
+		"jcr:uuid": "163bc5e5-3b57-4e63-b2ae-ededf43d3445"
+		"options": [ "1", "2" ]
+		"content/base64/": "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz
+		            IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg
+		            dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu
+		            dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo
+		            ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
+	},
+}
+]]></programlisting>
+	      All values of a property will always be Base 64 encoded if at least one of the values is binary.
+	      If there are multiple values, then they will be separated by commas and will appear within '[' and ']' 
+	      characters (just like other properties).
+			</para>
+		</sect2>
 	</sect1>
 	<sect1 id="dna_rest_server_configuration">
 		<title>Configuring the DNA REST Server</title>
@@ -390,7 +425,7 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 	<parent>
 		<artifactId>dna</artifactId>
 		<groupId>org.jboss.dna</groupId>
-		<version>0.5-SNAPSHOT</version>
+		<version>0.6</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>dna-web-jcr-rest-war</artifactId>
@@ -402,20 +437,20 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-web-jcr-rest</artifactId>
-			<version>${pom.version}</version>
+			<version>0.6</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.4.3</version>
+			<version>1.5.8</version>
 			<scope>runtime</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
-			<version>1.0-beta-8</version>
+			<version>1.1.GA</version>
 		</dependency>		
 	</dependencies>
 </project>
@@ -438,13 +473,13 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 	|	+ commons-codec-1.2.jar
 	|	+ commons-httpclient-3.1.jar
 	|	+ commons-logging-1.0.4.jar
-	|	+ dna-cnd-0.5-SNAPSHOT.jar
-	|	+ dna-common-0.5-SNAPSHOT.jar
-	|	+ dna-connector-federation-0.5-SNAPSHOT.jar
-	|	+ dna-graph-0.5-SNAPSHOT.jar
-	|	+ dna-jcr-0.5-SNAPSHOT.jar
-	|	+ dna-repository-0.5-SNAPSHOT.jar
-	|	+ dna-web-jcr-rest-0.5-SNAPSHOT.jar
+	|	+ dna-cnd-0.6.jar
+	|	+ dna-common-0.6.jar
+	|	+ dna-connector-federation-0.6.jar
+	|	+ dna-graph-0.6.jar
+	|	+ dna-jcr-0.6.jar
+	|	+ dna-repository-0.6.jar
+	|	+ dna-web-jcr-rest-0.6.jar
 	|	+ FastInfoset-1.2.2.jar
 	|	+ google-collect-snapshot-20080530.jar
 	|	+ hamcrest-core-1.1.jar
