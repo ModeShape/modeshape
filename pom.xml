@@ -22,7 +22,7 @@
 		</license>
 	</licenses>
 	<organization>
-		<name>JBoss, a division of Red Hat</name>
+		<name>JBoss, by Red Hat</name>
 		<url>http://www.jboss.org</url>
 	</organization>
 	<developers>
@@ -30,7 +30,7 @@
 			<name>Randall Hauch</name>
 			<id>randall</id>
 			<email>rhauch@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
+			<organization>JBoss, by Red Hat</organization>
 			<roles>
 				<role>Project Lead</role>
 				<role>Developer</role>
@@ -41,7 +41,7 @@
 			<name>John Verhaeg</name>
 			<id>johnny</id>
 			<email>jverhaeg@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
+			<organization>JBoss, by Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -51,7 +51,7 @@
 			<name>Dan Florian</name>
 			<id>dan</id>
 			<email>dflorian@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
+			<organization>JBoss, by Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -102,20 +102,11 @@
 			</roles>
 			<timezone>+10</timezone>
 		</developer>
-		<developer>
-			<name>Bojidar Penchev</name>
-			<id>dcodeboy</id>
-			<email>dcodeboy@gmail.com</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
 	</developers>
 	<contributors>
 		<contributor>
 			<name>Greg Haber</name>
-			<organization>JBoss, a division of Red Hat</organization>
+			<organization>JBoss, by Red Hat</organization>
 			<timezone>-5</timezone>
 		</contributor>
 	</contributors>
@@ -144,8 +135,8 @@
 		<module>extensions/dna-mimetype-detector-aperture</module>
 		<module>extensions/dna-common-jdbc</module> 
 		<module>extensions/dna-connector-jdbc-metadata</module> 
-		<module>extensions/dna-web-jcr-rest</module> 
-		<module>extensions/dna-web-jcr-rest-war</module> 
+		<module>web/dna-web-jcr-rest</module> 
+		<module>web/dna-web-jcr-rest-war</module> 
 	</modules>
 
 	<profiles>
