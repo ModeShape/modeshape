@@ -54,7 +54,7 @@ public class NamespaceEntity {
     @GeneratedValue( strategy = GenerationType.AUTO )
     private Long id;
 
-    @Column( name = "URI", nullable = false, unique = false, length = 512, updatable = false )
+    @Column( name = "URI", nullable = true, unique = false, length = 512, updatable = false )
     private String uri;
 
     /**
