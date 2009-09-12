@@ -235,6 +235,7 @@
 	        </plugins>
 	      </build>
 	      <modules>
+					<module>dna-integration-tests</module>
 	        <module>docs</module>
 	        <module>docs/examples/gettingstarted</module>
 	      </modules>
