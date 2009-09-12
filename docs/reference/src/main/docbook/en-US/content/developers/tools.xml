@@ -402,18 +402,17 @@
 			<note>
 				<para>
 					Before running Maven commands to build the releases, increase the memory available to Maven with this command:
-					<code>$ export MAVEN_OPTS=-Xmx256m</code>
+					<code>$ export MAVEN_OPTS=-Xmx512m</code>
 				</para>
 			</note>
 			<para>
-				To perform this complete build, issue the following command while in the <code>target/</code> directory:
+				To perform this complete build, issue the following command while in the <code>trunk/</code> directory:
 			</para>
-			<programlisting>$ mvn -P assembly clean javadoc:javadoc install</programlisting>
+			<programlisting>$ mvn -P assembly clean install</programlisting>
 			<para>
-				This command runs the "clean", "javadoc:javadoc", and "install" goals using the "assembly" profile, 
+				This command runs the "clean" and "install" goals using the "assembly" profile, 
 				which adds the production of JavaDocs, the Getting Started document, the Reference Guide document, 
-				the Getting Started examples, and several ZIP archives.  The order of the goals is important,
-				since the "install" goal attempts to include the JavaDoc in the archives. 
+				the Getting Started examples, integration tests, and several ZIP archives.  The order of the goals is important.
 			</para>
 			<para>
 				After this build has completed, verify that the assemblies under <code>target/</code> have actually been created and that
@@ -435,7 +434,7 @@
 				The next step is to ensure that all information in the POM is correct and contains all the information required for
 				the release process.  This is called a <emphasis>dry run</emphasis>, and is done with the Maven "release" plugin:
 			</para>
-			<programlisting>$ mvn -Passembly release:prepare -DdryRun=true</programlisting>
+			<programlisting>$ mvn -P assembly release:prepare -DdryRun=true</programlisting>
 			<para>
 				This may download a lot of Maven plugins if they already haven't been downloaded, but it will eventually prompt you for
 				the release version of each of the Maven projects, the tag name for the release, and the next development versions
@@ -445,14 +444,14 @@
 			<para>
 				After the dry run completes you should clean up the files that the release plugin created in the dry run:
 			</para>
-			<programlisting>$ mvn -Passembly release:clean</programlisting>
+			<programlisting>$ mvn -P assembly release:clean</programlisting>
 		</sect2>
 		<sect2 id="prepare-release">
 			<title>Prepare for the release</title>
 			<para>
 				Run the prepare step (without the <code>dryRun</code> option):
 			</para>
-			<programlisting>$ mvn -Passembly release:prepare</programlisting>
+			<programlisting>$ mvn -P assembly release:prepare</programlisting>
 			<para>
 				You will again be prompted for the release versions and tag name. These should be the same as what was used during the dry run. 
 				This will run the same steps as the dry run, with the additional step of tagging the release in SVN.  

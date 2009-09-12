@@ -264,34 +264,6 @@
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.2</version>
 				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>2.2</version>
-					<configuration>
-						<aggregate>true</aggregate>
-            <doclet>net.gleamynode.apiviz.APIviz</doclet>
-	          <docletArtifact>
-	            <groupId>net.gleamynode.apiviz</groupId>
-	            <artifactId>apiviz</artifactId>
-	            <version>1.1.1</version>
-	          </docletArtifact>
-	          <additionalparam>
-	            -charset UTF-8
-	            -docencoding UTF-8
-	            -version
-	            -author
-	            -breakiterator
-	            -linksource
-	            -sourcetab 4
-	            -windowtitle "${project.name} ${project.version} API Reference"
-	            -doctitle "${project.name} ${project.version} API Reference"
-	            -bottom "Copyright © ${project.inceptionYear}-Present JBoss a division of Red Hat. All Rights Reserved."
-	            -link http://java.sun.com/javase/6/docs/api/
-	          </additionalparam>
-	          <encoding>UTF-8</encoding>
-					</configuration>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
@@ -373,6 +345,64 @@
 					</archive>
 				</configuration>
 			</plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>generate-javadoc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <doclet>org.jboss.apiviz.APIviz</doclet>
+          <docletArtifact>
+            <groupId>org.jboss.apiviz</groupId>
+            <artifactId>apiviz</artifactId>
+            <version>1.3.0.GA</version>
+          </docletArtifact>
+          <attach>false</attach>
+          <!--stylesheetfile>${basedir}/src/javadoc/stylesheet.css</stylesheetfile-->
+          <useStandardDocletOptions>true</useStandardDocletOptions>
+          <outputDirectory>${project.build.directory}/api</outputDirectory>
+          <reportOutputDirectory>${project.build.directory}/api</reportOutputDirectory>
+          <destDir>api</destDir>
+          <charset>UTF-8</charset>
+          <docencoding>UTF-8</docencoding>
+          <breakiterator>true</breakiterator>
+          <version>true</version>
+          <author>true</author>
+          <keywords>true</keywords>
+          <overview>${basedir}/src/javadoc/overview.html</overview>
+          <doctitle>${project.name} API Reference (${project.version})</doctitle>
+          <windowtitle>${project.name} API Reference (${project.version})</windowtitle>
+          <maxmemory>1024m</maxmemory>
+          <additionalparam>
+            -link http://java.sun.com/javase/6/docs/api/
+            -link http://java.sun.com/products/servlet/2.5/docs/servlet-2_5-mr2/
+            -link http://www.slf4j.org/apidocs/
+            -link http://logging.apache.org/log4j/1.2/apidocs/
+
+            -group "JCR implementation" ${project.groupId}.jcr*:${project.groupId}.cnd*
+            -group "Repository engine" ${project.groupId}.repository*
+            -group "Graph API" ${project.groupId}.graph:${project.groupId}.graph.io*:${project.groupId}.graph.property*:${project.groupId}.graph.request*:${project.groupId}.graph.session*:${project.groupId}.graph.xml*
+            -group "Connectors" ${project.groupId}.graph.cache*:${project.groupId}.graph.connector*:${project.groupId}.connector*
+            -group "Observation" ${project.groupId}.graph.observation*
+            -group "Sequencers" ${project.groupId}.graph.sequencer*:${project.groupId}.sequencer*
+            -group "MIME type detectors" ${project.groupId}.graph.mimetype*:${project.groupId}.mimetype*
+            -group "Web services" ${project.groupId}.web*
+            -group "Common utilities" ${project.groupId}.common*
+            
+            -nopackagediagram
+          </additionalparam>
+          <encoding>UTF-8</encoding>
+          <locale>en_US</locale>
+          <excludePackageNames>${project.groupId}.test*:org.jboss.example.dna*</excludePackageNames>
+        </configuration>
+      </plugin>
 		</plugins>
 	</build>
 	<!--
@@ -490,26 +520,6 @@
 				<artifactId>joda-time</artifactId>
 				<version>1.4</version>
 			</dependency>
-			<!-- 
-		    Rules
-		    -->
-			<dependency>
-				<groupId>jsr94</groupId>
-				<artifactId>jsr94</artifactId>
-				<version>1.1</version>
-			</dependency>
-			<dependency>
-				<groupId>org.drools</groupId>
-				<artifactId>drools-jsr94</artifactId>
-				<version>4.0.7</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.drools</groupId>
-				<artifactId>drools-compiler</artifactId>
-				<version>4.0.7</version>
-				<scope>test</scope>
-			</dependency>
 			<!-- Testing (note the scope) -->
 			<dependency>
 				<groupId>junit</groupId>
@@ -584,8 +594,6 @@
 				<version>10.2.1.6</version>
 				<scope>test</scope>
 			</dependency>
-			
-			
 		</dependencies>
 	</dependencyManagement>
 	<reporting>
@@ -598,19 +606,6 @@
 	</reporting>
 
 	<repositories>
-	<repository>
-      <id>apiviz.release</id>
-      <name>APIviz releases</name>
-      <url>http://apiviz.googlecode.com/svn/site/repo/mvn/release</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-	
-	
 		<repository>
 			<id>jboss</id>
 			<url>http://repository.jboss.com/maven2</url>
