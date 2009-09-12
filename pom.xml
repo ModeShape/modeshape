@@ -22,7 +22,7 @@
 		</license>
 	</licenses>
 	<organization>
-		<name>JBoss, by Red Hat</name>
+		<name>JBoss, a division of Red Hat</name>
 		<url>http://www.jboss.org</url>
 	</organization>
 	<developers>
@@ -30,7 +30,7 @@
 			<name>Randall Hauch</name>
 			<id>randall</id>
 			<email>rhauch@redhat.com</email>
-			<organization>JBoss, by Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Project Lead</role>
 				<role>Developer</role>
@@ -41,7 +41,7 @@
 			<name>John Verhaeg</name>
 			<id>johnny</id>
 			<email>jverhaeg@redhat.com</email>
-			<organization>JBoss, by Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -51,7 +51,7 @@
 			<name>Dan Florian</name>
 			<id>dan</id>
 			<email>dflorian@redhat.com</email>
-			<organization>JBoss, by Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -106,7 +106,7 @@
 	<contributors>
 		<contributor>
 			<name>Greg Haber</name>
-			<organization>JBoss, by Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<timezone>-5</timezone>
 		</contributor>
 	</contributors>

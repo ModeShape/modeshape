@@ -36,6 +36,7 @@ import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.common.util.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -81,6 +82,8 @@ public class JackrabbitDerbyStressTest {
             if (session != null) session.logout();
         } finally {
             session = null;
+            repository = null;
+            logger = null;
             // No matter what, clean up the test data ...
             FileUtil.delete(JACKRABBIT_DATA_PATH);
         }
@@ -103,6 +106,10 @@ public class JackrabbitDerbyStressTest {
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
+    // NOTE: Most of these tests are @Ignored because they are just used to baseline Jackrabbit
+    // and are not needed to verify JBoss DNA in any way
+
+    @Ignore
     @Test
     public void shouldCreate1000NodesWithNoChildrenAndNoProperties() throws Exception {
         Node rootNode = this.session.getRootNode();
@@ -120,6 +127,7 @@ public class JackrabbitDerbyStressTest {
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
+    @Ignore
     @Test
     public void shouldCreate5000NodesWithNoChildrenAndNoProperties() throws Exception {
         Node rootNode = this.session.getRootNode();
@@ -137,6 +145,7 @@ public class JackrabbitDerbyStressTest {
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
+    @Ignore
     @Test
     public void shouldCreate10000NodesWithNoChildrenAndNoProperties() throws Exception {
         Node rootNode = this.session.getRootNode();
@@ -172,61 +181,70 @@ public class JackrabbitDerbyStressTest {
                                           "create 100 nodes with no children and several properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
-    //	
-    // @Test
-    // public void shouldCreate10000NodesWithNoChildrenAndSeveralProperties() throws Exception {
-    // Node rootNode = this.session.getRootNode();
-    // rootNode.addNode("node"); // don't measure the first one
-    // for(int i=0; i!=10000; ++i ) {
-    // stopwatch.start();
-    // Node child = rootNode.addNode("node" + i);
-    // child.setProperty("jcr:name", "This is the name of node " + i );
-    // child.setProperty("jcr:description", "This is the description of node " + i );
-    // stopwatch.stop();
-    // }
-    // rootNode.save();
-    // HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 10000 nodes with no
-    // children and several properties");
-    // this.logger.info( stopwatch.toString() );
-    // }
-    //	
-    // // @Test
-    // // public void shouldCreate50000NodesWithNoChildrenAndSeveralProperties() throws Exception {
-    // // Node rootNode = this.session.getRootNode();
-    // // rootNode.addNode("node"); // don't measure the first one
-    // // for(int i=0; i!=50000; ++i ) {
-    // // stopwatch.start();
-    // // Node child = rootNode.addNode("node" + i);
-    // // child.setProperty("jcr:name", "This is the name of node " + i );
-    // // child.setProperty("jcr:description", "This is the description of node " + i );
-    // // stopwatch.stop();
-    // // }
-    // // rootNode.save();
-    // // HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 50000 nodes with no
-    // children and several properties");
-    // // this.logger.info( stopwatch.toString() );
-    // // }
-    //	
-    // @Test
-    // public void shouldCreate100000NodesWithNoChildrenAndSeveralProperties() throws Exception {
-    // Node rootNode = this.session.getRootNode();
-    // rootNode.addNode("node"); // don't measure the first one
-    // int index = 0;
-    // stopwatch.start();
-    // for(int j=0; j!=100; ++j ) {
-    // for(int i=0; i!=1000; ++i ) {
-    // ++index;
-    // // stopwatch.start();
-    // Node child = rootNode.addNode("node" + index);
-    // child.setProperty("jcr:name", "This is the name of node " + index );
-    // child.setProperty("jcr:description", "This is the description of node " + index );
-    // // stopwatch.stop();
-    // }
-    // rootNode.save();
-    // }
-    // stopwatch.stop();
-    // HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 100000 nodes (in 100
-    // batches) with no children and several properties");
-    // this.logger.info( stopwatch.toString() );
-    // }
+
+    @Ignore
+    @Test
+    public void shouldCreate10000NodesWithNoChildrenAndSeveralProperties() throws Exception {
+        Node rootNode = this.session.getRootNode();
+        rootNode.addNode("node"); // don't measure the first one
+        for (int i = 0; i != 10000; ++i) {
+            stopwatch.start();
+            Node child = rootNode.addNode("node" + i);
+            child.setProperty("jcr:name", "This is the name of node " + i);
+            child.setProperty("jcr:description", "This is the description of node " + i);
+            stopwatch.stop();
+        }
+        rootNode.save();
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 10000 nodes with no children and several properties");
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
+    }
+
+    @Ignore
+    @Test
+    public void shouldCreate50000NodesWithNoChildrenAndSeveralProperties() throws Exception {
+        Node rootNode = this.session.getRootNode();
+        rootNode.addNode("node"); // don't measure the first one
+        for (int i = 0; i != 50000; ++i) {
+            stopwatch.start();
+            Node child = rootNode.addNode("node" + i);
+            child.setProperty("jcr:name", "This is the name of node " + i);
+            child.setProperty("jcr:description", "This is the description of node " + i);
+            stopwatch.stop();
+        }
+        rootNode.save();
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 50000 nodes with no children and several properties");
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
+    }
+
+    @Ignore
+    @Test
+    public void shouldCreate100000NodesWithNoChildrenAndSeveralProperties() throws Exception {
+        Node rootNode = this.session.getRootNode();
+        rootNode.addNode("node"); // don't measure the first one
+        int index = 0;
+        stopwatch.start();
+        for (int j = 0; j != 100; ++j) {
+            for (int i = 0; i != 1000; ++i) {
+                ++index;
+                // stopwatch.start();
+                Node child = rootNode.addNode("node" + index);
+                child.setProperty("jcr:name", "This is the name of node " + index);
+                child.setProperty("jcr:description", "This is the description of node " + index);
+                // stopwatch.stop();
+            }
+            rootNode.save();
+        }
+        stopwatch.stop();
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 100000 nodes (in 100 batches) with no children and several properties");
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
+    }
 }
