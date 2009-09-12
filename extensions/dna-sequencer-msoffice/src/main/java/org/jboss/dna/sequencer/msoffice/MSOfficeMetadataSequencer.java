@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadata;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.PowerPointMetadataReader;
@@ -76,9 +76,6 @@ import org.jboss.dna.sequencer.msoffice.word.WordMetadataReader;
  * </li>
  * </ul>
  * </p>
- * 
- * @author Michael Trezzi
- * @author John Verhaeg
  */
 public class MSOfficeMetadataSequencer implements StreamSequencer {
 
@@ -112,7 +109,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
     // Excel specific
     public static final String EXCEL_FULL_CONTENT = "msoffice:full_contents";
     public static final String EXCEL_SHEET_NAME = "msoffice:sheet_name";
-    
+
     // Word specific
     public static final String WORD_HEADING_NODE = "msoffice:heading";
     public static final String WORD_HEADING_NAME = "msoffice:heading_name";
@@ -176,14 +173,14 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             try {
                 WordMetadata wordMetadata = WordMetadataReader.instance(stream);
 
-                for (Iterator<WordMetadata.WordHeading> iter = wordMetadata.getHeadings().iterator(); iter.hasNext(); ) {
+                for (Iterator<WordMetadata.WordHeading> iter = wordMetadata.getHeadings().iterator(); iter.hasNext();) {
                     WordMetadata.WordHeading heading = iter.next();
-                    
+
                     output.setProperty(METADATA_NODE + "/" + WORD_HEADING_NODE, WORD_HEADING_NAME, heading.getText());
-                	output.setProperty(METADATA_NODE + "/" + WORD_HEADING_NODE, WORD_HEADING_LEVEL, heading.getHeaderLevel());
-                	
+                    output.setProperty(METADATA_NODE + "/" + WORD_HEADING_NODE, WORD_HEADING_LEVEL, heading.getHeaderLevel());
+
                 }
-                
+
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
                 context.getLogger(this.getClass()).debug(e, "Error while extracting the Word document metadata");

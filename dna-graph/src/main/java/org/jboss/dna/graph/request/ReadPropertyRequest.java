@@ -33,8 +33,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * Instruction to read a single property on the node at the specified location.
- * 
- * @author Randall Hauch
  */
 public class ReadPropertyRequest extends CacheableRequest {
 

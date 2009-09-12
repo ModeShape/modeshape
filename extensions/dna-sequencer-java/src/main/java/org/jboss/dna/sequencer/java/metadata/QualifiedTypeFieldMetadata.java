@@ -23,11 +23,8 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-
 /**
  * QualifiedTypeFieldMetadata meta data for a qualified type.
- * 
- * @author Serge Pagop
  */
 public class QualifiedTypeFieldMetadata extends FieldMetadata {
 
@@ -36,7 +33,7 @@ public class QualifiedTypeFieldMetadata extends FieldMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isQualifiedType()
      */
     @Override
@@ -46,7 +43,7 @@ public class QualifiedTypeFieldMetadata extends FieldMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override

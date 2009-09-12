@@ -31,13 +31,17 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.basic.StringValueFactory;
 
 /**
- * @author Randall Hauch
+ * A set of {@link Comparator} objects for the different kinds of property values.
+ * 
+ * @see PropertyType#getComparator()
  */
+@Immutable
 public class ValueComparators {
 
     /**

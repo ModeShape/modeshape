@@ -32,10 +32,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 
 /**
- * A thread-safe list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in
- * which they were encountered.
- * 
- * @author Randall Hauch
+ * A thread-safe {@link Problems} collection. The problems will be {@link #iterator() returned} in the order in which they were
+ * encountered.
  */
 @ThreadSafe
 public class ThreadSafeProblems extends AbstractProblems {

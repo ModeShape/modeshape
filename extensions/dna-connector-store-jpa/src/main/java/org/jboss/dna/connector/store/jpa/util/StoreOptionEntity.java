@@ -39,8 +39,6 @@ import org.jboss.dna.connector.store.jpa.Model;
  * This JPA entity is always added to the {@link Ejb3Configuration} in the {@link JpaSource#getConnection() JpaSource}, and
  * therefore should not be {@link Model#configure(Ejb3Configuration) added to the configuration} by a {@link Model}.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Entity( name = "DNA_OPTIONS" )
 @NamedQueries( {@NamedQuery( name = "StoreOptionEntity.findAll", query = "SELECT option FROM DNA_OPTIONS AS option" )} )

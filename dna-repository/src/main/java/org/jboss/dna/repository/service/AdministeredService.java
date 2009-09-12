@@ -24,7 +24,7 @@
 package org.jboss.dna.repository.service;
 
 /**
- * @author Randall Hauch
+ * A simple interface for an administered service.
  */
 public interface AdministeredService {
 

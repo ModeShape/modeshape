@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.graph.property;
 
-
 /**
  * A factory for creating {@link DateTime date-time instants}. This interface extends the {@link ValueFactory} generic interface
  * and adds specific methods for creating instants for the current time (and time zone) as well as various combinations of
@@ -50,7 +49,7 @@ package org.jboss.dna.graph.property;
  * <li>two digit minute, from 00 to 59;</li>
  * <li>two digit second, from 00 to 59;</li>
  * <li>three decimal places for milliseconds, if required;</li>
- * <li>time zone offset of the form <code>±HH:mm</code> (or '0' if UTC)</li>
+ * <li>time zone offset of the form <code>ï¿½HH:mm</code> (or '0' if UTC)</li>
  * </ul>
  * </p>
  * <h3>Day of Year Based</h3>
@@ -69,7 +68,7 @@ package org.jboss.dna.graph.property;
  * <li>two digit minute, from 00 to 59;</li>
  * <li>two digit second, from 00 to 59;</li>
  * <li>three decimal places for milliseconds, if required;</li>
- * <li>time zone offset of the form <code>±HH:mm</code> (or '0' if UTC)</li>
+ * <li>time zone offset of the form <code>ï¿½HH:mm</code> (or '0' if UTC)</li>
  * </ul>
  * </p>
  * <h3>Week Based</h3>
@@ -89,7 +88,7 @@ package org.jboss.dna.graph.property;
  * <li>two digit minute, from 00 to 59;</li>
  * <li>two digit second, from 00 to 59;</li>
  * <li>three decimal places for milliseconds, if required;</li>
- * <li>time zone offset of the form <code>±HH:mm</code> (or '0' if UTC)</li>
+ * <li>time zone offset of the form <code>ï¿½HH:mm</code> (or '0' if UTC)</li>
  * </ul>
  * </p>
  * <p>
@@ -98,8 +97,6 @@ package org.jboss.dna.graph.property;
  * the previous year, and the last week finishes in the next year. The weekyear field is defined to refer to the year that owns
  * the week, which may differ from the actual year.
  * </p>
- * 
- * @author Randall Hauch
  */
 public interface DateTimeFactory extends ValueFactory<DateTime> {
 

@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.repository.sequencer;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception that denotes an error within a sequencer.
  */
+@Immutable
 public class SequencerException extends RuntimeException {
 
     /**
@@ -55,7 +58,8 @@ public class SequencerException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public SequencerException( String message, Throwable cause ) {
+    public SequencerException( String message,
+                               Throwable cause ) {
         super(message, cause);
     }
 

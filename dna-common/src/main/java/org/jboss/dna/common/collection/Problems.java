@@ -27,43 +27,112 @@ import java.util.Iterator;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author John Verhaeg
+ * An interface for a collection of {@link Problem} objects, with multiple overloaded methods for adding errors, warnings, and
+ * informational messages.
  */
 public interface Problems extends Iterable<Problem> {
 
+    /**
+     * Add an error message with the parameters that should be used when localizing the message.
+     * 
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addError( I18n message,
                    Object... params );
 
+    /**
+     * Add an error exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the error; may be null
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addError( Throwable throwable,
                    I18n message,
                    Object... params );
 
+    /**
+     * Add an error message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addError( I18n message,
                    String resource,
                    String location,
                    Object... params );
 
+    /**
+     * Add an error exception and message with a description of the resource, its location, and the parameters that should be used
+     * when localizing the message
+     * 
+     * @param throwable the exception that represents the error; may be null
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addError( Throwable throwable,
                    I18n message,
                    String resource,
                    String location,
                    Object... params );
 
+    /**
+     * Add an error message with the parameters that should be used when localizing the message.
+     * 
+     * @param code the error code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addError( int code,
                    I18n message,
                    Object... params );
 
+    /**
+     * Add an error exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the error; may be null
+     * @param code the error code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addError( Throwable throwable,
                    int code,
                    I18n message,
                    Object... params );
 
+    /**
+     * Add an error message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param code the error code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addError( int code,
                    I18n message,
                    String resource,
                    String location,
                    Object... params );
 
+    /**
+     * Add an error exception and message with a description of the resource, its location, and the parameters that should be used
+     * when localizing the message
+     * 
+     * @param throwable the exception that represents the error; may be null
+     * @param code the error code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addError( Throwable throwable,
                    int code,
                    I18n message,
@@ -71,39 +140,107 @@ public interface Problems extends Iterable<Problem> {
                    String location,
                    Object... params );
 
+    /**
+     * Add a warning message with the parameters that should be used when localizing the message.
+     * 
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addWarning( I18n message,
                      Object... params );
 
+    /**
+     * Add a warning exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the error; may be null
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addWarning( Throwable throwable,
                      I18n message,
                      Object... params );
 
+    /**
+     * Add a warning message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addWarning( I18n message,
                      String resource,
                      String location,
                      Object... params );
 
+    /**
+     * Add a warning exception and message with a description of the resource, its location, and the parameters that should be
+     * used when localizing the message
+     * 
+     * @param throwable the exception that represents the warning; may be null
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addWarning( Throwable throwable,
                      I18n message,
                      String resource,
                      String location,
                      Object... params );
 
+    /**
+     * Add a warning message with the parameters that should be used when localizing the message.
+     * 
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addWarning( int code,
                      I18n message,
                      Object... params );
 
+    /**
+     * Add a warning exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the warning; may be null
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addWarning( Throwable throwable,
                      int code,
                      I18n message,
                      Object... params );
 
+    /**
+     * Add a warning message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addWarning( int code,
                      I18n message,
                      String resource,
                      String location,
                      Object... params );
 
+    /**
+     * Add a warning exception and message with a description of the resource, its location, and the parameters that should be
+     * used when localizing the message
+     * 
+     * @param throwable the exception that represents the warning; may be null
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addWarning( Throwable throwable,
                      int code,
                      I18n message,
@@ -111,39 +248,107 @@ public interface Problems extends Iterable<Problem> {
                      String location,
                      Object... params );
 
+    /**
+     * Add a informational message with the parameters that should be used when localizing the message.
+     * 
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addInfo( I18n message,
                   Object... params );
 
+    /**
+     * Add an informational exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the warning; may be null
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addInfo( Throwable throwable,
                   I18n message,
                   Object... params );
 
+    /**
+     * Add an informational message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addInfo( I18n message,
                   String resource,
                   String location,
                   Object... params );
 
+    /**
+     * Add an informational exception and message with a description of the resource, its location, and the parameters that should
+     * be used when localizing the message
+     * 
+     * @param throwable the exception that represents the problem; may be null
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addInfo( Throwable throwable,
                   I18n message,
                   String resource,
                   String location,
                   Object... params );
 
+    /**
+     * Add a informational message with the parameters that should be used when localizing the message.
+     * 
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addInfo( int code,
                   I18n message,
                   Object... params );
 
+    /**
+     * Add a informational exception and message with the parameters that should be used when localizing the message.
+     * 
+     * @param throwable the exception that represents the warning; may be null
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param params the values for the parameters in the message
+     */
     void addInfo( Throwable throwable,
                   int code,
                   I18n message,
                   Object... params );
 
+    /**
+     * Add an informational message with a description of the resource, its location, and the parameters that should be used when
+     * localizing the message
+     * 
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addInfo( int code,
                   I18n message,
                   String resource,
                   String location,
                   Object... params );
 
+    /**
+     * Add an informational exception and message with a description of the resource, its location, and the parameters that should
+     * be used when localizing the message
+     * 
+     * @param throwable the exception that represents the problem; may be null
+     * @param code the problem code
+     * @param message the internationalized message describing the problem
+     * @param resource the description of the resource; may be null
+     * @param location the location of the resource; may be null
+     * @param params the values for the parameters in the message
+     */
     void addInfo( Throwable throwable,
                   int code,
                   I18n message,
@@ -151,17 +356,54 @@ public interface Problems extends Iterable<Problem> {
                   String location,
                   Object... params );
 
-    boolean hasProblems();
+    /**
+     * Get the number of problems that are in this collection
+     * 
+     * @return the number of problems; never negative
+     * @see #hasProblems()
+     * @see #isEmpty()
+     */
+    int size();
 
-    boolean hasErrors();
-
-    boolean hasWarnings();
-
-    boolean hasInfo();
-
+    /**
+     * Determine if this collection is empty.
+     * 
+     * @return true if the there are no problems, or false if there is at least one
+     * @see #hasProblems()
+     * @see #size()
+     */
     boolean isEmpty();
 
-    int size();
+    /**
+     * Determine if there are problems in this collection.
+     * 
+     * @return true if there is at least one problem, or false if it is empty
+     * @see #isEmpty()
+     * @see #size()
+     */
+    boolean hasProblems();
+
+    /**
+     * Determine if there is at least one error in this collection.
+     * 
+     * @return true if there is at least one error in this collection, or false if there are no errors
+     */
+    boolean hasErrors();
+
+    /**
+     * Determine if there is at least one warning in this collection.
+     * 
+     * @return true if there is at least one warning in this collection, or false if there are no warnings
+     */
+    boolean hasWarnings();
+
+    /**
+     * Determine if there is at least one informational problem in this collection.
+     * 
+     * @return true if there is at least one informational problem in this collection, or false if there are no informational
+     *         problems
+     */
+    boolean hasInfo();
 
     /**
      * <p>

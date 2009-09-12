@@ -36,11 +36,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.CommonI18n;
 
 /**
  * Utilities for string processing and manipulation.
  */
+@Immutable
 public class StringUtil {
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -123,12 +125,12 @@ public class StringUtil {
                 matcher.appendReplacement(text, matcher.group());
             } else {
                 Object parameter = parameters[ndx];
-                
+
                 // Automatically pretty-print arrays
                 if (parameter != null && parameter.getClass().isArray()) {
                     parameter = Arrays.asList((Object[])parameter);
                 }
-                
+
                 matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
             }
         }

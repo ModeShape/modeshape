@@ -40,7 +40,6 @@ import org.jboss.dna.graph.property.Property;
  * to be read.
  * 
  * @see ReadBlockOfChildrenRequest
- * @author Randall Hauch
  */
 public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
 

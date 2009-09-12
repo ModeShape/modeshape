@@ -86,8 +86,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 /**
  * The {@link RequestProcessor} implementation for the file systme connector. This is the class that does the bulk of the work in
  * the file system connector, since it processes all requests.
- * 
- * @author Randall Hauch
  */
 public class FileSystemRequestProcessor extends RequestProcessor {
 

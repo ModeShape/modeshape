@@ -31,8 +31,6 @@ import org.jboss.dna.common.util.HashCode;
 
 /**
  * A unique identifier for a parent-child relationship.
- * 
- * @author Randall Hauch
  */
 @Embeddable
 @Immutable

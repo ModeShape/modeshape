@@ -35,9 +35,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * A basic implementation of {@link Path}.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class BasicPath extends AbstractPath {

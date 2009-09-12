@@ -31,8 +31,6 @@ import org.jboss.dna.graph.property.Binary;
 
 /**
  * An implementation of {@link Binary} that keeps the binary data in-memory.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class InMemoryBinary extends AbstractBinary {

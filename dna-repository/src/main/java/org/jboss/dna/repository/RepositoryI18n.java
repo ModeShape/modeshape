@@ -25,12 +25,13 @@ package org.jboss.dna.repository;
 
 import java.util.Locale;
 import java.util.Set;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
- * @author John Verhaeg
+ * The internationalized string constants for the <code>org.jboss.dna.repository*</code> packages.
  */
+@Immutable
 public final class RepositoryI18n {
 
     // Configuration

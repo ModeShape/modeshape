@@ -45,8 +45,8 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * @author Randall Hauch
- * @author John Verhaeg
+ * An importer of graph content. This class can be used directly, or the import can be done via the {@link Graph} using the
+ * {@link Graph#importXmlFrom(java.io.File)} (and similar) methods.
  */
 public class GraphImporter {
 

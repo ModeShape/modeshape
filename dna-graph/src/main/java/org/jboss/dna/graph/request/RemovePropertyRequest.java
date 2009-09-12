@@ -33,8 +33,6 @@ import org.jboss.dna.graph.property.Path;
 /**
  * Instruction to remove the property with the supplied name from the node at the given location. This request has no net effect
  * if the node does not contain a property with the supplied name.
- * 
- * @author Randall Hauch
  */
 public class RemovePropertyRequest extends ChangeRequest {
 

@@ -30,12 +30,12 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import net.jcip.annotations.Immutable;
 
 /**
  * Static utilities for working with classes.
- * 
- * @author John Verhaeg
  */
+@Immutable
 public final class ClassUtil {
 
     private static void addObjectString( Object object,

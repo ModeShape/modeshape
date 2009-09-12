@@ -26,11 +26,13 @@ package org.jboss.dna.common.math;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
+import net.jcip.annotations.Immutable;
 
 /**
  * A number representing an immutable duration of time. This is intended to be used in the same manner as other {@link Number}
  * subclasses.
  */
+@Immutable
 public class Duration extends Number implements Comparable<Duration> {
 
     private static final long serialVersionUID = 1L;
@@ -222,6 +224,8 @@ public class Duration extends Number implements Comparable<Duration> {
      */
     public Components getComponents() {
         if (this.components == null) {
+            // This is idempotent, so no need to synchronize ...
+
             // Calculate how many seconds, and don't lose any information ...
             BigDecimal bigSeconds = new BigDecimal(this.durationInNanos).divide(new BigDecimal(1000000000));
             // Calculate the minutes, and round to lose the seconds

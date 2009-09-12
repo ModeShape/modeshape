@@ -24,7 +24,6 @@
 package org.jboss.dna.connector.svn;
 
 /**
- * @author Serge Pagop
  */
 public enum SVNProtocol {
     FILE("file"),

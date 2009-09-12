@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.common.text;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * Interface for components that can encode text. This is the counterpart to {@link TextDecoder}.
  * 
- * @author Randall Hauch
  * @see TextDecoder
  */
+@Immutable
 public interface TextEncoder {
 
     /**

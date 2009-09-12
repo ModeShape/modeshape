@@ -26,12 +26,14 @@ package org.jboss.dna.common.util;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.CommonI18n;
 
 /**
  * Utility class that checks arguments to methods. This class is to be used only in API methods, where failure to supply correct
  * arguments should result in a useful error message. In all cases, use the <code>assert</code> statement.
  */
+@Immutable
 public final class CheckArg {
 
     // ########################## int METHODS ###################################

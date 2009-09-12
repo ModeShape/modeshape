@@ -45,7 +45,7 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
- *
+ * DNA implementation of a {@link Value JCR Value}.
  */
 @NotThreadSafe
 final class JcrValue implements Value {
@@ -449,7 +449,7 @@ final class JcrValue implements Value {
     public String toString() {
         return (value == null ? "null" : value.toString()) + " (" + PropertyType.nameFromValue(type) + ")";
     }
-    
+
     private enum State {
         NEVER_CONSUMED,
         INPUT_STREAM_CONSUMED,

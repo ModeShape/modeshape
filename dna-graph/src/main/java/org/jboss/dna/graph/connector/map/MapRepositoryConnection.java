@@ -35,12 +35,15 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
+/**
+ * A connection to a {@link MapRepository}.
+ */
 public class MapRepositoryConnection implements RepositoryConnection {
     private final MapRepositorySource source;
     private final MapRepository repository;
 
     public MapRepositoryConnection( MapRepositorySource source,
-                                  MapRepository repository ) {
+                                    MapRepository repository ) {
         assert source != null;
         assert repository != null;
         this.source = source;

@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.UUID;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -34,6 +35,7 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
@@ -41,8 +43,11 @@ import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
- *
+ * DNA implementation of a {@link Property JCR Property} with a single value.
+ * 
+ * @see JcrMultiValueProperty
  */
+@NotThreadSafe
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 
     JcrSingleValueProperty( SessionCache cache,

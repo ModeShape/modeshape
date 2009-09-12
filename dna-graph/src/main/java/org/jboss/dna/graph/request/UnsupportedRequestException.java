@@ -23,11 +23,12 @@
  */
 package org.jboss.dna.graph.request;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * Specifies that the request was a type that is not supported.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class UnsupportedRequestException extends RequestException {
 
     /**

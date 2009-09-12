@@ -54,8 +54,6 @@ import org.tmatesoft.svn.core.io.SVNRepository;
  * repository. This source considers a workspace name to be the path to the directory on the repository's root directory location
  * that represents the root of that workspace. New workspaces can be created, as long as the names represent valid paths to
  * existing directories.
- * 
- * @author Serge Pagop
  */
 @ThreadSafe
 public class SVNRepositorySource implements RepositorySource, ObjectFactory {

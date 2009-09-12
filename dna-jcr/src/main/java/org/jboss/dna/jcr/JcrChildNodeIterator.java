@@ -29,6 +29,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
+ * A concrete {@link NodeIterator} implementation.
  */
 @Immutable
 final class JcrChildNodeIterator implements NodeIterator {

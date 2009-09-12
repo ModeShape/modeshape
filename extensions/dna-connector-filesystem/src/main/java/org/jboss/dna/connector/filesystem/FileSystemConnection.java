@@ -39,8 +39,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 /**
  * The {@link RepositoryConnection} implementation for the file system connector. The bulk of the work is performed by the
  * {@link FileSystemRequestProcessor}.
- * 
- * @author Randall Hauch
  */
 public class FileSystemConnection implements RepositoryConnection {
 

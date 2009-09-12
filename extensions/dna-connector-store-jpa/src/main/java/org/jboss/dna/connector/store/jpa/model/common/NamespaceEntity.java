@@ -40,8 +40,6 @@ import org.jboss.dna.common.util.CheckArg;
 /**
  * A NamespaceEntity represents a namespace that has been used in the store. NamespaceEntity records are immutable and shared by
  * one or more enities.
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_NAMESPACES" )

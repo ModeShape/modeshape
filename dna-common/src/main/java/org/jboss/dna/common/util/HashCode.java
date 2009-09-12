@@ -24,12 +24,13 @@
 package org.jboss.dna.common.util;
 
 import java.util.Arrays;
+import net.jcip.annotations.Immutable;
 
 /**
  * Utilities for easily computing hash codes. The algorithm should generally produce good distributions for use in hash-based
  * containers or collections, but as expected does always result in repeatable hash codes given the inputs.
- * @author Randall Hauch
  */
+@Immutable
 public class HashCode {
 
     // Prime number used in improving distribution: 1,000,003
@@ -37,6 +38,7 @@ public class HashCode {
 
     /**
      * Compute a combined hash code from the supplied objects. This method always returns 0 if no objects are supplied.
+     * 
      * @param objects the objects that should be used to compute the hash code
      * @return the hash code
      */
@@ -46,11 +48,13 @@ public class HashCode {
 
     /**
      * Compute a combined hash code from the supplied objects using the supplied seed.
+     * 
      * @param seed a value upon which the hash code will be based; may be 0
      * @param objects the objects that should be used to compute the hash code
      * @return the hash code
      */
-    protected static int compute( int seed, Object... objects ) {
+    protected static int compute( int seed,
+                                  Object... objects ) {
         if (objects == null || objects.length == 0) {
             return seed * HashCode.PRIME;
         }

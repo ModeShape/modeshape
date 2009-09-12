@@ -48,7 +48,6 @@ import org.jboss.dna.common.util.Reflection;
  * obtained} are always reflected by the configurations.
  * </p>
  * 
- * @author Randall Hauch
  * @param <ComponentType> the type of component being managed, which may be a subclass of {@link Component}
  * @param <ConfigType> the configuration type describing the components
  */
@@ -257,7 +256,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             if (newInstance instanceof Component) {
                 ((Component<ConfigType>)newInstance).setConfiguration(config);
             }
-            
+
             if (config.getProperties() != null) {
                 for (Map.Entry<String, Object> entry : config.getProperties().entrySet()) {
                     // Set the JavaBean-style property on the RepositorySource instance ...

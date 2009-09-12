@@ -28,7 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.connector.filesystem*</code> packages.
  */
 public final class FileSystemI18n {
 
@@ -51,7 +51,7 @@ public final class FileSystemI18n {
     public static I18n sourceIsReadOnly;
     public static I18n pathIsReadOnly;
     public static I18n unableToCreateWorkspaces;
-    
+
     // Writable messages
     public static I18n parentIsReadOnly;
     public static I18n fileAlreadyExists;

@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception denoting that a namespace was invalid or not found.
  */
+@Immutable
 public class NamespaceException extends RuntimeException {
 
     /**
@@ -58,7 +61,8 @@ public class NamespaceException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public NamespaceException( String message, Throwable cause ) {
+    public NamespaceException( String message,
+                               Throwable cause ) {
         super(message, cause);
 
     }

@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
@@ -35,9 +36,8 @@ import org.jboss.dna.common.util.CheckArg;
  * the <a href="http://api.rubyonrails.org/classes/Inflector.html">Inflector</a> class in <a
  * href="http://www.rubyonrails.org">Ruby on Rails</a>, which is distributed under the <a
  * href="http://wiki.rubyonrails.org/rails/pages/License">Rails license</a>.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public class Inflector {
 
     protected static final Inflector INSTANCE = new Inflector();

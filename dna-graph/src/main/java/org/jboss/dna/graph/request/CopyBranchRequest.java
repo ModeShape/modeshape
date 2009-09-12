@@ -37,7 +37,6 @@ import org.jboss.dna.graph.property.Path;
  * UUIDs for the copied nodes. {@link CloneBranchRequest Cloning a branch} provides functionality similar to copy, but with the
  * ability to preserve UUIDs in the move.
  * 
- * @author Randall Hauch
  * @see CloneBranchRequest
  */
 public class CopyBranchRequest extends ChangeRequest {

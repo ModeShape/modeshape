@@ -30,7 +30,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 
 /**
- * @author Randall Hauch
+ * A utility that wraps the {@link NamespaceEntity} objects appearing within an {@link EntityManager}.
  */
 @NotThreadSafe
 public class Namespaces {

@@ -47,8 +47,6 @@ import org.jboss.dna.graph.request.Request;
 
 /**
  * A reusable implementation of a managed pool of connections that is optimized for safe concurrent operations.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public class RepositoryConnectionPool {

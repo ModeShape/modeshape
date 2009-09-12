@@ -29,8 +29,7 @@ import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
- * @author John Verhaeg
+ * The internationalized string constants for the <code>org.jboss.dna.graph*</code> packages.
  */
 public final class GraphI18n {
 

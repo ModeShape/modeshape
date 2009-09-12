@@ -35,10 +35,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
+import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * An immutable {@link Properties} implementation.
  */
+@Immutable
 public class UnmodifiableProperties extends Properties {
 
     /**

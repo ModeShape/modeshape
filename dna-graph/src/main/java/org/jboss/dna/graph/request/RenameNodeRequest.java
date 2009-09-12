@@ -33,8 +33,6 @@ import org.jboss.dna.graph.property.Path;
 /**
  * Instruction to rename an existing node (but keep it under the same parent). The same-name-sibling index will be determined
  * automatically, based upon it's current location within the list of children.
- * 
- * @author Randall Hauch
  */
 public class RenameNodeRequest extends ChangeRequest {
 

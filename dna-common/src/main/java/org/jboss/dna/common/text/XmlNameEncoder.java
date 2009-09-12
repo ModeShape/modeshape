@@ -26,6 +26,7 @@ package org.jboss.dna.common.text;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.BitSet;
+import net.jcip.annotations.Immutable;
 
 /**
  * An {@link TextEncoder encoder} and {@link TextDecoder decoder} for XML element and attribute names.
@@ -40,9 +41,8 @@ import java.util.BitSet;
  * Decoding transforms every <code>_xHHHH_</code> encoding sequences back into the UTF-16 character. Note that
  * {@link #decode(String) decoding} can be safely done on any XML name, even if the name does not contain any encoded sequences.
  * </p>
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class XmlNameEncoder implements TextDecoder, TextEncoder {
 
     private static final BitSet XML_NAME_ALLOWED_CHARACTERS = new BitSet(2 ^ 16);

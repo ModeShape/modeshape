@@ -26,14 +26,14 @@ package org.jboss.dna.common.text;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.BitSet;
+import net.jcip.annotations.Immutable;
 
 /**
  * An encoder useful for converting text to be used within a URL, as defined by Section 2.3 of <a
- * href="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</a>. Note that this class does not encode a complete URL ({@link java.net.URLEncoder}
- * and {@link java.net.URLDecoder} should be used for such purposes).
- * 
- * @author Randall Hauch
+ * href="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</a>. Note that this class does not encode a complete URL (
+ * {@link java.net.URLEncoder} and {@link java.net.URLDecoder} should be used for such purposes).
  */
+@Immutable
 public class UrlEncoder implements TextEncoder, TextDecoder {
 
     /**

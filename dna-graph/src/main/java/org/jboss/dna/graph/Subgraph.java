@@ -40,8 +40,6 @@ import org.jboss.dna.graph.property.Path;
  * of the subgraph will contain the locations for child nodes that are below the maximum depth and therefore not included in this
  * subgraph.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Subgraph extends Graph.BaseResults<SubgraphNode> {

@@ -45,9 +45,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#LONG} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class LongValueFactory extends AbstractValueFactory<Long> {
@@ -67,8 +64,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
         } catch (NumberFormatException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            Long.class.getSimpleName(),
-                                                                            value), err);
+                                                                              Long.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -100,8 +97,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
      */
     public Long create( boolean value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Long.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Long.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -157,8 +154,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
      */
     public Long create( Name value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -166,8 +163,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
      */
     public Long create( Path value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -176,8 +173,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
     public Long create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -185,8 +182,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
      */
     public Long create( URI value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  URI.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    URI.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -196,8 +193,8 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
      */
     public Long create( UUID value ) throws IoException {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

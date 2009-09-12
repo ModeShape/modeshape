@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Constructor metadata.
  */
 public class ConstructorMetadata extends MethodMetadata {
 

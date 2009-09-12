@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Metadata for single member annotations.
  */
 public class SingleMemberAnnotationMetadata extends AnnotationMetadata {
     private boolean single;

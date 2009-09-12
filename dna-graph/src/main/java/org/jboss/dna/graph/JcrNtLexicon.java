@@ -27,7 +27,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * A lexicon of names with the JCR "nt" namespace.
  */
 public class JcrNtLexicon {
 

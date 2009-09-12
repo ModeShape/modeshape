@@ -47,8 +47,6 @@ import org.jboss.dna.graph.property.PathFactory;
  * The use of database joins also produces another benefit: the number of SQL statements necessary to build the set of nodes in a
  * subgraph is equal to the depth of the subgraph, regardless of the number of child nodes at any level.
  * </p>
- * 
- * @author Randall Hauch
  */
 public class SubgraphQuery {
 

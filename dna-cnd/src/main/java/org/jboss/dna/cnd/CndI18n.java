@@ -26,8 +26,7 @@ package org.jboss.dna.cnd;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author John Verhaeg
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.cnd*</code> packages.
  */
 public final class CndI18n {
 

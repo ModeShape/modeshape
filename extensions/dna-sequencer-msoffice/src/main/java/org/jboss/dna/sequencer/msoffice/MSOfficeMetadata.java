@@ -30,6 +30,9 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
 import org.jboss.dna.common.util.Logger;
 
+/**
+ * Metadata about an Microsoft Office file.
+ */
 public class MSOfficeMetadata implements POIFSReaderListener {
 
     private String title;

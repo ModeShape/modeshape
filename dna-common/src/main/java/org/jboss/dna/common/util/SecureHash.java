@@ -30,10 +30,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * A simple utility to generate various kinds of secure hashes.
  */
+@Immutable
 public class SecureHash {
 
     /**

@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * FieldMetadata is the base class of all fields.
- *  
- * @author Serge Pagop
  */
 public class FieldMetadata {
 
@@ -82,7 +80,7 @@ public class FieldMetadata {
     public void setModifiers( List<ModifierMetadata> modifierMetadatas ) {
         this.modifierMetadatas = modifierMetadatas;
     }
-    
+
     /**
      * Find out if a field is primitive type or not.
      * 
@@ -91,7 +89,7 @@ public class FieldMetadata {
     public boolean isPrimitiveType() {
         return false;
     }
-   
+
     /**
      * Find out if a field is a simple type or not.
      * 
@@ -100,7 +98,7 @@ public class FieldMetadata {
     public boolean isSimpleType() {
         return false;
     }
-    
+
     /**
      * Find out if a field is a array type or not.
      * 
@@ -118,7 +116,7 @@ public class FieldMetadata {
     public boolean isQualifiedType() {
         return false;
     }
-    
+
     /**
      * Find out if a field is a parameterized type or not.
      * 
@@ -127,7 +125,7 @@ public class FieldMetadata {
     public boolean isParameterizedType() {
         return false;
     }
-    
+
     /**
      * Find out if a field is a wild card type or not.
      * 

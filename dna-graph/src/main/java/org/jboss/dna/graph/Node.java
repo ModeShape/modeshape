@@ -34,8 +34,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * A node in a {@link Graph graph}, with methods to access the properties and children.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Node extends Iterable<Location> {

@@ -28,8 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author John Verhaeg
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.common*</code> packages.
  */
 public final class CommonI18n {
 

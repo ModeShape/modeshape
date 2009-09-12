@@ -43,8 +43,6 @@ import org.jboss.dna.graph.property.Property;
 /**
  * Instruction to read the properties and children of the nodes in the branch at the supplied location. The children of the nodes
  * at the bottom of the branch are not read.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class ReadBranchRequest extends CacheableRequest implements Iterable<Location> {

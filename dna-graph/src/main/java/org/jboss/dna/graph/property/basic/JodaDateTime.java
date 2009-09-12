@@ -36,8 +36,6 @@ import org.joda.time.DateTimeZone;
 
 /**
  * Implementation of DateTime based upon the Joda-Time library.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {

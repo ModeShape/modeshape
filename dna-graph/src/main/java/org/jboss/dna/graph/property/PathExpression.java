@@ -142,8 +142,6 @@ import org.jboss.dna.graph.GraphI18n;
  * Square brackets can also be used to specify criteria on a node's properties or children. Whatever appears in between the square
  * brackets does not appear in the selected node.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class PathExpression implements Serializable {

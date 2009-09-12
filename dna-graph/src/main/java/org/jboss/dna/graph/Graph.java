@@ -90,8 +90,6 @@ import org.xml.sax.SAXException;
  * content. The graph is designed to be an <i><a href="http://en.wikipedia.org/wiki/Domain_Specific_Language">embedded domain
  * specific language</a></i>, meaning calls to it are designed to read like sentences even though they are really just Java
  * methods. And to be more readable, methods can be chained together.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class Graph {

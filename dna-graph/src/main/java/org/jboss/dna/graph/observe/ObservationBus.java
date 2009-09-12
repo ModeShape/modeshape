@@ -23,10 +23,13 @@
  */
 package org.jboss.dna.graph.observe;
 
+import net.jcip.annotations.ThreadSafe;
+
 /**
  * A simple {@link Observer} that is itself {@link Observable}. This class essentially multiplexes the events from a single
  * Observable to disseminate each event to multiple Observers.
  */
+@ThreadSafe
 public class ObservationBus implements Observable, Observer {
     private final ChangeObservers observers = new ChangeObservers();
 

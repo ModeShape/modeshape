@@ -72,8 +72,6 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
 /**
  * Abstract definition of a <code>JavaMetadata<code>. This class exposes some useful methods, that can
  * be used to create meta data of a compilation unit. Methods can also separately be used.
- * 
- * @author Serge Pagop
  */
 public abstract class AbstractJavaMetadata {
 
@@ -320,11 +318,13 @@ public abstract class AbstractJavaMetadata {
                 // TODO
             }
             if (type.isSimpleType()) {
-                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration, type);
+                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration,
+                                                                                                                      type);
                 methodMetadata.getParameters().add(simpleTypeFieldMetadata);
             }
             if (type.isArrayType()) {
-                ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration, type);
+                ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration,
+                                                                                                                   type);
                 methodMetadata.getParameters().add(arrayTypeFieldMetadata);
             }
             if (type.isWildcardType()) {
@@ -364,14 +364,14 @@ public abstract class AbstractJavaMetadata {
             }
             return primitiveFieldMetadata;
         }
-        if(type.isSimpleType()) {
+        if (type.isSimpleType()) {
             SimpleType simpleType = (SimpleType)type;
             SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
             simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
             variable = new Variable();
             variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
             simpleTypeFieldMetadata.getVariables().add(variable);
-            for (IExtendedModifier simpleTypeExtendedModifier : (List<IExtendedModifier> )singleVariableDeclaration.modifiers()) {
+            for (IExtendedModifier simpleTypeExtendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
                 ModifierMetadata modifierMetadata = new ModifierMetadata();
                 if (simpleTypeExtendedModifier.isAnnotation()) {
                     // TODO
@@ -392,32 +392,32 @@ public abstract class AbstractJavaMetadata {
             parameterizedTypeFieldMetadata.getVariables().add(variable);
             for (IExtendedModifier parameterizedExtendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
                 ModifierMetadata modifierMetadata = new ModifierMetadata();
-                if(parameterizedExtendedModifier.isAnnotation()) {
+                if (parameterizedExtendedModifier.isAnnotation()) {
                     // TODO
                 } else {
                     Modifier modifier = (Modifier)parameterizedExtendedModifier;
                     modifierMetadata.setName(modifier.getKeyword().toString());
-                    parameterizedTypeFieldMetadata.getModifiers().add(modifierMetadata); 
+                    parameterizedTypeFieldMetadata.getModifiers().add(modifierMetadata);
                 }
             }
             return parameterizedTypeFieldMetadata;
         }
-        if(type.isArrayType()) {
+        if (type.isArrayType()) {
             ArrayTypeFieldMetadata arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
             ArrayType arrayType = (ArrayType)type;
             arrayTypeFieldMetadata.setType(getTypeName(arrayType));
             variable = new Variable();
             variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
             arrayTypeFieldMetadata.getVariables().add(variable);
-            
+
             for (IExtendedModifier arrayTypeExtendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
                 ModifierMetadata modifierMetadata = new ModifierMetadata();
-                if(arrayTypeExtendedModifier.isAnnotation()) {
+                if (arrayTypeExtendedModifier.isAnnotation()) {
                     // TODO
                 } else {
                     Modifier modifier = (Modifier)arrayTypeExtendedModifier;
                     modifierMetadata.setName(modifier.getKeyword().toString());
-                    arrayTypeFieldMetadata.getModifiers().add(modifierMetadata); 
+                    arrayTypeFieldMetadata.getModifiers().add(modifierMetadata);
                 }
             }
             return arrayTypeFieldMetadata;
@@ -442,19 +442,19 @@ public abstract class AbstractJavaMetadata {
             SimpleType simpleType = (SimpleType)type;
             return JavaMetadataUtil.getName(simpleType.getName());
         }
-        if(type.isArrayType()) {
+        if (type.isArrayType()) {
             ArrayType arrayType = (ArrayType)type;
             // the element type is never an array type
             Type elementType = arrayType.getElementType();
             if (elementType.isPrimitiveType()) {
-             return ((PrimitiveType)elementType).getPrimitiveTypeCode().toString();
+                return ((PrimitiveType)elementType).getPrimitiveTypeCode().toString();
 
             }
             // can't be an array type
             if (elementType.isSimpleType()) {
                 return JavaMetadataUtil.getName(((SimpleType)elementType).getName());
             }
-            
+
         }
         return null;
     }

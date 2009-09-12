@@ -48,9 +48,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class UriValueFactory extends AbstractValueFactory<URI> {
@@ -75,8 +72,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
         } catch (URISyntaxException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            URI.class.getSimpleName(),
-                                                                            value), err);
+                                                                              URI.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -93,9 +90,10 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * {@inheritDoc}
      */
     public URI create( int value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Integer.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Integer.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -103,17 +101,18 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      */
     public URI create( long value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Long.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Long.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( boolean value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Boolean.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Boolean.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -121,8 +120,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      */
     public URI create( float value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Float.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Float.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -130,8 +129,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      */
     public URI create( double value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Double.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Double.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -140,17 +139,18 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
     public URI create( BigDecimal value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        BigDecimal.class.getSimpleName(),
-                                                                        value));
+                                                                          BigDecimal.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( Calendar value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Calendar.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Calendar.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -158,8 +158,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      */
     public URI create( Date value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Date.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Date.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -168,9 +168,10 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * @see org.jboss.dna.graph.property.ValueFactory#create(org.jboss.dna.graph.property.DateTime)
      */
     public URI create( DateTime value ) throws ValueFormatException {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  DateTime.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          DateTime.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -198,8 +199,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
     public URI create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -209,8 +210,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      */
     public URI create( UUID value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

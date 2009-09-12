@@ -30,8 +30,6 @@ import org.jboss.dna.graph.property.DateTime;
 
 /**
  * A request that contains results that may be cached.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public abstract class CacheableRequest extends Request implements Cacheable {

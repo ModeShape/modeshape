@@ -50,9 +50,6 @@ import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
  * An adapter class that wraps a {@link StreamSequencer} instance to be a {@link Sequencer}.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public class StreamSequencerAdapter implements Sequencer {
 

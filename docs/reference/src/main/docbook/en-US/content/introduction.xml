@@ -381,14 +381,14 @@
             viewed as repository content.
           </para>
         </listitem>
-        <listitem>
+        <!--listitem>
           <para>
             <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
             is a prototype DNA repository connector that provides read-only access to metadata from relational databases through a JDBC 
             connection.
                         <emphasis>This is still under development.</emphasis>
           </para>
-        </listitem>        
+        </listitem-->        
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-jbosscache</emphasis>

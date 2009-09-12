@@ -34,7 +34,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ClassUtil;
 
 /**
- * @author Randall Hauch
+ * An immutable configuration for a {@link Component}.
  */
 @Immutable
 public class ComponentConfig implements Comparable<ComponentConfig> {

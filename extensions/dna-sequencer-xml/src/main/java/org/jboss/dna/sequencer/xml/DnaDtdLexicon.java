@@ -27,7 +27,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * Lexicon of names for XML DTD concepts.
  */
 public class DnaDtdLexicon {
 

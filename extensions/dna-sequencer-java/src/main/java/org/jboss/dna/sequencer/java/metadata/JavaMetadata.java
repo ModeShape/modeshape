@@ -31,8 +31,7 @@ import org.jboss.dna.sequencer.java.CompilationUnitParser;
 import org.jboss.dna.sequencer.java.JavaMetadataUtil;
 
 /**
- * @author Serge Pagop
- * @author John Verhaeg
+ * Metadata for a Java source file.
  */
 public class JavaMetadata extends AbstractJavaMetadata {
 

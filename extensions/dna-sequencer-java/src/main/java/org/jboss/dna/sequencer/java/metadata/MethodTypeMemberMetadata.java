@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Metadata for method type members.
  */
 public class MethodTypeMemberMetadata extends MethodMetadata {
 

@@ -23,11 +23,13 @@
  */
 package org.jboss.dna.repository.sequencer;
 
+import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.property.PathExpression;
 
 /**
- * 
- * @author Randall Hauch
+ * A runtime exception that denotes an invalid {@link PathExpression} for a sequencer.
  */
+@Immutable
 public class InvalidSequencerPathExpression extends RuntimeException {
 
     /**
@@ -60,7 +62,8 @@ public class InvalidSequencerPathExpression extends RuntimeException {
      * @param message
      * @param cause
      */
-    public InvalidSequencerPathExpression( String message, Throwable cause ) {
+    public InvalidSequencerPathExpression( String message,
+                                           Throwable cause ) {
         super(message, cause);
 
     }

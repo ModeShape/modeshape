@@ -33,7 +33,8 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 
 /**
- * @author Randall Hauch
+ * A special {@link NamespaceRegistry} implementation that can be used to track transient registrations for another delegate
+ * registry.
  */
 @ThreadSafe
 public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {

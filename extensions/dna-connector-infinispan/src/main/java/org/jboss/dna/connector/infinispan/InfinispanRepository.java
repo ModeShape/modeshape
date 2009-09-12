@@ -9,6 +9,9 @@ import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 
+/**
+ * The repository that uses an Infinispan instance.
+ */
 public class InfinispanRepository extends MapRepository {
 
     private final CacheManager cacheManager;

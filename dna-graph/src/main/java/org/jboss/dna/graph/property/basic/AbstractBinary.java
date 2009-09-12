@@ -39,8 +39,6 @@ import org.jboss.dna.graph.property.ValueComparators;
 
 /**
  * An abstract implementation of {@link Binary} that provides some common capabilities for other implementations.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public abstract class AbstractBinary implements Binary {

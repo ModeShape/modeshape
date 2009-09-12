@@ -24,12 +24,13 @@
 package org.jboss.dna.graph.mimetype;
 
 import java.util.Map;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ComponentConfig;
-import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 
 /**
- * @author jverhaeg
+ * A configuration for a {@link MimeTypeDetector} component.
  */
+@Immutable
 public class MimeTypeDetectorConfig extends ComponentConfig {
 
     public MimeTypeDetectorConfig( String name,

@@ -36,6 +36,9 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 
+/**
+ * A node within a {@link MapRepository}.
+ */
 public class MapNode {
 
     private final UUID uuid;

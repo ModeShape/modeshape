@@ -41,8 +41,6 @@ import org.jboss.dna.graph.GraphI18n;
  * request has the effect of cancelling all other requests in the composite, including the composite. (This is implemented by
  * having all {@link Request} objects in the composite share the same cancelled flag object.)
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class CompositeRequest extends Request implements Iterable<Request> {

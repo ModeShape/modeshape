@@ -30,8 +30,6 @@ import net.jcip.annotations.Immutable;
 
 /**
  * Value holder for binary data. Binary instances are not mutable.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Binary extends Comparable<Binary>, Serializable {

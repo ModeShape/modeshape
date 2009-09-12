@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * @author Serge Pagop
+ * Abstract class for annotations.
  */
 public abstract class AnnotationMetadata {
 

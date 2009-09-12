@@ -82,8 +82,6 @@ import org.jboss.dna.maven.SignatureType;
  *      }
  * }
  * </pre>
- * 
- * @author Randall Hauch
  */
 public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
 
@@ -349,9 +347,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     }
 
     /**
-     * Obtain an input stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL
-     * should have a path that points to the node where the content is stored in the
-     * {@link #CONTENT_PROPERTY_NAME content property}.
+     * Obtain an input stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL should
+     * have a path that points to the node where the content is stored in the {@link #CONTENT_PROPERTY_NAME content property}.
      * 
      * @param mavenUrl the Maven URL to the content; may not be null
      * @return the input stream to the content, or null if there is no existing content
@@ -589,8 +586,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * A URLConnection with support for obtaining content from a node in a JCR repository.
      * <p>
-     * Each JcrUrlConnection is used to make a single request to read or write the <code>jcr:content</code> property value on
-     * the {@link javax.jcr.Node node} that corresponds to the given URL. The node must already exist.
+     * Each JcrUrlConnection is used to make a single request to read or write the <code>jcr:content</code> property value on the
+     * {@link javax.jcr.Node node} that corresponds to the given URL. The node must already exist.
      * </p>
      * 
      * @author Randall Hauch

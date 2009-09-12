@@ -26,7 +26,8 @@ package org.jboss.dna.common.component;
 import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * A {@link ClassLoaderFactory} implementation that loads classes using the thread's {@link Thread#getContextClassLoader() context
+ * class loader} or (optionally) a supplied class loader.
  */
 @Immutable
 public class StandardClassLoaderFactory implements ClassLoaderFactory {
@@ -42,7 +43,8 @@ public class StandardClassLoaderFactory implements ClassLoaderFactory {
         this(true, delegate);
     }
 
-    public StandardClassLoaderFactory( boolean useCurrentThreadContextClassLoader, final ClassLoader delegate ) {
+    public StandardClassLoaderFactory( boolean useCurrentThreadContextClassLoader,
+                                       final ClassLoader delegate ) {
         this.delegate = delegate != null ? delegate : this.getClass().getClassLoader();
         this.useCurrentThreadContextClassLoader = useCurrentThreadContextClassLoader;
     }

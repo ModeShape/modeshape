@@ -28,8 +28,6 @@ import net.jcip.annotations.ThreadSafe;
 
 /**
  * Contract defining an administrative interface for controlling the running state of a service.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public interface ServiceAdministrator {
@@ -71,7 +69,7 @@ public interface ServiceAdministrator {
      * @param state the desired state in string form
      * @return this object for method chaining purposes
      * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
-     * {@link State predefined enumerated values}
+     *         {@link State predefined enumerated values}
      * @see #setState(State)
      * @see #start()
      * @see #pause()
@@ -120,11 +118,12 @@ public interface ServiceAdministrator {
      * 
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
-     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut
-     * down completely
+     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut down
+     *         completely
      * @throws InterruptedException if interrupted while waiting
      */
-    boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException;
+    boolean awaitTermination( long timeout,
+                              TimeUnit unit ) throws InterruptedException;
 
     /**
      * Return whether this system has been started and is currently running.

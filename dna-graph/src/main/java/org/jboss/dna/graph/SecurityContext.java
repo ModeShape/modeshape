@@ -1,12 +1,15 @@
 package org.jboss.dna.graph;
 
+import net.jcip.annotations.NotThreadSafe;
+
 /**
- * A security context provides a pluggable means to support disparate authentication and authorization 
- * mechanisms that specify the user name and roles.
+ * A security context provides a pluggable means to support disparate authentication and authorization mechanisms that specify the
+ * user name and roles.
  * <p>
  * A security context should only be associated with the execution context <b>after</b> authentication has occurred.
  * </p>
  */
+@NotThreadSafe
 public interface SecurityContext {
 
     /**
@@ -23,7 +26,7 @@ public interface SecurityContext {
      * @return true if the user has the role and is logged in; false otherwise
      */
     boolean hasRole( String roleName );
-    
+
     /**
      * Logs the user out of the authentication mechanism.
      * <p>
@@ -31,5 +34,5 @@ public interface SecurityContext {
      * </p>
      */
     void logout();
-    
+
 }

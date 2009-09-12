@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.connector;
 
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.observe.Observer;
@@ -30,9 +31,8 @@ import org.jboss.dna.graph.observe.Observer;
 /**
  * The context for a repository. This interface need not be implemented by a {@link RepositorySource}, as it is normally provided
  * to the source when {@link RepositorySource#initialize(RepositoryContext) initialized}.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public interface RepositoryContext {
 
     /**

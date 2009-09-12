@@ -25,29 +25,31 @@ package org.jboss.dna.common.xml;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import net.jcip.annotations.Immutable;
 
 /**
- * A utility class for determining the validity of various XML names, per the 
- * <a href="http://www.w3.org/TR/REC-xml/">XML 1.0 Specification</a>.
+ * A utility class for determining the validity of various XML names, per the <a href="http://www.w3.org/TR/REC-xml/">XML 1.0
+ * Specification</a>.
  */
+@Immutable
 public class XmlCharacters {
 
     private static final int NUMBER_OF_CHARACTERS = 1 << 16; // 65536 or 0x10000
 
     /**
-     * This implementation uses an array that captures for each character the XML classifications.
-     * An array is used because it is a fast way of looking up each character.
+     * This implementation uses an array that captures for each character the XML classifications. An array is used because it is
+     * a fast way of looking up each character.
      */
     private static final char[] MASKS = new char[NUMBER_OF_CHARACTERS];
 
     private static final int VALID_CHARACTER = 1;
-    private static final int CONTENT_CHARACTER = 1 <<1;
-    private static final int SPACE_CHARACTER = 1 <<2;
-    private static final int NAME_START_CHARACTER = 1<<3;
-    private static final int NAME_CHARACTER = 1<<4;
-    private static final int NCNAME_START_CHARACTER = 1<<5;
-    private static final int NCNAME_CHARACTER = 1<<6;
-    private static final int PUBID_CHARACTER = 1<<7;
+    private static final int CONTENT_CHARACTER = 1 << 1;
+    private static final int SPACE_CHARACTER = 1 << 2;
+    private static final int NAME_START_CHARACTER = 1 << 3;
+    private static final int NAME_CHARACTER = 1 << 4;
+    private static final int NCNAME_START_CHARACTER = 1 << 5;
+    private static final int NCNAME_CHARACTER = 1 << 6;
+    private static final int PUBID_CHARACTER = 1 << 7;
 
     static {
 
@@ -59,9 +61,11 @@ public class XmlCharacters {
         MASKS[0x9] |= VALID_CHARACTER | CONTENT_CHARACTER;
         MASKS[0xA] |= VALID_CHARACTER | CONTENT_CHARACTER;
         MASKS[0xD] |= VALID_CHARACTER | CONTENT_CHARACTER;
-        for (int i = 0x20; i <= 0xD7FF; ++i) MASKS[i] |= VALID_CHARACTER | CONTENT_CHARACTER;
-        for (int i = 0xE000; i <= 0xFFFD; ++i) MASKS[i] |= VALID_CHARACTER | CONTENT_CHARACTER;
-        // Last range is bigger than our character array, so we'll handle in the 'isValid' method  ...
+        for (int i = 0x20; i <= 0xD7FF; ++i)
+            MASKS[i] |= VALID_CHARACTER | CONTENT_CHARACTER;
+        for (int i = 0xE000; i <= 0xFFFD; ++i)
+            MASKS[i] |= VALID_CHARACTER | CONTENT_CHARACTER;
+        // Last range is bigger than our character array, so we'll handle in the 'isValid' method ...
         // for ( int i=0x10000; i<=0x10FFFF; ++i ) MASKS[i] = VALID_CHARACTER_MASK | CONTENT_CHARACTER;
 
         // Remove the other characters that are not allowed in XML content:
@@ -71,7 +75,7 @@ public class XmlCharacters {
         MASKS['\n'] &= ~(CONTENT_CHARACTER);
         MASKS['\r'] &= ~(CONTENT_CHARACTER);
         MASKS[']'] &= ~(CONTENT_CHARACTER);
-        
+
         // ---------------------
         // Whitespace Characters
         // ---------------------
@@ -95,21 +99,34 @@ public class XmlCharacters {
         int nameStartMask = NAME_START_CHARACTER | NCNAME_START_CHARACTER | NAME_CHARACTER | NCNAME_CHARACTER;
         MASKS[':'] |= nameStartMask;
         MASKS['_'] |= nameStartMask;
-        for (int i = 'A'; i <= 'Z'; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 'a'; i <= 'z'; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0xC0; i <= 0xD6; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0xD8; i <= 0xF6; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0xF8; i <= 0x2FF; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x370; i <= 0x37D; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x37F; i <= 0x1FFF; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x200C; i <= 0x200D; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x2070; i <= 0x218F; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x2C00; i <= 0x2FEF; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x3001; i <= 0xD7FF; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0xF900; i <= 0xFDCF; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0xFDF0; i <= 0xFFFD; ++i) MASKS[i] |= nameStartMask;
+        for (int i = 'A'; i <= 'Z'; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 'a'; i <= 'z'; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0xC0; i <= 0xD6; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0xD8; i <= 0xF6; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0xF8; i <= 0x2FF; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x370; i <= 0x37D; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x37F; i <= 0x1FFF; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x200C; i <= 0x200D; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x2070; i <= 0x218F; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x2C00; i <= 0x2FEF; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x3001; i <= 0xD7FF; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0xF900; i <= 0xFDCF; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0xFDF0; i <= 0xFFFD; ++i)
+            MASKS[i] |= nameStartMask;
         // Last range is bigger than our character array ...
-        //for (int i = 0x10000; i <= 0xEFFFF; ++i) MASKS[i] |= nameStartMask;
+        // for (int i = 0x10000; i <= 0xEFFFF; ++i) MASKS[i] |= nameStartMask;
 
         // ---------------
         // Name Characters
@@ -122,10 +139,13 @@ public class XmlCharacters {
         MASKS['-'] |= nameMask;
         MASKS['.'] |= nameMask;
         MASKS[0xB7] |= nameMask;
-        for (int i = '0'; i <= '9'; ++i) MASKS[i] |= nameMask;
-        for (int i = 0x0300; i <= 0x036F; ++i) MASKS[i] |= nameStartMask;
-        for (int i = 0x203F; i <= 0x2040; ++i) MASKS[i] |= nameStartMask;
-        
+        for (int i = '0'; i <= '9'; ++i)
+            MASKS[i] |= nameMask;
+        for (int i = 0x0300; i <= 0x036F; ++i)
+            MASKS[i] |= nameStartMask;
+        for (int i = 0x203F; i <= 0x2040; ++i)
+            MASKS[i] |= nameStartMask;
+
         // --------
         // NC Names
         // --------
@@ -134,7 +154,7 @@ public class XmlCharacters {
         // See http://www.w3.org/TR/REC-xml-names/#ns-decl
         // So, remove the NCNAME_CHARACTER and NCNAME_START_CHARACTER masks from ':' ...
         MASKS[':'] &= ~(NCNAME_START_CHARACTER | NCNAME_CHARACTER);
-        
+
         // --------------------
         // Public ID characters
         // --------------------
@@ -142,9 +162,12 @@ public class XmlCharacters {
         MASKS[0x20] |= PUBID_CHARACTER;
         MASKS[0xA] |= PUBID_CHARACTER;
         MASKS[0xD] |= PUBID_CHARACTER;
-        for (int i = 'A'; i <= 'Z'; ++i) MASKS[i] |= PUBID_CHARACTER;
-        for (int i = 'a'; i <= 'z'; ++i) MASKS[i] |= PUBID_CHARACTER;
-        for (int i = '0'; i <= '9'; ++i) MASKS[i] |= PUBID_CHARACTER;
+        for (int i = 'A'; i <= 'Z'; ++i)
+            MASKS[i] |= PUBID_CHARACTER;
+        for (int i = 'a'; i <= 'z'; ++i)
+            MASKS[i] |= PUBID_CHARACTER;
+        for (int i = '0'; i <= '9'; ++i)
+            MASKS[i] |= PUBID_CHARACTER;
         MASKS['-'] |= PUBID_CHARACTER;
         MASKS['\''] |= PUBID_CHARACTER;
         MASKS['('] |= PUBID_CHARACTER;
@@ -171,47 +194,47 @@ public class XmlCharacters {
     }
 
     /**
-     * Determine whether the supplied character is a valid first character in an XML Name.
-     * The first character in an XML name is more restrictive than the {@link #isValidName(int) remaining characters}.
+     * Determine whether the supplied character is a valid first character in an XML Name. The first character in an XML name is
+     * more restrictive than the {@link #isValidName(int) remaining characters}.
      * 
      * @param c the character
      * @return true if the character is valid for an XML Name's first character
      */
     public static boolean isValidNameStart( int c ) {
-        return c < NUMBER_OF_CHARACTERS && ( MASKS[c] & NAME_START_CHARACTER ) != 0;
+        return c < NUMBER_OF_CHARACTERS && (MASKS[c] & NAME_START_CHARACTER) != 0;
     }
 
     /**
-     * Determine whether the supplied character is a valid first character in an XML NCName.
-     * The first character in an XML NCName is more restrictive than the {@link #isValidName(int) remaining characters}.
+     * Determine whether the supplied character is a valid first character in an XML NCName. The first character in an XML NCName
+     * is more restrictive than the {@link #isValidName(int) remaining characters}.
      * 
      * @param c the character
      * @return true if the character is valid for an XML NCName's first character
      */
     public static boolean isValidNcNameStart( int c ) {
-        return c < NUMBER_OF_CHARACTERS && ( MASKS[c] & NCNAME_START_CHARACTER ) != 0;
+        return c < NUMBER_OF_CHARACTERS && (MASKS[c] & NCNAME_START_CHARACTER) != 0;
     }
 
     /**
-     * Determine whether the supplied character is a valid non-first character in an XML Name.
-     * The {@link #isValidNameStart(int) first character} in an XML name is more restrictive than the remaining characters.
+     * Determine whether the supplied character is a valid non-first character in an XML Name. The {@link #isValidNameStart(int)
+     * first character} in an XML name is more restrictive than the remaining characters.
      * 
      * @param c the character
      * @return true if the character is valid character in an XML Name
      */
     public static boolean isValidName( int c ) {
-        return c < NUMBER_OF_CHARACTERS && ( MASKS[c] & NAME_CHARACTER ) != 0;
+        return c < NUMBER_OF_CHARACTERS && (MASKS[c] & NAME_CHARACTER) != 0;
     }
 
     /**
-     * Determine whether the supplied character is a valid non-first character in an XML NCName.
-     * The {@link #isValidNcNameStart(int) first character} in an XML NCName is more restrictive than the remaining characters.
+     * Determine whether the supplied character is a valid non-first character in an XML NCName. The
+     * {@link #isValidNcNameStart(int) first character} in an XML NCName is more restrictive than the remaining characters.
      * 
      * @param c the character
      * @return true if the character is valid character in an XML NCName
      */
     public static boolean isValidNcName( int c ) {
-        return c < NUMBER_OF_CHARACTERS && ( MASKS[c] & NCNAME_CHARACTER ) != 0;
+        return c < NUMBER_OF_CHARACTERS && (MASKS[c] & NCNAME_CHARACTER) != 0;
     }
 
     /**
@@ -221,7 +244,7 @@ public class XmlCharacters {
      * @return true if the character is valid character in an XML Pubid
      */
     public static boolean isValidPubid( int c ) {
-        return c < NUMBER_OF_CHARACTERS && ( MASKS[c] & PUBID_CHARACTER ) != 0;
+        return c < NUMBER_OF_CHARACTERS && (MASKS[c] & PUBID_CHARACTER) != 0;
     }
 
     /**
@@ -231,7 +254,7 @@ public class XmlCharacters {
      * @return true if the character is valid character in XML
      */
     public static boolean isValid( int c ) {
-        return (c < NUMBER_OF_CHARACTERS && ( MASKS[c] & VALID_CHARACTER ) != 0) || ( 0x10000 <= c && c <= 0x10FFFF);
+        return (c < NUMBER_OF_CHARACTERS && (MASKS[c] & VALID_CHARACTER) != 0) || (0x10000 <= c && c <= 0x10FFFF);
     }
 
     /**
@@ -241,7 +264,7 @@ public class XmlCharacters {
      * @return true if the character is valid character in XML content
      */
     public static boolean isValidContent( int c ) {
-        return (c < NUMBER_OF_CHARACTERS && ( MASKS[c] & CONTENT_CHARACTER ) != 0) || ( 0x10000 <= c && c <= 0x10FFFF);
+        return (c < NUMBER_OF_CHARACTERS && (MASKS[c] & CONTENT_CHARACTER) != 0) || (0x10000 <= c && c <= 0x10FFFF);
     }
 
     /**
@@ -251,9 +274,9 @@ public class XmlCharacters {
      * @return true if the character is valid whitespace character in XML
      */
     public static boolean isValidSpace( int c ) {
-        return c <= 0x20 && ( MASKS[c] & SPACE_CHARACTER ) != 0;
+        return c <= 0x20 && (MASKS[c] & SPACE_CHARACTER) != 0;
     }
-    
+
     /**
      * Determine if the supplied name is a valid XML Name.
      * 
@@ -261,17 +284,17 @@ public class XmlCharacters {
      * @return true if the supplied name is indeed a valid XML Name, or false otherwise
      */
     public static boolean isValidName( String name ) {
-        if ( name == null || name.length() == 0 ) return false;
+        if (name == null || name.length() == 0) return false;
         CharacterIterator iter = new StringCharacterIterator(name);
         char c = iter.first();
-        if ( !isValidNameStart(c) ) return false;
-        while ( c != CharacterIterator.DONE ) {
-            if ( !isValidName(c) ) return false;
+        if (!isValidNameStart(c)) return false;
+        while (c != CharacterIterator.DONE) {
+            if (!isValidName(c)) return false;
             c = iter.next();
         }
         return true;
     }
-    
+
     /**
      * Determine if the supplied name is a valid XML NCName.
      * 
@@ -279,12 +302,12 @@ public class XmlCharacters {
      * @return true if the supplied name is indeed a valid XML NCName, or false otherwise
      */
     public static boolean isValidNcName( String name ) {
-        if ( name == null || name.length() == 0 ) return false;
+        if (name == null || name.length() == 0) return false;
         CharacterIterator iter = new StringCharacterIterator(name);
         char c = iter.first();
-        if ( !isValidNcNameStart(c) ) return false;
-        while ( c != CharacterIterator.DONE ) {
-            if ( !isValidNcName(c) ) return false;
+        if (!isValidNcNameStart(c)) return false;
+        while (c != CharacterIterator.DONE) {
+            if (!isValidNcName(c)) return false;
             c = iter.next();
         }
         return true;

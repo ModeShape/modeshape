@@ -28,18 +28,15 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * Interface for sequencers to use to generate their output.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public interface SequencerOutput {
 
     /**
      * Set the supplied property on the supplied node.
      * <p>
-     * The {@link StreamSequencerContext#getValueFactories() value factories} should be used to create paths, names, and values. These
-     * factories can be used to create new values or convert values from one property type to another. (Note that each of the
-     * factories have methods that create values from all of the property types.)
+     * The {@link StreamSequencerContext#getValueFactories() value factories} should be used to create paths, names, and values.
+     * These factories can be used to create new values or convert values from one property type to another. (Note that each of
+     * the factories have methods that create values from all of the property types.)
      * </p>
      * <p>
      * This method is provided as a convenience, but it identical to creating a {@link Path} and {@link Name} using the
@@ -73,9 +70,9 @@ public interface SequencerOutput {
     /**
      * Set the supplied property on the supplied node.
      * <p>
-     * The {@link StreamSequencerContext#getValueFactories() value factories} should be used to create paths, names, and values. These
-     * factories can be used to create new values or convert values from one property type to another. (Note that each of the
-     * factories have methods that create values from all of the property types.)
+     * The {@link StreamSequencerContext#getValueFactories() value factories} should be used to create paths, names, and values.
+     * These factories can be used to create new values or convert values from one property type to another. (Note that each of
+     * the factories have methods that create values from all of the property types.)
      * </p>
      * 
      * @param nodePath the path to the node containing the property; may not be null

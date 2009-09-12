@@ -52,9 +52,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class StringValueFactory extends AbstractValueFactory<String> {

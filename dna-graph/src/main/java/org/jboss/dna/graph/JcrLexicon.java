@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.graph;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * A lexicon of names with the JCR namespace.
  */
+@Immutable
 public class JcrLexicon {
 
     public static class Namespace {

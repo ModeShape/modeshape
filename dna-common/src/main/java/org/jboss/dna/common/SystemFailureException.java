@@ -24,10 +24,8 @@
 
 package org.jboss.dna.common;
 
-
 /**
- * 
- * @author Randall Hauch
+ * A generic {@link RuntimeException runtime exception} representing a catastrophic and/or unrecoverable failure of the system.
  */
 public class SystemFailureException extends RuntimeException {
 
@@ -36,13 +34,15 @@ public class SystemFailureException extends RuntimeException {
     private static final long serialVersionUID = 8281373010920861138L;
 
     /**
-     * 
+     * Construct a system failure exception with no message.
      */
     public SystemFailureException() {
     }
 
     /**
-     * @param message
+     * Construct a system failure exception with a single message.
+     * 
+     * @param message the message describing the failure
      */
     public SystemFailureException( String message ) {
         super(message);
@@ -50,7 +50,9 @@ public class SystemFailureException extends RuntimeException {
     }
 
     /**
-     * @param cause
+     * Construct a system failure exception with another exception that is the cause of the failure.
+     * 
+     * @param cause the original cause of the failure
      */
     public SystemFailureException( Throwable cause ) {
         super(cause);
@@ -58,10 +60,13 @@ public class SystemFailureException extends RuntimeException {
     }
 
     /**
-     * @param message
-     * @param cause
+     * Construct a system failure exception with a single message and another exception that is the cause of the failure.
+     * 
+     * @param message the message describing the failure
+     * @param cause the original cause of the failure
      */
-    public SystemFailureException( String message, Throwable cause ) {
+    public SystemFailureException( String message,
+                                   Throwable cause ) {
         super(message, cause);
 
     }

@@ -36,7 +36,7 @@ import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
- * @author Randall Hauch
+ * The repository connection to JPA repository sources.
  */
 public class JpaConnection implements RepositoryConnection {
 

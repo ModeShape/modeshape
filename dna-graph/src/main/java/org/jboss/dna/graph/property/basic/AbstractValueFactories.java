@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.property.basic;
 
 import java.util.Iterator;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -33,9 +34,8 @@ import org.jboss.dna.graph.property.ValueFactory;
  * Abstract implementation of {@link ValueFactories} that implements all the methods other than the <code>get*Factory()</code>
  * methods. Subclasses can simply implement these methods and inherit the {@link #iterator()}, {@link #getValueFactory(Object)}
  * and {@link #getValueFactory(PropertyType)} method implementations.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public abstract class AbstractValueFactories implements ValueFactories {
 
     /**

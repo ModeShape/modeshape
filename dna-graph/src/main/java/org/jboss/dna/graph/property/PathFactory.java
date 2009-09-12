@@ -23,15 +23,14 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 
 /**
  * A factory for creating {@link Path paths}. This interface extends the {@link ValueFactory} generic interface and adds specific
  * methods for creating paths (and relative paths) from a series of names, segments, or combinations.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
+@ThreadSafe
 public interface PathFactory extends ValueFactory<Path> {
 
     /**

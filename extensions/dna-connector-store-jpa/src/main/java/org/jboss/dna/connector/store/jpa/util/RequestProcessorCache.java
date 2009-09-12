@@ -43,8 +43,6 @@ import org.jboss.dna.graph.property.PathFactory;
 
 /**
  * Represents a cache of the known node information, including a node's actual {@link Location} and the complete set of children.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class RequestProcessorCache {

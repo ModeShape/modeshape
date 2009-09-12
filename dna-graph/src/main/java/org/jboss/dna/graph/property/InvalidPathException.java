@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception that represents that an invalid {@link Path path} was specified.
  */
+@Immutable
 public class InvalidPathException extends RuntimeException {
 
     /**
@@ -58,7 +61,8 @@ public class InvalidPathException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public InvalidPathException( String message, Throwable cause ) {
+    public InvalidPathException( String message,
+                                 Throwable cause ) {
         super(message, cause);
 
     }

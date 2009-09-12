@@ -33,15 +33,15 @@ import org.jboss.dna.common.util.StringUtil;
 
 /**
  * Encapsulation of the statistics for a series of values to which new values are frequently added. The statistics include the
- * {@link #getMinimum() minimum}, {@link #getMaximum() maximum}, {@link #getTotal() total (aggregate sum)}, and
- * {@link #getMean() mean (average)}. See {@link DetailedStatistics} for a subclass that also calculates the
- * {@link DetailedStatistics#getMedian() median}, {@link DetailedStatistics#getStandardDeviation() standard deviation} and the
- * {@link DetailedStatistics#getHistogram() histogram} of the values.
+ * {@link #getMinimum() minimum}, {@link #getMaximum() maximum}, {@link #getTotal() total (aggregate sum)}, and {@link #getMean()
+ * mean (average)}. See {@link DetailedStatistics} for a subclass that also calculates the {@link DetailedStatistics#getMedian()
+ * median}, {@link DetailedStatistics#getStandardDeviation() standard deviation} and the {@link DetailedStatistics#getHistogram()
+ * histogram} of the values.
  * <p>
  * This class is threadsafe.
  * </p>
+ * 
  * @param <T> the number type used in these statistics
- * @author Randall Hauch
  */
 @ThreadSafe
 public class SimpleStatistics<T extends Number> {
@@ -66,6 +66,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Add a new value to these statistics.
+     * 
      * @param value the new value
      */
     public void add( T value ) {
@@ -81,6 +82,7 @@ public class SimpleStatistics<T extends Number> {
     /**
      * A method that can be overridden by subclasses when {@link #add(Number) add} is called. This method is called within the
      * write lock, and does real work. Therefore, subclasses should call this method when they overwrite it.
+     * 
      * @param value the value already added
      */
     protected void doAddValue( T value ) {
@@ -107,6 +109,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Get the aggregate sum of the values in the series.
+     * 
      * @return the total of the values, or 0.0 if the {@link #getCount() count} is 0
      */
     public T getTotal() {
@@ -121,6 +124,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Get the maximum value in the series.
+     * 
      * @return the maximum value, or 0.0 if the {@link #getCount() count} is 0
      */
     public T getMaximum() {
@@ -135,6 +139,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Get the minimum value in the series.
+     * 
      * @return the minimum value, or 0.0 if the {@link #getCount() count} is 0
      */
     public T getMinimum() {
@@ -149,6 +154,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Get the number of values that have been measured.
+     * 
      * @return the count
      */
     public int getCount() {
@@ -164,6 +170,7 @@ public class SimpleStatistics<T extends Number> {
     /**
      * Return the approximate mean (average) value represented as an instance of the operand type. Note that this may truncate if
      * the operand type is not able to have the required precision. For the accurate mean, see {@link #getMeanValue() }.
+     * 
      * @return the mean (average), or 0.0 if the {@link #getCount() count} is 0
      */
     public T getMean() {
@@ -178,6 +185,7 @@ public class SimpleStatistics<T extends Number> {
 
     /**
      * Return the mean (average) value.
+     * 
      * @return the mean (average), or 0.0 if the {@link #getCount() count} is 0
      * @see #getMean()
      */
@@ -229,7 +237,12 @@ public class SimpleStatistics<T extends Number> {
     public String toString() {
         int count = this.getCount();
         String samples = Inflector.getInstance().pluralize("sample", count);
-        return StringUtil.createString("{0} {1}: min={2}; avg={3}; max={4}", count, samples, this.minimum, this.mean, this.maximum);
+        return StringUtil.createString("{0} {1}: min={2}; avg={3}; max={4}",
+                                       count,
+                                       samples,
+                                       this.minimum,
+                                       this.mean,
+                                       this.maximum);
     }
 
 }

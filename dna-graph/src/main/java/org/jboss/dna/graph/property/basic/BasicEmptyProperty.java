@@ -31,8 +31,6 @@ import org.jboss.dna.graph.property.Name;
 /**
  * An immutable version of a property that has no values. This is done for efficiency of the in-memory representation, since many
  * properties will have just a single value, while others will have multiple values.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class BasicEmptyProperty extends BasicProperty {

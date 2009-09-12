@@ -35,10 +35,12 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Arrays;
+import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * A set of utilities for more easily performing I/O.
  */
+@Immutable
 public class IoUtil {
 
     /**

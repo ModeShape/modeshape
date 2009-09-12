@@ -40,7 +40,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  * @see JpaSource.Models#addModel(Model)
  * @see JpaSource#setModel(String)
  * @see JpaSource#getModel()
- * @author Randall Hauch
  */
 public abstract class Model {
     private final String name;

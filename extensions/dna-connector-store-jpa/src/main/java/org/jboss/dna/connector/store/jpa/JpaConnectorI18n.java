@@ -25,11 +25,13 @@ package org.jboss.dna.connector.store.jpa;
 
 import java.util.Locale;
 import java.util.Set;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.connector.store.jpa*</code> packages.
  */
+@Immutable
 public final class JpaConnectorI18n {
 
     public static I18n connectorName;

@@ -34,8 +34,6 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
 
 /**
  * Sequencer for array types.
- * 
- * @author Serge Pagop
  */
 public class ArrayTypeFieldMetadataSequencer implements JavaSourceCndDefinition {
 

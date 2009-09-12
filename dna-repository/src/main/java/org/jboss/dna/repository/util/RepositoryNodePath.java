@@ -30,14 +30,16 @@ import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
- * @author Randall Hauch
+ * An immutable representation of a path to a node within the named workspace of a named repository source.
  */
 @Immutable
 public class RepositoryNodePath {
 
     protected static final Pattern PATTERN = Pattern.compile("([^:/]):(/.*)");
 
-    public static RepositoryNodePath parse( String path, String repositorySourceName, String defaultRepositoryWorkspaceName ) {
+    public static RepositoryNodePath parse( String path,
+                                            String repositorySourceName,
+                                            String defaultRepositoryWorkspaceName ) {
         Matcher matcher = PATTERN.matcher(path);
         if (matcher.matches()) {
             try {
@@ -55,7 +57,9 @@ public class RepositoryNodePath {
     private final String nodePath;
     private final int hc;
 
-    public RepositoryNodePath( String repositorySourceName, String workspaceName, String nodePath ) {
+    public RepositoryNodePath( String repositorySourceName,
+                               String workspaceName,
+                               String nodePath ) {
         this.repositorySourceName = repositorySourceName;
         this.workspaceName = workspaceName;
         this.nodePath = nodePath;
@@ -77,13 +81,12 @@ public class RepositoryNodePath {
     }
 
     /**
-     * 
      * @return the workspace name
      */
     public String getWorkspaceName() {
         return this.workspaceName;
     }
-    
+
     /**
      * {@inheritDoc}
      */

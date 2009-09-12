@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.text.TextEncoder;
@@ -44,9 +45,8 @@ import org.jboss.dna.graph.property.Path;
  * but it does provide implementations for most of the methods based upon a few abstract methods. For example, any implementaton
  * that requires the {@link Path.Segment path's segments} are written to use the {@link #iterator()}, since that is likely more
  * efficient for the majority of implementations.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public abstract class AbstractPath implements Path {
 
     /**

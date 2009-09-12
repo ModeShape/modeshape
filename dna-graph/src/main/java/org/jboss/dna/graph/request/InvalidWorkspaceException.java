@@ -23,11 +23,12 @@
  */
 package org.jboss.dna.graph.request;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * Specifies that the request was invalid and could not be completed.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class InvalidWorkspaceException extends RequestException {
 
     /**

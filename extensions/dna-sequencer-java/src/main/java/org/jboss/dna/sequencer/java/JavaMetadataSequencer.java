@@ -29,9 +29,9 @@ import java.util.List;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
@@ -165,9 +165,6 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
  * </li>
  * </ul>
  * </p>
- * 
- * @author Serge Pagop
- * @author John Verhaeg
  */
 public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSequencer {
 

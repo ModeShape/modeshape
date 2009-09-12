@@ -37,8 +37,6 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 
 /**
  * A simple {@link NamespaceRegistry} implementation that is not thread-safe, but that provides all the basic functionality.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class SimpleNamespaceRegistry implements NamespaceRegistry {

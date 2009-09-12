@@ -41,8 +41,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * The location of a node, as specified by either its path, UUID, and/or identification properties.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public abstract class Location implements Iterable<Property>, Comparable<Location> {

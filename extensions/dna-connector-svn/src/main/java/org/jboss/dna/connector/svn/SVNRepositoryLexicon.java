@@ -26,11 +26,8 @@ package org.jboss.dna.connector.svn;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
-
 /**
  * The namespace and property names used within a {@link SVNRepositorySource} to store internal information.
- * 
- * @author Serge Pagop
  */
 public class SVNRepositoryLexicon {
 

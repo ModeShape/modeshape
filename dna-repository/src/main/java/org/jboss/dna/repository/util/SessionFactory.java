@@ -28,7 +28,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 /**
- * @author Randall Hauch
+ * An interface for creating JCR Session objects.
  */
 public interface SessionFactory {
 

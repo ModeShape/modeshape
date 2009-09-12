@@ -28,7 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.sequencer.image*</code> packages.
  */
 public final class ImageSequencerI18n {
 

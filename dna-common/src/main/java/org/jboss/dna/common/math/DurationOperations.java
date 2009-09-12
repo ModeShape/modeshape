@@ -27,31 +27,40 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import net.jcip.annotations.Immutable;
 
+/**
+ * The {@link MathOperations math operations} for {@link Duration}s.
+ */
+@Immutable
 public class DurationOperations implements MathOperations<Duration>, Comparator<Duration> {
 
     public Class<Duration> getOperandClass() {
         return Duration.class;
     }
 
-    public Duration add( Duration value1, Duration value2 ) {
+    public Duration add( Duration value1,
+                         Duration value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
         if (value2 == null) return value1;
         return value1.add(value2);
     }
 
-    public Duration subtract( Duration value1, Duration value2 ) {
+    public Duration subtract( Duration value1,
+                              Duration value2 ) {
         if (value1 == null) return negate(value2);
         if (value2 == null) return value1;
         return value1.subtract(value2);
     }
 
-    public Duration multiply( Duration value1, Duration value2 ) {
+    public Duration multiply( Duration value1,
+                              Duration value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return value1.multiply(value2.longValue());
     }
 
-    public double divide( Duration value1, Duration value2 ) {
+    public double divide( Duration value1,
+                          Duration value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1.divide(value2);
     }
@@ -66,19 +75,22 @@ public class DurationOperations implements MathOperations<Duration>, Comparator<
         return value.add(1l, TimeUnit.NANOSECONDS);
     }
 
-    public Duration maximum( Duration value1, Duration value2 ) {
+    public Duration maximum( Duration value1,
+                             Duration value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return new Duration(Math.max(value1.longValue(), value2.longValue()));
     }
 
-    public Duration minimum( Duration value1, Duration value2 ) {
+    public Duration minimum( Duration value1,
+                             Duration value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return new Duration(Math.min(value1.longValue(), value2.longValue()));
     }
 
-    public int compare( Duration value1, Duration value2 ) {
+    public int compare( Duration value1,
+                        Duration value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
         if (value2 == null) return 1;
         return value1.compareTo(value2);
@@ -116,7 +128,9 @@ public class DurationOperations implements MathOperations<Duration>, Comparator<
         return this;
     }
 
-    public Duration random( Duration minimum, Duration maximum, Random rng ) {
+    public Duration random( Duration minimum,
+                            Duration maximum,
+                            Random rng ) {
         Duration difference = subtract(maximum, minimum);
         return new Duration(minimum.getDuratinInNanoseconds() + rng.nextInt(difference.intValue()));
     }
@@ -153,7 +167,8 @@ public class DurationOperations implements MathOperations<Duration>, Comparator<
         return exp;
     }
 
-    public Duration roundUp( Duration durationValue, int decimalShift ) {
+    public Duration roundUp( Duration durationValue,
+                             int decimalShift ) {
         long value = durationValue.longValue();
         if (value == 0) return new Duration(0l);
         if (decimalShift >= 0) return durationValue;
@@ -169,7 +184,8 @@ public class DurationOperations implements MathOperations<Duration>, Comparator<
         return new Duration(shiftedValue);
     }
 
-    public Duration roundDown( Duration durationValue, int decimalShift ) {
+    public Duration roundDown( Duration durationValue,
+                               int decimalShift ) {
         long value = durationValue.longValue();
         if (value == 0) return new Duration(0l);
         if (decimalShift >= 0) return durationValue;
@@ -182,7 +198,8 @@ public class DurationOperations implements MathOperations<Duration>, Comparator<
         return new Duration(shiftedValue);
     }
 
-    public Duration keepSignificantFigures( Duration value, int numSigFigs ) {
+    public Duration keepSignificantFigures( Duration value,
+                                            int numSigFigs ) {
         if (numSigFigs < 0) return value;
         if (numSigFigs == 0) return new Duration(0l);
         int currentExp = getExponentInScientificNotation(value);

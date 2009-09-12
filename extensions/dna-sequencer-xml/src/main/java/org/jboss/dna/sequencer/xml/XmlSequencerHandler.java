@@ -43,14 +43,14 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.ext.DefaultHandler2;
 
 /**
- * @author Randall Hauch
+ * A {@link DefaultHandler2} implementation that is used by the sequencer.
  */
 public class XmlSequencerHandler extends DefaultHandler2 {
 

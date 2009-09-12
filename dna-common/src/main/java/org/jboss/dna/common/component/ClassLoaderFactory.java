@@ -25,12 +25,12 @@ package org.jboss.dna.common.component;
 
 /**
  * Factory interface for creating class loaders.
- * @author Randall Hauch
  */
 public interface ClassLoaderFactory {
 
     /**
      * Get a class loader for the supplied classpath.
+     * 
      * @param classpath the classpath to use
      * @return the class loader; may not be null
      */

@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.List;
 
 /**
- * @author Randall Hauch
+ * The methods to interact with the user.
  */
 public interface UserInterface {
 

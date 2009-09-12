@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * @author Serge Pagop
+ * Import metadata.
  */
 public abstract class ImportMetadata {
 

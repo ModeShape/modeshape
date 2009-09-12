@@ -37,8 +37,6 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 /**
  * A thread-safe {@link NamespaceRegistry} that may be used as a thread-safe wrapper around another non-thread-safe
  * implementation.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public class ThreadSafeNamespaceRegistry implements NamespaceRegistry {

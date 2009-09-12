@@ -24,12 +24,14 @@
 package org.jboss.dna.jcr.nodetype;
 
 import javax.jcr.RepositoryException;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 
 /**
  * An exception that captures the error condition that a referenced node type already exists.
  */
+@Immutable
 public class NodeTypeExistsException extends RepositoryException {
 
     /**

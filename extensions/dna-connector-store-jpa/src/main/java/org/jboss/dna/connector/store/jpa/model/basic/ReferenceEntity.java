@@ -37,8 +37,6 @@ import org.hibernate.annotations.Index;
 
 /**
  * A record of a reference from one node to another.
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_BASIC_REFERENCES" )

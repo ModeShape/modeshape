@@ -46,11 +46,8 @@ import org.jboss.dna.common.util.ClassUtil;
 import org.jboss.dna.common.util.StringUtil;
 
 /**
- * Manages the initialization of internationalization (i18n) files, substitution of values within i18n message placeholders, and
- * dynamically reading properties from i18n property files.
- * 
- * @author John Verhaeg
- * @author Randall Hauch
+ * An internalized string object, which manages the initialization of internationalization (i18n) files, substitution of values
+ * within i18n message placeholders, and dynamically reading properties from i18n property files.
  */
 @ThreadSafe
 public final class I18n {
@@ -101,8 +98,8 @@ public final class I18n {
      * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
      * 
      * @param i18nClass The internalization class for which localization problems should be returned.
-     * @param locale The locale for which localization problems should be returned. If <code>null</code>, the default locale
-     *        will be used.
+     * @param locale The locale for which localization problems should be returned. If <code>null</code>, the default locale will
+     *        be used.
      * @return The localization problems encountered while localizing the supplied internationalization class to the supplied
      *         locale; never <code>null</code>.
      */
@@ -134,8 +131,8 @@ public final class I18n {
      * Set the repository of localized messages. If <code>null</code>, a {@link ClasspathLocalizationRepository} instance that
      * uses this class loader will be used.
      * 
-     * @param localizationRepository the localization repository to use; may be <code>null</code> if the default repository
-     *        should be used.
+     * @param localizationRepository the localization repository to use; may be <code>null</code> if the default repository should
+     *        be used.
      */
     public static void setLocalizationRepository( LocalizationRepository localizationRepository ) {
         I18n.localizationRepository = localizationRepository != null ? localizationRepository : DEFAULT_LOCALIZATION_REPOSITORY;

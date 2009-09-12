@@ -30,8 +30,6 @@ import net.jcip.annotations.ThreadSafe;
 /**
  * MIME-type detection libraries must provide thread-safe implementations of this interface to enable DNA to use the libraries to
  * return MIME-types for data sources.
- * 
- * @author jverhaeg
  */
 @ThreadSafe
 public interface MimeTypeDetector {

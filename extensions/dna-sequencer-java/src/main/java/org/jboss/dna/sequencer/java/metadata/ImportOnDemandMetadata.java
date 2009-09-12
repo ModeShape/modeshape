@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * @author Serge Pagop
+ * On-demand import metadata.
  */
 public class ImportOnDemandMetadata extends ImportMetadata {
 

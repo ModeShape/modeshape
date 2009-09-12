@@ -23,13 +23,14 @@
  */
 package org.jboss.dna.common.util;
 
+import net.jcip.annotations.Immutable;
 import org.slf4j.MDC;
 
 /**
  * Provides a "mapped diagnostic context" (MDC) for use in capturing extra context information to be included in logs of
  * multithreaded applications. Not all logging implementations support MDC, although a few do (including <a
- * href="http://logging.apache.org/log4j/1.3/index.html">Log4J</a> and <a href="http://logback.qos.ch/">Logback</a>). Note that
- * if the logging implementation does not support MDC, this information is ignored.
+ * href="http://logging.apache.org/log4j/1.3/index.html">Log4J</a> and <a href="http://logback.qos.ch/">Logback</a>). Note that if
+ * the logging implementation does not support MDC, this information is ignored.
  * <p>
  * It can be difficult to understand what is going on within a multithreaded application. When multiple threads are working
  * simultaneously, their log messages are mixed together. Thus, it's difficult to follow the log messages of a single thread. Log
@@ -61,19 +62,22 @@ import org.slf4j.MDC;
  * the values for those keys.
  * </p>
  */
+@Immutable
 public class LogContext {
 
     /**
      * Put a context value (the <code>val</code> parameter) as identified with the <code>key</code> parameter into the current
-     * thread's context map. The <code>key</code> parameter cannot be null. The code>val</code> parameter can be null only if
-     * the underlying implementation supports it.
+     * thread's context map. The <code>key</code> parameter cannot be null. The code>val</code> parameter can be null only if the
+     * underlying implementation supports it.
      * <p>
      * This method delegates all work to the MDC of the underlying logging system.
+     * 
      * @param key the key
      * @param value the value
      * @throws IllegalArgumentException in case the "key" parameter is null
      */
-    public static void set( String key, String value ) {
+    public static void set( String key,
+                            String value ) {
         MDC.put(key, value);
     }
 
@@ -81,6 +85,7 @@ public class LogContext {
      * Get the context identified by the <code>key</code> parameter. The <code>key</code> parameter cannot be null.
      * <p>
      * This method delegates all work to the MDC of the underlying logging system.
+     * 
      * @param key the key
      * @return the string value identified by the <code>key</code> parameter.
      * @throws IllegalArgumentException in case the "key" parameter is null
@@ -93,6 +98,7 @@ public class LogContext {
      * Remove the the context identified by the <code>key</code> parameter using the underlying system's MDC implementation. The
      * <code>key</code> parameter cannot be null. This method does nothing if there is no previous value associated with
      * <code>key</code>.
+     * 
      * @param key the key
      * @throws IllegalArgumentException in case the "key" parameter is null
      */

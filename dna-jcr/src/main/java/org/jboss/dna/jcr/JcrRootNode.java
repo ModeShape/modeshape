@@ -25,16 +25,17 @@ package org.jboss.dna.jcr;
 
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.session.GraphSession.NodeId;
 
 /**
- * @author jverhaeg
+ * A concrete implementation of a root {@link Node JCR Node}.
  */
-@NotThreadSafe
+@Immutable
 final class JcrRootNode extends AbstractJcrNode {
 
     JcrRootNode( SessionCache cache,

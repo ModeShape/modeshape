@@ -24,13 +24,16 @@
 package org.jboss.dna.jcr;
 
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.session.GraphSession.NodeId;
 
 /**
- *
+ * A concrete {@link Node JCR Node} implementation.
+ * 
+ * @see JcrRootNode
  */
 @NotThreadSafe
 final class JcrNode extends AbstractJcrNode {

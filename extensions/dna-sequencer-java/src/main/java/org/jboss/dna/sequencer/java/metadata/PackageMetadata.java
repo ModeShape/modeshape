@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Package meta data.
- * 
- * @author Serge Pagop.
  */
 public class PackageMetadata {
     private JavadocMetadata javadocMetadata;

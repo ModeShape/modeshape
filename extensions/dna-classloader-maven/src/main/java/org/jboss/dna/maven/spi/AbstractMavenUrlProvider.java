@@ -27,7 +27,7 @@ import java.util.Properties;
 import org.jboss.dna.common.collection.UnmodifiableProperties;
 
 /**
- * @author Randall Hauch
+ * An abstract URL provider for Maven 2 repositories.
  */
 public abstract class AbstractMavenUrlProvider implements MavenUrlProvider {
 
@@ -45,6 +45,7 @@ public abstract class AbstractMavenUrlProvider implements MavenUrlProvider {
 
     /**
      * Get the properties for this provider.
+     * 
      * @return the properties
      */
     public Properties getProperties() {

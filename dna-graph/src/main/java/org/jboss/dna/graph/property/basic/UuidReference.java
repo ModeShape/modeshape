@@ -30,7 +30,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Reference;
 
 /**
- * @author Randall Hauch
+ * A {@link Reference} implementation that uses a single {@link UUID} as the pointer.
  */
 @Immutable
 public class UuidReference implements Reference {

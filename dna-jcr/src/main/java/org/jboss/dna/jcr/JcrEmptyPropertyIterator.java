@@ -26,11 +26,13 @@ package org.jboss.dna.jcr;
 import java.util.NoSuchElementException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * 
+ * A concrete {@link PropertyIterator}.
  */
+@Immutable
 class JcrEmptyPropertyIterator implements PropertyIterator {
 
     /**

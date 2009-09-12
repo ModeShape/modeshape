@@ -49,8 +49,6 @@ import org.jboss.dna.repository.RepositoryI18n;
  * <code>title</code> property on the <code>/a/b/c</code> node, and that the output of the sequencing should be placed at
  * <code>/d/e/f</code>.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class SequencerPathExpression implements Serializable {

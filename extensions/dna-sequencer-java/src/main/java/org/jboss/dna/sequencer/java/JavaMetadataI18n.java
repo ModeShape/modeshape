@@ -28,7 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Serge Pagop
+ * The internationalized string constants for the <code>org.jboss.dna.sequencer.java*</code> packages.
  */
 public class JavaMetadataI18n {
     public static I18n sequencerTaskName;

@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception that represents that an invalid {@link PathExpression path expression} was specified.
  */
+@Immutable
 public class InvalidPathExpressionException extends RuntimeException {
 
     /**

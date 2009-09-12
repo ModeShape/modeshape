@@ -36,7 +36,6 @@ import java.util.Locale;
  * returned immediately.
  * </p>
  * named with a name that matches
- * @author Randall Hauch
  */
 public class ClasspathLocalizationRepository implements LocalizationRepository {
 
@@ -54,6 +53,7 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
      * Create a repository using the supplied class loader. Null may be passed if the class loader should be obtained from the
      * current thread's {@link Thread#getContextClassLoader() context class loader} or, if that is null, the same class loader
      * that loaded this class.
+     * 
      * @param classLoader the class loader to use; may be null
      */
     public ClasspathLocalizationRepository( ClassLoader classLoader ) {
@@ -65,7 +65,8 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
     /**
      * {@inheritDoc}
      */
-    public URL getLocalizationBundle( String bundleName, Locale locale ) {
+    public URL getLocalizationBundle( String bundleName,
+                                      Locale locale ) {
         URL url = null;
         String pathPfx = bundleName.replaceAll("\\.", "/");
         String variant = '_' + locale.toString();

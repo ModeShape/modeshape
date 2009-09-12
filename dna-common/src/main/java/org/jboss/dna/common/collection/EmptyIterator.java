@@ -25,11 +25,15 @@ package org.jboss.dna.common.collection;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import net.jcip.annotations.Immutable;
 
 /**
- * @author jverhaeg
- * @param <T> some type
+ * A reusuable {@link Iterator} implementation that has no elements. Note that the objects are immutable, and therefore may be
+ * shared and reused.
+ * 
+ * @param <T> the type of the elements over which the iteration is being performed
  */
+@Immutable
 public final class EmptyIterator<T> implements Iterator<T> {
 
     /**

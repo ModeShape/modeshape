@@ -23,11 +23,12 @@
  */
 package org.jboss.dna.graph.request;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * Specifies that the request was invalid and could not be completed.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class RequestException extends RuntimeException {
 
     /**
@@ -61,7 +62,7 @@ public class RequestException extends RuntimeException {
      * @param cause
      */
     public RequestException( String message,
-                                    Throwable cause ) {
+                             Throwable cause ) {
         super(message, cause);
 
     }

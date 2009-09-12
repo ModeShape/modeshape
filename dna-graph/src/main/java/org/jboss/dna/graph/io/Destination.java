@@ -32,8 +32,6 @@ import org.jboss.dna.graph.property.Property;
 /**
  * Interface used internally as the destination for the requests. This is used to abstract whether the requests should be
  * submitted immediately or in a single batch.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public interface Destination {

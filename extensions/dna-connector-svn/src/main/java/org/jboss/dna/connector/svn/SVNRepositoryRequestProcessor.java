@@ -86,8 +86,6 @@ import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
 /**
  * The {@link RequestProcessor} implementation for the file subversion repository connector. This is the class that does the bulk
  * of the work in the subversion repository connector, since it processes all requests.
- * 
- * @author Serge Pagop
  */
 public class SVNRepositoryRequestProcessor extends RequestProcessor implements ScmActionFactory {
 

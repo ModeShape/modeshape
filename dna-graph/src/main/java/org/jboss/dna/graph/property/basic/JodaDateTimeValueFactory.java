@@ -47,9 +47,6 @@ import org.joda.time.DateTimeZone;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
@@ -69,8 +66,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         } catch (IllegalArgumentException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            DateTime.class.getSimpleName(),
-                                                                            value), err);
+                                                                              DateTime.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -102,8 +99,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create( boolean value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Date.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Date.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -158,8 +155,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create( Name value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -167,8 +164,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create( Path value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -177,8 +174,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     public DateTime create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -186,8 +183,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create( URI value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  URI.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    URI.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -197,8 +194,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create( UUID value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

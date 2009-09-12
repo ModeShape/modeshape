@@ -10,6 +10,9 @@ import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 
+/**
+ * A repository implementation that uses JBoss Cache.
+ */
 public class JBossCacheRepository extends MapRepository {
 
     private final Cache<UUID, MapNode> cache;

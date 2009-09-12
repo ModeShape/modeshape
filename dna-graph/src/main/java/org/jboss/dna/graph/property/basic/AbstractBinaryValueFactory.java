@@ -51,9 +51,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 /**
  * An abstract {@link BinaryFactory} implementation that contains many general methods that are likely to be appropriate for many
  * concrete implementations.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public abstract class AbstractBinaryValueFactory extends AbstractValueFactory<Binary> implements BinaryFactory {

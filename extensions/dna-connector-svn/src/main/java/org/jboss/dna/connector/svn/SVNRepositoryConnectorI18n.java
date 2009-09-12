@@ -28,7 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Serge Pagop
+ * The internationalized string constants for the <code>org.jboss.dna.connector.svn*</code> packages.
  */
 public final class SVNRepositoryConnectorI18n {
 

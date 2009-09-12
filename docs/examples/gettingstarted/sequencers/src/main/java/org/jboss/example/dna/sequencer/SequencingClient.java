@@ -51,7 +51,7 @@ import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
 
 /**
- * @author Randall Hauch
+ * The main application for running the sequencers.
  */
 public class SequencingClient {
 
@@ -252,17 +252,17 @@ public class SequencingClient {
                 for (NodeIterator i = root.getNode("zips").getNodes(); i.hasNext();) {
                     nodesToVisit.addLast(i.nextNode());
                 }
-                
+
                 while (!nodesToVisit.isEmpty()) {
                     Node node = nodesToVisit.remove();
-                    
+
                     String nodeType = "nt:file".equals(node.getPrimaryNodeType()) ? "file" : "folder";
                     infos.add(new MediaInfo(node.getPath(), node.getName(), nodeType, new Properties()));
 
                     for (NodeIterator i = node.getNodes(); i.hasNext();) {
                         nodesToVisit.addLast(i.nextNode());
                     }
-                
+
                 }
             }
             if (root.hasNode("java")) {

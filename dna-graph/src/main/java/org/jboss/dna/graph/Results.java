@@ -31,8 +31,6 @@ import org.jboss.dna.graph.request.Request;
 /**
  * A set of nodes returned from a {@link Graph graph}, with methods to access the properties and children of the nodes in the
  * result. The {@link #iterator()} method can be used to iterate all over the nodes in the result.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Results extends Graph.BaseResults<Node> {

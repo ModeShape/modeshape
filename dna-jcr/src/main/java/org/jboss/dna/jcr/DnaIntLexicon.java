@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.jcr;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * A lexicon of internal and implementation-specific information
  */
+@Immutable
 public class DnaIntLexicon extends org.jboss.dna.graph.DnaIntLexicon {
     public static final Name MULTI_VALUED_PROPERTIES = new BasicName(Namespace.URI, "multiValuedProperties");
 }

@@ -33,8 +33,6 @@ import org.jboss.dna.repository.RepositoryI18n;
 /**
  * Simple abstract implementation of the service administrator interface that can be easily subclassed by services that require an
  * administrative interface.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public abstract class AbstractServiceAdministrator implements ServiceAdministrator {

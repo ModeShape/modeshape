@@ -28,7 +28,7 @@ import java.util.Properties;
 import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * Information about a media file.
  */
 @Immutable
 public class MediaInfo extends ContentInfo {

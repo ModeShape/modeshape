@@ -30,8 +30,7 @@ import java.util.TreeMap;
 import net.jcip.annotations.Immutable;
 
 /**
- * @author Serge Pagop
- * @author Randall Hauch
+ * The information about Java source.
  */
 @Immutable
 public class JavaInfo extends ContentInfo {

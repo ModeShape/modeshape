@@ -31,9 +31,6 @@ import java.io.InputStream;
  * <p>
  * Implementations must provide a no-argument constructor.
  * </p>
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public interface StreamSequencer {
 

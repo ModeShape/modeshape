@@ -27,14 +27,16 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 
 /**
- * @author jverhaeg
+ * An abstract {@link Item} implementation.
  */
+@Immutable
 abstract class AbstractJcrItem implements Item {
 
     protected final SessionCache cache;

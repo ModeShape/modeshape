@@ -50,8 +50,6 @@ import org.jboss.dna.graph.property.Property;
  * {@link Property#isSingle()}, and {@link Property#isMultiple()}) has no influence on whether the property should be removed. It
  * is possible for a property to have no values.
  * </p>
- * 
- * @author Randall Hauch
  */
 public class UpdatePropertiesRequest extends ChangeRequest {
 

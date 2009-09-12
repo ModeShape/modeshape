@@ -28,7 +28,7 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.NamespaceRegistry.Namespace;
 
 /**
- * @author Randall Hauch
+ * Basic implementation of a {@link NamespaceRegistry} namespace.
  */
 @Immutable
 public class BasicNamespace implements NamespaceRegistry.Namespace {

@@ -65,8 +65,6 @@ import org.jboss.dna.graph.observe.Observer;
  * The {@link RepositorySource} for the connector that stores content in a (custom) relational database. This connector uses Java
  * Persistence API as the interface to the database, with Hibernate as the JPA implementation. (Note that some Hibernate-specific
  * features are used.)
- * 
- * @author Randall Hauch
  */
 public class JpaSource implements RepositorySource, ObjectFactory {
 

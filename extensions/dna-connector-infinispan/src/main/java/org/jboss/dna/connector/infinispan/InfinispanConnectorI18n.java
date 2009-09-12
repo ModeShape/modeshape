@@ -4,6 +4,9 @@ import java.util.Locale;
 import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
+/**
+ * The internationalized string constants for the <code>org.jboss.dna.connector.infinispan*</code> packages.
+ */
 public final class InfinispanConnectorI18n {
 
     public static I18n connectorName;
@@ -19,7 +22,6 @@ public final class InfinispanConnectorI18n {
     public static I18n workspaceNameWasNotValidConfiguration;
     public static I18n defaultCacheManagerConfigurationNameWasNotValidConfiguration;
 
-    
     static {
         try {
             I18n.initialize(InfinispanConnectorI18n.class);

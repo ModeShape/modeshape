@@ -34,7 +34,6 @@ import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.Reflection;
-import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -58,7 +57,7 @@ import org.jboss.dna.repository.service.AdministeredService;
 import org.jboss.dna.repository.service.ServiceAdministrator;
 
 /**
- * @author Randall Hauch
+ * A service that manages the {@link RepositorySource}es defined within a configuration repository.
  */
 @ThreadSafe
 public class RepositoryService implements AdministeredService, Observer {
@@ -232,7 +231,7 @@ public class RepositoryService implements AdministeredService, Observer {
             } catch (PathNotFoundException e) {
                 // No sources were found, and this is okay!
             } catch (Throwable err) {
-                throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text(), err);
+                throw new DnaConfigurationException(RepositoryI18n.errorStartingRepositoryService.text(), err);
             }
 
             this.started.set(true);

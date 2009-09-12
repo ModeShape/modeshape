@@ -17,7 +17,6 @@ import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 /**
- * @author Serge Pagop
  */
 public class SVNRepositoryUtil {
 

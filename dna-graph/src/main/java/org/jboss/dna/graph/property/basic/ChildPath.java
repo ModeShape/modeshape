@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.ImmutableAppendedList;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Path;
@@ -35,9 +36,8 @@ import org.jboss.dna.graph.property.Path;
 /**
  * Implementation of a {@link Path} that has the information for the last segment but that points to another Path for the parent
  * information.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class ChildPath extends AbstractPath {
 
     /**

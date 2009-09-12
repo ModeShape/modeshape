@@ -29,8 +29,6 @@ import org.eclipse.jdt.core.dom.ASTParser;
 
 /**
  * The Parser, that process the a compilation unit.
- * 
- * @author Serge Pagop
  */
 public class CompilationUnitParser {
 

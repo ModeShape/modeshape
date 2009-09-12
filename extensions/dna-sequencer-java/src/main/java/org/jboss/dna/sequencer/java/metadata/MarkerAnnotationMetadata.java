@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Metadata for marker annotations.
  */
 public class MarkerAnnotationMetadata extends AnnotationMetadata {
     private boolean marker;

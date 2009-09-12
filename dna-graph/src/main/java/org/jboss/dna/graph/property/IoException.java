@@ -23,10 +23,12 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
- * @author John Verhaeg
+ * A runtime exception that represents that an error occurred during input/output.
  */
+@Immutable
 public class IoException extends RuntimeException {
 
     /**
@@ -60,7 +62,7 @@ public class IoException extends RuntimeException {
      * @param cause
      */
     public IoException( String message,
-                                 Throwable cause ) {
+                        Throwable cause ) {
         super(message, cause);
 
     }

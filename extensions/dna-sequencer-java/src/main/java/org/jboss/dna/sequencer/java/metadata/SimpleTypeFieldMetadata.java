@@ -24,17 +24,14 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * SimpleTypeFieldMetadata is a meta data for simple class type reference , 
- * a simple interface type reference, or a simple type variable.
- * 
- * @author serge pagop
- *
+ * SimpleTypeFieldMetadata is a meta data for simple class type reference , a simple interface type reference, or a simple type
+ * variable.
  */
 public class SimpleTypeFieldMetadata extends FieldMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isSimpleType()
      */
     @Override
@@ -44,12 +41,12 @@ public class SimpleTypeFieldMetadata extends FieldMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-        return "SimpleTypeFieldMetadata [ " + getType() + "]" ;
+        return "SimpleTypeFieldMetadata [ " + getType() + "]";
     }
 
 }

@@ -27,9 +27,9 @@ import java.io.InputStream;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -41,8 +41,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * the {@link XmlSequencer.AttributeScoping#USE_DEFAULT_NAMESPACE default namespace} for unqualified attribute rather than
  * {@link XmlSequencer.AttributeScoping#INHERIT_ELEMENT_NAMESPACE inheriting the namespace from the element}. (See also
  * {@link InheritingXmlSequencer}.
- * 
- * @author John Verhaeg
  */
 public class XmlSequencer implements StreamSequencer {
 

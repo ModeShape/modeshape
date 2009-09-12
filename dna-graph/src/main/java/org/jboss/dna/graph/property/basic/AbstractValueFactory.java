@@ -47,8 +47,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 /**
  * Abstract {@link ValueFactory}.
  * 
- * @author Randall Hauch
- * @author John Verhaeg
  * @param <T> the property type
  */
 @Immutable

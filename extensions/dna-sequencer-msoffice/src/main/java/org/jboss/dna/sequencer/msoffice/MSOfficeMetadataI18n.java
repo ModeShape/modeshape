@@ -23,13 +23,12 @@
  */
 package org.jboss.dna.sequencer.msoffice;
 
-import org.jboss.dna.common.i18n.I18n;
-
 import java.util.Locale;
 import java.util.Set;
+import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.sequencer.msoffice*</code> packages.
  */
 public final class MSOfficeMetadataI18n {
 

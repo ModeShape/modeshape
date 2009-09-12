@@ -109,7 +109,7 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
- * @author Randall Hauch
+ * A {@link RequestProcessor} implementation for the JPA connector.
  */
 @NotThreadSafe
 public class BasicRequestProcessor extends RequestProcessor {

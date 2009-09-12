@@ -27,9 +27,9 @@ import java.util.Iterator;
 
 /**
  * An {@link Iterator} implementation that only allows reading elements, used as a wrapper around another iterator to make the
- * contents appear to be immutable.
+ * contents immutable to the user of this iterator.
  * 
- * @param <T> the type that is being iterated over
+ * @param <T> the type of the elements over which the iteration is being performed
  */
 public final class ReadOnlyIterator<T> implements Iterator<T> {
 

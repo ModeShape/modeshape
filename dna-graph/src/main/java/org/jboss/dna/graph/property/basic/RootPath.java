@@ -38,8 +38,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * Optimized implementation of {@link Path} that serves as the root path.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class RootPath extends AbstractPath {

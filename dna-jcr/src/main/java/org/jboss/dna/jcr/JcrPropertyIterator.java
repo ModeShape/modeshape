@@ -31,6 +31,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
+ * DNA implementation of a {@link PropertyIterator}.
  */
 @Immutable
 final class JcrPropertyIterator implements PropertyIterator {

@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -50,6 +51,7 @@ import org.jboss.dna.graph.request.UpdatePropertiesRequest;
  * example, if a property is updated and then updated again, the net change will be a single change. Or, if a node is created and
  * then deleted, no net change will be observed.
  */
+@ThreadSafe
 public abstract class NetChangeObserver extends ChangeObserver {
 
     public enum ChangeType {

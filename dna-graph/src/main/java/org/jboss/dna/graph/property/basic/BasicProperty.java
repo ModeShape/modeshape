@@ -35,7 +35,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueComparators;
 
 /**
- * @author Randall Hauch
+ * An abstract {@link Property} implementation.
  */
 @Immutable
 public abstract class BasicProperty implements Property {

@@ -25,6 +25,7 @@ package org.jboss.dna.graph.property.basic;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.BinaryFactory;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.NameFactory;
@@ -35,8 +36,9 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 
 /**
- * @author Randall Hauch
+ * A {@link ValueFactories} implementation that delegates to another instance, and that is often useful for subclassing.
  */
+@Immutable
 public class DelegatingValueFactories extends AbstractValueFactories {
 
     private final ValueFactories delegate;

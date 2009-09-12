@@ -33,8 +33,6 @@ import net.jcip.annotations.Immutable;
  * An identifier for a node, comprised of a single {@link UUID}, and {@link Embeddable embeddable} in a persistent entity. The
  * identifier takes the form of two <code>long</code> columns: one for the UUID's {@link UUID#getMostSignificantBits() most
  * significant bits} and one for its {@link UUID#getLeastSignificantBits() least significant bits}.
- * 
- * @author Randall Hauch
  */
 @Embeddable
 @Immutable

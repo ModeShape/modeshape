@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.graph.ExecutionContext;
@@ -36,8 +37,9 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
 /**
- * @author John Verhaeg
+ * A special {@link ExecutionContext} that is used for sequencing streams.
  */
+@ThreadSafe
 public class StreamSequencerContext extends ExecutionContext {
 
     private final Path inputPath;
@@ -47,10 +49,10 @@ public class StreamSequencerContext extends ExecutionContext {
     private final String mimeType;
 
     public StreamSequencerContext( ExecutionContext context,
-                             Path inputPath,
-                             Set<Property> inputProperties,
-                             String mimeType,
-                             Problems problems ) {
+                                   Path inputPath,
+                                   Set<Property> inputProperties,
+                                   String mimeType,
+                                   Problems problems ) {
         super(context);
         this.inputPath = inputPath;
         this.inputProperties = inputProperties != null ? new HashSet<Property>(inputProperties) : new HashSet<Property>();

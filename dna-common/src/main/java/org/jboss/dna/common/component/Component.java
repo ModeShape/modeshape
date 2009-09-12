@@ -29,7 +29,7 @@ package org.jboss.dna.common.component;
  * <p>
  * Implementations must provide a no-argument constructor.
  * </p>
- * @author Randall Hauch
+ * 
  * @param <T> the type of configuration
  */
 public interface Component<T extends ComponentConfig> {
@@ -38,12 +38,14 @@ public interface Component<T extends ComponentConfig> {
      * This method allows the implementation to initialize and configure itself using the supplied {@link ComponentConfig}
      * information, and is called prior to any other class to this object. When this method is called, the implementation must
      * maintain a reference to the supplied configuration (which should then be returned in {@link #getConfiguration()}.
+     * 
      * @param configuration the configuration for the component
      */
     void setConfiguration( T configuration );
 
     /**
      * Return the configuration for this component, as supplied to the last {@link #setConfiguration(ComponentConfig)} invocation.
+     * 
      * @return the configuration, or null if not yet configured
      */
     T getConfiguration();

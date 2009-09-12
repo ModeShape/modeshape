@@ -23,18 +23,15 @@
  */
 package org.jboss.dna.sequencer.msoffice;
 
-
 import java.io.InputStream;
-import org.apache.poi.poifs.eventfilesystem.*;
-
+import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 
 /**
  * Utility for extracting metadata from Excel files
- * @author Michael Trezzi
  */
 public class MSOfficeMetadataReader {
 
-     public static MSOfficeMetadata instance( InputStream stream ) {
+    public static MSOfficeMetadata instance( InputStream stream ) {
         try {
             POIFSReader r = new POIFSReader();
             MSOfficeMetadata MSOfficeMetadataListener = new MSOfficeMetadata();

@@ -28,52 +28,52 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.maven*</code> packages.
  */
 public final class MavenI18n {
 
-	public static I18n errorGettingUrlForMavenProject;
-	public static I18n unsupportedMavenCoordinateFormat;
-	public static I18n errorCreatingUrlForMavenId;
-	public static I18n errorGettingPomFileForMavenIdAtUrl;
-	public static I18n pomFileIsInvalid;
-	public static I18n pomFileContainsUnexpectedId;
-	public static I18n errorCreatingXpathStatementsToEvaluatePom;
-	public static I18n errorCreatingXpathParserToEvaluatePom;
-	public static I18n errorReadingXmlDocumentToEvaluatePom;
-	public static I18n errorClosingUrlStreamToPom;
+    public static I18n errorGettingUrlForMavenProject;
+    public static I18n unsupportedMavenCoordinateFormat;
+    public static I18n errorCreatingUrlForMavenId;
+    public static I18n errorGettingPomFileForMavenIdAtUrl;
+    public static I18n pomFileIsInvalid;
+    public static I18n pomFileContainsUnexpectedId;
+    public static I18n errorCreatingXpathStatementsToEvaluatePom;
+    public static I18n errorCreatingXpathParserToEvaluatePom;
+    public static I18n errorReadingXmlDocumentToEvaluatePom;
+    public static I18n errorClosingUrlStreamToPom;
 
-	public static I18n unableToOpenSessiontoRepositoryWhenCreatingNode;
-	public static I18n unableToFindWorkspaceWhenCreatingNode;
-	public static I18n errorCreatingNode;
-	public static I18n unableToOpenSessiontoRepositoryWhenReadingNode;
-	public static I18n unableToFindWorkspaceWhenReadingNode;
-	public static I18n errorReadingNode;
-	public static I18n unableToOpenSessiontoRepositoryWhenWritingNode;
-	public static I18n unableToFindWorkspaceWhenWritingNode;
-	public static I18n errorWritingNode;
+    public static I18n unableToOpenSessiontoRepositoryWhenCreatingNode;
+    public static I18n unableToFindWorkspaceWhenCreatingNode;
+    public static I18n errorCreatingNode;
+    public static I18n unableToOpenSessiontoRepositoryWhenReadingNode;
+    public static I18n unableToFindWorkspaceWhenReadingNode;
+    public static I18n errorReadingNode;
+    public static I18n unableToOpenSessiontoRepositoryWhenWritingNode;
+    public static I18n unableToFindWorkspaceWhenWritingNode;
+    public static I18n errorWritingNode;
 
-	public static I18n unableToWriteToClosedStream;
-	public static I18n errorClosingTempFileStreamAfterWritingContent;
-	public static I18n errorDeletingTempFileStreamAfterWritingContent;
+    public static I18n unableToWriteToClosedStream;
+    public static I18n errorClosingTempFileStreamAfterWritingContent;
+    public static I18n errorDeletingTempFileStreamAfterWritingContent;
 
-	static {
-		try {
-			I18n.initialize(MavenI18n.class);
-		} catch (final Exception err) {
-			System.err.println(err);
-		}
-	}
+    static {
+        try {
+            I18n.initialize(MavenI18n.class);
+        } catch (final Exception err) {
+            System.err.println(err);
+        }
+    }
 
-	public static Set<Locale> getLocalizationProblemLocales() {
-		return I18n.getLocalizationProblemLocales(MavenI18n.class);
-	}
+    public static Set<Locale> getLocalizationProblemLocales() {
+        return I18n.getLocalizationProblemLocales(MavenI18n.class);
+    }
 
-	public static Set<String> getLocalizationProblems() {
-		return I18n.getLocalizationProblems(MavenI18n.class);
-	}
+    public static Set<String> getLocalizationProblems() {
+        return I18n.getLocalizationProblems(MavenI18n.class);
+    }
 
-	public static Set<String> getLocalizationProblems( Locale locale ) {
-		return I18n.getLocalizationProblems(MavenI18n.class, locale);
-	}
+    public static Set<String> getLocalizationProblems( Locale locale ) {
+        return I18n.getLocalizationProblems(MavenI18n.class, locale);
+    }
 }

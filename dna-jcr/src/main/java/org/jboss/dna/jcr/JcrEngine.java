@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -53,6 +54,7 @@ import org.jboss.dna.repository.DnaEngine;
 /**
  * The basic component that encapsulates the JBoss DNA services, including the {@link Repository} instances.
  */
+@ThreadSafe
 public class JcrEngine extends DnaEngine {
 
     private final Map<String, JcrRepository> repositories;

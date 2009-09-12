@@ -32,7 +32,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ComponentConfig;
 
 /**
- * @author Randall Hauch
+ * A configuration for a sequencer.
  */
 @Immutable
 public class SequencerConfig extends ComponentConfig {

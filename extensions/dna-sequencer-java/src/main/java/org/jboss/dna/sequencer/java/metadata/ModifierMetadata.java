@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Metadata for modifiers.
  */
 public class ModifierMetadata extends AnnotationMetadata {
 

@@ -44,8 +44,6 @@ import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
  * nodes, this entity also maintains the indexInParent of the indexInParent within the parent node's list of all children, the
  * child's name ( {@link #getChildName() local part} and {@link #getChildNamespace() namespace}), and the same-name-sibling
  * indexInParent (if there is one).
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_BASIC_CHILDREN" )
@@ -312,15 +310,15 @@ public class ChildEntity {
 
     @SuppressWarnings( "unchecked" )
     public static int adjustSnsIndexesAndIndexes( EntityManager entities,
-                                                   Long workspaceId,
-                                                   String uuidParent,
-                                                   int afterIndex,
-                                                   int untilIndex,
-                                                   long childNamespaceIndex,
-                                                   String childName,
-                                                   int modifier ) {
+                                                  Long workspaceId,
+                                                  String uuidParent,
+                                                  int afterIndex,
+                                                  int untilIndex,
+                                                  long childNamespaceIndex,
+                                                  String childName,
+                                                  int modifier ) {
         int snsCount = 0;
-        
+
         // Decrement the 'indexInParent' index values for all nodes above the previously removed sibling ...
         Query query = entities.createNamedQuery("ChildEntity.findChildrenAfterIndexUnderParent");
         query.setParameter("workspaceId", workspaceId);

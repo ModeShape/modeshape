@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception denoting that a value could not be converted to a specific type because of the value's format.
  */
+@Immutable
 public class ValueFormatException extends RuntimeException {
 
     /**

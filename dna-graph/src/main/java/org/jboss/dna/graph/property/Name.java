@@ -28,8 +28,6 @@ import net.jcip.annotations.Immutable;
 
 /**
  * A qualified name consisting of a namespace and a local name.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Name extends Comparable<Name>, Serializable, Readable {

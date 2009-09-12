@@ -37,7 +37,6 @@ import org.jboss.dna.common.util.CheckArg;
  * that contains all of the elements in the parent list as well as the last appended element, but while reusing the existing
  * parent list and without having to create a copy of the parent list.
  * 
- * @author Randall Hauch
  * @param <T> the type of element
  */
 @Immutable

@@ -34,8 +34,6 @@ import net.jcip.annotations.Immutable;
  * href="http://jcp.org/en/jsr/detail?id=310">JSR-310</a>, which will be based upon <a
  * href="http://joda-time.sourceforge.net/">Joda-Time</a>. This class serves as a stable migration path toward the new JSR 310
  * classes.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface DateTime extends Comparable<DateTime>, Serializable {
@@ -57,7 +55,7 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
      * <li>two digit minute, from 00 to 59;</li>
      * <li>two digit second, from 00 to 59;</li>
      * <li>three decimal places for milliseconds, if required;</li>
-     * <li>time zone offset of the form <code>±HH:mm</code> (or '0' if UTC)</li>
+     * <li>time zone offset of the form <code>ï¿½HH:mm</code> (or '0' if UTC)</li>
      * </ul>
      * 
      * @return the string representation; never null

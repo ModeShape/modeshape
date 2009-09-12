@@ -26,11 +26,13 @@ package org.jboss.dna.jcr;
 import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * 
+ * A concrete {@link NodeIterator} that is always empty.
  */
+@Immutable
 class JcrEmptyNodeIterator implements NodeIterator {
 
     /**

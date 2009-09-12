@@ -95,9 +95,6 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
  * Note, {@link Session#getAttributeNames() attributes} on credentials are not supported. JCR {@link SimpleCredentials} are also
  * not supported.
  * </p>
- * 
- * @author John Verhaeg
- * @author Randall Hauch
  */
 @ThreadSafe
 public class JcrRepository implements Repository {

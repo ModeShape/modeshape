@@ -32,8 +32,6 @@ import net.jcip.annotations.Immutable;
  * A unique identifer for a large value, which is the 160-bit SHA-1 hash of this value, in hex form (40-bytes). The SHA-1
  * algorithm is fast and has not yet proven to have any duplicates. Even if SHA-2 and SHA-3 are better for cryptographically
  * secure purposes, it is doubtful whether a repository needs more than SHA-1 for identity purposes.
- * 
- * @author Randall Hauch
  */
 @Embeddable
 @Immutable

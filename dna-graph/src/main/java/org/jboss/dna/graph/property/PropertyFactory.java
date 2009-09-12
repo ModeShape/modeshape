@@ -24,10 +24,12 @@
 package org.jboss.dna.graph.property;
 
 import java.util.Iterator;
+import net.jcip.annotations.ThreadSafe;
 
 /**
- * @author Randall Hauch
+ * A factory for creating {@link Property} objects.
  */
+@ThreadSafe
 public interface PropertyFactory {
     /**
      * Create a property with the supplied name and values

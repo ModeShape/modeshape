@@ -30,11 +30,9 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
 
 /**
  * Sequencer for variabels.
- * @author Perge Pagop
- *
  */
 public class VariableSequencer implements JavaSourceCndDefinition {
-    
+
     /**
      * Sequence a variable.
      * 
@@ -44,9 +42,9 @@ public class VariableSequencer implements JavaSourceCndDefinition {
      * @param path - the path
      */
     public static void sequenceTheVariable( SequencerOutput output,
-                                      NameFactory nameFactory,
-                                      Variable variable,
-                                      Path path ) {
+                                            NameFactory nameFactory,
+                                            Variable variable,
+                                            Path path ) {
         output.setProperty(path, nameFactory.create(JAVA_VARIABLE_NAME), variable.getName());
     }
 }

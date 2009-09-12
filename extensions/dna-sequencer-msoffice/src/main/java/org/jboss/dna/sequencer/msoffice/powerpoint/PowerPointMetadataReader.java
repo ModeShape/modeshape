@@ -23,20 +23,22 @@
  */
 package org.jboss.dna.sequencer.msoffice.powerpoint;
 
-import java.util.List;
-import java.io.*;
-import java.awt.image.BufferedImage;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import org.apache.poi.hslf.usermodel.SlideShow;
+import java.util.List;
 import org.apache.poi.hslf.model.Slide;
 import org.apache.poi.hslf.model.TextRun;
+import org.apache.poi.hslf.usermodel.SlideShow;
 
 /**
  * Utility for extracting metadata from PowerPoint files
- * 
- * @author Michael Trezzi
  */
 public class PowerPointMetadataReader {
 

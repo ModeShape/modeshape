@@ -27,8 +27,6 @@ package org.jboss.dna.sequencer.xml;
  * An XML sequencer that is a specialization of {@link XmlSequencer} by inheriting unqualified attribute namespaces
  * {@link XmlSequencer.AttributeScoping#INHERIT_ELEMENT_NAMESPACE from the element} rather than from the
  * {@link XmlSequencer.AttributeScoping#USE_DEFAULT_NAMESPACE default namespace}.
- * 
- * @author Randall Hauch
  */
 public class InheritingXmlSequencer extends XmlSequencer {
 

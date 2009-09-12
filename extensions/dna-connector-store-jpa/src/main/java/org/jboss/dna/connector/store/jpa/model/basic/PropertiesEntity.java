@@ -44,8 +44,6 @@ import org.jboss.dna.connector.store.jpa.util.Serializer;
  * but nothing else. The PropertiesEntity doesn't even have the name. This is because this class is used to read, modify, and save
  * the properties of a node. Finding a node by its name or working with the children, however, requires working with the
  * {@link ChildEntity node children}.
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_BASIC_NODEPROPS" )

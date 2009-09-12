@@ -24,9 +24,9 @@
 package org.jboss.dna.sequencer.mp3;
 
 import java.io.InputStream;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 
 /**
  * A sequencer that processes the binary content of an MP3 audio file, extracts the metadata for the file, and then writes that
@@ -45,10 +45,6 @@ import org.jboss.dna.graph.sequencer.StreamSequencer;
  * </li>
  * </ul>
  * </p>
- * 
- * @author Stefano Maestri
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public class Mp3MetadataSequencer implements StreamSequencer {
 

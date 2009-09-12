@@ -37,7 +37,7 @@ import org.jboss.dna.common.util.StringUtil;
 import com.sun.security.auth.callback.TextCallbackHandler;
 
 /**
- * @author Randall Hauch
+ * The {@link UserInterface} implementation that uses the console.
  */
 public class ConsoleInput implements UserInterface {
 

@@ -32,7 +32,7 @@ import java.util.List;
 import org.jboss.dna.repository.sequencer.SequencingService;
 
 /**
- * @author Randall Hauch
+ * The {@link UserInterface} implementation that uses the console to interact with a user.
  */
 public class ConsoleInput implements UserInterface {
 

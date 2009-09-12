@@ -28,7 +28,7 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
+ * The internationalized string constants for the <code>org.jboss.dna.common.jdbc*</code> packages.
  */
 public final class JdbcMetadataI18n {
     public static I18n databaseConnectionHasBeenReleased;

@@ -41,8 +41,6 @@ import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
  * The defaultRepository connection to a SVN Repository instance.
- * 
- * @author Serge Pagop
  */
 public class SVNRepositoryConnection implements RepositoryConnection {
 
@@ -53,10 +51,10 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     private final Set<String> availableWorkspaceNames;
     private final boolean creatingWorkspacesAllowed;
     private final RepositoryAccessData accessData;
-    
+
     /**
-     * default workspace must can be a root repository or any folders from the root directory.
-     * available workspace names must consist of URLs from repository folders.
+     * default workspace must can be a root repository or any folders from the root directory. available workspace names must
+     * consist of URLs from repository folders.
      * 
      * @param sourceName
      * @param defaultWorkspace
@@ -71,13 +69,14 @@ public class SVNRepositoryConnection implements RepositoryConnection {
                                     Set<String> availableWorkspaceNames,
                                     boolean creatingWorkspacesAllowed,
                                     CachePolicy cachePolicy,
-                                    boolean updatesAllowed, RepositoryAccessData accessData ) {
+                                    boolean updatesAllowed,
+                                    RepositoryAccessData accessData ) {
 
         CheckArg.isNotNull(defaultWorkspace, "defaultWorkspace");
         CheckArg.isNotEmpty(sourceName, "sourceName");
         assert availableWorkspaceNames != null;
         assert accessData != null;
-        
+
         // Check if the default workspace is a folder.
         SVNNodeKind nodeKind = null;
         try {
@@ -168,10 +167,9 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     public void execute( final ExecutionContext context,
                          final Request request ) throws RepositorySourceException {
 
-
-        RequestProcessor processor = new SVNRepositoryRequestProcessor(sourceName, defaultWorkspace,
-                                                                       availableWorkspaceNames, creatingWorkspacesAllowed,
-                                                                       context, updatesAllowed, accessData);
+        RequestProcessor processor = new SVNRepositoryRequestProcessor(sourceName, defaultWorkspace, availableWorkspaceNames,
+                                                                       creatingWorkspacesAllowed, context, updatesAllowed,
+                                                                       accessData);
         try {
             processor.process(request);
         } finally {

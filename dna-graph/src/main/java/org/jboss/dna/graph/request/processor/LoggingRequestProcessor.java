@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.request.processor;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
@@ -53,9 +54,8 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 
 /**
  * A {@link RequestProcessor} implementation that wraps another and that logs messages at the supplied level.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class LoggingRequestProcessor extends RequestProcessor {
 
     private final RequestProcessor delegate;

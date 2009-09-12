@@ -28,11 +28,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
 
 /**
- * @author Randall Hauch
+ * A runtime exception denoting that an operation could not be performed because it would leave references in an invalid state.
  */
+@Immutable
 public class ReferentialIntegrityException extends RuntimeException {
 
     /**

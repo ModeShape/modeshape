@@ -24,9 +24,8 @@
 package org.jboss.dna.connector.scm;
 
 /**
- * @author Serge Pagop
  *
  */
 public interface ScmAction {
-    public void applyAction(Object context) throws Exception;
+    public void applyAction( Object context ) throws Exception;
 }

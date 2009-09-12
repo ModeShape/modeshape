@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.connector;
 
 import java.util.UUID;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 
@@ -32,6 +33,7 @@ import org.jboss.dna.graph.request.CloneBranchRequest;
  * workspace and the {@link CloneBranchRequest#removeExisting() UUID conflict behavior} is set to throw an exception instead of
  * removing the existing nodes.
  */
+@Immutable
 public class UuidAlreadyExistsException extends RepositorySourceException {
 
     private static final long serialVersionUID = 1L;

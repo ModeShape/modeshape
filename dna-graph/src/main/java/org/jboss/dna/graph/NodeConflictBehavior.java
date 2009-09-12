@@ -26,8 +26,6 @@ package org.jboss.dna.graph;
 /**
  * An enumeration used by several commands for the choice of handling duplicate nodes, such as when a node is to be copied to
  * another location where a node already exists.
- * 
- * @author Randall Hauch
  */
 public enum NodeConflictBehavior {
 

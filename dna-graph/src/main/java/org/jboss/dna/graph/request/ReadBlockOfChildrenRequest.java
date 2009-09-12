@@ -40,7 +40,6 @@ import org.jboss.dna.graph.property.Property;
  * a large number of children.
  * 
  * @see ReadNextBlockOfChildrenRequest
- * @author Randall Hauch
  */
 public class ReadBlockOfChildrenRequest extends CacheableRequest {
 

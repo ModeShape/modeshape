@@ -29,24 +29,20 @@ import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
 
 /**
  * Sequencer for a {@link MethodMetadata}.
- * 
- * @author Serge PAgop
- *
  */
 public class MethodMetadataSequencer implements JavaSourceCndDefinition {
-    
+
     /**
-     * Create  a path of method/constructor parameter. 
+     * Create a path of method/constructor parameter.
+     * 
      * @param pathFactory - {@link PathFactory}.
      * @param rootPath - Root path of the method/constructor.
      * @return the path of the parameter.
      */
     public static Path createMethodParamPath( PathFactory pathFactory,
-                                        String rootPath ) {
-        String methodPrimitiveParamVariablePath = JavaMetadataUtil.createPath(rootPath
-                                                                          + SLASH
-                                                                          + JAVA_PRIMITIVE_TYPE_VARIABLE
-                                                                          + SLASH + JAVA_VARIABLE);
+                                              String rootPath ) {
+        String methodPrimitiveParamVariablePath = JavaMetadataUtil.createPath(rootPath + SLASH + JAVA_PRIMITIVE_TYPE_VARIABLE
+                                                                              + SLASH + JAVA_VARIABLE);
         Path methodParamChildNode = pathFactory.create(methodPrimitiveParamVariablePath);
         return methodParamChildNode;
     }
@@ -59,8 +55,8 @@ public class MethodMetadataSequencer implements JavaSourceCndDefinition {
      */
     public static String createMethodParamRootPath( String constructorParameterRootPath ) {
         String constructPrimitiveFormalParamRootPath = JavaMetadataUtil.createPath(constructorParameterRootPath + SLASH
-                                                                          + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                          + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
+                                                                                   + JAVA_TYPE_CHILD_NODE + SLASH
+                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
         return constructPrimitiveFormalParamRootPath;
     }
 

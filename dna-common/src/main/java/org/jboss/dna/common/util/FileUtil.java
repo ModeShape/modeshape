@@ -34,7 +34,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import net.jcip.annotations.Immutable;
 
+/**
+ * A set of utilities for working with files and directories.
+ */
+@Immutable
 public class FileUtil {
 
     /**

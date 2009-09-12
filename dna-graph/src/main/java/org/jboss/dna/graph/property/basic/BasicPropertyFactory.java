@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
@@ -36,8 +37,9 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 
 /**
- * @author Randall Hauch
+ * A basic {@link PropertyFactory} implementation.
  */
+@Immutable
 public class BasicPropertyFactory implements PropertyFactory {
 
     private final ValueFactories factories;

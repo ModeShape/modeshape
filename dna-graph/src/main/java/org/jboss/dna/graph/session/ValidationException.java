@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.session;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * 
+ * A runtime exception signaling failed validation within a graph session.
  */
+@Immutable
 public class ValidationException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

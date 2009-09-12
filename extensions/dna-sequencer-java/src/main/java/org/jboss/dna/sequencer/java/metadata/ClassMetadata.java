@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * @author Serge Pagop
+ * Class metadata.
  */
 public class ClassMetadata extends TypeMetadata {
 

@@ -25,12 +25,12 @@ package org.jboss.dna.graph.property;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import net.jcip.annotations.ThreadSafe;
 
 /**
  * The set of standard {@link ValueFactory} instances.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public interface ValueFactories extends Iterable<ValueFactory<?>> {
 
     /**

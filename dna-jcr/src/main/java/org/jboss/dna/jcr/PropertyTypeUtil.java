@@ -24,10 +24,13 @@
 package org.jboss.dna.jcr;
 
 import javax.jcr.PropertyType;
+import net.jcip.annotations.Immutable;
 
 /**
- * 
+ * A utility for working with {@link PropertyType JCR property types} and {@link org.jboss.dna.graph.property.PropertyType DNA
+ * property types}.
  */
+@Immutable
 class PropertyTypeUtil {
 
     /**

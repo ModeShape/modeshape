@@ -32,8 +32,6 @@ import org.jboss.dna.sequencer.java.metadata.ParameterizedTypeFieldMetadata;
 
 /**
  * Sequencer for all paths of a {@link ParameterizedTypeFieldMetadata}.
- * 
- * @author Serge Pagop
  */
 public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDefinition {
 
@@ -45,13 +43,15 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      */
     public static String getParameterizedTypeFieldRootPath( int parameterizedIndex ) {
         String simpleTypeFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                     + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                     + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                     + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                     + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                     + JAVA_FIELD_CHILD_NODE + SLASH + JAVA_FIELD_TYPE_CHILD_NODE
-                                                                     + SLASH + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                     + JAVA_PARAMETERIZED_TYPE_CHILD_NODE, parameterizedIndex);
+                                                                              + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                              + JAVA_FIELD_CHILD_NODE + SLASH
+                                                                              + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
+                                                                              + JAVA_TYPE_CHILD_NODE + SLASH
+                                                                              + JAVA_PARAMETERIZED_TYPE_CHILD_NODE,
+                                                                              parameterizedIndex);
         return simpleTypeFieldRootPath;
     }
 
@@ -85,9 +85,10 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
     public static String getParameterizedTypeFieldRModifierPath( String parameterizedTypeFieldRootPath,
                                                                  int parameterizedTypeModifierIndex ) {
         String parameterizedTypeModifierPath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
-                                                                           + JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE + SLASH
-                                                                           + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                           parameterizedTypeModifierIndex);
+                                                                                    + JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE
+                                                                                    + SLASH
+                                                                                    + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                    parameterizedTypeModifierIndex);
         return parameterizedTypeModifierPath;
     }
 
@@ -121,12 +122,12 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
                                                               String parameterizedTypeFieldRootPath,
                                                               int parameterizedTypeVariableIndex ) {
         String variablePath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
-                                                          + JAVA_PARAMETERIZED_TYPE_VARIABLE + SLASH + JAVA_VARIABLE,
-                                                          parameterizedTypeVariableIndex);
+                                                                   + JAVA_PARAMETERIZED_TYPE_VARIABLE + SLASH + JAVA_VARIABLE,
+                                                                   parameterizedTypeVariableIndex);
         Path parameterizedTypeVariableChildNode = pathFactory.create(variablePath);
         return parameterizedTypeVariableChildNode;
     }
-    
+
     private ParameterizedTypeFieldMetadataSequencer() {
         // prevent constructor
     }

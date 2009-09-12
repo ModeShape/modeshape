@@ -39,8 +39,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 
 /**
- * @author Randall Hauch
- * @author John Verhaeg
+ * The data types for property values.
  */
 @Immutable
 public enum PropertyType {

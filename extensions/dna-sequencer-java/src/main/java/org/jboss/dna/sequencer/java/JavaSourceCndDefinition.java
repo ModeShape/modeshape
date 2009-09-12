@@ -25,8 +25,6 @@ package org.jboss.dna.sequencer.java;
 
 /**
  * JavaSourceCndDefinition defines each elements and sub elements, that must be found in the java source cnd document.
- * 
- * @author Serge Pagop
  */
 public interface JavaSourceCndDefinition {
 
@@ -120,19 +118,19 @@ public interface JavaSourceCndDefinition {
     public static final String JAVA_SIMPLE_TYPE_NAME = "java:simpleTypeName";
     public static final String JAVA_SIMPLE_TYPE_VARIABLE = "java:simpleTypeVariable";
     public static final String JAVA_SIMPLE_TYPE_MODIFIER_CHILD_NODE = "java:simpleTypeModifier";
-    
+
     // Parameterized type
-    public static final String JAVA_PARAMETERIZED_TYPE_CHILD_NODE="java:parameterizedType";
-    public static final String JAVA_PARAMETERIZED_TYPE_DESCRIPTION ="java:parameterizedTypeDescription";
-    public static final String JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE ="java:parameterizedTypeModifier";
-    public static final String JAVA_PARAMETERIZED_TYPE_NAME ="java:parameterizedTypeName";
-    public static final String JAVA_PARAMETERIZED_TYPE_VARIABLE ="java:parameterizedTypeVariable";
-    
+    public static final String JAVA_PARAMETERIZED_TYPE_CHILD_NODE = "java:parameterizedType";
+    public static final String JAVA_PARAMETERIZED_TYPE_DESCRIPTION = "java:parameterizedTypeDescription";
+    public static final String JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE = "java:parameterizedTypeModifier";
+    public static final String JAVA_PARAMETERIZED_TYPE_NAME = "java:parameterizedTypeName";
+    public static final String JAVA_PARAMETERIZED_TYPE_VARIABLE = "java:parameterizedTypeVariable";
+
     // Array type
-    public static final String JAVA_ARRAY_TYPE_CHILD_NODE="java:arrayType";
-    public static final String JAVA_ARRAY_TYPE_DESCRIPTION ="java:arrayTypeDescription";
-    public static final String JAVA_ARRAY_TYPE_MODIFIER_CHILD_NODE ="java:arrayTypeModifier";
-    public static final String JAVA_ARRAY_TYPE_NAME ="java:arrayTypeName";
-    public static final String JAVA_ARRAY_TYPE_VARIABLE ="java:arrayTypeVariable";
+    public static final String JAVA_ARRAY_TYPE_CHILD_NODE = "java:arrayType";
+    public static final String JAVA_ARRAY_TYPE_DESCRIPTION = "java:arrayTypeDescription";
+    public static final String JAVA_ARRAY_TYPE_MODIFIER_CHILD_NODE = "java:arrayTypeModifier";
+    public static final String JAVA_ARRAY_TYPE_NAME = "java:arrayTypeName";
+    public static final String JAVA_ARRAY_TYPE_VARIABLE = "java:arrayTypeVariable";
 
 }

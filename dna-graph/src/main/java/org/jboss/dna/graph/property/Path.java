@@ -69,9 +69,6 @@ import org.jboss.dna.graph.property.basic.BasicPathSegment;
  * {@link #isAncestorOf(Path) ancestor} or {@link #isDecendantOf(Path) decendent} of another path, and
  * {@link #getCommonAncestor(Path) finding a common ancestor}.
  * </p>
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializable, Readable {

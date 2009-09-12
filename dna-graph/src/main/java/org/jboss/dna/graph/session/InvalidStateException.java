@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.session;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * 
+ * A runtime exception signaling an invalid state of a graph session.
  */
+@Immutable
 public class InvalidStateException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
@@ -57,7 +60,7 @@ public class InvalidStateException extends RuntimeException {
      * @param cause
      */
     public InvalidStateException( String message,
-                                Throwable cause ) {
+                                  Throwable cause ) {
         super(message, cause);
 
     }

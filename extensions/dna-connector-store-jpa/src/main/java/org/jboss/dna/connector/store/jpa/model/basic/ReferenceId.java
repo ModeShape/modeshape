@@ -32,8 +32,6 @@ import org.jboss.dna.common.util.HashCode;
 /**
  * An identifier for a reference, comprised of a single {@link NodeId} of the node containing the reference and a single
  * {@link NodeId} of the node being referenced.
- * 
- * @author Randall Hauch
  */
 @Embeddable
 @Immutable

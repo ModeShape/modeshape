@@ -29,7 +29,10 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 
 /**
- * @author Randall Hauch
+ * An immutable representation of a problem, with a status, code, internationalized and parameterized message, values for the
+ * parameters, information about the resource and location, and an optional exception. The use of internationalized messages
+ * allows for automatic localization of the messages (and substitution of the parameter values) via the
+ * {@link #getMessageString()} method.
  */
 @Immutable
 public class Problem {

@@ -31,9 +31,16 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.util.StringUtil;
 
+/**
+ * A representation of a histogram of values.
+ * 
+ * @param <T> the type of value
+ */
+@NotThreadSafe
 public class Histogram<T extends Number> {
 
     public static final int DEFAULT_BUCKET_COUNT = 10;
@@ -48,7 +55,8 @@ public class Histogram<T extends Number> {
     private BucketingStrategy actualValueStrategy = new DefaultBucketingStrategy();
     private BucketingStrategy bucketingStrategy = actualValueStrategy;
 
-    public Histogram( MathOperations<T> operations, List<T> values ) {
+    public Histogram( MathOperations<T> operations,
+                      List<T> values ) {
         this.math = operations;
         this.values = new LinkedList<T>(values);
         this.buckets = new LinkedList<Bucket>();
@@ -57,7 +65,8 @@ public class Histogram<T extends Number> {
         Collections.sort(this.values, this.math.getComparator());
     }
 
-    public Histogram( MathOperations<T> operations, T... values ) {
+    public Histogram( MathOperations<T> operations,
+                      T... values ) {
         this(operations, Arrays.asList(values));
     }
 
@@ -74,21 +83,26 @@ public class Histogram<T extends Number> {
 
     /**
      * Set the histogram to use the standard deviation to determine the bucket sizes.
+     * 
      * @param median
      * @param standardDeviation
      * @param sigma
      */
-    public void setStrategy( double median, double standardDeviation, int sigma ) {
+    public void setStrategy( double median,
+                             double standardDeviation,
+                             int sigma ) {
         this.bucketingStrategy = new StandardDeviationBucketingStrategy(median, standardDeviation, sigma);
         this.bucketWidth = null;
     }
 
     /**
      * Set the histogram to use the supplied minimum and maximum values to determine the bucket size.
+     * 
      * @param minimum
      * @param maximum
      */
-    public void setStrategy( T minimum, T maximum ) {
+    public void setStrategy( T minimum,
+                             T maximum ) {
         this.bucketingStrategy = new ExplicitBucketingStrategy(minimum, maximum);
         this.bucketWidth = null;
     }
@@ -107,6 +121,7 @@ public class Histogram<T extends Number> {
 
     /**
      * Set the number of significant figures used in the calculation of the bucket widths.
+     * 
      * @param significantFigures the number of significant figures for the bucket widths
      * @return this histogram, useful for method-chaining
      * @see #DEFAULT_SIGNIFICANT_FIGURES
@@ -122,6 +137,7 @@ public class Histogram<T extends Number> {
 
     /**
      * Return the number of buckets in this histogram.
+     * 
      * @return the number of buckets.
      */
     public int getBucketCount() {
@@ -130,6 +146,7 @@ public class Histogram<T extends Number> {
 
     /**
      * Set the number of buckets that this histogram will use.
+     * 
      * @param count the number of buckets
      * @return this histogram, useful for method-chaining
      * @see #DEFAULT_BUCKET_COUNT
@@ -146,6 +163,7 @@ public class Histogram<T extends Number> {
     /**
      * Get the buckets in this histogram. If the histogram has not yet been computed, this method will cause it to be generated.
      * The resulting list should not be modified.
+     * 
      * @return the histogram buckets.
      */
     public List<Bucket> getBuckets() {
@@ -166,7 +184,13 @@ public class Histogram<T extends Number> {
         T actualMaximum = this.actualValueStrategy.getUpperBound();
 
         // Create the buckets ...
-        List<T> boundaries = getBucketBoundaries(this.math, lowerBound, upperBound, actualMinimum, actualMaximum, this.bucketCount, this.significantFigures);
+        List<T> boundaries = getBucketBoundaries(this.math,
+                                                 lowerBound,
+                                                 upperBound,
+                                                 actualMinimum,
+                                                 actualMaximum,
+                                                 this.bucketCount,
+                                                 this.significantFigures);
         this.buckets.clear();
         int numBuckets = boundaries.isEmpty() ? 0 : boundaries.size() - 1;
         for (int i = 0; i != numBuckets; ++i) {
@@ -187,6 +211,7 @@ public class Histogram<T extends Number> {
 
     /**
      * Return the total number of values that have gone into this histogram.
+     * 
      * @return the total number of values
      * @see Bucket#getPercentageOfValues()
      */
@@ -212,13 +237,15 @@ public class Histogram<T extends Number> {
 
     /**
      * Generate a textual (horizontal) bar graph of this histogram.
+     * 
      * @param maxBarLength the maximum bar length, or 0 if the bar length is to represent actual counts
      * @return the strings that make up the histogram
      */
     public List<String> getTextGraph( int maxBarLength ) {
         compute();
         if (maxBarLength < 1) maxBarLength = (int)this.getMaximumCount();
-        final float barLengthForHundredPercent = this.buckets.isEmpty() ? maxBarLength : 100.0f * maxBarLength / getMaximumPercentage();
+        final float barLengthForHundredPercent = this.buckets.isEmpty() ? maxBarLength : 100.0f * maxBarLength
+                                                                                         / getMaximumPercentage();
         final String fullLengthBar = StringUtil.createString('*', (int)barLengthForHundredPercent);
         List<String> result = new LinkedList<String>();
         // First calculate the labels and the max length ...
@@ -258,7 +285,13 @@ public class Histogram<T extends Number> {
         return result;
     }
 
-    protected static <T> List<T> getBucketBoundaries( MathOperations<T> math, T lowerBound, T upperBound, T actualMinimum, T actualMaximum, int bucketCount, int bucketWidthSigFigs ) {
+    protected static <T> List<T> getBucketBoundaries( MathOperations<T> math,
+                                                      T lowerBound,
+                                                      T upperBound,
+                                                      T actualMinimum,
+                                                      T actualMaximum,
+                                                      int bucketCount,
+                                                      int bucketWidthSigFigs ) {
         lowerBound = math.compare(lowerBound, actualMinimum) < 0 ? actualMinimum : lowerBound;
         upperBound = math.compare(actualMaximum, upperBound) < 0 ? actualMaximum : upperBound;
         if (math.compare(lowerBound, upperBound) == 0) {
@@ -315,7 +348,8 @@ public class Histogram<T extends Number> {
         private final T width;
         private long numValues;
 
-        protected Bucket( T lowerBound, T upperBound ) {
+        protected Bucket( T lowerBound,
+                          T upperBound ) {
             this.lowerBound = lowerBound;
             this.upperBound = upperBound;
             this.width = Histogram.this.math.subtract(upperBound, lowerBound);
@@ -323,6 +357,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Get the lower bound of this bucket.
+         * 
          * @return the lower bound
          */
         public T getLowerBound() {
@@ -331,6 +366,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Get the upper bound of this bucket.
+         * 
          * @return the upper bound
          */
         public T getUpperBound() {
@@ -339,6 +375,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Get the width of this bucket.
+         * 
          * @return the width
          */
         public T getWidth() {
@@ -347,6 +384,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Return the percentage of values in the histogram that appear in this bucket.
+         * 
          * @return the percentage of all values in the histogram that appear in this bucket.
          */
         public float getPercentageOfValues() {
@@ -358,6 +396,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Add a value to this bucket
+         * 
          * @param value
          */
         protected void addValue( T value ) {
@@ -366,6 +405,7 @@ public class Histogram<T extends Number> {
 
         /**
          * Get the number of values in this bucket.
+         * 
          * @return the number of values
          */
         public long getNumberOfValues() {
@@ -374,12 +414,14 @@ public class Histogram<T extends Number> {
 
         /**
          * Check whether the value fits in this bucket.
+         * 
          * @param value the value to check
          * @param isLast
          * @return 0 if the value fits in this bucket, -1 if the value fits in a prior bucket, or 1 if the value fits in a later
-         * bucket
+         *         bucket
          */
-        public int checkValue( T value, boolean isLast ) {
+        public int checkValue( T value,
+                               boolean isLast ) {
             if (Histogram.this.math.compare(this.lowerBound, value) > 0) return -1;
             if (isLast) {
                 if (Histogram.this.math.compare(value, this.upperBound) > 0) return 1;
@@ -456,7 +498,8 @@ public class Histogram<T extends Number> {
         private final T lowerBound;
         private final T upperBound;
 
-        protected ExplicitBucketingStrategy( T lowerBound, T upperBound ) {
+        protected ExplicitBucketingStrategy( T lowerBound,
+                                             T upperBound ) {
             this.lowerBound = lowerBound;
             this.upperBound = upperBound;
         }
@@ -478,7 +521,9 @@ public class Histogram<T extends Number> {
         private final double standardDeviation;
         private final int numberOfDeviationsAboveAndBelow;
 
-        protected StandardDeviationBucketingStrategy( double median, double standardDeviation, int numDeviationsAboveAndBelow ) {
+        protected StandardDeviationBucketingStrategy( double median,
+                                                      double standardDeviation,
+                                                      int numDeviationsAboveAndBelow ) {
             this.median = median;
             this.standardDeviation = Math.abs(standardDeviation);
             this.numberOfDeviationsAboveAndBelow = Math.abs(numDeviationsAboveAndBelow);

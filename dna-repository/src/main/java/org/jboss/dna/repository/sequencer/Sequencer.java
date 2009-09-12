@@ -40,9 +40,6 @@ import org.jboss.dna.repository.util.RepositoryNodePath;
  * <p>
  * Implementations must provide a no-argument constructor.
  * </p>
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @ThreadSafe
 public interface Sequencer extends Component<SequencerConfig> {

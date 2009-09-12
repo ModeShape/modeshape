@@ -27,9 +27,9 @@ import java.io.InputStream;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -63,9 +63,6 @@ import org.jboss.dna.graph.sequencer.StreamSequencer;
  * vendors to store custom metadata. This structure could be mapped with each directory (e.g. "EXIF" or "Nikon Makernote" or
  * "IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
  * </p>
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public class ImageMetadataSequencer implements StreamSequencer {
 

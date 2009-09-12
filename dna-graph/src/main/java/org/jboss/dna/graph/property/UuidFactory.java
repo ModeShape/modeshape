@@ -24,13 +24,13 @@
 package org.jboss.dna.graph.property;
 
 import java.util.UUID;
+import net.jcip.annotations.ThreadSafe;
 
 /**
  * A factory for creating {@link UUID UUID instances}. This interface extends the {@link ValueFactory} generic interface and adds
  * specific methods for creating UUIDs.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public interface UuidFactory extends ValueFactory<UUID> {
 
     /**

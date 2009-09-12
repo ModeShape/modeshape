@@ -33,8 +33,6 @@ import org.jaudiotagger.tag.Tag;
 
 /**
  * Utility for extracting metadata from MP3 files.
- * 
- * @author Stefano Maestri
  */
 public class Mp3Metadata {
 

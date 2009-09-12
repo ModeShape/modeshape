@@ -32,8 +32,6 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
 
 /**
  * The sequencer of the {@link SimpleTypeFieldMetadata}
- * 
- * @author Serge Pagop
  */
 public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
 

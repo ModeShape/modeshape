@@ -23,12 +23,13 @@
  */
 package org.jboss.dna.jcr;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * @author John Verhaeg
- * @author Randall Hauch
+ * The internationalized string constants for the <code>org.jboss.dna.jcr*</code> packages.
  */
+@Immutable
 public final class JcrI18n {
 
     public static I18n cannotConvertValue;

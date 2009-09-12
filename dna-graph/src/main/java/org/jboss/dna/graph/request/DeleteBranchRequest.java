@@ -31,8 +31,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction that a branch be deleted.
- * 
- * @author Randall Hauch
  */
 public class DeleteBranchRequest extends ChangeRequest {
 

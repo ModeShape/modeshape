@@ -34,8 +34,6 @@ import org.jboss.dna.graph.property.ValueFactory;
  * <p>
  * This factory does not {@link #find(byte[]) reuse} any instances.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class InMemoryBinaryValueFactory extends AbstractBinaryValueFactory {

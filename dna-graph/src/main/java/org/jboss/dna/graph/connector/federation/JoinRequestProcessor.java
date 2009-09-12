@@ -74,7 +74,7 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
- * 
+ * A {@link RequestProcessor} that performs the join portion of the fork-join operation.
  */
 @NotThreadSafe
 class JoinRequestProcessor extends RequestProcessor {

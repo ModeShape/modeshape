@@ -27,46 +27,46 @@ package org.jboss.dna.sequencer.msoffice.word;
 import java.util.List;
 
 /**
- * @author Michael Trezzi
+ * Metadata for Microsoft Word documents.
  */
 public class WordMetadata {
 
-	private List<WordMetadata.WordHeading> headings;
+    private List<WordMetadata.WordHeading> headings;
 
-	public List<WordMetadata.WordHeading> getHeadings() {
-		return headings;
-	}
+    public List<WordMetadata.WordHeading> getHeadings() {
+        return headings;
+    }
 
-	public void setHeadings(List<WordMetadata.WordHeading> headings) {
-		this.headings = headings;
-	}
+    public void setHeadings( List<WordMetadata.WordHeading> headings ) {
+        this.headings = headings;
+    }
 
+    public static class WordHeading {
+        private String text;
+        private int headingLevel;
 
-	public static class WordHeading {
-		private String text;
-		private int headingLevel;
+        public WordHeading( String text,
+                            int headerLevel ) {
+            super();
+            this.text = text;
+            this.headingLevel = headerLevel;
+        }
 
-		public WordHeading(String text, int headerLevel) {
-			super();
-			this.text = text;
-			this.headingLevel = headerLevel;
-		}
+        public String getText() {
+            return text;
+        }
 
-		public String getText() {
-			return text;
-		}
-		
-		public void setText(String text) {
-			this.text = text;
-		}
-		
-		public int getHeaderLevel() {
-			return headingLevel;
-		}
-		
-		public void setHeaderLevel(int headerLevel) {
-			this.headingLevel = headerLevel;
-		}
-		
-	}
+        public void setText( String text ) {
+            this.text = text;
+        }
+
+        public int getHeaderLevel() {
+            return headingLevel;
+        }
+
+        public void setHeaderLevel( int headerLevel ) {
+            this.headingLevel = headerLevel;
+        }
+
+    }
 }

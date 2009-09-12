@@ -47,8 +47,6 @@ import org.jboss.dna.common.SystemFailureException;
  * dependency rules</a>. Each {@link MavenRepository} instance owns an instance of this class, which provides a cached set of
  * class loaders and a facility for {@link MavenRepository#getClassLoader(ClassLoader, MavenId...) getting class loaders} based
  * upon a set of one or more versioned libraries.
- * 
- * @author Randall Hauch
  */
 /* package */class MavenClassLoaders {
 

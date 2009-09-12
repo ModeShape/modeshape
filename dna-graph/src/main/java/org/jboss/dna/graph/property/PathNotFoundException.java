@@ -23,12 +23,15 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 
 /**
- * @author Randall Hauch
+ * A runtime exception denoting that a node or property at a supplied {@link Path path} was not found. This exception does contain
+ * the lowest ancestor of the path that was found to exist.
  */
+@Immutable
 public class PathNotFoundException extends RuntimeException {
 
     /**

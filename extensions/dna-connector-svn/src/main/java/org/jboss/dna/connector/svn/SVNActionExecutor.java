@@ -32,7 +32,6 @@ import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
- * @author Serge Pagop
  */
 public class SVNActionExecutor implements ScmActionExecutor {
 

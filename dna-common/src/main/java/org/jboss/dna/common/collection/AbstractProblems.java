@@ -31,9 +31,6 @@ import org.jboss.dna.common.i18n.I18n;
 /**
  * A list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in which they
  * were encountered (although this cannot be guaranteed in contexts involving multiple threads or processes).
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public abstract class AbstractProblems implements Problems {
 

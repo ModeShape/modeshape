@@ -24,7 +24,7 @@
 package org.jboss.dna.graph.observe;
 
 /**
- * 
+ * The interface for an observer of graph changes.
  */
 public interface Observer {
 

@@ -39,8 +39,6 @@ import org.jboss.dna.graph.property.PropertyType;
  * A single property value that is too large to be stored on the individual node, and which will be shared among all properties
  * that have the same value. Note that the large values are stored independently of workspace, so one large value may be shared by
  * properties of nodes in different workspaces.
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_BASIC_LARGE_VALUES" )

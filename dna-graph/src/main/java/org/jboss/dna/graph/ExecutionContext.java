@@ -53,9 +53,6 @@ import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
  * example, an ExecutionContext could be used to create another context that references the same {@link #getNamespaceRegistry()
  * namespace registry} but which has a different {@link #getSecurityContext() security context}.
  * </p>
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class ExecutionContext implements ClassLoaderFactory, Cloneable {

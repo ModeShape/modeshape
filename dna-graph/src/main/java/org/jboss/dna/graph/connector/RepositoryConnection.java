@@ -110,8 +110,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  * However, it is perfectly acceptable to throw an exception if the connection becomes invalid (e.g., there is a communication
  * failure) or if a fatal error would prevent subsequent requests from being processed.
  * </p>
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public interface RepositoryConnection {

@@ -32,8 +32,6 @@ import org.jboss.dna.connector.store.jpa.model.common.WorkspaceEntity;
 
 /**
  * A manager and cache for {@link WorkspaceEntity} objects.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class Workspaces {

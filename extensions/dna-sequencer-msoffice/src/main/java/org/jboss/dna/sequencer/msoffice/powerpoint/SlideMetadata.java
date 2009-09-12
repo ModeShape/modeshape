@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.msoffice.powerpoint;
 
 /**
- * @author Michael Trezzi
+ * Metadata for Microsoft Office PowerPoint slides.
  */
 public class SlideMetadata {
     private String title;
@@ -36,7 +36,7 @@ public class SlideMetadata {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle( String title ) {
         this.title = title;
     }
 
@@ -44,7 +44,7 @@ public class SlideMetadata {
         return text;
     }
 
-    public void setText(String text) {
+    public void setText( String text ) {
         this.text = text;
     }
 
@@ -52,16 +52,15 @@ public class SlideMetadata {
         return thumbnail;
     }
 
-    public void setThumbnail(byte[] thumbnail) {
+    public void setThumbnail( byte[] thumbnail ) {
         this.thumbnail = thumbnail;
     }
-
 
     public String getNotes() {
         return notes;
     }
 
-    public void setNotes(String notes) {
+    public void setNotes( String notes ) {
         this.notes = notes;
     }
 }

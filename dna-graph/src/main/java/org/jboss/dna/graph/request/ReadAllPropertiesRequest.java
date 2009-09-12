@@ -37,8 +37,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * Instruction to read the properties and the number of children of the node at the specifed location.
- * 
- * @author Randall Hauch
  */
 public class ReadAllPropertiesRequest extends CacheableRequest implements Iterable<Property> {
 

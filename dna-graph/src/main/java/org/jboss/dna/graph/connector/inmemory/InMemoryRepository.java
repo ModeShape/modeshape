@@ -36,7 +36,7 @@ import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Name;
 
 /**
- * @author Randall Hauch
+ * A specialized {@link MapRepository} that represents an in-memory repository.
  */
 @NotThreadSafe
 public class InMemoryRepository extends MapRepository {

@@ -23,12 +23,13 @@
  */
 package org.jboss.dna.common.text;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * An encoder implementation that does nothing. This is useful when a {@link TextEncoder encoder} is optional but the code is
  * easier to write when there is always an encoder.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class NoOpEncoder implements TextEncoder, TextDecoder {
 
     private static final NoOpEncoder INSTANCE = new NoOpEncoder();

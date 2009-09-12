@@ -41,8 +41,6 @@ import org.jboss.dna.repository.RepositoryI18n;
  * {@link #registerCredentials(String, Credentials) register} credentials for the appropriate repository/workspace name. For
  * security reasons, it is not possible to retrieve the Credentials once registered with this factory.
  * </p>
- * 
- * @author Randall Hauch
  */
 public class SimpleSessionFactory extends AbstractSessionFactory {
 

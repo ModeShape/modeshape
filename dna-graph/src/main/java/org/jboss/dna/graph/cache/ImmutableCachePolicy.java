@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.cache;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A basic {@link CachePolicy} implementation with a fixed {@link #getTimeToLive() time to live}.
  */
+@Immutable
 public class ImmutableCachePolicy implements CachePolicy {
 
     private static final long serialVersionUID = 1L;

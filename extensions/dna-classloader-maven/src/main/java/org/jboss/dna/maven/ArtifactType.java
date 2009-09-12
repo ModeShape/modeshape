@@ -24,7 +24,7 @@
 package org.jboss.dna.maven;
 
 /**
- * @author Randall Hauch
+ * The type of artifacts in a Maven 2 repository.
  */
 public enum ArtifactType {
     METADATA("maven-metadata.xml"),

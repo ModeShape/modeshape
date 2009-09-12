@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.jcr;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/1.0</code>" namespace.
  */
+@Immutable
 public class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
 
     public static final Name BASE_VERSION = new BasicName(Namespace.URI, "baseVersion");

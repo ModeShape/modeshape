@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.repository.sequencer;
 
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 
 /**
- * @author Randall Hauch
+ * A library of {@link Sequencer} components.
  */
+@ThreadSafe
 public class SequencerLibrary extends ComponentLibrary<Sequencer, SequencerConfig> {
 
     /**

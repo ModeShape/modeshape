@@ -28,7 +28,7 @@ import java.util.Properties;
 import net.jcip.annotations.Immutable;
 
 /**
- * @author Randall Hauch
+ * The information about content.
  */
 @Immutable
 public class ContentInfo {

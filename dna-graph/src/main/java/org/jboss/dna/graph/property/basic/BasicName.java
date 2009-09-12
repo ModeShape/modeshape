@@ -33,9 +33,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * A basic implementation of {@link Name}.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class BasicName implements Name {
@@ -91,7 +88,7 @@ public class BasicName implements Name {
             if (this.getLocalName().equals(Path.PARENT)) return Path.PARENT;
         }
         if (encoder == null) encoder = Path.DEFAULT_ENCODER;
-        
+
         if (namespaceUri.length() > 0) {
             return "{" + encoder.encode(this.namespaceUri) + "}" + encoder.encode(this.localName);
         }

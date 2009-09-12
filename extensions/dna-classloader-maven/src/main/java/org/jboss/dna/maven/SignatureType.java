@@ -24,7 +24,7 @@
 package org.jboss.dna.maven;
 
 /**
- * @author Randall Hauch
+ * The type of signatures used by a Maven 2 repository.
  */
 public enum SignatureType {
     MD5(".md5"),

@@ -30,8 +30,6 @@ import org.jboss.dna.graph.Location;
 
 /**
  * Instruction to verify the existance of a node at the specified location. This request also returns the actual location.
- * 
- * @author Randall Hauch
  */
 public class VerifyNodeExistsRequest extends CacheableRequest {
 

@@ -21,8 +21,6 @@ import org.jboss.dna.graph.property.Path;
  * new parent's children; nodes can be cloned to an exact location among the parent's children, replacing the existing node at
  * that location.</li>
  * </ol>
- * 
- * @author Brian Carothers
  */
 public class CloneBranchRequest extends ChangeRequest {
 

@@ -90,8 +90,6 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  * requests requires knowledge of the subgraph, and in fact all but the <code>ReadBranchRequest</code> need to know the complete
  * subgraph.
  * </p>
- * 
- * @author Randall Hauch
  */
 public class BasicModel extends Model {
 

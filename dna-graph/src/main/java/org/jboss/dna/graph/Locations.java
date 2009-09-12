@@ -29,8 +29,6 @@ import net.jcip.annotations.NotThreadSafe;
  * A class used by this package to manage a single {@link Location} or multiple {@link Location} objects, without having the
  * overhead of a collection (when only one is needed) and which can grow efficiently as new locations are added. This is achieved
  * through an effective linked list.
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 class Locations {

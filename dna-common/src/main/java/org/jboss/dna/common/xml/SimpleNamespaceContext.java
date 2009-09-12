@@ -29,7 +29,8 @@ import java.util.Map;
 import javax.xml.namespace.NamespaceContext;
 
 /**
- * @author Randall Hauch
+ * A simple {@link NamespaceContext} implementation that maintains the namespace and prefix mappings discovered within an XML
+ * document.
  */
 public class SimpleNamespaceContext implements NamespaceContext {
 

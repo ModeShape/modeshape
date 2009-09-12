@@ -34,8 +34,6 @@ import org.jboss.dna.graph.property.Property;
 /**
  * Instruction to set a particular property on the node at the specified location. This request <i>never</i> removes the node,
  * even if the property is empty.
- * 
- * @author Randall Hauch
  */
 public class SetPropertyRequest extends ChangeRequest {
 

@@ -30,7 +30,7 @@ import org.eclipse.jdt.internal.compiler.util.Util;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * @author Serge Pagop
+ * Utility class for working with metadata.
  */
 public class JavaMetadataUtil {
     /**
@@ -70,7 +70,7 @@ public class JavaMetadataUtil {
         CheckArg.isNotNull(name, "name");
         return name.getFullyQualifiedName();
     }
-    
+
     /**
      * Create a path for the tree with index.
      * 
@@ -80,7 +80,7 @@ public class JavaMetadataUtil {
      * @throws IllegalArgumentException if the path is null, blank or empty, or if the index is not a positive value
      */
     public static String createPathWithIndex( String path,
-                                        int index ) {
+                                              int index ) {
         CheckArg.isNotEmpty(path, "path");
         CheckArg.isPositive(index, "index");
         return path + "[" + index + "]";

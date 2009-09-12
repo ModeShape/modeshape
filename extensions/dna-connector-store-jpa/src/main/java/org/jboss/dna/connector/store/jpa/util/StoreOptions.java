@@ -29,7 +29,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.store.jpa.Model;
 
 /**
- * @author Randall Hauch
+ * A utility class that provides easy access to the options stored within a database.
  */
 public class StoreOptions {
 

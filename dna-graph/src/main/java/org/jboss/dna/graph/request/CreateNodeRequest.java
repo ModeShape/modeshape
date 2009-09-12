@@ -40,8 +40,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * Instruction to create the node under the specified location. This command will create the node and set the initial properties.
- * 
- * @author Randall Hauch
  */
 public class CreateNodeRequest extends ChangeRequest implements Iterable<Property> {
 

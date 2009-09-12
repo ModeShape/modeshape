@@ -56,8 +56,6 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
  * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository. This
  * source considers a workspace name to be the path to the directory on the file system that represents the root of that
  * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public class FileSystemSource implements RepositorySource, ObjectFactory {

@@ -57,7 +57,7 @@ import org.jboss.security.config.IDTrustConfiguration;
 import org.xml.sax.SAXException;
 
 /**
- * @author Randall Hauch
+ * The repository client, with the main application.
  */
 public class RepositoryClient {
 

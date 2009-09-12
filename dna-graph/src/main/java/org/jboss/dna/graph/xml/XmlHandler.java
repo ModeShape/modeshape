@@ -60,8 +60,6 @@ import com.google.common.collect.Multimap;
  * This class can be passed to the {@link SAXParser}'s {@link SAXParser#parse(java.io.File, org.xml.sax.helpers.DefaultHandler)
  * parse(..,DefaultHandler)} methods.
  * </p>
- * 
- * @author Randall Hauch
  */
 @NotThreadSafe
 public class XmlHandler extends DefaultHandler2 {

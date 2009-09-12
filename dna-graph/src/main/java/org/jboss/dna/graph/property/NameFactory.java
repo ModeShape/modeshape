@@ -23,13 +23,13 @@
  */
 package org.jboss.dna.graph.property;
 
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 
 /**
  * A factory for creating {@link Name names}.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public interface NameFactory extends ValueFactory<Name> {
 
     /**

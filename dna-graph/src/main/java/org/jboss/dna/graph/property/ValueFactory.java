@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 
@@ -44,10 +45,9 @@ import org.jboss.dna.common.text.TextEncoder;
  * <li>{@link IoException} - If an unexpected problem occurs during the conversion (such as an {@link IOException}).</li>
  * </ul>
  * 
- * @author Randall Hauch
- * @author John Verhaeg
  * @param <T> the type of value to create
  */
+@ThreadSafe
 public interface ValueFactory<T> {
 
     static final TextDecoder DEFAULT_DECODER = Path.NO_OP_DECODER;

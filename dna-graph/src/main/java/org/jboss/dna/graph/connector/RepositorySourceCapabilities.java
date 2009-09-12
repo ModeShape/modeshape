@@ -30,7 +30,6 @@ import net.jcip.annotations.Immutable;
  * complex behavior.
  * 
  * @see RepositorySource#getCapabilities()
- * @author Randall Hauch
  */
 @Immutable
 public class RepositorySourceCapabilities {

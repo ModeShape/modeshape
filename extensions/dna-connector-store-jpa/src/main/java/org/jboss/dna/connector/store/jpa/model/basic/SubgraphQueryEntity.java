@@ -31,8 +31,6 @@ import javax.persistence.Id;
 
 /**
  * Represents a temporary working area for a query that retrieves the nodes in a subgraph.
- * 
- * @author Randall Hauch
  */
 @Entity( name = "DNA_SUBGRAPH_QUERIES" )
 public class SubgraphQueryEntity {

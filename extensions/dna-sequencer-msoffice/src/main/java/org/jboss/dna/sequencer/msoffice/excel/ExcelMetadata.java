@@ -26,8 +26,7 @@ package org.jboss.dna.sequencer.msoffice.excel;
 import java.util.List;
 
 /**
- * @author Michael Trezzi
- * @description Metadata for Excel (Full text contents and list of sheet names
+ * Metadata for Excel (Full text contents and list of sheet names)
  */
 public class ExcelMetadata {
 
@@ -35,7 +34,7 @@ public class ExcelMetadata {
         return text;
     }
 
-    public void setText(String text) {
+    public void setText( String text ) {
         this.text = text;
     }
 
@@ -43,7 +42,7 @@ public class ExcelMetadata {
         return sheets;
     }
 
-    public void setSheets(List<String> sheets) {
+    public void setSheets( List<String> sheets ) {
         this.sheets = sheets;
     }
 

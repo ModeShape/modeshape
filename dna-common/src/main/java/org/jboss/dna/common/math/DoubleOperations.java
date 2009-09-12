@@ -26,31 +26,40 @@ package org.jboss.dna.common.math;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
+import net.jcip.annotations.Immutable;
 
+/**
+ * The {@link MathOperations math operations} for double numbers.
+ */
+@Immutable
 public class DoubleOperations implements MathOperations<Double>, Comparator<Double> {
 
     public Class<Double> getOperandClass() {
         return Double.class;
     }
 
-    public Double add( Double value1, Double value2 ) {
+    public Double add( Double value1,
+                       Double value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
         if (value2 == null) return value1;
         return (value1 + value2);
     }
 
-    public Double subtract( Double value1, Double value2 ) {
+    public Double subtract( Double value1,
+                            Double value2 ) {
         if (value1 == null) return negate(value2);
         if (value2 == null) return value1;
         return (value1 - value2);
     }
 
-    public Double multiply( Double value1, Double value2 ) {
+    public Double multiply( Double value1,
+                            Double value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return (value1 * value2);
     }
 
-    public double divide( Double value1, Double value2 ) {
+    public double divide( Double value1,
+                          Double value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
@@ -65,19 +74,22 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return (value + 1);
     }
 
-    public Double maximum( Double value1, Double value2 ) {
+    public Double maximum( Double value1,
+                           Double value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return Math.max(value1, value2);
     }
 
-    public Double minimum( Double value1, Double value2 ) {
+    public Double minimum( Double value1,
+                           Double value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return Math.min(value1, value2);
     }
 
-    public int compare( Double value1, Double value2 ) {
+    public int compare( Double value1,
+                        Double value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
         if (value2 == null) return 1;
         return value1.compareTo(value2);
@@ -115,7 +127,9 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return this;
     }
 
-    public Double random( Double minimum, Double maximum, Random rng ) {
+    public Double random( Double minimum,
+                          Double maximum,
+                          Random rng ) {
         Double difference = subtract(maximum, minimum);
         return minimum + difference.doubleValue() * rng.nextDouble();
     }
@@ -158,21 +172,24 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return exp;
     }
 
-    public Double roundUp( Double value, int decimalShift ) {
+    public Double roundUp( Double value,
+                           int decimalShift ) {
         if (value == 0) return 0.0d;
         double shiftedValue = (Math.abs(value) * Math.pow(10.0d, decimalShift) + 0.5d) * Math.signum(value);
         double roundedValue = (int)shiftedValue;
         return roundedValue * Math.pow(10.0d, -decimalShift);
     }
 
-    public Double roundDown( Double value, int decimalShift ) {
+    public Double roundDown( Double value,
+                             int decimalShift ) {
         if (value == 0) return 0.0d;
         double shiftedValue = (Math.abs(value) * Math.pow(10.0d, decimalShift)) * Math.signum(value);
         double roundedValue = (int)shiftedValue;
         return roundedValue * Math.pow(10.0d, -decimalShift);
     }
 
-    public Double keepSignificantFigures( Double value, int numSigFigs ) {
+    public Double keepSignificantFigures( Double value,
+                                          int numSigFigs ) {
         if (numSigFigs < 0) return value;
         if (numSigFigs == 0) return 0.0d;
         int currentExp = getExponentInScientificNotation(value);

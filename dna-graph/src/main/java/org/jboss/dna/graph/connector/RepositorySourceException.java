@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.graph.connector;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception signalling an error within a {@link RepositorySource}.
  */
+@Immutable
 public class RepositorySourceException extends RuntimeException {
 
     /**
@@ -44,7 +47,8 @@ public class RepositorySourceException extends RuntimeException {
      * @param sourceName the identifier of the source from which this exception eminates
      * @param message
      */
-    public RepositorySourceException( String sourceName, String message ) {
+    public RepositorySourceException( String sourceName,
+                                      String message ) {
         super(message);
         this.sourceName = sourceName;
     }
@@ -53,7 +57,8 @@ public class RepositorySourceException extends RuntimeException {
      * @param sourceName the identifier of the source from which this exception eminates
      * @param cause
      */
-    public RepositorySourceException( String sourceName, Throwable cause ) {
+    public RepositorySourceException( String sourceName,
+                                      Throwable cause ) {
         super(cause);
         this.sourceName = sourceName;
     }
@@ -63,7 +68,9 @@ public class RepositorySourceException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public RepositorySourceException( String sourceName, String message, Throwable cause ) {
+    public RepositorySourceException( String sourceName,
+                                      String message,
+                                      Throwable cause ) {
         super(message, cause);
         this.sourceName = sourceName;
     }

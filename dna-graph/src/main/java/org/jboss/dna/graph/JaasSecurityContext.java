@@ -16,6 +16,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.Reflection;
@@ -24,6 +25,7 @@ import org.jboss.dna.common.util.Reflection;
  * JAAS-based {@link SecurityContext security context} that provides authentication and authorization through the JAAS
  * {@link LoginContext login context}.
  */
+@NotThreadSafe
 public final class JaasSecurityContext implements SecurityContext {
 
     private final Logger log = Logger.getLogger(getClass());

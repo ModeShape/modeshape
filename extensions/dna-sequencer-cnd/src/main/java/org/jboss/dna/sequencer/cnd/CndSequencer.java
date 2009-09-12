@@ -31,12 +31,12 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
+import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 
 /**
- * 
+ * A sequencer of CND files.
  */
 public class CndSequencer implements StreamSequencer {
 

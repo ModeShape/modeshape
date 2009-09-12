@@ -32,8 +32,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * A basic implementation of {@link Path.Segment}.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class BasicPathSegment implements Path.Segment {

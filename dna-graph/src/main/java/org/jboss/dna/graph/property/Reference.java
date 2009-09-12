@@ -29,7 +29,6 @@ import org.jboss.dna.common.text.TextEncoder;
 
 /**
  * A representation of a reference to another node. Node references may not necessarily resolve to an existing node.
- * @author Randall Hauch
  */
 @Immutable
 public interface Reference extends Comparable<Reference>, Serializable {
@@ -37,6 +36,7 @@ public interface Reference extends Comparable<Reference>, Serializable {
     /**
      * Get the string form of the Reference. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in the
      * reference.
+     * 
      * @return the encoded string
      * @see #getString(TextEncoder)
      */
@@ -44,6 +44,7 @@ public interface Reference extends Comparable<Reference>, Serializable {
 
     /**
      * Get the encoded string form of the Reference, using the supplied encoder to encode characters in the reference.
+     * 
      * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
      * @see #getString()

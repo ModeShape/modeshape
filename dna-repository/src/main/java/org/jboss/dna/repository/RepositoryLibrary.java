@@ -53,8 +53,6 @@ import org.jboss.dna.repository.service.ServiceAdministrator;
 /**
  * A library of {@link RepositorySource} instances and the {@link RepositoryConnectionPool} used to manage the connections for
  * each.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public class RepositoryLibrary implements RepositoryConnectionFactory, Observable {

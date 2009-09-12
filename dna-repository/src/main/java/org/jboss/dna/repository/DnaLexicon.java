@@ -23,12 +23,14 @@
  */
 package org.jboss.dna.repository;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
- * @author Randall Hauch
+ * A lexicon of names used within JBoss DNA.
  */
+@Immutable
 public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
 
     public static final Name SOURCES = new BasicName(Namespace.URI, "sources");

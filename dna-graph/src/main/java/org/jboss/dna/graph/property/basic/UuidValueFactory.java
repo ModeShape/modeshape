@@ -46,9 +46,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class UuidValueFactory extends AbstractValueFactory<UUID> implements UuidFactory {
@@ -78,8 +75,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
         } catch (IllegalArgumentException err) {
             throw new ValueFormatException(value, PropertyType.UUID,
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            URI.class.getSimpleName(),
-                                                                            value), err);
+                                                                              URI.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -96,9 +93,10 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      * {@inheritDoc}
      */
     public UUID create( int value ) {
-        throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Integer.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, PropertyType.UUID,
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Integer.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -106,17 +104,18 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( long value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Long.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Long.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
      * {@inheritDoc}
      */
     public UUID create( boolean value ) {
-        throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Boolean.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, PropertyType.UUID,
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Boolean.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -124,8 +123,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( float value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Float.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Float.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -133,8 +132,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( double value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Double.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Double.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -143,17 +142,18 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
     public UUID create( BigDecimal value ) {
         throw new ValueFormatException(value, PropertyType.UUID,
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        BigDecimal.class.getSimpleName(),
-                                                                        value));
+                                                                          BigDecimal.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
      * {@inheritDoc}
      */
     public UUID create( Calendar value ) {
-        throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Calendar.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, PropertyType.UUID,
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Calendar.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -161,8 +161,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( Date value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Date.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Date.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -171,9 +171,10 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      * @see org.jboss.dna.graph.property.ValueFactory#create(org.jboss.dna.graph.property.DateTime)
      */
     public UUID create( DateTime value ) throws ValueFormatException {
-        throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  DateTime.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, PropertyType.UUID,
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          DateTime.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -181,8 +182,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( Name value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -190,8 +191,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( Path value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -204,8 +205,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
         }
         throw new ValueFormatException(value, PropertyType.UUID,
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -213,8 +214,8 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      */
     public UUID create( URI value ) {
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  URI.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    URI.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

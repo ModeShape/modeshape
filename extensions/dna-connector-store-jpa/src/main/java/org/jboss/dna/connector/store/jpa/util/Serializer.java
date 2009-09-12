@@ -56,7 +56,7 @@ import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
- * @author Randall Hauch
+ * A class that is responsible for serializing and deserializing properties.
  */
 public class Serializer {
 

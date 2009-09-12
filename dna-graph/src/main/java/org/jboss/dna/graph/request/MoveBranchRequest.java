@@ -33,8 +33,6 @@ import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction that a branch be moved from one location into another.
- * 
- * @author Randall Hauch
  */
 public class MoveBranchRequest extends ChangeRequest {
 

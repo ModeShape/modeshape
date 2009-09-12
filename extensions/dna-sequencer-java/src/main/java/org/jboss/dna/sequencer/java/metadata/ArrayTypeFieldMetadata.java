@@ -23,17 +23,14 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-
 /**
  * ArrayTypeFieldMetadata represents the meta data for an array type.
- * 
- * @author Serge Pagop
  */
 public class ArrayTypeFieldMetadata extends FieldMetadata {
-   
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isArrayType()
      */
     @Override
@@ -41,14 +38,14 @@ public class ArrayTypeFieldMetadata extends FieldMetadata {
         return true;
     }
 
-    // Element type 
+    // Element type
     private FieldMetadata elementType;
-    
+
     // Component type
     private FieldMetadata componentType;
 
     public ArrayTypeFieldMetadata() {
-        
+
     }
 
     /**
@@ -81,7 +78,7 @@ public class ArrayTypeFieldMetadata extends FieldMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override

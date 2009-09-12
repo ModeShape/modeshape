@@ -29,8 +29,6 @@ import net.jcip.annotations.Immutable;
 /**
  * The specification of how node data is to be cached. The time values provided are relative, allowing the same cache policy
  * instance to be shared among multiple {@link Cacheable} objects.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface CachePolicy extends Serializable {

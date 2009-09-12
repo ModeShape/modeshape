@@ -36,7 +36,6 @@ import org.hibernate.annotations.Index;
 /**
  * Represents a single node that appears in a subgraph.
  * 
- * @author Randall Hauch
  * @see SubgraphQueryEntity
  */
 @Entity

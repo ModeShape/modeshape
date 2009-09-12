@@ -43,8 +43,6 @@ import org.jboss.dna.common.util.CheckArg;
 /**
  * A WorkspaceEntity represents a workspace that has been create in the store. WorkspaceEntity records are immutable and shared by
  * one or more enities.
- * 
- * @author Randall Hauch
  */
 @Entity
 @Table( name = "DNA_WORKSPACES" )

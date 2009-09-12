@@ -29,8 +29,6 @@ import net.jcip.annotations.ThreadSafe;
 
 /**
  * Registry of namespaces, which are used to provide isolated and independent domains for {@link Name names}.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public interface NamespaceRegistry {

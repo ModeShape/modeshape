@@ -63,9 +63,6 @@ import org.jboss.dna.repository.util.RepositoryNodePath;
 /**
  * A sequencing system is used to monitor changes in the content of DNA repositories and to sequence the content to extract or to
  * generate structured information.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 public class SequencingService implements AdministeredService {
 

@@ -41,7 +41,9 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
 
 /**
+ * A {@link javax.jcr.Property JCR Property} implementation that has multiple values.
  * 
+ * @see JcrSingleValueProperty
  */
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {

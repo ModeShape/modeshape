@@ -58,8 +58,6 @@ import org.jboss.dna.graph.connector.map.MapRepositorySource;
 /**
  * A {@link RepositorySource} for an in-memory repository. Each {@link InMemoryRepositorySource} instance contains its own
  * repository, and the lifetime of the source dictates the lifetime of the repository and its content.
- * 
- * @author Randall Hauch
  */
 public class InMemoryRepositorySource implements MapRepositorySource, ObjectFactory {
 

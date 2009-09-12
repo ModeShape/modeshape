@@ -31,8 +31,6 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 
 /**
  * The abstract base class for all classes representing requests to be executed against a {@link RepositoryConnection}.
- * 
- * @author Randall Hauch
  */
 public abstract class Request implements Serializable {
 

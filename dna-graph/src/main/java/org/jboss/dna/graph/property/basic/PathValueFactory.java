@@ -52,9 +52,6 @@ import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#NAME} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class PathValueFactory extends AbstractValueFactory<Path> implements PathFactory {

@@ -44,15 +44,18 @@ import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
- * @author Randall Hauch
+ * Utility methods for working with JCR.
  */
 public class JcrTools {
 
-    public Map<String, Object> loadProperties( Node propertyContainer, Problems problems ) {
+    public Map<String, Object> loadProperties( Node propertyContainer,
+                                               Problems problems ) {
         return loadProperties(propertyContainer, null, problems);
     }
 
-    public Map<String, Object> loadProperties( Node propertyContainer, Map<String, Object> properties, Problems problems ) {
+    public Map<String, Object> loadProperties( Node propertyContainer,
+                                               Map<String, Object> properties,
+                                               Problems problems ) {
         if (properties == null) properties = new HashMap<String, Object>();
         if (propertyContainer != null) {
             try {
@@ -83,7 +86,8 @@ public class JcrTools {
         return false;
     }
 
-    public boolean storeProblems( Node parent, Problems problems ) throws RepositoryException {
+    public boolean storeProblems( Node parent,
+                                  Problems problems ) throws RepositoryException {
         Node problemsNode = null;
         if (parent.hasNode("dna:problems")) {
             problemsNode = parent.getNode("dna:problems");
@@ -141,19 +145,32 @@ public class JcrTools {
         return childrenRemoved;
     }
 
-    public String getPropertyAsString( Node node, String propertyName, boolean required, Problems problems ) {
+    public String getPropertyAsString( Node node,
+                                       String propertyName,
+                                       boolean required,
+                                       Problems problems ) {
         return getPropertyAsString(node, propertyName, required, null);
     }
 
-    public String getPropertyAsString( Node node, String propertyName, boolean required, String defaultValue, Problems problems ) {
+    public String getPropertyAsString( Node node,
+                                       String propertyName,
+                                       boolean required,
+                                       String defaultValue,
+                                       Problems problems ) {
         try {
             Property property = node.getProperty(propertyName);
             return property.getString();
         } catch (ValueFormatException e) {
             if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringValue, propertyName, getReadable(node));
+                problems.addError(e,
+                                  RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringValue,
+                                  propertyName,
+                                  getReadable(node));
             } else {
-                problems.addError(e, RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringValue, propertyName, getReadable(node));
+                problems.addError(e,
+                                  RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringValue,
+                                  propertyName,
+                                  getReadable(node));
             }
         } catch (PathNotFoundException e) {
             if (required) {
@@ -170,7 +187,10 @@ public class JcrTools {
         return null;
     }
 
-    public Object getPropertyValue( Node node, String propertyName, boolean required, Problems problems ) {
+    public Object getPropertyValue( Node node,
+                                    String propertyName,
+                                    boolean required,
+                                    Problems problems ) {
         try {
             Property property = node.getProperty(propertyName);
             switch (property.getType()) {
@@ -185,7 +205,11 @@ public class JcrTools {
                                 stream.close();
                             } catch (IOException e) {
                                 // Log ...
-                                Logger.getLogger(this.getClass()).error(e, RepositoryI18n.errorClosingBinaryStreamForPropertyFromNode, propertyName, node.getPath());
+                                Logger.getLogger(this.getClass())
+                                      .error(e,
+                                             RepositoryI18n.errorClosingBinaryStreamForPropertyFromNode,
+                                             propertyName,
+                                             node.getPath());
                             }
                         }
                     }
@@ -214,7 +238,11 @@ public class JcrTools {
         return null;
     }
 
-    public String[] getPropertyAsStringArray( Node node, String propertyName, boolean required, Problems problems, String... defaultValues ) {
+    public String[] getPropertyAsStringArray( Node node,
+                                              String propertyName,
+                                              boolean required,
+                                              Problems problems,
+                                              String... defaultValues ) {
         String[] result = defaultValues;
         try {
             Property property = node.getProperty(propertyName);
@@ -230,9 +258,15 @@ public class JcrTools {
             }
         } catch (ValueFormatException e) {
             if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringArrayValue, propertyName, getReadable(node));
+                problems.addError(e,
+                                  RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringArrayValue,
+                                  propertyName,
+                                  getReadable(node));
             } else {
-                problems.addError(e, RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringArrayValue, propertyName, getReadable(node));
+                problems.addError(e,
+                                  RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringArrayValue,
+                                  propertyName,
+                                  getReadable(node));
             }
         } catch (PathNotFoundException e) {
             if (required) {
@@ -248,12 +282,18 @@ public class JcrTools {
         return result;
     }
 
-    public Node getNode( Node node, String relativePath, boolean required, Problems problems ) {
+    public Node getNode( Node node,
+                         String relativePath,
+                         boolean required,
+                         Problems problems ) {
         Node result = null;
         try {
             result = node.getNode(relativePath);
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e, RepositoryI18n.requiredNodeDoesNotExistRelativeToNode, relativePath, getReadable(node));
+            if (required) problems.addError(e,
+                                            RepositoryI18n.requiredNodeDoesNotExistRelativeToNode,
+                                            relativePath,
+                                            getReadable(node));
         } catch (RepositoryException err) {
             problems.addError(err, RepositoryI18n.errorGettingNodeRelativeToNode, relativePath, getReadable(node));
         }
@@ -269,20 +309,30 @@ public class JcrTools {
         }
     }
 
-    public Node findOrCreateNode( Session session, String path ) throws RepositoryException {
+    public Node findOrCreateNode( Session session,
+                                  String path ) throws RepositoryException {
         return findOrCreateNode(session, path, null, null);
     }
 
-    public Node findOrCreateNode( Session session, String path, String nodeType ) throws RepositoryException {
+    public Node findOrCreateNode( Session session,
+                                  String path,
+                                  String nodeType ) throws RepositoryException {
         return findOrCreateNode(session, path, nodeType, nodeType);
     }
 
-    public Node findOrCreateNode( Session session, String path, String defaultNodeType, String finalNodeType ) throws RepositoryException {
+    public Node findOrCreateNode( Session session,
+                                  String path,
+                                  String defaultNodeType,
+                                  String finalNodeType ) throws RepositoryException {
         Node root = session.getRootNode();
         return findOrCreateNode(session, root, path, defaultNodeType, finalNodeType);
     }
 
-    public Node findOrCreateNode( Session session, Node parentNode, String path, String defaultNodeType, String finalNodeType ) throws RepositoryException {
+    public Node findOrCreateNode( Session session,
+                                  Node parentNode,
+                                  String path,
+                                  String defaultNodeType,
+                                  String finalNodeType ) throws RepositoryException {
         // Remove leading and trailing slashes ...
         String relPath = path.replaceAll("^/+", "").replaceAll("/+$", "");
 
@@ -318,11 +368,16 @@ public class JcrTools {
         return node;
     }
 
-    public Node findOrCreateChild( Session session, Node parent, String name ) throws RepositoryException {
+    public Node findOrCreateChild( Session session,
+                                   Node parent,
+                                   String name ) throws RepositoryException {
         return findOrCreateChild(session, parent, name, null);
     }
 
-    public Node findOrCreateChild( Session session, Node parent, String name, String nodeType ) throws RepositoryException {
+    public Node findOrCreateChild( Session session,
+                                   Node parent,
+                                   String name,
+                                   String nodeType ) throws RepositoryException {
         return findOrCreateNode(session, parent, name, nodeType, nodeType);
     }
 

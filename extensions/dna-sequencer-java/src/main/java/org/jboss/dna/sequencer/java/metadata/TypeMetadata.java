@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Exposes meta data of a top level type.
- * 
- * @author Serge Pagop
  */
 public class TypeMetadata {
 

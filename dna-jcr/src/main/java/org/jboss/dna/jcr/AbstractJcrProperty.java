@@ -44,7 +44,7 @@ import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
 
 /**
- * @author jverhaeg
+ * An abstract {@link Property JCR Property} implementation.
  */
 @NotThreadSafe
 abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, Comparable<Property> {

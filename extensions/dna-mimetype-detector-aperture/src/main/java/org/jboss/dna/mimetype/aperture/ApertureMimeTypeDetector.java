@@ -31,7 +31,7 @@ import org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifie
 import org.semanticdesktop.aperture.util.IOUtil;
 
 /**
- * @author jverhaeg
+ * A {@link MimeTypeDetector} that uses the Aperture library.
  */
 public class ApertureMimeTypeDetector implements MimeTypeDetector {
 

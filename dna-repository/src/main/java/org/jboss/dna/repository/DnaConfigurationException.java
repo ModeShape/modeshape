@@ -21,9 +21,12 @@
  */
 package org.jboss.dna.repository;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * @author Randall Hauch
+ * A runtime exception that denotes an error within the configuration for JBoss DNA.
  */
+@Immutable
 public class DnaConfigurationException extends RuntimeException {
 
     /**

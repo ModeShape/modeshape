@@ -24,10 +24,8 @@
 package org.jboss.dna.connector.scm;
 
 /**
- * @author Serge Pagop
  */
 public interface ScmActionFactory {
-
 
     public ScmAction addFile( String path,
                               String file,

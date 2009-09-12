@@ -23,9 +23,12 @@
  */
 package org.jboss.dna.jcr;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/mix/1.0</code>" namespace.
  */
+@Immutable
 public class JcrMixLexicon extends org.jboss.dna.graph.JcrMixLexicon {
 
 }

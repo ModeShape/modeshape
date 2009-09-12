@@ -43,8 +43,6 @@ import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * The standard set of {@link ValueFactory value factories}.
- * 
- * @author Randall Hauch
  */
 @Immutable
 public class StandardValueFactories extends AbstractValueFactories {

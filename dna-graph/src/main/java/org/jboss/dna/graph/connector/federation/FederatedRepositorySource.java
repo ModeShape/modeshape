@@ -39,6 +39,7 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
@@ -65,8 +66,9 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 
 /**
- * 
+ * A {@link RepositorySource} for a federated repository.
  */
+@NotThreadSafe
 public class FederatedRepositorySource implements RepositorySource, ObjectFactory {
 
     /**

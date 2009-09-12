@@ -35,12 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import net.jcip.annotations.Immutable;
 
 /**
  * Utility class for working reflectively with objects.
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class Reflection {
 
     /**
@@ -196,7 +196,7 @@ public class Reflection {
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class[] {};
     private static final String[] BRACKETS_PAIR = new String[] {"", "[]", "[][]", "[][][]", "[][][][]", "[][][][][]"};
 
-    private Class<?> targetClass;
+    private final Class<?> targetClass;
     private Map<String, LinkedList<Method>> methodMap = null; // used for the brute-force method finder
 
     /**
@@ -497,6 +497,7 @@ public class Reflection {
         Method method;
         LinkedList<Method> methodsWithSameName;
         if (this.methodMap == null) {
+            // This is idempotent, so no need to lock or synchronize ...
             this.methodMap = new HashMap<String, LinkedList<Method>>();
             Method[] methods = this.targetClass.getMethods();
             for (int i = 0; i != methods.length; ++i) {

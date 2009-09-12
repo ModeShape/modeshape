@@ -24,7 +24,6 @@
 package org.jboss.dna.connector.scm;
 
 /**
- * @author Serge Pagop
  *
  */
 public interface ScmActionExecutor {

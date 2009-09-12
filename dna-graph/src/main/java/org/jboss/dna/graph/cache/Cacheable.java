@@ -28,8 +28,6 @@ import org.jboss.dna.graph.property.DateTime;
 
 /**
  * Interface defining an object that can be cached according to a {@link CachePolicy}.
- * 
- * @author Randall Hauch
  */
 public interface Cacheable extends Serializable {
 

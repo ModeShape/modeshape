@@ -25,43 +25,44 @@ package org.jboss.dna.common.text;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import net.jcip.annotations.Immutable;
 
 /**
  * Encoder that escapes characters that are not allowed in JCR names. The mapping defined in Section 3.6.3 of the JSR-283 public
- * review document: <table cellspacing="0" cellpadding="1" border="1">
+ * review document:
+ * <table cellspacing="0" cellpadding="1" border="1">
  * <tr>
  * <th>Non-JCR character<br/>(Unicode code point)</th>
- * <th>Private use<br/>Unicode code point </th>
+ * <th>Private use<br/>Unicode code point</th>
  * </tr>
  * <tr>
- * <td>* (U+002A)</td>
- * <td> U+F02A </td>
+ * <td>(U+002A)</td>
+ * <td>U+F02A</td>
  * </tr>
  * <tr>
  * <td>/ (U+002F)</td>
- * <td> U+F02F </td>
+ * <td>U+F02F</td>
  * </tr>
  * <tr>
  * <td>: (U+003A)</td>
- * <td> U+F03A </td>
+ * <td>U+F03A</td>
  * </tr>
  * <tr>
  * <td>[ (U+005B)</td>
- * <td> U+F05B </td>
+ * <td>U+F05B</td>
  * </tr>
  * <tr>
  * <td>] (U+005D)</td>
- * <td> U+F05D </td>
+ * <td>U+F05D</td>
  * </tr>
  * <tr>
  * <td>| (U+007C)</td>
- * <td> U+F07C </td>
+ * <td>U+F07C</td>
  * </tr>
  * </table>
  * </p>
- * 
- * @author Randall Hauch
  */
+@Immutable
 public class Jsr283Encoder implements TextEncoder, TextDecoder {
 
     /**

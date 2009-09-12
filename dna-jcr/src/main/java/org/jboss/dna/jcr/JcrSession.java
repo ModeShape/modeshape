@@ -76,8 +76,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * @author John Verhaeg
- * @author Randall Hauch
+ * The DNA implementation of a {@link Session JCR Session}.
  */
 @NotThreadSafe
 class JcrSession implements Session {

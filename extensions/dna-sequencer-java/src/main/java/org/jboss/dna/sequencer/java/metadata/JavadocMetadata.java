@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * JavaDoc metadata.
  */
 public class JavadocMetadata {
 

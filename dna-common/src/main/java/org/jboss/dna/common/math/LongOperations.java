@@ -26,31 +26,40 @@ package org.jboss.dna.common.math;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
+import net.jcip.annotations.Immutable;
 
+/**
+ * The {@link MathOperations math operations} for long numbers.
+ */
+@Immutable
 public class LongOperations implements MathOperations<Long>, Comparator<Long> {
 
     public Class<Long> getOperandClass() {
         return Long.class;
     }
 
-    public Long add( Long value1, Long value2 ) {
+    public Long add( Long value1,
+                     Long value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
         if (value2 == null) return value1;
         return (value1 + value2);
     }
 
-    public Long subtract( Long value1, Long value2 ) {
+    public Long subtract( Long value1,
+                          Long value2 ) {
         if (value1 == null) return negate(value2);
         if (value2 == null) return value1;
         return (value1 - value2);
     }
 
-    public Long multiply( Long value1, Long value2 ) {
+    public Long multiply( Long value1,
+                          Long value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return (value1 * value2);
     }
 
-    public double divide( Long value1, Long value2 ) {
+    public double divide( Long value1,
+                          Long value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
@@ -65,19 +74,22 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return (value + 1);
     }
 
-    public Long maximum( Long value1, Long value2 ) {
+    public Long maximum( Long value1,
+                         Long value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return Math.max(value1, value2);
     }
 
-    public Long minimum( Long value1, Long value2 ) {
+    public Long minimum( Long value1,
+                         Long value2 ) {
         if (value1 == null) return value2;
         if (value2 == null) return value1;
         return Math.min(value1, value2);
     }
 
-    public int compare( Long value1, Long value2 ) {
+    public int compare( Long value1,
+                        Long value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
         if (value2 == null) return 1;
         return value1.compareTo(value2);
@@ -115,7 +127,9 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return this;
     }
 
-    public Long random( Long minimum, Long maximum, Random rng ) {
+    public Long random( Long minimum,
+                        Long maximum,
+                        Random rng ) {
         Long difference = subtract(maximum, minimum);
         return minimum + rng.nextInt(difference.intValue());
     }
@@ -158,7 +172,8 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return exp;
     }
 
-    public Long roundUp( Long value, int decimalShift ) {
+    public Long roundUp( Long value,
+                         int decimalShift ) {
         if (value == 0) return 0l;
         if (decimalShift >= 0) return value;
         long shiftedValueP5 = Math.abs(value);
@@ -173,7 +188,8 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return shiftedValue;
     }
 
-    public Long roundDown( Long value, int decimalShift ) {
+    public Long roundDown( Long value,
+                           int decimalShift ) {
         if (value == 0) return 0l;
         if (decimalShift >= 0) return value;
         long shiftedValue = Math.abs(value);
@@ -185,7 +201,8 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return shiftedValue;
     }
 
-    public Long keepSignificantFigures( Long value, int numSigFigs ) {
+    public Long keepSignificantFigures( Long value,
+                                        int numSigFigs ) {
         if (value == 0l) return value;
         if (numSigFigs < 0) return value;
         if (numSigFigs == 0) return 0l;

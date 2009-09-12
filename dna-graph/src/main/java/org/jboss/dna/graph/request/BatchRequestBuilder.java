@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
@@ -44,6 +45,7 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * remove and return the enqueued requests (as a {@link CompositeRequest} if there is more than one enqueued request).
  * </p>
  */
+@NotThreadSafe
 public class BatchRequestBuilder {
 
     private LinkedList<Request> requests;

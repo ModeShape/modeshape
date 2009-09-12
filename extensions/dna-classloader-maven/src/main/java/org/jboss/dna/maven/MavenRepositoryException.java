@@ -25,7 +25,6 @@ package org.jboss.dna.maven;
 
 /**
  * An configuration or system failure exception.
- * @author Randall Hauch
  */
 public class MavenRepositoryException extends RuntimeException {
 
@@ -45,7 +44,8 @@ public class MavenRepositoryException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public MavenRepositoryException( String message, Throwable cause ) {
+    public MavenRepositoryException( String message,
+                                     Throwable cause ) {
         super(message, cause);
 
     }

@@ -45,9 +45,6 @@ import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DOUBLE} values.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @Immutable
 public class DoubleValueFactory extends AbstractValueFactory<Double> {
@@ -67,8 +64,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
         } catch (NumberFormatException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            Double.class.getSimpleName(),
-                                                                            value), err);
+                                                                              Double.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -100,8 +97,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
      */
     public Double create( boolean value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Double.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Double.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -127,8 +124,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
         if (result == Double.NEGATIVE_INFINITY || result == Double.POSITIVE_INFINITY) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(BigDecimal.class.getSimpleName(),
-                                                                            Double.class.getSimpleName(),
-                                                                            value));
+                                                                              Double.class.getSimpleName(),
+                                                                              value));
         }
         return result;
     }
@@ -164,8 +161,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
      */
     public Double create( Name value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -173,8 +170,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
      */
     public Double create( Path value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -183,8 +180,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     public Double create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -192,8 +189,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
      */
     public Double create( URI value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  URI.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    URI.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -203,8 +200,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
      */
     public Double create( UUID value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

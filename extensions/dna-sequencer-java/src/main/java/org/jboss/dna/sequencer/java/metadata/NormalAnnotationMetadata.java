@@ -24,7 +24,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * Metadata for normal annotations.
  */
 public class NormalAnnotationMetadata extends AnnotationMetadata {
     private boolean normal;

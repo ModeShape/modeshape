@@ -39,21 +39,21 @@ import org.jboss.dna.common.util.CheckArg;
  * <p>
  * This factory using a naming convention where the name supplied to the {@link #createSession(String)} contains both the name of
  * the repository and the name of the workspace. Typically, this is <i><code>repositoryName/workspaceName</code></i>, where
- * <code>repositoryName</code> is the name under which the Repository instance was bound, and <code>workspaceName</code> is
- * the name of the workspace. Note that this method looks for the last delimiter in the whole name to distinguish between the
+ * <code>repositoryName</code> is the name under which the Repository instance was bound, and <code>workspaceName</code> is the
+ * name of the workspace. Note that this method looks for the last delimiter in the whole name to distinguish between the
  * repository and workspace names.
  * </p>
  * <p>
  * For example, if "<code>java:comp/env/repository/dataRepository/myWorkspace</code>" is passed to the
- * {@link #createSession(String)} method, this factory will look for a {@link Repository} instance registered with the name "<code>java:comp/env/repository/dataRepository</code>"
- * and use it to {@link Repository#login(String) create a session} to the workspace named "<code>myWorkspace</code>".
+ * {@link #createSession(String)} method, this factory will look for a {@link Repository} instance registered with the name "
+ * <code>java:comp/env/repository/dataRepository</code>" and use it to {@link Repository#login(String) create a session} to the
+ * workspace named "<code>myWorkspace</code>".
  * </p>
  * <p>
  * By default, this factory creates an anonymous JCR session. To use sessions with specific {@link Credentials}, simply
  * {@link #registerCredentials(String, Credentials) register} credentials for the appropriate repository/workspace name. For
  * security reasons, it is not possible to retrieve the Credentials once registered with this factory.
  * </p>
- * @author Randall Hauch
  */
 public abstract class AbstractSessionFactory implements SessionFactory {
 
@@ -73,6 +73,7 @@ public abstract class AbstractSessionFactory implements SessionFactory {
     /**
      * Create an instance of the factory by supplying naming context and the characters that may be used to delimit the workspace
      * name from the repository name.
+     * 
      * @param workspaceDelimiters the delimiters, or null/empty if the default delimiter of '/' should be used.
      * @throws IllegalArgumentException if the context parameter is null
      */
@@ -104,10 +105,12 @@ public abstract class AbstractSessionFactory implements SessionFactory {
     /**
      * Convenience method to bind a repository in JNDI. Repository instances can be bound into JNDI using any technique, so this
      * method need not be used. <i>Note that the name should not contain the workspace part.</i>
+     * 
      * @param name the name of the repository, without the workspace name component.
      * @param repository the repository to be bound, or null if an existing repository should be unbound.
      */
-    public void registerRepository( String name, Repository repository ) {
+    public void registerRepository( String name,
+                                    Repository repository ) {
         assert name != null;
         // Remove all trailing delimiters ...
         name = name.replaceAll("[" + this.workspaceDelimsRegexCharacterSet + "]+$", "");
@@ -118,7 +121,8 @@ public abstract class AbstractSessionFactory implements SessionFactory {
         }
     }
 
-    protected abstract void doRegisterRepository( String name, Repository repository ) throws SystemFailureException;
+    protected abstract void doRegisterRepository( String name,
+                                                  Repository repository ) throws SystemFailureException;
 
     protected abstract void doUnregisterRepository( String name ) throws SystemFailureException;
 
@@ -128,6 +132,7 @@ public abstract class AbstractSessionFactory implements SessionFactory {
      * Register the credentials for the repository and workspace given by the supplied name, username and password. This is
      * equivalent to calling <code>registerCredentials(name, new SimpleCredentials(username,password))</code>, although if
      * <code>username</code> is null then this is equivalent to <code>registerCredentials(name,null)</code>.
+     * 
      * @param name the name of the repository and workspace
      * @param username the username to use, or null if the existing credentials for the named workspace should be removed
      * @param password the password, may be null or empty
@@ -135,7 +140,9 @@ public abstract class AbstractSessionFactory implements SessionFactory {
      * @see #registerCredentials(String, Credentials)
      * @see #removeCredentials(String)
      */
-    public boolean registerCredentials( String name, String username, char[] password ) {
+    public boolean registerCredentials( String name,
+                                        String username,
+                                        char[] password ) {
         if (password == null && username != null) password = new char[] {};
         Credentials creds = username == null ? null : new SimpleCredentials(username, password);
         return registerCredentials(name, creds);
@@ -144,13 +151,15 @@ public abstract class AbstractSessionFactory implements SessionFactory {
     /**
      * Register the credentials to be used for the named repository and workspace. Use the same name as used to
      * {@link #createSession(String) create sessions}.
+     * 
      * @param name the name of the repository and workspace
      * @param credentials the credentials to use, or null if the existing credentials for the named workspace should be removed
      * @return true if this overwrote existing credentials
      * @see #registerCredentials(String, String, char[])
      * @see #removeCredentials(String)
      */
-    public boolean registerCredentials( String name, Credentials credentials ) {
+    public boolean registerCredentials( String name,
+                                        Credentials credentials ) {
         boolean foundExisting = false;
         name = name != null ? name.trim() : null;
         if (credentials == null) {
@@ -164,6 +173,7 @@ public abstract class AbstractSessionFactory implements SessionFactory {
     /**
      * Remove any credentials associated with the named repository and workspace. This is equivalent to calling
      * <code>registerCredentials(name,null)</code>.
+     * 
      * @param name the name of the repository and workspace
      * @return true if existing credentials were found and removed, or false if no such credentials existed
      * @see #registerCredentials(String, Credentials)

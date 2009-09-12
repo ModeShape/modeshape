@@ -79,7 +79,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- *
+ * DNA implementation of a {@link Workspace JCR Workspace}.
  */
 @NotThreadSafe
 final class JcrWorkspace implements Workspace {

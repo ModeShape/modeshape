@@ -28,11 +28,8 @@ import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 
 /**
- * A list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in which they
- * were encountered (although this cannot be guaranteed in contexts involving multiple threads or processes).
- * 
- * @author Randall Hauch
- * @author John Verhaeg
+ * A simple {@link Problems} collection. The problems will be {@link #iterator() returned} in the order in which they were
+ * encountered (although this cannot be guaranteed in contexts involving multiple threads or processes).
  */
 @NotThreadSafe
 public class SimpleProblems extends AbstractProblems {

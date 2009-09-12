@@ -24,11 +24,13 @@
 package org.jboss.dna.graph.cache;
 
 import java.util.concurrent.TimeUnit;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * @author Randall Hauch
+ * A basic mutable {@link CachePolicy} implementation.
  */
+@NotThreadSafe
 public class BasicCachePolicy implements CachePolicy {
 
     private static final long serialVersionUID = 1L;

@@ -23,20 +23,21 @@
  */
 package org.jboss.dna.graph;
 
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
-
 
 /**
  * A lexicon of internal and implementation-specific information
  */
+@Immutable
 public class DnaIntLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.jboss.org/dna/internal/1.0";
         public static final String PREFIX = "dnaint";
     }
-    
+
     public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
-    
+
 }

@@ -27,13 +27,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import net.jcip.annotations.ThreadSafe;
 
 /**
  * A factory for creating {@link Binary} instances. This interface extends the {@link ValueFactory} generic interface and adds
  * specific methods for creating binary objects.
- * 
- * @author Randall Hauch
  */
+@ThreadSafe
 public interface BinaryFactory extends ValueFactory<Binary> {
 
     /**

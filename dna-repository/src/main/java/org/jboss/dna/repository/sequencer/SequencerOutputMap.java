@@ -43,9 +43,6 @@ import org.jboss.dna.graph.sequencer.SequencerOutput;
 /**
  * A basic {@link SequencerOutput} that records all information in-memory and which organizes the properties by {@link Path node
  * paths} and provides access to the nodes in a natural path-order.
- * 
- * @author Randall Hauch
- * @author John Verhaeg
  */
 @NotThreadSafe
 public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOutputMap.Entry> {

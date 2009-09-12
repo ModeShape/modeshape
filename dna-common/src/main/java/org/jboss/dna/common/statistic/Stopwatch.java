@@ -28,8 +28,7 @@ import org.jboss.dna.common.math.Duration;
 import org.jboss.dna.common.math.DurationOperations;
 
 /**
- * Provides a mechanism to measure time in the same was as a physical stopwatch.
- * @author Randall Hauch
+ * Provides a mechanism to measure time in the same way as a physical stopwatch.
  */
 @NotThreadSafe
 public class Stopwatch implements Comparable<Stopwatch> {
@@ -47,7 +46,8 @@ public class Stopwatch implements Comparable<Stopwatch> {
         this(detailedStats, null);
     }
 
-    public Stopwatch( boolean detailedStats, String description ) {
+    public Stopwatch( boolean detailedStats,
+                      String description ) {
         this.description = description != null ? description : "";
         this.detailedStats = detailedStats ? new DetailedStatistics<Duration>(new DurationOperations()) : null;
         this.stats = detailedStats ? this.detailedStats : new SimpleStatistics<Duration>(new DurationOperations());
@@ -61,6 +61,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
     /**
      * Start the stopwatch and begin recording the statistics a new run. This method does nothing if the stopwatch is already
      * {@link #isRunning() running}
+     * 
      * @see #isRunning()
      */
     public void start() {
@@ -72,6 +73,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
     /**
      * Stop the stopwatch and record the statistics for the latest run. This method does nothing if the stopwatch is not currently
      * {@link #isRunning() running}
+     * 
      * @see #isRunning()
      */
     public void stop() {
@@ -84,6 +86,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Return the number of runs (complete starts and stops) this stopwatch has undergone.
+     * 
      * @return the number of runs.
      * @see #isRunning()
      */
@@ -93,6 +96,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Return whether this stopwatch is currently running.
+     * 
      * @return true if running, or false if not
      */
     public boolean isRunning() {
@@ -101,8 +105,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Get the total duration that this stopwatch has recorded.
+     * 
      * @return the total duration, or an empty duration if this stopwatch has not been used since creation or being
-     * {@link #reset() reset}
+     *         {@link #reset() reset}
      */
     public Duration getTotalDuration() {
         return this.stats.getTotal();
@@ -110,8 +115,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Get the average duration that this stopwatch has recorded.
+     * 
      * @return the average duration, or an empty duration if this stopwatch has not been used since creation or being
-     * {@link #reset() reset}
+     *         {@link #reset() reset}
      */
     public Duration getAverageDuration() {
         return this.stats.getMean();
@@ -119,8 +125,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Get the median duration that this stopwatch has recorded.
+     * 
      * @return the median duration, or an empty duration if this stopwatch has not been used since creation or being
-     * {@link #reset() reset}
+     *         {@link #reset() reset}
      */
     public Duration getMedianDuration() {
         return this.detailedStats != null ? this.detailedStats.getMedian() : new Duration(0l);
@@ -128,8 +135,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Get the minimum duration that this stopwatch has recorded.
+     * 
      * @return the total minimum, or an empty duration if this stopwatch has not been used since creation or being
-     * {@link #reset() reset}
+     *         {@link #reset() reset}
      */
     public Duration getMinimumDuration() {
         return this.stats.getMinimum();
@@ -137,8 +145,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Get the maximum duration that this stopwatch has recorded.
+     * 
      * @return the maximum duration, or an empty duration if this stopwatch has not been used since creation or being
-     * {@link #reset() reset}
+     *         {@link #reset() reset}
      */
     public Duration getMaximumDuration() {
         return this.stats.getMaximum();
@@ -146,6 +155,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Return this stopwatch's simple statistics.
+     * 
      * @return the statistics
      * @see #getDetailedStatistics()
      */
@@ -155,6 +165,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Return this stopwatch's detailed statistics, if they are being kept.
+     * 
      * @return the statistics
      * @see #getSimpleStatistics()
      */
@@ -164,8 +175,9 @@ public class Stopwatch implements Comparable<Stopwatch> {
 
     /**
      * Return true if detailed statistics are being kept.
+     * 
      * @return true if {@link #getDetailedStatistics() detailed statistics} are being kept, or false if only
-     * {@link #getSimpleStatistics() simple statistics} are being kept.
+     *         {@link #getSimpleStatistics() simple statistics} are being kept.
      */
     public boolean isDetailedStatistics() {
         return this.detailedStats != null;
@@ -182,12 +194,14 @@ public class Stopwatch implements Comparable<Stopwatch> {
      * focused around the values that are up to 'numSigmas' above and below the {@link #getMedianDuration() median}, and all
      * values outside of this range are placed in the first and last bucket.
      * </p>
-     * @param numSigmas the number of standard deviations from the {@link #getMedianDuration() median}, or 0 if the buckets of
-     * the histogram should be evenly distributed
+     * 
+     * @param numSigmas the number of standard deviations from the {@link #getMedianDuration() median}, or 0 if the buckets of the
+     *        histogram should be evenly distributed
      * @return the histogram
      */
     public Histogram<Duration> getHistogram( int numSigmas ) {
-        return this.detailedStats != null ? this.detailedStats.getHistogram(numSigmas) : new Histogram<Duration>(this.stats.getMathOperations());
+        return this.detailedStats != null ? this.detailedStats.getHistogram(numSigmas) : new Histogram<Duration>(
+                                                                                                                 this.stats.getMathOperations());
     }
 
     /**

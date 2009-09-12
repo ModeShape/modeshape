@@ -36,8 +36,6 @@ import org.jboss.dna.graph.property.Property;
 
 /**
  * Instruction to read all of the children of a node at a specific location.
- * 
- * @author Randall Hauch
  */
 public class ReadAllChildrenRequest extends CacheableRequest implements Iterable<Location> {
 

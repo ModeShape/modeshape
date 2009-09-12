@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 import javax.naming.Referenceable;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
@@ -133,9 +134,8 @@ import org.jboss.dna.graph.request.CacheableRequest;
  * delegate authentication to JAAS. Either way, just realize that it's perfectly acceptable for the connector to require its own
  * security properties.
  * </p>
- * 
- * @author Randall Hauch
  */
+@NotThreadSafe
 public interface RepositorySource extends Referenceable, Serializable {
 
     /**
@@ -160,7 +160,8 @@ public interface RepositorySource extends Referenceable, Serializable {
     String getName();
 
     /**
-     * Get a connection from this source.
+     * Get a connection from this source. Even though each RepositorySource need not be thread safe, this method should be safe to
+     * be called concurrently by multiple threads.
      * 
      * @return a connection
      * @throws RepositorySourceException if there is a problem obtaining a connection

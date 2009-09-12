@@ -66,7 +66,6 @@ import org.xml.sax.SAXException;
  * {@link #getClassLoader(ClassLoader,MavenId...) class loader} by specifying the {@link MavenId artifact identifiers} for the
  * libraries used directly by your code. This class loader will add any libraries that are required by those you supply.
  * </p>
- * @author Randall Hauch
  */
 public class MavenRepository implements ClassLoaderFactory {
 
@@ -86,16 +85,18 @@ public class MavenRepository implements ClassLoaderFactory {
     /**
      * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
      * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
+     * 
      * @param parent the parent class loader that will be consulted before any project class loaders; may be null if the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this class
-     * should be used
+     *        {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this
+     *        class should be used
      * @param mavenIds the IDs of the libraries in this Maven repository
      * @return the class loader
      * @see #exists(MavenId)
      * @see #exists(MavenId,MavenId...)
      * @throws IllegalArgumentException if no Maven IDs are passed in or if any of the IDs are null
      */
-    public ClassLoader getClassLoader( ClassLoader parent, MavenId... mavenIds ) {
+    public ClassLoader getClassLoader( ClassLoader parent,
+                                       MavenId... mavenIds ) {
         CheckArg.isNotEmpty(mavenIds, "mavenIds");
         CheckArg.containsNoNulls(mavenIds, "mavenIds");
         return this.classLoaders.getClassLoader(parent, mavenIds);
@@ -104,6 +105,7 @@ public class MavenRepository implements ClassLoaderFactory {
     /**
      * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
      * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
+     * 
      * @param coordinates the IDs of the libraries in this Maven repository
      * @return the class loader
      * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
@@ -115,14 +117,16 @@ public class MavenRepository implements ClassLoaderFactory {
     /**
      * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
      * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
+     * 
      * @param parent the parent class loader that will be consulted before any project class loaders; may be null if the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this class
-     * should be used
+     *        {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this
+     *        class should be used
      * @param coordinates the IDs of the libraries in this Maven repository
      * @return the class loader
      * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
      */
-    public ClassLoader getClassLoader( ClassLoader parent, String... coordinates ) {
+    public ClassLoader getClassLoader( ClassLoader parent,
+                                       String... coordinates ) {
         CheckArg.isNotEmpty(coordinates, "coordinates");
         CheckArg.containsNoNulls(coordinates, "coordinates");
         MavenId[] mavenIds = new MavenId[coordinates.length];
@@ -135,6 +139,7 @@ public class MavenRepository implements ClassLoaderFactory {
 
     /**
      * Determine whether the identified library exists in this Maven repository.
+     * 
      * @param mavenId the ID of the library
      * @return true if this repository contains the library, or false if it does not exist (or the ID is null)
      * @throws MavenRepositoryException if there is a problem connecting to or using the Maven repository, as configured
@@ -148,13 +153,15 @@ public class MavenRepository implements ClassLoaderFactory {
 
     /**
      * Determine which of the identified libraries exist in this Maven repository.
+     * 
      * @param firstId the first ID of the library to check
      * @param mavenIds the IDs of the libraries; any null IDs will be ignored
      * @return the set of IDs for libraries that do exist in this repository; never null
      * @throws MavenRepositoryException if there is a problem connecting to or using the Maven repository, as configured
      * @see #exists(MavenId)
      */
-    public Set<MavenId> exists( MavenId firstId, MavenId... mavenIds ) throws MavenRepositoryException {
+    public Set<MavenId> exists( MavenId firstId,
+                                MavenId... mavenIds ) throws MavenRepositoryException {
         if (mavenIds == null || mavenIds.length == 0) return Collections.emptySet();
 
         // Find the set of MavenIds that are not null ...
@@ -184,6 +191,7 @@ public class MavenRepository implements ClassLoaderFactory {
      * <p>
      * This implementation downloads the POM file for the specified project to extract the dependencies and exclusions.
      * </p>
+     * 
      * @param mavenId the ID of the project; may not be null
      * @return the list of dependencies
      * @throws IllegalArgumentException if the MavenId reference is null
@@ -204,16 +212,19 @@ public class MavenRepository implements ClassLoaderFactory {
      * <p>
      * This implementation downloads the POM file for the specified project to extract the dependencies and exclusions.
      * </p>
+     * 
      * @param mavenId the ID of the Maven project for which the dependencies are to be obtained
      * @param pomStream the stream to the POM file
      * @param allowedScopes the set of scopes that are to be allowed in the dependency list; if null, the default scopes of
-     * {@link MavenDependency.Scope#getRuntimeScopes()} are used
+     *        {@link MavenDependency.Scope#getRuntimeScopes()} are used
      * @return the list of dependencies; never null
      * @throws IllegalArgumentException if the MavenId or InputStream references are null
      * @throws IOException if an error occurs reading the stream
      * @throws MavenRepositoryException if there is a problem reading the POM file given the supplied stream and MavenId
      */
-    protected List<MavenDependency> getDependencies( MavenId mavenId, InputStream pomStream, MavenDependency.Scope... allowedScopes ) throws IOException {
+    protected List<MavenDependency> getDependencies( MavenId mavenId,
+                                                     InputStream pomStream,
+                                                     MavenDependency.Scope... allowedScopes ) throws IOException {
         CheckArg.isNotNull(mavenId, "mavenId");
         CheckArg.isNotNull(pomStream, "pomStream");
         EnumSet<MavenDependency.Scope> includedScopes = MavenDependency.Scope.getRuntimeScopes();
@@ -271,7 +282,9 @@ public class MavenRepository implements ClassLoaderFactory {
 
                 // Extract the Maven dependency ...
                 if (depGroupId == null || depArtifactId == null || depVersion == null) {
-                    this.logger.trace("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}", mavenId, dependencyNode);
+                    this.logger.trace("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}",
+                                      mavenId,
+                                      dependencyNode);
                     continue; // not enough information, so skip
                 }
                 MavenDependency dependency = new MavenDependency(depGroupId, depArtifactId, depVersion, depClassifier);
@@ -290,7 +303,9 @@ public class MavenRepository implements ClassLoaderFactory {
                     String excludedArtifactId = (String)artifactIdExpression.evaluate(exclusionNode, XPathConstants.STRING);
 
                     if (excludedGroupId == null || excludedArtifactId == null) {
-                        this.logger.trace("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ", mavenId, exclusionNode);
+                        this.logger.trace("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ",
+                                          mavenId,
+                                          exclusionNode);
                         continue; // not enough information, so skip
                     }
                     MavenId excludedId = new MavenId(excludedGroupId, excludedArtifactId);
@@ -319,13 +334,16 @@ public class MavenRepository implements ClassLoaderFactory {
      * Get the URL for the artifact with the specified type in the given Maven project. The resulting URL can be used to
      * {@link URL#openConnection() connect} to the repository to {@link URLConnection#getInputStream() read} or
      * {@link URLConnection#getOutputStream() write} the artifact's content.
+     * 
      * @param mavenId the ID of the Maven project; may not be null
      * @param artifactType the type of artifact; may be null, but the URL will not be able to be read or written to
      * @param signatureType the type of signature; may be null if the signature file is not desired
      * @return the URL to this artifact; never null
      * @throws MalformedURLException if the supplied information cannot be turned into a valid URL
      */
-    public URL getUrl( MavenId mavenId, ArtifactType artifactType, SignatureType signatureType ) throws MalformedURLException {
+    public URL getUrl( MavenId mavenId,
+                       ArtifactType artifactType,
+                       SignatureType signatureType ) throws MalformedURLException {
         return this.urlProvider.getUrl(mavenId, artifactType, signatureType, false);
     }
 
@@ -333,21 +351,26 @@ public class MavenRepository implements ClassLoaderFactory {
      * Get the URL for the artifact with the specified type in the given Maven project. The resulting URL can be used to
      * {@link URL#openConnection() connect} to the repository to {@link URLConnection#getInputStream() read} or
      * {@link URLConnection#getOutputStream() write} the artifact's content.
+     * 
      * @param mavenId the ID of the Maven project; may not be null
      * @param artifactType the type of artifact; may be null, but the URL will not be able to be read or written to
      * @param signatureType the type of signature; may be null if the signature file is not desired
      * @param createIfRequired true if the node structure should be created if any part of it does not exist; this always expects
-     * that the path to the top of the repository tree exists.
+     *        that the path to the top of the repository tree exists.
      * @return the URL to this artifact; never null
      * @throws MalformedURLException if the supplied information cannot be turned into a valid URL
      */
-    public URL getUrl( MavenId mavenId, ArtifactType artifactType, SignatureType signatureType, boolean createIfRequired ) throws MalformedURLException {
+    public URL getUrl( MavenId mavenId,
+                       ArtifactType artifactType,
+                       SignatureType signatureType,
+                       boolean createIfRequired ) throws MalformedURLException {
         return this.urlProvider.getUrl(mavenId, artifactType, signatureType, createIfRequired);
     }
 
     /**
      * This method is called to signal this repository that the POM file for a project has been updated. This method notifies the
      * associated class loader of the change, which will adapt appropriately.
+     * 
      * @param mavenId
      */
     protected void notifyUpdatedPom( MavenId mavenId ) {

@@ -54,8 +54,6 @@ import net.jcip.annotations.Immutable;
  * heterogeneous values, so casting may not always work. Also, this technique guarantees that the values are properly converted if
  * the type is not what you expected.
  * </p>
- * 
- * @author Randall Hauch
  */
 @Immutable
 public interface Property extends Iterable<Object>, Comparable<Property>, Readable {
