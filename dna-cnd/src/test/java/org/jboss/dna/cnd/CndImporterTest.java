@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.collection.SimpleProblems;
+import org.jboss.dna.common.text.TokenStream.ParsingException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -133,40 +134,76 @@ public class CndImporterTest {
         return result;
     }
 
-    @Test
-    public void shouldReportErrorIfTheNodeTypeNameIsEmpty() throws IOException {
+    @Test( expected = ParsingException.class )
+    public void shouldReportErrorIfTheNodeTypeNameIsEmpty() {
         String cnd = "<ns = 'http://namespace.com/ns'> [] abstract";
-        importer.importFrom(cnd, problems, "string");
-        // printProblems();
-        assertThat(problems.size(), is(1));
-        assertThat(problems.iterator().next().getMessageString(), is("missing STRING at ']'"));
+        importer.parse(cnd);
     }
 
-    @Test
-    public void shouldReportErrorIfTheNodeTypeNameIsBlank() throws IOException {
+    @Test( expected = ParsingException.class )
+    public void shouldReportErrorIfTheNodeTypeNameIsBlank() {
         String cnd = "<ns = 'http://namespace.com/ns'> [ ] abstract";
-        importer.importFrom(cnd, problems, "string");
-        // printProblems();
-        assertThat(problems.size(), is(1));
-        assertThat(problems.iterator().next().getMessageString(), is("missing STRING at ']'"));
+        importer.parse(cnd);
     }
 
-    @Test
-    public void shouldReportErrorIfTheNodeTypeNameIsNotFollowedByClosingBracket() throws IOException {
+    @Test( expected = ParsingException.class )
+    public void shouldReportErrorIfTheNodeTypeNameIsNotFollowedByClosingBracket() {
         String cnd = "<ns = 'http://namespace.com/ns'> [  abstract";
-        importer.importFrom(cnd, problems, "string");
-        // printProblems();
-        assertThat(problems.size(), is(1));
-        assertThat(problems.iterator().next().getMessageString(), is("mismatched input 'abstract' expecting STRING"));
+        importer.parse(cnd);
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldReportErrorIfTheNodeTypeNameUsesInvalidNamespace() {
+        String cnd = "<ns = 'http://namespace.com/ns'> [xyz:acme] abstract";
+        importer.parse(cnd);
     }
 
     @Test
-    public void shouldReportErrorIfTheNodeTypeNameUsesInvalidNamespace() throws IOException {
-        String cnd = "<ns = 'http://namespace.com/ns'> [xyz:acme] abstract";
-        importer.importFrom(cnd, problems, "string");
-        // printProblems();
-        assertThat(problems.size(), is(1));
-        assertThat(problems.iterator().next().getMessage(), is(CndI18n.expectedValidNameLiteral));
+    public void shouldParseNamespaceDeclarationWithQuotedUriAndQuotedPrefix() {
+        String cnd = "<'ns' = 'http://namespace.com/ns'>";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseNamespaceDeclarationWithUnquotedUriAndQuotedPrefix() {
+        String cnd = "<'ns' = http_namespace.com_ns>";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseNamespaceDeclarationWithQuotedUriAndUnquotedPrefix() {
+        String cnd = "<ns = 'http://namespace.com/ns'>";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseNamespaceDeclarationWithUnquotedUriAndUnquotedPrefix() {
+        String cnd = "<ns = http_namespace.com_ns>";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseMinimalNodeDefinition() {
+        String cnd = "[nodeTypeName]";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseMinimalNodeDefinitionWithSupertype() {
+        String cnd = "[nodeTypeName] > supertype";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseMinimalNodeDefinitionWithSupertypes() {
+        String cnd = "[nodeTypeName] > supertype1, supertype2";
+        importer.parse(cnd);
+    }
+
+    @Test
+    public void shouldParseNodeDefinitionWithNameThatIsKeyword() {
+        String cnd = "[abstract] > supertype1, supertype2";
+        importer.parse(cnd);
     }
 
     @Test
@@ -174,8 +211,8 @@ public class CndImporterTest {
         // importer.setDebug(true);
         String cnd = "<ex = 'http://namespace.com/ns'>\n"
                      + "[ex:NodeType] > ex:ParentType1, ex:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
-                     + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2'\n"
-                     + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder\n"
+                     + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION\n"
+                     + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder < 'constraint1', 'constraint2'"
                      + "+ ex:node (ex:reqType1, ex:reqType2) = ex:defaultType mandatory autocreated protected sns version";
         importer.importFrom(cnd, problems, "string");
         // assertThat(problems.size(), is(1));
@@ -503,7 +540,11 @@ public class CndImporterTest {
         assertThat(nodeType, hasProperty(JcrLexicon.IS_ABSTRACT, options.contains(NodeOptions.Abstract)));
         assertThat(nodeType, hasProperty(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, options.contains(NodeOptions.Ordered)));
         assertThat(nodeType, hasProperty(JcrLexicon.IS_QUERYABLE, !options.contains(NodeOptions.Queryable)));
-        assertThat(nodeType, hasProperty(JcrLexicon.PRIMARY_ITEM_NAME, name(primaryItemName)));
+        if (primaryItemName != null) {
+            assertThat(nodeType, hasProperty(JcrLexicon.PRIMARY_ITEM_NAME, name(primaryItemName)));
+        } else {
+            assertThat(nodeType.getPropertiesByName().containsKey(JcrLexicon.PRIMARY_ITEM_NAME), is(false));
+        }
         if (superTypes.length != 0) {
             Name[] superTypeNames = new Name[superTypes.length];
             for (int i = 0; i != superTypes.length; ++i) {

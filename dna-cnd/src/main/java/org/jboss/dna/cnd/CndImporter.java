@@ -23,7 +23,7 @@
  */
 package org.jboss.dna.cnd;
 
-import java.io.ByteArrayInputStream;
+import static org.jboss.dna.common.text.TokenStream.ANY_VALUE;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,30 +34,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
-import org.antlr.runtime.ANTLRFileStream;
-import org.antlr.runtime.ANTLRInputStream;
-import org.antlr.runtime.CharStream;
-import org.antlr.runtime.CommonTokenStream;
-import org.antlr.runtime.RecognitionException;
-import org.antlr.runtime.TokenStream;
-import org.antlr.runtime.tree.CommonTree;
-import org.antlr.runtime.tree.RewriteCardinalityException;
 import org.jboss.dna.common.collection.Problems;
-import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.text.TokenStream;
+import org.jboss.dna.common.text.TokenStream.ParsingException;
+import org.jboss.dna.common.text.TokenStream.Position;
+import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
-import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 
 /**
  * A class that imports the node types contained in a JCR Compact Node Definition (CND) file into graph content. The content is
@@ -71,33 +67,53 @@ import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 @NotThreadSafe
 public class CndImporter {
 
-    private static final Set<String> VALID_PROPERTY_TYPES = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                            Arrays.asList(new String[] {
-                                                                                                                "STRING",
-                                                                                                                "BINARY", "LONG",
-                                                                                                                "DOUBLE",
-                                                                                                                "BOOLEAN",
-                                                                                                                "DECIMAL",
-                                                                                                                "DATE", "NAME",
-                                                                                                                "PATH",
-                                                                                                                "REFERENCE",
-                                                                                                                "WEAKREFERENCE",
-                                                                                                                "URI",
-                                                                                                                "UNDEFINED"})));
-    private static final Set<String> VALID_ON_PARENT_VERSION = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                               Arrays.asList(new String[] {
-                                                                                                                   "COPY",
-                                                                                                                   "VERSION",
-                                                                                                                   "INITIALIZE",
-                                                                                                                   "COMPUTE",
-                                                                                                                   "IGNORE",
-                                                                                                                   "ABORT"})));
+    protected final List<String> VALID_PROPERTY_TYPES = Collections.unmodifiableList(Arrays.asList(new String[] {"STRING",
+        "BINARY", "LONG", "DOUBLE", "BOOLEAN", "DATE", "NAME", "PATH", "REFERENCE", "WEAKREFERENCE", "DECIMAL", "URI",
+        "UNDEFINED", "*", "?"}));
+
+    protected final List<String> VALID_ON_PARENT_VERSION = Collections.unmodifiableList(Arrays.asList(new String[] {"COPY",
+        "VERSION", "INITIALIZE", "COMPUTE", "IGNORE", "ABORT"}));
+
+    protected final Set<String> VALID_QUERY_OPERATORS = Collections.unmodifiableSet(new HashSet<String>(
+                                                                                                        Arrays.asList(new String[] {
+                                                                                                            "=", "<>", "<", "<=",
+                                                                                                            ">", ">=", "LIKE"})));
+
     protected final Destination destination;
-    protected final Path parentPath;
-    private boolean debug = false;
+    protected final Path outputPath;
+    protected final PropertyFactory propertyFactory;
+    protected final PathFactory pathFactory;
+    protected final NameFactory nameFactory;
+    protected final ValueFactories valueFactories;
+    protected final boolean jcr170;
 
     /**
      * Create a new importer that will place the content in the supplied destination under the supplied path.
+     * 
+     * @param destination the destination where content is to be written
+     * @param parentPath the path in the destination below which the generated content is to appear
+     * @param compatibleWithPreJcr2 true if this parser should accept the CND format that was used in the reference implementation
+     *        prior to JCR 2.0.
+     * @throws IllegalArgumentException if either parameter is null
+     */
+    public CndImporter( Destination destination,
+                        Path parentPath,
+                        boolean compatibleWithPreJcr2 ) {
+        CheckArg.isNotNull(destination, "destination");
+        CheckArg.isNotNull(parentPath, "parentPath");
+        this.destination = destination;
+        this.outputPath = parentPath;
+        ExecutionContext context = destination.getExecutionContext();
+        this.valueFactories = context.getValueFactories();
+        this.propertyFactory = context.getPropertyFactory();
+        this.pathFactory = valueFactories.getPathFactory();
+        this.nameFactory = valueFactories.getNameFactory();
+        this.jcr170 = compatibleWithPreJcr2;
+    }
+
+    /**
+     * Create a new importer that will place the content in the supplied destination under the supplied path. This parser will
+     * accept the CND format that was used in the reference implementation prior to JCR 2.0.
      * 
      * @param destination the destination where content is to be written
      * @param parentPath the path in the destination below which the generated content is to appear
@@ -105,34 +121,7 @@ public class CndImporter {
      */
     public CndImporter( Destination destination,
                         Path parentPath ) {
-        CheckArg.isNotNull(destination, "destination");
-        CheckArg.isNotNull(parentPath, "parentPath");
-        this.destination = destination;
-        this.parentPath = parentPath;
-    }
-
-    void setDebug( boolean value ) {
-        this.debug = value;
-    }
-
-    protected ExecutionContext context() {
-        return this.destination.getExecutionContext();
-    }
-
-    protected NamespaceRegistry namespaces() {
-        return context().getNamespaceRegistry();
-    }
-
-    protected NameFactory nameFactory() {
-        return context().getValueFactories().getNameFactory();
-    }
-
-    protected ValueFactory<String> stringFactory() {
-        return context().getValueFactories().getStringFactory();
-    }
-
-    protected ValueFactory<Boolean> booleanFactory() {
-        return context().getValueFactories().getBooleanFactory();
+        this(destination, parentPath, true);
     }
 
     /**
@@ -147,24 +136,7 @@ public class CndImporter {
     public void importFrom( InputStream stream,
                             Problems problems,
                             String resourceName ) throws IOException {
-        CndLexer lex = new CndLexer(new CaseInsensitiveInputStream(stream));
-        importFrom(lex, resourceName, problems);
-    }
-
-    /**
-     * Import the CND content from the supplied stream, placing the content into the importer's destination.
-     * 
-     * @param content the string containing the CND content
-     * @param problems where any problems encountered during import should be reported
-     * @param resourceName a logical name for the resource name to be used when reporting problems; may be null if there is no
-     *        useful name
-     * @throws IOException if there is a problem reading from the supplied stream
-     */
-    public void importFrom( String content,
-                            Problems problems,
-                            String resourceName ) throws IOException {
-        ByteArrayInputStream stream = new ByteArrayInputStream(content.getBytes());
-        importFrom(stream, problems, resourceName);
+        importFrom(IoUtil.read(stream), problems, resourceName);
     }
 
     /**
@@ -176,163 +148,555 @@ public class CndImporter {
      */
     public void importFrom( File file,
                             Problems problems ) throws IOException {
-        CndLexer lex = new CndLexer(new CaseInsensitiveFileStream(file.getAbsolutePath()));
-        importFrom(lex, file.getCanonicalPath(), problems);
+        importFrom(IoUtil.read(file), problems, file.getCanonicalPath());
     }
 
-    protected void importFrom( CndLexer lexer,
-                               String resourceName,
-                               Problems problems ) {
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        CndParser parser = new Parser(tokens, problems, resourceName);
-
-        // Create a new context with our own namespace registry ...
-        ImportContext context = new ImportContext(context(), problems, resourceName);
-        CommonTree ast = null;
+    /**
+     * Import the CND content from the supplied stream, placing the content into the importer's destination.
+     * 
+     * @param content the string containing the CND content
+     * @param problems where any problems encountered during import should be reported
+     * @param resourceName a logical name for the resource name to be used when reporting problems; may be null if there is no
+     *        useful name
+     */
+    public void importFrom( String content,
+                            Problems problems,
+                            String resourceName ) {
         try {
-            ast = (CommonTree)parser.cnd().getTree();
-        } catch (RecognitionException e) {
-            // already handled by Parser, so we should not handle twice
-        } catch (RewriteCardinalityException e) {
-            // already handled by Parser, so we should not handle twice
+            parse(content);
+            destination.submit();
         } catch (RuntimeException e) {
             problems.addError(e, CndI18n.errorImportingCndContent, (Object)resourceName, e.getMessage());
         }
+    }
 
-        if (ast != null && problems.isEmpty()) {
-
-            // --------------
-            // Namespaces ...
-            // --------------
-
-            /* 
-              NAMESPACES
-               +- NODE (multiple)
-                   +- PREFIX
-                       +- string value
-                   +- URI
-                       +- string value
-             */
-
-            // Get the namespaces before we do anything else ...
-            CommonTree namespaces = (CommonTree)ast.getFirstChildWithType(CndLexer.NAMESPACES);
-            if (namespaces != null) {
-                for (int i = 0; i != namespaces.getChildCount(); ++i) {
-                    CommonTree namespace = (CommonTree)namespaces.getChild(i);
-                    String prefix = namespace.getFirstChildWithType(CndLexer.PREFIX).getChild(0).getText();
-                    String uri = namespace.getFirstChildWithType(CndLexer.URI).getChild(0).getText();
-                    // Register the namespace ...
-                    context.register(removeQuotes(prefix), removeQuotes(uri));
-                }
+    /**
+     * Parse the CND content.
+     * 
+     * @param content the content
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parse( String content ) {
+        Tokenizer tokenizer = new CndTokenizer(false, false);
+        TokenStream tokens = new TokenStream(content, tokenizer, false);
+        tokens.start();
+        while (tokens.hasNext()) {
+            // Keep reading while we can recognize one of the two types of statements ...
+            if (tokens.matches("<", ANY_VALUE, "=", ANY_VALUE, ">")) {
+                parseNamespaceMapping(tokens);
+            } else if (tokens.matches("[", ANY_VALUE, "]")) {
+                parseNodeTypeDefinition(tokens, outputPath);
+            } else {
+                Position position = tokens.previousPosition();
+                throw new ParsingException(position, CndI18n.expectedNamespaceOrNodeDefinition.text(tokens.consume(),
+                                                                                                    position.getLine(),
+                                                                                                    position.getColumn()));
             }
+        }
+    }
 
-            // --------------
-            // Node Types ...
-            // --------------
+    /**
+     * Parse the namespace mapping statement that is next on the token stream.
+     * 
+     * @param tokens the tokens containing the namespace statement; never null
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseNamespaceMapping( TokenStream tokens ) {
+        tokens.consume('<');
+        String prefix = removeQuotes(tokens.consume());
+        tokens.consume('=');
+        String uri = removeQuotes(tokens.consume());
+        tokens.consume('>');
+        // Register the namespace ...
+        destination.getExecutionContext().getNamespaceRegistry().register(prefix, uri);
+    }
 
-            /*
-            NODE_TYPES
-             +- NODE (multiple)
-                 +- NAME                                 [nt:nodeType/@jcr:name]
-                     +- string value
-                 +- PRIMARY_TYPE                         [nt:base/@jcr:primaryType]
-                     +- string with value 'nt:nodeType'
-                 +- SUPERTYPES                           [nt:nodeType/@jcr:supertypes]
-                     +- string value(s)
-                 +- IS_ABSTRACT                          [nt:nodeType/@jcr:isAbstract]
-                     +- string containing boolean value (or false if not present)
-                 +- HAS_ORDERABLE_CHILD_NODES            [nt:nodeType/@jcr:hasOrderableChildNodes]
-                     +- string containing boolean value (or false if not present)
-                 +- IS_MIXIN                             [nt:nodeType/@jcr:isMixin]
-                     +- string containing boolean value (or false if not present)
-                 +- IS_QUERYABLE                         [nt:nodeType/@jcr:isQueryable]
-                     +- string containing boolean value (or true if not present)
-                 +- PRIMARY_ITEM_NAME                    [nt:nodeType/@jcr:primaryItemName]
-                     +- string containing string value
-                 +- PROPERTY_DEFINITION                  [nt:nodeType/@jcr:propertyDefinition]
-                     +- NODE (multiple)
-                         +- NAME                         [nt:propertyDefinition/@jcr:name]
-                             +- string value
-                         +- PRIMARY_TYPE                 [nt:base/@jcr:primaryType]
-                             +- string with value 'nt:propertyDefinition'
-                         +- REQUIRED_TYPE                [nt:propertyDefinition/@jcr:propertyType]
-                             +- string value (limited to one of the predefined types)
-                         +- DEFAULT_VALUES               [nt:propertyDefinition/@jcr:defaultValues]
-                             +- string value(s)
-                         +- MULTIPLE                     [nt:propertyDefinition/@jcr:multiple]
-                             +- string containing boolean value (or false if not present)
-                         +- MANDATORY                    [nt:propertyDefinition/@jcr:mandatory]
-                             +- string containing boolean value (or false if not present)
-                         +- AUTO_CREATED                 [nt:propertyDefinition/@jcr:autoCreated]
-                             +- string containing boolean value (or false if not present)
-                         +- PROTECTED                    [nt:propertyDefinition/@jcr:protected]
-                             +- string containing boolean value (or false if not present)
-                         +- ON_PARENT_VERSION            [nt:propertyDefinition/@jcr:onParentVersion]
-                             +- string value (limited to one of the predefined literal values)
-                         +- QUERY_OPERATORS              
-                             +- string value (containing a comma-separated list of operator literals)
-                         +- IS_FULL_TEXT_SEARCHABLE      [nt:propertyDefinition/@jcr:isFullTextSearchable]
-                             +- string containing boolean value (or true if not present)
-                         +- IS_QUERY_ORDERABLE           [nt:propertyDefinition/@jcr:isQueryOrderable]
-                             +- string containing boolean value (or true if not present)
-                         +- VALUE_CONSTRAINTS            [nt:propertyDefinition/@jcr:valueConstraints]
-                             +- string value(s)
-                 +- CHILD_NODE_DEFINITION                [nt:nodeType/@jcr:childNodeDefinition]
-                     +- NODE (multiple)
-                         +- NAME                         [nt:childNodeDefinition/@jcr:name]
-                             +- string value
-                         +- PRIMARY_TYPE                 [nt:base/@jcr:primaryType]
-                             +- string with value 'nt:childNodeDefinition'
-                         +- REQUIRED_PRIMARY_TYPES       [nt:childNodeDefinition/@jcr:requiredPrimaryTypes]
-                             +- string values (limited to names)
-                         +- DEFAULT_PRIMARY_TYPE         [nt:childNodeDefinition/@jcr:defaultPrimaryType]
-                             +- string value (limited to a name)
-                         +- MANDATORY                    [nt:childNodeDefinition/@jcr:mandatory]
-                             +- string containing boolean value (or false if not present)
-                         +- AUTO_CREATED                 [nt:childNodeDefinition/@jcr:autoCreated]
-                             +- string containing boolean value (or false if not present)
-                         +- PROTECTED                    [nt:childNodeDefinition/@jcr:protected]
-                             +- string containing boolean value (or false if not present)
-                         +- SAME_NAME_SIBLINGS           [nt:childNodeDefinition/@jcr:sameNameSiblings]
-                             +- string containing boolean value (or false if not present)
-                         +- ON_PARENT_VERSION            [nt:childNodeDefinition/@jcr:onParentVersion]
-                             +- string value (limited to one of the predefined literal values)
-            */
+    /**
+     * Parse the node type definition that is next on the token stream.
+     * 
+     * @param tokens the tokens containing the node type definition; never null
+     * @param path the path in the destination under which the node type definition should be stored; never null
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseNodeTypeDefinition( TokenStream tokens,
+                                            Path path ) {
+        // Parse the name, and create the path and a property for the name ...
+        Name name = parseNodeTypeName(tokens);
+        Path nodeTypePath = pathFactory.create(path, name);
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(propertyFactory.create(JcrLexicon.NODE_TYPE_NAME, name));
 
-            // Get the node types ...
-            CommonTree nodeTypes = (CommonTree)ast.getFirstChildWithType(CndLexer.NODE_TYPES);
-            if (nodeTypes != null) {
-                int numNodeTypes = 0;
-                // Walk each of the nodes underneath the NODE_TYPES parent node ...
-                for (int i = 0; i != nodeTypes.getChildCount(); ++i) {
-                    CommonTree nodeType = (CommonTree)nodeTypes.getChild(i);
-                    if (this.debug) System.out.println(nodeType.toStringTree());
-                    Path nodeTypePath = context.createNodeType(nodeType, parentPath);
-                    if (nodeTypePath == null) continue;
-                    ++numNodeTypes;
+        // Read the (optional) supertypes ...
+        List<Name> supertypes = parseSupertypes(tokens);
+        properties.add(propertyFactory.create(JcrLexicon.SUPERTYPES, supertypes)); // even if empty
 
-                    CommonTree propertyDefinitions = (CommonTree)nodeType.getFirstChildWithType(CndLexer.PROPERTY_DEFINITION);
-                    if (propertyDefinitions != null) {
-                        // Walk each of the nodes under PROPERTY_DEFINITION ...
-                        for (int j = 0; j != propertyDefinitions.getChildCount(); ++j) {
-                            CommonTree propDefn = (CommonTree)propertyDefinitions.getChild(j);
-                            context.createPropertyDefinition(propDefn, nodeTypePath);
-                        }
-                    }
+        // Read the node type options ...
+        parseNodeTypeOptions(tokens, properties);
+        destination.create(nodeTypePath, properties);
 
-                    CommonTree childNodeDefinitions = (CommonTree)nodeType.getFirstChildWithType(CndLexer.CHILD_NODE_DEFINITION);
-                    if (childNodeDefinitions != null) {
-                        // Walk each of the nodes under CHILD_NODE_DEFINITION ...
-                        for (int j = 0; j != childNodeDefinitions.getChildCount(); ++j) {
-                            CommonTree childDefn = (CommonTree)childNodeDefinitions.getChild(j);
-                            context.createChildDefinition(childDefn, nodeTypePath);
-                        }
-                    }
-                }
+        // Parse property and child node definitions ...
+        parsePropertyOrChildNodeDefinitions(tokens, nodeTypePath);
+    }
 
-                // Submit the destination
-                destination.submit();
+    /**
+     * Parse a node type name that appears next on the token stream.
+     * 
+     * @param tokens the tokens containing the node type name; never null
+     * @return the node type name
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected Name parseNodeTypeName( TokenStream tokens ) {
+        tokens.consume('[');
+        Name name = parseName(tokens);
+        tokens.consume(']');
+        return name;
+    }
+
+    /**
+     * Parse an optional list of supertypes if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the supertype names; never null
+     * @return the list of supertype names; never null, but possibly empty
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected List<Name> parseSupertypes( TokenStream tokens ) {
+        if (tokens.canConsume('>')) {
+            // There is at least one supertype ...
+            return parseNameList(tokens);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Parse a list of strings, separated by commas. Any quotes surrounding the strings are removed.
+     * 
+     * @param tokens the tokens containing the comma-separated strings; never null
+     * @return the list of string values; never null, but possibly empty
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected List<String> parseStringList( TokenStream tokens ) {
+        List<String> strings = new ArrayList<String>();
+        if (tokens.canConsume('?')) {
+            // This list is variant ...
+            strings.add("?");
+        } else {
+            // Read names until we see a ','
+            do {
+                strings.add(removeQuotes(tokens.consume()));
+            } while (tokens.canConsume(','));
+        }
+        return strings;
+    }
+
+    /**
+     * Parse a list of names, separated by commas. Any quotes surrounding the names are removed.
+     * 
+     * @param tokens the tokens containing the comma-separated strings; never null
+     * @return the list of string values; never null, but possibly empty
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected List<Name> parseNameList( TokenStream tokens ) {
+        List<Name> names = new ArrayList<Name>();
+        if (!tokens.canConsume('?')) {
+            // Read names until we see a ','
+            do {
+                names.add(parseName(tokens));
+            } while (tokens.canConsume(','));
+        }
+        return names;
+    }
+
+    /**
+     * Parse the options for the node types, including whether the node type is orderable, a mixin, abstract, whether it supports
+     * querying, and which property/child node (if any) is the primary item for the node type.
+     * 
+     * @param tokens the tokens containing the comma-separated strings; never null
+     * @param properties the list into which the properties that represent the options should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseNodeTypeOptions( TokenStream tokens,
+                                         List<Property> properties ) {
+        // Set up the defaults ...
+        boolean isOrderable = false;
+        boolean isMixin = false;
+        boolean isAbstract = false;
+        boolean isQueryable = true;
+        Name primaryItem = null;
+        String onParentVersion = "COPY";
+        while (true) {
+            // Keep reading while we see a valid option ...
+            if (tokens.canConsumeAnyOf("ORDERABLE", "ORD", "O")) {
+                tokens.canConsume('?');
+                isOrderable = true;
+            } else if (tokens.canConsumeAnyOf("MIXIN", "MIX", "M")) {
+                tokens.canConsume('?');
+                isMixin = true;
+            } else if (tokens.canConsumeAnyOf("ABSTRACT", "ABS", "A")) {
+                tokens.canConsume('?');
+                isAbstract = true;
+            } else if (tokens.canConsumeAnyOf("NOQUERY", "NOQ")) {
+                tokens.canConsume('?');
+                isQueryable = false;
+            } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "!")) {
+                primaryItem = parseName(tokens);
+                tokens.canConsume('?');
+            } else if (tokens.matchesAnyOf(VALID_ON_PARENT_VERSION)) {
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else if (tokens.matches("OPV")) {
+                // variant on-parent-version
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else {
+                // No more valid options on the stream, so stop ...
+                break;
             }
+        }
+        properties.add(propertyFactory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, isOrderable));
+        properties.add(propertyFactory.create(JcrLexicon.IS_MIXIN, isMixin));
+        properties.add(propertyFactory.create(JcrLexicon.IS_ABSTRACT, isAbstract));
+        properties.add(propertyFactory.create(JcrLexicon.IS_QUERYABLE, isQueryable));
+        properties.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion.toUpperCase()));
+        if (primaryItem != null) {
+            properties.add(propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, primaryItem));
+        }
+    }
+
+    /**
+     * Parse a node type's property or child node definitions that appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definitions; never null
+     * @param nodeTypePath the path in the destination where the node type has been created, and under which the property and
+     *        child node type definitions should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parsePropertyOrChildNodeDefinitions( TokenStream tokens,
+                                                        Path nodeTypePath ) {
+        while (true) {
+            // Keep reading while we see a property definition or child node definition ...
+            if (tokens.matches('-')) {
+                parsePropertyDefinition(tokens, nodeTypePath);
+            } else if (tokens.matches('+')) {
+                parseChildNodeDefinition(tokens, nodeTypePath);
+            } else {
+                // The next token does not signal either one of these, so stop ...
+                break;
+            }
+        }
+    }
+
+    /**
+     * Parse a node type's property definition from the next tokens on the stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param nodeTypePath the path in the destination where the node type has been created, and under which the property and
+     *        child node type definitions should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parsePropertyDefinition( TokenStream tokens,
+                                            Path nodeTypePath ) {
+        tokens.consume('-');
+        Name name = parseName(tokens);
+        Path path = pathFactory.create(nodeTypePath, JcrLexicon.PROPERTY_DEFINITION);
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(propertyFactory.create(JcrLexicon.NAME, name));
+
+        // Parse the (optional) required type ...
+        parsePropertyType(tokens, properties, PropertyType.STRING.getName());
+
+        // Parse the default values ...
+        parseDefaultValues(tokens, properties);
+
+        // Parse the property attributes ...
+        parsePropertyAttributes(tokens, properties, name, path);
+
+        // Parse the property constraints ...
+        parseValueConstraints(tokens, properties);
+
+        // Create the node in the destination ...
+        destination.create(path, properties);
+    }
+
+    /**
+     * Parse the property type, if a valid one appears next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the property type should be placed
+     * @param defaultPropertyType the default property type if none is actually found
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parsePropertyType( TokenStream tokens,
+                                      List<Property> properties,
+                                      String defaultPropertyType ) {
+        if (tokens.canConsume('(')) {
+            // Parse the (optional) property type ...
+            String propertyType = defaultPropertyType;
+            if (tokens.matchesAnyOf(VALID_PROPERTY_TYPES)) {
+                propertyType = tokens.consume();
+                if ("*".equals(propertyType)) propertyType = "UNDEFINED";
+            }
+            tokens.consume(')');
+            properties.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, propertyType.toUpperCase()));
+        }
+    }
+
+    /**
+     * Parse the property definition's default value, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the default values should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseDefaultValues( TokenStream tokens,
+                                       List<Property> properties ) {
+        if (tokens.canConsume('=')) {
+            List<String> defaultValues = parseStringList(tokens);
+            if (!defaultValues.isEmpty()) {
+                properties.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, defaultValues));
+            }
+        }
+    }
+
+    /**
+     * Parse the property definition's value constraints, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the value constraints should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseValueConstraints( TokenStream tokens,
+                                          List<Property> properties ) {
+        if (tokens.canConsume('<')) {
+            List<String> defaultValues = parseStringList(tokens);
+            if (!defaultValues.isEmpty()) {
+                properties.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, defaultValues));
+            }
+        }
+    }
+
+    /**
+     * Parse the property definition's attributes, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the attributes; never null
+     * @param properties the list into which the properties that represents the attributes should be placed
+     * @param propDefnName the name of the property definition; never null
+     * @param propDefnPath the path in the destination to the property definition node; never null
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parsePropertyAttributes( TokenStream tokens,
+                                            List<Property> properties,
+                                            Name propDefnName,
+                                            Path propDefnPath ) {
+        boolean autoCreated = false;
+        boolean mandatory = false;
+        boolean isProtected = false;
+        boolean multiple = false;
+        boolean isFullTextSearchable = true;
+        boolean isQueryOrderable = true;
+        String onParentVersion = "COPY";
+        while (true) {
+            if (tokens.canConsumeAnyOf("AUTOCREATED", "AUT", "A")) {
+                tokens.canConsume('?');
+                autoCreated = true;
+            } else if (tokens.canConsumeAnyOf("MANDATORY", "MAN", "M")) {
+                tokens.canConsume('?');
+                mandatory = true;
+            } else if (tokens.canConsumeAnyOf("PROTECTED", "PRO", "P")) {
+                tokens.canConsume('?');
+                isProtected = true;
+            } else if (tokens.canConsumeAnyOf("MULTIPLE", "MUL", "*")) {
+                tokens.canConsume('?');
+                multiple = true;
+            } else if (tokens.matchesAnyOf(VALID_ON_PARENT_VERSION)) {
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else if (tokens.matches("OPV")) {
+                // variant on-parent-version
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else if (tokens.canConsumeAnyOf("NOFULLTEXT", "NOF")) {
+                tokens.canConsume('?');
+                isFullTextSearchable = false;
+            } else if (tokens.canConsumeAnyOf("NOQUERYORDER", "NQORD")) {
+                tokens.canConsume('?');
+                isQueryOrderable = false;
+            } else if (tokens.canConsumeAnyOf("QUERYOPS", "QOP")) {
+                parseQueryOperators(tokens, properties);
+            } else if (jcr170 && tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
+                // Then this child node is considered the primary item ...
+                Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, propDefnName);
+                destination.setProperties(propDefnPath.getParent(), primaryItem);
+            } else {
+                break;
+            }
+        }
+        properties.add(propertyFactory.create(JcrLexicon.AUTO_CREATED, autoCreated));
+        properties.add(propertyFactory.create(JcrLexicon.MANDATORY, mandatory));
+        properties.add(propertyFactory.create(JcrLexicon.PROTECTED, isProtected));
+        properties.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion.toUpperCase()));
+        properties.add(propertyFactory.create(JcrLexicon.MULTIPLE, multiple));
+        properties.add(propertyFactory.create(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, isFullTextSearchable));
+        properties.add(propertyFactory.create(JcrLexicon.IS_QUERY_ORDERABLE, isQueryOrderable));
+    }
+
+    /**
+     * Parse the property definition's query operators, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the value constraints should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseQueryOperators( TokenStream tokens,
+                                        List<Property> properties ) {
+        if (tokens.canConsume('?')) {
+            return;
+        }
+        // The query operators are expected to be enclosed in a single quote, so therefore will be a single token ...
+        List<String> operators = new ArrayList<String>();
+        String operatorList = removeQuotes(tokens.consume());
+        // Now split this string on ',' ...
+        for (String operatorValue : operatorList.split(",")) {
+            String operator = operatorValue.trim();
+            if (!VALID_QUERY_OPERATORS.contains(operator)) {
+                throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidQueryOperator.text(operator));
+            }
+            operators.add(operator);
+        }
+        if (operators.isEmpty()) {
+            operators.addAll(VALID_QUERY_OPERATORS);
+        }
+        properties.add(propertyFactory.create(JcrLexicon.QUERY_OPERATORS, operators));
+    }
+
+    /**
+     * Parse a node type's child node definition from the next tokens on the stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param nodeTypePath the path in the destination where the node type has been created, and under which the child node type
+     *        definitions should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseChildNodeDefinition( TokenStream tokens,
+                                             Path nodeTypePath ) {
+        tokens.consume('+');
+        Name name = parseName(tokens);
+        Path path = pathFactory.create(nodeTypePath, JcrLexicon.CHILD_NODE_DEFINITION);
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(propertyFactory.create(JcrLexicon.NAME, name));
+
+        parseRequiredPrimaryTypes(tokens, properties);
+        parseDefaultType(tokens, properties);
+        parseNodeAttributes(tokens, properties, name, path);
+
+        // Create the node in the destination ...
+        destination.create(path, properties);
+    }
+
+    /**
+     * Parse the child node definition's list of required primary types, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the required types should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseRequiredPrimaryTypes( TokenStream tokens,
+                                              List<Property> properties ) {
+        if (tokens.canConsume('(')) {
+            List<Name> requiredTypes = parseNameList(tokens);
+            if (requiredTypes.isEmpty()) {
+                requiredTypes.add(JcrNtLexicon.BASE);
+            }
+            properties.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, requiredTypes));
+            tokens.consume(')');
+        }
+    }
+
+    /**
+     * Parse the child node definition's default type, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the definition; never null
+     * @param properties the list into which the property that represents the default primary type should be placed
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseDefaultType( TokenStream tokens,
+                                     List<Property> properties ) {
+        if (tokens.canConsume('=')) {
+            if (!tokens.canConsume('?')) {
+                Name defaultType = parseName(tokens);
+                properties.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, defaultType));
+            }
+        }
+    }
+
+    /**
+     * Parse the child node definition's attributes, if they appear next on the token stream.
+     * 
+     * @param tokens the tokens containing the attributes; never null
+     * @param properties the list into which the properties that represents the attributes should be placed
+     * @param childNodeDefnName the name of the child node definition; never null
+     * @param childNodeDefnPath the path in the destination to the child node definition node; never null
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected void parseNodeAttributes( TokenStream tokens,
+                                        List<Property> properties,
+                                        Name childNodeDefnName,
+                                        Path childNodeDefnPath ) {
+        boolean autoCreated = false;
+        boolean mandatory = false;
+        boolean isProtected = false;
+        boolean sns = false;
+        String onParentVersion = "COPY";
+        while (true) {
+            if (tokens.canConsumeAnyOf("AUTOCREATED", "AUT", "A")) {
+                tokens.canConsume('?');
+                autoCreated = true;
+            } else if (tokens.canConsumeAnyOf("MANDATORY", "MAN", "M")) {
+                tokens.canConsume('?');
+                mandatory = true;
+            } else if (tokens.canConsumeAnyOf("PROTECTED", "PRO", "P")) {
+                tokens.canConsume('?');
+                isProtected = true;
+            } else if (tokens.canConsumeAnyOf("SNS", "*")) { // standard JCR 2.0 keywords for SNS ...
+                tokens.canConsume('?');
+                sns = true;
+            } else if (jcr170 && tokens.canConsumeAnyOf("MULTIPLE", "MUL", "*")) { // from pre-JCR 2.0 ref impl
+                tokens.canConsume('?');
+                sns = true;
+            } else if (tokens.matchesAnyOf(VALID_ON_PARENT_VERSION)) {
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else if (tokens.matches("OPV")) {
+                // variant on-parent-version
+                onParentVersion = tokens.consume();
+                tokens.canConsume('?');
+            } else if (jcr170 && tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
+                // Then this child node is considered the primary item ...
+                Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, childNodeDefnName);
+                destination.setProperties(childNodeDefnPath.getParent(), primaryItem);
+            } else {
+                break;
+            }
+        }
+        properties.add(propertyFactory.create(JcrLexicon.AUTO_CREATED, autoCreated));
+        properties.add(propertyFactory.create(JcrLexicon.MANDATORY, mandatory));
+        properties.add(propertyFactory.create(JcrLexicon.PROTECTED, isProtected));
+        properties.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion.toUpperCase()));
+        properties.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, sns));
+    }
+
+    /**
+     * Parse the name that is expected to be next on the token stream.
+     * 
+     * @param tokens the tokens containing the name; never null
+     * @return the name; never null
+     * @throws ParsingException if there is a problem parsing the content
+     */
+    protected Name parseName( TokenStream tokens ) {
+        String value = tokens.consume();
+        try {
+            return nameFactory.create(removeQuotes(value));
+        } catch (ValueFormatException e) {
+            throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidNameLiteral.text(value));
         }
     }
 
@@ -340,418 +704,4 @@ public class CndImporter {
         // Remove leading and trailing quotes, if there are any ...
         return text.replaceFirst("^['\"]+", "").replaceAll("['\"]+$", "");
     }
-
-    /**
-     * Utility class that uses a context with a local namespace registry, along with the problems and resource name.
-     */
-    protected final class ImportContext {
-        private final ExecutionContext context;
-        private final ExecutionContext originalContext;
-        private final Problems problems;
-        private final String resourceName;
-
-        protected ImportContext( ExecutionContext context,
-                                 Problems problems,
-                                 String resourceName ) {
-            // Create a context that has a local namespace registry
-            NamespaceRegistry localNamespaces = new LocalNamespaceRegistry(context.getNamespaceRegistry());
-            this.originalContext = context;
-            this.context = context.with(localNamespaces);
-            this.problems = problems;
-            this.resourceName = resourceName;
-        }
-
-        protected ExecutionContext context() {
-            return this.context;
-        }
-
-        protected void register( String prefix,
-                                 String uri ) {
-            // Register it in the local registry with the supplied prefix ...
-            context.getNamespaceRegistry().register(prefix, uri);
-
-            // See if it is already registered in the original context ...
-            NamespaceRegistry registry = originalContext.getNamespaceRegistry();
-            if (!registry.isRegisteredNamespaceUri(uri)) {
-                // It is not, so register it ...
-                registry.register(prefix, uri);
-            }
-        }
-
-        protected NameFactory nameFactory() {
-            return this.context.getValueFactories().getNameFactory();
-        }
-
-        protected PathFactory pathFactory() {
-            return this.context.getValueFactories().getPathFactory();
-        }
-
-        protected ValueFactory<String> stringFactory() {
-            return this.context.getValueFactories().getStringFactory();
-        }
-
-        protected ValueFactory<Boolean> booleanFactory() {
-            return this.context.getValueFactories().getBooleanFactory();
-        }
-
-        protected void recordError( CommonTree node,
-                                    I18n msg,
-                                    Object... params ) {
-            String location = CndI18n.locationFromLineNumberAndCharacter.text(node.getLine(), node.getCharPositionInLine());
-            problems.addError(msg, resourceName, location, params);
-        }
-
-        protected void recordError( Throwable throwable,
-                                    CommonTree node,
-                                    I18n msg,
-                                    Object... params ) {
-            String location = CndI18n.locationFromLineNumberAndCharacter.text(node.getLine(), node.getCharPositionInLine());
-            problems.addError(throwable, msg, resourceName, location, params);
-        }
-
-        protected Name nameFrom( CommonTree node,
-                                 int childType ) {
-            CommonTree childNode = (CommonTree)node.getFirstChildWithType(childType);
-            if (childNode != null && childNode.getChildCount() > 0) {
-                CommonTree textNode = (CommonTree)childNode.getChild(0);
-                if (textNode.getToken().getTokenIndex() < 0) return null;
-                String text = removeQuotes(childNode.getChild(0).getText());
-                try {
-                    return nameFactory().create(text);
-                } catch (ValueFormatException e) {
-                    recordError(e, node, CndI18n.expectedValidNameLiteral, text);
-                }
-            }
-            return null;
-        }
-
-        protected Name[] namesFrom( CommonTree node,
-                                    int childType ) {
-            CommonTree childNode = (CommonTree)node.getFirstChildWithType(childType);
-            if (childNode != null && childNode.getChildCount() > 0) {
-                List<Name> names = new ArrayList<Name>();
-                for (int i = 0; i != childNode.getChildCount(); ++i) {
-                    String text = removeQuotes(childNode.getChild(i).getText());
-                    try {
-                        names.add(nameFactory().create(text));
-                    } catch (ValueFormatException e) {
-                        recordError(e, node, CndI18n.expectedValidNameLiteral, text);
-                    }
-                }
-                return names.toArray(new Name[names.size()]);
-            }
-            return new Name[] {};
-        }
-
-        protected String stringFrom( CommonTree node,
-                                     int childType ) {
-            CommonTree childNode = (CommonTree)node.getFirstChildWithType(childType);
-            if (childNode != null && childNode.getChildCount() > 0) {
-                String text = removeQuotes(childNode.getChild(0).getText().trim());
-                try {
-                    return stringFactory().create(text);
-                } catch (ValueFormatException e) {
-                    recordError(e, node, CndI18n.expectedStringLiteral, text);
-                }
-            }
-            return null;
-        }
-
-        protected String[] stringsFrom( CommonTree node,
-                                        int childType ) {
-            CommonTree childNode = (CommonTree)node.getFirstChildWithType(childType);
-            if (childNode != null && childNode.getChildCount() > 0) {
-                List<String> names = new ArrayList<String>();
-                for (int i = 0; i != childNode.getChildCount(); ++i) {
-                    String text = removeQuotes(childNode.getChild(i).getText().trim());
-                    try {
-                        names.add(stringFactory().create(text));
-                    } catch (ValueFormatException e) {
-                        recordError(e, node, CndI18n.expectedStringLiteral, text);
-                    }
-                }
-                return names.toArray(new String[names.size()]);
-            }
-            return new String[] {};
-        }
-
-        protected boolean booleanFrom( CommonTree node,
-                                       int childType,
-                                       boolean defaultValue ) {
-            CommonTree childNode = (CommonTree)node.getFirstChildWithType(childType);
-            if (childNode != null && childNode.getChildCount() > 0) {
-                String text = removeQuotes(childNode.getChild(0).getText());
-                try {
-                    return booleanFactory().create(text);
-                } catch (ValueFormatException e) {
-                    recordError(e, node, CndI18n.expectedBooleanLiteral, text);
-                }
-            }
-            return defaultValue;
-        }
-
-        protected QueryOperator[] queryOperatorsFrom( CommonTree node,
-                                                      int childType ) {
-            String text = stringFrom(node, childType);
-            if (text != null) {
-                String[] literals = text.split(",");
-                if (literals.length != 0) {
-                    Set<QueryOperator> operators = new HashSet<QueryOperator>();
-                    for (String literal : literals) {
-                        literal = literal.trim();
-                        if (literal.length() == 0) continue;
-                        QueryOperator operator = QueryOperator.forText(literal);
-                        if (operator != null) {
-                            operators.add(operator);
-                        } else {
-                            recordError(node, CndI18n.expectedValidQueryOperator, literal);
-                        }
-                    }
-                    return operators.toArray(new QueryOperator[operators.size()]);
-                }
-            }
-            return new QueryOperator[] {};
-        }
-
-        protected String propertyTypeNameFrom( CommonTree node,
-                                               int childType ) {
-            String text = stringFrom(node, childType);
-            if ("*".equals(text)) text = "undefined";
-            String upperText = text.toUpperCase();
-            if (!VALID_PROPERTY_TYPES.contains(upperText)) {
-                recordError(node, CndI18n.expectedValidPropertyTypeName, text, VALID_PROPERTY_TYPES);
-                return null;
-            }
-            return upperText;
-        }
-
-        protected String onParentVersionFrom( CommonTree node,
-                                              int childType ) {
-            String text = stringFrom(node, childType);
-            if (text == null) return "COPY";
-            String upperText = text.toUpperCase();
-            if (!VALID_ON_PARENT_VERSION.contains(upperText)) {
-                recordError(node, CndI18n.expectedValidOnParentVersion, text, VALID_ON_PARENT_VERSION);
-                return null;
-            }
-            return upperText;
-        }
-
-        protected Path createNodeType( CommonTree nodeType,
-                                       Path parentPath ) {
-            Name name = nameFrom(nodeType, CndLexer.NAME);
-            Name[] supertypes = namesFrom(nodeType, CndLexer.SUPERTYPES);
-            boolean isAbstract = booleanFrom(nodeType, CndLexer.IS_ABSTRACT, false);
-            boolean hasOrderableChildNodes = booleanFrom(nodeType, CndLexer.HAS_ORDERABLE_CHILD_NODES, false);
-            boolean isMixin = booleanFrom(nodeType, CndLexer.IS_MIXIN, false);
-            boolean isQueryable = booleanFrom(nodeType, CndLexer.IS_QUERYABLE, true);
-            Name primaryItemName = nameFrom(nodeType, CndLexer.PRIMARY_ITEM_NAME);
-
-            if (primaryItemName == null) {
-                // See if one of the property definitions is marked as the primary ...
-                CommonTree propertyDefinitions = (CommonTree)nodeType.getFirstChildWithType(CndLexer.PROPERTY_DEFINITION);
-                if (propertyDefinitions != null) {
-                    // Walk each of the nodes under PROPERTY_DEFINITION ...
-                    for (int j = 0; j != propertyDefinitions.getChildCount(); ++j) {
-                        CommonTree propDefn = (CommonTree)propertyDefinitions.getChild(j);
-                        if (booleanFrom(propDefn, CndLexer.IS_PRIMARY_PROPERTY, false)) {
-                            primaryItemName = nameFrom(propDefn, CndLexer.NAME);
-                            break;
-                        }
-                    }
-                }
-            }
-            if (primaryItemName == null) {
-                // See if one of the child definitions is marked as the primary ...
-                CommonTree childNodeDefinitions = (CommonTree)nodeType.getFirstChildWithType(CndLexer.CHILD_NODE_DEFINITION);
-                if (childNodeDefinitions != null) {
-                    // Walk each of the nodes under CHILD_NODE_DEFINITION ...
-                    for (int j = 0; j != childNodeDefinitions.getChildCount(); ++j) {
-                        CommonTree childDefn = (CommonTree)childNodeDefinitions.getChild(j);
-                        if (booleanFrom(childDefn, CndLexer.IS_PRIMARY_PROPERTY, false)) {
-                            primaryItemName = nameFrom(childDefn, CndLexer.NAME);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Create the node for the node type ...
-            if (name == null) return null;
-            Path path = pathFactory().create(parentPath, name);
-
-            PropertyFactory factory = context.getPropertyFactory();
-            destination.create(path,
-                               factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.NODE_TYPE),
-                               factory.create(JcrLexicon.SUPERTYPES, (Object[])supertypes),
-                               factory.create(JcrLexicon.IS_ABSTRACT, isAbstract),
-                               factory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, hasOrderableChildNodes),
-                               factory.create(JcrLexicon.IS_MIXIN, isMixin),
-                               factory.create(JcrLexicon.IS_QUERYABLE, isQueryable),
-                               factory.create(JcrLexicon.NODE_TYPE_NAME, name),
-                               factory.create(JcrLexicon.PRIMARY_ITEM_NAME, primaryItemName));
-
-            return path;
-        }
-
-        protected Path createPropertyDefinition( CommonTree propDefn,
-                                                 Path parentPath ) {
-            Name name = nameFrom(propDefn, CndLexer.NAME);
-            String requiredType = propertyTypeNameFrom(propDefn, CndLexer.REQUIRED_TYPE);
-            String[] defaultValues = stringsFrom(propDefn, CndLexer.DEFAULT_VALUES);
-            boolean multiple = booleanFrom(propDefn, CndLexer.MULTIPLE, false);
-            boolean mandatory = booleanFrom(propDefn, CndLexer.MANDATORY, false);
-            boolean autoCreated = booleanFrom(propDefn, CndLexer.AUTO_CREATED, false);
-            boolean isProtected = booleanFrom(propDefn, CndLexer.PROTECTED, false);
-            String onParentVersion = onParentVersionFrom(propDefn, CndLexer.ON_PARENT_VERSION);
-            /*QueryOperator[] queryOperators =*/queryOperatorsFrom(propDefn, CndLexer.QUERY_OPERATORS);
-            boolean isFullTextSearchable = booleanFrom(propDefn, CndLexer.IS_FULL_TEXT_SEARCHABLE, true);
-            boolean isQueryOrderable = booleanFrom(propDefn, CndLexer.IS_QUERY_ORDERERABLE, true);
-            String[] valueConstraints = stringsFrom(propDefn, CndLexer.VALUE_CONSTRAINTS);
-
-            // Create the node for the node type ...
-            if (name == null) return null;
-            Path path = pathFactory().create(parentPath, JcrLexicon.PROPERTY_DEFINITION);
-
-            PropertyFactory factory = context.getPropertyFactory();
-            destination.create(path,
-                               factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.PROPERTY_DEFINITION),
-                               factory.create(JcrLexicon.REQUIRED_TYPE, requiredType),
-                               factory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultValues),
-                               factory.create(JcrLexicon.MULTIPLE, multiple),
-                               factory.create(JcrLexicon.MANDATORY, mandatory),
-                               factory.create(JcrLexicon.NAME, name),
-                               factory.create(JcrLexicon.AUTO_CREATED, autoCreated),
-                               factory.create(JcrLexicon.PROTECTED, isProtected),
-                               factory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion),
-                               // factory.create(DnaLexicon.QUERY_OPERATORS, queryOperators),
-                               factory.create(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, isFullTextSearchable),
-                               factory.create(JcrLexicon.IS_QUERY_ORDERABLE, isQueryOrderable),
-                               factory.create(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));
-
-            return path;
-        }
-
-        protected Path createChildDefinition( CommonTree childDefn,
-                                              Path parentPath ) {
-            Name name = nameFrom(childDefn, CndLexer.NAME);
-            Name[] requiredPrimaryTypes = namesFrom(childDefn, CndLexer.REQUIRED_PRIMARY_TYPES);
-            Name defaultPrimaryType = nameFrom(childDefn, CndLexer.DEFAULT_PRIMARY_TYPE);
-            boolean mandatory = booleanFrom(childDefn, CndLexer.MANDATORY, false);
-            boolean autoCreated = booleanFrom(childDefn, CndLexer.AUTO_CREATED, false);
-            boolean isProtected = booleanFrom(childDefn, CndLexer.PROTECTED, false);
-            String onParentVersion = onParentVersionFrom(childDefn, CndLexer.ON_PARENT_VERSION);
-            boolean sameNameSiblings = booleanFrom(childDefn, CndLexer.SAME_NAME_SIBLINGS, false);
-
-            // Create the node for the node type ...
-            if (name == null) return null;
-            Path path = pathFactory().create(parentPath, JcrLexicon.CHILD_NODE_DEFINITION);
-
-            PropertyFactory factory = context.getPropertyFactory();
-            destination.create(path,
-                               factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.CHILD_NODE_DEFINITION),
-                               factory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, (Object[])requiredPrimaryTypes),
-                               factory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, defaultPrimaryType),
-                               factory.create(JcrLexicon.MANDATORY, mandatory),
-                               factory.create(JcrLexicon.NAME, name),
-                               factory.create(JcrLexicon.AUTO_CREATED, autoCreated),
-                               factory.create(JcrLexicon.PROTECTED, isProtected),
-                               factory.create(JcrLexicon.ON_PARENT_VERSION, onParentVersion),
-                               factory.create(JcrLexicon.SAME_NAME_SIBLINGS, sameNameSiblings));
-
-            return path;
-        }
-    }
-
-    protected class Parser extends CndParser {
-        private final Problems problems;
-        private final String nameOfResource;
-
-        public Parser( TokenStream input,
-                       Problems problems,
-                       String nameOfResource ) {
-            super(input);
-            this.problems = problems;
-            this.nameOfResource = nameOfResource;
-        }
-
-        @Override
-        public void displayRecognitionError( String[] tokenNames,
-                                             RecognitionException e ) {
-            if (problems != null) {
-                String hdr = getErrorHeader(e);
-                String msg = getErrorMessage(e, tokenNames);
-                problems.addError(CndI18n.passthrough, nameOfResource, hdr, msg);
-            } else {
-                super.displayRecognitionError(tokenNames, e);
-            }
-        }
-    }
-
-    /**
-     * Specialization of an {@link ANTLRInputStream} that converts all tokens to lowercase, allowing the grammar to be
-     * case-insensitive. See the <a href="http://www.antlr.org/wiki/pages/viewpage.action?pageId=1782">ANTLR documentation</a>.
-     */
-    protected class CaseInsensitiveInputStream extends ANTLRInputStream {
-        protected CaseInsensitiveInputStream( InputStream stream ) throws IOException {
-            super(stream);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.antlr.runtime.ANTLRStringStream#LA(int)
-         */
-        @Override
-        public int LA( int i ) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-            }
-
-            if ((p + i - 1) >= n) {
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
-        }
-    }
-
-    /**
-     * Specialization of an {@link ANTLRInputStream} that converts all tokens to lowercase, allowing the grammar to be
-     * case-insensitive. See the <a href="http://www.antlr.org/wiki/pages/viewpage.action?pageId=1782">ANTLR documentation</a>.
-     */
-    protected class CaseInsensitiveFileStream extends ANTLRFileStream {
-        protected CaseInsensitiveFileStream( String fileName ) throws IOException {
-            super(fileName, null);
-        }
-
-        protected CaseInsensitiveFileStream( String fileName,
-                                             String encoding ) throws IOException {
-            super(fileName, encoding);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.antlr.runtime.ANTLRStringStream#LA(int)
-         */
-        @Override
-        public int LA( int i ) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-            }
-
-            if ((p + i - 1) >= n) {
-
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
-        }
-    }
-
 }

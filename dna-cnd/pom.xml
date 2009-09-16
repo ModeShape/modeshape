@@ -18,17 +18,6 @@
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-graph</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>antlr-runtime</artifactId>
-      <version>3.1.3</version>        
-      <exclusions>
-        <exclusion>
-          <groupId>org.antlr</groupId>
-          <artifactId>stringtemplate</artifactId>
-        </exclusion>                                  
-      </exclusions>                        
-    </dependency>
     
     <!-- Testing -->
     <dependency>
@@ -42,24 +31,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
-	  <dependency>
-	    <groupId>org.antlr</groupId>
-	    <artifactId>antlr</artifactId>
-	    <version>3.1.3</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.antlr</groupId>
-          <artifactId>stringtemplate</artifactId>
-        </exclusion>      
-        <exclusion>
-          <groupId>org.apache.maven</groupId>
-          <artifactId>maven-project</artifactId>
-        </exclusion>                                                                
-      </exclusions>                                             
-	    <!-- we try to use scope to hide it from transitivity -->
-	    <scope>test</scope> <!-- or perhaps 'provided' (see later discussion) or 'import' (maven >= 2.0.9) -->
-	  </dependency>
-		<dependency>
+	<dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-library</artifactId>
     </dependency>
@@ -88,20 +60,4 @@
       <artifactId>jcip-annotations</artifactId>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr3-maven-plugin</artifactId>
-        <version>3.1.3-1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>antlr</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

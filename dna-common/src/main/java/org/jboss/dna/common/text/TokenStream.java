@@ -32,6 +32,7 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.xml.XmlCharacters;
 
 /**
  * A foundation for basic parsers that tokenizes input content and allows parsers to easily access and use those tokens. A
@@ -421,6 +422,28 @@ public class TokenStream {
     }
 
     /**
+     * Get the position of the previous token.
+     * 
+     * @return the previous token's position; never null
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     * @throws NoSuchElementException if there is no previous token
+     */
+    public Position previousPosition() {
+        return previousToken().position();
+    }
+
+    /**
+     * Get the position of the next (or current) token.
+     * 
+     * @return the current token's position; never null
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     * @throws NoSuchElementException if there is no previous token
+     */
+    public Position nextPosition() {
+        return currentToken().position();
+    }
+
+    /**
      * Return the value of this token and move to the next token.
      * 
      * @return the value of the current token
@@ -746,6 +769,87 @@ public class TokenStream {
     }
 
     /**
+     * Attempt to consume the next token if it matches one of the supplied values.
+     * 
+     * @param firstOption the first option for the value of the current token
+     * @param additionalOptions the additional options for the value of the current token
+     * @return true if the current token's value did match one of the suplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsumeAnyOf( String firstOption,
+                                    String... additionalOptions ) throws IllegalStateException {
+        if (completed) return false;
+        if (canConsume(firstOption)) return true;
+        for (String nextOption : additionalOptions) {
+            if (canConsume(nextOption)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Attempt to consume the next token if it matches one of the supplied values.
+     * 
+     * @param options the options for the value of the current token
+     * @return true if the current token's value did match one of the suplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsumeAnyOf( String[] options ) throws IllegalStateException {
+        if (completed) return false;
+        for (String option : options) {
+            if (canConsume(option)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Attempt to consume the next token if it matches one of the supplied values.
+     * 
+     * @param options the options for the value of the current token
+     * @return true if the current token's value did match one of the suplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsumeAnyOf( Iterable<String> options ) throws IllegalStateException {
+        if (completed) return false;
+        for (String option : options) {
+            if (canConsume(option)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Attempt to consume the next token if it matches one of the supplied types.
+     * 
+     * @param firstTypeOption the first option for the type of the current token
+     * @param additionalTypeOptions the additional options for the type of the current token
+     * @return true if the current token's type matched one of the supplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsumeAnyOf( int firstTypeOption,
+                                    int... additionalTypeOptions ) throws IllegalStateException {
+        if (completed) return false;
+        if (canConsume(firstTypeOption)) return true;
+        for (int nextTypeOption : additionalTypeOptions) {
+            if (canConsume(nextTypeOption)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Attempt to consume the next token if it matches one of the supplied types.
+     * 
+     * @param typeOptions the options for the type of the current token
+     * @return true if the current token's type matched one of the supplied options, or false otherwise
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean canConsumeAnyOf( int[] typeOptions ) throws IllegalStateException {
+        if (completed) return false;
+        for (int nextTypeOption : typeOptions) {
+            if (canConsume(nextTypeOption)) return true;
+        }
+        return false;
+    }
+
+    /**
      * Determine if the current token matches the expected value.
      * <p>
      * The {@link #ANY_VALUE ANY_VALUE} constant can be used as a wildcard.
@@ -1003,13 +1107,30 @@ public class TokenStream {
         return tokenIterator.hasNext();
     }
 
-    // public Position currentPosition() {
-    // return currentToken().position();
-    // }
-    //
-    // public int currentType() {
-    // return currentToken().type();
-    // }
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
+        StringBuilder sb = new StringBuilder();
+        if (iter.hasNext()) {
+            sb.append(iter.next());
+            int count = 1;
+            while (iter.hasNext()) {
+                if (count > 20) {
+                    sb.append(" ...");
+                    break;
+                }
+                sb.append("  ");
+                ++count;
+                sb.append(iter.next());
+            }
+        }
+        return sb.toString();
+    }
 
     private void moveToNextToken() {
         // And move the currentToken to the next token ...
@@ -1037,6 +1158,30 @@ public class TokenStream {
         }
         assert currentToken != null;
         return currentToken;
+    }
+
+    /**
+     * Get the previous token. This does not modify the state.
+     * 
+     * @return the previous token; never null
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     * @throws NoSuchElementException if there is no previous token
+     */
+    final Token previousToken() throws IllegalStateException, NoSuchElementException {
+        if (currentToken == null) {
+            if (completed) {
+                if (tokens.isEmpty()) {
+                    throw new NoSuchElementException(CommonI18n.noMoreContent.text());
+                }
+                return tokens.get(tokens.size() - 1);
+            }
+            throw new IllegalStateException(CommonI18n.startMethodMustBeCalledBeforeConsumingOrMatching.text());
+        }
+        if (!tokenIterator.hasPrevious()) {
+            throw new NoSuchElementException(CommonI18n.noMoreContent.text());
+        }
+        ListIterator<Token> temp = tokens.listIterator(tokenIterator.previousIndex());
+        return temp.next();
     }
 
     String generateFragment() {
@@ -1131,6 +1276,14 @@ public class TokenStream {
          * @return true if there is a {@link #next() next} character and it is a whitespace character, or false otherwise
          */
         boolean isNextWhitespace();
+
+        /**
+         * Determine if the next character on the sream is a {@link XmlCharacters#isValid(int) valid XML character}. This method
+         * does <i>not</i> advance the stream.
+         * 
+         * @return true if there is a {@link #next() next} character and it is a valid XML character, or false otherwise
+         */
+        boolean isNextValidXmlCharacter();
 
         /**
          * Determine if the next character on the sream is the supplied value. This method does <i>not</i> advance the stream.
@@ -1234,26 +1387,74 @@ public class TokenStream {
 
     /**
      * The interface defining a token, which references the characters in the actual input character stream.
+     * 
+     * @see CaseSensitiveTokenFactory
+     * @see CaseInsensitiveTokenFactory
      */
     @Immutable
-    protected interface Token {
+    public interface Token {
+        /**
+         * Get the value of the token, in actual case.
+         * 
+         * @return the value
+         */
         String value();
 
+        /**
+         * Determine if the token matches the supplied string.
+         * 
+         * @param expected the expected value
+         * @return true if the token's value matches the supplied value, or false otherwise
+         */
         boolean matches( String expected );
 
+        /**
+         * Determine if the token matches the supplied character.
+         * 
+         * @param expected the expected character value
+         * @return true if the token's value matches the supplied character value, or false otherwise
+         */
         boolean matches( char expected );
 
+        /**
+         * Get the type of the token.
+         * 
+         * @return the token's type
+         */
         int type();
 
+        /**
+         * Get the index in the raw stream for the first character in the token.
+         * 
+         * @return the starting index of the token
+         */
         int startIndex();
 
+        /**
+         * Get the index in the raw stream past the last character in the token.
+         * 
+         * @return the ending index of the token, which is past the last character
+         */
         int endIndex();
 
+        /**
+         * Get the length of the token, which is equivalent to <code>endIndex() - startIndex()</code>.
+         * 
+         * @return the length
+         */
         int length();
 
+        /**
+         * Get the position of this token, which includes the line number and column number of the first character in the token.
+         * 
+         * @return the position; never null
+         */
         Position position();
     }
 
+    /**
+     * An immutable {@link Token} that implements matching using case-sensitive logic.
+     */
     @Immutable
     protected class CaseSensitiveToken implements Token {
         private final int startIndex;
@@ -1410,7 +1611,7 @@ public class TokenStream {
         }
     }
 
-    protected class CaseSensitiveTokenFactory extends TokenFactory {
+    public class CaseSensitiveTokenFactory extends TokenFactory {
         /**
          * {@inheritDoc}
          * 
@@ -1424,7 +1625,7 @@ public class TokenStream {
         }
     }
 
-    protected class CaseInsensitiveTokenFactory extends TokenFactory {
+    public class CaseInsensitiveTokenFactory extends TokenFactory {
         /**
          * {@inheritDoc}
          * 
@@ -1438,7 +1639,10 @@ public class TokenStream {
         }
     }
 
-    protected static final class CharacterArrayStream implements CharacterStream {
+    /**
+     * An implementation of {@link CharacterStream} that works with a single character array.
+     */
+    public static final class CharacterArrayStream implements CharacterStream {
         private final char[] content;
         private int lastIndex = -1;
         private final int maxIndex;
@@ -1446,7 +1650,7 @@ public class TokenStream {
         private int columnNumber = 1;
         private boolean nextCharMayBeLineFeed;
 
-        protected CharacterArrayStream( char[] content ) {
+        public CharacterArrayStream( char[] content ) {
             this.content = content;
             this.maxIndex = content.length - 1;
         }
@@ -1576,6 +1780,16 @@ public class TokenStream {
         public boolean isNextWhitespace() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && Character.isWhitespace(content[nextIndex]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#isNextValidXmlCharacter()
+         */
+        public boolean isNextValidXmlCharacter() {
+            int nextIndex = lastIndex + 1;
+            return nextIndex <= maxIndex && XmlCharacters.isValid(content[nextIndex]);
         }
     }
 

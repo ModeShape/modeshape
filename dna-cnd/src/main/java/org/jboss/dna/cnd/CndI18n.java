@@ -30,15 +30,11 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class CndI18n {
 
-    public static I18n passthrough;
     public static I18n errorImportingCndContent;
-    public static I18n expectedBooleanLiteral;
-    public static I18n expectedStringLiteral;
     public static I18n expectedValidNameLiteral;
     public static I18n expectedValidQueryOperator;
-    public static I18n expectedValidPropertyTypeName;
-    public static I18n expectedValidOnParentVersion;
-    public static I18n locationFromLineNumberAndCharacter;
+    public static I18n expectedNamespaceOrNodeDefinition;
+    public static I18n vendorBlockWasNotClosed;
 
     static {
         try {
