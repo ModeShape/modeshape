@@ -253,9 +253,9 @@
 			          <attach>false</attach>
 			          <!--stylesheetfile>${basedir}/src/javadoc/stylesheet.css</stylesheetfile-->
 			          <useStandardDocletOptions>true</useStandardDocletOptions>
-			          <outputDirectory>${project.build.directory}/api</outputDirectory>
-			          <reportOutputDirectory>${project.build.directory}/api</reportOutputDirectory>
-			          <destDir>api</destDir>
+			          <outputDirectory>${project.build.directory}/apidoc</outputDirectory>
+			          <reportOutputDirectory>${project.build.directory}/apidoc</reportOutputDirectory>
+			          <destDir>apidoc</destDir>
 			          <charset>UTF-8</charset>
 			          <docencoding>UTF-8</docencoding>
 			          <breakiterator>true</breakiterator>
