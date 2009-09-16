@@ -45,22 +45,12 @@ public class JpaSourceTest {
 
     @Before
     public void beforeEach() throws Exception {
-        this.source = new JpaSource();
-        // Set the connection properties to be an in-memory HSQL database ...
-        this.source.setName("Test Repository");
-        this.source.setDialect("org.hibernate.dialect.HSQLDialect");
-        this.source.setDriverClassName("org.hsqldb.jdbcDriver");
-        this.source.setUsername("sa");
-        this.source.setPassword("");
-        this.source.setUrl("jdbc:hsqldb:.");
-        this.source.setMaximumConnectionsInPool(3);
-        this.source.setMinimumConnectionsInPool(0);
-        this.source.setNumberOfConnectionsToAcquireAsNeeded(1);
-        this.source.setMaximumSizeOfStatementCache(100);
-        this.source.setMaximumConnectionIdleTimeInSeconds(0);
+        // Set the connection properties using the environment defined in the POM files ...
+        this.source = TestEnvironment.configureJpaSource("Test Repository", this);
+
+        // Override the inherited properties ...
         this.source.setDefaultWorkspaceName("default");
         this.source.setCreatingWorkspacesAllowed(true);
-        this.source.setAutoGenerateSchema("create");
     }
 
     @After

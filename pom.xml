@@ -137,6 +137,36 @@
 		<module>web/dna-web-jcr-rest</module> 
 		<module>web/dna-web-jcr-rest-war</module> 
 	</modules>
+	<properties>
+		<!-- These are properties used in the database profiles. Must initialize them to be empty so that Maven applies
+		     them via filtering to the resources. If a project needs files filtered, however, make sure to include
+		     a 'testResources' fragment in the 'build' section of the child project POM to say which files need to be filtered.
+		     See the "dna-integration" or "extensions/dna-connector-store-jpa" project POMs for examples. -->
+		<jpaSource.dialect/>
+		<jpaSource.driverClassName/>
+		<jpaSource.url/>
+		<jpaSource.username/>
+		<jpaSource.password/>
+		<jpaSource.maximumConnectionsInPool>1</jpaSource.maximumConnectionsInPool>
+		<jpaSource.minimumConnectionsInPool>0</jpaSource.minimumConnectionsInPool>
+		<jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
+		<jpaSource.maximumSizeOfStatementCache>100</jpaSource.maximumSizeOfStatementCache>
+		<jpaSource.maximumConnectionIdleTimeInSeconds>0</jpaSource.maximumConnectionIdleTimeInSeconds>
+		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
+		<jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
+		<jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
+		<jpaSource.compressData/>
+		<jpaSource.cacheTimeToLiveInMilliseconds/>
+		<jpaSource.creatingWorkspacesAllowed/>
+		<jpaSource.defaultWorkspaceName/>
+		<jpaSource.predefinedWorkspaceNames/>
+		<jpaSource.model/>
+		<jpaSource.numberOfConnectionsToAcquireAsNeeded/>
+		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
+		<jpaSource.retryLimit>3</jpaSource.retryLimit>
+		<jpaSource.rootNodeUuid/>
+		<jpaSource.showSql>false</jpaSource.showSql>
+	</properties>
 
 	<profiles>
 		<profile>
@@ -310,6 +340,368 @@
 			    </plugins>
 			  </reporting>
 	    </profile>
+	
+      <!--
+          ###################################################################
+          Database profiles to specify which DBMS is used for tests.
+          ###################################################################
+
+          To use, specify "-Ddatbase=<dbProfileName>" on the Maven command line.
+      -->
+
+      <!-- The default test environment is HSQLDB (may eventually move to H2) -->
+      <profile>
+          <id>default_dbms</id>
+		      <activation>
+		        <property>
+		          <name>!database</name>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>hsqldb</groupId>
+              <artifactId>hsqldb</artifactId>
+              <version>1.8.0.2</version>
+            </dependency>
+          </dependencies>
+          <properties>
+		        <database>hsqldb</database>
+            <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:hsqldb:target/test/db/hsqldb/hibernate</jpaSource.url>
+            <jpaSource.username>sa</jpaSource.username>
+            <jpaSource.password />
+          </properties>
+      </profile>
+
+      <!-- The HSQLDB test environment -->
+      <profile>
+          <id>hsqldb</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>h2</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>hsqldb</groupId>
+              <artifactId>hsqldb</artifactId>
+              <version>1.8.0.2</version>
+            </dependency>
+          </dependencies>
+          <properties>
+		        <database>hsqldb</database>
+            <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:hsqldb:target/test/db/hsqldb/hibernate</jpaSource.url>
+            <jpaSource.username>sa</jpaSource.username>
+            <jpaSource.password />
+          </properties>
+      </profile>
+
+      <!-- The H2 test environment -->
+
+      <profile>
+          <id>h2</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>h2</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>org.h2database</groupId>
+              <artifactId>h2database</artifactId>
+              <version>1.0.20061217</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
+            <jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:h2:mem:target/test/db/h2/hibernate</jpaSource.url>
+            <jpaSource.username>sa</jpaSource.username>
+            <jpaSource.password />
+          </properties>
+      </profile>
+
+      <!-- The PostgreSQL test environment, local to the developer -->
+      <profile>
+          <id>postgresql_local</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>postgresql_local</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>postgresql</groupId>
+              <artifactId>postgresql</artifactId>
+              <version>8.4-701.jdbc3</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
+            <jpaSource.driver>org.postgresql.Driver</jpaSource.driver>
+            <jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
+            <jpaSource.username>postgres</jpaSource.username>
+            <jpaSource.password>data</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!--
+          ###################################################################
+          Profiles naming db instances in the Red Hat QA/QE lab
+          First, those with OSS drivers
+          ###################################################################
+      -->
+
+      <!-- The MySQL5 test environment -->
+      <profile>
+          <id>mysql5</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>mysql5</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>mysql</groupId>
+              <artifactId>mysql-connector-java</artifactId>
+              <version>5.0.5</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>com.mysql.jdbc.driverClassName</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:mysql://vmg08.mw.lab.eng.bos.redhat.com/hibbrtru</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The PostgreSQL test environment -->
+      <profile>
+          <id>postgresql8</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>postgresql8</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>postgresql</groupId>
+              <artifactId>postgresql</artifactId>
+              <version>8.2-504</version>
+              <classifier>jdbc3</classifier>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:postgresql://dev01.qa.atl.jboss.com:5432:hibbrtru</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!--
+          ###################################################################
+          Then, those with commercial drivers
+          ###################################################################
+      -->
+
+      <!-- The DB2 8.x test environment (using 9x drivers)-->
+      <profile>
+          <id>db2v8</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>db2v8</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.ibm</groupId>
+              <artifactId>db2jcc</artifactId>
+              <version>3.1.57</version>
+            </dependency>
+            <dependency>
+              <groupId>com.ibm</groupId>
+              <artifactId>db2jcc_license_cu</artifactId>
+              <version>3.1.57</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
+            <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:db2://dev32.qa.atl.jboss.com:50000/jbossqa</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The DB2 9.x test environment (using 9x drivers)-->
+      <profile>
+          <id>db2v9</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>db2v9</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.ibm</groupId>
+              <artifactId>db2jcc</artifactId>
+              <version>3.1.57</version>
+            </dependency>
+            <dependency>
+              <groupId>com.ibm</groupId>
+              <artifactId>db2jcc_license_cu</artifactId>
+              <version>3.1.57</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
+            <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:db2://dev67.qa.atl.jboss.com:50000/jbossqa</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The Oracle9i test environment -->
+      <profile>
+          <id>oracle9i</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>oracle9i</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.oracle</groupId>
+              <artifactId>ojdbc14</artifactId>
+              <!-- use the 10g drivers which are surprisingly largely bug free -->
+              <version>10.0.2.0</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.Oracle9iDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:oracle:thin:@dev20.qa.atl.jboss.com:1521:qa</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The Oracle10g test environment -->
+      <profile>
+          <id>oracle10g</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>oracle10g</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.oracle</groupId>
+              <artifactId>ojdbc14</artifactId>
+              <!-- use the 10g drivers which are surprisingly largely bug free -->
+              <version>10.0.2.0</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:oracle:thin:@dev01.qa.atl.jboss.com:1521:qadb01</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The Oracle11g test environment -->
+      <profile>
+          <id>oracle11g</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>oracle11g</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.oracle</groupId>
+              <artifactId>ojdbc6</artifactId>
+              <version>11.1.0.7.0</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:oracle:thin:@ENGLXDBS11.mm.atl2.redhat.com:1521:orcl</jpaSource.url>
+            <jpaSource.username>integtest</jpaSource.username>
+            <jpaSource.password>teiid</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The Sybase 15 test environment -->
+      <profile>
+          <id>sybase15</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>sybase15</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.sybase</groupId>
+              <artifactId>jconnect</artifactId>
+              <version>6.0.5</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.SybaseASE15Dialect</jpaSource.dialect>
+            <jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:sybase:Tds:dev77.qa.atl2.redhat.com:5000/hibbrtru</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
+      <!-- The SQLServer2005 (MS JDBC) test environment -->
+      <profile>
+          <id>mssql2005</id>
+		      <activation>
+		        <property>
+		          <name>database</name>
+		          <value>mssql2005</value>
+		        </property>
+		      </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.microsoft.sqlserver</groupId>
+              <artifactId>msjdbc</artifactId>
+              <version>1.1</version>
+            </dependency>
+          </dependencies>
+          <properties>
+            <jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
+            <jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:sqlserver://dev30.qa.atl.jboss.com:3918</jpaSource.url>
+            <jpaSource.username>username</jpaSource.username>
+            <jpaSource.password>password</jpaSource.password>
+          </properties>
+      </profile>
+
 	</profiles>
 	<build>
 		<!-- This section defines the default plugin settings inherited by child projects. -->

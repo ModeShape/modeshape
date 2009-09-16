@@ -42,22 +42,11 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() {
-        // Set the connection properties to be an in-memory HSQL database ...
-        JpaSource source = new JpaSource();
-        source.setName("Test Repository");
-        source.setDialect("org.hibernate.dialect.HSQLDialect");
-        source.setDriverClassName("org.hsqldb.jdbcDriver");
-        source.setUsername("sa");
-        source.setPassword("");
-        source.setUrl("jdbc:hsqldb:.");
-        source.setMaximumConnectionsInPool(1);
-        source.setMinimumConnectionsInPool(0);
-        source.setNumberOfConnectionsToAcquireAsNeeded(1);
-        source.setMaximumSizeOfStatementCache(100);
-        source.setMaximumConnectionIdleTimeInSeconds(0);
+        // Set the connection properties using the environment defined in the POM files ...
+        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
+
+        // Override the inherited properties ...
         source.setReferentialIntegrityEnforced(true);
-        source.setLargeValueSizeInBytes(150);
-        source.setAutoGenerateSchema("create");
         source.setCompressData(true);
 
         return source;

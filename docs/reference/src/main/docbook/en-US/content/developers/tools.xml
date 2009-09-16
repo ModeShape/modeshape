@@ -252,36 +252,81 @@
 				see the <ulink url="http://wiki.jboss.org/wiki/Maven">JBoss.org Wiki</ulink>.
 			</para>
 		</note>
-		<para>
-			There are just a few commands that are useful for building JBoss DNA (and it's <link linkend="modules">subprojects</link>).
-			Usually, these are issued while at the top level of the code (usually just below <code>trunk/</code>), although issuing
-			them inside a subproject just applies to that subproject.
-		</para>
-		<table frame='all'>
-			<title>Useful Maven commands</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Command</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry><code>mvn clean</code></entry>
-						<entry>Clean up all built artifacts (e.g., the <code>target/</code> directory in each project)</entry>
-					</row>
-					<row>
-						<entry><code>mvn clean install</code></entry>
-						<entry>Clean up all built artifacts, then compile, run the unit tests, and install the resulting JAR artifact(s)
-							into your local Maven repository (e.g, usually <code>~/.m2/repository</code>).
-						</entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</table>
+		<sect2 id="build_commands">
+			<title>Building</title>
+			<para>
+				There are just a few commands that are useful for building JBoss DNA (and it's <link linkend="modules">subprojects</link>).
+				Usually, these are issued while at the top level of the code (usually just below <code>trunk/</code>), although issuing
+				them inside a subproject just applies to that subproject.
+			</para>
+			<table frame='all'>
+				<title>Useful Maven commands</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Command</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>mvn clean</code></entry>
+							<entry>Clean up all built artifacts (e.g., the <code>target/</code> directory in each project)</entry>
+						</row>
+						<row>
+							<entry><code>mvn clean install</code></entry>
+							<entry>Called the "quick build".  Clean up all produced artifacts; compile the source code and test cases; 
+								run all of the unit tests; and install the resulting JAR artifact(s)
+								into your local Maven repository (e.g, usually <code>~/.m2/repository</code>).  This is often what
+								developers run prior to checking in changes, since it generally runs quickly.
+								Note that no integration tests are performed, and HSQLDB is used when a database is needed.
+							</entry>
+						</row>
+						<row>
+							<entry><code>mvn clean install -Ddatabase=dbprofile</code></entry>
+							<entry>Same as the "quick build", except that it specifies the database management system
+								that is to be used by the tests.
+								Options for "<code>dbprofile</code>" values are: 
+								"<code>hsqldb</code>", "<code>h2</code>", 
+								"<code>postgresql_local</code>", "<code>postgresql8</code>",
+								"<code>mysql5</code>", 
+								"<code>oracle9i</code>", "<code>oracle10g</code>", "<code>oracle11g</code>", 
+								"<code>db2v8</code>", "<code>db2v9</code>", 
+								"<code>sybase15</code>", and 
+								"<code>mysql2005</code>".
+								The database connection information for these database profiles are in the parent "pom.xml" file,
+								and most of these are configured to use database instances within the JBoss Quality Assurance
+								lab and are accessible only to Red Hat employees.  However, feel free to add your own profiles
+								or even change the settings in the POM file to suit your needs.
+							</entry>
+						</row>
+						<row>
+							<entry><code>mvn -P integration clean install</code></entry>
+							<entry>This "integration build" does everything the "quick" build does plus it compiles and
+								runs the integration tests, which take several extra minutes to run.
+							  Also, HSQLDB is used when a database is needed.
+							</entry>
+						</row>
+						<row>
+							<entry><code>mvn -P integration clean install -Ddatabase=dbprofile</code></entry>
+							<entry>This does the same as the "integration build", except that it specifies the database management system
+								that is to be used by the unit and integration tests.  Options for the "<code>dbprofile</code>" values are
+								the same as listed above.
+							</entry>
+						</row>
+						<row>
+							<entry><code>mvn -P assembly clean install</code></entry>
+							<entry>This runs a builds all source code, documentation, JavaDoc, runs all unit and integration tests,
+								and produces all assemblies (e.g., zip files).
+							  HSQLDB is used when a database is needed.
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</sect2>
 	</sect1>
 	<sect1 id="hudson">
 		<title>Continuous integration with Hudson</title>
@@ -303,11 +348,11 @@
 				<tbody>
 					<row>
 						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20continuous%20on%20JDK1.5/">Continuous on JDK 5</ulink></entry>
-						<entry>Continuous build that runs after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
+						<entry>Continuous build that runs an integration build after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
 					</row>
 					<row>
 						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
-						<entry>Build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
+						<entry>Integration build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
 							since the previous night.</entry>
 					</row>
 				</tbody>

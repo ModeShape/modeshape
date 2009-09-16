@@ -102,4 +102,24 @@
       </plugin>
     </plugins>
   </reporting>
+  <build>
+    <testResources>
+      <testResource>
+           <filtering>false</filtering>
+           <directory>src/test/resources</directory>
+           <includes>
+             <include>*</include>
+             <include>**/*</include>
+           </includes>
+       </testResource>
+	    <!-- Apply the properties set in the POM to the resource files -->
+      <testResource>
+        <filtering>true</filtering>
+        <directory>src/test/resources</directory>
+        <includes>
+          <include>database.properties</include>
+        </includes>
+      </testResource>
+    </testResources>
+  </build>
 </project>

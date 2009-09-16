@@ -41,21 +41,8 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() {
-        // Set the connection properties to be an in-memory HSQL database ...
-        JpaSource source = new JpaSource();
-        source.setName("Test Repository");
-        source.setDialect("org.hibernate.dialect.HSQLDialect");
-        source.setDriverClassName("org.hsqldb.jdbcDriver");
-        source.setUsername("sa");
-        source.setPassword("");
-        source.setUrl("jdbc:hsqldb:.");
-        source.setMaximumConnectionsInPool(3);
-        source.setMinimumConnectionsInPool(0);
-        source.setNumberOfConnectionsToAcquireAsNeeded(1);
-        source.setMaximumSizeOfStatementCache(100);
-        source.setMaximumConnectionIdleTimeInSeconds(0);
-        source.setLargeValueSizeInBytes(150);
-        source.setAutoGenerateSchema("create");
+        // Set the connection properties using the environment defined in the POM files ...
+        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
 
         // Create a graph and look up the root node. We do this to initialize the connection pool and
         // force the database to be setup at this point. By doing it now, we don't include this overhead
