@@ -25,7 +25,6 @@ package org.jboss.dna.common.text;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.common.text.TokenStream.ParsingException;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.junit.Before;
 import org.junit.Test;

@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.collection.SimpleProblems;
-import org.jboss.dna.common.text.TokenStream.ParsingException;
+import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;

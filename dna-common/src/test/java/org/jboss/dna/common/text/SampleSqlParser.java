@@ -26,7 +26,6 @@ package org.jboss.dna.common.text;
 import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TokenStream.ParsingException;
 
 /**
  * 

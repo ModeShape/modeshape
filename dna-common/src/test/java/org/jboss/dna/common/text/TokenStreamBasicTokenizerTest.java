@@ -28,8 +28,6 @@ import static org.junit.Assert.assertThat;
 import java.util.LinkedList;
 import org.jboss.dna.common.text.TokenStream.BasicTokenizer;
 import org.jboss.dna.common.text.TokenStream.CharacterArrayStream;
-import org.jboss.dna.common.text.TokenStream.ParsingException;
-import org.jboss.dna.common.text.TokenStream.Position;
 import org.jboss.dna.common.text.TokenStream.Tokens;
 import org.junit.Before;
 import org.junit.Test;

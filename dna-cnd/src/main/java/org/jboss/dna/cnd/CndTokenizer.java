@@ -1,9 +1,9 @@
 package org.jboss.dna.cnd;
 
 import org.jboss.dna.common.CommonI18n;
+import org.jboss.dna.common.text.ParsingException;
+import org.jboss.dna.common.text.Position;
 import org.jboss.dna.common.text.TokenStream.CharacterStream;
-import org.jboss.dna.common.text.TokenStream.ParsingException;
-import org.jboss.dna.common.text.TokenStream.Position;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.common.text.TokenStream.Tokens;
 

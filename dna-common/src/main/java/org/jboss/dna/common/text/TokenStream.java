@@ -1585,7 +1585,7 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(org.jboss.dna.common.text.TokenStream.Position, int)
+         * @see org.jboss.dna.common.text.TokenStream.Tokens#addToken(Position, int)
          */
         public void addToken( Position position,
                               int index ) {
@@ -1790,95 +1790,6 @@ public class TokenStream {
         public boolean isNextValidXmlCharacter() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && XmlCharacters.isValid(content[nextIndex]);
-        }
-    }
-
-    /**
-     * A class that represents the position of a particular character in terms of the lines and columns of a character sequence.
-     */
-    @Immutable
-    public final static class Position {
-        private final int line;
-        private final int column;
-
-        protected Position( int line,
-                            int column ) {
-            this.line = line;
-            this.column = column;
-        }
-
-        /**
-         * Get the 1-based column number of the character.
-         * 
-         * @return the column number; always positive
-         */
-        public int getColumn() {
-            return column;
-        }
-
-        /**
-         * Get the 1-based line number of the character.
-         * 
-         * @return the line number; always positive
-         */
-        public int getLine() {
-            return line;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            return "" + line + ':' + column;
-        }
-    }
-
-    /**
-     * An exception representing a problem during parsing.
-     */
-    public static class ParsingException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        private final Position position;
-
-        /**
-         * @param position the position of the error; never null
-         */
-        public ParsingException( Position position ) {
-            super();
-            this.position = position;
-        }
-
-        /**
-         * @param position the position of the error; never null
-         * @param message the message
-         * @param cause the underlying cause
-         */
-        public ParsingException( Position position,
-                                 String message,
-                                 Throwable cause ) {
-            super(message, cause);
-            this.position = position;
-        }
-
-        /**
-         * @param position the position of the error; never null
-         * @param message the message
-         */
-        public ParsingException( Position position,
-                                 String message ) {
-            super(message);
-            this.position = position;
-        }
-
-        /**
-         * @return position
-         */
-        public Position getPosition() {
-            return position;
         }
     }
 
