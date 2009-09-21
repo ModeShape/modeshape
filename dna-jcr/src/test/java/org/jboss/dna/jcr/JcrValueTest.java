@@ -156,7 +156,7 @@ public class JcrValueTest {
     public void shouldProvideDateForDouble() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue(factories, cache, PropertyType.DOUBLE, 0.0).getDate(), is(expectedValue));
+        assertThat(new JcrValue(factories, cache, PropertyType.DOUBLE, 0.0).getDate().getTimeInMillis(), is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class JcrValueTest {
     public void shouldProvideDateForLong() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue(factories, cache, PropertyType.LONG, 0L).getDate(), is(expectedValue));
+        assertThat(new JcrValue(factories, cache, PropertyType.LONG, 0L).getDate().getTimeInMillis(), is(expectedValue.getTimeInMillis()));
     }
 
     @Test
