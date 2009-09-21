@@ -24,6 +24,7 @@
 package org.jboss.dna.graph;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +45,31 @@ import org.jboss.dna.graph.property.Property;
  */
 @Immutable
 public abstract class Location implements Iterable<Property>, Comparable<Location> {
+
+    private static final Comparator<Location> COMPARATOR = new Comparator<Location>() {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+         */
+        public int compare( Location o1,
+                            Location o2 ) {
+            if (o1 == o2) return 0;
+            if (o1 == null) return -1;
+            if (o2 == null) return 1;
+            return o1.compareTo(o2);
+        }
+    };
+
+    /**
+     * Get a {@link Comparator} that can be used to compare two Location objects. Note that Location implements {@link Comparable}
+     * .
+     * 
+     * @return the comparator; never null
+     */
+    public static final Comparator<Location> comparator() {
+        return COMPARATOR;
+    }
 
     /**
      * Simple shared iterator instance that is used when there are no properties.

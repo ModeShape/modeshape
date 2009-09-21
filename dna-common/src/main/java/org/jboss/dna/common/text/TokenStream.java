@@ -444,6 +444,72 @@ public class TokenStream {
     }
 
     /**
+     * Convert the value of this token to an integer, return it, and move to the next token.
+     * 
+     * @return the current token's value, converted to an integer
+     * @throws ParsingException if there is no such token to consume, or if the token cannot be converted to an integer
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public int consumeInteger() throws ParsingException, IllegalStateException {
+        if (completed) throwNoMoreContent();
+        // Get the value from the current token ...
+        String value = currentToken().value();
+        try {
+            int result = Integer.parseInt(value);
+            moveToNextToken();
+            return result;
+        } catch (NumberFormatException e) {
+            Position position = currentToken().position();
+            String msg = CommonI18n.expectingValidIntegerAtLineAndColumn.text(value, position.getLine(), position.getColumn());
+            throw new ParsingException(position, msg);
+        }
+    }
+
+    /**
+     * Convert the value of this token to a long, return it, and move to the next token.
+     * 
+     * @return the current token's value, converted to an integer
+     * @throws ParsingException if there is no such token to consume, or if the token cannot be converted to a long
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public long consumeLong() throws ParsingException, IllegalStateException {
+        if (completed) throwNoMoreContent();
+        // Get the value from the current token ...
+        String value = currentToken().value();
+        try {
+            long result = Long.parseLong(value);
+            moveToNextToken();
+            return result;
+        } catch (NumberFormatException e) {
+            Position position = currentToken().position();
+            String msg = CommonI18n.expectingValidLongAtLineAndColumn.text(value, position.getLine(), position.getColumn());
+            throw new ParsingException(position, msg);
+        }
+    }
+
+    /**
+     * Convert the value of this token to an integer, return it, and move to the next token.
+     * 
+     * @return the current token's value, converted to an integer
+     * @throws ParsingException if there is no such token to consume, or if the token cannot be converted to an integer
+     * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
+     */
+    public boolean consumeBoolean() throws ParsingException, IllegalStateException {
+        if (completed) throwNoMoreContent();
+        // Get the value from the current token ...
+        String value = currentToken().value();
+        try {
+            boolean result = Boolean.parseBoolean(value);
+            moveToNextToken();
+            return result;
+        } catch (NumberFormatException e) {
+            Position position = currentToken().position();
+            String msg = CommonI18n.expectingValidBooleanAtLineAndColumn.text(value, position.getLine(), position.getColumn());
+            throw new ParsingException(position, msg);
+        }
+    }
+
+    /**
      * Return the value of this token and move to the next token.
      * 
      * @return the value of the current token
@@ -451,14 +517,17 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public String consume() throws ParsingException, IllegalStateException {
-        if (completed) {
-            String msg = CommonI18n.noMoreContent.text();
-            throw new ParsingException(tokens.get(tokens.size() - 1).position(), msg);
-        }
+        if (completed) throwNoMoreContent();
         // Get the value from the current token ...
         String result = currentToken().value();
         moveToNextToken();
         return result;
+    }
+
+    protected void throwNoMoreContent() throws ParsingException {
+        String msg = CommonI18n.noMoreContent.text();
+        Position pos = tokens.isEmpty() ? new Position(1, 0) : tokens.get(tokens.size() - 1).position();
+        throw new ParsingException(pos, msg);
     }
 
     /**
@@ -1278,6 +1347,14 @@ public class TokenStream {
         boolean isNextWhitespace();
 
         /**
+         * Determine if the next character on the sream is a {@link Character#isLetterOrDigit(char) letter or digit}. This method
+         * does <i>not</i> advance the stream.
+         * 
+         * @return true if there is a {@link #next() next} character and it is a letter or digit, or false otherwise
+         */
+        boolean isNextLetterOrDigit();
+
+        /**
          * Determine if the next character on the sream is a {@link XmlCharacters#isValid(int) valid XML character}. This method
          * does <i>not</i> advance the stream.
          * 
@@ -1647,7 +1724,7 @@ public class TokenStream {
         private int lastIndex = -1;
         private final int maxIndex;
         private int lineNumber = 1;
-        private int columnNumber = 1;
+        private int columnNumber = 0;
         private boolean nextCharMayBeLineFeed;
 
         public CharacterArrayStream( char[] content ) {
@@ -1692,6 +1769,7 @@ public class TokenStream {
                 throw new NoSuchElementException();
             }
             char result = content[++lastIndex];
+            ++columnNumber;
             if (result == '\r') {
                 nextCharMayBeLineFeed = true;
                 ++lineNumber;
@@ -1780,6 +1858,16 @@ public class TokenStream {
         public boolean isNextWhitespace() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && Character.isWhitespace(content[nextIndex]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#isNextLetterOrDigit()
+         */
+        public boolean isNextLetterOrDigit() {
+            int nextIndex = lastIndex + 1;
+            return nextIndex <= maxIndex && Character.isLetterOrDigit(content[nextIndex]);
         }
 
         /**

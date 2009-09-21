@@ -10,8 +10,8 @@ public final class Position {
     private final int line;
     private final int column;
 
-    protected Position( int line,
-                        int column ) {
+    public Position( int line,
+                     int column ) {
         this.line = line;
         this.column = column;
     }

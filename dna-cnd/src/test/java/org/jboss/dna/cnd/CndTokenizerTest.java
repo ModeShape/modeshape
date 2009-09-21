@@ -112,7 +112,6 @@ public class CndTokenizerTest {
     public void shouldNotIncludeColonInListOfSymbolsSinceTheyCanAppearInNames() {
         tokenizer = new CndTokenizer(true, true);
         String content = "dna:someName";
-        int numSymbols = content.length();
         tokenize(content);
         assertNextTokenIs(0, content.length(), CndTokenizer.WORD);
         assertNoMoreTokens();
@@ -122,7 +121,6 @@ public class CndTokenizerTest {
     public void shouldCreateVendorExtensionToken() {
         tokenizer = new CndTokenizer(true, true);
         String content = "{vendor extension}";
-        int numSymbols = content.length();
         tokenize(content);
         assertNextTokenIs(0, content.length(), CndTokenizer.VENDOR_EXTENSION);
         assertNoMoreTokens();
@@ -132,7 +130,6 @@ public class CndTokenizerTest {
     public void shouldNotCreateVendorExtensionTokenIfTokenizerIsNotUsingThem() {
         tokenizer = new CndTokenizer(true, false);
         String content = "{vendor extension}";
-        int numSymbols = content.length();
         tokenize(content);
         assertNoMoreTokens();
     }

@@ -57,6 +57,8 @@ import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
 @Immutable
 public class ExecutionContext implements ClassLoaderFactory, Cloneable {
 
+    public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
+
     private final ClassLoaderFactory classLoaderFactory;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -210,7 +212,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * 
      * @return the property factory; never <code>null</code>
      */
-    public PropertyFactory getPropertyFactory() {
+    public final PropertyFactory getPropertyFactory() {
         return this.propertyFactory;
     }
 

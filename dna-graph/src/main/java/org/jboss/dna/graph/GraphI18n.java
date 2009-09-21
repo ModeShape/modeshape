@@ -127,6 +127,35 @@ public final class GraphI18n {
     public static I18n unableToMoveNodeToBeChildOfDecendent;
     public static I18n childNotFound;
 
+    /* Query */
+    public static I18n tableDoesNotExist;
+    public static I18n columnDoesNotExistOnTable;
+    public static I18n columnDoesNotExistInQuery;
+    public static I18n selectorDoesNotExistInQuery;
+    public static I18n propertyOnSelectorIsNotUsedInQuery;
+    public static I18n errorResolvingNodesFromLocationsUsingSourceAndWorkspace;
+    public static I18n queryHasNoResults;
+    public static I18n schemataKeyReferencesNonExistingColumn;
+    public static I18n nextMethodMustBeCalledBeforeGettingValue;
+    public static I18n expectingValidName;
+    public static I18n expectingValidPath;
+    public static I18n columnMustBeScoped;
+    public static I18n expectingValidNameAtLineAndColumn;
+    public static I18n expectingValidPathAtLineAndColumn;
+    public static I18n mustBeScopedAtLineAndColumn;
+    public static I18n unexpectedToken;
+    public static I18n secondValueInLimitRangeCannotBeLessThanFirst;
+    public static I18n expectingComparisonOperator;
+    public static I18n expectingConstraintCondition;
+    public static I18n functionIsAmbiguous;
+    public static I18n bindVariableMustConformToNcName;
+    public static I18n invalidPropertyType;
+    public static I18n valueCannotBeCastToSpecifiedType;
+    public static I18n noMatchingBracketFound;
+    public static I18n expectingLiteralAndUnableToParseAsLong;
+    public static I18n expectingLiteralAndUnableToParseAsDouble;
+    public static I18n expectingLiteralAndUnableToParseAsDate;
+
     static {
         try {
             I18n.initialize(GraphI18n.class);

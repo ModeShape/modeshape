@@ -101,6 +101,9 @@ public final class CommonI18n {
     public static I18n startMethodMustBeCalledBeforeConsumingOrMatching;
     public static I18n noMatchingDoubleQuoteFound;
     public static I18n noMatchingSingleQuoteFound;
+    public static I18n expectingValidIntegerAtLineAndColumn;
+    public static I18n expectingValidLongAtLineAndColumn;
+    public static I18n expectingValidBooleanAtLineAndColumn;
 
     static {
         try {

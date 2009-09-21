@@ -114,6 +114,7 @@
 		<module>dna-common</module>
 		<module>dna-graph</module>
 		<module>dna-repository</module>
+		<module>dna-search</module>
 		<module>dna-cnd</module>
 		<module>dna-jcr</module>
 		<module>extensions/dna-classloader-maven</module>
@@ -821,6 +822,11 @@
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-cnd</artifactId>
+				<version>${pom.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-search</artifactId>
 				<version>${pom.version}</version>
 			</dependency>
 			<dependency>

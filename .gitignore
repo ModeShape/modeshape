@@ -15,6 +15,9 @@
 /dna-integration-tests/.settings
 /dna-integration-tests/target
 
+/dna-search/.settings
+/dna-search/target
+
 /dna-jcr/.settings
 /dna-jcr/target
 
