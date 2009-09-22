@@ -565,7 +565,7 @@
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qa09</jpaSource.url>
+            <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</jpaSource.url>
             <jpaSource.username>jbossdna</jpaSource.username>
             <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
@@ -590,7 +590,7 @@
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qa09</jpaSource.url>
+            <jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
             <jpaSource.username>jbossdna</jpaSource.username>
             <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
