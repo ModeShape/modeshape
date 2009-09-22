@@ -428,7 +428,7 @@
       </profile>
 
       <!-- The PostgreSQL test environment, local to the developer -->
-      <profile>
+      <!--profile>
           <id>postgresql_local</id>
 		      <activation>
 		        <property>
@@ -450,7 +450,7 @@
             <jpaSource.username>postgres</jpaSource.username>
             <jpaSource.password>data</jpaSource.password>
           </properties>
-      </profile>
+      </profile-->
 
       <!--
           ###################################################################
@@ -477,10 +477,10 @@
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
-            <jpaSource.driverClassName>com.mysql.jdbc.driverClassName</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:mysql://vmg08.mw.lab.eng.bos.redhat.com/hibbrtru</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/jbossdna</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
@@ -497,16 +497,15 @@
             <dependency>
               <groupId>postgresql</groupId>
               <artifactId>postgresql</artifactId>
-              <version>8.2-504</version>
-              <classifier>jdbc3</classifier>
+              <version>8.4-701.jdbc3</version>
             </dependency>
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:postgresql://dev01.qa.atl.jboss.com:5432:hibbrtru</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:jbossdna</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
@@ -515,36 +514,6 @@
           Then, those with commercial drivers
           ###################################################################
       -->
-
-      <!-- The DB2 8.x test environment (using 9x drivers)-->
-      <profile>
-          <id>db2v8</id>
-		      <activation>
-		        <property>
-		          <name>database</name>
-		          <value>db2v8</value>
-		        </property>
-		      </activation>
-          <dependencies>
-            <dependency>
-              <groupId>com.ibm</groupId>
-              <artifactId>db2jcc</artifactId>
-              <version>3.1.57</version>
-            </dependency>
-            <dependency>
-              <groupId>com.ibm</groupId>
-              <artifactId>db2jcc_license_cu</artifactId>
-              <version>3.1.57</version>
-            </dependency>
-          </dependencies>
-          <properties>
-            <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
-            <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:db2://dev32.qa.atl.jboss.com:50000/jbossqa</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
-          </properties>
-      </profile>
 
       <!-- The DB2 9.x test environment (using 9x drivers)-->
       <profile>
@@ -559,46 +528,20 @@
             <dependency>
               <groupId>com.ibm</groupId>
               <artifactId>db2jcc</artifactId>
-              <version>3.1.57</version>
+              <version>3.8.47</version>
             </dependency>
             <dependency>
               <groupId>com.ibm</groupId>
               <artifactId>db2jcc_license_cu</artifactId>
-              <version>3.1.57</version>
+              <version>3.8.47</version>
             </dependency>
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:db2://dev67.qa.atl.jboss.com:50000/jbossqa</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
-          </properties>
-      </profile>
-
-      <!-- The Oracle9i test environment -->
-      <profile>
-          <id>oracle9i</id>
-		      <activation>
-		        <property>
-		          <name>database</name>
-		          <value>oracle9i</value>
-		        </property>
-		      </activation>
-          <dependencies>
-            <dependency>
-              <groupId>com.oracle</groupId>
-              <artifactId>ojdbc14</artifactId>
-              <!-- use the 10g drivers which are surprisingly largely bug free -->
-              <version>10.0.2.0</version>
-            </dependency>
-          </dependencies>
-          <properties>
-            <jpaSource.dialect>org.hibernate.dialect.Oracle9iDialect</jpaSource.dialect>
-            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:oracle:thin:@dev20.qa.atl.jboss.com:1521:qa</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
@@ -621,10 +564,10 @@
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
-            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:oracle:thin:@dev01.qa.atl.jboss.com:1521:qadb01</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qa09</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
@@ -646,10 +589,10 @@
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
-            <jpaSource.driverClassName>oracle.jdbc.driverClassName.OracleDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:oracle:thin:@ENGLXDBS11.mm.atl2.redhat.com:1521:orcl</jpaSource.url>
-            <jpaSource.username>integtest</jpaSource.username>
-            <jpaSource.password>teiid</jpaSource.password>
+            <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
+            <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qa09</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
@@ -670,36 +613,37 @@
             </dependency>
           </dependencies>
           <properties>
-            <jpaSource.dialect>org.hibernate.dialect.SybaseASE15Dialect</jpaSource.dialect>
+            <jpaSource.dialect>org.hibernate.dialect.SybaseDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:sybase:Tds:dev77.qa.atl2.redhat.com:5000/hibbrtru</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/jbossdna</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
-      <!-- The SQLServer2005 (MS JDBC) test environment -->
+      <!-- The SQLServer2008 (MS JDBC) test environment -->
       <profile>
-          <id>mssql2005</id>
+          <id>mssql2008</id>
 		      <activation>
 		        <property>
 		          <name>database</name>
-		          <value>mssql2005</value>
+		          <value>mssql2008</value>
 		        </property>
 		      </activation>
           <dependencies>
             <dependency>
               <groupId>com.microsoft.sqlserver</groupId>
               <artifactId>msjdbc</artifactId>
-              <version>1.1</version>
+              <version>2.0.1008.2</version>
+              <classifier>4</classifier><!-- Must use the JDBC-4 driver on JDK6 -->
             </dependency>
           </dependencies>
           <properties>
             <jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:sqlserver://dev30.qa.atl.jboss.com:3918</jpaSource.url>
-            <jpaSource.username>username</jpaSource.username>
-            <jpaSource.password>password</jpaSource.password>
+            <jpaSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</jpaSource.url>
+            <jpaSource.username>jbossdna</jpaSource.username>
+            <jpaSource.password>jbossdna</jpaSource.password>
           </properties>
       </profile>
 
