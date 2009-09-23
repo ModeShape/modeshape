@@ -754,6 +754,7 @@ public class TokenStream {
         }
         this.tokenIterator = iter;
         this.currentToken = tokenIterator.hasNext() ? tokenIterator.next() : null;
+        this.completed = this.currentToken == null;
         return true;
     }
 
@@ -794,6 +795,7 @@ public class TokenStream {
         }
         this.tokenIterator = iter;
         this.currentToken = tokenIterator.hasNext() ? tokenIterator.next() : null;
+        this.completed = this.currentToken == null;
         return true;
     }
 
@@ -834,6 +836,7 @@ public class TokenStream {
         }
         this.tokenIterator = iter;
         this.currentToken = tokenIterator.hasNext() ? tokenIterator.next() : null;
+        this.completed = this.currentToken == null;
         return true;
     }
 
