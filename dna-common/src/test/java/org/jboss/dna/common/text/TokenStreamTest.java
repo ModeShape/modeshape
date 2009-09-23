@@ -23,11 +23,9 @@
  */
 package org.jboss.dna.common.text;
 
-import java.util.Arrays;
-
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-
+import java.util.Arrays;
 import org.jboss.dna.common.text.TokenStream.BasicTokenizer;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.junit.Before;
@@ -87,6 +85,14 @@ public class TokenStreamTest {
     public void shouldNotAllowCanConsumeBeforeStartIsCalled() {
         tokens = new TokenStream(content, TokenStream.basicTokenizer(false), false);
         tokens.canConsume("Select");
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNextIfThereIsACurrentToken() {
+        content = "word";
+        makeCaseSensitive();
+        assertThat(tokens.currentToken().matches("word"), is(true));
+        assertThat(tokens.hasNext(), is(true));
     }
 
     @Test
@@ -358,7 +364,7 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume("SELECT", "ALL", "COLUMNS", "FROM", TokenStream.ANY_VALUE, "TABLE"), is(true));
         assertThat(tokens.hasNext(), is(false));
     }
-    
+
     @Test
     public void shouldCanConsumeSingleAfterTokensCompleteFromCanConsumeStringList() {
         makeCaseInsensitive();
@@ -369,7 +375,7 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume(TokenStream.ANY_VALUE), is(false));
         assertThat(tokens.canConsume(BasicTokenizer.SYMBOL), is(false));
     }
-    
+
     @Test
     public void shouldCanConsumeStringAfterTokensCompleteFromCanConsumeStringArray() {
         makeCaseInsensitive();
@@ -380,10 +386,10 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume(TokenStream.ANY_VALUE), is(false));
         assertThat(tokens.canConsume(BasicTokenizer.SYMBOL), is(false));
     }
-    
+
     @Test
     public void shouldCanConsumeStringAfterTokensCompleteFromCanConsumeStringIterator() {
-        makeCaseInsensitive();       
+        makeCaseInsensitive();
         // consume ALL the tokens using canConsume()
         tokens.canConsume(Arrays.asList(new String[] {"SELECT", "ALL", "COLUMNS", "FROM", "THIS", "TABLE"}));
         // try to canConsume() single word

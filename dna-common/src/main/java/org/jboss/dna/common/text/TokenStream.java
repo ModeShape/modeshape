@@ -1167,16 +1167,16 @@ public class TokenStream {
     }
 
     /**
-     * Determine if this stream has another token beyond the current position.
+     * Determine if this stream has another token to be consumed.
      * 
-     * @return true if there is another token, or false otherwise
+     * @return true if there is another token ready for consumption, or false otherwise
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean hasNext() {
         if (tokenIterator == null) {
             throw new IllegalStateException(CommonI18n.startMethodMustBeCalledBeforeNext.text());
         }
-        return tokenIterator.hasNext();
+        return !completed;
     }
 
     /**
