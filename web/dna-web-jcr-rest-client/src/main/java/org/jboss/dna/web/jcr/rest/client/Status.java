@@ -177,7 +177,7 @@ public final class Status {
     public String toString() {
         StringBuilder txt = new StringBuilder("Status "); //$NON-NLS-1$
         txt.append(this.severity.toString()).append(": "); //$NON-NLS-1$
-        txt.append(getMessage().isEmpty() ? "<no message>" : getMessage()); //$NON-NLS-1$
+        txt.append((getMessage().length() == 0) ? "<no message>" : getMessage()); //$NON-NLS-1$
         txt.append(" : "); //$NON-NLS-1$
         txt.append((getException() == null) ? "<no error>" : getException()); //$NON-NLS-1$
         return txt.toString();
