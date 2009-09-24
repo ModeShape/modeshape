@@ -1,0 +1,174 @@
+Help us improve Wikipedia by supporting it financially.
+Registration for Wikimania 2009 is now open. Learn more.
+    
+[Hide] [Help us with translations!]
+Percent-encoding
+From Wikipedia, the free encyclopedia
+Jump to: navigation, search
+    This article includes a list of references, related reading or external links, but its sources remain unclear because it lacks inline citations. Please improve this article by introducing more precise citations where appropriate. (April 2008)
+
+    For the urlencode in mediawiki, see Help:Magic words
+
+Percent-encoding, also known as URL encoding, is a mechanism for encoding information in a Uniform Resource Identifier (URI) under certain circumstances. Although it is known as URL encoding it is, in fact, used more generally within the main Uniform Resource Identifier (URI) set, which includes both Uniform Resource Locator (URL) and Uniform Resource Name (URN). As such it is also used in the preparation of data of the "application/x-www-form-urlencoded" media type, as is often used in email messages and the submission of HTML form data in HTTP requests.
+Contents
+[hide]
+
+    * 1 Percent-encoding in a URI
+          o 1.1 Types of URI characters
+          o 1.2 Percent-encoding reserved characters
+          o 1.3 Percent-encoding unreserved characters
+          o 1.4 Percent-encoding arbitrary data
+                + 1.4.1 Binary data
+                + 1.4.2 Character data
+          o 1.5 Current standard
+          o 1.6 Non-standard implementations
+    * 2 The application/x-www-form-urlencoded type
+    * 3 See also
+    * 4 References
+    * 5 External links
+
+[edit] Percent-encoding in a URI
+
+[edit] Types of URI characters
+
+The characters allowed in a URI are either reserved or unreserved. Reserved characters are those characters that sometimes have special meaning, while unreserved characters have no such meaning. Using percent-encoding, characters which otherwise would not be allowed are represented using allowed characters. The sets of reserved and unreserved characters and the circumstances under which certain reserved characters have special meaning have changed slightly with each revision of specifications that govern URIs and URI schemes.
+RFC 3986 section 2.2 Reserved Characters (January 2005) !   *   '   (   )   ;   :   @   &   =   +   $   ,   /   ?   %   #   [   ]
+RFC 3986 section 2.3 Unreserved Characters (January 2005) A     B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z
+a   b   c   d   e   f   g   h   i   j   k   l   m   n   o   p   q   r   s   t   u   v   w   x   y   z
+0   1   2   3   4   5   6   7   8   9   -   _   .   ~   
+
+No other characters are allowed in a URI.
+
+[edit] Percent-encoding reserved characters
+
+When a character from the reserved set (a "reserved character") has special meaning (a "reserved purpose") in a certain context, and a URI scheme says that it is necessary to use that character for some other purpose, then the character must be percent-encoded. Percent-encoding a reserved character involves converting the character to its corresponding byte value in ASCII and then representing that value as a pair of hexadecimal digits. The digits, preceded by a percent sign ("%"), are then used in the URI in place of the reserved character. (For a non-ASCII character, it is typically converted to its byte sequence in UTF-8, and then each byte value is represented as above.)
+
+The reserved character "/", for example, if used in the "path" component of a URI, has the special meaning of being a delimiter between path segments. If, according to a given URI scheme, "/" needs to be in a path segment, then the three characters "%2F" or "%2f" must be used in the segment instead of a raw "/".
+Reserved characters after percent-encoding !    *   "   '   (   )   ;   :   @   &   =   +   $   ,   /   ?   %   #   [   ]
+%21     %2A     %22     %27     %28     %29     %3B     %3A     %40     %26     %3D     %2B     %24     %2C     %2F     %3F     %25     %23     %5B     %5D
+
+Reserved characters that have no reserved purpose in a particular context may also be percent-encoded but are not semantically different from those that are not.
+
+In the "query" component of a URI, for example, "/" is still considered a reserved character but it normally has no reserved purpose, unless a particular URI scheme says otherwise. The character does not need to be percent-encoded when it has no reserved purpose.
+
+URIs that differ only by whether a reserved character is percent-encoded or appears literally are normally considered not equivalent (denoting the same resource) unless it can be determined that the reserved characters in question have no reserved purpose. This determination is dependent upon the rules established for reserved characters by individual URI schemes.
+
+[edit] Percent-encoding unreserved characters
+
+Characters from the unreserved set can be percent-encoded in the same way as reserved characters. That is, if a scheme calls for an unreserved character to be used in a URI, either the raw character or its percent-encoded equivalent may be used interchangeably.
+
+URIs that differ only by whether an unreserved character is percent-encoded or appears literally are equivalent by definition, but URI processors, in practice, may not always recognize this equivalence. For example, URI consumers shouldn't treat "%41" differently from "A" or "%7E" differently from "~", but some do. For maximum interoperability, URI producers are discouraged from percent-encoding unreserved characters.
+
+[edit] Percent-encoding arbitrary data
+
+Most URI schemes involve the representation of arbitrary data, such as an IP address or file system path, as components of a URI. URI scheme specifications should, but often don't, provide an explicit mapping between URI characters and all possible data values being represented by those characters.
+
+[edit] Binary data
+
+Since the publication of RFC 1738 in 1994 it has been specified that schemes that provide for the representation of binary data in a URI must divide the data into 8-bit bytes and percent-encode each byte in the same manner as above. Byte value 0F (hexadecimal), for example, should be represented by "%0F", but byte value 41 (hexadecimal) can be represented by "A", or "%41". The use of unencoded characters for alphanumeric and unreserved characters is typically preferred as it results in shorter URLs.
+
+[edit] Character data
+
+The procedure for percent-encoding binary data has often been extrapolated, sometimes inappropriately or without being fully specified, to apply to character-based data. In the World Wide Web's formative years, when dealing with data characters in the ASCII repertoire and using their corresponding bytes in ASCII as the basis for determining percent-encoded sequences, this practice was relatively harmless; it was just assumed that characters and bytes mapped one-to-one and were interchangeable. The need to represent characters outside the ASCII range, however, grew quickly and URI schemes and protocols often failed to provide standard rules for preparing character data for inclusion in a URI. Web applications consequently began using different multi-byte, stateful, and other non-ASCII-compatible encodings as the basis for percent-encoding, leading to ambiguities and difficulty interpreting URIs reliably.
+
+For example, many URI schemes and protocols based on RFCs 1738 and 2396 presume that the data characters will be converted to bytes according to some unspecified character encoding before being represented in a URI by unreserved characters or percent-encoded bytes. If the scheme does not allow the URI to provide a hint as to what encoding was used, or if the encoding conflicts with the use of ASCII to percent-encode reserved and unreserved characters, then the URI cannot be reliably interpreted. Some schemes fail to account for encoding at all, and instead just suggest that data characters map directly to URI characters, which leaves it up to implementations to decide whether and how to percent-encode data characters that are in neither the reserved nor unreserved sets.
+
+[edit] Current standard
+
+The generic URI syntax mandates that new URI schemes that provide for the representation of character data in a URI must, in effect, represent characters from the unreserved set without translation, and should convert all other characters to bytes according to UTF-8, and then percent-encode those values. This requirement was introduced in January 2005 with the publication of RFC 3986. URI schemes introduced before this date are not affected.
+
+Not addressed by the current specification is what to do with encoded character data. For example, in computers, character data manifests in encoded form, at some level, and thus could be treated as either binary data or as character data when being mapped to URI characters. Presumably, it is up to the URI scheme specifications to account for this possibility and require one or the other, but in practice, few, if any, actually do.
+
+[edit] Non-standard implementations
+
+There exists a non-standard encoding for Unicode characters: %uxxxx, where xxxx is a Unicode value represented as four hexadecimal digits. This behavior is not specified by any RFC and has been rejected by the W3C. The third edition of ECMA-262 still includes an escape(string) function that uses this syntax, but also an encodeURI(uri) function that converts to UTF-8 and percent-encodes each octet.
+
+[edit] The application/x-www-form-urlencoded type
+
+When data that has been entered into HTML forms is submitted, the form field names and values are encoded and sent to the server in an HTTP request message using method GET or POST, or, historically, via email.[1] The encoding used by default is based on a very early version of the general URI percent-encoding rules, with a number of modifications such as newline normalization and replacing spaces with "+" instead of "%20". The MIME type of data encoded this way is application/x-www-form-urlencoded, and it is currently defined (still in a very outdated manner) in the HTML and XForms specifications. In addition, the CGI specification contains rules for how web servers decode data of this type and make it available to applications.
+
+When sent in an HTTP GET request, application/x-www-form-urlencoded data is included in the query component of the request URI. When sent in an HTTP POST request or via email, the data is placed in the body of the message, and the name of the media type is included in the message's Content-Type header.
+
+[edit] See also
+
+    * Internationalized Resource Identifier
+    * Punycode
+
+[edit] References
+
+   1. ^ User-agent support for email based HTML form submission, using a 'mailto' URL as the form action, was proposed in RFC 1867 section 5.6, during the HTML 3.2 era. Various web browsers implemented it by invoking a separate email program or using their own rudimentary SMTP capabilities. Although sometimes unreliable, it was briefly popular as a simple way to transmit form data without involving a web server or CGI scripts.
+
+[edit] External links
+
+The following specifications all discuss and define reserved characters, unreserved characters, and percent-encoding, in some form or other:
+
+    * RFC 3986 / STD 66, the current generic URI syntax specification.
+    * RFC 2396 (obsolete) and RFC 2732 together comprised the previous version of the generic URI syntax specification.
+    * RFC 1738 (mostly obsolete) and RFC 1808 (obsolete), which define URLs.
+    * RFC 1630 (obsolete), the first generic URI syntax specification.
+    * W3C Guidelines on Naming and Addressing: URIs, URLs, ...
+    * W3C explanation of UTF-8 in URIs
+    * W3C HTML form content types
+
+Retrieved from "http://en.wikipedia.org/wiki/Percent-encoding"
+Categories: URI scheme | Internet standards | Binary-to-text encoding formats
+Hidden categories: Articles lacking in-text citations from April 2008
+Views
+
+    * Article
+    * Discussion
+    * Edit this page
+    * History
+
+Personal tools
+
+    * Try Beta
+    * Log in / create account
+
+Navigation
+
+    * Main page
+    * Contents
+    * Featured content
+    * Current events
+    * Random article
+
+Search
+ 
+Interaction
+
+    * About Wikipedia
+    * Community portal
+    * Recent changes
+    * Contact Wikipedia
+    * Donate to Wikipedia
+    * Help
+
+Toolbox
+
+    * What links here
+    * Related changes
+    * Upload file
+    * Special pages
+    * Printable version
+    * Permanent link
+    * Cite this page
+
+Languages
+
+    * Česky
+    * Deutsch
+    * 한국어
+    * Magyar
+    * 日本語
+
+Powered by MediaWiki
+Wikimedia Foundation
+
+    * This page was last modified on 5 August 2009 at 16:59.
+    * Text is available under the Creative Commons Attribution-ShareAlike License; additional terms may apply. See Terms of Use for details.
+      Wikipedia® is a registered trademark of the Wikimedia Foundation, Inc., a non-profit organization.
+    * Privacy policy
+    * About Wikipedia
+    * Disclaimers
+
