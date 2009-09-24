@@ -1,0 +1,52 @@
+<h2>DNA Console</h2>
+
+<p>The <i>DNA Console</i> is shown in the <i>Workbench Console</i> view. Entries show the status and outcome of the publishing or unpublishing operations.</p>
+
+<p>Here is what the <i>DNA Console</i> looks like:</p>
+
+<img src="images/DnaConsole.png" border="0" alt="">
+
+<p>There are view toolbar buttons to clear the console, scroll lock, pin the console, display a different console, and to open another <i>DNA Console</i>.</p>
+
+<h3>Console Message Entries</h3>
+
+<p>For each operation there is an entry at the start of the operation that identifies the job number, operation type, number of files involved in the operation, server, repository, and workspace. There is another entry at the end of the operation that identifies the job number, operation type, and how long the operation took. Inbetween these entries are entries for each file involved in the operation. The file entry takes on the form of a job number, message prefix, and message. The message consists of an operation type, eclipse workspace path, and the URL of the DNA repository for that file. The URL is a hyperlink that opens that file in the default or last used editor for that file.</p>
+
+<p>Here are the file entry message prefixes:</p>
+
+<table border="1">
+<tr>
+	<td align="center"><strong>++</strong>&nbsp;</td>
+	<td>if the file was successfully published (uploaded)</td>
+</tr>
+<tr>
+	<td align="center"><strong>--</strong>&nbsp;</td>
+	<td>if the file was successfully unpublished (removed)</td>
+</tr>
+<tr>
+	<td align="center"><strong>ERROR</strong>&nbsp;</td>
+	<td>if there was an error publishing or unpublishing the file</td>
+</tr>
+<tr>
+	<td align="center"><strong>INFO</strong>&nbsp;</td>
+	<td>if there was an informational message publishing or unpublishing the file</td>
+</tr>
+<tr>
+	<td align="center"><strong>WARN</strong>&nbsp;</td>
+	<td>if there is a warning when publishing or unpublishing a file (like trying to unpublish a file that was never unpublished)</td>
+</tr>
+</table>
+
+<h3>Operations</h3>
+
+<p>Each publishing or unpublishing operation can be run "in the background" so you don't have to wait around until an operation is finished. Simply click "Run in Background" on the operation dialog. This dialog identifies the operation type, the job number, and the operations progress. You can also cancel the operation using this dialog.</p>
+
+<p>Here is what the <i>Operation Dialog</i> looks like:</p>
+
+<img src="images/OperationDialog.png" border="0" alt="">
+
+<h3>Related Topics</h3>
+
+<ul>
+<li><a href="PublishDialog.html">Publishing and Unpublishing Dialog</a></li>
+</ul>
