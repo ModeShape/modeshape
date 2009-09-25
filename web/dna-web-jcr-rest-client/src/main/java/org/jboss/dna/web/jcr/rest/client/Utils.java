@@ -66,11 +66,12 @@ public final class Utils {
      *         the file extension (never <code>null</code>)
      */
     public static String getMimeType( File file ) {
-        // TODO write test for getMimeType(File)
         if (mimeTypeUtils == null) {
-
+            // load custom extensions
             InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/jboss/dna/web/jcr/rest/client/mime.types"); //$NON-NLS-1$
             Map<String, String> customMap = MimeTypeUtil.load(stream, null);
+
+            // construct
             mimeTypeUtils = new MimeTypeUtil(customMap, true);
         }
 
