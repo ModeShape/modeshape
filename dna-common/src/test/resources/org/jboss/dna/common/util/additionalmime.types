@@ -1,0 +1,9 @@
+# This file defines the Internet media types and extensions.
+# For more information about Internet media types,
+# please read RFC 2045, 2046, 2047, 2048, and 2077.  The Internet media type
+# registry is at <http://www.iana.org/assignments/media-types/>.
+
+# MIME type                 Extensions
+
+text/plain                  ini properties
+application/xml             xsd

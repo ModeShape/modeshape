@@ -99,8 +99,8 @@ public class MimeTypeUtil {
             for (Map.Entry<String, String> entry : extensionsToMimeTypes.entrySet()) {
                 String extensionString = entry.getKey();
                 if (extensionString == null) continue;
-                // Lowercase, trime, and remove all leading '.' characters ...
-                extensionString = extensionString.toLowerCase().trim().replaceAll("^.+", "");
+                // Lowercase, trim, and remove all leading '.' characters ...
+                extensionString = extensionString.toLowerCase().trim().replaceAll("^[.]+", "");
                 if (extensionString.length() == 0) continue;
                 String mimeType = entry.getValue();
                 if (mimeType == null) continue;
@@ -217,7 +217,7 @@ public class MimeTypeUtil {
 
         // Find the extension ...
         int indexOfDelimiter = trimmedName.lastIndexOf('.');
-        if (indexOfDelimiter < 1) return null;
+        if (indexOfDelimiter < 0) return null;
         String extension = trimmedName.substring(indexOfDelimiter).toLowerCase();
 
         // Look for a match ...

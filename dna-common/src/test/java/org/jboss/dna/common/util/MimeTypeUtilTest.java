@@ -25,8 +25,11 @@ package org.jboss.dna.common.util;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.io.InputStream;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -97,6 +100,30 @@ public class MimeTypeUtilTest {
     @Test
     public void shouldFindMimeTypeForNameWithTrailingWhitespace() {
         assertThat(detector.mimeTypeOf("something.txt \t"), is("text/plain"));
+    }
+
+    @Test
+    public void shouldLoadAdditionalMimeTypeMappings() {
+        String iniFile = ".ini";
+        assertNull(this.detector.mimeTypeOf(iniFile));
+
+        // load custom map
+        InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/jboss/dna/common/util/additionalmime.types");
+        Map<String, String> customMap = MimeTypeUtil.load(stream, null);
+        assertThat(customMap.size(), is(3));
+
+        // construct with custom map
+        this.detector = new MimeTypeUtil(customMap, false);
+        assertThat(this.detector.mimeTypeOf(iniFile), is("text/plain"));
+        
+        // make sure all other extensions have been loaded correctly
+        assertThat(this.detector.mimeTypeOf(".properties"), is("text/plain"));
+        assertThat(this.detector.mimeTypeOf(".xsd"), is("application/xml"));
+    }
+    
+    @Test
+    public void shouldFindMimeTypeOfHiddenFiles() {
+        assertThat(this.detector.mimeTypeOf(".txt"), is("text/plain"));
     }
 
 }
