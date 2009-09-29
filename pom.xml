@@ -8,15 +8,21 @@
 	<url>http://www.jboss.org/dna</url>
 	<inceptionYear>2008</inceptionYear>
 	<description>
-		JBoss DNA provides tools for working with JCR repositories.
+		JBoss DNA is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/trunk</connection>
+    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/trunk</developerConnection>   
 	</scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>http://jira.jboss.org/jira/browse/DNA</url>
+  </issueManagement>
 	<licenses>
 		<license>
 			<name>GNU Lesser General Public License</name>
-			<url>http://www.gnu.org/licenses/lgpl.html</url>
+			<url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
+			<!--url>http://www.gnu.org/licenses/lgpl.html</url-->
 			<distribution>repo</distribution>
 			<comments>A business-friendly OSS license</comments>
 		</license>
