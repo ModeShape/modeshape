@@ -283,8 +283,17 @@ public class WorkspaceSearchEngine {
      */
     protected final void execute( boolean overwrite,
                                   Activity... activities ) throws SearchEngineException {
+        // Determine if the activities are readonly ...
+        boolean readOnly = true;
+        for (Activity activity : activities) {
+            if (!(activity instanceof ReadOnlyActivity)) {
+                readOnly = false;
+                break;
+            }
+        }
+
         Analyzer analyzer = this.indexingStrategy.createAnalyzer();
-        IndexContext indexes = new IndexContext(encodedContext, pathsDirectory, contentDirectory, analyzer, overwrite);
+        IndexContext indexes = new IndexContext(encodedContext, pathsDirectory, contentDirectory, analyzer, overwrite, readOnly);
 
         // Execute the various activities ...
         Throwable error = null;
@@ -343,6 +352,8 @@ public class WorkspaceSearchEngine {
      * Interface for activities that will be executed against the set of indexes. These activities don't have to commit or roll
      * back the writer, nor do they have to translate the exceptions, since this is done by the
      * {@link WorkspaceSearchEngine#execute(boolean, Activity...)} method.
+     * 
+     * @see ReadOnlyActivity
      */
     protected interface Activity {
 
@@ -364,7 +375,10 @@ public class WorkspaceSearchEngine {
         String messageFor( Throwable t );
     }
 
-    protected interface Search extends Activity {
+    protected interface ReadOnlyActivity extends Activity {
+    }
+
+    protected interface Search extends ReadOnlyActivity {
         /**
          * Get the results of the search.
          * 
@@ -373,7 +387,7 @@ public class WorkspaceSearchEngine {
         List<Location> getResults();
     }
 
-    protected interface Query extends Activity {
+    protected interface Query extends ReadOnlyActivity {
         /**
          * Get the results of the query.
          * 

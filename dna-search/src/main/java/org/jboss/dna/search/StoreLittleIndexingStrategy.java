@@ -45,8 +45,8 @@ import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocCollector;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.util.Version;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.Logger;
@@ -166,7 +166,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
      * @see org.jboss.dna.search.IndexingStrategy#createAnalyzer()
      */
     public Analyzer createAnalyzer() {
-        return new StandardAnalyzer();
+        return new StandardAnalyzer(Version.LUCENE_CURRENT);
     }
 
     /**
@@ -318,11 +318,9 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
         // Parse the full-text search and search against the 'fts' field ...
         QueryParser parser = new QueryParser(ContentIndex.FULL_TEXT, createAnalyzer());
         Query query = parser.parse(fullTextString);
-        TopDocCollector collector = new TopDocCollector(maxResults + offset);
-        indexes.getContentSearcher().search(query, collector);
+        TopDocs docs = indexes.getContentSearcher().search(query, maxResults + offset);
 
         // Collect the results ...
-        TopDocs docs = collector.topDocs();
         IndexReader contentReader = indexes.getContentReader();
         IndexReader pathReader = indexes.getPathsReader();
         IndexSearcher pathSearcher = indexes.getPathsSearcher();

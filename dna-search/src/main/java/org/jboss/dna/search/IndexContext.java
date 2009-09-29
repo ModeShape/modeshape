@@ -47,6 +47,7 @@ final class IndexContext {
     private final Directory contentIndexDirectory;
     private final Analyzer analyzer;
     private final boolean overwrite;
+    private final boolean readOnly;
     private final ValueFactory<String> stringFactory;
     private final DateTimeFactory dateFactory;
     private IndexReader pathsReader;
@@ -60,7 +61,8 @@ final class IndexContext {
                   Directory pathsIndexDirectory,
                   Directory contentIndexDirectory,
                   Analyzer analyzer,
-                  boolean overwrite ) {
+                  boolean overwrite,
+                  boolean readOnly ) {
         assert context != null;
         assert pathsIndexDirectory != null;
         assert contentIndexDirectory != null;
@@ -71,6 +73,7 @@ final class IndexContext {
         this.overwrite = overwrite;
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.dateFactory = context.getValueFactories().getDateFactory();
+        this.readOnly = readOnly;
     }
 
     /**
@@ -97,14 +100,14 @@ final class IndexContext {
 
     public IndexReader getPathsReader() throws IOException {
         if (pathsReader == null) {
-            pathsReader = IndexReader.open(pathsIndexDirectory);
+            pathsReader = IndexReader.open(pathsIndexDirectory, readOnly);
         }
         return pathsReader;
     }
 
     public IndexReader getContentReader() throws IOException {
         if (contentReader == null) {
-            contentReader = IndexReader.open(contentIndexDirectory);
+            contentReader = IndexReader.open(contentIndexDirectory, readOnly);
         }
         return contentReader;
     }

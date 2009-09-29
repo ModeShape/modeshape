@@ -313,7 +313,7 @@ public class DirectoryConfigurations {
          */
         protected FSDirectory create( File directory,
                                       LockFactory lockFactory ) throws IOException {
-            return FSDirectory.getDirectory(directory, lockFactory);
+            return FSDirectory.open(directory, lockFactory);
         }
     }
 
