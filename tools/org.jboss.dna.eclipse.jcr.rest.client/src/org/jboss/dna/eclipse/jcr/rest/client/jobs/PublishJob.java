@@ -70,7 +70,7 @@ public final class PublishJob extends Job {
     /**
      * A unique job identifier given to each publishing/unpublishing job.
      */
-    private static final AtomicInteger JOB_ID = new AtomicInteger(1);
+    private static final AtomicInteger JOB_ID = new AtomicInteger();
 
     // ===========================================================================================================================
     // Class Methods

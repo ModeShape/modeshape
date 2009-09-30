@@ -2,12 +2,10 @@
 <feature
       id="org.jboss.dna.eclipse.jcr.rest.client.feature"
       label="%featureName"
-      version="1.0.0.v20090819"
-      image="feature.png"
+      version="1.0.0.v20090930"
       provider-name="%featureProvider"
-      plugin="org.jboss.dna.eclipse.jcr.rest.client">
-
-<!-- NOTE: above image is found in the branding plugin -->
+      plugin="org.jboss.dna.eclipse.jcr.rest.client"
+      image="feature.png">
 
    <description url="http://www.jboss.org/dna/">
       %description
@@ -31,7 +29,6 @@
          id="org.jboss.dna.eclipse.jcr.rest.client"
          download-size="0"
          install-size="0"
-         version="0.0.0"
-         unpack="true"/>
+         version="0.0.0"/>
 
 </feature>

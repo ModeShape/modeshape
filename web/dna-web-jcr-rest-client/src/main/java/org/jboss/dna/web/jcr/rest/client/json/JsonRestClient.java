@@ -27,8 +27,6 @@ import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Collection;
-import javax.ws.rs.core.MediaType;
-import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.web.jcr.rest.client.IRestClient;
@@ -38,6 +36,8 @@ import org.jboss.dna.web.jcr.rest.client.Status.Severity;
 import org.jboss.dna.web.jcr.rest.client.domain.Repository;
 import org.jboss.dna.web.jcr.rest.client.domain.Server;
 import org.jboss.dna.web.jcr.rest.client.domain.Workspace;
+import org.jboss.dna.web.jcr.rest.client.http.HttpClientConnection;
+import org.jboss.dna.web.jcr.rest.client.http.IHttpConnection;
 import org.jboss.dna.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
 
 /**
@@ -60,6 +60,21 @@ public final class JsonRestClient implements IRestClient {
     // ===========================================================================================================================
 
     /**
+     * @param server the server where the connection will be established
+     * @param url the URL where the connection will be established
+     * @param method the request method
+     * @return the connection which <strong>MUST</strong> be disconnected
+     * @throws Exception if there is a problem establishing the connection
+     */
+    private IHttpConnection connect( Server server,
+                                     URL url,
+                                     RequestMethod method ) throws Exception {
+        this.logger.trace("connect: url={0}, method={1}", url, method); //$NON-NLS-1$
+        // return new HttpUrlConnection(server, url, method);
+        return new HttpClientConnection(server, url, method);
+    }
+
+    /**
      * Creates a file node in the specified repository. Note: All parent folders are assumed to already exist.
      * 
      * @param workspace the workspace where the file node is being created
@@ -72,11 +87,11 @@ public final class JsonRestClient implements IRestClient {
                                  File file ) throws Exception {
         this.logger.trace("createFileNode: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath()); //$NON-NLS-1$
         FileNode fileNode = new FileNode(workspace, path, file);
-        HttpURLConnection connection = openConnection(workspace.getServer(), fileNode.getUrl(), RequestMethod.POST);
+        IHttpConnection connection = connect(workspace.getServer(), fileNode.getUrl(), RequestMethod.POST);
 
         try {
             this.logger.trace("createFileNode: create node={0}", fileNode); //$NON-NLS-1$
-            connection.getOutputStream().write(fileNode.getContent());
+            connection.write(fileNode.getContent());
 
             // make sure node was created
             if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
@@ -107,11 +122,11 @@ public final class JsonRestClient implements IRestClient {
                                    String path ) throws Exception {
         this.logger.trace("createFolderNode: workspace={0}, path={1}", workspace.getName(), path); //$NON-NLS-1$
         FolderNode folderNode = new FolderNode(workspace, path);
-        HttpURLConnection connection = openConnection(workspace.getServer(), folderNode.getUrl(), RequestMethod.POST);
+        IHttpConnection connection = connect(workspace.getServer(), folderNode.getUrl(), RequestMethod.POST);
 
         try {
             this.logger.trace("createFolderNode: create node={0}", folderNode); //$NON-NLS-1$
-            connection.getOutputStream().write(folderNode.getContent());
+            connection.write(folderNode.getContent());
 
             // make sure node was created
             if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
@@ -179,11 +194,11 @@ public final class JsonRestClient implements IRestClient {
         this.logger.trace("getRepositories: server={0}", server); //$NON-NLS-1$
 
         ServerNode serverNode = new ServerNode(server);
-        HttpURLConnection connection = openConnection(server, serverNode.getFindRepositoriesUrl(), RequestMethod.GET);
+        IHttpConnection connection = connect(server, serverNode.getFindRepositoriesUrl(), RequestMethod.GET);
 
         try {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                return serverNode.getRepositories(JsonUtils.readInputStream(connection));
+                return serverNode.getRepositories(connection.read());
             }
 
             // not a good response code
@@ -229,11 +244,11 @@ public final class JsonRestClient implements IRestClient {
         this.logger.trace("getWorkspaces: repository={0}", repository); //$NON-NLS-1$
 
         RepositoryNode repositoryNode = new RepositoryNode(repository);
-        HttpURLConnection connection = openConnection(repository.getServer(), repositoryNode.getUrl(), RequestMethod.GET);
+        IHttpConnection connection = connect(repository.getServer(), repositoryNode.getUrl(), RequestMethod.GET);
 
         try {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                return repositoryNode.getWorkspaces(JsonUtils.readInputStream(connection));
+                return repositoryNode.getWorkspaces(connection.read());
             }
 
             // not a good response code
@@ -251,33 +266,6 @@ public final class JsonRestClient implements IRestClient {
     }
 
     /**
-     * @param server the server where the connection will be established
-     * @param url the URL where the connection will be established
-     * @param method the request method
-     * @return the open connection which <strong>MUST</strong> be disconnected
-     * @throws Exception if there is a problem establishing the connection
-     */
-    private HttpURLConnection openConnection( Server server,
-                                              URL url,
-                                              RequestMethod method ) throws Exception {
-        this.logger.trace("openConnection: url={0}, method={1}", url, method); //$NON-NLS-1$
-
-        try {
-            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-            connection.setDoOutput(true);
-            String encoding = Base64.encodeBytes((server.getUser() + ':' + server.getPassword()).getBytes());
-            connection.setRequestProperty("Authorization", "Basic " + encoding); //$NON-NLS-1$ //$NON-NLS-2$
-            connection.setRequestMethod(method.toString());
-            connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON); //$NON-NLS-1$
-            connection.setUseCaches(false);
-            return connection;
-        } catch (Exception e) {
-            this.logger.trace("openConnection: exception:", e); //$NON-NLS-1$
-            throw e;
-        }
-    }
-
-    /**
      * Note: Currently used for testing only.
      * 
      * @param workspace the workspace where the file is published
@@ -290,11 +278,11 @@ public final class JsonRestClient implements IRestClient {
                             String path,
                             File file ) throws Exception {
         FileNode fileNode = new FileNode(workspace, path, file);
-        HttpURLConnection connection = openConnection(workspace.getServer(), fileNode.getFileContentsUrl(), RequestMethod.GET);
+        IHttpConnection connection = connect(workspace.getServer(), fileNode.getFileContentsUrl(), RequestMethod.GET);
         int responseCode = connection.getResponseCode();
 
         if (responseCode == HttpURLConnection.HTTP_OK) {
-            String result = JsonUtils.readInputStream(connection);
+            String result = connection.read();
             return fileNode.getFileContents(result);
         }
 
@@ -310,7 +298,7 @@ public final class JsonRestClient implements IRestClient {
     private boolean pathExists( Server server,
                                 URL url ) throws Exception {
         this.logger.trace("pathExists: url={0}", url); //$NON-NLS-1$
-        HttpURLConnection connection = openConnection(server, url, RequestMethod.GET);
+        IHttpConnection connection = connect(server, url, RequestMethod.GET);
 
         try {
             int responseCode = connection.getResponseCode();
@@ -385,11 +373,11 @@ public final class JsonRestClient implements IRestClient {
         CheckArg.isNotNull(file, "file"); //$NON-NLS-1$
         this.logger.trace("unpublish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath()); //$NON-NLS-1$
 
-        HttpURLConnection connection = null;
+        IHttpConnection connection = null;
 
         try {
             FileNode fileNode = new FileNode(workspace, path, file);
-            connection = openConnection(workspace.getServer(), fileNode.getUrl(), RequestMethod.DELETE);
+            connection = connect(workspace.getServer(), fileNode.getUrl(), RequestMethod.DELETE);
             int responseCode = connection.getResponseCode();
             this.logger.trace("responseCode={0}", responseCode); //$NON-NLS-1$
 

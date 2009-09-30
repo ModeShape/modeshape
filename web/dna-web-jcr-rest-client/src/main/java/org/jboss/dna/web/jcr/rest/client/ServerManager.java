@@ -25,7 +25,6 @@ package org.jboss.dna.web.jcr.rest.client;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.net.Authenticator;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -173,9 +172,6 @@ public final class ServerManager implements IRestClient {
         this.stateLocationPath = stateLocationPath;
         this.delegate = restClient;
         this.listeners = new CopyOnWriteArrayList<IServerRegistryListener>();
-
-        // set our authenticator that uses the server registry
-        Authenticator.setDefault(new ServerAuthenticator());
     }
 
     /**

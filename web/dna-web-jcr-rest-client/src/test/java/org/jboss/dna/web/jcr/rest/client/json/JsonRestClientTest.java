@@ -28,8 +28,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Collection;
 import org.jboss.dna.web.jcr.rest.client.IRestClient;
@@ -83,13 +81,6 @@ public final class JsonRestClientTest {
     @Before
     public void beforeEach() {
         this.restClient = new JsonRestClient();
-
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(USER, PSWD.toCharArray());
-            }
-        });
     }
 
     // ===========================================================================================================================
