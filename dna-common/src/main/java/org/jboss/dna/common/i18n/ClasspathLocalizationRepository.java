@@ -57,7 +57,6 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
      * @param classLoader the class loader to use; may be null
      */
     public ClasspathLocalizationRepository( ClassLoader classLoader ) {
-        if (classLoader == null) classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader == null) classLoader = this.getClass().getClassLoader();
         this.classLoader = classLoader;
     }
