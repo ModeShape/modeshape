@@ -63,7 +63,7 @@ public final class DnaResourceHelper {
      * file has been published to at least one DNA repository. The value of the property is a list of DNA repository workspaces
      * where this file has been published.
      */
-    private static QualifiedName PUBLISHED_RESOURCE_PROPERTY = new QualifiedName(IUiConstants.PLUGIN_ID, "publishedIn"); //$NON-NLS-1$
+    private static QualifiedName PUBLISHED_RESOURCE_PROPERTY = new QualifiedName(IUiConstants.PLUGIN_ID, "publishedLocations"); //$NON-NLS-1$
 
     // ===========================================================================================================================
     // Fields

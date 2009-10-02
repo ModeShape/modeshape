@@ -39,9 +39,13 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 import org.eclipse.ui.part.ViewPart;
@@ -208,6 +212,7 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
         constructActions();
         constructToolBar();
         constructContextMenu();
+        hookGlobalActions();
 
         setTitleToolTip(RestClientI18n.serverViewToolTip.text());
 
@@ -228,6 +233,10 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
     public void dispose() {
         getServerManager().removeRegistryListener(this);
         super.dispose();
+    }
+
+    IAction getDeleteAction() {
+        return this.deleteAction;
     }
 
     /**
@@ -256,6 +265,36 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
      */
     void handleSelectionChanged( SelectionChangedEvent event ) {
         updateStatusLine((IStructuredSelection)event.getSelection());
+    }
+
+    /**
+     * Sets global action handlers.
+     */
+    private void hookGlobalActions() {
+        IActionBars bars = getViewSite().getActionBars();
+
+        // hook delete server action up
+        bars.setGlobalActionHandler(ActionFactory.DELETE.getId(), this.deleteAction);
+        this.viewer.getControl().addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed( KeyEvent event ) {
+                if ((event.character == SWT.DEL) && (event.stateMask == 0) && getDeleteAction().isEnabled()) {
+                    getDeleteAction().run();
+                }
+            }
+        });
+        
+        // don't want cut, copy, or paste actions so hook them up with a disabled action
+        class NoOpAction extends Action {
+            NoOpAction() {
+                setEnabled(false);
+            }
+        }
+        
+        IAction noop = new NoOpAction();
+        bars.setGlobalActionHandler(ActionFactory.CUT.getId(), noop);
+        bars.setGlobalActionHandler(ActionFactory.COPY.getId(), noop);
+        bars.setGlobalActionHandler(ActionFactory.PASTE.getId(), noop);
     }
 
     /**
