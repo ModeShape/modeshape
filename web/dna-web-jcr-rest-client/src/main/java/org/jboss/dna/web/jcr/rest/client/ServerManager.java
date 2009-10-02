@@ -98,29 +98,6 @@ public final class ServerManager implements IRestClient {
     private static final String USER_TAG = "user"; //$NON-NLS-1$
 
     // ===========================================================================================================================
-    // Class Fields
-    // ===========================================================================================================================
-
-    /**
-     * The java.net.Authenticator needs server information to complete the publish, unpublish, getRepositories(), and
-     * getWorkspaces() operations. Setting a thread variable was a way to do that.
-     * 
-     * @see ServerAuthenticator
-     */
-    private static ThreadLocal<Server> currentServer = new ThreadLocal<Server>();
-
-    // ===========================================================================================================================
-    // Class Methods
-    // ===========================================================================================================================
-
-    /**
-     * @return the server set on the current thread or <code>null</code>
-     */
-    public static Server getCurrentServer() {
-        return ServerManager.currentServer.get();
-    }
-
-    // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================
 
@@ -275,7 +252,6 @@ public final class ServerManager implements IRestClient {
             this.serverLock.readLock().lock();
 
             if (isRegistered(server)) {
-                ServerManager.currentServer.set(server);
                 Collection<Repository> repositories = this.delegate.getRepositories(server);
                 return Collections.unmodifiableCollection(new ArrayList<Repository>(repositories));
             }
@@ -313,7 +289,6 @@ public final class ServerManager implements IRestClient {
             this.serverLock.readLock().lock();
 
             if (isRegistered(repository.getServer())) {
-                ServerManager.currentServer.set(repository.getServer());
                 Collection<Workspace> workspaces = this.delegate.getWorkspaces(repository);
                 return Collections.unmodifiableCollection(new ArrayList<Workspace>(workspaces));
             }
@@ -482,11 +457,10 @@ public final class ServerManager implements IRestClient {
         CheckArg.isNotNull(server, "server"); //$NON-NLS-1$
 
         try {
-            ServerManager.currentServer.set(server);
             this.delegate.getRepositories(server);
             return new Status(Severity.OK, RestClientI18n.serverManagerConnectionEstablishedMsg.text(), null);
         } catch (Exception e) {
-            return new Status(Severity.ERROR, RestClientI18n.serverManagerConnectionFailedMsg.text(), null);
+            return new Status(Severity.ERROR, RestClientI18n.serverManagerConnectionFailedMsg.text(e), null);
         }
     }
 
@@ -509,7 +483,6 @@ public final class ServerManager implements IRestClient {
         Server server = workspace.getServer();
 
         if (isRegistered(server)) {
-            ServerManager.currentServer.set(server);
             return this.delegate.publish(workspace, path, file);
         }
 
@@ -652,7 +625,6 @@ public final class ServerManager implements IRestClient {
         Server server = workspace.getServer();
 
         if (isRegistered(server)) {
-            ServerManager.currentServer.set(server);
             return this.delegate.unpublish(workspace, path, file);
         }
 

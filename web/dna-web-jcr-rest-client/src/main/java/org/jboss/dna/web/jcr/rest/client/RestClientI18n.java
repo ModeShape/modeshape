@@ -71,6 +71,8 @@ public final class RestClientI18n {
     public static I18n serverManagerUnregisteredServer;
 
     public static I18n serverShortDescription;
+    
+    public static I18n unknownHttpRequestMethodMsg;
 
     public static I18n workspaceEmptyNameMsg;
 

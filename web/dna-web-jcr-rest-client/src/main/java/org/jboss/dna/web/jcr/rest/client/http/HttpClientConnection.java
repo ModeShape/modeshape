@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.web.jcr.rest.client.http;
 
+import static org.jboss.dna.web.jcr.rest.client.RestClientI18n.unknownHttpRequestMethodMsg;
 import java.net.URL;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpResponse;
@@ -38,13 +39,14 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.web.jcr.rest.client.domain.Server;
 import org.jboss.dna.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
 
 /**
- * <code>HttpClientConnection</code> is an <code>Apache HttpClient</code> implementation of <code>IHttpConnection</code>.
+ * <code>HttpClientConnection</code> uses the <code>Apache HttpClient</code>.
  */
-public final class HttpClientConnection implements IHttpConnection {
+public final class HttpClientConnection {
 
     // ===========================================================================================================================
     // Fields
@@ -70,14 +72,18 @@ public final class HttpClientConnection implements IHttpConnection {
     // ===========================================================================================================================
 
     /**
-     * @param server the server with the host and port information
-     * @param url the URL that will be used in the request
-     * @param method the HTTP request method
+     * @param server the server with the host and port information (never <code>null</code>)
+     * @param url the URL that will be used in the request (never <code>null</code>)
+     * @param method the HTTP request method (never <code>null</code>)
      * @throws Exception if there is a problem establishing the connection
      */
     public HttpClientConnection( Server server,
                                  URL url,
                                  RequestMethod method ) throws Exception {
+        CheckArg.isNotNull(server, "server"); //$NON-NLS-1$
+        CheckArg.isNotNull(url, "url"); //$NON-NLS-1$
+        CheckArg.isNotNull(method, "method"); //$NON-NLS-1$
+
         this.httpClient = new DefaultHttpClient();
         this.httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()),
                                                                 new UsernamePasswordCredentials(server.getUser(),
@@ -92,8 +98,7 @@ public final class HttpClientConnection implements IHttpConnection {
         } else if (RequestMethod.PUT == method) {
             this.request = new HttpPut();
         } else {
-            // TODO need exception message
-            throw new RuntimeException();
+            throw new RuntimeException(unknownHttpRequestMethodMsg.text(method));
         }
 
         // set request URI
@@ -105,9 +110,7 @@ public final class HttpClientConnection implements IHttpConnection {
     // ===========================================================================================================================
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.web.jcr.rest.client.http.IHttpConnection#disconnect()
+     * Disconnects this connection.
      */
     public void disconnect() {
         this.httpClient.getConnectionManager().shutdown();
@@ -126,29 +129,28 @@ public final class HttpClientConnection implements IHttpConnection {
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.web.jcr.rest.client.http.IHttpConnection#getResponseCode()
+     * @return the HTTP response code
+     * @throws Exception if there is a problem getting the response code
      */
     public int getResponseCode() throws Exception {
         return getResponse().getStatusLine().getStatusCode();
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.web.jcr.rest.client.http.IHttpConnection#read()
+     * @return the HTTP response body as a string
+     * @throws Exception if there is a problem reading from the connection
      */
     public String read() throws Exception {
         return EntityUtils.toString(getResponse().getEntity());
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.web.jcr.rest.client.http.IHttpConnection#write(byte[])
+     * @param bytes the bytes being posted to the HTTP connection (never <code>null</code>)
+     * @throws Exception if there is a problem writing to the connection
      */
     public void write( byte[] bytes ) throws Exception {
+        CheckArg.isNotNull(bytes, "bytes"); //$NON-NLS-1$
+
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
         entity.setContentType(MediaType.APPLICATION_JSON);
 
