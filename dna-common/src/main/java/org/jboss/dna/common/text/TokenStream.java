@@ -437,7 +437,7 @@ public class TokenStream {
      * 
      * @return the current token's position; never null
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
-     * @throws NoSuchElementException if there is no previous token
+     * @throws NoSuchElementException if there is no next token
      */
     public Position nextPosition() {
         return currentToken().position();
@@ -1047,7 +1047,7 @@ public class TokenStream {
         ListIterator<Token> iter = tokens.listIterator(tokenIterator.previousIndex());
         if (!iter.hasNext()) return false;
         Token token = iter.next();
-        if (currentExpectedType != ANY_TYPE || currentToken().type() != currentExpectedType) return false;
+        if (currentExpectedType != ANY_TYPE && currentToken().type() != currentExpectedType) return false;
         for (int nextExpectedType : expectedTypeForNextTokens) {
             if (!iter.hasNext()) return false;
             token = iter.next();
@@ -1364,6 +1364,22 @@ public class TokenStream {
          * @return true if there is a {@link #next() next} character and it is a valid XML character, or false otherwise
          */
         boolean isNextValidXmlCharacter();
+
+        /**
+         * Determine if the next character on the sream is a {@link XmlCharacters#isValidName(int) valid XML NCName character}.
+         * This method does <i>not</i> advance the stream.
+         * 
+         * @return true if there is a {@link #next() next} character and it is a valid XML Name character, or false otherwise
+         */
+        boolean isNextValidXmlNameCharacter();
+
+        /**
+         * Determine if the next character on the sream is a {@link XmlCharacters#isValidNcName(int) valid XML NCName character}.
+         * This method does <i>not</i> advance the stream.
+         * 
+         * @return true if there is a {@link #next() next} character and it is a valid XML NCName character, or false otherwise
+         */
+        boolean isNextValidXmlNcNameCharacter();
 
         /**
          * Determine if the next character on the sream is the supplied value. This method does <i>not</i> advance the stream.
@@ -1881,6 +1897,26 @@ public class TokenStream {
         public boolean isNextValidXmlCharacter() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && XmlCharacters.isValid(content[nextIndex]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#isNextValidXmlNameCharacter()
+         */
+        public boolean isNextValidXmlNameCharacter() {
+            int nextIndex = lastIndex + 1;
+            return nextIndex <= maxIndex && XmlCharacters.isValidName(content[nextIndex]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#isNextValidXmlNcNameCharacter()
+         */
+        public boolean isNextValidXmlNcNameCharacter() {
+            int nextIndex = lastIndex + 1;
+            return nextIndex <= maxIndex && XmlCharacters.isValidNcName(content[nextIndex]);
         }
     }
 
