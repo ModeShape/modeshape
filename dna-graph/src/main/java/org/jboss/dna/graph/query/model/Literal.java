@@ -66,7 +66,7 @@ public class Literal extends StaticOperand {
         if (obj == this) return true;
         if (obj instanceof Literal) {
             Literal that = (Literal)obj;
-            return this.value.equals(that.value);
+            return this.value.equals(that.value) || this.value.toString().equals(that.value.toString());
         }
         return false;
     }

@@ -23,11 +23,18 @@
  */
 package org.jboss.dna.graph.query;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
@@ -37,6 +44,8 @@ import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
+import org.jboss.dna.graph.query.parse.InvalidQueryException;
+import org.jboss.dna.graph.query.parse.QueryParser;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
 import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
@@ -58,11 +67,13 @@ public class QueryEngine {
     private final Optimizer optimizer;
     private final Processor processor;
     private final Schemata schemata;
+    private final ConcurrentMap<String, QueryParser> parsers = new ConcurrentHashMap<String, QueryParser>();
 
     public QueryEngine( Planner planner,
                         Optimizer optimizer,
                         Processor processor,
-                        Schemata schemata ) {
+                        Schemata schemata,
+                        QueryParser... parsers ) {
         CheckArg.isNotNull(processor, "processor");
         this.planner = planner != null ? planner : new CanonicalPlanner();
         this.optimizer = optimizer != null ? optimizer : new RuleBasedOptimizer();
@@ -74,6 +85,70 @@ public class QueryEngine {
                 return null;
             }
         };
+        for (QueryParser parser : parsers) {
+            if (parser != null) addLanguage(parser);
+        }
+    }
+
+    /**
+     * Add a language to this engine by supplying its parser.
+     * 
+     * @param languageParser the query parser for the language
+     * @throws IllegalArgumentException if the language parser is null
+     */
+    public void addLanguage( QueryParser languageParser ) {
+        CheckArg.isNotNull(languageParser, "languageParser");
+        this.parsers.put(languageParser.getLanguage().toLowerCase(), languageParser);
+    }
+
+    /**
+     * Remove from this engine the language with the given name.
+     * 
+     * @param language the name of the language, which is to match the {@link QueryParser#getLanguage() language} of the parser
+     * @return the parser for the language, or null if the engine had no support for the named language
+     * @throws IllegalArgumentException if the language is null
+     */
+    public QueryParser removeLanguage( String language ) {
+        CheckArg.isNotNull(language, "language");
+        return this.parsers.remove(language.toLowerCase());
+    }
+
+    /**
+     * Get the set of languages that this engine is capable of parsing.
+     * 
+     * @return the unmodifiable copy of the set of languages; never null but possibly empty
+     */
+    public Set<String> getLanguages() {
+        Set<String> result = new HashSet<String>();
+        for (QueryParser parser : parsers.values()) {
+            result.add(parser.getLanguage());
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    /**
+     * Execute the supplied query by planning, optimizing, and then processing it.
+     * 
+     * @param context the context in which the query should be executed
+     * @param language the language in which the query is expressed; must be one of the supported {@link #getLanguages()
+     *        languages}
+     * @param query the query that is to be executed
+     * @return the query results; never null
+     * @throws IllegalArgumentException if the language, context or query references are null, or if the language is not know
+     * @throws ParsingException if there is an error parsing the supplied query
+     * @throws InvalidQueryException if the supplied query can be parsed but is invalid
+     */
+    public QueryResults execute( ExecutionContext context,
+                                 String language,
+                                 String query ) {
+        CheckArg.isNotNull(language, "language");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(query, "query");
+        QueryParser parser = parsers.get(language.toLowerCase());
+        if (parser == null) {
+            throw new IllegalArgumentException(GraphI18n.unknownQueryLanguage.text(language));
+        }
+        return execute(context, parser.parseQuery(query, context));
     }
 
     /**
@@ -101,6 +176,8 @@ public class QueryEngine {
     public QueryResults execute( ExecutionContext context,
                                  QueryCommand query,
                                  PlanHints hints ) {
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(query, "query");
         QueryContext queryContext = new QueryContext(context, hints, schemata);
 
         // Create the canonical plan ...

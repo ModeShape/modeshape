@@ -33,8 +33,6 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Ordering;
 import org.jboss.dna.graph.query.plan.PlanHints;
-import org.jboss.dna.graph.query.process.ProcessingComponent;
-import org.jboss.dna.graph.query.process.SortValuesComponent;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,8 +110,40 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     }
 
     @Test
+    public void shouldReturnAllResultsOrderedByNodeDepth() {
+        orderings.add(orderByNodeDepth("Selector1"));
+        component = new SortValuesComponent(delegate, orderings);
+        inputTuples.add(tuple(columns, "/a/b1", "v1", 100, "v4"));
+        inputTuples.add(tuple(columns, "/a/b2/c4", "v4", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a", 100, 100, "v2"));
+        inputTuples.add(tuple(columns, "/a/b4/c3", "v3", 100, "v1"));
+        List<Object[]> expected = new ArrayList<Object[]>();
+        expected.add(inputTuples.get(2));
+        expected.add(inputTuples.get(0));
+        expected.add(inputTuples.get(1));
+        expected.add(inputTuples.get(3));
+        assertThat(component.execute(), is(expected));
+    }
+
+    @Test
+    public void shouldReturnAllResultsOrderedByNodePath() {
+        orderings.add(orderByNodePath("Selector1"));
+        component = new SortValuesComponent(delegate, orderings);
+        inputTuples.add(tuple(columns, "/a/b1", "v1", 100, "v4"));
+        inputTuples.add(tuple(columns, "/a/b1/c4[2]", "v4", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b1/c2", 100, 100, "v2"));
+        inputTuples.add(tuple(columns, "/a/b1/c4", "v3", 100, "v1"));
+        List<Object[]> expected = new ArrayList<Object[]>();
+        expected.add(inputTuples.get(0));
+        expected.add(inputTuples.get(2));
+        expected.add(inputTuples.get(3));
+        expected.add(inputTuples.get(1));
+        assertThat(component.execute(), is(expected));
+    }
+
+    @Test
     public void shouldReturnAllResultsOrderedByNodeLocalName() {
-        orderings.add(orderByNodeName("Selector1"));
+        orderings.add(orderByNodeLocalName("Selector1"));
         component = new SortValuesComponent(delegate, orderings);
         inputTuples.add(tuple(columns, "/a/b1/c1", "v1", 100, "v4"));
         inputTuples.add(tuple(columns, "/a/b2/c4", "v4", 100, "v3"));

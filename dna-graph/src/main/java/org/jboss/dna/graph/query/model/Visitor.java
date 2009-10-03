@@ -66,6 +66,10 @@ public interface Visitor {
 
     void visit( NodeName obj );
 
+    void visit( NodePath obj );
+
+    void visit( NodeDepth obj );
+
     void visit( NamedSelector obj );
 
     void visit( Not obj );

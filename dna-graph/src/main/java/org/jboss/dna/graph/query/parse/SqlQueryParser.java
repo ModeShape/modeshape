@@ -67,8 +67,10 @@ import org.jboss.dna.graph.query.model.Limit;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.LowerCase;
 import org.jboss.dna.graph.query.model.NamedSelector;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Not;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.Or;
@@ -101,6 +103,17 @@ import org.jboss.dna.graph.query.model.SetQuery.Operation;
  * </p>
  */
 public class SqlQueryParser implements QueryParser {
+
+    public static final String LANGUAGE = "SQL";
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.parse.QueryParser#getLanguage()
+     */
+    public String getLanguage() {
+        return LANGUAGE;
+    }
 
     /**
      * {@inheritDoc}
@@ -188,12 +201,12 @@ public class SqlQueryParser implements QueryParser {
         List<ColumnExpression> columns = new ArrayList<ColumnExpression>();
         do {
             Position position = tokens.nextPosition();
-            String propertyName = tokens.consume();
+            String propertyName = removeBracketsAndQuotes(tokens.consume());
             SelectorName selectorName = null;
             if (tokens.canConsume('.')) {
                 // We actually read the selector name, so now read the property name ...
                 selectorName = new SelectorName(propertyName);
-                propertyName = tokens.consume();
+                propertyName = removeBracketsAndQuotes(tokens.consume());
             }
             String alias = propertyName;
             if (tokens.canConsume("AS")) alias = removeBracketsAndQuotes(tokens.consume());
@@ -304,7 +317,7 @@ public class SqlQueryParser implements QueryParser {
                 propertyName = parseName(tokens, context);
             } else {
                 if (!(source instanceof Selector)) {
-                    String msg = GraphI18n.functionIsAmbiguous.text("CONTEXT()", pos.getLine(), pos.getColumn());
+                    String msg = GraphI18n.functionIsAmbiguous.text("CONTAINS()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).getName();
@@ -681,6 +694,26 @@ public class SqlQueryParser implements QueryParser {
             }
             result = new FullTextSearchScore(parseSelectorName(tokens));
             tokens.consume(")");
+        } else if (tokens.canConsume("DEPTH", "(")) {
+            if (tokens.canConsume(")")) {
+                if (source instanceof Selector) {
+                    return new NodeDepth(((Selector)source).getName());
+                }
+                String msg = GraphI18n.functionIsAmbiguous.text("DEPTH()", pos.getLine(), pos.getColumn());
+                throw new ParsingException(pos, msg);
+            }
+            result = new NodeDepth(parseSelectorName(tokens));
+            tokens.consume(")");
+        } else if (tokens.canConsume("PATH", "(")) {
+            if (tokens.canConsume(")")) {
+                if (source instanceof Selector) {
+                    return new NodePath(((Selector)source).getName());
+                }
+                String msg = GraphI18n.functionIsAmbiguous.text("PATH()", pos.getLine(), pos.getColumn());
+                throw new ParsingException(pos, msg);
+            }
+            result = new NodePath(parseSelectorName(tokens));
+            tokens.consume(")");
         } else {
             result = parsePropertyValue(tokens, context, source);
         }
@@ -743,7 +776,19 @@ public class SqlQueryParser implements QueryParser {
      *         quotes
      */
     protected String removeBracketsAndQuotes( String text ) {
-        return text.replaceFirst("^['\"\\[]+", "").replaceAll("['\"\\]]+$", "");
+        if (text.length() > 0) {
+            char firstChar = text.charAt(0);
+            switch (firstChar) {
+                case '\'':
+                case '"':
+                    assert text.charAt(text.length() - 1) == firstChar;
+                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1));
+                case '[':
+                    assert text.charAt(text.length() - 1) == ']';
+                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1));
+            }
+        }
+        return text;
     }
 
     protected NamedSelector parseNamedSelector( TokenStream tokens ) {

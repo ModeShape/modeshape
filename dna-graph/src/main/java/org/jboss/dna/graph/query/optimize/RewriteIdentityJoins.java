@@ -49,8 +49,10 @@ import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.JoinCondition;
 import org.jboss.dna.graph.query.model.Length;
 import org.jboss.dna.graph.query.model.LowerCase;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Not;
 import org.jboss.dna.graph.query.model.Or;
 import org.jboss.dna.graph.query.model.Ordering;
@@ -338,7 +340,19 @@ public class RewriteIdentityJoins implements OptimizerRule {
             PropertyValue value = (PropertyValue)operand;
             SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
             if (replacement == null) return operand;
-            return new Length(new PropertyValue(replacement, value.getPropertyName()));
+            return new PropertyValue(replacement, value.getPropertyName());
+        }
+        if (operand instanceof NodeDepth) {
+            NodeDepth depth = (NodeDepth)operand;
+            SelectorName replacement = rewrittenSelectors.get(depth.getSelectorName());
+            if (replacement == null) return operand;
+            return new NodeDepth(replacement);
+        }
+        if (operand instanceof NodePath) {
+            NodePath path = (NodePath)operand;
+            SelectorName replacement = rewrittenSelectors.get(path.getSelectorName());
+            if (replacement == null) return operand;
+            return new NodePath(replacement);
         }
         return operand;
     }

@@ -23,20 +23,28 @@
  */
 package org.jboss.dna.graph.query;
 
+import java.math.BigDecimal;
+import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
+import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Comparison;
 import org.jboss.dna.graph.query.model.Constraint;
@@ -54,8 +62,10 @@ import org.jboss.dna.graph.query.model.Limit;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.LowerCase;
 import org.jboss.dna.graph.query.model.NamedSelector;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Not;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.Or;
@@ -302,13 +312,13 @@ public class QueryBuilder {
      * 
      * @param name the name; may not be null
      * @return the name; never null
-     * @throws InvalidQueryException if the supplied name is not a valid {@link Name} object
+     * @throws IllegalArgumentException if the supplied name is not a valid {@link Name} object
      */
     protected Name name( String name ) {
         try {
             return context.getValueFactories().getNameFactory().create(name.trim());
         } catch (ValueFormatException e) {
-            throw new InvalidQueryException(GraphI18n.expectingValidName.text(name));
+            throw new IllegalArgumentException(GraphI18n.expectingValidName.text(name));
         }
     }
 
@@ -318,13 +328,13 @@ public class QueryBuilder {
      * 
      * @param path the path; may not be null
      * @return the path; never null
-     * @throws InvalidQueryException if the supplied string is not a valid {@link Path} object
+     * @throws IllegalArgumentException if the supplied string is not a valid {@link Path} object
      */
     protected Path path( String path ) {
         try {
             return context.getValueFactories().getPathFactory().create(path.trim());
         } catch (ValueFormatException e) {
-            throw new InvalidQueryException(GraphI18n.expectingValidPath.text(path));
+            throw new IllegalArgumentException(GraphI18n.expectingValidPath.text(path));
         }
     }
 
@@ -335,7 +345,7 @@ public class QueryBuilder {
      * 
      * @param nameExpression the expression specifying the columm name and (optionally) the table's name or alias; may not be null
      * @return the column; never null
-     * @throws InvalidQueryException if the table's name/alias is not specified, but the query has more than one named source
+     * @throws IllegalArgumentException if the table's name/alias is not specified, but the query has more than one named source
      */
     protected Column column( String nameExpression ) {
         String[] parts = nameExpression.split("(?<!\\\\)\\."); // a . not preceded by an escaping slash
@@ -356,7 +366,7 @@ public class QueryBuilder {
                 propertyName = name(parts[0]);
                 columnName = parts[0];
             } else {
-                throw new InvalidQueryException(GraphI18n.columnMustBeScoped.text(parts[0]));
+                throw new IllegalArgumentException(GraphI18n.columnMustBeScoped.text(parts[0]));
             }
         }
         return new Column(name, propertyName, columnName);
@@ -373,16 +383,15 @@ public class QueryBuilder {
     }
 
     /**
-     * Select the columns with the supplied names. Each column name has the form "<code>[tableName.]columnName</code>", where "
-     * <code>tableName</code>" must be a valid table name or alias. If the table name/alias is not specified, then there is
-     * expected to be a single FROM clause with a single named selector.
+     * Add to the select clause the columns with the supplied names. Each column name has the form "
+     * <code>[tableName.]columnName</code>", where " <code>tableName</code>" must be a valid table name or alias. If the table
+     * name/alias is not specified, then there is expected to be a single FROM clause with a single named selector.
      * 
      * @param columnNames the column expressions; may not be null
      * @return this builder object, for convenience in method chaining
-     * @throws InvalidQueryException if the table's name/alias is not specified, but the query has more than one named source
+     * @throws IllegalArgumentException if the table's name/alias is not specified, but the query has more than one named source
      */
     public QueryBuilder select( String... columnNames ) {
-        columns.clear();
         for (String expression : columnNames) {
             columns.add(column(expression));
         }
@@ -406,7 +415,7 @@ public class QueryBuilder {
      * 
      * @param columnNames the column expressions; may not be null
      * @return this builder object, for convenience in method chaining
-     * @throws InvalidQueryException if the table's name/alias is not specified, but the query has more than one named source
+     * @throws IllegalArgumentException if the table's name/alias is not specified, but the query has more than one named source
      */
     public QueryBuilder selectDistinct( String... columnNames ) {
         distinct = true;
@@ -546,6 +555,73 @@ public class QueryBuilder {
     public JoinClause rightOuterJoin( String tableName ) {
         // Expect there to be a source already ...
         return new JoinClause(namedSelector(tableName), JoinType.RIGHT_OUTER);
+    }
+
+    /**
+     * Perform an inner join between the already defined source with the "__ALLNODES__" table using the supplied alias.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause joinAllNodesAs( String alias ) {
+        return innerJoinAllNodesAs(alias);
+    }
+
+    /**
+     * Perform an inner join between the already defined source with the "__ALL_NODES" table using the supplied alias.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause innerJoinAllNodesAs( String alias ) {
+        // Expect there to be a source already ...
+        return new JoinClause(namedSelector(AllNodes.ALL_NODES_NAME + " AS " + alias), JoinType.INNER);
+    }
+
+    /**
+     * Perform a cross join between the already defined source with the "__ALL_NODES" table using the supplied alias. Cross joins
+     * have a higher precedent than other join types, so if this is called after another join was defined, the resulting cross
+     * join will be between the previous join's right-hand side and the supplied table.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause crossJoinAllNodesAs( String alias ) {
+        // Expect there to be a source already ...
+        return new JoinClause(namedSelector(AllNodes.ALL_NODES_NAME + " AS " + alias), JoinType.CROSS);
+    }
+
+    /**
+     * Perform a full outer join between the already defined source with the "__ALL_NODES" table using the supplied alias.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause fullOuterJoinAllNodesAs( String alias ) {
+        // Expect there to be a source already ...
+        return new JoinClause(namedSelector(AllNodes.ALL_NODES_NAME + " AS " + alias), JoinType.FULL_OUTER);
+    }
+
+    /**
+     * Perform a left outer join between the already defined source with the "__ALL_NODES" table using the supplied alias.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause leftOuterJoinAllNodesAs( String alias ) {
+        // Expect there to be a source already ...
+        return new JoinClause(namedSelector(AllNodes.ALL_NODES_NAME + " AS " + alias), JoinType.LEFT_OUTER);
+    }
+
+    /**
+     * Perform a right outer join between the already defined source with the "__ALL_NODES" table using the supplied alias.
+     * 
+     * @param alias the alias for the "__ALL_NODES" table; may not be null
+     * @return the component that must be used to complete the join specification; never null
+     */
+    public JoinClause rightOuterJoinAllNodesAs( String alias ) {
+        // Expect there to be a source already ...
+        return new JoinClause(namedSelector(AllNodes.ALL_NODES_NAME + " AS " + alias), JoinType.RIGHT_OUTER);
     }
 
     /**
@@ -703,7 +779,7 @@ public class QueryBuilder {
          * 
          * @param tableName the table name
          * @return the selector name matching the supplied table name; never null
-         * @throws InvalidQueryException if the table name could not be resolved
+         * @throws IllegalArgumentException if the table name could not be resolved
          */
         protected SelectorName nameOf( String tableName ) {
             final SelectorName name = new SelectorName(tableName);
@@ -723,7 +799,7 @@ public class QueryBuilder {
                 }
             });
             if (notFound.get()) {
-                throw new InvalidQueryException("Expected \"" + tableName + "\" to be a valid table name or alias");
+                throw new IllegalArgumentException("Expected \"" + tableName + "\" to be a valid table name or alias");
             }
             return name;
         }
@@ -734,12 +810,13 @@ public class QueryBuilder {
          * 
          * @param columnEqualExpression the equality expression between the two tables; may not be null
          * @return the query builder instance, for method chaining purposes
+         * @throws IllegalArgumentException if the supplied expression is not an equality expression
          */
         public QueryBuilder on( String columnEqualExpression ) {
             String[] parts = columnEqualExpression.split("=");
             if (parts.length != 2) {
-                throw new InvalidQueryException("Expected equality expression for columns, but found \"" + columnEqualExpression
-                                                + "\"");
+                throw new IllegalArgumentException("Expected equality expression for columns, but found \""
+                                                   + columnEqualExpression + "\"");
             }
             return createJoin(new EquiJoinCondition(column(parts[0]), column(parts[1])));
         }
@@ -780,7 +857,7 @@ public class QueryBuilder {
          */
         public QueryBuilder onChildNode( String parentTable,
                                          String childTable ) {
-            return createJoin(new DescendantNodeJoinCondition(nameOf(parentTable), nameOf(childTable)));
+            return createJoin(new ChildNodeJoinCondition(nameOf(parentTable), nameOf(childTable)));
         }
 
         protected QueryBuilder createJoin( JoinCondition condition ) {
@@ -836,7 +913,25 @@ public class QueryBuilder {
         public ComparisonBuilder fullTextSearchScore( String table );
 
         /**
-         * Constrains the nodes in the the supplied table such that they must have a matching node local name.
+         * Constrains the nodes in the the supplied table based upon criteria on the node's depth.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder depth( String table );
+
+        /**
+         * Constrains the nodes in the the supplied table based upon criteria on the node's path.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder path( String table );
+
+        /**
+         * Constrains the nodes in the the supplied table based upon criteria on the node's local name.
          * 
          * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
          *        FROM clause
@@ -845,7 +940,7 @@ public class QueryBuilder {
         public ComparisonBuilder nodeLocalName( String table );
 
         /**
-         * Constrains the nodes in the the supplied table such that they must have a matching node name.
+         * Constrains the nodes in the the supplied table based upon criteria on the node's name.
          * 
          * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
          *        FROM clause
@@ -987,8 +1082,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isSameNode( String table,
                                              String asNodeAtPath ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
-            return setConstraint(new SameNode(selector(table), path(asNodeAtPath)));
+            return setConstraint(new SameNode(selector(table), QueryBuilder.this.path(asNodeAtPath)));
         }
 
         /**
@@ -1001,8 +1095,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isChild( String childTable,
                                           String parentPath ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
-            return setConstraint(new ChildNode(selector(childTable), path(parentPath)));
+            return setConstraint(new ChildNode(selector(childTable), QueryBuilder.this.path(parentPath)));
         }
 
         /**
@@ -1015,12 +1108,11 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isBelowPath( String descendantTable,
                                               String ancestorPath ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
-            return setConstraint(new DescendantNode(selector(descendantTable), path(ancestorPath)));
+            return setConstraint(new DescendantNode(selector(descendantTable), QueryBuilder.this.path(ancestorPath)));
         }
 
         /**
-         * Define a constraint clause that the node within the named table has at least one value for the named property. path.
+         * Define a constraint clause that the node within the named table has at least one value for the named property.
          * 
          * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
          *        FROM clause
@@ -1029,7 +1121,6 @@ public class QueryBuilder {
          */
         public ConstraintBuilder hasProperty( String table,
                                               String propertyName ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
             return setConstraint(new PropertyExistence(selector(table), name(propertyName)));
         }
 
@@ -1044,7 +1135,6 @@ public class QueryBuilder {
          */
         public ConstraintBuilder search( String table,
                                          String searchExpression ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
             return setConstraint(new FullTextSearch(selector(table), searchExpression));
         }
 
@@ -1061,7 +1151,6 @@ public class QueryBuilder {
         public ConstraintBuilder search( String table,
                                          String propertyName,
                                          String searchExpression ) {
-            if (constraint != null) throw new InvalidQueryException("Existing constraint; call in proper order");
             return setConstraint(new FullTextSearch(selector(table), name(propertyName), searchExpression));
         }
 
@@ -1092,6 +1181,24 @@ public class QueryBuilder {
          */
         public ComparisonBuilder fullTextSearchScore( String table ) {
             return new ComparisonBuilder(this, new FullTextSearchScore(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#depth(java.lang.String)
+         */
+        public ComparisonBuilder depth( String table ) {
+            return new ComparisonBuilder(this, new NodeDepth(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#path(java.lang.String)
+         */
+        public ComparisonBuilder path( String table ) {
+            return new ComparisonBuilder(this, new NodePath(selector(table)));
         }
 
         /**
@@ -1179,6 +1286,400 @@ public class QueryBuilder {
         }
     }
 
+    public class CastAs {
+        private final RightHandSide rhs;
+        private final Object value;
+
+        protected CastAs( RightHandSide rhs,
+                          Object value ) {
+            this.rhs = rhs;
+            this.value = value;
+        }
+
+        private ValueFactories factories() {
+            return QueryBuilder.this.context.getValueFactories();
+        }
+
+        /**
+         * Define the right-hand side literal value cast as the specified type.
+         * 
+         * @param type the property type; may not be null
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder as( PropertyType type ) {
+            return rhs.comparisonBuilder.is(rhs.operator, factories().getValueFactory(type).create(value));
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#STRING}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asString() {
+            return as(PropertyType.STRING);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#BOOLEAN}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asBoolean() {
+            return as(PropertyType.BOOLEAN);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#LONG}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asLong() {
+            return as(PropertyType.LONG);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DOUBLE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asDouble() {
+            return as(PropertyType.DOUBLE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DECIMAL}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asDecimal() {
+            return as(PropertyType.DECIMAL);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DATE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asDate() {
+            return as(PropertyType.DATE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#NAME}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asName() {
+            return as(PropertyType.NAME);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#PATH}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asPath() {
+            return as(PropertyType.PATH);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#BINARY}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asBinary() {
+            return as(PropertyType.BINARY);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#REFERENCE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asReference() {
+            return as(PropertyType.REFERENCE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#URI}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asUri() {
+            return as(PropertyType.URI);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#UUID}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder asUuid() {
+            return as(PropertyType.UUID);
+        }
+    }
+
+    public class RightHandSide {
+        protected final Operator operator;
+        protected final ComparisonBuilder comparisonBuilder;
+
+        protected RightHandSide( ComparisonBuilder comparisonBuilder,
+                                 Operator operator ) {
+            this.operator = operator;
+            this.comparisonBuilder = comparisonBuilder;
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( String literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( int literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( long literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( float literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( double literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( DateTime literal ) {
+            return comparisonBuilder.is(operator, literal.toUtcTimeZone());
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Path literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Name literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( URI literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( UUID literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Binary literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( BigDecimal literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( boolean literal ) {
+            return comparisonBuilder.is(operator, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param variableName the name of the variable
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder variable( String variableName ) {
+            return comparisonBuilder.is(operator, variableName);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( int literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( String literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( boolean literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( long literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( double literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( BigDecimal literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( DateTime literal ) {
+            return new CastAs(this, literal.toUtcTimeZone());
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( Name literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( Path literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( UUID literal ) {
+            return new CastAs(this, literal);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs cast( URI literal ) {
+            return new CastAs(this, literal);
+        }
+    }
+
     /**
      * An interface used to set the right-hand side of a constraint.
      */
@@ -1192,14 +1693,112 @@ public class QueryBuilder {
             this.constraintBuilder = constraintBuilder;
         }
 
-        protected ConstraintBuilder isVariable( Operator operator,
-                                                String variableName ) {
-            assert operator != null;
+        /**
+         * Define the operator that will be used in the comparison, returning an interface that can be used to define the
+         * right-hand-side of the comparison.
+         * 
+         * @param operator the operator; may not be null
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide is( Operator operator ) {
+            CheckArg.isNotNull(operator, "operator");
+            return new RightHandSide(this, operator);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isEqualTo() {
+            return is(Operator.EQUAL_TO);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isNotEqualTo() {
+            return is(Operator.NOT_EQUAL_TO);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isGreaterThan() {
+            return is(Operator.GREATER_THAN);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isGreaterThanOrEqualTo() {
+            return is(Operator.GREATER_THAN_OR_EQUAL_TO);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isLessThan() {
+            return is(Operator.LESS_THAN);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isLessThanOrEqualTo() {
+            return is(Operator.LESS_THAN_OR_EQUAL_TO);
+        }
+
+        /**
+         * Use the 'equal to' operator in the comparison, returning an interface that can be used to define the right-hand-side of
+         * the comparison.
+         * 
+         * @return the interface used to define the right-hand-side of the comparison
+         */
+        public RightHandSide isLike() {
+            return is(Operator.LIKE);
+        }
+
+        /**
+         * Define the right-hand-side of the constraint using the supplied operator.
+         * 
+         * @param operator the operator; may not be null
+         * @param variableName the name of the variable
+         * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
+         *         complete already-started clauses; never null
+         */
+        public ConstraintBuilder isVariable( Operator operator,
+                                             String variableName ) {
+            CheckArg.isNotNull(operator, "operator");
             return this.constraintBuilder.setConstraint(new Comparison(left, operator, new BindVariableName(variableName)));
         }
 
-        protected ConstraintBuilder is( Operator operator,
-                                        Object literal ) {
+        /**
+         * Define the right-hand-side of the constraint using the supplied operator.
+         * 
+         * @param operator the operator; may not be null
+         * @param literal the literal value
+         * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
+         *         complete already-started clauses; never null
+         */
+        public ConstraintBuilder is( Operator operator,
+                                     Object literal ) {
             assert operator != null;
             return this.constraintBuilder.setConstraint(new Comparison(left, operator, new Literal(literal)));
         }

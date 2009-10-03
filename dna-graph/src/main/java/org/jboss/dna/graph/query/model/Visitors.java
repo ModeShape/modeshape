@@ -154,6 +154,16 @@ public class Visitors {
             }
 
             @Override
+            public void visit( NodeDepth depth ) {
+                super.visit(depth);
+            }
+
+            @Override
+            public void visit( NodePath path ) {
+                super.visit(path);
+            }
+
+            @Override
             public void visit( NodeLocalName node ) {
                 symbols.add(node.getSelectorName());
             }
@@ -343,6 +353,22 @@ public class Visitors {
          * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.LowerCase)
          */
         public void visit( LowerCase obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodeDepth)
+         */
+        public void visit( NodeDepth obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodePath)
+         */
+        public void visit( NodePath obj ) {
         }
 
         /**
@@ -683,6 +709,26 @@ public class Visitors {
         public void visit( LowerCase lowerCase ) {
             strategy.visit(lowerCase);
             enqueue(lowerCase.getOperand());
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodeDepth)
+         */
+        public void visit( NodeDepth depth ) {
+            strategy.visit(depth);
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodePath)
+         */
+        public void visit( NodePath path ) {
+            strategy.visit(path);
             visitNext();
         }
 
@@ -1098,8 +1144,15 @@ public class Visitors {
          * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.Literal)
          */
         public void visit( Literal literal ) {
-            if (context == null) append(literal.getValue().toString());
-            else append(context.getValueFactories().getStringFactory().create(literal.getValue()));
+            Object value = literal.getValue();
+            boolean quote = value instanceof String || value instanceof Path || value instanceof Name;
+            if (quote) append('\'');
+            if (context == null) {
+                append(literal.getValue().toString());
+            } else {
+                append(context.getValueFactories().getStringFactory().create(literal.getValue()));
+            }
+            if (quote) append('\'');
         }
 
         /**
@@ -1111,6 +1164,24 @@ public class Visitors {
             append("LOWER(");
             lowerCase.getOperand().accept(this);
             append(')');
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodeDepth)
+         */
+        public void visit( NodeDepth depth ) {
+            append("DEPTH(").append(depth.getSelectorName()).append(')');
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.NodePath)
+         */
+        public void visit( NodePath path ) {
+            append("PATH(").append(path.getSelectorName()).append(')');
         }
 
         /**

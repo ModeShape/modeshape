@@ -128,6 +128,7 @@ public final class GraphI18n {
     public static I18n childNotFound;
 
     /* Query */
+    public static I18n unknownQueryLanguage;
     public static I18n tableDoesNotExist;
     public static I18n columnDoesNotExistOnTable;
     public static I18n columnDoesNotExistInQuery;

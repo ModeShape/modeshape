@@ -25,7 +25,10 @@ package org.jboss.dna.search;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.Set;
 import org.apache.lucene.queryParser.ParseException;
+import org.jboss.dna.common.text.ParsingException;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
@@ -34,6 +37,8 @@ import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.OptimizerRule;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
+import org.jboss.dna.graph.query.parse.InvalidQueryException;
+import org.jboss.dna.graph.query.parse.QueryParser;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
 import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
@@ -51,6 +56,62 @@ class LuceneQueryEngine {
 
     public LuceneQueryEngine( Schemata schemata ) {
         engine = new QueryEngine(new CanonicalPlanner(), new LuceneOptimizer(), new LuceneProcessor(), schemata);
+    }
+
+    public LuceneQueryEngine( Schemata schemata,
+                              QueryParser... languages ) {
+        engine = new QueryEngine(new CanonicalPlanner(), new LuceneOptimizer(), new LuceneProcessor(), schemata, languages);
+    }
+
+    /**
+     * Add a language to this engine by supplying its parser.
+     * 
+     * @param languageParser the query parser for the language
+     * @throws IllegalArgumentException if the language parser is null
+     */
+    public void addLanguage( QueryParser languageParser ) {
+        this.engine.addLanguage(languageParser);
+    }
+
+    /**
+     * Remove from this engine the language with the given name.
+     * 
+     * @param language the name of the language, which is to match the {@link QueryParser#getLanguage() language} of the parser
+     * @return the parser for the language, or null if the engine had no support for the named language
+     * @throws IllegalArgumentException if the language is null
+     */
+    public QueryParser removeLanguage( String language ) {
+        return this.engine.removeLanguage(language);
+    }
+
+    /**
+     * Get the set of languages that this engine is capable of parsing.
+     * 
+     * @return the unmodifiable copy of the set of languages; never null but possibly empty
+     */
+    public Set<String> getLanguages() {
+        return this.engine.getLanguages();
+    }
+
+    /**
+     * Execute the supplied query by planning, optimizing, and then processing it.
+     * 
+     * @param indexes the context in which the query should be executed
+     * @param language the language in which the query is expressed; must be one of the supported {@link #getLanguages()
+     *        languages}
+     * @param query the query that is to be executed
+     * @return the query results; never null
+     * @throws IllegalArgumentException if the language, context or query references are null, or if the language is not know
+     * @throws ParsingException if there is an error parsing the supplied query
+     * @throws InvalidQueryException if the supplied query can be parsed but is invalid
+     */
+    public QueryResults execute( IndexContext indexes,
+                                 String language,
+                                 String query ) {
+        CheckArg.isNotNull(language, "language");
+        CheckArg.isNotNull(indexes, "indexes");
+        CheckArg.isNotNull(query, "query");
+        return engine.execute(indexes.context(), language, query);
     }
 
     /**

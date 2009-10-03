@@ -21,36 +21,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.query.parse;
+package org.jboss.dna.jcr.xpath;
 
-import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.parse.InvalidQueryException;
+import org.jboss.dna.graph.query.parse.QueryParser;
+import org.jboss.dna.jcr.xpath.XPath.Component;
 
 /**
- * The basic interface defining a component that is able to parse a string query into a {@link QueryCommand}.
+ * A {@link QueryParser} implementation that accepts XPath expressions and converts them to a {@link QueryCommand DNA Abstract
+ * Query Model} representation.
  */
-@Immutable
-public interface QueryParser {
+public class XPathQueryParser implements QueryParser {
+
+    static final boolean COLLAPSE_INNER_COMPONENTS = true;
+    private static final String LANGUAGE = "XPath";
 
     /**
-     * Get the name of the language that this parser is able to understand.
+     * {@inheritDoc}
      * 
-     * @return the language name; never null
+     * @see org.jboss.dna.graph.query.parse.QueryParser#getLanguage()
      */
-    String getLanguage();
+    public String getLanguage() {
+        return LANGUAGE;
+    }
 
     /**
-     * Parse the supplied query from a string representation into a {@link QueryCommand}.
+     * {@inheritDoc}
      * 
-     * @param query the query in string form; may not be null
-     * @param context the context in which the query is being parsed
-     * @return the query command
-     * @throws ParsingException if there is an error parsing the supplied query
-     * @throws InvalidQueryException if the supplied query can be parsed but is invalid
+     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.ExecutionContext)
      */
-    QueryCommand parseQuery( String query,
-                             ExecutionContext context ) throws InvalidQueryException;
-
+    public QueryCommand parseQuery( String query,
+                                    ExecutionContext context ) throws InvalidQueryException, ParsingException {
+        Component xpath = new XPathParser(context).parseXPath(query);
+        System.out.println(query);
+        System.out.println(" --> " + xpath);
+        // Convert the result into a QueryCommand ...
+        QueryCommand command = new XPathToQueryTranslator(context, query).createQuery(xpath);
+        return command;
+    }
 }

@@ -40,6 +40,8 @@ import org.joda.time.DateTimeZone;
 @Immutable
 public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
 
+    private static final DateTimeZone UTC_ZONE = DateTimeZone.forID("UTC");
+
     /**
      */
     private static final long serialVersionUID = -730188225988292422L;
@@ -47,36 +49,44 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
     private static final int MILLIS_IN_HOUR = 1000 * 60 * 60;
 
     private final DateTime instance;
+    private final long millisInUtc;
 
     public JodaDateTime() {
         this.instance = new DateTime();
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( String iso8601 ) {
         this.instance = new DateTime(iso8601);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( String iso8601,
                          String timeZoneId ) {
         this.instance = new DateTime(iso8601, DateTimeZone.forID(timeZoneId));
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( long milliseconds ) {
         this.instance = new DateTime(milliseconds);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( long milliseconds,
                          Chronology chronology ) {
         this.instance = new DateTime(milliseconds, chronology);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( long milliseconds,
                          String timeZoneId ) {
         this.instance = new DateTime(milliseconds, DateTimeZone.forID(timeZoneId));
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( DateTimeZone dateTimeZone ) {
         this.instance = new DateTime(dateTimeZone);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( int year,
@@ -87,6 +97,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
                          int secondOfMinute,
                          int millisecondsOfSecond ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( int year,
@@ -99,6 +110,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
                          Chronology chronology ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
                                      millisecondsOfSecond, chronology);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( int year,
@@ -111,6 +123,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
                          DateTimeZone dateTimeZone ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
                                      millisecondsOfSecond, dateTimeZone);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( int year,
@@ -123,6 +136,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
                          int timeZoneOffsetHours ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
                                      millisecondsOfSecond, DateTimeZone.forOffsetHours(timeZoneOffsetHours));
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( int year,
@@ -135,18 +149,22 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
                          String timeZoneId ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
                                      millisecondsOfSecond, DateTimeZone.forID(timeZoneId));
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( java.util.Date jdkDate ) {
         this.instance = new DateTime(jdkDate);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( java.util.Calendar jdkCalendar ) {
         this.instance = new DateTime(jdkCalendar);
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     public JodaDateTime( DateTime dateTime ) {
         this.instance = dateTime; // it's immutable, so just hold onto the supplied instance
+        this.millisInUtc = instance.withZone(UTC_ZONE).getMillis();
     }
 
     /**
@@ -203,6 +221,15 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      */
     public long getMilliseconds() {
         return this.instance.getMillis();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.DateTime#getMillisecondsInUtc()
+     */
+    public long getMillisecondsInUtc() {
+        return millisInUtc;
     }
 
     /**
@@ -315,12 +342,8 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      * {@inheritDoc}
      */
     public int compareTo( org.jboss.dna.graph.property.DateTime that ) {
-        if (that instanceof JodaDateTime) {
-            return this.instance.compareTo(((JodaDateTime)that).instance);
-        }
-        if (that == null) return 1;
-        long diff = this.toUtcTimeZone().getMilliseconds() - that.toUtcTimeZone().getMilliseconds();
-        return (int)diff;
+        long diff = this.getMillisecondsInUtc() - that.getMillisecondsInUtc();
+        return diff == 0 ? 0 : diff > 0 ? 1 : -1;
     }
 
     /**
@@ -328,7 +351,7 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      */
     @Override
     public int hashCode() {
-        return this.instance.hashCode();
+        return (int)this.millisInUtc;
     }
 
     /**
@@ -337,18 +360,13 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof JodaDateTime) {
-            JodaDateTime that = (JodaDateTime)obj;
-
-            /*
-             * The equals semantics for JodaDateTimes are very strict, implying that not only are the two instants represented
-             * by the JodaDateTimes logically equivalent, but also that the Chronology and DateTimeZone are the same.  
-             * Instead, use isEqual, which only checks that the two JodaDateTimes are logically equivalent.
-             */
-            return this.instance.isEqual(that.instance);
+        if (obj instanceof org.jboss.dna.graph.property.DateTime) {
+            org.jboss.dna.graph.property.DateTime that = (org.jboss.dna.graph.property.DateTime)obj;
+            return this.getMillisecondsInUtc() == that.getMillisecondsInUtc();
         }
         if (obj instanceof DateTime) {
-            return this.instance.equals(obj);
+            DateTime that = (DateTime)obj;
+            return this.getMillisecondsInUtc() == that.withZone(UTC_ZONE).getMillis();
         }
         return false;
     }
@@ -365,7 +383,9 @@ public class JodaDateTime implements org.jboss.dna.graph.property.DateTime {
      * {@inheritDoc}
      */
     public org.jboss.dna.graph.property.DateTime toUtcTimeZone() {
-        DateTime jodaTime = this.instance.withZone(DateTimeZone.forID("UTC"));
+        DateTimeZone utc = DateTimeZone.forID("UTC");
+        if (this.instance.getZone().equals(utc)) return this;
+        DateTime jodaTime = this.instance.withZone(utc);
         return new JodaDateTime(jodaTime);
     }
 

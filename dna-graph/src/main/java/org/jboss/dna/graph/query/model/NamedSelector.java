@@ -72,8 +72,8 @@ public class NamedSelector extends Selector {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof NamedSelector) {
-            NamedSelector that = (NamedSelector)obj;
+        if (obj instanceof Selector) {
+            Selector that = (Selector)obj;
             if (!this.getName().equals(that.getName())) return false;
             if (!ObjectUtil.isEqualWithNulls(this.getAlias(), that.getAlias())) return false;
             return true;

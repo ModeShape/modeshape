@@ -21,45 +21,51 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.query;
+package org.jboss.dna.graph.query.parse;
+
+import org.jboss.dna.common.util.CheckArg;
 
 /**
- * 
+ * An exception signalling that an XPath query is invalid (but typically well-formed)
  */
 public class InvalidQueryException extends RuntimeException {
 
+    /**
+     */
     private static final long serialVersionUID = 1L;
 
+    private final String xpath;
+
     /**
+     * Create an exception with the invalid query.
      * 
+     * @param xpath the XPath query that is invalid
      */
-    public InvalidQueryException() {
+    public InvalidQueryException( String xpath ) {
+        super();
+        this.xpath = xpath;
     }
 
     /**
+     * Create an exception with the invalid query and a message.
+     * 
+     * @param xpath the XPath query that is invalid
      * @param message
      */
-    public InvalidQueryException( String message ) {
+    public InvalidQueryException( String xpath,
+                                  String message ) {
         super(message);
-
+        CheckArg.isNotNull(xpath, "xpath");
+        this.xpath = xpath;
     }
 
     /**
-     * @param cause
+     * Get the XPath query that is invalid.
+     * 
+     * @return the query
      */
-    public InvalidQueryException( Throwable cause ) {
-        super(cause);
-
-    }
-
-    /**
-     * @param message
-     * @param cause
-     */
-    public InvalidQueryException( String message,
-                                  Throwable cause ) {
-        super(message, cause);
-
+    public String getXPath() {
+        return xpath;
     }
 
 }

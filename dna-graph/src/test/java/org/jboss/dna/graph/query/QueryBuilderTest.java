@@ -433,7 +433,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) = literal"));
+                                "WHERE LENGTH(nodes.property) = 'literal'"));
     }
 
     @Test
@@ -459,7 +459,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) != literal"));
+                                "WHERE LENGTH(nodes.property) != 'literal'"));
     }
 
     @Test
@@ -485,7 +485,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) < literal"));
+                                "WHERE LENGTH(nodes.property) < 'literal'"));
     }
 
     @Test
@@ -511,7 +511,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) <= literal"));
+                                "WHERE LENGTH(nodes.property) <= 'literal'"));
     }
 
     @Test
@@ -537,7 +537,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) > literal"));
+                                "WHERE LENGTH(nodes.property) > 'literal'"));
     }
 
     @Test
@@ -563,7 +563,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) >= literal"));
+                                "WHERE LENGTH(nodes.property) >= 'literal'"));
     }
 
     @Test
@@ -583,7 +583,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingLengthLike() {
         query = builder.selectStar().from("table AS nodes").where().length("nodes", "property").isLike("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LENGTH(nodes.property) LIKE literal"));
+                                "WHERE LENGTH(nodes.property) LIKE 'literal'"));
     }
 
     @Test
@@ -600,10 +600,44 @@ public class QueryBuilderTest {
     }
 
     @Test
+    public void shouldBuildQueryWithCriteriaUsingNodeDepthEqualToLiteral() {
+        query = builder.selectStar().from("table AS nodes").where().depth("nodes").isEqualTo(3).end().query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE DEPTH(nodes) = 3"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCriteriaUsingNodeDepthLessThanOrEqualToLongLiteral() {
+        query = builder.selectStar().from("table AS nodes").where().depth("nodes").isLessThanOrEqualTo(3).end().query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE DEPTH(nodes) <= 3"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCriteriaUsingNodeDepthLessThanOrEqualToStringLiteral() {
+        query = builder.selectStar().from("table AS nodes").where().depth("nodes").isLessThanOrEqualTo(3).end().query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE DEPTH(nodes) <= 3"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCriteriaUsingNodeDepthLessThanOrEqualToVariable() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .depth("nodes")
+                       .isLessThanOrEqualToVariable("value")
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE DEPTH(nodes) <= $value"));
+    }
+
+    @Test
     public void shouldBuildQueryWithCriteriaUsingNodeNameEqualTo() {
         query = builder.selectStar().from("table AS nodes").where().nodeName("nodes").isEqualTo("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) = literal"));
+                                "WHERE NAME(nodes) = 'literal'"));
     }
 
     @Test
@@ -617,7 +651,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeNameNotEqualTo() {
         query = builder.selectStar().from("table AS nodes").where().nodeName("nodes").isNotEqualTo("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) != literal"));
+                                "WHERE NAME(nodes) != 'literal'"));
     }
 
     @Test
@@ -637,7 +671,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeNameLessThan() {
         query = builder.selectStar().from("table AS nodes").where().nodeName("nodes").isLessThan("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) < literal"));
+                                "WHERE NAME(nodes) < 'literal'"));
     }
 
     @Test
@@ -657,7 +691,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) <= literal"));
+                                "WHERE NAME(nodes) <= 'literal'"));
     }
 
     @Test
@@ -677,7 +711,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeNameGreaterThan() {
         query = builder.selectStar().from("table AS nodes").where().nodeName("nodes").isGreaterThan("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) > literal"));
+                                "WHERE NAME(nodes) > 'literal'"));
     }
 
     @Test
@@ -703,7 +737,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) >= literal"));
+                                "WHERE NAME(nodes) >= 'literal'"));
     }
 
     @Test
@@ -723,7 +757,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeNameLike() {
         query = builder.selectStar().from("table AS nodes").where().nodeName("nodes").isLike("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE NAME(nodes) LIKE literal"));
+                                "WHERE NAME(nodes) LIKE 'literal'"));
     }
 
     @Test
@@ -737,7 +771,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeLocalNameEqualTo() {
         query = builder.selectStar().from("table AS nodes").where().nodeLocalName("nodes").isEqualTo("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) = literal"));
+                                "WHERE LOCALNAME(nodes) = 'literal'"));
     }
 
     @Test
@@ -757,7 +791,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeLocalNameNotEqualTo() {
         query = builder.selectStar().from("table AS nodes").where().nodeLocalName("nodes").isNotEqualTo("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) != literal"));
+                                "WHERE LOCALNAME(nodes) != 'literal'"));
     }
 
     @Test
@@ -777,7 +811,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeLocalNameLessThan() {
         query = builder.selectStar().from("table AS nodes").where().nodeLocalName("nodes").isLessThan("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) < literal"));
+                                "WHERE LOCALNAME(nodes) < 'literal'"));
     }
 
     @Test
@@ -803,7 +837,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) <= literal"));
+                                "WHERE LOCALNAME(nodes) <= 'literal'"));
     }
 
     @Test
@@ -823,7 +857,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeLocalNameGreaterThan() {
         query = builder.selectStar().from("table AS nodes").where().nodeLocalName("nodes").isGreaterThan("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) > literal"));
+                                "WHERE LOCALNAME(nodes) > 'literal'"));
     }
 
     @Test
@@ -849,7 +883,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) >= literal"));
+                                "WHERE LOCALNAME(nodes) >= 'literal'"));
     }
 
     @Test
@@ -869,7 +903,7 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeLocalNameLike() {
         query = builder.selectStar().from("table AS nodes").where().nodeLocalName("nodes").isLike("literal").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOCALNAME(nodes) LIKE literal"));
+                                "WHERE LOCALNAME(nodes) LIKE 'literal'"));
     }
 
     @Test
@@ -896,7 +930,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) = literal"));
+                                "WHERE UPPER(NAME(nodes)) = 'literal'"));
     }
 
     @Test
@@ -924,7 +958,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) != literal"));
+                                "WHERE UPPER(NAME(nodes)) != 'literal'"));
     }
 
     @Test
@@ -952,7 +986,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) < literal"));
+                                "WHERE UPPER(NAME(nodes)) < 'literal'"));
     }
 
     @Test
@@ -980,7 +1014,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) <= literal"));
+                                "WHERE UPPER(NAME(nodes)) <= 'literal'"));
     }
 
     @Test
@@ -1008,7 +1042,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) > literal"));
+                                "WHERE UPPER(NAME(nodes)) > 'literal'"));
     }
 
     @Test
@@ -1036,7 +1070,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) >= literal"));
+                                "WHERE UPPER(NAME(nodes)) >= 'literal'"));
     }
 
     @Test
@@ -1064,7 +1098,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE UPPER(NAME(nodes)) LIKE literal"));
+                                "WHERE UPPER(NAME(nodes)) LIKE 'literal'"));
     }
 
     @Test
@@ -1092,7 +1126,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) = literal"));
+                                "WHERE LOWER(NAME(nodes)) = 'literal'"));
     }
 
     @Test
@@ -1120,7 +1154,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) != literal"));
+                                "WHERE LOWER(NAME(nodes)) != 'literal'"));
     }
 
     @Test
@@ -1148,7 +1182,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) < literal"));
+                                "WHERE LOWER(NAME(nodes)) < 'literal'"));
     }
 
     @Test
@@ -1176,7 +1210,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) <= literal"));
+                                "WHERE LOWER(NAME(nodes)) <= 'literal'"));
     }
 
     @Test
@@ -1204,7 +1238,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) > literal"));
+                                "WHERE LOWER(NAME(nodes)) > 'literal'"));
     }
 
     @Test
@@ -1232,7 +1266,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) >= literal"));
+                                "WHERE LOWER(NAME(nodes)) >= 'literal'"));
     }
 
     @Test
@@ -1260,7 +1294,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(NAME(nodes)) LIKE literal"));
+                                "WHERE LOWER(NAME(nodes)) LIKE 'literal'"));
     }
 
     @Test
@@ -1289,6 +1323,6 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE LOWER(UPPER(NAME(nodes))) = literal"));
+                                "WHERE LOWER(UPPER(NAME(nodes))) = 'literal'"));
     }
 }

@@ -52,8 +52,10 @@ import org.jboss.dna.graph.query.model.Limit;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.LowerCase;
 import org.jboss.dna.graph.query.model.NamedSelector;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Not;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.Or;
@@ -1226,6 +1228,88 @@ public class SqlQueryParserTest {
     @Test( expected = ParsingException.class )
     public void shouldFailToParseDynamicOperandFromStringContainingUpperWithoutOpeningParenthesis() {
         parser.parseDynamicOperand(tokens("Upper tableA.property other"), context, mock(Source.class));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseDynamicOperand - DEPTH
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingDepthOfSelector() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("DEPTH(tableA)"), context, mock(Source.class));
+        assertThat(operand, is(instanceOf(NodeDepth.class)));
+        NodeDepth depth = (NodeDepth)operand;
+        assertThat(depth.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingDepthWithNoSelectorOnlyIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("DEPTH()"), context, source);
+        assertThat(operand, is(instanceOf(NodeDepth.class)));
+        NodeDepth depth = (NodeDepth)operand;
+        assertThat(depth.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingDepthWithNoSelectorIfTheSourceIsNotASelector() {
+        parser.parseDynamicOperand(tokens("DEPTH()"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingDepthWithSelectorNameAndProperty() {
+        parser.parseDynamicOperand(tokens("DEPTH(tableA.property) other"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingDepthWithoutClosingParenthesis() {
+        parser.parseDynamicOperand(tokens("DEPTH(tableA other"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingDepthWithoutOpeningParenthesis() {
+        parser.parseDynamicOperand(tokens("Depth  tableA other"), context, mock(Source.class));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseDynamicOperand - PATH
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingPathOfSelector() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("PATH(tableA)"), context, mock(Source.class));
+        assertThat(operand, is(instanceOf(NodePath.class)));
+        NodePath path = (NodePath)operand;
+        assertThat(path.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingPathWithNoSelectorOnlyIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("PATH()"), context, source);
+        assertThat(operand, is(instanceOf(NodePath.class)));
+        NodePath path = (NodePath)operand;
+        assertThat(path.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingPathWithNoSelectorIfTheSourceIsNotASelector() {
+        parser.parseDynamicOperand(tokens("PATH()"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingPathWithSelectorNameAndProperty() {
+        parser.parseDynamicOperand(tokens("PATH(tableA.property) other"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingPathWithoutClosingParenthesis() {
+        parser.parseDynamicOperand(tokens("PATH(tableA other"), context, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingPathWithoutOpeningParenthesis() {
+        parser.parseDynamicOperand(tokens("Path  tableA other"), context, mock(Source.class));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

@@ -40,8 +40,10 @@ import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.Length;
 import org.jboss.dna.graph.query.model.LowerCase;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.validate.Schemata.Column;
@@ -216,6 +218,40 @@ public abstract class ProcessingComponent {
                 public Object evaluate( Object[] tuple ) {
                     String result = stringFactory.create(delegate.evaluate(tuple));
                     return result != null ? result.toUpperCase() : null;
+                }
+            };
+        }
+        if (operand instanceof NodeDepth) {
+            NodeDepth nodeDepth = (NodeDepth)operand;
+            final int locationIndex = columns.getLocationIndex(nodeDepth.getSelectorName().getName());
+            return new DynamicOperation() {
+                public PropertyType getExpectedType() {
+                    return PropertyType.LONG;
+                }
+
+                public Object evaluate( Object[] tuple ) {
+                    Location location = (Location)tuple[locationIndex];
+                    if (location == null) return null;
+                    Path path = location.getPath();
+                    assert path != null;
+                    return new Long(path.size());
+                }
+            };
+        }
+        if (operand instanceof NodePath) {
+            NodePath nodePath = (NodePath)operand;
+            final int locationIndex = columns.getLocationIndex(nodePath.getSelectorName().getName());
+            return new DynamicOperation() {
+                public PropertyType getExpectedType() {
+                    return PropertyType.PATH;
+                }
+
+                public Object evaluate( Object[] tuple ) {
+                    Location location = (Location)tuple[locationIndex];
+                    if (location == null) return null;
+                    Path path = location.getPath();
+                    assert path != null;
+                    return path;
                 }
             };
         }

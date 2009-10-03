@@ -24,27 +24,34 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ObjectUtil;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
- * A selector that represents a source that returns all nodes.
+ * A dynamic operand that evaluates to the depth of a node given by a selector, used in a {@link Comparison} constraint.
  */
 @Immutable
-public class AllNodes extends Selector {
+public class NodeDepth extends DynamicOperand {
+    private final SelectorName selectorName;
 
-    public static final SelectorName ALL_NODES_NAME = new SelectorName("__ALLNODES__");
-
-    public AllNodes() {
-        super(ALL_NODES_NAME);
+    /**
+     * Create a dynamic operand that evaluates to the depth of the node identified by the selector.
+     * 
+     * @param selectorName the name of the selector
+     * @throws IllegalArgumentException if the selector name or property name are null
+     */
+    public NodeDepth( SelectorName selectorName ) {
+        CheckArg.isNotNull(selectorName, "selectorName");
+        this.selectorName = selectorName;
     }
 
     /**
-     * Create a selector with the supplied alias.
+     * {@inheritDoc}
      * 
-     * @param alias the alias for this selector; may be null
+     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
      */
-    public AllNodes( SelectorName alias ) {
-        super(ALL_NODES_NAME, alias);
+    @Override
+    public final SelectorName getSelectorName() {
+        return selectorName;
     }
 
     /**
@@ -65,10 +72,9 @@ public class AllNodes extends Selector {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof Selector) {
-            Selector that = (Selector)obj;
-            return ObjectUtil.isEqualWithNulls(this.getName(), that.getName())
-                   && ObjectUtil.isEqualWithNulls(this.getAlias(), that.getAlias());
+        if (obj instanceof NodeDepth) {
+            NodeDepth that = (NodeDepth)obj;
+            return this.selectorName.equals(that.selectorName);
         }
         return false;
     }

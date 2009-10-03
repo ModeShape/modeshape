@@ -36,11 +36,13 @@ import org.jboss.dna.common.text.TokenStream;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AnyKindTest;
 import org.jboss.dna.jcr.xpath.XPath.AttributeNameTest;
 import org.jboss.dna.jcr.xpath.XPath.AttributeTest;
 import org.jboss.dna.jcr.xpath.XPath.AxisStep;
 import org.jboss.dna.jcr.xpath.XPath.CommentTest;
+import org.jboss.dna.jcr.xpath.XPath.Comparison;
 import org.jboss.dna.jcr.xpath.XPath.Component;
 import org.jboss.dna.jcr.xpath.XPath.ContextItem;
 import org.jboss.dna.jcr.xpath.XPath.DescendantOrSelf;
@@ -51,15 +53,16 @@ import org.jboss.dna.jcr.xpath.XPath.FunctionCall;
 import org.jboss.dna.jcr.xpath.XPath.Literal;
 import org.jboss.dna.jcr.xpath.XPath.NameTest;
 import org.jboss.dna.jcr.xpath.XPath.NodeTest;
+import org.jboss.dna.jcr.xpath.XPath.Or;
 import org.jboss.dna.jcr.xpath.XPath.ParenthesizedExpression;
 import org.jboss.dna.jcr.xpath.XPath.PathExpression;
 import org.jboss.dna.jcr.xpath.XPath.SchemaAttributeTest;
 import org.jboss.dna.jcr.xpath.XPath.SchemaElementTest;
 import org.jboss.dna.jcr.xpath.XPath.StepExpression;
 import org.jboss.dna.jcr.xpath.XPath.TextTest;
-import org.jboss.dna.jcr.xpath.XPathParser.XPathTokenizer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -68,12 +71,12 @@ import org.junit.Test;
 public class XPathParserTest {
 
     private ExecutionContext context;
-    private XPathParser.Parser parser;
+    private XPathParser parser;
 
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
-        parser = new XPathParser.Parser(context);
+        parser = new XPathParser(context);
     }
 
     @After
@@ -85,19 +88,59 @@ public class XPathParserTest {
     public void shouldParseXPathExpressions() {
         assertParsable("/jcr:root/a/b/c");
         assertParsable("/jcr:root/a/b/c[*]");
-        assertParsable("/jcr:root/some[1]/element(nodes, my:type)[1]");
+        assertParsable("/jcr:root/some[1]/element(nodes, my:type)[2]");
         assertParsable("//element(*,my:type)");
         assertParsable("//element(*,my:type)[@jcr:title='something' and @globalProperty='something else']");
         assertParsable("//element(*,my:type)[@jcr:title | @globalProperty]");
+        assertParsable("//element(*,my:type)/(@jcr:title | @globalProperty)");
         assertParsable("//element(*, my:type) order by @my:title");
         assertParsable("//element(*, my:type) [jcr:contains(., 'jcr')] order by jcr:score() descending");
         assertParsable("//element(*, employee)[@secretary and @assistant]");
+        assertParsable("//element(*, employee)[@secretary or @assistant]");
     }
 
     @Test
+    public void shouldParseXPathExpressions2() {
+        assertParsable("/jcr:root/a/b/c", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                   axisStep(nameTest("a")),
+                                                   axisStep(nameTest("b")),
+                                                   axisStep(nameTest("c"))));
+        assertParsable("/jcr:root/a/b/c[*]", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                      axisStep(nameTest("a")),
+                                                      axisStep(nameTest("b")),
+                                                      axisStep(nameTest("c"), wildcard())));
+        assertParsable("/jcr:root/some[1]", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(nameTest("some"), literal("1"))));
+        assertParsable("/jcr:root/element(*)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(),
+                                                                                                            wildcard()))));
+        assertParsable("/jcr:root/element(name)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("name"),
+                                                                                                               wildcard()))));
+        assertParsable("/jcr:root/element(*, *)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(),
+                                                                                                               wildcard()))));
+        assertParsable("/jcr:root/element(*, my:type)", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                 axisStep(element(wildcard(), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(ex:name, my:type)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("ex", "name"),
+                                                                                    nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, my:type)", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                    axisStep(element(nameTest("name"), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, type)", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                 axisStep(element(nameTest("name"), nameTest("type")))));
+        assertParsable("/jcr:root/some[1]/element(nodes, my:type)[1]", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                                axisStep(nameTest("some"), literal("1")),
+                                                                                axisStep(element(nameTest("nodes"),
+                                                                                                 nameTest("my", "type")),
+                                                                                         literal("1"))));
+        assertParsable("/jcr:root/some[1]/element(*, my:type)[1]", pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                            axisStep(nameTest("some"), literal("1")),
+                                                                            axisStep(element(wildcard(), nameTest("my", "type")),
+                                                                                     literal("1"))));
+    }
+
+    @Ignore
+    @Test
     public void shouldParseXPathExpressionsThatCombineSeparateExpressions() {
-        assertParsable("/jcr:root/a/b/c and /jcr:root/c/d/e");
-        assertParsable("/jcr:root/a/b/c and /jcr:root/c/d/e or /jcr:root/f/g/h");
+        assertParsable("/jcr:root/a/b/c union /jcr:root/c/d/e");
+        assertParsable("/jcr:root/a/b/c union /jcr:root/c/d/e intersect /jcr:root/f/g/h");
     }
 
     @Test
@@ -116,16 +159,14 @@ public class XPathParserTest {
 
     @Test
     public void shouldParsePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNamePathPredicate() {
-        assertThat(parser.parsePathExpr(tokenize("//.[c]")), is(pathExpr(descendantOrSelf(),
-                                                                         filterStep(contextItem(),
-                                                                                    relativePathExpr(axisStep(nameTest("c")))))));
+        assertThat(parser.parsePathExpr(tokenize("//.[c]")), is(pathExpr(descendantOrSelf(), filterStep(contextItem(),
+                                                                                                        nameTest("c")))));
     }
 
     @Test
     public void shouldParsePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNumericLiteralPredicate() {
-        assertThat(parser.parsePathExpr(tokenize("//.[3]")), is(pathExpr(descendantOrSelf(),
-                                                                         filterStep(contextItem(),
-                                                                                    relativePathExpr(filterStep(literal("3")))))));
+        assertThat(parser.parsePathExpr(tokenize("//.[3]")), is(pathExpr(descendantOrSelf(), filterStep(contextItem(),
+                                                                                                        literal("3")))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -148,17 +189,13 @@ public class XPathParserTest {
     @Test
     public void shouldParseRelativePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNamePathPredicate() {
         assertThat(parser.parseRelativePathExpr(tokenize("a//.[c]")),
-                   is(relativePathExpr(axisStep(nameTest("a")),
-                                       descendantOrSelf(),
-                                       filterStep(contextItem(), relativePathExpr(axisStep(nameTest("c")))))));
+                   is(relativePathExpr(axisStep(nameTest("a")), descendantOrSelf(), filterStep(contextItem(), nameTest("c")))));
     }
 
     @Test
     public void shouldParseRelativePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNumericLiteralPredicate() {
         assertThat(parser.parseRelativePathExpr(tokenize("a//.[3]")),
-                   is(relativePathExpr(axisStep(nameTest("a")),
-                                       descendantOrSelf(),
-                                       filterStep(contextItem(), relativePathExpr(filterStep(literal("3")))))));
+                   is(relativePathExpr(axisStep(nameTest("a")), descendantOrSelf(), filterStep(contextItem(), literal("3")))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -167,8 +204,7 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseStepExpressionFromParenthesizedLiteral() {
-        assertThat(parser.parseStepExpr(tokenize("('foo')")),
-                   is((StepExpression)filterStep(paren(relativePathExpr(filterStep(literal("foo")))))));
+        assertThat(parser.parseStepExpr(tokenize("('foo')")), is((StepExpression)filterStep(paren(literal("foo")))));
     }
 
     @Test
@@ -178,22 +214,20 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseStepExpressionFromFunctionCallWithUnqualifiedName() {
-        assertThat(parser.parseStepExpr(tokenize("element(*,*)")),
-                   is((StepExpression)filterStep(functionCall(nameTest("element"),
-                                                              relativePathExpr(axisStep(wildcard())),
-                                                              relativePathExpr(axisStep(wildcard()))))));
+        assertThat(parser.parseStepExpr(tokenize("element2(*,*)")),
+                   is((StepExpression)filterStep(functionCall(nameTest("element2"), wildcard(), wildcard()))));
     }
 
     @Test
     public void shouldParseStepExpressionFromFunctionCallWithQualifiedName() {
         assertThat(parser.parseStepExpr(tokenize("foo:bar(*)")),
-                   is((StepExpression)filterStep(functionCall(nameTest("foo", "bar"), relativePathExpr(axisStep(wildcard()))))));
+                   is((StepExpression)filterStep(functionCall(nameTest("foo", "bar"), wildcard()))));
     }
 
     @Test
     public void shouldParseStepExpressionFromQualifiedNameWithPredicate() {
         assertThat(parser.parseStepExpr(tokenize("foo:bar[3]")),
-                   is((StepExpression)axisStep(nameTest("foo", "bar"), relativePathExpr(filterStep(literal("3"))))));
+                   is((StepExpression)axisStep(nameTest("foo", "bar"), literal("3"))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -255,18 +289,17 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseAxisStepFromWildcardPrefixAndNonWildcardLocalNameWithPredicates() {
-        assertThat(parser.parseAxisStep(tokenize("*:name[3]")), is(axisStep(nameTest(null, "name"),
-                                                                            relativePathExpr(filterStep(literal("3"))))));
+        assertThat(parser.parseAxisStep(tokenize("*:name[3]")), is(axisStep(nameTest(null, "name"), literal("3"))));
     }
 
     @Test
     public void shouldParseAxisStepFromWildcardLocalNameWithPredicates() {
-        assertThat(parser.parseAxisStep(tokenize("*[3]")), is(axisStep(wildcard(), relativePathExpr(filterStep(literal("3"))))));
+        assertThat(parser.parseAxisStep(tokenize("*[3]")), is(axisStep(wildcard(), literal("3"))));
     }
 
     @Test
     public void shouldParseAxisStepFromWildcardPrefixAndLocalNameWithPredicates() {
-        assertThat(parser.parseAxisStep(tokenize("*:*[3]")), is(axisStep(wildcard(), relativePathExpr(filterStep(literal("3"))))));
+        assertThat(parser.parseAxisStep(tokenize("*:*[3]")), is(axisStep(wildcard(), literal("3"))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -342,16 +375,63 @@ public class XPathParserTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
+    public void shouldParsePredicatesWithAttributeEqualsStringLiteral() {
+        assertThat(parser.parsePredicates(tokenize("[@jcr:title='something']")),
+                   is(predicates(comparison(attributeNameTest(nameTest("jcr", "title")), Operator.EQUAL_TO, literal("something")))));
+    }
+
+    @Test
+    public void shouldParsePredicatesWithAttributeLessThanIntegerLiteral() {
+        assertThat(parser.parsePredicates(tokenize("[@ex:age<3]")), is(predicates(comparison(attributeNameTest(nameTest("ex",
+                                                                                                                        "age")),
+                                                                                             Operator.LESS_THAN,
+                                                                                             literal("3")))));
+    }
+
+    @Test
+    public void shouldParsePredicatesWithAttributeLikeStringLiteral() {
+        assertThat(parser.parsePredicates(tokenize("[jcr:like(@jcr:title,'%something%')]")),
+                   is(predicates(functionCall(nameTest("jcr", "like"),
+                                              attributeNameTest(nameTest("jcr", "title")),
+                                              literal("%something%")))));
+    }
+
+    @Test
+    public void shouldParsePredicatesWithAndedExpressions() {
+        assertThat(parser.parsePredicates(tokenize("[@ex:age<3 and jcr:like(@jcr:title,'%something%')]")),
+                   is(predicates(and(comparison(attributeNameTest(nameTest("ex", "age")), Operator.LESS_THAN, literal("3")),
+                                     functionCall(nameTest("jcr", "like"),
+                                                  attributeNameTest(nameTest("jcr", "title")),
+                                                  literal("%something%"))))));
+    }
+
+    @Test
+    public void shouldParsePredicatesWithOredExpressions() {
+        assertThat(parser.parsePredicates(tokenize("[@ex:age<3 or jcr:like(@jcr:title,'%something%')]")),
+                   is(predicates(or(comparison(attributeNameTest(nameTest("ex", "age")), Operator.LESS_THAN, literal("3")),
+                                    functionCall(nameTest("jcr", "like"),
+                                                 attributeNameTest(nameTest("jcr", "title")),
+                                                 literal("%something%"))))));
+    }
+
+    @Test
+    public void shouldParsePredicatesWithMultipleSeparatePredicates() {
+        assertThat(parser.parsePredicates(tokenize("[@ex:age<3][jcr:like(@jcr:title,'%something%')]")),
+                   is(predicates(comparison(attributeNameTest(nameTest("ex", "age")), Operator.LESS_THAN, literal("3")),
+                                 functionCall(nameTest("jcr", "like"),
+                                              attributeNameTest(nameTest("jcr", "title")),
+                                              literal("%something%")))));
+    }
+
+    @Test
     public void shouldParsePredicatesWhenThereIsOnlyOnePredicate() {
-        assertThat(parser.parsePredicates(tokenize("[foo]")), is(predicates(relativePathExpr(axisStep(nameTest("foo"))))));
+        assertThat(parser.parsePredicates(tokenize("[foo]")), is(predicates(nameTest("foo"))));
     }
 
     @Test
     public void shouldParsePredicatesWhenThereAreMultiplePredicates() {
-        assertThat(parser.parsePredicates(tokenize("['foo']['bar']")),
-                   is(predicates(relativePathExpr(filterStep(literal("foo"))), relativePathExpr(filterStep(literal("bar"))))));
-        assertThat(parser.parsePredicates(tokenize("[foo][bar]")), is(predicates(relativePathExpr(axisStep(nameTest("foo"))),
-                                                                                 relativePathExpr(axisStep(nameTest("bar"))))));
+        assertThat(parser.parsePredicates(tokenize("['foo']['bar']")), is(predicates(literal("foo"), literal("bar"))));
+        assertThat(parser.parsePredicates(tokenize("[foo][bar]")), is(predicates(nameTest("foo"), nameTest("bar"))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -369,7 +449,7 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseParenthesizedExpression() {
-        assertThat(parser.parseParenthesizedExpr(tokenize("('foo')")), is(paren(relativePathExpr(filterStep(literal("foo"))))));
+        assertThat(parser.parseParenthesizedExpr(tokenize("('foo')")), is(paren(literal("foo"))));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -430,7 +510,7 @@ public class XPathParserTest {
         assertThat(func, is(notNullValue()));
         assertThat(func.getName(), is(nameTest("a")));
         assertThat(func.getParameters().size(), is(1));
-        assertThat(func.getParameters().get(0), is((Component)relativePathExpr(filterStep(literal("foo")))));
+        assertThat(func.getParameters().get(0), is((Component)literal("foo")));
     }
 
     @Test
@@ -439,7 +519,7 @@ public class XPathParserTest {
         assertThat(func, is(notNullValue()));
         assertThat(func.getName(), is(nameTest("a")));
         assertThat(func.getParameters().size(), is(1));
-        assertThat(func.getParameters().get(0), is((Component)relativePathExpr(axisStep(nameTest("foo")))));
+        assertThat(func.getParameters().get(0), is((Component)nameTest("foo")));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -557,7 +637,7 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseAnyKindTest() {
-        assertThat(parser.parseAnyKindTest(tokenize("node()")), is(notNullValue()));
+        assertThat(parser.parseAnyKindTest(tokenize("node()")), is(instanceOf(AnyKindTest.class)));
     }
 
     @Test
@@ -573,7 +653,7 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseCommentTest() {
-        assertThat(parser.parseCommentTest(tokenize("comment()")), is(notNullValue()));
+        assertThat(parser.parseCommentTest(tokenize("comment()")), is(instanceOf(CommentTest.class)));
     }
 
     @Test
@@ -589,7 +669,7 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseTextTest() {
-        assertThat(parser.parseTextTest(tokenize("text()")), is(notNullValue()));
+        assertThat(parser.parseTextTest(tokenize("text()")), is(instanceOf(TextTest.class)));
     }
 
     @Test
@@ -769,8 +849,12 @@ public class XPathParserTest {
         assertThat(result, is(nullValue()));
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // utility methods
+    // ----------------------------------------------------------------------------------------------------------------
+
     protected TokenStream tokenize( String xpath ) {
-        Tokenizer tokenizer = new XPathTokenizer(false); // skip comments
+        Tokenizer tokenizer = new XPathParser.XPathTokenizer(false); // skip comments
         return new TokenStream(xpath, tokenizer, true).start(); // case sensitive!!
     }
 
@@ -812,6 +896,22 @@ public class XPathParserTest {
         return new ContextItem();
     }
 
+    protected And and( Component left,
+                       Component right ) {
+        return new And(left, right);
+    }
+
+    protected Or or( Component left,
+                     Component right ) {
+        return new Or(left, right);
+    }
+
+    protected Comparison comparison( Component left,
+                                     Operator operator,
+                                     Component right ) {
+        return new Comparison(left, operator, right);
+    }
+
     protected List<Component> predicates( Component... predicates ) {
         return Arrays.asList(predicates);
     }
@@ -833,6 +933,15 @@ public class XPathParserTest {
         return new AttributeTest(name, type);
     }
 
+    protected ElementTest element( NameTest name ) {
+        return new ElementTest(name, null);
+    }
+
+    protected ElementTest element( NameTest name,
+                                   NameTest type ) {
+        return new ElementTest(name, type);
+    }
+
     protected FunctionCall functionCall( NameTest name,
                                          Component... parameters ) {
         return new FunctionCall(name, Arrays.asList(parameters));
@@ -852,12 +961,22 @@ public class XPathParserTest {
     }
 
     protected void assertParsable( String xpath ) {
-        new XPathParser().parseQuery(xpath, context);
+        new XPathQueryParser().parseQuery(xpath, context);
+    }
+
+    protected void assertParsable( String xpath,
+                                   Component component ) {
+        Component actual = parser.parseExpr(tokenize(xpath));
+        if (component != null) {
+            assertThat(actual, is(component));
+        } else {
+            assertThat(actual, is(nullValue()));
+        }
     }
 
     protected void assertNotParsable( String xpath ) {
         try {
-            new XPathParser().parseQuery(xpath, context);
+            new XPathQueryParser().parseQuery(xpath, context);
             fail("Expected an invalid XPath:  " + xpath);
         } catch (ParsingException e) {
             // expected

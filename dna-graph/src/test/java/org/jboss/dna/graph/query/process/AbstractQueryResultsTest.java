@@ -37,13 +37,14 @@ import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.Length;
+import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
+import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.Ordering;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SelectorName;
-import org.jboss.dna.graph.query.process.QueryResultColumns;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
 
@@ -207,6 +208,24 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
     protected Ordering orderByPropertyLength( Column column,
                                               Order order ) {
         return new Ordering(new Length(new PropertyValue(column.getSelectorName(), column.getPropertyName())), order);
+    }
+
+    protected Ordering orderByNodeDepth( String selectorName ) {
+        return orderByNodeDepth(selectorName, Order.ASCENDING);
+    }
+
+    protected Ordering orderByNodeDepth( String selectorName,
+                                         Order order ) {
+        return new Ordering(new NodeDepth(selector(selectorName)), order);
+    }
+
+    protected Ordering orderByNodePath( String selectorName ) {
+        return orderByNodePath(selectorName, Order.ASCENDING);
+    }
+
+    protected Ordering orderByNodePath( String selectorName,
+                                        Order order ) {
+        return new Ordering(new NodePath(selector(selectorName)), order);
     }
 
     protected Ordering orderByNodeName( String selectorName ) {

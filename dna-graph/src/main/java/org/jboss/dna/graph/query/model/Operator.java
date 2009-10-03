@@ -64,6 +64,29 @@ public enum Operator {
     }
 
     /**
+     * Get the equivalent operator if the operands are to be reversed.
+     * 
+     * @return the reverse operator; never null
+     */
+    public Operator getReverse() {
+        switch (this) {
+            case GREATER_THAN:
+                return LESS_THAN;
+            case GREATER_THAN_OR_EQUAL_TO:
+                return LESS_THAN_OR_EQUAL_TO;
+            case LESS_THAN:
+                return GREATER_THAN;
+            case LESS_THAN_OR_EQUAL_TO:
+                return GREATER_THAN_OR_EQUAL_TO;
+            case EQUAL_TO:
+            case LIKE:
+            case NOT_EQUAL_TO:
+            default:
+                return this;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Enum#toString()

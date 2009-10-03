@@ -71,6 +71,14 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
     long getMilliseconds();
 
     /**
+     * Get the number of milliseconds from 1970-01-01T00:00Z with this time converted to UTC. This value is consistent with the
+     * JDK {@link java.util.Date Date} and {@link java.util.Calendar Calendar} classes.
+     * 
+     * @return the number of milliseconds from 1970-01-01T00:00Z in the UTC time zone
+     */
+    long getMillisecondsInUtc();
+
+    /**
      * Get this instance represented as a standard JDK {@link java.util.Date} instance. Note that this conversion loses the time
      * zone information, as the standard JDK {@link java.util.Date} does not represent time zones.
      * 

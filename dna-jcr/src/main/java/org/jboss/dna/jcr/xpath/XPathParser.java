@@ -39,8 +39,6 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.Operator;
-import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.parse.QueryParser;
 import org.jboss.dna.jcr.xpath.XPath.Add;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AnyKindTest;
@@ -54,8 +52,10 @@ import org.jboss.dna.jcr.xpath.XPath.ContextItem;
 import org.jboss.dna.jcr.xpath.XPath.DescendantOrSelf;
 import org.jboss.dna.jcr.xpath.XPath.DocumentTest;
 import org.jboss.dna.jcr.xpath.XPath.ElementTest;
+import org.jboss.dna.jcr.xpath.XPath.Except;
 import org.jboss.dna.jcr.xpath.XPath.FilterStep;
 import org.jboss.dna.jcr.xpath.XPath.FunctionCall;
+import org.jboss.dna.jcr.xpath.XPath.Intersect;
 import org.jboss.dna.jcr.xpath.XPath.KindTest;
 import org.jboss.dna.jcr.xpath.XPath.Literal;
 import org.jboss.dna.jcr.xpath.XPath.NameTest;
@@ -75,599 +75,603 @@ import org.jboss.dna.jcr.xpath.XPath.TextTest;
 import org.jboss.dna.jcr.xpath.XPath.Union;
 
 /**
- * 
+ * A component that parses an XPath query string and creates an abstract syntax tree representation. The supported grammar is
+ * defined by JCR 1.0, and is a subset of what is allowed by the W3C XPath 2.0 specification.
  */
-public class XPathParser implements QueryParser {
+public class XPathParser {
+    private final ExecutionContext context;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.ExecutionContext)
-     */
-    public QueryCommand parseQuery( String query,
-                                    ExecutionContext context ) {
+    public XPathParser( ExecutionContext context ) {
+        this.context = context;
+    }
+
+    public Component parseXPath( String xpath ) {
         Tokenizer tokenizer = new XPathTokenizer(false); // skip comments
-        TokenStream tokens = new TokenStream(query, tokenizer, true).start(); // case sensitive!!
-        Component result = new Parser(context).parseXPath(tokens);
-        System.out.println(query);
-        System.out.println(" --> " + result);
+        TokenStream tokens = new TokenStream(xpath, tokenizer, true).start(); // case sensitive!!
+        return parseXPath(tokens);
+    }
+
+    protected Component parseXPath( TokenStream tokens ) {
+        return parseExpr(tokens);
+    }
+
+    protected Component parseExpr( TokenStream tokens ) {
+        Component result = parseExprSingle(tokens);
+        if (tokens.matches(',')) {
+            throw new ParsingException(tokens.nextPosition(), "Multiple XPath expressions are not supported");
+        }
+        return result;
+    }
+
+    protected Component parseExprSingle( TokenStream tokens ) {
+        if (tokens.matches("for", "$", ANY_VALUE, "IN")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'for' expressions are not supported");
+        }
+        if (tokens.matches("some", "$", ANY_VALUE, "IN")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'some' expressions are not supported");
+        }
+        if (tokens.matches("every", "$", ANY_VALUE, "IN")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'every' expressions are not supported");
+        }
+        if (tokens.matches("if", "(", ANY_VALUE, "IN")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath if-then-else expressions are not supported");
+        }
+        return parseOrExpr(tokens);
+    }
+
+    protected Component parseOrExpr( TokenStream tokens ) {
+        Component result = parseAndExpr(tokens);
+        while (tokens.canConsume("or")) {
+            result = new Or(result, parseInstanceofExpr(tokens));
+        }
+        return result;
+    }
+
+    protected Component parseAndExpr( TokenStream tokens ) {
+        Component result = parseInstanceofExpr(tokens);
+        while (tokens.canConsume("and")) {
+            result = new And(result, parseInstanceofExpr(tokens));
+        }
+        return result;
+    }
+
+    protected Component parseInstanceofExpr( TokenStream tokens ) {
+        Component result = parseTreatExpr(tokens);
+        if (tokens.matches("instance", "of")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'instance of' expressions are not supported");
+        }
+        return result;
+    }
+
+    protected Component parseTreatExpr( TokenStream tokens ) {
+        Component result = parseCastableExpr(tokens);
+        if (tokens.matches("treat", "as")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'treat as' expressions are not supported");
+        }
+        return result;
+    }
+
+    protected Component parseCastableExpr( TokenStream tokens ) {
+        Component result = parseCastExpr(tokens);
+        if (tokens.matches("castable", "as")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'castable as' expressions are not supported");
+        }
+        return result;
+    }
+
+    protected Component parseCastExpr( TokenStream tokens ) {
+        Component result = parseComparisonExpr(tokens);
+        if (tokens.matches("cast", "as")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'cast as' expressions are not supported");
+        }
+        return result;
+    }
+
+    protected Component parseComparisonExpr( TokenStream tokens ) {
+        Component result = parseRangeExpr(tokens);
+        // General comparison is optional ...
+        Operator operator = parseGeneralComp(tokens);
+        if (operator == null) parseValueComp(tokens);
+        if (operator != null) {
+            return new Comparison(result, operator, parseRangeExpr(tokens));
+        }
+        NodeComparisonOperator nodeComp = parseNodeComp(tokens);
+        if (nodeComp != null) {
+            return new NodeComparison(result, nodeComp, parseRangeExpr(tokens));
+        }
+        return result;
+    }
+
+    protected Component parseValueComp( TokenStream tokens ) {
+        if (tokens.matchesAnyOf("eq", "ne", "lt", "le", "gt")) {
+            throw new ParsingException(tokens.nextPosition(),
+                                       "XPath value comparisons using 'eq', 'ne', 'lt', 'le', or 'gt' are not supported");
+        }
         return null;
     }
 
-    protected static class Parser {
-        private final ExecutionContext context;
-
-        protected Parser( ExecutionContext context ) {
-            this.context = context;
+    protected NodeComparisonOperator parseNodeComp( TokenStream tokens ) {
+        if (tokens.matches("is") || tokens.matches("<", "<") || tokens.matches(">", ">")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath 'is', '<<' and '>>' expressions are not supported");
         }
+        return null;
+    }
 
-        protected Component parseXPath( TokenStream tokens ) {
-            return parseExpr(tokens);
+    protected Component parseRangeExpr( TokenStream tokens ) {
+        Component result = parseAdditiveExpr(tokens);
+        if (tokens.matches("to")) {
+            throw new ParsingException(tokens.nextPosition(), "XPath range expressions with 'to' are not supported");
         }
+        return result;
+    }
 
-        protected Component parseExpr( TokenStream tokens ) {
-            Component result = parseExprSingle(tokens);
-            if (tokens.matches(',')) {
-                throw new ParsingException(tokens.nextPosition(), "Multiple XPath expressions are not supported");
+    protected Component parseAdditiveExpr( TokenStream tokens ) {
+        Component result = parseMultiplicativeExpr(tokens);
+        while (true) {
+            if (tokens.canConsume("+")) {
+                result = new Add(result, parseMultiplicativeExpr(tokens));
+            } else if (tokens.canConsume("-")) {
+                result = new Subtract(result, parseMultiplicativeExpr(tokens));
+            } else {
+                break; // no more additions
             }
-            return result;
         }
+        return result;
+    }
 
-        protected Component parseExprSingle( TokenStream tokens ) {
-            if (tokens.matches("for", "$", ANY_VALUE, "IN")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'for' expressions are not supported");
-            }
-            if (tokens.matches("some", "$", ANY_VALUE, "IN")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'some' expressions are not supported");
-            }
-            if (tokens.matches("every", "$", ANY_VALUE, "IN")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'every' expressions are not supported");
-            }
-            if (tokens.matches("if", "(", ANY_VALUE, "IN")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath if-then-else expressions are not supported");
-            }
-            return parseOrExpr(tokens);
+    protected Component parseMultiplicativeExpr( TokenStream tokens ) {
+        Component result = parseUnaryExpr(tokens);
+        if (tokens.matchesAnyOf("+", "div", "idiv", "mod")) {
+            throw new ParsingException(tokens.nextPosition(),
+                                       "XPath multiplicative expressions using '+', 'div', 'idiv', or 'mod' are not supported");
         }
+        return result;
+    }
 
-        protected Component parseOrExpr( TokenStream tokens ) {
-            Component result = parseAndExpr(tokens);
-            while (tokens.canConsume("or")) {
-                result = new Or(result, parseInstanceofExpr(tokens));
-            }
-            return result;
+    protected Component parseUnaryExpr( TokenStream tokens ) {
+        boolean negative = false;
+        // Technically more than one +/- are allowed by the spec
+        while (tokens.matchesAnyOf("+", "-")) {
+            if (tokens.canConsume("-")) negative = true;
+            tokens.canConsume("+");
         }
+        Component result = parseUnionExpr(tokens);
+        return negative ? new Negation(result) : result;
+    }
 
-        protected Component parseAndExpr( TokenStream tokens ) {
-            Component result = parseInstanceofExpr(tokens);
-            while (tokens.canConsume("and")) {
-                result = new And(result, parseInstanceofExpr(tokens));
+    protected Component parseUnionExpr( TokenStream tokens ) {
+        Component result = parseIntersectExceptExpr(tokens);
+        while (true) {
+            if (tokens.canConsumeAnyOf("union", "|")) {
+                result = new Union(result, parseIntersectExceptExpr(tokens));
+            } else {
+                break; // no more
             }
-            return result;
         }
+        return result;
+    }
 
-        protected Component parseInstanceofExpr( TokenStream tokens ) {
-            Component result = parseTreatExpr(tokens);
-            if (tokens.matches("instance", "of")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'instance of' expressions are not supported");
+    protected Component parseIntersectExceptExpr( TokenStream tokens ) {
+        Component result = parseValueExpr(tokens);
+        while (true) {
+            if (tokens.canConsumeAnyOf("intersect")) {
+                result = new Intersect(result, parseValueExpr(tokens));
+            } else if (tokens.canConsumeAnyOf("except")) {
+                result = new Except(result, parseValueExpr(tokens));
+            } else {
+                break; // no more
             }
-            return result;
         }
+        return result;
+    }
 
-        protected Component parseTreatExpr( TokenStream tokens ) {
-            Component result = parseCastableExpr(tokens);
-            if (tokens.matches("treat", "as")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'treat as' expressions are not supported");
-            }
-            return result;
-        }
+    protected Component parseValueExpr( TokenStream tokens ) {
+        return parsePathExpr(tokens);
+    }
 
-        protected Component parseCastableExpr( TokenStream tokens ) {
-            Component result = parseCastExpr(tokens);
-            if (tokens.matches("castable", "as")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'castable as' expressions are not supported");
-            }
-            return result;
-        }
-
-        protected Component parseCastExpr( TokenStream tokens ) {
-            Component result = parseComparisonExpr(tokens);
-            if (tokens.matches("cast", "as")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'cast as' expressions are not supported");
-            }
-            return result;
-        }
-
-        protected Component parseComparisonExpr( TokenStream tokens ) {
-            Component result = parseRangeExpr(tokens);
-            // General comparison is optional ...
-            Operator operator = parseGeneralComp(tokens);
-            if (operator == null) parseValueComp(tokens);
-            if (operator != null) {
-                return new Comparison(result, operator, parseRangeExpr(tokens));
-            }
-            NodeComparisonOperator nodeComp = parseNodeComp(tokens);
-            if (nodeComp != null) {
-                return new NodeComparison(result, nodeComp, parseRangeExpr(tokens));
-            }
-            return result;
-        }
-
-        protected Component parseValueComp( TokenStream tokens ) {
-            if (tokens.matchesAnyOf("eq", "ne", "lt", "le", "gt")) {
-                throw new ParsingException(tokens.nextPosition(),
-                                           "XPath value comparisons using 'eq', 'ne', 'lt', 'le', or 'gt' are not supported");
-            }
-            return null;
-        }
-
-        protected NodeComparisonOperator parseNodeComp( TokenStream tokens ) {
-            if (tokens.matches("is") || tokens.matches("<", "<") || tokens.matches(">", ">")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath 'is', '<<' and '>>' expressions are not supported");
-            }
-            return null;
-        }
-
-        protected Component parseRangeExpr( TokenStream tokens ) {
-            Component result = parseAdditiveExpr(tokens);
-            if (tokens.matches("to")) {
-                throw new ParsingException(tokens.nextPosition(), "XPath range expressions with 'to' are not supported");
-            }
-            return result;
-        }
-
-        protected Component parseAdditiveExpr( TokenStream tokens ) {
-            Component result = parseMultiplicativeExpr(tokens);
-            while (true) {
-                if (tokens.canConsume("+")) {
-                    result = new Add(result, parseMultiplicativeExpr(tokens));
-                } else if (tokens.canConsume("-")) {
-                    result = new Subtract(result, parseMultiplicativeExpr(tokens));
-                } else {
-                    break; // no more additions
-                }
-            }
-            return result;
-        }
-
-        protected Component parseMultiplicativeExpr( TokenStream tokens ) {
-            Component result = parseUnaryExpr(tokens);
-            if (tokens.matchesAnyOf("+", "div", "idiv", "mod")) {
-                throw new ParsingException(tokens.nextPosition(),
-                                           "XPath multiplicative expressions using '+', 'div', 'idiv', or 'mod' are not supported");
-            }
-            return result;
-        }
-
-        protected Component parseUnaryExpr( TokenStream tokens ) {
-            boolean negative = false;
-            // Technically more than one +/- are allowed by the spec
-            while (tokens.matchesAnyOf("+", "-")) {
-                if (tokens.canConsume("-")) negative = true;
-                tokens.canConsume("+");
-            }
-            Component result = parseUnionExpr(tokens);
-            return negative ? new Negation(result) : result;
-        }
-
-        protected Component parseUnionExpr( TokenStream tokens ) {
-            Component result = parseIntersectExceptExpr(tokens);
-            while (true) {
-                if (tokens.canConsumeAnyOf("union", "|")) {
-                    result = new Union(result, parseIntersectExceptExpr(tokens));
-                } else {
-                    break; // no more
-                }
-            }
-            return result;
-        }
-
-        protected Component parseIntersectExceptExpr( TokenStream tokens ) {
-            Component result = parseValueExpr(tokens);
-            if (tokens.matchesAnyOf("intersect", "except")) {
-                throw new ParsingException(tokens.nextPosition(),
-                                           "XPath multiplicative expressions using '+', 'div', 'idiv', or 'mod' are not supported");
-            }
-            return result;
-        }
-
-        protected Component parseValueExpr( TokenStream tokens ) {
-            return parsePathExpr(tokens);
-        }
-
-        protected PathExpression parsePathExpr( TokenStream tokens ) {
-            boolean relative = true;
-            boolean prependDependentOrSelf = false;
+    protected PathExpression parsePathExpr( TokenStream tokens ) {
+        boolean relative = true;
+        boolean prependDependentOrSelf = false;
+        if (tokens.canConsume('/')) {
             if (tokens.canConsume('/')) {
-                if (tokens.canConsume('/')) {
-                    if (!tokens.hasNext()) {
-                        // See http://www.w3.org/XML/2007/qt-errata/xpath20-errata.html#E3
-                        throw new ParsingException(tokens.previousPosition(), "'//' is not a valid XPath expression");
-                    }
-                    prependDependentOrSelf = true;
+                if (!tokens.hasNext()) {
+                    // See http://www.w3.org/XML/2007/qt-errata/xpath20-errata.html#E3
+                    throw new ParsingException(tokens.previousPosition(), "'//' is not a valid XPath expression");
                 }
-                relative = false;
+                prependDependentOrSelf = true;
             }
-            PathExpression result = new PathExpression(relative, parseRelativePathExpr(tokens).getSteps());
-            if (prependDependentOrSelf) {
-                result.getSteps().add(0, new DescendantOrSelf());
-            }
-            return result;
+            relative = false;
         }
-
-        protected PathExpression parseRelativePathExpr( TokenStream tokens ) {
-            List<StepExpression> steps = new ArrayList<StepExpression>();
-            steps.add(parseStepExpr(tokens));
-            while (tokens.canConsume('/')) {
-                if (tokens.canConsume('/')) {
-                    steps.add(new DescendantOrSelf());
-                }
-                if (tokens.hasNext()) {
-                    steps.add(parseStepExpr(tokens));
-                }
-            }
-            return new PathExpression(true, steps);
+        PathExpression result = new PathExpression(relative, parseRelativePathExpr(tokens).getSteps());
+        if (prependDependentOrSelf) {
+            result.getSteps().add(0, new DescendantOrSelf());
         }
+        return result;
+    }
 
-        protected StepExpression parseStepExpr( TokenStream tokens ) {
-            if (tokens.matches('(') || tokens.matches('.') || tokens.matches(XPathTokenizer.QUOTED_STRING)
-                || tokens.matches(ANY_VALUE, "(") || tokens.matches(ANY_VALUE, ":", ANY_VALUE, "(")) {
-                // We know its a filter expression (though literals don't fit this pattern) ...
-                return parseFilterExpr(tokens);
+    protected PathExpression parseRelativePathExpr( TokenStream tokens ) {
+        List<StepExpression> steps = new ArrayList<StepExpression>();
+        steps.add(parseStepExpr(tokens));
+        while (tokens.canConsume('/')) {
+            if (tokens.canConsume('/')) {
+                steps.add(new DescendantOrSelf());
             }
-            AxisStep result = parseAxisStep(tokens);
-            if (result != null) return result;
-            // It must be the remaining kind of filter expression ...
+            if (tokens.hasNext()) {
+                steps.add(parseStepExpr(tokens));
+            }
+        }
+        return new PathExpression(true, steps);
+    }
+
+    protected StepExpression parseStepExpr( TokenStream tokens ) {
+        KindTest kindTest = parseKindTest(tokens);
+        if (kindTest != null) {
+            // Now parse the predicates ...
+            List<Component> predicates = parsePredicates(tokens);
+            return new AxisStep(kindTest, predicates);
+        }
+        if (tokens.matches('(') || tokens.matches('.') || tokens.matches(XPathTokenizer.QUOTED_STRING)
+            || tokens.matches(ANY_VALUE, "(") || tokens.matches(ANY_VALUE, ":", ANY_VALUE, "(")) {
+            // We know its a filter expression (though literals don't fit this pattern) ...
             return parseFilterExpr(tokens);
         }
+        AxisStep result = parseAxisStep(tokens);
+        if (result != null) return result;
+        // It must be the remaining kind of filter expression ...
+        return parseFilterExpr(tokens);
+    }
 
-        protected AxisStep parseAxisStep( TokenStream tokens ) {
-            NodeTest nodeTest = null;
-            if (tokens.canConsume('@')) {
-                // Abbreviated forward step with an attribute...
-                nodeTest = new AttributeNameTest(parseNodeTest(tokens));
-            } else if (tokens.matches('*')) {
-                // Abbreviated forward step with an wildcard element ...
-                nodeTest = parseNodeTest(tokens);
+    protected AxisStep parseAxisStep( TokenStream tokens ) {
+        NodeTest nodeTest = null;
+        if (tokens.canConsume('@')) {
+            // Abbreviated forward step with an attribute...
+            nodeTest = new AttributeNameTest(parseNameTest(tokens));
+        } else if (tokens.matches('*')) {
+            // Abbreviated forward step with an wildcard element ...
+            nodeTest = parseNodeTest(tokens);
 
-            } else if (tokens.matches("child", ":", ":") || tokens.matches("attribute", ":", ":")
-                       || tokens.matches("self", ":", ":") || tokens.matches("descendant", ":", ":")
-                       || tokens.matches("descendant-or-self", ":", ":") || tokens.matches("following-sibling", ":", ":")
-                       || tokens.matches("following", ":", ":") || tokens.matches("namespace", ":", ":")) {
-                // No non-abbreviated forward steps allowed
-                throw new ParsingException(
-                                           tokens.nextPosition(),
-                                           "XPath non-abbreviated forward steps (e.g., 'child::', 'attribute::', 'self::', 'descendant::', 'descendant-or-self::', 'following-sibling::', 'following::', or 'namespace::') are not supported");
-            } else if (tokens.matches("..")) {
-                // No abbreviated reverse steps allowed ...
-                throw new ParsingException(tokens.nextPosition(),
-                                           "XPath abbreviated reverse steps (e.g., '..') are not supported");
-            } else if (tokens.matches("parent", ":", ":") || tokens.matches("ancestor-or-self", ":", ":")
-                       || tokens.matches("preceding-sibling", ":", ":") || tokens.matches("preceding", ":", ":")
-                       || tokens.matches("ancestor", ":", ":")) {
-                // No non-abbreviated reverse steps allowed ...
-                throw new ParsingException(
-                                           tokens.nextPosition(),
-                                           "XPath non-abbreviated reverse steps (e.g., 'parent::', 'ancestor::', 'ancestor-or-self::', 'preceding-or-sibling::', or 'preceding::') are not supported");
-            } else if (tokens.matches(ANY_VALUE, ":", ANY_VALUE)
-                       && tokens.matches(XPathTokenizer.NAME, XPathTokenizer.SYMBOL, XPathTokenizer.NAME)) {
-                // This is probably a forward step with a (qualified) name test ...
-                nodeTest = parseQName(tokens);
-            } else if (tokens.matches(XPathTokenizer.NAME)) {
-                // This is probably a forward step with an unqualified name test ...
-                nodeTest = parseNodeTest(tokens);
-            } else {
-                return null;
-            }
-
-            // Parse the predicates
-            List<Component> predicates = parsePredicates(tokens);
-            return new AxisStep(nodeTest, predicates);
+        } else if (tokens.matches("child", ":", ":") || tokens.matches("attribute", ":", ":") || tokens.matches("self", ":", ":")
+                   || tokens.matches("descendant", ":", ":") || tokens.matches("descendant-or-self", ":", ":")
+                   || tokens.matches("following-sibling", ":", ":") || tokens.matches("following", ":", ":")
+                   || tokens.matches("namespace", ":", ":")) {
+            // No non-abbreviated forward steps allowed
+            throw new ParsingException(
+                                       tokens.nextPosition(),
+                                       "XPath non-abbreviated forward steps (e.g., 'child::', 'attribute::', 'self::', 'descendant::', 'descendant-or-self::', 'following-sibling::', 'following::', or 'namespace::') are not supported");
+        } else if (tokens.matches("..")) {
+            // No abbreviated reverse steps allowed ...
+            throw new ParsingException(tokens.nextPosition(), "XPath abbreviated reverse steps (e.g., '..') are not supported");
+        } else if (tokens.matches("parent", ":", ":") || tokens.matches("ancestor-or-self", ":", ":")
+                   || tokens.matches("preceding-sibling", ":", ":") || tokens.matches("preceding", ":", ":")
+                   || tokens.matches("ancestor", ":", ":")) {
+            // No non-abbreviated reverse steps allowed ...
+            throw new ParsingException(
+                                       tokens.nextPosition(),
+                                       "XPath non-abbreviated reverse steps (e.g., 'parent::', 'ancestor::', 'ancestor-or-self::', 'preceding-or-sibling::', or 'preceding::') are not supported");
+        } else if (tokens.matches(ANY_VALUE, ":", ANY_VALUE)
+                   && tokens.matches(XPathTokenizer.NAME, XPathTokenizer.SYMBOL, XPathTokenizer.NAME)) {
+            // This is probably a forward step with a (qualified) name test ...
+            nodeTest = parseQName(tokens);
+        } else if (tokens.matches(XPathTokenizer.NAME)) {
+            // This is probably a forward step with an unqualified name test ...
+            nodeTest = parseNodeTest(tokens);
+        } else {
+            return null;
         }
 
-        protected List<Component> parsePredicates( TokenStream tokens ) {
-            List<Component> predicates = new ArrayList<Component>();
-            while (tokens.canConsume('[')) {
-                predicates.add(parseExpr(tokens));
-                tokens.consume(']');
-            }
-            return predicates;
+        // Parse the predicates
+        List<Component> predicates = parsePredicates(tokens);
+        return new AxisStep(nodeTest, predicates);
+    }
+
+    protected List<Component> parsePredicates( TokenStream tokens ) {
+        List<Component> predicates = new ArrayList<Component>();
+        while (tokens.canConsume('[')) {
+            predicates.add(collapse(parseExpr(tokens)));
+            tokens.consume(']');
         }
+        return predicates;
+    }
 
-        protected FilterStep parseFilterExpr( TokenStream tokens ) {
-            Component primaryExpr = parsePrimaryExpr(tokens);
-            List<Component> predicates = parsePredicates(tokens);
-            return new FilterStep(primaryExpr, predicates);
+    protected FilterStep parseFilterExpr( TokenStream tokens ) {
+        Component primaryExpr = parsePrimaryExpr(tokens);
+        List<Component> predicates = parsePredicates(tokens);
+        return new FilterStep(primaryExpr, predicates);
+    }
+
+    protected Component parsePrimaryExpr( TokenStream tokens ) {
+        if (tokens.matches('(')) {
+            return parseParenthesizedExpr(tokens);
         }
-
-        protected Component parsePrimaryExpr( TokenStream tokens ) {
-            if (tokens.matches('(')) {
-                return parseParenthesizedExpr(tokens);
-            }
-            if (tokens.matches('.')) {
-                return parseContextItemExpr(tokens);
-            }
-            if (tokens.matches(XPathTokenizer.QUOTED_STRING)) {
-                return parseStringLiteral(tokens);
-            }
-            if (tokens.matches(ANY_VALUE, "(") || tokens.matches(ANY_VALUE, ":", ANY_VALUE, "(")) {
-                return parseFunctionCall(tokens);
-            }
-            return parseNumericLiteral(tokens);
+        if (tokens.matches('.')) {
+            return parseContextItemExpr(tokens);
         }
-
-        protected ContextItem parseContextItemExpr( TokenStream tokens ) {
-            tokens.consume('.');
-            return new ContextItem();
+        if (tokens.matches(XPathTokenizer.QUOTED_STRING)) {
+            return parseStringLiteral(tokens);
         }
-
-        protected ParenthesizedExpression parseParenthesizedExpr( TokenStream tokens ) {
-            tokens.consume('(');
-            if (tokens.canConsume(')')) {
-                return new ParenthesizedExpression();
-            }
-            Component expr = parseExpr(tokens);
-            tokens.consume(')');
-            return new ParenthesizedExpression(expr);
+        if (tokens.matches(ANY_VALUE, "(") || tokens.matches(ANY_VALUE, ":", ANY_VALUE, "(")) {
+            return parseFunctionCall(tokens);
         }
+        return parseNumericLiteral(tokens);
+    }
 
-        protected Literal parseNumericLiteral( TokenStream tokens ) {
-            Position pos = tokens.nextPosition();
-            String sign = "";
-            if (tokens.canConsume('-')) sign = "-";
-            else if (tokens.canConsume('+')) sign = "";
+    protected ContextItem parseContextItemExpr( TokenStream tokens ) {
+        tokens.consume('.');
+        return new ContextItem();
+    }
 
-            // Try to parse this value as a number ...
-            ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
-            String number = tokens.consume();
-            if (number.indexOf(".") != -1) {
-                String value = sign + number;
-                if (value.endsWith("e") && (tokens.matches('+') || tokens.matches('-'))) {
-                    // There's more to the number ...
-                    value = value + tokens.consume() + tokens.consume(); // +/-EXP
-                }
-                try {
-                    // Convert to a double and then back to a string to get canonical form ...
-                    String canonical = stringFactory.create(context.getValueFactories().getDoubleFactory().create(value));
-                    return new Literal(canonical);
-                } catch (ValueFormatException e) {
-                    String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
-                    throw new ParsingException(pos, msg);
-                }
-            }
-            // try to parse an a long ...
+    protected ParenthesizedExpression parseParenthesizedExpr( TokenStream tokens ) {
+        tokens.consume('(');
+        if (tokens.canConsume(')')) {
+            return new ParenthesizedExpression();
+        }
+        Component expr = collapse(parseExpr(tokens));
+        tokens.consume(')');
+        return new ParenthesizedExpression(expr);
+    }
+
+    protected Literal parseNumericLiteral( TokenStream tokens ) {
+        Position pos = tokens.nextPosition();
+        String sign = "";
+        if (tokens.canConsume('-')) sign = "-";
+        else if (tokens.canConsume('+')) sign = "";
+
+        // Try to parse this value as a number ...
+        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+        String number = tokens.consume();
+        if (number.indexOf(".") != -1) {
             String value = sign + number;
+            if (value.endsWith("e") && (tokens.matches('+') || tokens.matches('-'))) {
+                // There's more to the number ...
+                value = value + tokens.consume() + tokens.consume(); // +/-EXP
+            }
             try {
-                // Convert to a long and then back to a string to get canonical form ...
-                String canonical = stringFactory.create(context.getValueFactories().getLongFactory().create(value));
+                // Convert to a double and then back to a string to get canonical form ...
+                String canonical = stringFactory.create(context.getValueFactories().getDoubleFactory().create(value));
                 return new Literal(canonical);
             } catch (ValueFormatException e) {
-                String msg = GraphI18n.expectingLiteralAndUnableToParseAsLong.text(value, pos.getLine(), pos.getColumn());
+                String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
         }
-
-        protected Literal parseStringLiteral( TokenStream tokens ) {
-            boolean removeQuotes = tokens.matches(XPathTokenizer.QUOTED_STRING);
-            String value = tokens.consume();
-            if (removeQuotes) value = removeQuotes(value);
-            return new Literal(value);
+        // try to parse an a long ...
+        String value = sign + number;
+        try {
+            // Convert to a long and then back to a string to get canonical form ...
+            String canonical = stringFactory.create(context.getValueFactories().getLongFactory().create(value));
+            return new Literal(canonical);
+        } catch (ValueFormatException e) {
+            String msg = GraphI18n.expectingLiteralAndUnableToParseAsLong.text(value, pos.getLine(), pos.getColumn());
+            throw new ParsingException(pos, msg);
         }
+    }
 
-        protected FunctionCall parseFunctionCall( TokenStream tokens ) {
-            NameTest name = parseQName(tokens);
-            tokens.consume("(");
-            List<Component> args = new ArrayList<Component>();
-            if (!tokens.matches(')')) {
-                do {
-                    args.add(parseExprSingle(tokens));
-                } while (tokens.canConsume(","));
-                tokens.consume(")");
-            }
-            return new FunctionCall(name, args);
+    protected Literal parseStringLiteral( TokenStream tokens ) {
+        boolean removeQuotes = tokens.matches(XPathTokenizer.QUOTED_STRING);
+        String value = tokens.consume();
+        if (removeQuotes) value = removeQuotes(value);
+        return new Literal(value);
+    }
+
+    protected FunctionCall parseFunctionCall( TokenStream tokens ) {
+        NameTest name = parseQName(tokens);
+        tokens.consume("(");
+        List<Component> args = new ArrayList<Component>();
+        if (!tokens.matches(')')) {
+            do {
+                args.add(collapse(parseExprSingle(tokens)));
+            } while (tokens.canConsume(","));
+            tokens.consume(")");
         }
+        return new FunctionCall(name, args);
+    }
 
-        protected Operator parseGeneralComp( TokenStream tokens ) {
-            if (tokens.canConsume("!", "=")) return Operator.NOT_EQUAL_TO;
-            if (tokens.canConsume("=")) return Operator.EQUAL_TO;
-            if (tokens.canConsume("<", "=")) return Operator.LESS_THAN_OR_EQUAL_TO;
-            if (tokens.canConsume(">", "=")) return Operator.GREATER_THAN_OR_EQUAL_TO;
-            if (tokens.canConsume("<")) return Operator.LESS_THAN;
-            if (tokens.canConsume(">")) return Operator.GREATER_THAN;
-            return null;
+    protected Operator parseGeneralComp( TokenStream tokens ) {
+        if (tokens.canConsume("!", "=")) return Operator.NOT_EQUAL_TO;
+        if (tokens.canConsume("=")) return Operator.EQUAL_TO;
+        if (tokens.canConsume("<", "=")) return Operator.LESS_THAN_OR_EQUAL_TO;
+        if (tokens.canConsume(">", "=")) return Operator.GREATER_THAN_OR_EQUAL_TO;
+        if (tokens.canConsume("<")) return Operator.LESS_THAN;
+        if (tokens.canConsume(">")) return Operator.GREATER_THAN;
+        return null;
+    }
+
+    protected NodeTest parseNodeTest( TokenStream tokens ) {
+        KindTest kind = parseKindTest(tokens);
+        if (kind != null) return kind;
+        return parseNameTest(tokens);
+    }
+
+    protected NameTest parseNameTest( TokenStream tokens ) {
+        NameTest wildcard = parseWildcard(tokens);
+        if (wildcard != null) return wildcard;
+        return parseQName(tokens);
+    }
+
+    protected NameTest parseQName( TokenStream tokens ) {
+        String firstPart = parseNCName(tokens);
+        if (tokens.canConsume(':')) {
+            String secondPart = tokens.consume();
+            return new NameTest(firstPart, secondPart);
         }
+        return new NameTest(null, firstPart);
+    }
 
-        protected NodeTest parseNodeTest( TokenStream tokens ) {
-            KindTest kind = parseKindTest(tokens);
-            if (kind != null) return kind;
-            return parseNameTest(tokens);
+    protected String parseNCName( TokenStream tokens ) {
+        String name = tokens.consume();
+        if (!XmlCharacters.isValidNcName(name)) {
+            throw new ParsingException(tokens.previousPosition(), "Expected valid NCName but found " + name);
         }
+        return name;
+    }
 
-        protected NameTest parseNameTest( TokenStream tokens ) {
-            NameTest wildcard = parseWildcard(tokens);
-            if (wildcard != null) return wildcard;
-            return parseQName(tokens);
-        }
-
-        protected NameTest parseQName( TokenStream tokens ) {
-            String firstPart = parseNCName(tokens);
+    protected NameTest parseWildcard( TokenStream tokens ) {
+        if (tokens.canConsume('*')) {
             if (tokens.canConsume(':')) {
-                String secondPart = tokens.consume();
-                return new NameTest(firstPart, secondPart);
-            }
-            return new NameTest(null, firstPart);
-        }
-
-        protected String parseNCName( TokenStream tokens ) {
-            String name = tokens.consume();
-            if (!XmlCharacters.isValidNcName(name)) {
-                throw new ParsingException(tokens.previousPosition(), "Expected valid NCName but found " + name);
-            }
-            return name;
-        }
-
-        protected NameTest parseWildcard( TokenStream tokens ) {
-            if (tokens.canConsume('*')) {
-                if (tokens.canConsume(':')) {
-                    if (tokens.canConsume('*')) {
-                        return new NameTest(null, null);
-                    }
-                    String localName = tokens.consume();
-                    return new NameTest(null, localName);
+                if (tokens.canConsume('*')) {
+                    return new NameTest(null, null);
                 }
-                return new NameTest(null, null);
+                String localName = tokens.consume();
+                return new NameTest(null, localName);
             }
-            if (tokens.matches(XPathTokenizer.NAME, XPathTokenizer.SYMBOL, XPathTokenizer.SYMBOL)
-                && tokens.matches(TokenStream.ANY_VALUE, ":", "*")) {
-                String prefix = tokens.consume();
-                tokens.consume(':');
-                tokens.consume('*');
-                return new NameTest(prefix, null);
+            return new NameTest(null, null);
+        }
+        if (tokens.matches(XPathTokenizer.NAME, XPathTokenizer.SYMBOL, XPathTokenizer.SYMBOL)
+            && tokens.matches(TokenStream.ANY_VALUE, ":", "*")) {
+            String prefix = tokens.consume();
+            tokens.consume(':');
+            tokens.consume('*');
+            return new NameTest(prefix, null);
+        }
+        return null;
+    }
+
+    protected NameTest parseItemType( TokenStream tokens ) {
+        return parseQName(tokens);
+    }
+
+    protected NameTest parseAtomicType( TokenStream tokens ) {
+        return parseQName(tokens);
+    }
+
+    protected KindTest parseKindTest( TokenStream tokens ) {
+        KindTest result = parseAnyKindTest(tokens);
+        if (result == null) result = parseDocumentTest(tokens);
+        if (result == null) result = parseElementTest(tokens);
+        if (result == null) result = parseAttributeTest(tokens);
+        if (result == null) result = parseSchemaElementTest(tokens);
+        if (result == null) result = parseSchemaAttributeTest(tokens);
+        if (result == null) result = parsePITest(tokens);
+        if (result == null) result = parseCommentTest(tokens);
+        if (result == null) result = parseTextTest(tokens);
+        return result;
+    }
+
+    protected AnyKindTest parseAnyKindTest( TokenStream tokens ) {
+        if (tokens.canConsume("node", "(", ")")) {
+            return new AnyKindTest();
+        }
+        return null;
+    }
+
+    protected ProcessingInstructionTest parsePITest( TokenStream tokens ) {
+        if (tokens.canConsume("processing-instruction", "(")) {
+            if (tokens.canConsume(")")) return new ProcessingInstructionTest(null);
+            String nameOrStringLiteral = tokens.consume();
+            tokens.consume(")");
+            return new ProcessingInstructionTest(nameOrStringLiteral);
+        }
+        return null;
+    }
+
+    protected CommentTest parseCommentTest( TokenStream tokens ) {
+        if (tokens.canConsume("comment", "(", ")")) {
+            return new CommentTest();
+        }
+        return null;
+    }
+
+    protected TextTest parseTextTest( TokenStream tokens ) {
+        if (tokens.canConsume("text", "(", ")")) {
+            return new TextTest();
+        }
+        return null;
+    }
+
+    protected DocumentTest parseDocumentTest( TokenStream tokens ) {
+        if (tokens.canConsume("document-node", "(")) {
+            // Document test ...
+            ElementTest elementTest = parseElementTest(tokens);
+            DocumentTest result = null;
+            if (elementTest != null) {
+                result = new DocumentTest(elementTest);
+            } else {
+                SchemaElementTest schemaTest = parseSchemaElementTest(tokens);
+                result = schemaTest != null ? new DocumentTest(schemaTest) : null;
             }
-            return null;
-        }
-
-        protected NameTest parseItemType( TokenStream tokens ) {
-            return parseQName(tokens);
-        }
-
-        protected NameTest parseAtomicType( TokenStream tokens ) {
-            return parseQName(tokens);
-        }
-
-        protected KindTest parseKindTest( TokenStream tokens ) {
-            KindTest result = parseAnyKindTest(tokens);
-            if (result == null) result = parseDocumentTest(tokens);
-            if (result == null) result = parseElementTest(tokens);
-            if (result == null) result = parseAttributeTest(tokens);
-            if (result == null) result = parseSchemaElementTest(tokens);
-            if (result == null) result = parseSchemaAttributeTest(tokens);
-            if (result == null) result = parsePITest(tokens);
-            if (result == null) result = parseCommentTest(tokens);
-            if (result == null) result = parseTextTest(tokens);
+            tokens.consume(")");
             return result;
         }
+        return null;
+    }
 
-        protected AnyKindTest parseAnyKindTest( TokenStream tokens ) {
-            if (tokens.canConsume("node", "(", ")")) {
-                return new AnyKindTest();
+    protected ElementTest parseElementTest( TokenStream tokens ) {
+        if (tokens.canConsume("element", "(")) {
+            if (tokens.canConsume(")") || tokens.canConsume("*", ")")) {
+                return new ElementTest(new NameTest(null, null), new NameTest(null, null));
             }
-            return null;
-        }
-
-        protected ProcessingInstructionTest parsePITest( TokenStream tokens ) {
-            if (tokens.canConsume("processing-instruction", "(")) {
-                if (tokens.canConsume(")")) return new ProcessingInstructionTest(null);
-                String nameOrStringLiteral = tokens.consume();
-                tokens.consume(")");
-                return new ProcessingInstructionTest(nameOrStringLiteral);
+            ElementTest result = null;
+            NameTest elementName = parseNameTest(tokens);
+            if (tokens.canConsume(",")) {
+                NameTest typeName = parseNameTest(tokens);
+                result = new ElementTest(elementName, typeName);
+                tokens.canConsume('?'); // just eat this
+            } else {
+                result = new ElementTest(elementName, new NameTest(null, null));
             }
-            return null;
+            tokens.consume(")");
+            return result;
         }
+        return null;
+    }
 
-        protected CommentTest parseCommentTest( TokenStream tokens ) {
-            if (tokens.canConsume("comment", "(", ")")) {
-                return new CommentTest();
+    protected SchemaElementTest parseSchemaElementTest( TokenStream tokens ) {
+        if (tokens.canConsume("schema-element", "(")) {
+            NameTest elementDeclarationName = parseNameTest(tokens);
+            SchemaElementTest result = new SchemaElementTest(elementDeclarationName);
+            tokens.consume(")");
+            return result;
+        }
+        return null;
+    }
+
+    protected AttributeTest parseAttributeTest( TokenStream tokens ) {
+        if (tokens.canConsume("attribute", "(")) {
+            if (tokens.canConsume(")") || tokens.canConsume("*", ")")) {
+                return new AttributeTest(new NameTest(null, null), new NameTest(null, null));
             }
-            return null;
-        }
-
-        protected TextTest parseTextTest( TokenStream tokens ) {
-            if (tokens.canConsume("text", "(", ")")) {
-                return new TextTest();
+            AttributeTest result = null;
+            NameTest attributeName = parseNameTest(tokens);
+            if (tokens.canConsume(",")) {
+                NameTest typeName = parseNameTest(tokens);
+                result = new AttributeTest(attributeName, typeName);
+            } else {
+                result = new AttributeTest(attributeName, new NameTest(null, null));
             }
-            return null;
+            tokens.consume(")");
+            return result;
         }
+        return null;
+    }
 
-        protected DocumentTest parseDocumentTest( TokenStream tokens ) {
-            if (tokens.canConsume("document-node", "(")) {
-                // Document test ...
-                ElementTest elementTest = parseElementTest(tokens);
-                DocumentTest result = null;
-                if (elementTest != null) {
-                    result = new DocumentTest(elementTest);
-                } else {
-                    SchemaElementTest schemaTest = parseSchemaElementTest(tokens);
-                    result = schemaTest != null ? new DocumentTest(schemaTest) : null;
-                }
-                tokens.consume(")");
-                return result;
-            }
-            return null;
+    protected SchemaAttributeTest parseSchemaAttributeTest( TokenStream tokens ) {
+        if (tokens.canConsume("schema-attribute", "(")) {
+            NameTest attributeDeclarationName = parseNameTest(tokens);
+            SchemaAttributeTest result = new SchemaAttributeTest(attributeDeclarationName);
+            tokens.consume(")");
+            return result;
         }
+        return null;
+    }
 
-        protected ElementTest parseElementTest( TokenStream tokens ) {
-            if (tokens.canConsume("element", "(")) {
-                if (tokens.canConsume(")") || tokens.canConsume("*", ")")) {
-                    return new ElementTest(new NameTest(null, null), new NameTest(null, null));
-                }
-                ElementTest result = null;
-                NameTest elementName = parseNameTest(tokens);
-                if (tokens.canConsume(",")) {
-                    NameTest typeName = parseNameTest(tokens);
-                    result = new ElementTest(elementName, typeName);
-                } else {
-                    result = new ElementTest(elementName, new NameTest(null, null));
-                }
-                tokens.consume(")");
-                return result;
-            }
-            return null;
-        }
+    protected void parseSingleType( TokenStream tokens ) {
+    }
 
-        protected SchemaElementTest parseSchemaElementTest( TokenStream tokens ) {
-            if (tokens.canConsume("schema-element", "(")) {
-                NameTest elementDeclarationName = parseNameTest(tokens);
-                SchemaElementTest result = new SchemaElementTest(elementDeclarationName);
-                tokens.consume(")");
-                return result;
-            }
-            return null;
-        }
+    protected void parseSequenceType( TokenStream tokens ) {
+    }
 
-        protected AttributeTest parseAttributeTest( TokenStream tokens ) {
-            if (tokens.canConsume("attribute", "(")) {
-                if (tokens.canConsume(")") || tokens.canConsume("*", ")")) {
-                    return new AttributeTest(new NameTest(null, null), new NameTest(null, null));
-                }
-                AttributeTest result = null;
-                NameTest attributeName = parseNameTest(tokens);
-                if (tokens.canConsume(",")) {
-                    NameTest typeName = parseNameTest(tokens);
-                    result = new AttributeTest(attributeName, typeName);
-                } else {
-                    result = new AttributeTest(attributeName, new NameTest(null, null));
-                }
-                tokens.consume(")");
-                return result;
-            }
-            return null;
-        }
+    /**
+     * Remove any leading and trailing single-quotes or double-quotes from the supplied text.
+     * 
+     * @param text the input text; may not be null
+     * @return the text without leading and trailing quotes, or <code>text</code> if there were no square brackets or quotes
+     */
+    protected String removeQuotes( String text ) {
+        return text.replaceFirst("^['\"]+", "").replaceAll("['\"]+$", "");
+    }
 
-        protected SchemaAttributeTest parseSchemaAttributeTest( TokenStream tokens ) {
-            if (tokens.canConsume("schema-attribute", "(")) {
-                NameTest attributeDeclarationName = parseNameTest(tokens);
-                SchemaAttributeTest result = new SchemaAttributeTest(attributeDeclarationName);
-                tokens.consume(")");
-                return result;
-            }
-            return null;
-        }
-
-        protected void parseSingleType( TokenStream tokens ) {
-        }
-
-        protected void parseSequenceType( TokenStream tokens ) {
-        }
-
-        /**
-         * Remove any leading and trailing single-quotes or double-quotes from the supplied text.
-         * 
-         * @param text the input text; may not be null
-         * @return the text without leading and trailing quotes, or <code>text</code> if there were no square brackets or quotes
-         */
-        protected String removeQuotes( String text ) {
-            return text.replaceFirst("^['\"]+", "").replaceAll("['\"]+$", "");
-        }
+    protected Component collapse( Component component ) {
+        return XPathQueryParser.COLLAPSE_INNER_COMPONENTS ? component.collapse() : component;
     }
 
     /**

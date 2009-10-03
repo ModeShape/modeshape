@@ -23,13 +23,19 @@
  */
 package org.jboss.dna.jcr.xpath;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.query.model.Operator;
 
 /**
+ * Abstract syntax components of an XPath query. The supported grammar is defined by JCR 1.0, and is a subset of what is allowed
+ * by the W3C XPath 2.0 specification.
  * 
+ * @see XPathParser#parseXPath(String)
  */
 public class XPath {
 
@@ -39,10 +45,18 @@ public class XPath {
         FOLLOWS;
     }
 
-    public static interface Component {
+    public static abstract class Component {
+        /**
+         * Return the collapsable form
+         * 
+         * @return the collapsed form of th is component; never null and possibly the same as this
+         */
+        public Component collapse() {
+            return this;
+        }
     }
 
-    public static abstract class UnaryComponent implements Component {
+    public static abstract class UnaryComponent extends Component {
         protected final Component wrapped;
 
         public UnaryComponent( Component wrapped ) {
@@ -85,7 +99,7 @@ public class XPath {
         }
     }
 
-    public static abstract class BinaryComponent implements Component {
+    public static abstract class BinaryComponent extends Component {
         private final Component left;
         private final Component right;
 
@@ -118,6 +132,23 @@ public class XPath {
                            Component right ) {
             super(left, right);
             this.operator = operator;
+        }
+
+        /**
+         * @return operator
+         */
+        public Operator getOperator() {
+            return operator;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new Comparison(getLeft().collapse(), operator, getRight().collapse());
         }
 
         /**
@@ -160,6 +191,16 @@ public class XPath {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new NodeComparison(getLeft().collapse(), operator, getRight().collapse());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see java.lang.Object#toString()
          */
         @Override
@@ -188,6 +229,16 @@ public class XPath {
         public Add( Component left,
                     Component right ) {
             super(left, right);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new Add(getLeft().collapse(), getRight().collapse());
         }
 
         /**
@@ -225,6 +276,16 @@ public class XPath {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new Subtract(getLeft().collapse(), getRight().collapse());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see java.lang.Object#toString()
          */
         @Override
@@ -252,6 +313,16 @@ public class XPath {
         public And( Component left,
                     Component right ) {
             super(left, right);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new And(getLeft().collapse(), getRight().collapse());
         }
 
         /**
@@ -312,10 +383,84 @@ public class XPath {
         }
     }
 
+    public static class Intersect extends BinaryComponent {
+        public Intersect( Component left,
+                          Component right ) {
+            super(left, right);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return getLeft() + " intersect " + getRight();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Intersect) {
+                Intersect that = (Intersect)obj;
+                return this.getLeft().equals(that.getLeft()) && this.getRight().equals(that.getRight());
+            }
+            return false;
+        }
+    }
+
+    public static class Except extends BinaryComponent {
+        public Except( Component left,
+                       Component right ) {
+            super(left, right);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return getLeft() + " except " + getRight();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Except) {
+                Except that = (Except)obj;
+                return this.getLeft().equals(that.getLeft()) && this.getRight().equals(that.getRight());
+            }
+            return false;
+        }
+    }
+
     public static class Or extends BinaryComponent {
         public Or( Component left,
                    Component right ) {
             super(left, right);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return new Or(getLeft().collapse(), getRight().collapse());
         }
 
         /**
@@ -344,7 +489,7 @@ public class XPath {
         }
     }
 
-    public static class ContextItem implements Component {
+    public static class ContextItem extends Component {
         /**
          * {@inheritDoc}
          * 
@@ -366,7 +511,7 @@ public class XPath {
         }
     }
 
-    public static class Literal implements Component {
+    public static class Literal extends Component {
         private final String value;
 
         public Literal( String value ) {
@@ -378,6 +523,19 @@ public class XPath {
          */
         public String getValue() {
             return value;
+        }
+
+        public boolean isInteger() {
+            try {
+                Integer.parseInt(value);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        public int getValueAsInteger() {
+            return Integer.parseInt(value);
         }
 
         /**
@@ -405,7 +563,7 @@ public class XPath {
         }
     }
 
-    public static class FunctionCall implements Component {
+    public static class FunctionCall extends Component {
         private final NameTest name;
         private final List<Component> arguments;
 
@@ -429,6 +587,20 @@ public class XPath {
          */
         public List<Component> getParameters() {
             return arguments;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            List<Component> args = new ArrayList<Component>(arguments.size());
+            for (Component arg : arguments) {
+                args.add(arg.collapse());
+            }
+            return new FunctionCall(name, args);
         }
 
         /**
@@ -467,7 +639,7 @@ public class XPath {
         return sb.toString();
     }
 
-    public static class PathExpression implements Component {
+    public static class PathExpression extends Component implements Iterable<StepExpression> {
         private final List<StepExpression> steps;
         private final boolean relative;
 
@@ -489,6 +661,34 @@ public class XPath {
          */
         public List<StepExpression> getSteps() {
             return steps;
+        }
+
+        public StepExpression getLastStep() {
+            return steps.isEmpty() ? null : steps.get(steps.size() - 1);
+        }
+
+        public PathExpression withoutLast() {
+            assert !steps.isEmpty();
+            return new PathExpression(relative, steps.subList(0, steps.size() - 1));
+        }
+
+        public PathExpression withoutFirst() {
+            assert !steps.isEmpty();
+            return new PathExpression(relative, steps.subList(1, steps.size()));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Iterable#iterator()
+         */
+        public Iterator<StepExpression> iterator() {
+            return steps.iterator();
+        }
+
+        @Override
+        public Component collapse() {
+            return steps.size() == 1 ? steps.get(0).collapse() : this;
         }
 
         /**
@@ -517,10 +717,10 @@ public class XPath {
         }
     }
 
-    public static interface StepExpression extends Component {
+    public static abstract class StepExpression extends Component {
     }
 
-    public static class FilterStep implements StepExpression {
+    public static class FilterStep extends StepExpression {
         private final Component primaryExpression;
         private final List<Component> predicates;
 
@@ -544,6 +744,11 @@ public class XPath {
          */
         public List<Component> getPredicates() {
             return predicates;
+        }
+
+        @Override
+        public Component collapse() {
+            return predicates.isEmpty() ? primaryExpression.collapse() : this;
         }
 
         /**
@@ -572,7 +777,7 @@ public class XPath {
         }
     }
 
-    public static class DescendantOrSelf implements StepExpression {
+    public static class DescendantOrSelf extends StepExpression {
         /**
          * {@inheritDoc}
          * 
@@ -594,7 +799,7 @@ public class XPath {
         }
     }
 
-    public static class AxisStep implements StepExpression {
+    public static class AxisStep extends StepExpression {
         private final NodeTest nodeTest;
         private final List<Component> predicates;
 
@@ -618,6 +823,11 @@ public class XPath {
          */
         public List<Component> getPredicates() {
             return predicates;
+        }
+
+        @Override
+        public Component collapse() {
+            return predicates.isEmpty() ? nodeTest.collapse() : this;
         }
 
         /**
@@ -646,7 +856,7 @@ public class XPath {
         }
     }
 
-    public static class ParenthesizedExpression implements Component {
+    public static class ParenthesizedExpression extends Component {
         private final Component wrapped;
 
         public ParenthesizedExpression() {
@@ -662,6 +872,16 @@ public class XPath {
          */
         public Component getWrapped() {
             return wrapped;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return wrapped instanceof BinaryComponent ? this : wrapped;
         }
 
         /**
@@ -690,13 +910,13 @@ public class XPath {
         }
     }
 
-    public static interface NodeTest extends Component {
+    public static abstract class NodeTest extends Component {
     }
 
-    public static interface KindTest extends NodeTest {
+    public static abstract class KindTest extends NodeTest {
     }
 
-    public static class NameTest implements NodeTest {
+    public static class NameTest extends NodeTest {
         private final String prefixTest;
         private final String localTest;
 
@@ -707,17 +927,50 @@ public class XPath {
         }
 
         /**
-         * @return prefixTest
+         * @return the prefix criteria, or null if the prefix criteria is a wildcard
          */
         public String getPrefixTest() {
             return prefixTest;
         }
 
         /**
-         * @return localTest
+         * @return the local name criteria, or null if the local name criteria is a wildcard
          */
         public String getLocalTest() {
             return localTest;
+        }
+
+        /**
+         * Determine if this name test exactly matches the supplied prefix and local name values.
+         * 
+         * @param prefix the prefix; may be null
+         * @param local the local name; may be null
+         * @return true if this name matches the supplied values, or false otherwise.
+         */
+        public boolean matches( String prefix,
+                                String local ) {
+            if (this.prefixTest != null && !this.prefixTest.equals(prefix)) return false;
+            if (this.localTest != null && !this.localTest.equals(local)) return false;
+            return true;
+        }
+
+        /**
+         * Return whether this represents a wildcard, meaning both {@link #getPrefixTest()} and {@link #getLocalTest()} are null.
+         * 
+         * @return true if this is a wildcard name test.
+         */
+        public boolean isWildcard() {
+            return prefixTest == null && localTest == null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return HashCode.compute(this.prefixTest, this.localTest);
         }
 
         /**
@@ -748,18 +1001,18 @@ public class XPath {
         }
     }
 
-    public static class AttributeNameTest implements NodeTest {
-        private final NodeTest nodeTest;
+    public static class AttributeNameTest extends NodeTest {
+        private final NameTest nameTest;
 
-        public AttributeNameTest( NodeTest nodeTest ) {
-            this.nodeTest = nodeTest;
+        public AttributeNameTest( NameTest nameTest ) {
+            this.nameTest = nameTest;
         }
 
         /**
          * @return nodeTest
          */
-        public NodeTest getNodeTest() {
-            return nodeTest;
+        public NameTest getNameTest() {
+            return nameTest;
         }
 
         /**
@@ -769,7 +1022,7 @@ public class XPath {
          */
         @Override
         public String toString() {
-            return "@" + nodeTest;
+            return "@" + nameTest;
         }
 
         /**
@@ -782,14 +1035,14 @@ public class XPath {
             if (obj == this) return true;
             if (obj instanceof AttributeNameTest) {
                 AttributeNameTest that = (AttributeNameTest)obj;
-                return this.nodeTest.equals(that.nodeTest);
+                return this.nameTest.equals(that.nameTest);
             }
             return false;
         }
 
     }
 
-    public static class AnyKindTest implements KindTest {
+    public static class AnyKindTest extends KindTest {
         /**
          * {@inheritDoc}
          * 
@@ -811,7 +1064,7 @@ public class XPath {
         }
     }
 
-    public static class TextTest implements KindTest {
+    public static class TextTest extends KindTest {
         /**
          * {@inheritDoc}
          * 
@@ -833,7 +1086,7 @@ public class XPath {
         }
     }
 
-    public static class CommentTest implements KindTest {
+    public static class CommentTest extends KindTest {
         /**
          * {@inheritDoc}
          * 
@@ -855,7 +1108,7 @@ public class XPath {
         }
     }
 
-    public static class ProcessingInstructionTest implements KindTest {
+    public static class ProcessingInstructionTest extends KindTest {
         private final String nameOrStringLiteral;
 
         public ProcessingInstructionTest( String nameOrStringLiteral ) {
@@ -895,7 +1148,7 @@ public class XPath {
         }
     }
 
-    public static class DocumentTest implements KindTest {
+    public static class DocumentTest extends KindTest {
         private KindTest elementOrSchemaElementTest;
 
         public DocumentTest( ElementTest elementTest ) {
@@ -948,7 +1201,7 @@ public class XPath {
         }
     }
 
-    public static class AttributeTest implements KindTest {
+    public static class AttributeTest extends KindTest {
         private final NameTest attributeNameOrWildcard;
         private final NameTest typeName;
 
@@ -999,7 +1252,7 @@ public class XPath {
         }
     }
 
-    public static class ElementTest implements KindTest {
+    public static class ElementTest extends KindTest {
         private final NameTest elementNameOrWildcard;
         private final NameTest typeName;
 
@@ -1050,7 +1303,7 @@ public class XPath {
         }
     }
 
-    public static class SchemaElementTest implements KindTest {
+    public static class SchemaElementTest extends KindTest {
         private final NameTest elementDeclarationName;
 
         public SchemaElementTest( NameTest elementDeclarationName ) {
@@ -1090,7 +1343,7 @@ public class XPath {
         }
     }
 
-    public static class SchemaAttributeTest implements KindTest {
+    public static class SchemaAttributeTest extends KindTest {
         private final NameTest attributeDeclarationName;
 
         public SchemaAttributeTest( NameTest attributeDeclarationName ) {

@@ -39,6 +39,7 @@
 
 /web/dna-web-jcr-rest/target/
 /web/dna-web-jcr-rest-war/target/
+/web/dna-web-jcr-rest-client/target/
 
 /extensions/dna-classloader-maven/target
 /extensions/dna-common-jdbc/target
