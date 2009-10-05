@@ -66,7 +66,7 @@ public final class JsonRestClientTest {
     private static final String BINARY_FILE_PATH = WORKSPACE_PATH + "picture.jpg"; //$NON-NLS-1$
 
     private static final String WORKSPACE_UNUSUALPATH = "/myproject/My.Test - Folder/"; //$NON-NLS-1$
-    private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-*().txt"; //$NON-NLS-1$
+    private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-().txt"; //$NON-NLS-1$
 
     // ===========================================================================================================================
     // Fields

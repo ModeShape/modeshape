@@ -92,13 +92,12 @@ public final class JsonRestClient implements IRestClient {
             connection.write(fileNode.getContent());
 
             // make sure node was created
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_CREATED) {
                 // node was not created
-                this.logger.error(RestClientI18n.connectionErrorMsg, connection.getResponseCode(), "createFileNode"); //$NON-NLS-1$
-                String msg = RestClientI18n.createFileFailedMsg.text(file.getName(),
-                                                                     path,
-                                                                     workspace.getName(),
-                                                                     connection.getResponseCode());
+                this.logger.error(RestClientI18n.connectionErrorMsg, responseCode, "createFileNode"); //$NON-NLS-1$
+                String msg = RestClientI18n.createFileFailedMsg.text(file.getName(), path, workspace.getName(), responseCode);
                 throw new RuntimeException(msg);
             }
         } finally {
@@ -127,10 +126,12 @@ public final class JsonRestClient implements IRestClient {
             connection.write(folderNode.getContent());
 
             // make sure node was created
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_CREATED) {
                 // node was not created
-                this.logger.error(RestClientI18n.connectionErrorMsg, connection.getResponseCode(), "createFolderNode"); //$NON-NLS-1$
-                String msg = RestClientI18n.createFolderFailedMsg.text(path, workspace.getName(), connection.getResponseCode());
+                this.logger.error(RestClientI18n.connectionErrorMsg, responseCode, "createFolderNode"); //$NON-NLS-1$
+                String msg = RestClientI18n.createFolderFailedMsg.text(path, workspace.getName(), responseCode);
                 throw new RuntimeException(msg);
             }
         } finally {
@@ -195,13 +196,15 @@ public final class JsonRestClient implements IRestClient {
         HttpClientConnection connection = connect(server, serverNode.getFindRepositoriesUrl(), RequestMethod.GET);
 
         try {
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 return serverNode.getRepositories(connection.read());
             }
 
             // not a good response code
-            this.logger.error(RestClientI18n.connectionErrorMsg, connection.getResponseCode(), "getRepositories"); //$NON-NLS-1$
-            String msg = RestClientI18n.getRepositoriesFailedMsg.text(server.getName(), connection.getResponseCode());
+            this.logger.error(RestClientI18n.connectionErrorMsg, responseCode, "getRepositories"); //$NON-NLS-1$
+            String msg = RestClientI18n.getRepositoriesFailedMsg.text(server.getName(), responseCode);
             throw new RuntimeException(msg);
         } finally {
             if (connection != null) {
@@ -245,15 +248,17 @@ public final class JsonRestClient implements IRestClient {
         HttpClientConnection connection = connect(repository.getServer(), repositoryNode.getUrl(), RequestMethod.GET);
 
         try {
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 return repositoryNode.getWorkspaces(connection.read());
             }
 
             // not a good response code
-            this.logger.error(RestClientI18n.connectionErrorMsg, connection.getResponseCode(), "getWorkspaces"); //$NON-NLS-1$
+            this.logger.error(RestClientI18n.connectionErrorMsg, responseCode, "getWorkspaces"); //$NON-NLS-1$
             String msg = RestClientI18n.getWorkspacesFailedMsg.text(repository.getName(),
                                                                     repository.getServer().getName(),
-                                                                    connection.getResponseCode());
+                                                                    responseCode);
             throw new RuntimeException(msg);
         } finally {
             if (connection != null) {
