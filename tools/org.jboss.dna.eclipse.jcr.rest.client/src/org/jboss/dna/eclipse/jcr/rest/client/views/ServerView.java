@@ -218,6 +218,7 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
 
         // register to receive changes to the server registry
         getServerManager().addRegistryListener(this);
+        getServerManager().addRegistryListener(this.provider);
 
         // register with the help system
         IWorkbenchHelpSystem helpSystem = Activator.getDefault().getWorkbench().getHelpSystem();
@@ -232,6 +233,11 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
     @Override
     public void dispose() {
         getServerManager().removeRegistryListener(this);
+
+        if (this.provider != null) {
+            getServerManager().removeRegistryListener(this.provider);
+        }
+
         super.dispose();
     }
 
@@ -283,14 +289,14 @@ public final class ServerView extends ViewPart implements IServerRegistryListene
                 }
             }
         });
-        
+
         // don't want cut, copy, or paste actions so hook them up with a disabled action
         class NoOpAction extends Action {
             NoOpAction() {
                 setEnabled(false);
             }
         }
-        
+
         IAction noop = new NoOpAction();
         bars.setGlobalActionHandler(ActionFactory.CUT.getId(), noop);
         bars.setGlobalActionHandler(ActionFactory.COPY.getId(), noop);

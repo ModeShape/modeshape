@@ -226,11 +226,6 @@ public final class PublishJob extends Job {
                     // set persistent property on resource indicating it has been published
                     if (!status.isError()) {
                         resourceHelper.addPublishedProperty(eclipseFile, workspace);
-                        DnaContentProvider decorator = DnaContentProvider.getDecorator();
-
-                        if (decorator != null) {
-                            // decorator.refresh(eclipseFile);
-                        }
                     }
                 } else {
                     status = getServerManager().unpublish(this.workspace, path, file);
@@ -238,16 +233,18 @@ public final class PublishJob extends Job {
                     // clear persistent property on resource indicating it has been unpublished
                     if (!status.isError()) {
                         resourceHelper.removePublishedProperty(eclipseFile, workspace);
-                        DnaContentProvider decorator = DnaContentProvider.getDecorator();
-
-                        if (decorator != null) {
-                            // decorator.refresh(eclipseFile);
-                        }
                     }
                 }
 
                 ++numProcessed;
                 monitor.worked(1);
+
+                // let decorator know publishing state has changed on this file
+                DnaContentProvider decorator = DnaContentProvider.getDecorator();
+
+                if (decorator != null) {
+                    decorator.refresh(eclipseFile);
+                }
 
                 // write outcome message to console
                 if (isPublishing() && status.isOk()) {

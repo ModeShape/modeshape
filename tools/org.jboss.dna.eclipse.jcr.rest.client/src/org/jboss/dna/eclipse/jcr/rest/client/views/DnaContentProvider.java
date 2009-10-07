@@ -24,11 +24,15 @@
 package org.jboss.dna.eclipse.jcr.rest.client.views;
 
 import static org.jboss.dna.eclipse.jcr.rest.client.IUiConstants.PUBLISHED_OVERLAY_IMAGE;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.jcip.annotations.GuardedBy;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.IDecoration;
-import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
@@ -40,7 +44,9 @@ import org.jboss.dna.eclipse.jcr.rest.client.Activator;
 import org.jboss.dna.eclipse.jcr.rest.client.DnaResourceHelper;
 import org.jboss.dna.eclipse.jcr.rest.client.RestClientI18n;
 import org.jboss.dna.eclipse.jcr.rest.client.Utils;
+import org.jboss.dna.web.jcr.rest.client.IServerRegistryListener;
 import org.jboss.dna.web.jcr.rest.client.ServerManager;
+import org.jboss.dna.web.jcr.rest.client.ServerRegistryEvent;
 import org.jboss.dna.web.jcr.rest.client.Status;
 import org.jboss.dna.web.jcr.rest.client.Status.Severity;
 import org.jboss.dna.web.jcr.rest.client.domain.IDnaObject;
@@ -49,9 +55,11 @@ import org.jboss.dna.web.jcr.rest.client.domain.Server;
 import org.jboss.dna.web.jcr.rest.client.domain.Workspace;
 
 /**
- * The <code>DnaContentProvider</code> is a content and label provider for DNA repositories.
+ * The <code>DnaContentProvider</code> is a content and label provider for DNA repositories. This class <strong>MUST</strong> be
+ * registered, and then unregistered, to receive server registry events.
  */
-public final class DnaContentProvider extends ColumnLabelProvider implements ILightweightLabelDecorator, ITreeContentProvider {
+public final class DnaContentProvider extends ColumnLabelProvider
+    implements ILightweightLabelDecorator, IServerRegistryListener, ITreeContentProvider {
 
     // ===========================================================================================================================
     // Constants
@@ -61,6 +69,11 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
      * The decorator ID.
      */
     private static final String ID = "org.jboss.dna.eclipse.jcr.rest.client.dnaDecorator"; //$NON-NLS-1$
+
+    /**
+     * If a server connection cannot be established, wait this amount of time before trying again.
+     */
+    private static final long RETRY_DURATION = 10000;
 
     // ===========================================================================================================================
     // Class Methods
@@ -79,9 +92,21 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
         return null;
     }
 
-    // ===========================================dnaDecorator================================================================================
+    // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================
+
+    /**
+     * Servers that a connection can't be established. Value is the last time a establishing a connection was tried.
+     */
+    @GuardedBy( "offlineServersLock" )
+    private final Map<Server, Long> offlineServerMap = new HashMap<Server, Long>();
+
+    /**
+     * Lock used for when accessing the offline server map. The map will be accessed in different threads as the decorator runs in
+     * its own thread (not the UI thread).
+     */
+    private final ReadWriteLock offlineServersLock = new ReentrantReadWriteLock();
 
     /**
      * The server manager where the server registry is managed.
@@ -93,13 +118,15 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
     // ===========================================================================================================================
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+     * @param server the server that is offline
      */
-    @Override
-    public void addListener( ILabelProviderListener listener ) {
-        // nothing to do
+    private void addOfflineServer( Server server ) {
+        try {
+            this.offlineServersLock.writeLock().lock();
+            this.offlineServerMap.put(server, System.currentTimeMillis());
+        } finally {
+            this.offlineServersLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -117,11 +144,18 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
             return;
         }
 
-        // must be an IDnaObject
         if (getServerManager() != null) {
             if (element instanceof Server) {
-                Status status = getServerManager().ping((Server)element);
-                overlay = Utils.getOverlayImage(status);
+                Server server = (Server)element;
+
+                if (isOkToConnect(server)) {
+                    Status status = getServerManager().ping(server);
+                    overlay = Utils.getOverlayImage(status);
+
+                    if (status.isError()) {
+                        addOfflineServer(server);
+                    }
+                }
             } else if ((element instanceof IFile) && new DnaResourceHelper(getServerManager()).isPublished((IFile)element)) {
                 overlay = Activator.getDefault().getImageDescriptor(PUBLISHED_OVERLAY_IMAGE);
             }
@@ -152,22 +186,30 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
         assert (parentElement instanceof IDnaObject);
 
         if (getServerManager() != null) {
-            try {
-                if ((parentElement instanceof Server) && getServerManager().ping((Server)parentElement).isOk()) {
-                    return getServerManager().getRepositories((Server)parentElement).toArray();
-                }
-            } catch (Exception e) {
-                String msg = RestClientI18n.serverManagerGetRepositoriesExceptionMsg.text(((Server)parentElement).getShortDescription());
-                Activator.getDefault().log(new Status(Severity.ERROR, msg, e));
-            }
+            if (parentElement instanceof Server) {
+                Server server = (Server)parentElement;
 
-            try {
-                if (parentElement instanceof Repository) {
-                    return getServerManager().getWorkspaces((Repository)parentElement).toArray();
+                if (isOkToConnect(server)) {
+                    try {
+                        return getServerManager().getRepositories(server).toArray();
+                    } catch (Exception e) {
+                        addOfflineServer(server);
+                        String msg = RestClientI18n.serverManagerGetRepositoriesExceptionMsg.text(server.getShortDescription());
+                        Activator.getDefault().log(new Status(Severity.ERROR, msg, e));
+                    }
                 }
-            } catch (Exception e) {
-                String msg = RestClientI18n.serverManagerGetWorkspacesExceptionMsg.text();
-                Activator.getDefault().log(new Status(Severity.ERROR, msg, e));
+            } else if (parentElement instanceof Repository) {
+                Repository repository = (Repository)parentElement;
+
+                if (isOkToConnect(repository.getServer())) {
+                    try {
+                        return getServerManager().getWorkspaces(repository).toArray();
+                    } catch (Exception e) {
+                        addOfflineServer(repository.getServer());
+                        String msg = RestClientI18n.serverManagerGetWorkspacesExceptionMsg.text(repository.getShortDescription());
+                        Activator.getDefault().log(new Status(Severity.ERROR, msg, e));
+                    }
+                }
             }
         }
 
@@ -291,18 +333,7 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
     public void inputChanged( Viewer viewer,
                               Object oldInput,
                               Object newInput ) {
-        // this.viewer = (StructuredViewer)viewer;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
-     */
-    @Override
-    public boolean isLabelProperty( Object element,
-                                    String property ) {
-        return false;
+        // nothing to do
     }
 
     public void refresh( final Object element ) {
@@ -327,13 +358,68 @@ public final class DnaContentProvider extends ColumnLabelProvider implements ILi
     }
 
     /**
+     * Determines if a try to connect to a server should be done based on the last time a try was done and failed.
+     * 
+     * @param server the server being checked
+     * @return <code>true</code> if it is OK to try and connect
+     */
+    private boolean isOkToConnect( Server server ) {
+        boolean check = false; // check map for time
+
+        try {
+            this.offlineServersLock.readLock().lock();
+            check = this.offlineServerMap.containsKey(server);
+        } finally {
+            this.offlineServersLock.readLock().unlock();
+        }
+
+        if (check) {
+            try {
+                this.offlineServersLock.writeLock().lock();
+
+                if (this.offlineServerMap.containsKey(server)) {
+                    long checkTime = this.offlineServerMap.get(server);
+
+                    // OK to try and connect if last failed attempt was too long ago
+                    if ((System.currentTimeMillis() - checkTime) > RETRY_DURATION) {
+                        this.offlineServerMap.remove(server);
+                        return true;
+                    }
+
+                    // don't try and connect because we just tried and failed
+                    return false;
+                }
+            } finally {
+                this.offlineServersLock.writeLock().unlock();
+            }
+        }
+
+        // OK to try and connect
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      * 
-     * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+     * @see org.jboss.dna.web.jcr.rest.client.IServerRegistryListener#serverRegistryChanged(org.jboss.dna.web.jcr.rest.client.ServerRegistryEvent)
      */
     @Override
-    public void removeListener( ILabelProviderListener listener ) {
-        // nothing to do
+    public Exception[] serverRegistryChanged( ServerRegistryEvent event ) {
+        Exception[] errors = null;
+
+        // only care about servers being removed or updated
+        if (event.isRemove() || event.isUpdate()) {
+            try {
+                this.offlineServersLock.writeLock().lock();
+                this.offlineServerMap.remove(event.getServer());
+            } catch (Exception e) {
+                errors = new Exception[] {e};
+            } finally {
+                this.offlineServersLock.writeLock().unlock();
+            }
+        }
+
+        return errors;
     }
 
 }
