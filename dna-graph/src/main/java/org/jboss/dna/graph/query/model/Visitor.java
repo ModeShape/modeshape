@@ -88,6 +88,8 @@ public interface Visitor {
 
     void visit( SameNodeJoinCondition obj );
 
+    void visit( SetCriteria obj );
+
     void visit( SetQuery obj );
 
     void visit( UpperCase obj );

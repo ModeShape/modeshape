@@ -1325,4 +1325,17 @@ public class QueryBuilderTest {
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
                                 "WHERE LOWER(UPPER(NAME(nodes))) = 'literal'"));
     }
+
+    @Test
+    public void shouldBuilderQueryWithSetCriteria() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .nodeName("nodes")
+                       .isIn("value1", "value2", "value3")
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE NAME(nodes) IN ('value1','value2','value3')"));
+    }
 }

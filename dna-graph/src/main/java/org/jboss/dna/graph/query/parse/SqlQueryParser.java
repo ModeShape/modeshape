@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.parse;
 
 import static org.jboss.dna.common.text.TokenStream.ANY_VALUE;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,6 +85,7 @@ import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.Selector;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.SetQuery;
 import org.jboss.dna.graph.query.model.Source;
 import org.jboss.dna.graph.query.model.StaticOperand;
@@ -414,9 +416,18 @@ public class SqlQueryParser implements QueryParser {
                         String msg = GraphI18n.expectingConstraintCondition.text(name, pos2.getLine(), pos2.getColumn());
                         throw new ParsingException(pos, msg);
                     }
-                    Operator operator = parseComparisonOperator(tokens);
-                    StaticOperand right = parseStaticOperand(tokens, context);
-                    constraint = new Comparison(left, operator, right);
+                    if (tokens.matches("IN", "(")) {
+                        Collection<StaticOperand> staticOperands = parseInClause(tokens, context);
+                        constraint = new SetCriteria(left, staticOperands);
+                    } else if (tokens.matches("NOT", "IN", "(")) {
+                        tokens.consume("NOT");
+                        Collection<StaticOperand> staticOperands = parseInClause(tokens, context);
+                        constraint = new Not(new SetCriteria(left, staticOperands));
+                    } else {
+                        Operator operator = parseComparisonOperator(tokens);
+                        StaticOperand right = parseStaticOperand(tokens, context);
+                        constraint = new Comparison(left, operator, right);
+                    }
                 }
                 // else continue ...
             }
@@ -433,6 +444,21 @@ public class SqlQueryParser implements QueryParser {
             constraint = new Or(constraint, parseConstraint(tokens, context, source));
         }
         return constraint;
+    }
+
+    protected Collection<StaticOperand> parseInClause( TokenStream tokens,
+                                                       ExecutionContext context ) {
+        Collection<StaticOperand> result = new ArrayList<StaticOperand>();
+        tokens.consume("IN");
+        tokens.consume("(");
+        if (!tokens.canConsume(")")) {
+            // Not empty, so read the static operands ...
+            do {
+                result.add(parseStaticOperand(tokens, context));
+            } while (tokens.canConsume(','));
+            tokens.consume(")");
+        }
+        return result;
     }
 
     protected Term parseFullTextSearchExpression( String expression,

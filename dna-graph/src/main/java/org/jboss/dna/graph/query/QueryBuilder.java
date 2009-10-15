@@ -25,6 +25,8 @@ package org.jboss.dna.graph.query;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -78,8 +80,10 @@ import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.Selector;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.SetQuery;
 import org.jboss.dna.graph.query.model.Source;
+import org.jboss.dna.graph.query.model.StaticOperand;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.model.SetQuery.Operation;
@@ -1691,6 +1695,17 @@ public class QueryBuilder {
                                      DynamicOperand left ) {
             this.left = left;
             this.constraintBuilder = constraintBuilder;
+        }
+
+        public ConstraintBuilder isIn( Object firstLiteral,
+                                       Object... additionalLiterals ) {
+            CheckArg.isNotNull(firstLiteral, "firstLiteral");
+            Collection<StaticOperand> right = new ArrayList<StaticOperand>();
+            right.add(firstLiteral instanceof Literal ? (Literal)firstLiteral : new Literal(firstLiteral));
+            for (Object literal : additionalLiterals) {
+                right.add(literal instanceof Literal ? (Literal)literal : new Literal(literal));
+            }
+            return this.constraintBuilder.setConstraint(new SetCriteria(left, right));
         }
 
         /**

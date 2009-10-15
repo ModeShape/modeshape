@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.query.model;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
@@ -155,12 +156,12 @@ public class Visitors {
 
             @Override
             public void visit( NodeDepth depth ) {
-                super.visit(depth);
+                symbols.add(depth.getSelectorName());
             }
 
             @Override
             public void visit( NodePath path ) {
-                super.visit(path);
+                symbols.add(path.getSelectorName());
             }
 
             @Override
@@ -457,6 +458,14 @@ public class Visitors {
          * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.SameNodeJoinCondition)
          */
         public void visit( SameNodeJoinCondition obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.SetCriteria)
+         */
+        public void visit( SetCriteria obj ) {
         }
 
         /**
@@ -847,6 +856,20 @@ public class Visitors {
          */
         public void visit( SameNodeJoinCondition condition ) {
             strategy.visit(condition);
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.SetCriteria)
+         */
+        public void visit( SetCriteria setCriteria ) {
+            strategy.visit(setCriteria);
+            enqueue(setCriteria.getLeftOperand());
+            for (StaticOperand right : setCriteria.getRightOperands()) {
+                enqueue(right);
+            }
             visitNext();
         }
 
@@ -1324,6 +1347,25 @@ public class Visitors {
             append("ISSAMENODE(").append(condition.getSelector1Name()).append(',').append(condition.getSelector2Name());
             if (condition.getSelector2Path() != null) {
                 append(',').append(condition.getSelector2Path());
+            }
+            append(')');
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.SetCriteria)
+         */
+        public void visit( SetCriteria criteria ) {
+            criteria.getLeftOperand().accept(this);
+            append(" IN (");
+            Iterator<StaticOperand> iter = criteria.getRightOperands().iterator();
+            if (iter.hasNext()) {
+                iter.next().accept(this);
+                while (iter.hasNext()) {
+                    append(',');
+                    iter.next().accept(this);
+                }
             }
             append(')');
         }
