@@ -51,6 +51,31 @@ public class XPathQueryParser implements QueryParser {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return LANGUAGE;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof QueryParser) {
+            QueryParser that = (QueryParser)obj;
+            return this.getLanguage().equals(that.getLanguage());
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.ExecutionContext)
      */
     public QueryCommand parseQuery( String query,

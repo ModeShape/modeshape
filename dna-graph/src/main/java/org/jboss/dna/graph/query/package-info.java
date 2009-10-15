@@ -41,6 +41,7 @@
  * model using the {@link QueryBuilder}, which provides a fluent API that makes it easy to create a query
  * with Java code.  The second (and more common) approach is to use a {@link org.jboss.dna.graph.query.parse.QueryParser}
  * that parses a query represented in a specific language (like SQL or XPath) and then creates the query's equivalent abstract query model.
+ * There's even a {@link org.jboss.dna.graph.query.parse.QueryParsers} class that can manage the parsers for multiple languages.
  * </p>
  * <p>
  * The abstract query model classes are immutable, making them very easily shared or reused if that is advantageous.
