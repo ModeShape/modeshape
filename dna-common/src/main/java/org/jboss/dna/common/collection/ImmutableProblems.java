@@ -54,12 +54,12 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addError(org.jboss.dna.common.i18n.I18n, java.lang.String, java.lang.String,
+     * @see org.jboss.dna.common.collection.Problems#addError(java.lang.String, java.lang.String, org.jboss.dna.common.i18n.I18n,
      *      java.lang.Object[])
      */
-    public void addError( I18n message,
-                          String resource,
+    public void addError( String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -78,13 +78,12 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addError(int, org.jboss.dna.common.i18n.I18n, java.lang.String,
-     *      java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addError(int, String, String, I18n, Object...)
      */
     public void addError( int code,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -104,13 +103,13 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addError(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addError(java.lang.Throwable, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n,java.lang.Object[])
      */
     public void addError( Throwable throwable,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -131,14 +130,14 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addError(java.lang.Throwable, int, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addError(java.lang.Throwable, int, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void addError( Throwable throwable,
                           int code,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -156,12 +155,12 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addInfo(org.jboss.dna.common.i18n.I18n, java.lang.String, java.lang.String,
+     * @see org.jboss.dna.common.collection.Problems#addInfo(java.lang.String, java.lang.String, org.jboss.dna.common.i18n.I18n,
      *      java.lang.Object[])
      */
-    public void addInfo( I18n message,
-                         String resource,
+    public void addInfo( String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -180,13 +179,13 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addInfo(int, org.jboss.dna.common.i18n.I18n, java.lang.String,
-     *      java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addInfo(int, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void addInfo( int code,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -206,13 +205,13 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addInfo(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addInfo(java.lang.Throwable, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void addInfo( Throwable throwable,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -233,14 +232,14 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addInfo(java.lang.Throwable, int, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addInfo(java.lang.Throwable, int, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void addInfo( Throwable throwable,
                          int code,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -258,12 +257,12 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addWarning(org.jboss.dna.common.i18n.I18n, java.lang.String,
-     *      java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addWarning(java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
-    public void addWarning( I18n message,
-                            String resource,
+    public void addWarning( String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -282,13 +281,13 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addWarning(int, org.jboss.dna.common.i18n.I18n, java.lang.String,
-     *      java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addWarning(int, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void addWarning( int code,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -308,13 +307,13 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addWarning(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addWarning(java.lang.Throwable, java.lang.String, java.lang.String ,
+     *      org.jboss.dna.common.i18n.I18n,java.lang.Object[])
      */
     public void addWarning( Throwable throwable,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         throw new UnsupportedOperationException();
     }
@@ -335,14 +334,14 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.Problems#addWarning(java.lang.Throwable, int, org.jboss.dna.common.i18n.I18n,
-     *      java.lang.String, java.lang.String, java.lang.Object[])
+     * @see org.jboss.dna.common.collection.Problems#addWarning(java.lang.Throwable, int, java.lang.String, java.lang.String,
+     *      org.jboss.dna.common.i18n.I18n,java.lang.Object[])
      */
     public void addWarning( Throwable throwable,
                             int code,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         throw new UnsupportedOperationException();
     }

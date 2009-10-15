@@ -72,10 +72,15 @@ public class RuleBasedOptimizer implements Optimizer {
         if (hints.hasJoin) {
             ruleStack.addFirst(ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM);
         }
+        ruleStack.addFirst(PushProjects.INSTANCE);
         if (hints.hasCriteria) {
             ruleStack.addFirst(PushSelectCriteria.INSTANCE);
         }
         ruleStack.addFirst(AddAccessNodes.INSTANCE);
         ruleStack.addFirst(RightOuterToLeftOuterJoins.INSTANCE);
+        ruleStack.addFirst(CopyCriteria.INSTANCE);
+        if (hints.hasView) {
+            ruleStack.addFirst(ReplaceViews.INSTANCE);
+        }
     }
 }

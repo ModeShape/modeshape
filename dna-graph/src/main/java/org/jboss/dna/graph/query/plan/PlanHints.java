@@ -28,19 +28,19 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public final class PlanHints {
 
-    // This flag indicates that the plan has a criteria somewhere
+    /** This flag indicates that the plan has a criteria somewhere */
     public boolean hasCriteria = false;
 
-    // This flag indicates that the plan has a join somewhere
+    /** This flag indicates that the plan has a join somewhere */
     public boolean hasJoin = false;
 
-    // This flag indicates that the plan has a sort somewhere
+    /** This flag indicates that the plan has a sort somewhere */
     public boolean hasSort = false;
 
     // List of groups to make dependent
     // public List makeDepGroups = null;
 
-    // flag indicates that the plan has a union somewhere
+    /** flag indicates that the plan has a union somewhere */
     public boolean hasSetQuery = false;
 
     // flag indicating that the plan has a grouping node somewhere
@@ -55,6 +55,9 @@ public final class PlanHints {
 
     public boolean hasFullTextSearch = false;
 
+    /** Flag indicates that the plan has at least one view somewhere */
+    public boolean hasView = false;
+
     public PlanHints() {
     }
 
@@ -62,6 +65,7 @@ public final class PlanHints {
     public String toString() {
         StringBuilder sb = new StringBuilder("PlanHints {");
         sb.append(" hasCriteria=").append(hasCriteria);
+        sb.append(", hasView=").append(hasView);
         sb.append(", hasJoin=").append(hasJoin);
         sb.append(", hasSort=").append(hasSort);
         sb.append(", hasSetQuery=").append(hasSetQuery);

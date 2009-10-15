@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.common.collection;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
@@ -56,5 +57,24 @@ public class SimpleProblems extends AbstractProblems {
     @Override
     protected List<Problem> getProblems() {
         return this.problems != null ? problems : EMPTY_PROBLEMS;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Problem> iter = getProblems().iterator();
+        if (iter.hasNext()) {
+            sb.append(iter.next());
+            while (iter.hasNext()) {
+                sb.append("\n");
+                sb.append(iter.next());
+            }
+        }
+        return sb.toString();
     }
 }

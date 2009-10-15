@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.query.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,6 +33,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * A set of common visitors that can be reused or extended, and methods that provide easy construction and calling of visitors.
@@ -51,7 +53,7 @@ public class Visitors {
      */
     public static <StrategyVisitor extends Visitor> StrategyVisitor visitAll( Visitable visitable,
                                                                               StrategyVisitor strategyVisitor ) {
-        visitable.accept(new WalkAllVisitor(strategyVisitor));
+        if (visitable != null) visitable.accept(new WalkAllVisitor(strategyVisitor));
         return strategyVisitor;
     }
 
@@ -66,7 +68,7 @@ public class Visitors {
      */
     public static <GeneralVisitor extends Visitor> GeneralVisitor visit( Visitable visitable,
                                                                          GeneralVisitor visitor ) {
-        visitable.accept(visitor);
+        if (visitable != null) visitable.accept(visitor);
         return visitor;
     }
 

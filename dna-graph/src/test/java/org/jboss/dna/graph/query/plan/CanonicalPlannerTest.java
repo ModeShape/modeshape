@@ -35,9 +35,6 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
-import org.jboss.dna.graph.query.plan.CanonicalPlanner;
-import org.jboss.dna.graph.query.plan.PlanHints;
-import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
@@ -68,7 +65,7 @@ public class CanonicalPlannerTest {
         hints = new PlanHints();
         builder = new QueryBuilder(context);
         problems = new SimpleProblems();
-        schemataBuilder = ImmutableSchemata.createBuilder();
+        schemataBuilder = ImmutableSchemata.createBuilder(context);
     }
 
     protected SelectorName selector( String name ) {

@@ -104,7 +104,7 @@ public abstract class AbstractProblemsTest {
     @Test
     public void shouldAddErrorByMessageAndResourceAndLocationAndParametersUsingDefaultCode() {
         error = new Problem(Status.ERROR, Problem.DEFAULT_CODE, message, new Object[] {"error msg"}, resource, location, null);
-        problems.addError(error.getMessage(), error.getResource(), error.getLocation(), error.getParameters());
+        problems.addError(error.getResource(), error.getLocation(), error.getMessage(), error.getParameters());
         assertThat(problems.iterator().next(), is(error));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -113,7 +113,7 @@ public abstract class AbstractProblemsTest {
     @Test
     public void shouldAddErrorByCodeAndMesssageAndResourceAndLocationAndParameters() {
         error = new Problem(Status.ERROR, 1, message, new Object[] {"error msg"}, resource, location, null);
-        problems.addError(error.getCode(), error.getMessage(), error.getResource(), error.getLocation(), error.getParameters());
+        problems.addError(error.getCode(), error.getResource(), error.getLocation(), error.getMessage(), error.getParameters());
         assertThat(problems.iterator().next(), is(error));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -124,9 +124,9 @@ public abstract class AbstractProblemsTest {
         error = new Problem(Status.ERROR, Problem.DEFAULT_CODE, message, new Object[] {"error msg"}, resource, location,
                             throwable);
         problems.addError(error.getThrowable(),
-                          error.getMessage(),
                           error.getResource(),
                           error.getLocation(),
+                          error.getMessage(),
                           error.getParameters());
         assertThat(problems.iterator().next(), is(error));
         assertThat(problems.isEmpty(), is(false));
@@ -138,9 +138,9 @@ public abstract class AbstractProblemsTest {
         error = new Problem(Status.ERROR, 1, message, new Object[] {"error msg"}, resource, location, throwable);
         problems.addError(error.getThrowable(),
                           error.getCode(),
-                          error.getMessage(),
                           error.getResource(),
                           error.getLocation(),
+                          error.getMessage(),
                           error.getParameters());
         assertThat(problems.iterator().next(), is(error));
         assertThat(problems.isEmpty(), is(false));
@@ -186,7 +186,7 @@ public abstract class AbstractProblemsTest {
     public void shouldAddWarningByMessageAndResourceAndLocationAndParametersUsingDefaultCode() {
         warning = new Problem(Status.WARNING, Problem.DEFAULT_CODE, message, new Object[] {"warning msg"}, resource, location,
                               null);
-        problems.addWarning(warning.getMessage(), warning.getResource(), warning.getLocation(), warning.getParameters());
+        problems.addWarning(warning.getResource(), warning.getLocation(), warning.getMessage(), warning.getParameters());
         assertThat(problems.iterator().next(), is(warning));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -196,9 +196,9 @@ public abstract class AbstractProblemsTest {
     public void shouldAddWarningByCodeAndMesssageAndResourceAndLocationAndParameters() {
         warning = new Problem(Status.WARNING, 1, message, new Object[] {"warning msg"}, resource, location, null);
         problems.addWarning(warning.getCode(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         assertThat(problems.iterator().next(), is(warning));
         assertThat(problems.isEmpty(), is(false));
@@ -210,9 +210,9 @@ public abstract class AbstractProblemsTest {
         warning = new Problem(Status.WARNING, Problem.DEFAULT_CODE, message, new Object[] {"warning msg"}, resource, location,
                               throwable);
         problems.addWarning(warning.getThrowable(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         assertThat(problems.iterator().next(), is(warning));
         assertThat(problems.isEmpty(), is(false));
@@ -224,9 +224,9 @@ public abstract class AbstractProblemsTest {
         warning = new Problem(Status.WARNING, 1, message, new Object[] {"warning msg"}, resource, location, throwable);
         problems.addWarning(warning.getThrowable(),
                             warning.getCode(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         assertThat(problems.iterator().next(), is(warning));
         assertThat(problems.isEmpty(), is(false));
@@ -271,7 +271,7 @@ public abstract class AbstractProblemsTest {
     @Test
     public void shouldAddInfoByMessageAndResourceAndLocationAndParametersUsingDefaultCode() {
         info = new Problem(Status.INFO, Problem.DEFAULT_CODE, message, new Object[] {"info msg"}, resource, location, null);
-        problems.addInfo(info.getMessage(), info.getResource(), info.getLocation(), info.getParameters());
+        problems.addInfo(info.getResource(), info.getLocation(), info.getMessage(), info.getParameters());
         assertThat(problems.iterator().next(), is(info));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -280,7 +280,7 @@ public abstract class AbstractProblemsTest {
     @Test
     public void shouldAddInfoByCodeAndMesssageAndResourceAndLocationAndParameters() {
         info = new Problem(Status.INFO, 1, message, new Object[] {"info msg"}, resource, location, null);
-        problems.addInfo(info.getCode(), info.getMessage(), info.getResource(), info.getLocation(), info.getParameters());
+        problems.addInfo(info.getCode(), info.getResource(), info.getLocation(), info.getMessage(), info.getParameters());
         assertThat(problems.iterator().next(), is(info));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -289,7 +289,7 @@ public abstract class AbstractProblemsTest {
     @Test
     public void shouldAddInfoByThrowableAndMessageAndResourceAndLocationAndParametersUsingDefaultCode() {
         info = new Problem(Status.INFO, Problem.DEFAULT_CODE, message, new Object[] {"info msg"}, resource, location, throwable);
-        problems.addInfo(info.getThrowable(), info.getMessage(), info.getResource(), info.getLocation(), info.getParameters());
+        problems.addInfo(info.getThrowable(), info.getResource(), info.getLocation(), info.getMessage(), info.getParameters());
         assertThat(problems.iterator().next(), is(info));
         assertThat(problems.isEmpty(), is(false));
         assertThat(problems.size(), is(1));
@@ -300,9 +300,9 @@ public abstract class AbstractProblemsTest {
         info = new Problem(Status.INFO, 1, message, new Object[] {"info msg"}, resource, location, throwable);
         problems.addInfo(info.getThrowable(),
                          info.getCode(),
-                         info.getMessage(),
                          info.getResource(),
                          info.getLocation(),
+                         info.getMessage(),
                          info.getParameters());
         assertThat(problems.iterator().next(), is(info));
         assertThat(problems.isEmpty(), is(false));
@@ -318,9 +318,9 @@ public abstract class AbstractProblemsTest {
         assertThat(problems.size(), is(0));
         problems.addWarning(warning.getThrowable(),
                             warning.getCode(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         assertThat(problems.hasErrors(), is(false));
         assertThat(problems.hasWarnings(), is(true));
@@ -329,9 +329,9 @@ public abstract class AbstractProblemsTest {
         assertThat(problems.size(), is(1));
         problems.addError(error.getThrowable(),
                           error.getCode(),
-                          error.getMessage(),
                           error.getResource(),
                           error.getLocation(),
+                          error.getMessage(),
                           error.getParameters());
         assertThat(problems.hasErrors(), is(true));
         assertThat(problems.hasWarnings(), is(true));
@@ -340,9 +340,9 @@ public abstract class AbstractProblemsTest {
         assertThat(problems.size(), is(2));
         problems.addInfo(info.getThrowable(),
                          info.getCode(),
-                         info.getMessage(),
                          info.getResource(),
                          info.getLocation(),
+                         info.getMessage(),
                          info.getParameters());
         assertThat(problems.hasErrors(), is(true));
         assertThat(problems.hasWarnings(), is(true));
@@ -351,27 +351,27 @@ public abstract class AbstractProblemsTest {
         assertThat(problems.size(), is(3));
         problems.addWarning(warning.getThrowable(),
                             warning.getCode(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         problems.addError(error.getThrowable(),
                           error.getCode(),
-                          error.getMessage(),
                           error.getResource(),
                           error.getLocation(),
+                          error.getMessage(),
                           error.getParameters());
         problems.addWarning(warning.getThrowable(),
                             warning.getCode(),
-                            warning.getMessage(),
                             warning.getResource(),
                             warning.getLocation(),
+                            warning.getMessage(),
                             warning.getParameters());
         problems.addError(error.getThrowable(),
                           error.getCode(),
-                          error.getMessage(),
                           error.getResource(),
                           error.getLocation(),
+                          error.getMessage(),
                           error.getParameters());
         assertThat(problems.hasErrors(), is(true));
         assertThat(problems.hasWarnings(), is(true));

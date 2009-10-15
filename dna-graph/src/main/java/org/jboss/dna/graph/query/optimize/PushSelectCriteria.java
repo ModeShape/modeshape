@@ -64,9 +64,9 @@ import org.jboss.dna.graph.query.plan.PlanNode.Type;
  * <pre>
  *          ...
  *           |
- *        PROJECT      with the list of columns being SELECTed
- *           |
  *        ACCESS
+ *           |
+ *        PROJECT      with the list of columns being SELECTed
  *           |
  *        SELECT1
  *           |         One or more SELECT plan nodes that each have
@@ -104,6 +104,9 @@ import org.jboss.dna.graph.query.plan.PlanNode.Type;
  *   ACCESS     ACCESS
  *    ('s1')    ('s2')
  *     |           |
+ *   PROJECT    PROJECT
+ *    ('s1')    ('s2')
+ *     |           |
  *   SOURCE     SOURCE
  *    ('s1')    ('s2')
  * </pre>
@@ -123,6 +126,9 @@ import org.jboss.dna.graph.query.plan.PlanNode.Type;
  *   ACCESS     ACCESS
  *   ('s1')     ('s2')
  *     |           |
+ *  PROJECT     PROJECT
+ *   ('s1')     ('s2')
+ *     |           |
  *  SELECT1     SELECT2
  *   ('s1')     ('s2')
  *     |           |
@@ -133,6 +139,9 @@ import org.jboss.dna.graph.query.plan.PlanNode.Type;
  *   ('s1')
  * </pre>
  * 
+ * </p>
+ * <p>
+ * Also, any SELECT that applies to one side of an equi-join will be applied to <i>both</i> sides of the JOIN.
  * </p>
  */
 @Immutable

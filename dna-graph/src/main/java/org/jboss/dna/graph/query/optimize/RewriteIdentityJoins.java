@@ -24,46 +24,17 @@
 package org.jboss.dna.graph.query.optimize;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
-import org.jboss.dna.graph.query.model.And;
-import org.jboss.dna.graph.query.model.ChildNode;
-import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
-import org.jboss.dna.graph.query.model.Column;
-import org.jboss.dna.graph.query.model.Comparison;
-import org.jboss.dna.graph.query.model.Constraint;
-import org.jboss.dna.graph.query.model.DescendantNode;
-import org.jboss.dna.graph.query.model.DescendantNodeJoinCondition;
-import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
-import org.jboss.dna.graph.query.model.FullTextSearch;
-import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.JoinCondition;
-import org.jboss.dna.graph.query.model.Length;
-import org.jboss.dna.graph.query.model.LowerCase;
-import org.jboss.dna.graph.query.model.NodeDepth;
-import org.jboss.dna.graph.query.model.NodeLocalName;
-import org.jboss.dna.graph.query.model.NodeName;
-import org.jboss.dna.graph.query.model.NodePath;
-import org.jboss.dna.graph.query.model.Not;
-import org.jboss.dna.graph.query.model.Or;
-import org.jboss.dna.graph.query.model.Ordering;
-import org.jboss.dna.graph.query.model.PropertyExistence;
-import org.jboss.dna.graph.query.model.PropertyValue;
-import org.jboss.dna.graph.query.model.SameNode;
-import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
-import org.jboss.dna.graph.query.model.StaticOperand;
-import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.plan.PlanNode;
+import org.jboss.dna.graph.query.plan.PlanUtil;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import org.jboss.dna.graph.query.validate.Schemata;
@@ -170,7 +141,7 @@ public class RewriteIdentityJoins implements OptimizerRule {
             ruleStack.addFirst(this);
 
             // Now rewrite the various portions of the plan that make use of the now-removed selectors ...
-            replaceReferencesToRemovedSource(context, plan, rewrittenSelectors);
+            PlanUtil.replaceReferencesToRemovedSource(context, plan, rewrittenSelectors);
         } else {
             // There are no-untouched JOIN nodes, which means the sole JOIN node was rewritten as a single SOURCE node
             assert plan.findAllAtOrBelow(Type.JOIN).isEmpty();
@@ -204,255 +175,6 @@ public class RewriteIdentityJoins implements OptimizerRule {
             if (rightTableName != null) rewrittenSelectors.put(rightTableName, leftTableName);
             if (rightTableAlias != null) rewrittenSelectors.put(rightTableAlias, leftTableName);
         }
-    }
-
-    protected void replaceReferencesToRemovedSource( QueryContext context,
-                                                     PlanNode planNode,
-                                                     Map<SelectorName, SelectorName> rewrittenSelectors ) {
-        switch (planNode.getType()) {
-            case PROJECT:
-                List<Column> columns = planNode.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
-                for (int i = 0; i != columns.size(); ++i) {
-                    Column column = columns.get(i);
-                    SelectorName replacement = rewrittenSelectors.get(column.getSelectorName());
-                    if (replacement != null) {
-                        columns.set(i, new Column(replacement, column.getPropertyName(), column.getColumnName()));
-                    }
-                }
-                break;
-            case SELECT:
-                Constraint constraint = planNode.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-                Constraint newConstraint = replaceReferencesToRemovedSource(context, constraint, rewrittenSelectors);
-                if (constraint != newConstraint) {
-                    planNode.setProperty(Property.SELECT_CRITERIA, newConstraint);
-                }
-                break;
-            case SORT:
-                List<Object> orderBys = planNode.getPropertyAsList(Property.SORT_ORDER_BY, Object.class);
-                if (orderBys != null && !orderBys.isEmpty()) {
-                    if (orderBys.get(0) instanceof SelectorName) {
-                        for (int i = 0; i != orderBys.size(); ++i) {
-                            SelectorName selectorName = (SelectorName)orderBys.get(i);
-                            SelectorName replacement = rewrittenSelectors.get(selectorName);
-                            if (replacement != null) {
-                                orderBys.set(i, replacement);
-                            }
-                        }
-                    } else {
-                        for (int i = 0; i != orderBys.size(); ++i) {
-                            Ordering ordering = (Ordering)orderBys.get(i);
-                            DynamicOperand operand = ordering.getOperand();
-                            orderBys.set(i, replaceReferencesToRemovedSource(context, operand, rewrittenSelectors));
-                        }
-                    }
-                }
-                break;
-            case JOIN:
-                // Update the join condition ...
-                JoinCondition joinCondition = planNode.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
-                JoinCondition newCondition = replaceReferencesToRemovedSource(context, joinCondition, rewrittenSelectors);
-                if (joinCondition != newCondition) {
-                    planNode.setProperty(Property.JOIN_CONDITION, newCondition);
-                }
-
-                // Update the join criteria (if there are some) ...
-                List<Constraint> constraints = planNode.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
-                if (constraints != null && !constraints.isEmpty()) {
-                    for (int i = 0; i != constraints.size(); ++i) {
-                        Constraint old = constraints.get(i);
-                        Constraint replacement = replaceReferencesToRemovedSource(context, old, rewrittenSelectors);
-                        if (replacement != old) {
-                            constraints.set(i, replacement);
-                        }
-                    }
-                }
-                break;
-            case GROUP:
-            case SET_OPERATION:
-            case DUP_REMOVE:
-            case LIMIT:
-            case NULL:
-            case SOURCE:
-            case ACCESS:
-                // None of these have to be changed ...
-                break;
-        }
-
-        // Update the selectors referenced by the node ...
-        Set<SelectorName> selectorsToAdd = null;
-        for (Iterator<SelectorName> iter = planNode.getSelectors().iterator(); iter.hasNext();) {
-            SelectorName replacement = rewrittenSelectors.get(iter.next());
-            if (replacement != null) {
-                iter.remove();
-                if (selectorsToAdd == null) selectorsToAdd = new HashSet<SelectorName>();
-                selectorsToAdd.add(replacement);
-            }
-        }
-        if (selectorsToAdd != null) planNode.getSelectors().addAll(selectorsToAdd);
-
-        // Now call recursively on the children ...
-        for (PlanNode child : planNode) {
-            replaceReferencesToRemovedSource(context, child, rewrittenSelectors);
-        }
-    }
-
-    protected DynamicOperand replaceReferencesToRemovedSource( QueryContext context,
-                                                               DynamicOperand operand,
-                                                               Map<SelectorName, SelectorName> rewrittenSelectors ) {
-        if (operand instanceof FullTextSearchScore) {
-            FullTextSearchScore score = (FullTextSearchScore)operand;
-            SelectorName replacement = rewrittenSelectors.get(score.getSelectorName());
-            if (replacement == null) return score;
-            return new FullTextSearchScore(replacement);
-        }
-        if (operand instanceof Length) {
-            Length operation = (Length)operand;
-            PropertyValue wrapped = operation.getPropertyValue();
-            SelectorName replacement = rewrittenSelectors.get(wrapped.getSelectorName());
-            if (replacement == null) return operand;
-            return new Length(new PropertyValue(replacement, wrapped.getPropertyName()));
-        }
-        if (operand instanceof LowerCase) {
-            LowerCase operation = (LowerCase)operand;
-            SelectorName replacement = rewrittenSelectors.get(operation.getSelectorName());
-            if (replacement == null) return operand;
-            return new LowerCase(replaceReferencesToRemovedSource(context, operand, rewrittenSelectors));
-        }
-        if (operand instanceof UpperCase) {
-            UpperCase operation = (UpperCase)operand;
-            SelectorName replacement = rewrittenSelectors.get(operation.getSelectorName());
-            if (replacement == null) return operand;
-            return new UpperCase(replaceReferencesToRemovedSource(context, operand, rewrittenSelectors));
-        }
-        if (operand instanceof NodeName) {
-            NodeName name = (NodeName)operand;
-            SelectorName replacement = rewrittenSelectors.get(name.getSelectorName());
-            if (replacement == null) return name;
-            return new NodeName(replacement);
-        }
-        if (operand instanceof NodeLocalName) {
-            NodeLocalName name = (NodeLocalName)operand;
-            SelectorName replacement = rewrittenSelectors.get(name.getSelectorName());
-            if (replacement == null) return name;
-            return new NodeLocalName(replacement);
-        }
-        if (operand instanceof PropertyValue) {
-            PropertyValue value = (PropertyValue)operand;
-            SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
-            if (replacement == null) return operand;
-            return new PropertyValue(replacement, value.getPropertyName());
-        }
-        if (operand instanceof NodeDepth) {
-            NodeDepth depth = (NodeDepth)operand;
-            SelectorName replacement = rewrittenSelectors.get(depth.getSelectorName());
-            if (replacement == null) return operand;
-            return new NodeDepth(replacement);
-        }
-        if (operand instanceof NodePath) {
-            NodePath path = (NodePath)operand;
-            SelectorName replacement = rewrittenSelectors.get(path.getSelectorName());
-            if (replacement == null) return operand;
-            return new NodePath(replacement);
-        }
-        return operand;
-    }
-
-    protected Constraint replaceReferencesToRemovedSource( QueryContext context,
-                                                           Constraint constraint,
-                                                           Map<SelectorName, SelectorName> rewrittenSelectors ) {
-        if (constraint instanceof And) {
-            And and = (And)constraint;
-            Constraint left = replaceReferencesToRemovedSource(context, and.getLeft(), rewrittenSelectors);
-            Constraint right = replaceReferencesToRemovedSource(context, and.getRight(), rewrittenSelectors);
-            if (left == and.getLeft() && right == and.getRight()) return and;
-            return new And(left, right);
-        }
-        if (constraint instanceof Or) {
-            Or or = (Or)constraint;
-            Constraint left = replaceReferencesToRemovedSource(context, or.getLeft(), rewrittenSelectors);
-            Constraint right = replaceReferencesToRemovedSource(context, or.getRight(), rewrittenSelectors);
-            if (left == or.getLeft() && right == or.getRight()) return or;
-            return new Or(left, right);
-        }
-        if (constraint instanceof Not) {
-            Not not = (Not)constraint;
-            Constraint wrapped = replaceReferencesToRemovedSource(context, not.getConstraint(), rewrittenSelectors);
-            if (wrapped == not.getConstraint()) return not;
-            return new Not(wrapped);
-        }
-        if (constraint instanceof SameNode) {
-            SameNode sameNode = (SameNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(sameNode.getSelectorName());
-            if (replacement == null) return sameNode;
-            return new SameNode(replacement, sameNode.getPath());
-        }
-        if (constraint instanceof ChildNode) {
-            ChildNode childNode = (ChildNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(childNode.getSelectorName());
-            if (replacement == null) return childNode;
-            return new ChildNode(replacement, childNode.getParentPath());
-        }
-        if (constraint instanceof DescendantNode) {
-            DescendantNode descendantNode = (DescendantNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(descendantNode.getSelectorName());
-            if (replacement == null) return descendantNode;
-            return new DescendantNode(replacement, descendantNode.getAncestorPath());
-        }
-        if (constraint instanceof PropertyExistence) {
-            PropertyExistence existence = (PropertyExistence)constraint;
-            SelectorName replacement = rewrittenSelectors.get(existence.getSelectorName());
-            if (replacement == null) return existence;
-            return new PropertyExistence(replacement, existence.getPropertyName());
-        }
-        if (constraint instanceof FullTextSearch) {
-            FullTextSearch search = (FullTextSearch)constraint;
-            SelectorName replacement = rewrittenSelectors.get(search.getSelectorName());
-            if (replacement == null) return search;
-            return new PropertyExistence(replacement, search.getPropertyName());
-        }
-        if (constraint instanceof Comparison) {
-            Comparison comparison = (Comparison)constraint;
-            DynamicOperand lhs = comparison.getOperand1();
-            StaticOperand rhs = comparison.getOperand2(); // Current only a literal; therefore, no reference to selector
-            DynamicOperand newLhs = replaceReferencesToRemovedSource(context, lhs, rewrittenSelectors);
-            if (lhs == newLhs) return comparison;
-            return new Comparison(newLhs, comparison.getOperator(), rhs);
-        }
-        return constraint;
-    }
-
-    protected JoinCondition replaceReferencesToRemovedSource( QueryContext context,
-                                                              JoinCondition joinCondition,
-                                                              Map<SelectorName, SelectorName> rewrittenSelectors ) {
-        if (joinCondition instanceof EquiJoinCondition) {
-            EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
-            SelectorName replacement1 = rewrittenSelectors.get(condition.getSelector1Name());
-            SelectorName replacement2 = rewrittenSelectors.get(condition.getSelector2Name());
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
-            return new EquiJoinCondition(replacement1, condition.getProperty1Name(), replacement2, condition.getProperty2Name());
-        }
-        if (joinCondition instanceof SameNodeJoinCondition) {
-            SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
-            SelectorName replacement1 = rewrittenSelectors.get(condition.getSelector1Name());
-            SelectorName replacement2 = rewrittenSelectors.get(condition.getSelector2Name());
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
-            return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
-        }
-        if (joinCondition instanceof ChildNodeJoinCondition) {
-            ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
-            SelectorName childSelector = rewrittenSelectors.get(condition.getChildSelectorName());
-            SelectorName parentSelector = rewrittenSelectors.get(condition.getParentSelectorName());
-            if (childSelector == condition.getChildSelectorName() && parentSelector == condition.getParentSelectorName()) return condition;
-            return new ChildNodeJoinCondition(parentSelector, childSelector);
-        }
-        if (joinCondition instanceof DescendantNodeJoinCondition) {
-            DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
-            SelectorName ancestor = rewrittenSelectors.get(condition.getAncestorSelectorName());
-            SelectorName descendant = rewrittenSelectors.get(condition.getDescendantSelectorName());
-            if (ancestor == condition.getAncestorSelectorName() && descendant == condition.getDescendantSelectorName()) return condition;
-            return new ChildNodeJoinCondition(ancestor, descendant);
-        }
-        return joinCondition;
     }
 
     /**

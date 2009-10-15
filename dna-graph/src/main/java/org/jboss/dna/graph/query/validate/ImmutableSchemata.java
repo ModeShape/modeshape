@@ -32,10 +32,23 @@ import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.query.QueryContext;
+import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.Visitors;
+import org.jboss.dna.graph.query.parse.InvalidQueryException;
+import org.jboss.dna.graph.query.parse.SqlQueryParser;
+import org.jboss.dna.graph.query.plan.CanonicalPlanner;
+import org.jboss.dna.graph.query.plan.PlanHints;
+import org.jboss.dna.graph.query.plan.PlanNode;
+import org.jboss.dna.graph.query.plan.PlanNode.Property;
+import org.jboss.dna.graph.query.plan.PlanNode.Type;
 
 /**
  * An immutable {@link Schemata} implementation.
@@ -46,10 +59,13 @@ public class ImmutableSchemata implements Schemata {
     /**
      * Obtain a new instance for building Schemata objects.
      * 
+     * @param context the execution context that can be used when building the schema
      * @return the new builder; never null
+     * @throws IllegalArgumentException if the context is null
      */
-    public static Builder createBuilder() {
-        return new Builder();
+    public static Builder createBuilder( ExecutionContext context ) {
+        CheckArg.isNotNull(context, "context");
+        return new Builder(context);
     }
 
     /**
@@ -58,7 +74,13 @@ public class ImmutableSchemata implements Schemata {
     @NotThreadSafe
     public static class Builder {
 
-        private Map<SelectorName, ImmutableTable> tables = new HashMap<SelectorName, ImmutableTable>();
+        private final ExecutionContext context;
+        private final Map<SelectorName, ImmutableTable> tables = new HashMap<SelectorName, ImmutableTable>();
+        private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
+
+        protected Builder( ExecutionContext context ) {
+            this.context = context;
+        }
 
         /**
          * Add a table with the supplied name and column names. Each column will be given a type of {@link PropertyType#STRING}.
@@ -254,6 +276,43 @@ public class ImmutableSchemata implements Schemata {
         }
 
         /**
+         * Add a view with the supplied name and SQL string definition. The column names and types will be inferred from the
+         * source table(s) and views(s) used in the definition.
+         * 
+         * @param name the name of the new view
+         * @param definition the SQL definition of the view
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the view name is null or empty or the definition is null
+         * @throws ParsingException if the supplied definition is cannot be parsed as a SQL query
+         */
+        public Builder addView( String name,
+                                String definition ) {
+            CheckArg.isNotEmpty(name, "name");
+            CheckArg.isNotEmpty(definition, "definition");
+            SqlQueryParser parser = new SqlQueryParser();
+            QueryCommand command = parser.parseQuery(definition, context);
+            this.viewDefinitions.put(new SelectorName(name), command);
+            return this;
+        }
+
+        /**
+         * Add a view with the supplied name and definition. The column names and types will be inferred from the source table(s)
+         * used in the definition.
+         * 
+         * @param name the name of the new view
+         * @param definition the definition of the view
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the view name is null or empty or the definition is null
+         */
+        public Builder addView( String name,
+                                QueryCommand definition ) {
+            CheckArg.isNotEmpty(name, "name");
+            CheckArg.isNotNull(definition, "definition");
+            this.viewDefinitions.put(new SelectorName(name), definition);
+            return this;
+        }
+
+        /**
          * Add a column with the supplied name and type to the named table. Any existing column with that name will be replaced
          * with the new column. If the table does not yet exist, it will be added.
          * 
@@ -320,9 +379,70 @@ public class ImmutableSchemata implements Schemata {
          * tables (with their columns) as they exist at the moment this method is called.
          * 
          * @return the new Schemata; never null
+         * @throws InvalidQueryException if any of the view definitions is invalid and cannot be resolved
          */
         public Schemata build() {
-            return new ImmutableSchemata(new HashMap<SelectorName, Table>(tables));
+            ImmutableSchemata schemata = new ImmutableSchemata(new HashMap<SelectorName, Table>(tables));
+
+            // Make a copy of the view definitions, and create the views ...
+            Map<SelectorName, QueryCommand> definitions = new HashMap<SelectorName, QueryCommand>(viewDefinitions);
+            ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+            boolean added = false;
+            do {
+                added = false;
+                Set<SelectorName> viewNames = new HashSet<SelectorName>(definitions.keySet());
+                for (SelectorName name : viewNames) {
+                    QueryCommand command = definitions.get(name);
+                    // Create the canonical plan for the definition ...
+                    QueryContext queryContext = new QueryContext(context, new PlanHints(), schemata);
+                    CanonicalPlanner planner = new CanonicalPlanner();
+                    PlanNode plan = planner.createPlan(queryContext, command);
+                    if (queryContext.getProblems().hasErrors()) continue;
+
+                    // Get the columns from the top-level PROJECT ...
+                    PlanNode project = plan.findAtOrBelow(Type.PROJECT);
+                    assert project != null;
+                    List<org.jboss.dna.graph.query.model.Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS,
+                                                                                                     org.jboss.dna.graph.query.model.Column.class);
+                    assert !columns.isEmpty();
+
+                    // Go through all the columns and look up the types ...
+                    List<Column> viewColumns = new ArrayList<Column>(columns.size());
+                    for (org.jboss.dna.graph.query.model.Column column : columns) {
+                        // Find the table that the column came from ...
+                        Table source = schemata.getTable(column.getSelectorName());
+                        if (source == null) break;
+                        String viewColumnName = column.getColumnName();
+                        String sourceColumnName = stringFactory.create(column.getPropertyName()); // getColumnName() returns alias
+                        Column sourceColumn = source.getColumn(sourceColumnName);
+                        if (sourceColumn == null) {
+                            throw new InvalidQueryException(Visitors.readable(command),
+                                                            "The view references a non-existant column '"
+                                                            + column.getColumnName() + "' in '" + source.getName() + "'");
+                        }
+                        viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType()));
+                    }
+                    if (viewColumns.size() != columns.size()) {
+                        // We weren't able to resolve all of the columns,
+                        // so maybe the columns were referencing yet-to-be-built views ...
+                        continue;
+                    }
+
+                    // If we could resolve the definition ...
+                    ImmutableView view = new ImmutableView(name, viewColumns, command);
+                    definitions.remove(name);
+                    schemata = schemata.with(view);
+                    added = true;
+                }
+            } while (added && !definitions.isEmpty());
+
+            if (!definitions.isEmpty()) {
+                QueryCommand command = definitions.values().iterator().next();
+                throw new InvalidQueryException(Visitors.readable(command), "The view definition cannot be resolved: "
+                                                                            + Visitors.readable(command));
+            }
+
+            return schemata;
         }
     }
 

@@ -187,6 +187,14 @@ class ImmutableTable implements Table {
         return new ImmutableTable(getName(), newColumns);
     }
 
+    public ImmutableTable withColumns( Iterable<Column> columns ) {
+        List<Column> newColumns = new LinkedList<Column>(this.getColumns());
+        for (Column column : columns) {
+            newColumns.add(new ImmutableColumn(column.getName(), column.getPropertyType()));
+        }
+        return new ImmutableTable(getName(), newColumns);
+    }
+
     public ImmutableTable with( SelectorName name ) {
         return new ImmutableTable(name, columnsByName, columns, keys);
     }

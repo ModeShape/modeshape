@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,14 @@ public abstract class AbstractQueryTest {
         }
     }
 
+    protected void assertSameChildren( PlanNode node,
+                                       PlanNode... children ) {
+        assertThat(node.getChildCount(), is(children.length));
+        for (int i = 0; i != node.getChildCount(); ++i) {
+            assertThat(node.getChild(i).isSameAs(children[i]), is(true));
+        }
+    }
+
     protected void assertSelectors( PlanNode node,
                                     String... selectors ) {
         Set<SelectorName> selectorSet = new HashSet<SelectorName>();
@@ -58,6 +67,19 @@ public abstract class AbstractQueryTest {
             selectorSet.add(new SelectorName(selectorName));
         }
         assertThat("Selectors don't match", node.getSelectors(), is(selectorSet));
+    }
+
+    protected void assertProperty( PlanNode node,
+                                   Property name,
+                                   Object value ) {
+        assertThat("Property value doesn't match", node.getProperty(name), is(value));
+    }
+
+    protected <T> void assertPropertyIsList( PlanNode node,
+                                             Property name,
+                                             Class<T> valueType,
+                                             T... values ) {
+        assertThat("Property value doesn't match", node.getPropertyAsList(name, valueType), is(Arrays.asList(values)));
     }
 
     protected void assertSortOrderBy( PlanNode sortNode,

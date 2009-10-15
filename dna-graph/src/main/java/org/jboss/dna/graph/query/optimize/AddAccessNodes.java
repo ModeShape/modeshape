@@ -32,8 +32,8 @@ import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 
 /**
- * An {@link OptimizerRule optimizer rule} that inserts an ACCESS above each SOURCE node in a query plan. This rule is often the
- * first rule to run against a {@link CanonicalPlanner canonical plan} (see
+ * An {@link OptimizerRule optimizer rule} that inserts an ACCESS above each SOURCE leaf node in a query plan. This rule is often
+ * the first rule to run against a {@link CanonicalPlanner canonical plan} (see
  * {@link RuleBasedOptimizer#populateRuleStack(LinkedList, PlanHints)}.
  * <p>
  * Before:
@@ -72,7 +72,7 @@ public class AddAccessNodes implements OptimizerRule {
                              LinkedList<OptimizerRule> ruleStack ) {
         // On each of the source nodes ...
         for (PlanNode source : plan.findAllAtOrBelow(Type.SOURCE)) {
-            // The source node should have no children ...
+            // The source node may have children if it is a view ...
             if (source.getChildCount() != 0) continue;
 
             // Create the ACCESS node, set the selectors, and insert above the source node ...

@@ -56,14 +56,14 @@ public interface Problems extends Iterable<Problem> {
      * Add an error message with a description of the resource, its location, and the parameters that should be used when
      * localizing the message
      * 
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
-    void addError( I18n message,
-                   String resource,
+    void addError( String resource,
                    String location,
+                   I18n message,
                    Object... params );
 
     /**
@@ -71,15 +71,15 @@ public interface Problems extends Iterable<Problem> {
      * when localizing the message
      * 
      * @param throwable the exception that represents the error; may be null
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addError( Throwable throwable,
-                   I18n message,
                    String resource,
                    String location,
+                   I18n message,
                    Object... params );
 
     /**
@@ -111,15 +111,15 @@ public interface Problems extends Iterable<Problem> {
      * localizing the message
      * 
      * @param code the error code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addError( int code,
-                   I18n message,
                    String resource,
                    String location,
+                   I18n message,
                    Object... params );
 
     /**
@@ -128,16 +128,16 @@ public interface Problems extends Iterable<Problem> {
      * 
      * @param throwable the exception that represents the error; may be null
      * @param code the error code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addError( Throwable throwable,
                    int code,
-                   I18n message,
                    String resource,
                    String location,
+                   I18n message,
                    Object... params );
 
     /**
@@ -164,14 +164,14 @@ public interface Problems extends Iterable<Problem> {
      * Add a warning message with a description of the resource, its location, and the parameters that should be used when
      * localizing the message
      * 
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
-    void addWarning( I18n message,
-                     String resource,
+    void addWarning( String resource,
                      String location,
+                     I18n message,
                      Object... params );
 
     /**
@@ -179,15 +179,15 @@ public interface Problems extends Iterable<Problem> {
      * used when localizing the message
      * 
      * @param throwable the exception that represents the warning; may be null
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addWarning( Throwable throwable,
-                     I18n message,
                      String resource,
                      String location,
+                     I18n message,
                      Object... params );
 
     /**
@@ -219,15 +219,15 @@ public interface Problems extends Iterable<Problem> {
      * localizing the message
      * 
      * @param code the problem code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addWarning( int code,
-                     I18n message,
                      String resource,
                      String location,
+                     I18n message,
                      Object... params );
 
     /**
@@ -236,16 +236,16 @@ public interface Problems extends Iterable<Problem> {
      * 
      * @param throwable the exception that represents the warning; may be null
      * @param code the problem code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addWarning( Throwable throwable,
                      int code,
-                     I18n message,
                      String resource,
                      String location,
+                     I18n message,
                      Object... params );
 
     /**
@@ -272,14 +272,14 @@ public interface Problems extends Iterable<Problem> {
      * Add an informational message with a description of the resource, its location, and the parameters that should be used when
      * localizing the message
      * 
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
-    void addInfo( I18n message,
-                  String resource,
+    void addInfo( String resource,
                   String location,
+                  I18n message,
                   Object... params );
 
     /**
@@ -287,15 +287,15 @@ public interface Problems extends Iterable<Problem> {
      * be used when localizing the message
      * 
      * @param throwable the exception that represents the problem; may be null
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addInfo( Throwable throwable,
-                  I18n message,
                   String resource,
                   String location,
+                  I18n message,
                   Object... params );
 
     /**
@@ -327,15 +327,15 @@ public interface Problems extends Iterable<Problem> {
      * localizing the message
      * 
      * @param code the problem code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addInfo( int code,
-                  I18n message,
                   String resource,
                   String location,
+                  I18n message,
                   Object... params );
 
     /**
@@ -344,16 +344,16 @@ public interface Problems extends Iterable<Problem> {
      * 
      * @param throwable the exception that represents the problem; may be null
      * @param code the problem code
-     * @param message the internationalized message describing the problem
      * @param resource the description of the resource; may be null
      * @param location the location of the resource; may be null
+     * @param message the internationalized message describing the problem
      * @param params the values for the parameters in the message
      */
     void addInfo( Throwable throwable,
                   int code,
-                  I18n message,
                   String resource,
                   String location,
+                  I18n message,
                   Object... params );
 
     /**

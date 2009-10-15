@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
@@ -53,6 +54,7 @@ import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.query.validate.Schemata.Table;
+import org.jboss.dna.graph.query.validate.Schemata.View;
 
 /**
  * The planner that produces a canonical query plan given a {@link QueryCommand query command}.
@@ -85,7 +87,7 @@ import org.jboss.dna.graph.query.validate.Schemata.Table;
  * from the top node of the plan.
  * </p>
  * <p>
- * This canonical plan, however, is optimized and rearranged so that it performs faster.
+ * This canonical plan, however, is later optimized and rearranged so that it performs faster.
  * </p>
  */
 public class CanonicalPlanner implements Planner {
@@ -190,14 +192,15 @@ public class CanonicalPlanner implements Planner {
             }
             // Validate the source name and set the available columns ...
             Table table = context.getSchemata().getTable(selector.getName());
-            if (table == null) {
-                context.getProblems().addError(GraphI18n.tableDoesNotExist,
-                                               selector.getName().getString(context.getExecutionContext()));
-            } else {
+            if (table != null) {
+                if (table instanceof View) context.getHints().hasView = true;
                 if (usedSelectors.put(selector.getAliasOrName(), table) != null) {
                     // There was already a table with this alias or name ...
                 }
                 node.setProperty(Property.SOURCE_COLUMNS, table.getColumns());
+            } else {
+                context.getProblems().addError(GraphI18n.tableDoesNotExist,
+                                               selector.getName().getString(context.getExecutionContext()));
             }
             return node;
         }
@@ -217,7 +220,8 @@ public class CanonicalPlanner implements Planner {
             // Handle each child
             Source[] clauses = new Source[] {join.getLeft(), join.getRight()};
             for (int i = 0; i < 2; i++) {
-                node.addLastChild(createPlanNode(context, clauses[i], usedSelectors));
+                PlanNode sourceNode = createPlanNode(context, clauses[i], usedSelectors);
+                node.addLastChild(sourceNode);
 
                 // Add selectors to the joinNode
                 for (PlanNode child : node.getChildren()) {
@@ -269,6 +273,7 @@ public class CanonicalPlanner implements Planner {
                 }
             });
 
+            criteriaNode.addFirstChild(plan);
             plan = criteriaNode;
         }
         return plan;
@@ -379,6 +384,7 @@ public class CanonicalPlanner implements Planner {
             }
         } else {
             // Add the selector used by each column ...
+            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
             for (Column column : columns) {
                 SelectorName tableName = column.getSelectorName();
                 // Add the selector that is being used ...
@@ -391,9 +397,11 @@ public class CanonicalPlanner implements Planner {
                                                    tableName.getString(context.getExecutionContext()));
                 } else {
                     // Make sure that the column is in the table ...
-                    if (table.getColumn(column.getColumnName()) == null) {
+                    Name columnName = column.getPropertyName();
+                    String name = stringFactory.create(columnName);
+                    if (table.getColumn(name) == null) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable,
-                                                       column.getColumnName(),
+                                                       name,
                                                        tableName.getString(context.getExecutionContext()));
                     }
                 }

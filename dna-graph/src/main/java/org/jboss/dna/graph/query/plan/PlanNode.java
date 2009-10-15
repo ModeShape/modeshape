@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Command;
@@ -54,7 +55,7 @@ import org.jboss.dna.graph.query.validate.Schemata;
  * A representation of a single node within a plan tree.
  */
 @NotThreadSafe
-public final class PlanNode implements Iterable<PlanNode>, Readable {
+public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
 
     /**
      * An enumeration dictating the type of plan tree nodes.
@@ -298,6 +299,70 @@ public final class PlanNode implements Iterable<PlanNode>, Readable {
     }
 
     /**
+     * Return true if this node's type does not match the supplied type
+     * 
+     * @param type the type to compare
+     * @return true if this node's type is different than that supplied, or false if they are the same
+     */
+    public boolean isNot( Type type ) {
+        return this.type != type;
+    }
+
+    /**
+     * Return true if this node's type does not match any of the supplied types
+     * 
+     * @param first the type to compare
+     * @param rest the additional types to compare
+     * @return true if this node's type is different than all of those supplied, or false if matches one of the supplied types
+     */
+    public boolean isNotOneOf( Type first,
+                               Type... rest ) {
+        return isNotOneOf(EnumSet.of(first, rest));
+    }
+
+    /**
+     * Return true if this node's type does not match any of the supplied types
+     * 
+     * @param types the types to compare
+     * @return true if this node's type is different than all of those supplied, or false if matches one of the supplied types
+     */
+    public boolean isNotOneOf( Set<Type> types ) {
+        return !types.contains(type);
+    }
+
+    /**
+     * Return true if this node's type does match the supplied type
+     * 
+     * @param type the type to compare
+     * @return true if this node's type is the same as that supplied, or false if the types are different
+     */
+    public boolean is( Type type ) {
+        return this.type == type;
+    }
+
+    /**
+     * Return true if this node's type matches one of the supplied types
+     * 
+     * @param first the type to compare
+     * @param rest the additional types to compare
+     * @return true if this node's type is one of those supplied, or false otherwise
+     */
+    public boolean isOneOf( Type first,
+                            Type... rest ) {
+        return isOneOf(EnumSet.of(first, rest));
+    }
+
+    /**
+     * Return true if this node's type matches one of the supplied types
+     * 
+     * @param types the types to compare
+     * @return true if this node's type is one of those supplied, or false otherwise
+     */
+    public boolean isOneOf( Set<Type> types ) {
+        return types.contains(type);
+    }
+
+    /**
      * Get the parent of this node.
      * 
      * @return the parent node, or null if this node has no parent
@@ -357,6 +422,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable {
      */
     public void insertAsParent( PlanNode newParent ) {
         if (newParent == null) return;
+        newParent.removeFromParent();
         if (this.parent != null) {
             this.parent.replaceChild(this, newParent);
         }
@@ -832,6 +898,34 @@ public final class PlanNode implements Iterable<PlanNode>, Readable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * This class returns a new clone of the plan tree rooted at this node. However, the top node of the resulting plan tree (that
+     * is, the node returned from this method) has no parent.
+     * </p>
+     * 
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public PlanNode clone() {
+        return cloneWithoutNewParent();
+    }
+
+    protected PlanNode cloneWithoutNewParent() {
+        PlanNode result = new PlanNode(this.type, null, this.selectors);
+        if (this.nodeProperties != null && !this.nodeProperties.isEmpty()) {
+            result.nodeProperties = new HashMap<Property, Object>(this.nodeProperties);
+        }
+        // Clone the children ...
+        for (PlanNode child : children) {
+            PlanNode childClone = child.cloneWithoutNewParent();
+            // The child has no parent, so add the child to the new result ...
+            result.addLastChild(childClone);
+        }
+        return result;
+    }
+
+    /**
      * Determine whether the supplied plan is equivalent to this plan.
      * 
      * @param other the other plan to compare with this instance
@@ -840,9 +934,15 @@ public final class PlanNode implements Iterable<PlanNode>, Readable {
     public boolean isSameAs( PlanNode other ) {
         if (other == null) return false;
         if (this.getType() != other.getType()) return false;
-        if (!this.nodeProperties.equals(other.nodeProperties)) return false;
+        if (!ObjectUtil.isEqualWithNulls(this.nodeProperties, other.nodeProperties)) return false;
         if (!this.getSelectors().equals(other.getSelectors())) return false;
-        return this.getChildren().equals(other.getChildren());
+        if (this.getChildCount() != other.getChildCount()) return false;
+        Iterator<PlanNode> thisChildren = this.getChildren().iterator();
+        Iterator<PlanNode> thatChildren = other.getChildren().iterator();
+        while (thisChildren.hasNext() && thatChildren.hasNext()) {
+            if (!thisChildren.next().isSameAs(thatChildren.next())) return false;
+        }
+        return true;
     }
 
     /**

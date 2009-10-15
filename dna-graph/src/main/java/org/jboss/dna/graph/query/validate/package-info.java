@@ -25,8 +25,9 @@
  * This package provides the interfaces that define the tables and columns that can be queried.  Though the query framework does not prescribe 
  * the semantics of a table or column, it does provide
  * a {@link org.jboss.dna.graph.query.validate.Schemata} interface that provides access to the immutable
- * {@link org.jboss.dna.graph.query.validate.Schemata.Table} definitions (that then contain the
- * {@link org.jboss.dna.graph.query.validate.Schemata.Column} and {@link org.jboss.dna.graph.query.validate.Schemata.Key} definitions).
+ * {@link org.jboss.dna.graph.query.validate.Schemata.Table} and {@link org.jboss.dna.graph.query.validate.Schemata.View}
+ * definitions (that then contain the {@link org.jboss.dna.graph.query.validate.Schemata.Column} 
+ * and {@link org.jboss.dna.graph.query.validate.Schemata.Key} definitions).
  * <p>
  * Although any Schemata implementaiton can be used, the query framework provides an {@link org.jboss.dna.graph.query.validate.ImmutableSchemata}
  * class with a {@link org.jboss.dna.graph.query.validate.ImmutableSchemata.Builder builder} with a fluent API

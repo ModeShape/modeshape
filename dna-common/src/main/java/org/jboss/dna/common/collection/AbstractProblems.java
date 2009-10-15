@@ -47,17 +47,17 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
-    public void addError( I18n message,
-                          String resource,
+    public void addError( String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
     public void addError( Throwable throwable,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
@@ -76,18 +76,18 @@ public abstract class AbstractProblems implements Problems {
     }
 
     public void addError( int code,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, resource, location, null));
     }
 
     public void addError( Throwable throwable,
                           int code,
-                          I18n message,
                           String resource,
                           String location,
+                          I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, resource, location, throwable));
     }
@@ -103,17 +103,17 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
-    public void addWarning( I18n message,
-                            String resource,
+    public void addWarning( String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
     public void addWarning( Throwable throwable,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
@@ -132,18 +132,18 @@ public abstract class AbstractProblems implements Problems {
     }
 
     public void addWarning( int code,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, resource, location, null));
     }
 
     public void addWarning( Throwable throwable,
                             int code,
-                            I18n message,
                             String resource,
                             String location,
+                            I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, resource, location, throwable));
     }
@@ -159,17 +159,17 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
-    public void addInfo( I18n message,
-                         String resource,
+    public void addInfo( String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
     public void addInfo( Throwable throwable,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
@@ -188,18 +188,18 @@ public abstract class AbstractProblems implements Problems {
     }
 
     public void addInfo( int code,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, resource, location, null));
     }
 
     public void addInfo( Throwable throwable,
                          int code,
-                         I18n message,
                          String resource,
                          String location,
+                         I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, resource, location, throwable));
     }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
 
 /**
@@ -36,10 +37,14 @@ import org.jboss.dna.graph.query.model.SelectorName;
 public interface Schemata {
 
     /**
-     * Get the information for the table with the supplied name within this schema.
+     * Get the information for the table or view with the supplied name within this schema.
+     * <p>
+     * The resulting definition is immutable, though subsequent calls to this method with the same argument may result in a
+     * different definition.
+     * </p>
      * 
-     * @param name the table name; may not be null
-     * @return the table information, or null if there is no such table
+     * @param name the table or view name; may not be null
+     * @return the table or view information, or null if there is no such table
      */
     Table getTable( SelectorName name );
 
@@ -56,6 +61,9 @@ public interface Schemata {
 
         /**
          * Get the information for a column with the supplied name within this table.
+         * <p>
+         * The resulting column definition is immutable.
+         * </p>
          * 
          * @param name the column name; may not be null
          * @return the column information, or null if there is no such column
@@ -65,21 +73,21 @@ public interface Schemata {
         /**
          * Get the queryable columns in this table.
          * 
-         * @return the map of column objects by their name; never null
+         * @return the immutable map of immutable column objects by their name; never null
          */
         Map<String, Column> getColumnsByName();
 
         /**
          * Get the queryable columns in this table.
          * 
-         * @return the ordered column objects; never null
+         * @return the immutable, ordered list of immutable column objects; never null
          */
         List<Column> getColumns();
 
         /**
          * Get the collection of keys for this table.
          * 
-         * @return the immutable collection of keys; never null, but possibly empty
+         * @return the immutable collection of immutable keys; never null, but possibly empty
          */
         Collection<Key> getKeys();
 
@@ -101,6 +109,9 @@ public interface Schemata {
 
         /**
          * Obtain this table's {@link #getKeys() key} that contains exactly those columns listed.
+         * <p>
+         * The resulting key definition is immutable.
+         * </p>
          * 
          * @param columns the columns for the key
          * @return the key that uses exactly the supplied columns, or null if there is no such key
@@ -109,11 +120,26 @@ public interface Schemata {
 
         /**
          * Obtain this table's {@link #getKeys() key} that contains exactly those columns listed.
+         * <p>
+         * The resulting key definition is immutable.
+         * </p>
          * 
          * @param columns the columns for the key
          * @return the key that uses exactly the supplied columns, or null if there is no such key
          */
         Key getKey( Iterable<Column> columns );
+    }
+
+    /**
+     * Information about a view that is defined in terms of other views/tables.
+     */
+    public interface View extends Table {
+        /**
+         * Get the {@link QueryCommand query} that is the definition of the view.
+         * 
+         * @return the view definition; never null
+         */
+        QueryCommand getDefinition();
     }
 
     /**
