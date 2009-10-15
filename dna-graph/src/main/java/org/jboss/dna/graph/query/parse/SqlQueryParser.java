@@ -446,9 +446,9 @@ public class SqlQueryParser implements QueryParser {
         return constraint;
     }
 
-    protected Collection<StaticOperand> parseInClause( TokenStream tokens,
-                                                       ExecutionContext context ) {
-        Collection<StaticOperand> result = new ArrayList<StaticOperand>();
+    protected List<StaticOperand> parseInClause( TokenStream tokens,
+                                                 ExecutionContext context ) {
+        List<StaticOperand> result = new ArrayList<StaticOperand>();
         tokens.consume("IN");
         tokens.consume("(");
         if (!tokens.canConsume(")")) {

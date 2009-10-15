@@ -622,6 +622,58 @@ public class SqlQueryParserTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // parseInClause
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseInClauseFromStringWithSingleValidLiteral() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN ('value1')"), context);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), is((StaticOperand)literal("value1")));
+    }
+
+    @Test
+    public void shouldParseInClauseFromStringWithTwoValidLiteral() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN ('value1','value2')"), context);
+        assertThat(result.size(), is(2));
+        assertThat(result.get(0), is((StaticOperand)literal("value1")));
+        assertThat(result.get(1), is((StaticOperand)literal("value2")));
+    }
+
+    @Test
+    public void shouldParseInClauseFromStringWithThreeValidLiteral() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN ('value1','value2','value3')"), context);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0), is((StaticOperand)literal("value1")));
+        assertThat(result.get(1), is((StaticOperand)literal("value2")));
+        assertThat(result.get(2), is((StaticOperand)literal("value3")));
+    }
+
+    @Test
+    public void shouldParseInClauseFromStringWithSingleValidLiteralCast() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN (CAST('value1' AS STRING))"), context);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next(), is((StaticOperand)literal("value1")));
+
+        result = parser.parseInClause(tokens("IN (CAST('3' AS LONG))"), context);
+        assertThat(result.size(), is(1));
+        assertThat(result.iterator().next(), is((StaticOperand)literal(new Long(3))));
+    }
+
+    @Test
+    public void shouldParseInClauseFromStringWithMultipleValidLiteralCasts() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN (CAST('value1' AS STRING),CAST('3' AS LONG),'4')"), context);
+        assertThat(result.size(), is(3));
+        assertThat(result.get(0), is((StaticOperand)literal("value1")));
+        assertThat(result.get(1), is((StaticOperand)literal(new Long(3))));
+        assertThat(result.get(2), is((StaticOperand)literal("4")));
+    }
+
+    protected Literal literal( Object literalValue ) {
+        return new Literal(literalValue);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // parseFullTextSearchExpression
     // ----------------------------------------------------------------------------------------------------------------
 
