@@ -39,6 +39,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
+import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.Graph;
@@ -402,14 +403,9 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         hybrid.getBaseVersion();
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowGetLock() throws Exception {
+    @Test( expected = LockException.class )
+    public void shouldNotAllowGetLockIfNoLock() throws Exception {
         hybrid.getLock();
-    }
-
-    @Test
-    public void shouldNotAllowHoldsLock() throws Exception {
-        assertThat(hybrid.holdsLock(), is(false));
     }
 
     @Test
@@ -422,10 +418,11 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         assertThat(hybrid.isLocked(), is(false));
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowLock() throws Exception {
-        hybrid.lock(false, false);
-    }
+    // Now tested in TCK
+    // @Test( expected = UnsupportedRepositoryOperationException.class )
+    // public void shouldAllowLock() throws Exception {
+    // hybrid.lock(false, false);
+    // }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowMerge() throws Exception {
@@ -457,10 +454,11 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         hybrid.restoreByLabel(null, false);
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowUnlock() throws Exception {
-        hybrid.unlock();
-    }
+    // Now tested in TCK
+    // @Test( expected = UnsupportedRepositoryOperationException.class )
+    // public void shouldNotAllowUnlock() throws Exception {
+    // hybrid.unlock();
+    // }
 
     /*
      * Primary-type and -item methods

@@ -432,7 +432,7 @@ public class JcrRepositoryTest {
     private void testDescriptorValues( Repository repository ) {
         assertThat(repository.getDescriptor(Repository.LEVEL_1_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.LEVEL_2_SUPPORTED), is("true"));
-        assertThat(repository.getDescriptor(Repository.OPTION_LOCKING_SUPPORTED), is("false"));
+        assertThat(repository.getDescriptor(Repository.OPTION_LOCKING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("false"));

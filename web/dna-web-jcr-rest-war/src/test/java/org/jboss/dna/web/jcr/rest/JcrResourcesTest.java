@@ -236,8 +236,9 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("dna:system"));
 
         JSONArray namespaces = system.getJSONArray("children");
-        assertThat(namespaces.length(), is(1));
+        assertThat(namespaces.length(), is(2));
         assertThat(namespaces.getString(0), is("dna:namespaces"));
+        assertThat(namespaces.getString(1), is("dna:locks"));
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
@@ -260,10 +261,12 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("dna:system"));
 
         JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(1));
+        assertThat(children.length(), is(2));
 
         JSONObject namespaces = children.getJSONObject("dna:namespaces");
         assertThat(namespaces.length(), is(2));
+        JSONObject locks = children.getJSONObject("dna:locks");
+        assertThat(locks.length(), is(1));
 
         properties = namespaces.getJSONObject("properties");
         assertThat(properties.length(), is(1));

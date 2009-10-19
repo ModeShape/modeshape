@@ -37,7 +37,7 @@
   mixin
   - jcr:uuid (string) mandatory autocreated protected initialize
 
-[mix:lockable]
+[mix:lockable] > mix:referenceable
   mixin
   - jcr:lockOwner (string) protected ignore
   - jcr:lockIsDeep (boolean) protected ignore

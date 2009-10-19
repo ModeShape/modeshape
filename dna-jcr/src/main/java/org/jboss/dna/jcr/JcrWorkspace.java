@@ -41,6 +41,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -62,6 +63,7 @@ import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.ReadBranchRequest;
@@ -71,6 +73,7 @@ import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.SessionCache.JcrNodePayload;
 import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
+import org.jboss.dna.jcr.WorkspaceLockManager.DnaLock;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -128,6 +131,8 @@ final class JcrWorkspace implements Workspace {
      */
     private final JcrQueryManager queryManager;
 
+    private final WorkspaceLockManager lockManager;
+    
     /**
      * The {@link Session} instance that this corresponds with this workspace.
      */
@@ -144,6 +149,7 @@ final class JcrWorkspace implements Workspace {
         assert repository != null;
         this.name = workspaceName;
         this.repository = repository;
+        this.lockManager = repository.getLockManager(workspaceName);
 
         // // Set up the execution context for this workspace, which should use the namespace registry that persists
         // // the namespaces in the graph ...
@@ -204,6 +210,10 @@ final class JcrWorkspace implements Workspace {
         return this.context;
     }
 
+    final WorkspaceLockManager lockManager() {
+        return this.lockManager;
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -315,6 +325,32 @@ final class JcrWorkspace implements Workspace {
             // This also performs the check permission for reading the parent ...
             Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
+            
+
+            /*
+             * Find the UUID for the source node.  Have to go directly against the graph.
+             */
+            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace).getNodeAt(srcPath);
+            Property uuidProp = sourceNode.getProperty(DnaLexicon.UUID);
+
+            if (uuidProp != null) {
+                UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
+
+                DnaLock sourceLock = lockManager().lockFor(Location.create(sourceUuid));
+                if (sourceLock != null && sourceLock.getLockToken() == null) {
+                    throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
+                }
+            }
+
+            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
+
+            if (parentNode.isLocked()) {
+                Lock newParentLock = parentNode.getLock();
+                if (newParentLock != null && newParentLock.getLockToken() == null) {
+                    throw new LockException(destAbsPath);
+                }
+            }
+            
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
@@ -445,6 +481,32 @@ final class JcrWorkspace implements Workspace {
             // This also performs the check permission for reading the parent ...
             Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
+            
+
+            /*
+             * Find the UUID for the source node.  Have to go directly against the graph.
+             */
+            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace).getNodeAt(srcPath);
+            Property uuidProp = sourceNode.getProperty(DnaLexicon.UUID);
+
+            if (uuidProp != null) {
+                UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
+
+                DnaLock sourceLock = lockManager().lockFor(Location.create(sourceUuid));
+                if (sourceLock != null && sourceLock.getLockToken() == null) {
+                    throw new LockException(srcAbsPath);
+                }
+            }
+
+            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
+
+            if (parentNode.isLocked()) {
+                Lock newParentLock = parentNode.getLock();
+                if (newParentLock != null && newParentLock.getLockToken() == null) {
+                    throw new LockException(destAbsPath);
+                }
+            }
+            
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
@@ -555,10 +617,32 @@ final class JcrWorkspace implements Workspace {
             Node<JcrNodePayload, JcrPropertyPayload> newParent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(newParent, newNodeName, newParent.getPayload().getPrimaryTypeName());
 
+            AbstractJcrNode sourceNode = cache.findJcrNode(Location.create(srcPath));
+
+            if (sourceNode.isLocked()) {
+                Lock sourceLock = sourceNode.getLock();
+                if (sourceLock != null && sourceLock.getLockToken() == null) {
+                    throw new LockException(srcAbsPath);
+                }
+            }
+
+            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
+
+            if (parentNode.isLocked()) {
+                Lock newParentLock = parentNode.getLock();
+                if (newParentLock != null && newParentLock.getLockToken() == null) {
+                    throw new LockException(destAbsPath);
+                }
+            }            
+
             // Now perform the clone, using the direct (non-session) method ...
             cache.graphSession().immediateMove(srcPath, destPath);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
+        } catch (ItemNotFoundException infe) {
+            throw new PathNotFoundException(infe);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException pnfe) {
+            throw new PathNotFoundException(pnfe);
         }
 
         // /*

@@ -197,6 +197,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public void setValue( Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         JcrValue jcrValue = null;
+        checkForLock();
+        
         if (value instanceof JcrValue) {
             jcrValue = (JcrValue)value;
 
@@ -249,6 +251,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     protected void setValue( JcrValue jcrValue )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert jcrValue != null;
+        
+        checkForLock();
+        
         editor().setProperty(name(), jcrValue);
     }
 

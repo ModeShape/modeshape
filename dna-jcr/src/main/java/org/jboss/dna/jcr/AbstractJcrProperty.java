@@ -31,6 +31,7 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -67,6 +68,27 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     abstract boolean isMultiple();
+
+    /**
+     * Checks that this property's parent node is not already locked by another session. If the parent node is not locked or the
+     * parent node is locked but the lock is owned by this {@code Session}, this method completes silently. If the parent node is
+     * locked (either directly or as part of a deep lock from an ancestor), this method throws a {@code LockException}.
+     * 
+     * @throws LockException if the parent node of this property is locked (that is, if {@code getParent().isLocked() == true &&
+     *         getParent().getLock().getLockToken() == null}.
+     * @throws RepositoryException if any other error occurs
+     * @see Node#isLocked()
+     * @see Lock#getLockToken()
+     */
+    protected final void checkForLock() throws LockException, RepositoryException {
+
+        if (this.getParent().isLocked()) {
+            Lock parentLock = this.getParent().getLock();
+            if (parentLock != null && parentLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.getParent().location));
+            }
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -145,7 +167,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public final Node getParent() {
+    public final AbstractJcrNode getParent() {
         return node;
     }
 

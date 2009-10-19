@@ -306,7 +306,7 @@ public class CndImporterTest {
         // mixin
         // - jcr:lockOwner (string) protected ignore
         // - jcr:lockIsDeep (boolean) protected ignore
-        assertNodeType("mix:lockable", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Mixin);
+        assertNodeType("mix:lockable", new String[] {"mix:referenceable"}, NO_PRIMARY_NAME, NodeOptions.Mixin);
         assertProperty("mix:lockable", "jcr:lockOwner", "String", NO_DEFAULTS, OnParentVersion.Ignore, PropertyOptions.Protected);
         assertProperty("mix:lockable",
                        "jcr:lockIsDeep",

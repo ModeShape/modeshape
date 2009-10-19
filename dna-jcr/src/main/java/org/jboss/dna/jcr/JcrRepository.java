@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
@@ -45,6 +47,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
@@ -204,6 +207,9 @@ public class JcrRepository implements Repository {
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
+    @GuardedBy( "lockManagersLock" )
+    private final ConcurrentMap<String, WorkspaceLockManager> lockManagers;
+    private final Path locksPath;
     private final Map<Option, String> options;
     private final String systemSourceName;
     private final String systemWorkspaceName;
@@ -257,7 +263,7 @@ public class JcrRepository implements Repository {
         // Initialize required JCR descriptors.
         modifiableDescriptors.put(Repository.LEVEL_1_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "false");
+        modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
@@ -402,6 +408,9 @@ public class JcrRepository implements Repository {
         this.federatedSource = new FederatedRepositorySource();
         this.federatedSource.setName("JCR " + repositorySourceName);
         this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
+
+        this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
+        this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);    
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {
@@ -659,6 +668,24 @@ public class JcrRepository implements Repository {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
         }
         return session;
+    }
+
+    /**
+     * Returns the lock manager for the named workspace (if one already exists) or creates a new lock manager and returns it. This
+     * method is thread-safe.
+     * 
+     * @param workspaceName the name of the workspace for which the lock manager should be returned
+     * @return the lock manager for the workspace; never null
+     */
+    WorkspaceLockManager getLockManager( String workspaceName ) {
+        WorkspaceLockManager lockManager = lockManagers.get(workspaceName);
+        if (lockManager != null) return lockManager;
+
+        lockManager = new WorkspaceLockManager(executionContext, this, workspaceName, locksPath);
+        WorkspaceLockManager newLockManager = lockManagers.putIfAbsent(workspaceName, lockManager);
+
+        if (newLockManager != null) return newLockManager;
+        return lockManager;
     }
 
     /**

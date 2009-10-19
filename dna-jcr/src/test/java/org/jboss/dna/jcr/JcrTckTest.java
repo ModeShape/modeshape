@@ -64,7 +64,9 @@ import org.apache.jackrabbit.test.api.SetValueStringTest;
 import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
@@ -72,9 +74,11 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceCopyTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 
 /**
@@ -230,9 +234,9 @@ public class JcrTckTest {
             addTestSuite(NodeCanAddMixinTest.class);
             addTestSuite(NodeRemoveMixinTest.class);
 
-            // DNA-518 addTestSuite(WorkspaceCloneReferenceableTest.class);
+            addTestSuite(WorkspaceCloneReferenceableTest.class);
             addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-            // addTestSuite(WorkspaceCloneTest.class);
+            addTestSuite(WorkspaceCloneTest.class);
             addTestSuite(WorkspaceCloneVersionableTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
             addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
@@ -240,11 +244,11 @@ public class JcrTckTest {
             addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
             addTestSuite(WorkspaceCopyReferenceableTest.class);
             addTestSuite(WorkspaceCopySameNameSibsTest.class);
-            // addTestSuite(WorkspaceCopyTest.class);
+            addTestSuite(WorkspaceCopyTest.class);
             addTestSuite(WorkspaceCopyVersionableTest.class);
             addTestSuite(WorkspaceMoveReferenceableTest.class);
             addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-            // addTestSuite(WorkspaceMoveTest.class);
+            addTestSuite(WorkspaceMoveTest.class);
             addTestSuite(WorkspaceMoveVersionableTest.class);
 
             addTestSuite(RepositoryLoginTest.class);
@@ -269,7 +273,7 @@ public class JcrTckTest {
 
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
-            // addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
         }
     }

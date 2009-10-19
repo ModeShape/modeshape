@@ -58,6 +58,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,7 +99,7 @@ public class JcrSessionTest extends AbstractSessionTest {
         }
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowAddLockToken() throws Exception {
         session.addLockToken(null);
     }
@@ -158,6 +159,9 @@ public class JcrSessionTest extends AbstractSessionTest {
         sessionAttributes = new HashMap<String, Object>();
 
         // Now create the workspace ...
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        Path locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
+        WorkspaceLockManager wlm = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
         workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
 
         // Create the session and log in ...
@@ -394,7 +398,7 @@ public class JcrSessionTest extends AbstractSessionTest {
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
         // The b node was not set up to be referenceable in this test, but does have a mixin type
-        Node node = session.getRootNode().getNode("a");
+        Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
 
         node.getUUID();
     }

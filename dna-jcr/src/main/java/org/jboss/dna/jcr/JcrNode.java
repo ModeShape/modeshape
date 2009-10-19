@@ -26,6 +26,8 @@ package org.jboss.dna.jcr;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.Lock;
+import javax.jcr.lock.LockException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.session.GraphSession.NodeId;
@@ -96,7 +98,15 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#remove()
      */
-    public void remove() throws RepositoryException {
+    public void remove() throws RepositoryException, LockException {
+        Node parentNode = getParent();
+        if (parentNode.isLocked()) {
+            Lock parentLock = parentNode.getLock();
+            if (parentLock != null && parentLock.getLockToken() == null) {
+                throw new LockException();
+            }
+        }
+
         editor().destroy();
     }
 }

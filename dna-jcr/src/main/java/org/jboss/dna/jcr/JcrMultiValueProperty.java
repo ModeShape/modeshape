@@ -187,7 +187,8 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-
+        checkForLock();
+        
         if (values == null) {
             this.remove();
             return;
@@ -208,6 +209,8 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkForLock();
+        
         if (values == null) {
             this.remove();
             return;

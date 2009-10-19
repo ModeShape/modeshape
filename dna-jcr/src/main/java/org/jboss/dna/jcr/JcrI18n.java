@@ -166,6 +166,15 @@ public final class JcrI18n {
     public static I18n cannotAddMixin;
     public static I18n invalidMixinTypeForNode;
     public static I18n notOrderable;
+    
+    // Lock messages
+    public static I18n cannotRemoveLockToken;
+    public static I18n alreadyLocked;
+    public static I18n parentAlreadyLocked;
+    public static I18n notLocked;
+    public static I18n lockTokenNotHeld;
+    public static I18n lockTokenAlreadyHeld;
+    public static I18n uuidRequiredForLock;
 
     static {
         try {

@@ -28,6 +28,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,6 +50,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
+import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
@@ -68,6 +71,7 @@ import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
 import org.jboss.dna.jcr.JcrNamespaceRegistry.Behavior;
 import org.jboss.dna.jcr.SessionCache.JcrPropertyPayload;
+import org.jboss.dna.jcr.WorkspaceLockManager.DnaLock;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -128,6 +132,8 @@ class JcrSession implements Session {
 
     private final SessionCache cache;
 
+    private final Set<String> lockTokens;
+
     /**
      * A cached instance of the root path.
      */
@@ -159,6 +165,7 @@ class JcrSession implements Session {
 
         this.cache = new SessionCache(this);
         this.isLive = true;
+        this.lockTokens = new HashSet<String>();
 
         assert this.sessionAttributes != null;
         assert this.workspace != null;
@@ -194,6 +201,10 @@ class JcrSession implements Session {
         return this.repository;
     }
 
+    final Collection<String> lockTokens() {
+        return lockTokens;
+    }
+    
     Graph.Batch createBatch() {
         return graph.batch();
     }
@@ -286,11 +297,22 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#addLockToken(java.lang.String)
      */
-    public void addLockToken( String lt ) {
-        throw new UnsupportedOperationException();
+    public void addLockToken( String lt ) throws LockException {
+        CheckArg.isNotNull(lt, "lock token");
+
+        // Trivial case of giving a token back to ourself
+        if (lockTokens.contains(lt)) {
+            return;
+        }
+        
+        if (workspace().lockManager().isHeldBySession(lt)) {
+            throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lt));
+        }
+        
+        workspace().lockManager().setHeldBySession(lt, true);
+        lockTokens.add(lt);
     }
 
     /**
@@ -493,11 +515,10 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getLockTokens()
      */
     public String[] getLockTokens() {
-        throw new UnsupportedOperationException();
+        return lockTokens.toArray(new String[lockTokens.size()]);
     }
 
     /**
@@ -751,6 +772,7 @@ class JcrSession implements Session {
             return;
         }
 
+        this.workspace().lockManager().cleanLocks(lockTokens);
         this.executionContext.getSecurityContext().logout();
         isLive = false;
     }
@@ -782,6 +804,20 @@ class JcrSession implements Session {
             throw new ItemExistsException(JcrI18n.childNodeAlreadyExists.text(newNodeNameAsString, newParentNode.getPath()));
         }
 
+        if (sourceNode.isLocked()) {
+            javax.jcr.lock.Lock sourceLock = sourceNode.getLock();
+            if (sourceLock != null && sourceLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
+            }
+        }
+
+        if (newParentNode.isLocked()) {
+            javax.jcr.lock.Lock newParentLock = newParentNode.getLock();
+            if (newParentLock != null && newParentLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
+            }
+        }
+
         newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());
     }
 
@@ -797,11 +833,29 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#removeLockToken(java.lang.String)
      */
     public void removeLockToken( String lt ) {
-        throw new UnsupportedOperationException();
+        CheckArg.isNotNull(lt, "lock token");
+        // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
+        /*
+         * The JCR API library that we're using diverges from the spec in that it doesn't declare
+         * this method to throw a LockException.  We'll throw a runtime exception for now.
+         */
+
+        DnaLock lock = workspace().lockManager().lockFor(lt);
+        if (lock == null) {
+            // The lock is no longer valid
+            lockTokens.remove(lt);
+            return;
+        }
+        
+        if (lock.isSessionScoped()) {
+            throw new IllegalStateException(JcrI18n.cannotRemoveLockToken.text(lt));
+        }
+
+        workspace().lockManager().setHeldBySession(lt, false);
+        lockTokens.remove(lt);
     }
 
     /**

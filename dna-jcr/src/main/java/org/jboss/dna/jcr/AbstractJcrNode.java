@@ -824,8 +824,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
 
         // Check this separately since it throws a different type of exception
-        if (this.isLocked()) {
-            throw new LockException();
+        if (this.isLocked() && !holdsLock()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
         if (!canAddMixin(mixinName)) {
@@ -853,11 +853,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void removeMixin( String mixinName ) throws RepositoryException {
 
-        if (this.isLocked()) {
-            throw new LockException();
+        if (this.isLocked() && !holdsLock()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
-        // TODO: Check access control when that support is added
         // TODO: Throw VersionException if this node is versionable and checked in or unversionable and the nearest versionable
         // ancestor is checked in
 
@@ -1007,6 +1006,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                    UUID desiredUuid )
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
+
+
+        if (isLocked() && !holdsLock()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
+        }
+        
         // Determine the path ...
         NodeEditor editor = null;
         Path path = null;
@@ -1331,8 +1336,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @return <code>false</code>
      * @see javax.jcr.Node#holdsLock()
      */
-    public final boolean holdsLock() {
-        return false;
+    public final boolean holdsLock() throws RepositoryException {
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(this.location);
+
+        return lock != null && cache.session().lockTokens().contains(lock.getLockToken());
     }
 
     /**
@@ -1341,41 +1348,99 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @return <code>false</code>
      * @see javax.jcr.Node#isLocked()
      */
-    public final boolean isLocked() {
-        return false;
+    public final boolean isLocked() throws LockException, RepositoryException {
+        return lock() != null;
     }
-
+    
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#lock(boolean, boolean)
      */
     public final Lock lock( boolean isDeep,
-                            boolean isSessionScoped ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                            boolean isSessionScoped ) throws LockException, RepositoryException {
+        if (isLocked()) {
+            throw new LockException(JcrI18n.alreadyLocked.text(this.location));
+        }
+
+        if (isDeep) {
+            LinkedList<Node<JcrNodePayload, JcrPropertyPayload>> nodesToVisit = new LinkedList<Node<JcrNodePayload, JcrPropertyPayload>>();
+            nodesToVisit.add(nodeInfo());
+
+            while (!nodesToVisit.isEmpty()) {
+                Node<JcrNodePayload, JcrPropertyPayload> node = nodesToVisit.pop();
+                if (session().workspace().lockManager().lockFor(node.getLocation()) != null) throw new LockException(
+                                                                                                                     JcrI18n.parentAlreadyLocked.text(this.location,
+                                                                                                                                                      node.getLocation()));
+
+                for (Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
+                    nodesToVisit.add(child);
+                }
+            }
+        }
+
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lock(cache,
+                                                                                     this.location,
+                                                                                     session().getUserID(),
+                                                                                     isDeep,
+                                                                                     isSessionScoped);
+
+        cache.session().addLockToken(lock.getLockToken());
+        return lock.lockFor(cache);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#unlock()
      */
-    public final void unlock() throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+    public final void unlock() throws LockException, RepositoryException {
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(this.location);
+
+        if (lock == null) {
+            throw new LockException(JcrI18n.notLocked.text(this.location));
+        }
+
+        if (!cache.session().lockTokens().contains(lock.getLockToken())) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
+        }
+
+        session().workspace().lockManager().unlock(lock);
+        session().removeLockToken(lock.getLockToken());
+    }
+
+    private final WorkspaceLockManager.DnaLock lock() throws RepositoryException {
+        // This can only happen in mocked testing.
+        if (session() == null || session().workspace() == null) return null;
+
+        WorkspaceLockManager lockManager = session().workspace().lockManager();
+        WorkspaceLockManager.DnaLock lock = lockManager.lockFor(this.location);
+        if (lock != null) return lock;
+
+        AbstractJcrNode parent = this;
+        while (!parent.isRoot()) {
+            parent = parent.getParent();
+
+            WorkspaceLockManager.DnaLock parentLock = lockManager.lockFor(parent.location);
+            if (parentLock != null && parentLock.isLive()) {
+                return parentLock.isDeep() ? parentLock : null;
+            }
+        }
+        return null;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#getLock()
      */
-    public final Lock getLock() throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
-    }
+    public final Lock getLock() throws LockException, RepositoryException {
+        WorkspaceLockManager.DnaLock lock = lock();
 
+        if (lock == null) throw new LockException(JcrI18n.notLocked.text(this.location));
+        return lock.lockFor(cache);
+    }
+    
     /**
      * {@inheritDoc}
      * 

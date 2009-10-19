@@ -41,6 +41,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
 import org.mockito.MockitoAnnotations;
@@ -66,6 +67,7 @@ public abstract class AbstractSessionTest {
     protected Map<String, Object> sessionAttributes;
     protected Map<JcrRepository.Option, String> options;
     protected NamespaceRegistry registry;
+    protected WorkspaceLockManager workspaceLockManager;
     @Mock
     protected JcrRepository repository;
 
@@ -140,6 +142,20 @@ public abstract class AbstractSessionTest {
                 return graph;
             }
         });
+        stub(repository.createSystemGraph()).toAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
+            }
+        });
+
+        Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
+        workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
+
+        stub(repository.getLockManager(anyString())).toAnswer(new Answer<WorkspaceLockManager>() {
+            public WorkspaceLockManager answer( InvocationOnMock invocation ) throws Throwable {
+                return workspaceLockManager;
+            }
+        });
 
         initializeOptions();
         stub(repository.getOptions()).toReturn(options);
@@ -148,7 +164,7 @@ public abstract class AbstractSessionTest {
         // Set up the session attributes ...
         sessionAttributes = new HashMap<String, Object>();
         sessionAttributes.put("attribute1", "value1");
-
+        
         // Now create the workspace ...
         SecurityContext mockSecurityContext = new MockSecurityContext(null,
                                                                       Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));

@@ -43,8 +43,21 @@
 [dna:nodeTypes] > nt:base
 + * (nt:nodeType) = nt:nodeType protected version
 
+[dna:lock] > nt:base
+- dna:lockedNode (string) protected ignore
+- jcr:lockOwner (string) protected ignore
+- jcr:uuid (string) protected ignore
+- dna:sessionScope (boolean) protected ignore
+- jcr:isDeep (boolean) protected ignore
+- dna:isHeldBySession (boolean) protected ignore
+- dna:workspace (string) protected ignore
+
+[dna:locks] > nt:base
++ * (dna:lock) = dna:lock protected ignore
+
 [dna:system] > nt:base
 + dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected version
++ dna:locks (dna:locks) = dna:locks autocreated mandatory protected ignore
 + jcr:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected version
 
 [dna:root] > nt:base, mix:referenceable orderable
