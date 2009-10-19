@@ -270,38 +270,31 @@ class WorkspaceLockManager {
             final AbstractJcrNode node = cache.findJcrNode(Location.create(nodeUuid));
             final JcrSession session = cache.session();
             return new Lock() {
-                @Override
                 public String getLockOwner() {
                     return lockOwner;
                 }
 
-                @Override
                 public String getLockToken() {
                     String uuidString = lockUuid.toString();
                     return session.lockTokens().contains(uuidString) ? uuidString : null;
                 }
 
-                @Override
                 public Node getNode() {
                     return node;
                 }
 
-                @Override
                 public boolean isDeep() {
                     return deep;
                 }
 
-                @Override
                 public boolean isLive() throws RepositoryException {
                     return workspaceLocksByNodeUuid.containsKey(nodeUuid);
                 }
 
-                @Override
                 public boolean isSessionScoped() {
                     return sessionScoped;
                 }
 
-                @Override
                 public void refresh() throws LockException, RepositoryException {
                     if (getLockToken() == null) {
                         throw new LockException(JcrI18n.notLocked.text(node.location));
