@@ -105,7 +105,7 @@ public interface &Name; extends Comparable&lt;&Name;>, &Serializable;, &Readable
 			via the <code>getValueFactories()</code> method.  But before we see that, let's first discuss how names are represented as strings.
 		</para>
 		<para>
-			We'll see how names are used later one, but one more point to make:  &Name; is both serializable and comparable,
+			We'll see how names are used later on, but one more point to make:  &Name; is both serializable and comparable,
 			and all implementations should support <code>equals(...)</code> and <code>hashCode()</code> so that &Name; can
 			be used as a key in a hash-based map.  &Name; also extends the &Readable; interface, which we'll learn
 			more about later in this chapter.
@@ -257,7 +257,7 @@ public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegm
 		<para>
 		  JBoss DNA properties can hold a wide range of value objects, including normal Java strings, names, paths, 
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
-		  or any other serializable object.  All but three these are the standard Java classes: dates are
+		  or any other serializable object.  All but three of these are the standard Java classes: dates are
 		  represented by an immutable &DateTime; class; binary content is represented by an immutable &Binary;
 		  interface patterned after the proposed interface of the same name in <ulink url="&JSR283;">JSR-283</ulink>;
 		  and &Reference; is an immutable interface patterned after the corresponding interface is 
@@ -352,7 +352,7 @@ public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property
 	<sect1 id="graph-value-factories">
 		<title>Values and value factories</title>
 		<para>
-			JBoss DNA properties can hold a variety of types of value objects: strings, names, paths, 
+			JBoss DNA properties can hold a variety of value object types: strings, names, paths, 
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
 		  or any other serializable object.  To assist in the creation of these values and conversion
 		  into other types, JBoss DNA defines a &ValueFactory; interface.  This interface is parameterized
@@ -459,7 +459,7 @@ for ( String value : stringFactory.create(property) ) {
 		</programlisting>
 		<para>
 			What we've glossed over so far, however, is how to obtain the correct &ValueFactory; for the desired type.
-			If you remember back to the previous chapter, &ExecutionContext; has a <code>getValueFactories()</code> method
+			If you remember back in the previous chapter, &ExecutionContext; has a <code>getValueFactories()</code> method
 			that return a &ValueFactories; interface:
 		</para>
 		<programlisting>
@@ -597,7 +597,7 @@ public interface &BinaryFactory; extends &ValueFactory;&lt;&Binary;> {
 		<para>
 			JBoss DNA provides efficient implementations of all of these interfaces: the &ValueFactory; interfaces and subinterfaces;
 			the &Path;, &PathSegment;, &Name;, &Binary;, &DateTime;, and &Reference; interfaces; and the &ValueFactories; interface
-			return by the &ExecutionContext;.  In fact, some of these interfaces have multiple implementations that are optimized for 
+			returned by the &ExecutionContext;.  In fact, some of these interfaces have multiple implementations that are optimized for 
 			specific but frequently-occurring conditions.
 		</para>
 	</sect1>
@@ -782,8 +782,8 @@ public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparabl
 		<para>
 			JBoss DNA's <emphasis>Graph API</emphasis> was designed as a lightweight public API for working with graph information.
 			The &Graph; class is the primary class in API, and each instance represents a single, independent
-			view of a single graph.  &Graph; instances don't maintain state, so every request (or batch of requests) operate against
-			the underlying graph and the return <emphasis>immutable snapshots</emphasis> of the requested state at the time
+			view of a single graph.  &Graph; instances don't maintain state, so every request (or batch of requests) operates against
+			the underlying graph and then returns <emphasis>immutable snapshots</emphasis> of the requested state at the time
 			the request was made.
 		</para>
 		<para>
@@ -807,8 +807,8 @@ public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparabl
 		<para>
 			JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis> that provide different views of the content.  Some graphs may have
 			one workspace, while others may have multiple workspaces.  Some graphs will allow a client to create new workspaces or destroy
-			existing workspaces, while other graphs will not allow adding or removing workspaces.  Some graphs may have workspaces may show the same (or very
-			similar) content, while other graphs may have workspaces that each contain completely independent content.
+			existing workspaces, while other graphs will not allow adding or removing workspaces.  Some graphs may have workspaces that may show the same (or very
+			similar) content, while other graphs may have workspaces that contain completely independent content.
 		</para>
 		<para>
 			The &Graph; object is always bound to a workspace, which initially is the <emphasis>default workspace</emphasis>.  To find out
@@ -1001,7 +1001,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadNodeRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source a node's properties and children.
+							A request to read a node's properties and children from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns all properties and the locations for all children,
 							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
@@ -1012,7 +1012,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>VerifyNodeExistsRequest</entry>
 						<entry>
-							A request to verify the existance of a node at the specified location in the named workspace of the source.
+							A request to verify the existence of a node at the specified location in the named workspace of the source.
 							The connector returns all the actual location for the node if it exists, or
 							sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
@@ -1021,7 +1021,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadAllPropertiesRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source all of the properties of a node.
+							A request to read all of the properties of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns all properties that were found on the node,
 							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
@@ -1032,7 +1032,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadPropertyRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source a single property of a node.
+							A request to read  a single property of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties,
 							and the property is specified by name.
 							The connector returns the property if found on the node,
@@ -1044,7 +1044,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadAllChildrenRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source all of the children of a node.
+							A request to read all of the children of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns an ordered list of locations for each child found on the node,
 							an empty list if the node had no children,
@@ -1056,7 +1056,7 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadBlockOfChildrenRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source a block of children of a node, starting with the n<superscript>th</superscript> children.
+							A request to read a block of children of a node, starting with the n<superscript>th</superscript> child from the named workspace in the source.
 							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
 							The node may be specified by path and/or by identification properties, and the block
 							is defined by a starting index and a count (i.e., the block size).
@@ -1070,8 +1070,8 @@ for ( &Location; child : results.getNode(path2) ) {
 					<row>
 						<entry>ReadNextBlockOfChildrenRequest</entry>
 						<entry>
-							A request to read from the named workspace in the source a block of children of a node, starting with the children that immediately follow
-							a previously-returned child.
+							A request to read a block of children of a node, starting with the children that immediately follow
+							a previously-returned child from the named workspace in the source.
 							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
 							The node may be specified by path and/or by identification properties, and the block
 							is defined by the location of the node immediately preceding the block and a count (i.e., the block size).
@@ -1336,7 +1336,7 @@ for ( &Location; child : results.getNode(path2) ) {
 			<title>Observable</title>
 			<para>
 				Any component that can have changes and be observed can implement the &Observable; interface.  This interface
-				allows &Observers; to register (or be registered) to receive notifications of the changes.  However, a concrete and thread-safe 
+				allows &Observer;s to register (or be registered) to receive notifications of the changes.  However, a concrete and thread-safe 
 				implementation of this interface, called &ChangeObservers;, is available and should be used where possible, since it 
 				automatically manages the registered &ChangeObserver; instances and properly implements the register and unregister mechanisms.
 			</para>
