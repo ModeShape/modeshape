@@ -332,11 +332,17 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
         select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
-                                                                      new Literal("t1"), new Literal("t0"), new Literal("t2")));
+                                                                      new Literal("t1"), new Literal("t0")));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
         select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
-                                                                      new Literal("t3"), new Literal("t4"), new Literal("t5")));
-        PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
+                                                                      new Literal("t3"), new Literal("t4")));
+        PlanNode select4 = new PlanNode(Type.SELECT, select3, selector("all"));
+        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+                                                                      new Literal("t2"), new Literal("t0")));
+        PlanNode select5 = new PlanNode(Type.SELECT, select4, selector("all"));
+        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                      new Literal("t4"), new Literal("t5")));
+        PlanNode source = new PlanNode(Type.SOURCE, select5, selector("all"));
         source.setProperty(Property.SOURCE_NAME, selector("all"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
 
@@ -410,11 +416,17 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
         select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
-                                                                      new Literal("t1"), new Literal("t0"), new Literal("t2")));
+                                                                      new Literal("t1"), new Literal("t0")));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
         select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
-                                                                      new Literal("t3"), new Literal("t4"), new Literal("t5")));
-        PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
+                                                                      new Literal("t3"), new Literal("t4")));
+        PlanNode select4 = new PlanNode(Type.SELECT, select3, selector("all"));
+        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+                                                                      new Literal("t2"), new Literal("t0")));
+        PlanNode select5 = new PlanNode(Type.SELECT, select4, selector("all"));
+        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                      new Literal("t4"), new Literal("t5")));
+        PlanNode source = new PlanNode(Type.SOURCE, select5, selector("all"));
         source.setProperty(Property.SOURCE_NAME, selector("all"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
 
