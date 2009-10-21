@@ -23,7 +23,9 @@
  */
 package org.jboss.dna.graph.query.model;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
@@ -42,6 +44,14 @@ public class SetCriteria extends Constraint {
         CheckArg.isNotNull(setOperands, "setOperands");
         this.left = left;
         this.setOperands = setOperands;
+    }
+
+    public SetCriteria( DynamicOperand left,
+                        StaticOperand... setOperands ) {
+        CheckArg.isNotNull(left, "left");
+        CheckArg.isNotNull(setOperands, "setOperands");
+        this.left = left;
+        this.setOperands = Collections.unmodifiableList(Arrays.asList(setOperands));
     }
 
     /**
@@ -66,6 +76,16 @@ public class SetCriteria extends Constraint {
     @Override
     public String toString() {
         return Visitors.readable(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return left.hashCode();
     }
 
     /**

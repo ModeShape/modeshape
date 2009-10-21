@@ -173,6 +173,12 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
         PROJECT_COLUMNS,
 
         /**
+         * For GROUP nodes, the ordered collection of columns used to group the result tuples. Value is a Collection of
+         * {@link Column} objects.
+         */
+        GROUP_COLUMNS,
+
+        /**
          * For SET_OPERATION nodes, the list of orderings for the results. Value is either a Collection of {@link Ordering}
          * objects or a collection of {@link SelectorName} objects (if the sorting is being done as an input to a merge-join).
          */
@@ -360,6 +366,31 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
      */
     public boolean isOneOf( Set<Type> types ) {
         return types.contains(type);
+    }
+
+    /**
+     * Determine if the supplied node is an ancestor of this node.
+     * 
+     * @param possibleAncestor the node that is to be determined if it is an ancestor
+     * @return true if the supplied node is indeed an ancestor, or false if it is not an ancestor
+     */
+    public boolean isBelow( PlanNode possibleAncestor ) {
+        PlanNode node = this;
+        while (node != null) {
+            if (node == possibleAncestor) return true;
+            node = node.getParent();
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the supplied node is a descendant of this node.
+     * 
+     * @param possibleDescendant the node that is to be determined if it is a descendant
+     * @return true if the supplied node is indeed an ancestor, or false if it is not an ancestor
+     */
+    public boolean isAbove( PlanNode possibleDescendant ) {
+        return possibleDescendant != null && possibleDescendant.isBelow(this);
     }
 
     /**

@@ -65,7 +65,16 @@ public class PushProjects implements OptimizerRule {
             // Is there already a PROJECT here ?
             assert parentOfProject.getChildCount() == 1; // should only have one child ...
             PlanNode child = parentOfProject.getFirstChild(); // should only have one child ...
-            if (child.is(Type.PROJECT)) continue;
+            if (child.is(Type.PROJECT)) {
+                // Check to see if there is a PROJECT above the access node ...
+                PlanNode accessParent = access.getParent();
+                if (accessParent == null || accessParent.isNot(Type.PROJECT)) continue;
+                // Otherwise, the parent is a PROJECT, but there is another PROJECT above the ACCESS node.
+                // Remove the lower PROJECT so the next code block moves the top PROJECT down below the ACCESS node ...
+                assert accessParent.is(Type.PROJECT);
+                child.extractFromParent();
+                child = parentOfProject.getFirstChild();
+            }
 
             // If the parent of the ACCESS node is a PROJECT, then we can simply move it to here ...
             PlanNode accessParent = access.getParent();

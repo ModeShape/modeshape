@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * A constraint that evaluates to true when the defined operation evaluates to true.
@@ -35,6 +36,7 @@ public class Comparison extends Constraint {
     private final DynamicOperand operand1;
     private final StaticOperand operand2;
     private final Operator operator;
+    private final int hc;
 
     public Comparison( DynamicOperand operand1,
                        Operator operator,
@@ -45,6 +47,7 @@ public class Comparison extends Constraint {
         this.operand1 = operand1;
         this.operand2 = operand2;
         this.operator = operator;
+        this.hc = HashCode.compute(this.operand1, this.operand2, this.operator);
     }
 
     /**
@@ -81,6 +84,16 @@ public class Comparison extends Constraint {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -88,6 +101,7 @@ public class Comparison extends Constraint {
         if (obj == this) return true;
         if (obj instanceof Comparison) {
             Comparison that = (Comparison)obj;
+            if (this.hc != that.hc) return false;
             if (!this.operator.equals(that.operator)) return false;
             if (!this.operand1.equals(that.operand1)) return false;
             if (!this.operand2.equals(that.operand2)) return false;

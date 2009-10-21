@@ -73,6 +73,16 @@ public class Length extends DynamicOperand {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return getPropertyValue().hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override

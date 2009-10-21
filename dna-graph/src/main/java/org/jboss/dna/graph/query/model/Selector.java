@@ -96,5 +96,4 @@ public abstract class Selector extends Source {
     public boolean hasAlias() {
         return alias != null;
     }
-
 }

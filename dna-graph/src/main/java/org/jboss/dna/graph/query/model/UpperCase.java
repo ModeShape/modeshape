@@ -76,6 +76,16 @@ public class UpperCase extends DynamicOperand {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return getOperand().hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override

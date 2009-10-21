@@ -99,6 +99,7 @@ public class ReplaceViews implements OptimizerRule {
                         // The PROJECT from the plan may actually not be needed if there is another PROJECT above it ...
                         PlanNode node = viewPlan.getParent();
                         while (node != null) {
+                            if (node.isOneOf(Type.JOIN)) break;
                             if (node.is(Type.PROJECT) && viewPlan.getSelectors().containsAll(node.getSelectors())) {
                                 viewPlan.extractFromParent();
                                 break;

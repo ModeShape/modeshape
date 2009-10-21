@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.optimize;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -133,15 +132,12 @@ public class ReplaceViewsTest extends AbstractQueryTest {
 
         // Execute the rule ...
         PlanNode result = rule.execute(context, project, new LinkedList<OptimizerRule>());
+        System.out.println(project);
         System.out.println(result);
-        assertThat(result, is(sameInstance(project)));
+        assertThat(result.isSameAs(project), is(true));
         assertChildren(project, select1);
         assertChildren(select1, select2);
         assertChildren(select2, select3);
-        assertChildren(select3, source);
-        assertSameChildren(source, viewSelect);
-        assertSameChildren(source.getFirstChild(), viewSource);
-        assertSameChildren(source.getFirstChild().getFirstChild());
     }
 
     protected List<Column> columns( Column... columns ) {

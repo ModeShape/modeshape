@@ -356,7 +356,7 @@ public class ImmutableSchemata implements Schemata {
                                String... columnNames ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnNames, "columnNames");
-            ImmutableTable existing = tables.get(tableName);
+            ImmutableTable existing = tables.get(new SelectorName(tableName));
             if (existing == null) {
                 throw new IllegalArgumentException(GraphI18n.tableDoesNotExist.text(tableName));
             }

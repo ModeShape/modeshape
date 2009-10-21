@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 
 /**
@@ -43,6 +44,7 @@ public class Query extends QueryCommand {
     private final Constraint constraint;
     private final List<Column> columns;
     private final boolean distinct;
+    private final int hc;
 
     /**
      * Create a new query that uses the supplied source.
@@ -57,6 +59,7 @@ public class Query extends QueryCommand {
         this.constraint = null;
         this.columns = Collections.<Column>emptyList();
         this.distinct = IS_DISTINCT_DEFAULT;
+        this.hc = HashCode.compute(this.source, this.constraint, this.columns, this.distinct);
     }
 
     /**
@@ -84,6 +87,7 @@ public class Query extends QueryCommand {
         this.constraint = constraint;
         this.columns = columns != null ? columns : Collections.<Column>emptyList();
         this.distinct = isDistinct;
+        this.hc = HashCode.compute(this.source, this.constraint, this.columns, this.distinct);
     }
 
     /**
@@ -189,6 +193,16 @@ public class Query extends QueryCommand {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -196,6 +210,7 @@ public class Query extends QueryCommand {
         if (obj == this) return true;
         if (obj instanceof Query) {
             Query that = (Query)obj;
+            if (this.hc != that.hc) return false;
             if (this.distinct != that.distinct) return false;
             if (!this.source.equals(that.source)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.getLimits(), that.getLimits())) return false;

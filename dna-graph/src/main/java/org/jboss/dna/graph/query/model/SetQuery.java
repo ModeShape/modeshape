@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.ExecutionContext;
 
@@ -101,6 +102,7 @@ public class SetQuery extends QueryCommand {
     private final QueryCommand right;
     private final Operation operation;
     private final boolean all;
+    private final int hc;
 
     public SetQuery( QueryCommand left,
                      Operation operation,
@@ -114,6 +116,7 @@ public class SetQuery extends QueryCommand {
         this.right = right;
         this.operation = operation;
         this.all = all;
+        this.hc = HashCode.compute(this.left, this.right, this.operation);
     }
 
     public SetQuery( QueryCommand left,
@@ -130,6 +133,7 @@ public class SetQuery extends QueryCommand {
         this.right = right;
         this.operation = operation;
         this.all = all;
+        this.hc = HashCode.compute(this.left, this.right, this.operation);
     }
 
     /**
@@ -181,6 +185,16 @@ public class SetQuery extends QueryCommand {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -188,6 +202,7 @@ public class SetQuery extends QueryCommand {
         if (obj == this) return true;
         if (obj instanceof SetQuery) {
             SetQuery that = (SetQuery)obj;
+            if (this.hc != that.hc) return false;
             if (this.operation != that.operation) return false;
             if (!this.left.equals(that.left)) return false;
             if (!this.right.equals(that.right)) return false;

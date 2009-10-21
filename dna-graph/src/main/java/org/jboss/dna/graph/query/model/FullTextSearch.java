@@ -28,6 +28,7 @@ import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.parse.FullTextSearchParser;
@@ -42,6 +43,7 @@ public class FullTextSearch extends Constraint {
     private final Name propertyName;
     private final String fullTextSearchExpression;
     private Term term;
+    private final int hc;
 
     /**
      * Create a constraint defining a full-text search against the property values on node within the search scope.
@@ -60,6 +62,7 @@ public class FullTextSearch extends Constraint {
         this.selectorName = selectorName;
         this.propertyName = propertyName;
         this.fullTextSearchExpression = fullTextSearchExpression;
+        this.hc = HashCode.compute(this.selectorName, this.propertyName, this.fullTextSearchExpression);
     }
 
     /**
@@ -78,6 +81,7 @@ public class FullTextSearch extends Constraint {
         this.propertyName = propertyName;
         this.fullTextSearchExpression = fullTextSearchExpression;
         this.term = null;
+        this.hc = HashCode.compute(this.selectorName, this.propertyName, this.fullTextSearchExpression);
     }
 
     /**
@@ -93,6 +97,7 @@ public class FullTextSearch extends Constraint {
         this.selectorName = selectorName;
         this.propertyName = null;
         this.fullTextSearchExpression = fullTextSearchExpression;
+        this.hc = HashCode.compute(this.selectorName, this.propertyName, this.fullTextSearchExpression);
     }
 
     /**
@@ -143,6 +148,16 @@ public class FullTextSearch extends Constraint {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -150,6 +165,7 @@ public class FullTextSearch extends Constraint {
         if (obj == this) return true;
         if (obj instanceof FullTextSearch) {
             FullTextSearch that = (FullTextSearch)obj;
+            if (this.hc != that.hc) return false;
             if (!this.selectorName.equals(that.selectorName)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.propertyName, that.propertyName)) return false;
             if (!this.fullTextSearchExpression.equals(that.fullTextSearchExpression)) return false;

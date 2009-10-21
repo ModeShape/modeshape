@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.property.Path;
 
@@ -37,6 +38,7 @@ public class SameNodeJoinCondition extends JoinCondition {
     private final SelectorName selector1Name;
     private final SelectorName selector2Name;
     private final Path selector2Path;
+    private final int hc;
 
     /**
      * Create a join condition that determines whether the node identified by the first selector is the same as the node at the
@@ -56,6 +58,7 @@ public class SameNodeJoinCondition extends JoinCondition {
         this.selector1Name = selector1Name;
         this.selector2Name = selector2Name;
         this.selector2Path = selector2Path;
+        this.hc = HashCode.compute(this.selector1Name, this.selector2Name, this.selector2Path);
     }
 
     /**
@@ -73,6 +76,7 @@ public class SameNodeJoinCondition extends JoinCondition {
         this.selector1Name = selector1Name;
         this.selector2Name = selector2Name;
         this.selector2Path = null;
+        this.hc = HashCode.compute(this.selector1Name, this.selector2Name, this.selector2Path);
     }
 
     /**
@@ -115,6 +119,16 @@ public class SameNodeJoinCondition extends JoinCondition {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -122,6 +136,7 @@ public class SameNodeJoinCondition extends JoinCondition {
         if (obj == this) return true;
         if (obj instanceof SameNodeJoinCondition) {
             SameNodeJoinCondition that = (SameNodeJoinCondition)obj;
+            if (this.hc != that.hc) return false;
             if (!this.selector1Name.equals(that.selector1Name)) return false;
             if (!this.selector2Name.equals(that.selector2Name)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.selector2Path, that.selector2Path)) return false;

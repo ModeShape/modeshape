@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * 
@@ -36,6 +37,7 @@ public class Join extends Source {
     private final Source right;
     private final JoinType type;
     private final JoinCondition joinCondition;
+    private final int hc;
 
     /**
      * Create a join of the left and right sources, using the supplied join condition. The outputs of the left and right sources
@@ -58,6 +60,7 @@ public class Join extends Source {
         this.right = right;
         this.type = type;
         this.joinCondition = joinCondition;
+        this.hc = HashCode.compute(this.left, this.right, this.type, this.joinCondition);
     }
 
     /**
@@ -101,6 +104,16 @@ public class Join extends Source {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -108,6 +121,7 @@ public class Join extends Source {
         if (obj == this) return true;
         if (obj instanceof Join) {
             Join that = (Join)obj;
+            if (this.hc != that.hc) return false;
             if (!this.type.equals(that.type)) return false;
             if (!this.left.equals(that.left)) return false;
             if (!this.right.equals(that.right)) return false;

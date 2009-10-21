@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * A join condition that evaluates to true only when the named child node is indeed a child of the named parent node.
@@ -33,6 +34,7 @@ import org.jboss.dna.common.util.CheckArg;
 public class ChildNodeJoinCondition extends JoinCondition {
     private final SelectorName childSelectorName;
     private final SelectorName parentSelectorName;
+    private final int hc;
 
     /**
      * Create a join condition that determines whether the node identified by the child selector is a child of the node identified
@@ -47,6 +49,7 @@ public class ChildNodeJoinCondition extends JoinCondition {
         CheckArg.isNotNull(parentSelectorName, "parentSelectorName");
         this.childSelectorName = childSelectorName;
         this.parentSelectorName = parentSelectorName;
+        this.hc = HashCode.compute(this.childSelectorName, this.parentSelectorName);
     }
 
     /**
@@ -76,6 +79,16 @@ public class ChildNodeJoinCondition extends JoinCondition {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -83,6 +96,7 @@ public class ChildNodeJoinCondition extends JoinCondition {
         if (obj == this) return true;
         if (obj instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition that = (ChildNodeJoinCondition)obj;
+            if (this.hc != that.hc) return false;
             if (!this.childSelectorName.equals(that.childSelectorName)) return false;
             if (!this.parentSelectorName.equals(that.parentSelectorName)) return false;
             return true;

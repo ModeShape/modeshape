@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Path;
 
 /**
@@ -34,6 +35,7 @@ import org.jboss.dna.graph.property.Path;
 public class SameNode extends Constraint {
     private final SelectorName selectorName;
     private final Path path;
+    private final int hc;
 
     /**
      * Create a constraint requiring that the node identified by the selector is reachable by the supplied absolute path.
@@ -48,6 +50,7 @@ public class SameNode extends Constraint {
         CheckArg.isNotNull(path, "path");
         this.selectorName = selectorName;
         this.path = path;
+        this.hc = HashCode.compute(this.selectorName, this.path);
     }
 
     /**
@@ -81,6 +84,16 @@ public class SameNode extends Constraint {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -88,6 +101,7 @@ public class SameNode extends Constraint {
         if (obj == this) return true;
         if (obj instanceof SameNode) {
             SameNode that = (SameNode)obj;
+            if (this.hc != that.hc) return false;
             if (!this.selectorName.equals(that.selectorName)) return false;
             if (!this.path.equals(that.path)) return false;
             return true;

@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * A constraint that evaluates to true when <i>both</i> of the other constraints evaluate to true.
@@ -34,6 +35,7 @@ public class And extends Constraint {
 
     private final Constraint left;
     private final Constraint right;
+    private final int hc;
 
     public And( Constraint left,
                 Constraint right ) {
@@ -41,6 +43,7 @@ public class And extends Constraint {
         CheckArg.isNotNull(right, "right");
         this.left = left;
         this.right = right;
+        this.hc = HashCode.compute(this.left, this.right);
     }
 
     /**
@@ -70,6 +73,16 @@ public class And extends Constraint {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -77,6 +90,7 @@ public class And extends Constraint {
         if (obj == this) return true;
         if (obj instanceof And) {
             And that = (And)obj;
+            if (this.hc != that.hc) return false;
             return left.equals(that.left) && right.equals(that.right);
         }
         return false;

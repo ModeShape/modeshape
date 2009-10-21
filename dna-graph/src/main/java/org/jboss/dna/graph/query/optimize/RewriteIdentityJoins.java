@@ -25,13 +25,16 @@ package org.jboss.dna.graph.query.optimize;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
+import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
 import org.jboss.dna.graph.query.model.JoinCondition;
+import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanUtil;
@@ -82,54 +85,67 @@ public class RewriteIdentityJoins implements OptimizerRule {
     public PlanNode execute( QueryContext context,
                              PlanNode plan,
                              LinkedList<OptimizerRule> ruleStack ) {
+        if (!context.getHints().hasJoin) return plan;
+
         // For each of the JOIN nodes ...
         Map<SelectorName, SelectorName> rewrittenSelectors = null;
+        int rewrittenJoins = 0;
+        int numJoins = 0;
         for (PlanNode joinNode : plan.findAllAtOrBelow(Type.JOIN)) {
+            ++numJoins;
             JoinCondition condition = joinNode.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
             if (condition instanceof EquiJoinCondition) {
-                PlanNode leftNode = joinNode.getFirstChild();
-                PlanNode rightNode = joinNode.getLastChild();
+                PlanNode leftNode = joinNode.getFirstChild().findAtOrBelow(Type.SOURCE);
+                PlanNode rightNode = joinNode.getLastChild().findAtOrBelow(Type.SOURCE);
                 assert leftNode != null;
                 assert rightNode != null;
-                if (leftNode.getType() == Type.SOURCE && rightNode.getType() == Type.SOURCE) {
-                    EquiJoinCondition equiJoin = (EquiJoinCondition)condition;
-                    // Find the names (or aliases) of the tables ...
-                    Schemata schemata = context.getSchemata();
-                    assert schemata != null;
-                    SelectorName leftTableName = leftNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
-                    SelectorName rightTableName = rightNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
-                    assert leftTableName != null;
-                    assert rightTableName != null;
-                    // Presumably the join condition is using at least one alias, but we only care about the actual name ...
-                    if (!leftTableName.equals(rightTableName)) {
-                        // The join is not joining the same table, so this doesn't meet the condition ...
-                        continue;
-                    }
-                    // Find the schemata columns referenced by the join condition ...
-                    Table table = schemata.getTable(leftTableName);
-                    if (table == null) {
-                        context.getProblems().addError(GraphI18n.tableDoesNotExist, leftTableName);
-                        continue;
-                    }
-                    ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-                    String leftColumnName = stringFactory.create(equiJoin.getProperty1Name());
-                    String rightColumnName = stringFactory.create(equiJoin.getProperty2Name());
-                    Schemata.Column leftColumn = table.getColumn(leftColumnName);
-                    Schemata.Column rightColumn = table.getColumn(rightColumnName);
-                    if (leftColumn == null) {
-                        context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, leftColumnName, leftTableName);
-                        continue;
-                    }
-                    if (rightColumn == null) {
-                        context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, rightColumnName, leftTableName);
-                        continue;
-                    }
-                    // Are the join columns (on both sides) keys?
-                    if (table.hasKey(leftColumn) && (rightColumn == leftColumn || table.hasKey(rightColumn))) {
-                        // It meets all the criteria, so rewrite this join node ...
-                        if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
-                        rewriteJoinNode(context, joinNode, equiJoin, rewrittenSelectors);
-                    }
+                EquiJoinCondition equiJoin = (EquiJoinCondition)condition;
+                // Find the names (or aliases) of the tables ...
+                Schemata schemata = context.getSchemata();
+                assert schemata != null;
+                SelectorName leftTableName = leftNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                SelectorName rightTableName = rightNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                assert leftTableName != null;
+                assert rightTableName != null;
+                // Presumably the join condition is using at least one alias, but we only care about the actual name ...
+                if (!leftTableName.equals(rightTableName)) {
+                    // The join is not joining the same table, so this doesn't meet the condition ...
+                    continue;
+                }
+                // Find the schemata columns referenced by the join condition ...
+                Table table = schemata.getTable(leftTableName);
+                if (table == null) {
+                    context.getProblems().addError(GraphI18n.tableDoesNotExist, leftTableName);
+                    continue;
+                }
+                ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
+                String leftColumnName = stringFactory.create(equiJoin.getProperty1Name());
+                String rightColumnName = stringFactory.create(equiJoin.getProperty2Name());
+                Schemata.Column leftColumn = table.getColumn(leftColumnName);
+                Schemata.Column rightColumn = table.getColumn(rightColumnName);
+                if (leftColumn == null) {
+                    context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, leftColumnName, leftTableName);
+                    continue;
+                }
+                if (rightColumn == null) {
+                    context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, rightColumnName, leftTableName);
+                    continue;
+                }
+                // Are the join columns (on both sides) keys?
+                if (table.hasKey(leftColumn) && (rightColumn == leftColumn || table.hasKey(rightColumn))) {
+                    // It meets all the criteria, so rewrite this join node ...
+                    if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
+                    rewriteJoinNode(context, joinNode, rewrittenSelectors);
+                    ++rewrittenJoins;
+                }
+            } else if (condition instanceof SameNodeJoinCondition) {
+                SameNodeJoinCondition sameNodeCondition = (SameNodeJoinCondition)condition;
+                if (sameNodeCondition.getSelector1Name().equals(sameNodeCondition.getSelector2Name())
+                    && sameNodeCondition.getSelector2Path() == null) {
+                    // It meets all the criteria, so rewrite this join node ...
+                    if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
+                    rewriteJoinNode(context, joinNode, rewrittenSelectors);
+                    ++rewrittenJoins;
                 }
             }
         }
@@ -140,27 +156,71 @@ public class RewriteIdentityJoins implements OptimizerRule {
             // this criteria, so we need to re-run this rule...
             ruleStack.addFirst(this);
 
+            // After this rule is done as is no longer needed, we need to try to push SELECTs and PROJECTs again ...
+            if (!(ruleStack.peekFirst() instanceof PushSelectCriteria)) {
+                // We haven't already added these, so add them now ...
+                ruleStack.addFirst(PushProjects.INSTANCE);
+                if (context.getHints().hasCriteria) {
+                    ruleStack.addFirst(PushSelectCriteria.INSTANCE);
+                }
+            }
+
             // Now rewrite the various portions of the plan that make use of the now-removed selectors ...
             PlanUtil.replaceReferencesToRemovedSource(context, plan, rewrittenSelectors);
-        } else {
-            // There are no-untouched JOIN nodes, which means the sole JOIN node was rewritten as a single SOURCE node
-            assert plan.findAllAtOrBelow(Type.JOIN).isEmpty();
-            context.getHints().hasJoin = false;
+
+            assert rewrittenJoins > 0;
+            if (rewrittenJoins == numJoins) {
+                assert plan.findAllAtOrBelow(Type.JOIN).isEmpty();
+                context.getHints().hasJoin = false;
+            }
         }
         return plan;
     }
 
     protected void rewriteJoinNode( QueryContext context,
                                     PlanNode joinNode,
-                                    EquiJoinCondition joinCondition,
                                     Map<SelectorName, SelectorName> rewrittenSelectors ) {
         // Remove the right source node from the join node ...
-        PlanNode rightSource = joinNode.getLastChild();
-        rightSource.removeFromParent();
+        PlanNode rightChild = joinNode.getLastChild();
+        rightChild.removeFromParent();
+        PlanNode rightSource = rightChild.findAtOrBelow(Type.SOURCE);
 
         // Replace the join node with the left source node ...
-        PlanNode leftSource = joinNode.getFirstChild();
+        PlanNode leftChild = joinNode.getFirstChild();
         joinNode.extractFromParent();
+        PlanNode leftSource = leftChild.findAtOrBelow(Type.SOURCE);
+
+        // Combine the right PROJECT node with that on the left ...
+        PlanNode rightProject = rightChild.findAtOrBelow(Type.PROJECT);
+        if (rightProject != null) {
+            PlanNode leftProject = leftChild.findAtOrBelow(Type.PROJECT);
+            if (leftProject != null) {
+                List<Column> leftColumns = leftProject.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+                for (Column rightColumn : rightProject.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class)) {
+                    if (!leftColumns.contains(rightColumn)) leftColumns.add(rightColumn);
+                }
+            } else {
+                // Just create a project on the left side ...
+                leftProject = new PlanNode(Type.PROJECT);
+                leftProject.setProperty(Property.PROJECT_COLUMNS, rightProject.getProperty(Property.PROJECT_COLUMNS));
+                leftChild.getFirstChild().insertAsParent(leftProject);
+            }
+        }
+
+        // Accumulate any SELECT nodes from the right side and add to the left ...
+        PlanNode topRightSelect = rightChild.findAtOrBelow(Type.SELECT);
+        if (topRightSelect != null) {
+            PlanNode bottomRightSelect = topRightSelect;
+            while (true) {
+                if (bottomRightSelect.getFirstChild().isNot(Type.SELECT)) break;
+                bottomRightSelect = bottomRightSelect.getFirstChild();
+            }
+            topRightSelect.setParent(null);
+            bottomRightSelect.removeAllChildren();
+            // Place just above the left source ...
+            leftSource.getParent().addLastChild(topRightSelect);
+            leftSource.setParent(bottomRightSelect);
+        }
 
         // Now record that references to the right selector name should be removed ...
         SelectorName rightTableName = rightSource.getProperty(Property.SOURCE_NAME, SelectorName.class);

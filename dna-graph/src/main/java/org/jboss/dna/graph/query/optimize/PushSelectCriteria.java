@@ -297,6 +297,7 @@ public class PushSelectCriteria implements OptimizerRule {
 
         // first look for originating nodes that exactly match the required selectors ...
         for (PlanNode originatingNode : originatingNodes) {
+            if (!criteriaNode.isAbove(originatingNode)) continue;
             if (originatingNode.getSelectors().equals(requiredSelectors)) return originatingNode;
         }
 

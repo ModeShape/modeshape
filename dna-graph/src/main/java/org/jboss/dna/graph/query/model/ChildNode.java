@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Path;
 
 /**
@@ -34,6 +35,7 @@ import org.jboss.dna.graph.property.Path;
 public class ChildNode extends Constraint {
     private final SelectorName selectorName;
     private final Path parentPath;
+    private final int hc;
 
     /**
      * Create a constraint requiring that the node identified by the selector is a child of the node reachable by the supplied
@@ -48,6 +50,7 @@ public class ChildNode extends Constraint {
         CheckArg.isNotNull(parentPath, "parentPath");
         this.selectorName = selectorName;
         this.parentPath = parentPath;
+        this.hc = HashCode.compute(this.selectorName, this.parentPath);
     }
 
     /**
@@ -77,6 +80,16 @@ public class ChildNode extends Constraint {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -84,6 +97,7 @@ public class ChildNode extends Constraint {
         if (obj == this) return true;
         if (obj instanceof ChildNode) {
             ChildNode that = (ChildNode)obj;
+            if (this.hc != that.hc) return false;
             if (!this.selectorName.equals(that.selectorName)) return false;
             if (!this.parentPath.equals(that.parentPath)) return false;
             return true;

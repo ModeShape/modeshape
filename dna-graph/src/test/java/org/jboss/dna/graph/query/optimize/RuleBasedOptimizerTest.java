@@ -38,12 +38,14 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Comparison;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
+import org.jboss.dna.graph.query.model.FullTextSearch;
 import org.jboss.dna.graph.query.model.JoinType;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
 import org.jboss.dna.graph.query.plan.JoinAlgorithm;
@@ -66,6 +68,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     private List<Integer> ruleExecutionOrder;
     private QueryContext context;
     private PlanNode node;
+    private boolean print = false;
 
     @Before
     public void beforeEach() {
@@ -73,8 +76,15 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(execContext);
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
+        builder.addTable("all", "a1", "a2", "a3", "a4", "primaryType", "mixins");
+        builder.addKey("all", "a1");
+        builder.addKey("all", "a3");
         builder.addView("v1", "SELECT c11, c12 AS c2 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
+        builder.addView("type1",
+                        "SELECT all.a1, all.a2 FROM all WHERE all.primaryType IN ('t1','t0') AND all.mixins IN ('t3','t4')");
+        builder.addView("type2",
+                        "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
         context = new QueryContext(execContext, new PlanHints(), schemata);
 
@@ -282,6 +292,136 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         assertThat(node.isSameAs(project), is(true));
     }
 
+    @Test
+    public void shouldOptimizePlanForQueryUsingTypeView() {
+        node = optimize("SELECT type1.a1 AS a, type1.a2 AS b FROM type1 WHERE CONTAINS(type1.a2,'something')");
+
+        // Create the expected plan ...
+        PlanNode access = new PlanNode(Type.ACCESS, selector("all"));
+        PlanNode project = new PlanNode(Type.PROJECT, access, selector("all"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1", "a"), column("all", "a2", "b")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+                                                                      new Literal("t1"), new Literal("t0")));
+        PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                      new Literal("t3"), new Literal("t4")));
+        PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
+        source.setProperty(Property.SOURCE_NAME, selector("all"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(access), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryJoiningMultipleTypeViewsUsingIdentityEquiJoin() {
+        node = optimize("SELECT type1.a1 AS a, type1.a2 AS b, type2.a3 as c, type2.a4 as d "
+                        + "FROM type1 JOIN type2 ON type1.a1 = type2.a3 WHERE CONTAINS(type1.a2,'something')");
+
+        // Create the expected plan ...
+        PlanNode access = new PlanNode(Type.ACCESS, selector("all"));
+        PlanNode project = new PlanNode(Type.PROJECT, access, selector("all"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1", "a"),
+                                                              column("all", "a2", "b"),
+                                                              column("all", "a3", "c"),
+                                                              column("all", "a4", "d")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+                                                                      new Literal("t1"), new Literal("t0"), new Literal("t2")));
+        PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                      new Literal("t3"), new Literal("t4"), new Literal("t5")));
+        PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
+        source.setProperty(Property.SOURCE_NAME, selector("all"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(access), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryJoiningMultipleTypeViewsUsingNonIdentityEquiJoin() {
+        node = optimize("SELECT type1.a1 AS a, type1.a2 AS b, type2.a3 as c, type2.a4 as d "
+                        + "FROM type1 JOIN type2 ON type1.a2 = type2.a3 WHERE CONTAINS(type1.a1,'something')");
+
+        // Create the expected plan ...
+        PlanNode project = new PlanNode(Type.PROJECT, selector("all"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1", "a"),
+                                                              column("all", "a2", "b"),
+                                                              column("all", "a3", "c"),
+                                                              column("all", "a4", "d")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a1"), "something"));
+        PlanNode join = new PlanNode(Type.JOIN, select1, selector("all"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("all"), name("a2"), selector("all"), name("a3")));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("all"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("all"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1"), column("all", "a2")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("all"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA,
+                                new SetCriteria(new PropertyValue(selector("all"), name("primaryType")), new Literal("t1"),
+                                                new Literal("t0")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("all"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                          new Literal("t3"), new Literal("t4")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("all"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("all"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("all"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("all"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a3"), column("all", "a4")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("all"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA,
+                                 new SetCriteria(new PropertyValue(selector("all"), name("primaryType")), new Literal("t2"),
+                                                 new Literal("t0")));
+        PlanNode rightSelect2 = new PlanNode(Type.SELECT, rightSelect1, selector("all"));
+        rightSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                           new Literal("t4"), new Literal("t5")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect2, selector("all"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("all"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(project), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryJoiningMultipleTypeViewsUsingSameNodeJoin() {
+        node = optimize("SELECT type1.a1 AS a, type1.a2 AS b, type2.a3 as c, type2.a4 as d "
+                        + "FROM type1 JOIN type2 ON ISSAMENODE(type1,type2) WHERE CONTAINS(type1.a2,'something')");
+
+        // Create the expected plan ...
+        PlanNode access = new PlanNode(Type.ACCESS, selector("all"));
+        PlanNode project = new PlanNode(Type.PROJECT, access, selector("all"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1", "a"),
+                                                              column("all", "a2", "b"),
+                                                              column("all", "a3", "c"),
+                                                              column("all", "a4", "d")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+                                                                      new Literal("t1"), new Literal("t0"), new Literal("t2")));
+        PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+                                                                      new Literal("t3"), new Literal("t4"), new Literal("t5")));
+        PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
+        source.setProperty(Property.SOURCE_NAME, selector("all"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("all")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(access), is(true));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utility methods ...
     // ----------------------------------------------------------------------------------------------------------------
@@ -313,9 +453,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         assertThat("Problems planning query: " + sql + "\n" + problems, problems.hasErrors(), is(false));
         PlanNode optimized = new RuleBasedOptimizer().optimize(context, plan);
         assertThat("Problems optimizing query: " + sql + "\n" + problems, problems.hasErrors(), is(false));
-        System.out.println();
-        System.out.println(sql);
-        System.out.println(optimized);
+        if (print) {
+            System.out.println();
+            System.out.println(sql);
+            System.out.println(optimized);
+        }
         return optimized;
     }
 }

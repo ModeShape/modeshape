@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * A join condition that evaluates to true only when the named node is a descendant of another named node.
@@ -33,6 +34,7 @@ import org.jboss.dna.common.util.CheckArg;
 public class DescendantNodeJoinCondition extends JoinCondition {
     private final SelectorName descendantSelectorName;
     private final SelectorName ancestorSelectorName;
+    private final int hc;
 
     /**
      * Create a join condition that determines whether the node identified by the descendant selector is indeed a descendant of
@@ -47,6 +49,7 @@ public class DescendantNodeJoinCondition extends JoinCondition {
         CheckArg.isNotNull(ancestorSelectorName, "ancestorSelectorName");
         this.descendantSelectorName = descendantSelectorName;
         this.ancestorSelectorName = ancestorSelectorName;
+        this.hc = HashCode.compute(this.descendantSelectorName, this.ancestorSelectorName);
     }
 
     /**
@@ -76,6 +79,16 @@ public class DescendantNodeJoinCondition extends JoinCondition {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -83,6 +96,7 @@ public class DescendantNodeJoinCondition extends JoinCondition {
         if (obj == this) return true;
         if (obj instanceof DescendantNodeJoinCondition) {
             DescendantNodeJoinCondition that = (DescendantNodeJoinCondition)obj;
+            if (this.hc != that.hc) return false;
             if (!this.descendantSelectorName.equals(that.descendantSelectorName)) return false;
             if (!this.ancestorSelectorName.equals(that.ancestorSelectorName)) return false;
             return true;

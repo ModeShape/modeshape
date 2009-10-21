@@ -70,6 +70,8 @@ import org.jboss.dna.graph.query.validate.Schemata.View;
  *         |
  *      PROJECT      with the list of columns being SELECTed
  *         |
+ *       GROUP       if 'GROUP BY' is used
+ *         |
  *      SELECT1
  *         |         One or more SELECT plan nodes that each have
  *      SELECT2      a single non-join constraint that are then all AND-ed
@@ -126,6 +128,9 @@ public class CanonicalPlanner implements Planner {
 
         // Attach criteria (on top) ...
         plan = attachCriteria(context, plan, query.getConstraint());
+
+        // Attach groupbys (on top) ...
+        // plan = attachGrouping(context,plan,query.getGroupBy());
 
         // Attach the project ...
         plan = attachProject(context, plan, query.getColumns(), usedSources);

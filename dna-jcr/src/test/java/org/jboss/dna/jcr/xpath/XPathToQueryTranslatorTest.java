@@ -73,7 +73,7 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathContainingExplicitPath() {
         assertThat(xpath("/jcr:root/a"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'a' AND DEPTH(nodeSet1) = 1"));
+                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'a' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
         assertThat(xpath("/jcr:root/a/b"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
         assertThat(xpath("/jcr:root/a/b/c"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c'"));
         assertThat(xpath("/jcr:root/a/b/c/d"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c/d'"));
@@ -218,13 +218,13 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathOfNodeWithNameUnderRoot() {
         assertThat(xpath("/jcr:root/element(nodeName,*)"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = 1"));
+                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
 
         assertThat(xpath("/jcr:root/nodeName"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = 1"));
+                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
 
         assertThat(xpath("nodeName"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = 1"));
+                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
     }
 
     @Test

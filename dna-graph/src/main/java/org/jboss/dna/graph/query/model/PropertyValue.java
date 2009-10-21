@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -34,6 +35,7 @@ import org.jboss.dna.graph.property.Name;
 public class PropertyValue extends DynamicOperand {
     private final SelectorName selectorName;
     private final Name propertyName;
+    private final int hc;
 
     /**
      * Create a dynamic operand that evaluates to the property values of the node identified by the selector.
@@ -48,6 +50,7 @@ public class PropertyValue extends DynamicOperand {
         CheckArg.isNotNull(propertyName, "propertyName");
         this.selectorName = selectorName;
         this.propertyName = propertyName;
+        this.hc = HashCode.compute(this.selectorName, this.propertyName);
     }
 
     /**
@@ -82,6 +85,16 @@ public class PropertyValue extends DynamicOperand {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -89,6 +102,7 @@ public class PropertyValue extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof PropertyValue) {
             PropertyValue that = (PropertyValue)obj;
+            if (this.hc != that.hc) return false;
             return this.selectorName.equals(that.selectorName) && this.propertyName.equals(that.propertyName);
         }
         return false;

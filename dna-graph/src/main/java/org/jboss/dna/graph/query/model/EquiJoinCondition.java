@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -42,6 +43,7 @@ public class EquiJoinCondition extends JoinCondition {
     private final Name property1Name;
     private final SelectorName selector2Name;
     private final Name property2Name;
+    private final int hc;
 
     public EquiJoinCondition( SelectorName selector1Name,
                               Name property1Name,
@@ -55,6 +57,7 @@ public class EquiJoinCondition extends JoinCondition {
         this.property1Name = property1Name;
         this.selector2Name = selector2Name;
         this.property2Name = property2Name;
+        this.hc = HashCode.compute(this.selector1Name, this.property1Name, this.selector2Name, this.property2Name);
     }
 
     public EquiJoinCondition( Column column1,
@@ -103,6 +106,16 @@ public class EquiJoinCondition extends JoinCondition {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return hc;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -110,6 +123,7 @@ public class EquiJoinCondition extends JoinCondition {
         if (obj == this) return true;
         if (obj instanceof EquiJoinCondition) {
             EquiJoinCondition that = (EquiJoinCondition)obj;
+            if (this.hc != that.hc) return false;
             if (!this.selector1Name.equals(that.selector1Name)) return false;
             if (!this.selector2Name.equals(that.selector2Name)) return false;
             if (!this.property1Name.equals(that.property1Name)) return false;

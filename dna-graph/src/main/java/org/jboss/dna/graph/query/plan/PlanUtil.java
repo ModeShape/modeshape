@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.query.plan;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -489,11 +490,10 @@ public class PlanUtil {
         List<PlanNode> potentiallyRemovableSources = new LinkedList<PlanNode>();
         do {
             // Remove the view from the selectors ...
-            if (node.getSelectors().contains(viewName)) {
+            if (node.getSelectors().remove(viewName)) {
                 switch (node.getType()) {
                     case PROJECT:
                         // Adjust the columns ...
-                        node.getSelectors().remove(viewName);
                         List<Column> columns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
                         if (columns != null) {
                             for (int i = 0; i != columns.size(); ++i) {
@@ -529,18 +529,40 @@ public class PlanUtil {
                             node.setProperty(Property.SELECT_CRITERIA, newConstraint);
                         }
                         break;
-                    case SET_OPERATION:
-                        break;
                     case SOURCE:
                         SelectorName sourceName = node.getProperty(Property.SOURCE_NAME, SelectorName.class);
                         assert sourceName.equals(sourceName); // selector name already matches
                         potentiallyRemovableSources.add(node);
                         break;
-                    default:
+                    case JOIN:
+                        JoinCondition joinCondition = node.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
+                        JoinCondition newJoinCondition = replaceViewReferences(context, joinCondition, mappings, node);
+                        node.getSelectors().clear();
+                        node.setProperty(Property.JOIN_CONDITION, newJoinCondition);
+                        node.addSelectors(Visitors.getSelectorsReferencedBy(newJoinCondition));
+                        List<Constraint> joinConstraints = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
+                        if (joinConstraints != null && !joinConstraints.isEmpty()) {
+                            List<Constraint> newConstraints = new ArrayList<Constraint>(joinConstraints.size());
+                            for (Constraint joinConstraint : joinConstraints) {
+                                newConstraint = replaceReferences(context, joinConstraint, mappings, node);
+                                newConstraints.add(newConstraint);
+                                node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
+                            }
+                            node.setProperty(Property.JOIN_CONSTRAINTS, newConstraints);
+                        }
                         break;
-                }
-                if (!node.getSelectors().contains(viewName)) {
-                    // Used to reference view, so it needs to at least reference
+                    case ACCESS:
+                        // Nothing to do here, as the selector names are fixed elsewhere
+                        break;
+                    case SORT:
+                        break;
+                    case GROUP:
+                        // Don't yet use GROUP BY
+                    case SET_OPERATION:
+                    case DUP_REMOVE:
+                    case LIMIT:
+                    case NULL:
+                        break;
                 }
             }
             // Move to the parent ...
@@ -704,10 +726,10 @@ public class PlanUtil {
         return operand;
     }
 
-    public static JoinCondition replaceReferences( QueryContext context,
-                                                   JoinCondition joinCondition,
-                                                   ColumnMapping mapping,
-                                                   PlanNode node ) {
+    public static JoinCondition replaceViewReferences( QueryContext context,
+                                                       JoinCondition joinCondition,
+                                                       ColumnMapping mapping,
+                                                       PlanNode node ) {
         if (joinCondition instanceof EquiJoinCondition) {
             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
             SelectorName replacement1 = condition.getSelector1Name();
@@ -749,6 +771,7 @@ public class PlanUtil {
             if (replacement2.equals(viewName)) replacement2 = sourceName;
             if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
             node.addSelector(replacement1, replacement2);
+            if (condition.getSelector2Path() == null) return new SameNodeJoinCondition(replacement1, replacement2);
             return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
         }
         if (joinCondition instanceof ChildNodeJoinCondition) {
