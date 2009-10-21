@@ -38,7 +38,6 @@ import org.jboss.dna.graph.query.model.EquiJoinCondition;
 import org.jboss.dna.graph.query.model.JoinCondition;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.PropertyValue;
-import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.Visitable;
 import org.jboss.dna.graph.query.model.Visitors;
@@ -49,13 +48,75 @@ import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 
 /**
- * An {@link OptimizerRule optimizer rule} that copies SELECT nodes that apply to one side of a equi-join condition so that they
- * also apply to the other side fo the equi-join condition.
+ * An {@link OptimizerRule optimizer rule} that moves up higher in the plan any SELECT node that appears below a JOIN node and
+ * that applies to selectors that are on the other side of the join.
+ * <p>
+ * This step is often counterintuitive, since one of the best optimizations a query optimizer can do is to
+ * {@link PushSelectCriteria push down SELECT nodes} as far as they'll go. But consider the case of a SOURCE node that appears
+ * below a JOIN, where the SOURCE node is a view. The optimizer {@link ReplaceViews replaces the SOURCE node with the view
+ * definition}, and if the view definition includes a SELECT node, that SELECT node appears below the JOIN. Plus, that SELECT node
+ * is already pushed down as far as it can go (assuming the view isn't defined to use another view). However, the JOIN may use the
+ * same selector on the opposite side, and it may be possible that the same SELECT node may apply to the other side of the JOIN.
+ * In this case, we can push <i>up</i> the SELECT node higher than the JOIN, and then the push-down would cause the SELECT to be
+ * copied to both sides of the JOIN.
+ * </p>
+ * <p>
+ * Here is an example plan that involves a JOIN of two SOURCE nodes:
+ * 
+ * <pre>
+ *          ...
+ *           |
+ *         JOIN
+ *        /     \
+ *       /       SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;t1&quot;)   
+ *      /
+ *   SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;v1&quot;)
+ * </pre>
+ * 
+ * If the right-side SOURCE references the "t1" table, and the left-side SOURCE references a view "v1" defined as "
+ * <code>SELECT * FROM t1 WHERE t1.id &lt; 3</code>", then the {@link ReplaceViews} rule would change this plan to be:
+ * 
+ * <pre>
+ *           ...
+ *           |
+ *         JOIN
+ *        /     \
+ *       /       SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;t1&quot;)   
+ *      /
+ *    PROJECT
+ *      |
+ *    SELECT     applies the &quot;t1.id &lt; 3&quot; criteria
+ *      |
+ *   SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;t1&quot;)
+ * </pre>
+ * 
+ * Again, the SELECT cannot be pushed down any further. But the whole query can be made more efficient - because the SELECT on the
+ * left-side of the JOIN will include only those tuples from 't1' that satisfy the SELECT, the JOIN will only include those tuples
+ * that also satisfy this criteria, even though more tuples are returned from the right-side SOURCE.
+ * </p>
+ * <p>
+ * In this case, the left-hand SELECT can actually be copied to the right-hand side of the JOIN, resulting in:
+ * 
+ * <pre>
+ *           ...
+ *           |
+ *         JOIN
+ *        /     \
+ *       /       SELECT   applies the &quot;t1.id &lt; 3&quot; criteria
+ *      /          |
+ *    PROJECT    SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;t1&quot;)   
+ *      |
+ *    SELECT   applies the &quot;t1.id &lt; 3&quot; criteria
+ *      |
+ *   SOURCE({@link Property#SOURCE_NAME SOURCE_NAME}=&quot;t1&quot;)
+ * </pre>
+ * 
+ * </p>
  */
 @Immutable
-public class CopyCriteria implements OptimizerRule {
+public class RaiseSelectCriteria implements OptimizerRule {
 
-    public static final CopyCriteria INSTANCE = new CopyCriteria();
+    public static final RaiseSelectCriteria INSTANCE = new RaiseSelectCriteria();
 
     /**
      * {@inheritDoc}
@@ -99,47 +160,8 @@ public class CopyCriteria implements OptimizerRule {
                     node = node.getParent();
                 }
             }
-
-            if (joinCondition instanceof EquiJoinCondition || joinCondition instanceof SameNodeJoinCondition) {
-                // Then for each side of the join ...
-                PlanNode left = join.getFirstChild();
-                PlanNode right = join.getLastChild();
-                copySelectNodes(context, left, right);
-                copySelectNodes(context, right, left);
-            }
         }
         return plan;
-    }
-
-    protected void copySelectNodes( QueryContext context,
-                                    PlanNode fromJoined,
-                                    PlanNode toJoined ) {
-        // Find all of the selectors used on the 'to' side ...
-        Set<SelectorName> toSelectors = new HashSet<SelectorName>();
-        for (PlanNode toNode : toJoined.findAllAtOrBelow()) {
-            toSelectors.addAll(toNode.getSelectors());
-        }
-
-        PlanNode nodeBelowSelects = null;
-
-        // Walk down the 'fromJoined' side looking for all SELECT nodes ...
-        for (PlanNode select : fromJoined.findAllAtOrBelow(Type.SELECT)) {
-            // If all of the SELECT's selectors are also found on the right ...
-            if (toSelectors.containsAll(select.getSelectors())) {
-                // Copy the criteria ...
-                PlanNode copy = new PlanNode(Type.SELECT, select.getSelectors());
-                copy.setProperty(Property.SELECT_CRITERIA, select.getProperty(Property.SELECT_CRITERIA));
-
-                if (nodeBelowSelects == null) {
-                    nodeBelowSelects = toJoined.findAtOrBelow(Type.SOURCE, Type.JOIN, Type.SET_OPERATION, Type.NULL);
-                    if (nodeBelowSelects == null) {
-                        nodeBelowSelects = toJoined;
-                    }
-                }
-                nodeBelowSelects.insertAsParent(copy);
-                nodeBelowSelects = copy;
-            }
-        }
     }
 
     protected PlanNode copySelectNode( QueryContext context,

@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.graph.query.model;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,7 +32,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * A set of common visitors that can be reused or extended, and methods that provide easy construction and calling of visitors.

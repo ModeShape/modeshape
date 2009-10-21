@@ -113,6 +113,15 @@ public abstract class QueryProcessor implements Processor {
         return null;
     }
 
+    /**
+     * Create the {@link ProcessingComponent} that processes a single {@link Type#ACCESS} branch of a query plan.
+     * 
+     * @param context the context in which query is being evaluated; never null
+     * @param accessNode the node in the query plan that represents the {@link Type#ACCESS} plan; never null
+     * @param resultColumns the columns that are to be returned; never null
+     * @param analyzer the criteria analyzer; never null
+     * @return the processing component; may not be null
+     */
     protected abstract ProcessingComponent createAccessComponent( QueryContext context,
                                                                   PlanNode accessNode,
                                                                   Columns resultColumns,
@@ -141,10 +150,11 @@ public abstract class QueryProcessor implements Processor {
         ProcessingComponent component = null;
         switch (node.getType()) {
             case ACCESS:
-                // Create the component under the ACCESS ...
+                // Create the component to handle the ACCESS node ...
                 assert node.getChildCount() == 1;
-                // Don't do anything special with an access node at the moment ...
-                component = createComponent(context, node.getFirstChild(), columns, analyzer);
+                component = createAccessComponent(context, node, columns, analyzer);
+                // // Don't do anything special with an access node at the moment ...
+                // component = createComponent(context, node.getFirstChild(), columns, analyzer);
                 break;
             case DUP_REMOVE:
                 // Create the component under the DUP_REMOVE ...

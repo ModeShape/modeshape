@@ -1090,6 +1090,40 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
     }
 
     /**
+     * Find all of the nodes that are at or below this node.
+     * 
+     * @return the collection of nodes that are at or below this node; never null and never empty
+     */
+    public List<PlanNode> findAllAtOrBelow() {
+        return findAllAtOrBelow(Traversal.PRE_ORDER);
+    }
+
+    /**
+     * Find all of the nodes that are at or below this node.
+     * 
+     * @param order the order to traverse; may not be null
+     * @return the collection of nodes that are at or below this node; never null and never empty
+     */
+    public List<PlanNode> findAllAtOrBelow( Traversal order ) {
+        assert order != null;
+        List<PlanNode> results = new LinkedList<PlanNode>();
+        LinkedList<PlanNode> queue = new LinkedList<PlanNode>();
+        queue.add(this);
+        while (!queue.isEmpty()) {
+            PlanNode aNode = queue.poll();
+            switch (order) {
+                case LEVEL_ORDER:
+                    queue.addAll(aNode.getChildren());
+                    break;
+                case PRE_ORDER:
+                    queue.addAll(0, aNode.getChildren());
+                    break;
+            }
+        }
+        return results;
+    }
+
+    /**
      * Find all of the nodes of the specified type that are at or below this node.
      * 
      * @param typeToFind the type of node to find; may not be null

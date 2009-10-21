@@ -43,6 +43,32 @@ import org.jboss.dna.graph.query.validate.Schemata.View;
 /**
  * An {@link OptimizerRule optimizer rule} that replaces any SOURCE nodes that happen to be {@link View views}. This rewriting
  * changes all of the elements of the plan that reference the SOURCE and it's columns, including criteria, project nodes, etc.
+ * <p>
+ * For example, here is the portion of a plan that uses a single SOURCE that is defined to use a view.
+ * 
+ * <pre>
+ *          ...
+ *           |
+ *        SOURCE1
+ * </pre>
+ * 
+ * This same SOURCE node is then replaced with the view's definition:
+ * 
+ * <pre>
+ *          ...
+ *           |
+ *        PROJECT      with the list of columns being SELECTed
+ *           |
+ *        SELECT1
+ *           |         One or more SELECT plan nodes that each have
+ *        SELECT2      a single non-join constraint that are then all AND-ed
+ *           |         together
+ *        SELECTn
+ *           |
+ *        SOURCE
+ * </pre>
+ * 
+ * </p>
  */
 @Immutable
 public class ReplaceViews implements OptimizerRule {
@@ -113,6 +139,12 @@ public class ReplaceViews implements OptimizerRule {
         } while (foundViews);
 
         if (foundViews) {
+            // We'll need to try to push up criteria from the join, but we only should do this after this rule
+            // is completely done ...
+            if (!(ruleStack.getFirst() instanceof RaiseSelectCriteria)) {
+                ruleStack.addFirst(RaiseSelectCriteria.INSTANCE);
+            }
+
             // We re-wrote at least one SOURCE, but the resulting plan tree for the view could actually reference
             // other views. Therefore, re-run this rule ...
             ruleStack.addFirst(this);
