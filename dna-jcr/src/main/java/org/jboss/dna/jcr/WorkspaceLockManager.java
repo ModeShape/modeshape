@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -14,6 +15,8 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.LockFailedException;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -80,7 +83,7 @@ class WorkspaceLockManager {
             throw new RepositoryException(JcrI18n.uuidRequiredForLock.text(nodeLocation));
         }
 
-        DnaLock lock = new DnaLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
+        DnaLock lock = createLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
 
         Graph.Batch batch = repository.createSystemGraph().batch();
 
@@ -110,12 +113,70 @@ class WorkspaceLockManager {
                            false);
         editor.setProperty(JcrLexicon.LOCK_IS_DEEP, (JcrValue)cache.session().getValueFactory().createValue(isDeep), false);
 
-        // Write them directly to the underlying graph
-        repository.createWorkspaceGraph(workspaceName).set(lockOwnerProp, lockIsDeepProp).on(nodeUuid);
-
+        lockNodeInRepository(nodeUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
         workspaceLocksByNodeUuid.put(nodeUuid, lock);
 
         return lock;
+    }
+
+    /* Factory method added to facilitate mocked testing */
+    DnaLock createLock( String lockOwner,
+                        UUID lockUuid,
+                        UUID nodeUuid,
+                        boolean isDeep,
+                        boolean isSessionScoped ) {
+        return new DnaLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
+    }
+
+    /**
+     * Marks the node as locked in the underlying repository with an immediate write (that is, the write is not part of the JCR
+     * session scope and cannot be "rolled back" with a refresh at the {@link Session#refresh(boolean) session} or
+     * {@link Item#refresh(boolean) item} level.
+     * <p>
+     * This method will also attempt to {@link Graph#lock(Location) lock the node in the underlying repository}. If the underlying
+     * repository {@link RepositorySourceCapabilities#supportsLocks() supports locks} and {@link LockFailedException the lock
+     * attempt fails}, this method will cancel the lock attempt by calling {@link #unlock(DnaLock)} and will throw a {@code
+     * RepositoryException}.
+     * </p>
+     * <p>
+     * This method does not modify the system graph. In other words, it will not create the record for the lock in the {@code
+     * /jcr:system/dna:locks} subgraph.
+     * </p>
+     * 
+     * @param nodeUuid the UUID of the node to lock
+     * @param lockOwnerProp an existing property with name {@link JcrLexicon#LOCK_OWNER} and the value being the name of the lock
+     *        owner
+     * @param lockIsDeepProp an existing property with name {@link JcrLexicon#LOCK_IS_DEEP} and the value being {@code true} if
+     *        the lock should include all descendants of the locked node or {@code false} if the lock should only include the
+     *        specified node and not its descendants
+     * @param lock the internal lock representation
+     * @param isDeep {@code true} if the lock should include all descendants of the locked node or {@code false} if the lock
+     *        should only include the specified node and not its descendants. This value is redundant with the lockIsDeep
+     *        parameter, but is included separately as a minor performance optimization
+     * @throws RepositoryException if the repository in which the node represented by {@code nodeUuid} supports locking but
+     *         signals that the lock for the node cannot be acquired
+     */
+    void lockNodeInRepository( UUID nodeUuid,
+                               Property lockOwnerProp,
+                               Property lockIsDeepProp,
+                               DnaLock lock,
+                               boolean isDeep ) throws RepositoryException {
+        // Write them directly to the underlying graph
+        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(workspaceName).batch();
+        workspaceBatch.set(lockOwnerProp, lockIsDeepProp).on(nodeUuid);
+        if (isDeep) {
+            workspaceBatch.lock(nodeUuid).andItsDescendants().withDefaultTimeout();
+        } else {
+            workspaceBatch.lock(nodeUuid).only().withDefaultTimeout();
+        }
+        try {
+            workspaceBatch.execute();
+        } catch (LockFailedException lfe) {
+            // Attempt to lock node at the repo level failed - cancel lock
+            unlock(lock);
+            throw new RepositoryException(lfe);
+        }
+
     }
 
     /**
@@ -132,6 +193,9 @@ class WorkspaceLockManager {
             batch.delete(pathFactory.create(locksPath, pathFactory.createSegment(lock.getUuid().toString())));
             batch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
             batch.execute();
+
+            unlockNodeInRepository(lock);
+
             workspaceLocksByNodeUuid.remove(lock.nodeUuid);
         } catch (PathNotFoundException pnfe) {
             /*
@@ -147,20 +211,58 @@ class WorkspaceLockManager {
         }
     }
 
+    /**
+     * Removes the workspace record of the lock in the underlying repository. This method clears the {@code jcr:lockOwner} and
+     * {@code jcr:lockIsDeep} properties on the node and sends an {@link Graph#unlock(Location) unlock request} to the underlying
+     * repository to clear any locks that it is holding on the node.
+     * <p>
+     * This method does not modify the system graph. In other words, it will not remove the record for the lock in the {@code
+     * /jcr:system/dna:locks} subgraph.
+     * </p>
+     * 
+     * @param lock
+     */
+    void unlockNodeInRepository( DnaLock lock ) {
+        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName).batch();
+
+        workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
+        workspaceBatch.unlock(lock.nodeUuid);
+
+        workspaceBatch.execute();
+    }
+
+    /**
+     * Checks whether the given lock token is currently held by any session by querying the lock record in the underlying
+     * repository.
+     * 
+     * @param lockToken the lock token to check; may not be null
+     * @return true if a session currently holds the lock token, false otherwise
+     */
     boolean isHeldBySession( String lockToken ) {
+        assert lockToken != null;
+
         ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph()
-                                                      .getNodeAt(pathFactory.create(locksPath,
-                                                                                    pathFactory.createSegment(lockToken)));
+        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph().getNodeAt(pathFactory.create(locksPath,
+                                                                                                        pathFactory.createSegment(lockToken)));
 
         return booleanFactory.create(lockNode.getProperty(DnaLexicon.IS_HELD_BY_SESSION).getFirstValue());
 
     }
 
+    /**
+     * Updates the underlying repository directly (i.e., outside the scope of the {@link Session}) to mark the token for the given
+     * lock as being held (or not held) by some {@link Session}. Note that this method does not identify <i>which</i> (if any)
+     * session holds the token for the lock, just that <i>some</i> session holds the token for the lock.
+     * 
+     * @param lockToken the lock token for which the "held" status should be modified; may not be null
+     * @param value the new value
+     */
     void setHeldBySession( String lockToken,
                            boolean value ) {
+        assert lockToken != null;
+
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
@@ -194,13 +296,23 @@ class WorkspaceLockManager {
      * @return the corresponding lock, possibly null if there is no such lock
      * @throws RepositoryException if there is a problem obtaining the information for a lock
      */
-    DnaLock lockFor( Location nodeLocation ) throws RepositoryException {
+    DnaLock lockFor( Location nodeLocation ) {
         UUID nodeUuid = uuidFor(nodeLocation);
         if (nodeUuid == null) return null;
         return workspaceLocksByNodeUuid.get(nodeUuid);
     }
 
+    /**
+     * Returns the UUID that identifies the given location or {@code null} if the location does not have a UUID. The method
+     * returns the {@link Location#getUuid() default UUID} if it exists. If it does not, the method returns the value of the
+     * {@link JcrLexicon#UUID} property as a UUID. If the location does not contain that property, the method returns null.
+     * 
+     * @param location the location for which the UUID should be returned
+     * @return the UUID that identifies the given location or {@code null} if the location does not have a UUID.
+     */
     UUID uuidFor( Location location ) {
+        assert location != null;
+
         if (location.getUuid() != null) return location.getUuid();
 
         org.jboss.dna.graph.property.Property uuidProp = location.getIdProperty(JcrLexicon.UUID);
@@ -303,7 +415,7 @@ class WorkspaceLockManager {
                     return sessionScoped;
                 }
 
-                public void refresh() throws LockException, RepositoryException {
+                public void refresh() throws LockException {
                     if (getLockToken() == null) {
                         throw new LockException(JcrI18n.notLocked.text(node.location));
                     }

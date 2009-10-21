@@ -63,6 +63,7 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -72,11 +73,13 @@ import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.junit.Before;
 import org.junit.Test;
@@ -204,6 +207,24 @@ public class GraphTest {
         assertThat(request, is(instanceOf(DeleteBranchRequest.class)));
         DeleteBranchRequest delete = (DeleteBranchRequest)request;
         assertThat(delete.at(), is(at));
+    }
+
+    protected void assertNextRequestIsLock( Location at,
+                                            LockScope lockScope,
+                                            long lockTimeout ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(LockBranchRequest.class)));
+        LockBranchRequest lock = (LockBranchRequest)request;
+        assertThat(lock.at(), is(at));
+        assertThat(lock.lockScope(), is(lockScope));
+        assertThat(lock.lockTimeoutInMillis(), is(lockTimeout));
+    }
+
+    protected void assertNextRequestIsUnlock( Location at ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(UnlockBranchRequest.class)));
+        UnlockBranchRequest unlock = (UnlockBranchRequest)request;
+        assertThat(unlock.at(), is(at));
     }
 
     protected void assertNextRequestIsCreate( Location parent,
@@ -1072,6 +1093,24 @@ public class GraphTest {
         graph.useWorkspace("something");
     }
 
+    @Test
+    public void shouldLockNodeButNotDescendants() {
+        graph.lock(validPath).only().withDefaultTimeout();
+        assertNextRequestIsLock(Location.create(validPath), LockScope.SELF_ONLY, 0);
+    }
+
+    @Test
+    public void shouldLockNodeAndItsDescendants() {
+        graph.lock(validPath).andItsDescendants().withTimeoutOf(12345);
+        assertNextRequestIsLock(Location.create(validPath), LockScope.SELF_AND_DESCENDANTS, 12345);
+    }
+
+    @Test
+    public void shouldUnlockNode() {
+        graph.unlock(validPath);
+        assertNextRequestIsUnlock(Location.create(validPath));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Implementation of RepositoryConnection and RequestProcessor for tests
     // ----------------------------------------------------------------------------------------------------------------
@@ -1133,6 +1172,18 @@ public class GraphTest {
         public void process( DeleteBranchRequest request ) {
             // Just update the actual location
             request.setActualLocationOfNode(actualLocationOf(request.at()));
+        }
+
+        @Override
+        public void process( LockBranchRequest request ) {
+            // Just update the actual location
+            request.setActualLocation(actualLocationOf(request.at()));
+        }
+
+        @Override
+        public void process( UnlockBranchRequest request ) {
+            // Just update the actual location
+            request.setActualLocation(actualLocationOf(request.at()));
         }
 
         @Override

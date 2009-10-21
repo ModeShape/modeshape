@@ -29,11 +29,13 @@ import java.util.UUID;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
  * A specialized {@link MapRepository} that represents an in-memory repository.
@@ -122,6 +124,18 @@ public class InMemoryRepository extends MapRepository {
                                     boolean recursive,
                                     Map<UUID, UUID> oldToNewUuids ) {
             return super.copyNode(context, original, newWorkspace, newParent, desiredName, recursive, oldToNewUuids);
+        }
+
+        @Override
+        public void lockNode( MapNode node,
+                              LockScope lockScope,
+                              long lockTimeoutInMillis ) throws LockFailedException {
+            // Locking is not supported by this connector
+        }
+
+        @Override
+        public void unlockNode( MapNode node ) {
+            // Locking is not supported by this connector
         }
 
         /**

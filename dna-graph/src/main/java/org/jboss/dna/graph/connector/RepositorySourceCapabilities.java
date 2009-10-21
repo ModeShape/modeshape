@@ -59,24 +59,30 @@ public class RepositorySourceCapabilities {
      */
     public static final boolean DEFAULT_SUPPORT_REFERENCES = true;
 
-    private boolean sameNameSiblings;
-    private boolean updates;
-    private boolean events;
-    private boolean creatingWorkspaces;
-    private boolean references;
+    /**
+     * The default support for creating locks is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_LOCKS = false;
+
+    private final boolean sameNameSiblings;
+    private final boolean updates;
+    private final boolean events;
+    private final boolean creatingWorkspaces;
+    private final boolean references;
+    private final boolean locks;
 
     /**
      * Create a capabilities object using the defaults, .
      */
     public RepositorySourceCapabilities() {
         this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS,
-             DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES);
+             DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
         this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES,
-             DEFAULT_SUPPORT_REFERENCES);
+             DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
@@ -84,11 +90,24 @@ public class RepositorySourceCapabilities {
                                          boolean supportsEvents,
                                          boolean supportsCreatingWorkspaces,
                                          boolean supportsReferences ) {
+        this(supportsSameNameSiblings, supportsUpdates, supportsEvents, supportsCreatingWorkspaces, supportsReferences,
+             DEFAULT_SUPPORT_LOCKS);
+
+    }
+
+    public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
+                                         boolean supportsUpdates,
+                                         boolean supportsEvents,
+                                         boolean supportsCreatingWorkspaces,
+                                         boolean supportsReferences,
+                                         boolean supportsLocks ) {
+
         this.sameNameSiblings = supportsSameNameSiblings;
         this.updates = supportsUpdates;
         this.events = supportsEvents;
         this.creatingWorkspaces = supportsCreatingWorkspaces;
         this.references = supportsReferences;
+        this.locks = supportsLocks;
     }
 
     /**
@@ -118,6 +137,19 @@ public class RepositorySourceCapabilities {
      */
     public boolean supportsReferences() {
         return references;
+    }
+
+    /**
+     * Return whether the source supports locking nodes.
+     * <p>
+     * Sources that support locking nodes must be able to explicitly lock and unlock nodes in a manner that is persistent and
+     * stable across repository connections. Sources that cannot provide this capability should return false from this method.
+     * </p>
+     * 
+     * @return true if locks are supported, or false otherwise
+     */
+    public boolean supportsLocks() {
+        return locks;
     }
 
     /**

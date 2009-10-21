@@ -1368,7 +1368,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             nodesToVisit.add(nodeInfo());
 
             while (!nodesToVisit.isEmpty()) {
-                Node<JcrNodePayload, JcrPropertyPayload> node = nodesToVisit.get(nodesToVisit.size() - 1);
+                Node<JcrNodePayload, JcrPropertyPayload> node = nodesToVisit.remove(nodesToVisit.size() - 1);
                 if (session().workspace().lockManager().lockFor(node.getLocation()) != null) throw new LockException(
                                                                                                                      JcrI18n.parentAlreadyLocked.text(this.location,
                                                                                                                                                       node.getLocation()));

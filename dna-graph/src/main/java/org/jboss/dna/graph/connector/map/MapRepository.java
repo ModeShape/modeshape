@@ -266,5 +266,4 @@ public abstract class MapRepository {
     public boolean destroyWorkspace( String name ) {
         return workspaces.remove(name) != null;
     }
-
 }

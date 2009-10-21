@@ -406,6 +406,165 @@ public class Graph {
     }
 
     /**
+     * Request to lock the specified node. This request is submitted to the repository immediately.
+     * 
+     * @param at the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( Node at ) {
+        return lock(at.getLocation());
+    }
+
+    /**
+     * Request to lock the node at the given path. This request is submitted to the repository immediately.
+     * 
+     * @param atPath the path of the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( String atPath ) {
+        return lock(Location.create(createPath(atPath)));
+    }
+
+    /**
+     * Request to lock the node at the given path. This request is submitted to the repository immediately.
+     * 
+     * @param at the path of the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( Path at ) {
+        return lock(Location.create(at));
+    }
+
+    /**
+     * Request to lock the node with the given UUID. This request is submitted to the repository immediately.
+     * 
+     * @param at the UUID of the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( UUID at ) {
+        return lock(Location.create(at));
+    }
+
+    /**
+     * Request to lock the node with the given unique identification property. This request is submitted to the repository
+     * immediately.
+     * 
+     * @param idProperty the unique identifying property of the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( Property idProperty ) {
+        return lock(Location.create(idProperty));
+    }
+
+    /**
+     * Request to lock the node with the given identification properties. The identification properties should uniquely identify a
+     * single node. This request is submitted to the repository immediately.
+     * 
+     * @param firstIdProperty the first identification property of the node that is to be copied
+     * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( Property firstIdProperty,
+                                               Property... additionalIdProperties ) {
+        return lock(Location.create(firstIdProperty, additionalIdProperties));
+    }
+
+    /**
+     * Request to lock the node at the given location. This request is submitted to the repository immediately.
+     * 
+     * @param at the location of the node that is to be locked
+     * @return an object that allows the scope of the lock to be defined
+     */
+    public LockScope<LockTimeout<Conjunction<Graph>>> lock( Location at ) {
+        return new LockAction<Conjunction<Graph>>(this.nextGraph, at) {
+            @Override
+            protected Conjunction<Graph> submit( Location target,
+                                                 org.jboss.dna.graph.request.LockBranchRequest.LockScope lockScope,
+                                                 long lockTimeoutInMillis ) {
+                String workspaceName = getCurrentWorkspaceName();
+                requests.lockBranch(workspaceName, target, lockScope, lockTimeoutInMillis);
+                return and();
+            }
+        };
+    }
+
+    /**
+     * Request to unlock the specified node. This request is submitted to the repository immediately.
+     * 
+     * @param at the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( Node at ) {
+        return unlock(at.getLocation());
+    }
+
+    /**
+     * Request to unlock the node at the given path. This request is submitted to the repository immediately.
+     * 
+     * @param atPath the path of the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( String atPath ) {
+        return unlock(Location.create(createPath(atPath)));
+    }
+
+    /**
+     * Request to unlock the node at the given path. This request is submitted to the repository immediately.
+     * 
+     * @param at the path of the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( Path at ) {
+        return unlock(Location.create(at));
+    }
+
+    /**
+     * Request to unlock the node with the given UUID. This request is submitted to the repository immediately.
+     * 
+     * @param at the UUID of the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( UUID at ) {
+        return unlock(Location.create(at));
+    }
+
+    /**
+     * Request to unlock the node with the given unique identification property. This request is submitted to the repository
+     * immediately.
+     * 
+     * @param idProperty the unique identifying property of the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( Property idProperty ) {
+        return unlock(Location.create(idProperty));
+    }
+
+    /**
+     * Request to unlock the node with the given identification properties. The identification properties should uniquely identify
+     * a single node. This request is submitted to the repository immediately.
+     * 
+     * @param firstIdProperty the first identification property of the node that is to be copied
+     * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( Property firstIdProperty,
+                                      Property... additionalIdProperties ) {
+        return unlock(Location.create(firstIdProperty, additionalIdProperties));
+    }
+
+    /**
+     * Request to unlock the node at the given location. This request is submitted to the repository immediately.
+     * 
+     * @param at the location of the node that is to be unlocked
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> unlock( Location at ) {
+        String workspaceName = getCurrentWorkspaceName();
+        requests.unlockBranch(workspaceName, at);
+        return this.nextGraph;
+    }
+
+    /**
      * Begin the request to move the specified node into a parent node at a different location, which is specified via the
      * <code>into(...)</code> method on the returned {@link Move} object.
      * <p>
@@ -1847,15 +2006,13 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
-                                               .getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
-                                       .getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -2447,6 +2604,164 @@ public class Graph {
          */
         public Move<BatchConjunction> move( Iterable<Property> idProperties ) {
             return move(Location.create(idProperties));
+        }
+
+        /**
+         * Request to lock the specified node. This request is submitted to the repository immediately.
+         * 
+         * @param at the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( Node at ) {
+            return lock(at.getLocation());
+        }
+
+        /**
+         * Request to lock the node at the given path. This request is submitted to the repository immediately.
+         * 
+         * @param atPath the path of the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( String atPath ) {
+            return lock(Location.create(createPath(atPath)));
+        }
+
+        /**
+         * Request to lock the node at the given path. This request is submitted to the repository immediately.
+         * 
+         * @param at the path of the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( Path at ) {
+            return lock(Location.create(at));
+        }
+
+        /**
+         * Request to lock the node with the given UUID. This request is submitted to the repository immediately.
+         * 
+         * @param at the UUID of the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( UUID at ) {
+            return lock(Location.create(at));
+        }
+
+        /**
+         * Request to lock the node with the given unique identification property. This request is submitted to the repository
+         * immediately.
+         * 
+         * @param idProperty the unique identifying property of the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( Property idProperty ) {
+            return lock(Location.create(idProperty));
+        }
+
+        /**
+         * Request to lock the node with the given identification properties. The identification properties should uniquely
+         * identify a single node. This request is submitted to the repository immediately.
+         * 
+         * @param firstIdProperty the first identification property of the node that is to be copied
+         * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( Property firstIdProperty,
+                                                 Property... additionalIdProperties ) {
+            return lock(Location.create(firstIdProperty, additionalIdProperties));
+        }
+
+        /**
+         * Request to lock the node at the given location. This request is submitted to the repository immediately.
+         * 
+         * @param at the location of the node that is to be locked
+         * @return an object that allows the scope of the lock to be defined
+         */
+        public LockScope<LockTimeout<BatchConjunction>> lock( Location at ) {
+            return new LockAction<BatchConjunction>(this.nextRequests, at) {
+                @Override
+                protected BatchConjunction submit( Location target,
+                                                   org.jboss.dna.graph.request.LockBranchRequest.LockScope lockScope,
+                                                   long lockTimeoutInMillis ) {
+                    String workspaceName = getCurrentWorkspaceName();
+                    requests.lockBranch(workspaceName, target, lockScope, lockTimeoutInMillis);
+                    return and();
+                }
+            };
+        }
+
+        /**
+         * Request to unlock the specified node. This request is submitted to the repository immediately.
+         * 
+         * @param at the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( Node at ) {
+            return unlock(at.getLocation());
+        }
+
+        /**
+         * Request to unlock the node at the given path. This request is submitted to the repository immediately.
+         * 
+         * @param atPath the path of the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( String atPath ) {
+            return unlock(Location.create(createPath(atPath)));
+        }
+
+        /**
+         * Request to unlock the node at the given path. This request is submitted to the repository immediately.
+         * 
+         * @param at the path of the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( Path at ) {
+            return unlock(Location.create(at));
+        }
+
+        /**
+         * Request to unlock the node with the given UUID. This request is submitted to the repository immediately.
+         * 
+         * @param at the UUID of the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( UUID at ) {
+            return unlock(Location.create(at));
+        }
+
+        /**
+         * Request to unlock the node with the given unique identification property. This request is submitted to the repository
+         * immediately.
+         * 
+         * @param idProperty the unique identifying property of the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( Property idProperty ) {
+            return unlock(Location.create(idProperty));
+        }
+
+        /**
+         * Request to unlock the node with the given identification properties. The identification properties should uniquely
+         * identify a single node. This request is submitted to the repository immediately.
+         * 
+         * @param firstIdProperty the first identification property of the node that is to be copied
+         * @param additionalIdProperties the remaining identification properties of the node that is to be copied
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( Property firstIdProperty,
+                                        Property... additionalIdProperties ) {
+            return unlock(Location.create(firstIdProperty, additionalIdProperties));
+        }
+
+        /**
+         * Request to unlock the node at the given location. This request is submitted to the repository immediately.
+         * 
+         * @param at the location of the node that is to be unlocked
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction unlock( Location at ) {
+            requests.unlockBranch(workspaceName, at);
+            return this.nextRequests;
         }
 
         /**
@@ -4390,6 +4705,78 @@ public class Graph {
     }
 
     /**
+     * Interface for specifying whether a lock should be deep in scope
+     * 
+     * @param <Next> The interface that is to be returned when this create request is completed
+     */
+    public interface LockScope<Next> {
+        Next andItsDescendants();
+
+        Next only();
+    }
+
+    /**
+     * Interface for specifying whether the maximum length of the lock
+     * 
+     * @param <Next> The interface that is to be returned when this create request is completed
+     */
+    public interface LockTimeout<Next> {
+        Next withDefaultTimeout();
+
+        Next withTimeoutOf( long milliseconds );
+    }
+
+    @NotThreadSafe
+    protected abstract class LockAction<T> extends AbstractAction<T> implements LockScope<LockTimeout<T>> {
+        private final Location target;
+
+        /*package*/LockAction( T afterConjunction,
+                                Location target ) {
+            super(afterConjunction);
+            this.target = target;
+        }
+
+        protected abstract T submit( Location lock,
+                                     org.jboss.dna.graph.request.LockBranchRequest.LockScope lockScope,
+                                     long lockTimeoutInMillis );
+
+        public LockTimeout<T> andItsDescendants() {
+            return new LockTimeout<T>() {
+
+                @Override
+                public T withDefaultTimeout() {
+                    return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_AND_DESCENDANTS, 0);
+                }
+
+                @Override
+                public T withTimeoutOf( long milliseconds ) {
+                    return submit(target,
+                                  org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_AND_DESCENDANTS,
+                                  milliseconds);
+                }
+
+            };
+        }
+
+        public LockTimeout<T> only() {
+            return new LockTimeout<T>() {
+
+                @Override
+                public T withDefaultTimeout() {
+                    return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_ONLY, 0);
+                }
+
+                @Override
+                public T withTimeoutOf( long milliseconds ) {
+                    return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_ONLY, milliseconds);
+                }
+
+            };
+        }
+
+    }
+
+    /**
      * The interface for defining additional properties on a new node.
      * 
      * @param <Next> The interface that is to be returned when this create request is completed
@@ -6041,10 +6428,7 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext()
-                                  .getValueFactories()
-                                  .getPathFactory()
-                                  .create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }

@@ -27,10 +27,12 @@ import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
  * The {@code MapWorkspace} defines the required methods for workspaces in a {@link MapRepository map repository}. By default, a
@@ -178,6 +180,27 @@ public interface MapWorkspace {
                        Path.Segment desiredSegment,
                        boolean removeExisting,
                        Set<Location> removedExistingNodes ) throws UuidAlreadyExistsException;
+
+    /**
+     * Attempts to lock the given node with the given timeout. If the lock attempt fails, a {@link LockFailedException} will be
+     * thrown.
+     * 
+     * @param node the node to be locked; may not be null
+     * @param lockScope the scope of the lock (i.e., whether descendants of {@code node} should be included in the lock
+     * @param lockTimeoutInMillis the maximum lifetime of the lock in milliseconds; zero (0) indicates that the connector default
+     *        should be used
+     * @throws LockFailedException if the implementing connector supports locking but the lock could not be acquired.
+     */
+    void lockNode( MapNode node,
+                   LockScope lockScope,
+                   long lockTimeoutInMillis ) throws LockFailedException;
+
+    /**
+     * Attempts to unlock the given node.
+     * 
+     * @param node the node to be unlocked; may not be null
+     */
+    void unlockNode( MapNode node );
 
     /**
      * Find the lowest existing node along the path.

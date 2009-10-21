@@ -37,6 +37,8 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.connector.LockFailedException;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
@@ -57,6 +59,7 @@ import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -69,6 +72,7 @@ import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.UpdateValuesRequest;
@@ -251,6 +255,10 @@ public abstract class RequestProcessor {
                 process((UpdatePropertiesRequest)request);
             } else if (request instanceof VerifyNodeExistsRequest) {
                 process((VerifyNodeExistsRequest)request);
+            } else if (request instanceof LockBranchRequest) {
+                process((LockBranchRequest)request);
+            } else if (request instanceof UnlockBranchRequest) {
+                process((UnlockBranchRequest)request);
             } else if (request instanceof VerifyWorkspaceRequest) {
                 process((VerifyWorkspaceRequest)request);
             } else if (request instanceof GetWorkspacesRequest) {
@@ -779,7 +787,7 @@ public abstract class RequestProcessor {
         Property property = readProperty.getProperty();
         List<Object> actualRemovedValues = new ArrayList<Object>(request.removedValues().size());
         List<Object> newValues = property == null ? new LinkedList<Object>() : new LinkedList<Object>(
-                                                                                          Arrays.asList(property.getValuesAsArray()));
+                                                                                                      Arrays.asList(property.getValuesAsArray()));
         // Calculate what the new values should be
         for (Object removedValue : request.removedValues()) {
             for (Iterator<Object> iter = newValues.iterator(); iter.hasNext();) {
@@ -793,7 +801,7 @@ public abstract class RequestProcessor {
 
         newValues.addAll(request.addedValues());
         Property newProperty = getExecutionContext().getPropertyFactory().create(propertyName, newValues);
-        
+
         // Update the current values
         SetPropertyRequest setProperty = new SetPropertyRequest(on, workspaceName, newProperty);
         process(setProperty);
@@ -842,6 +850,35 @@ public abstract class RequestProcessor {
             Changes changes = new Changes(userName, getSourceName(), getNowInUtc(), this.changes);
             observer.notify(changes);
         }
+    }
+
+    /**
+     * Process a request to lock a node or branch within a workspace
+     * <p>
+     * The default implementation of this method does nothing, as most connectors will not support locking (as defined in
+     * {@link RepositorySourceCapabilities#supportsLocks()}). Any implementation of this method should do nothing if the request
+     * is null.
+     * </p>
+     * <p>
+     * Implementations that do support locking should throw a {@link LockFailedException} if the request could not be fulfilled.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( LockBranchRequest request ) {
+    }
+
+    /**
+     * Process a request to unlock a node or branch within a workspace
+     * <p>
+     * The default implementation of this method does nothing, as most connectors will not support locking (as defined in
+     * {@link RepositorySourceCapabilities#supportsLocks()}). Any implementation of this method should do nothing if the request
+     * is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( UnlockBranchRequest request ) {
     }
 
     /**

@@ -36,6 +36,7 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -48,6 +49,7 @@ import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
@@ -348,6 +350,30 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RenameNodeRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.LockBranchRequest)
+     */
+    @Override
+    public void process( LockBranchRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UnlockBranchRequest)
+     */
+    @Override
+    public void process( UnlockBranchRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);

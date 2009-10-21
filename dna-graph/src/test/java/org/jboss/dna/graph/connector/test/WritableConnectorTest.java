@@ -83,6 +83,10 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         super.afterEach();
     }
 
+    private boolean supportsLocks() {
+        return source.getCapabilities().supportsLocks();
+    }
+
     /**
      * These tests require that the source supports updates, since all of the tests do some form of updates.
      */
@@ -120,20 +124,9 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldAddChildrenAndSettingProperties() {
-        graph.batch()
-             .set("propA")
-             .to("valueA")
-             .on("/")
-             .and()
-             .create("/a")
-             .with("propB", "valueB")
-             .and("propC", "valueC")
-             .and()
-             .create("/b")
-             .with("propD", "valueD")
-             .and("propE", "valueE")
-             .and()
-             .execute();
+        graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and().create("/b").with("propD",
+                                                                                                                                                  "valueD").and("propE",
+                                                                                                                                                                "valueE").and().execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
@@ -886,20 +879,12 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
         // graph.copy("/node1/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/node1");
-        graph.clone("/node1/node1/node1")
-             .fromWorkspace(workspaceName)
-             .as(name("node1"))
-             .into("/newUuids")
-             .failingIfAnyUuidsMatch();
+        graph.clone("/node1/node1/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").failingIfAnyUuidsMatch();
 
         try {
             // Copy again to get the exception since the UUID is already in the default workspace
             // graph.copy("/node1/node1").failingIfUuidsMatch().fromWorkspace(workspaceName).to("/newUuids/shouldNotWork");
-            graph.clone("/node1/node1/node1")
-                 .fromWorkspace(workspaceName)
-                 .as(name("shouldNotWork"))
-                 .into("/newUuids")
-                 .failingIfAnyUuidsMatch();
+            graph.clone("/node1/node1/node1").fromWorkspace(workspaceName).as(name("shouldNotWork")).into("/newUuids").failingIfAnyUuidsMatch();
             fail("Should not be able to copy a node into a workspace if another node with the "
                  + "same UUID already exists in the workspace and UUID behavior is failingIfUuidsMatch");
         } catch (UuidAlreadyExistsException ex) {
@@ -931,11 +916,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
         // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
-        graph.clone("/node1")
-             .fromWorkspace(workspaceName)
-             .as(name("node1"))
-             .into("/newUuids")
-             .replacingExistingNodesWithSameUuids();
+        graph.clone("/node1").fromWorkspace(workspaceName).as(name("node1")).into("/newUuids").replacingExistingNodesWithSameUuids();
 
         // Make sure that the node wasn't moved by the clone
         graph.useWorkspace(workspaceName);
@@ -948,11 +929,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
         // This should remove /newUuids/node1/shouldBeRemoved
         // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/otherNode");
-        graph.clone("/node1")
-             .fromWorkspace(workspaceName)
-             .as(name("otherNode"))
-             .into("/newUuids")
-             .replacingExistingNodesWithSameUuids();
+        graph.clone("/node1").fromWorkspace(workspaceName).as(name("otherNode")).into("/newUuids").replacingExistingNodesWithSameUuids();
 
         /*
          * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
@@ -1009,11 +986,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
         // This should remove /segmentTestUuids/node1[1]
-        graph.clone("/node1")
-             .fromWorkspace(workspaceName)
-             .as(segment("node1[1]"))
-             .into("/segmentTestUuids")
-             .replacingExistingNodesWithSameUuids();
+        graph.clone("/node1").fromWorkspace(workspaceName).as(segment("node1[1]")).into("/segmentTestUuids").replacingExistingNodesWithSameUuids();
 
         /*
          * Focus on testing node structure, since shouldCopyNodeWithChildren tests that properties get copied
@@ -1953,6 +1926,27 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         assertThat(subgraph, is(notNullValue()));
 
         assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+    }
+
+    @Test
+    public void shouldLockNode() {
+        if (!supportsLocks()) return;
+
+        fail("Need to add test body here");
+    }
+
+    @Test
+    public void shouldNotAllowMultipleConcurrentLocksOnSameNode() {
+        if (!supportsLocks()) return;
+
+        fail("Need to add test body here");
+    }
+
+    @Test
+    public void shouldUnlockNode() {
+        if (!supportsLocks()) return;
+
+        fail("Need to add test body here");
     }
 
 }

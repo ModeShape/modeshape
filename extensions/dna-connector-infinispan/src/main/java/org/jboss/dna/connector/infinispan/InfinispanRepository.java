@@ -4,10 +4,12 @@ import java.util.UUID;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheManager;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
  * The repository that uses an Infinispan instance.
@@ -79,6 +81,18 @@ public class InfinispanRepository extends MapRepository {
         public MapNode getNode( UUID nodeUuid ) {
             assert nodeUuid != null;
             return workspaceCache.get(nodeUuid);
+        }
+
+        @Override
+        public void lockNode( MapNode node,
+                              LockScope lockScope,
+                              long lockTimeoutInMillis ) throws LockFailedException {
+            // Locking is not supported by this connector
+        }
+
+        @Override
+        public void unlockNode( MapNode node ) {
+            // Locking is not supported by this connector
         }
     }
 

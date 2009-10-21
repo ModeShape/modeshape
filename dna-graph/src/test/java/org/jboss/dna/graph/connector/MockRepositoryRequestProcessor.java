@@ -25,6 +25,7 @@ package org.jboss.dna.graph.connector;
 
 import java.util.Queue;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -33,6 +34,7 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -45,6 +47,7 @@ import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
@@ -55,7 +58,9 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 public class MockRepositoryRequestProcessor extends RequestProcessor {
 
-    private Queue<Request> processed;
+    private static final String DEFAULT_WORKSPACE_NAME = "default";
+    private final Queue<Request> processed;
+    private final Location defaultWorkspaceRoot;
 
     /**
      * @param sourceName
@@ -67,7 +72,9 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
                                            Queue<Request> processed ) {
         super(sourceName, context, null);
         assert processed != null;
+
         this.processed = processed;
+        this.defaultWorkspaceRoot = Location.create(context.getValueFactories().getPathFactory().createRootPath());
     }
 
     protected void record( Request request ) {
@@ -82,6 +89,10 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     @Override
     public void process( VerifyWorkspaceRequest request ) {
         record(request);
+
+        // Need to add this loopback in so we can use this with JCR layer test cases
+        request.setActualWorkspaceName(request.getActualWorkspaceName() == null ? DEFAULT_WORKSPACE_NAME : request.getActualWorkspaceName());
+        request.setActualRootLocation(request.getActualLocationOfRoot() == null ? defaultWorkspaceRoot : request.getActualLocationOfRoot());
     }
 
     /**
@@ -172,6 +183,26 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     @Override
     public void process( MoveBranchRequest request ) {
         recordChange(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.LockBranchRequest)
+     */
+    @Override
+    public void process( LockBranchRequest request ) {
+        record(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UnlockBranchRequest)
+     */
+    @Override
+    public void process( UnlockBranchRequest request ) {
+        record(request);
     }
 
     /**

@@ -35,6 +35,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
  * A component that can be used to build requests while allowing different strategies for how requests are handled. Subclasses can
@@ -616,4 +617,38 @@ public abstract class RequestBuilder {
         return request;
     }
 
+    /**
+     * Create a request to lock a branch or node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param target the location of the top node in the existing branch that is to be locked
+     * @param lockScope the {@link LockBranchRequest#lockScope()} scope of the lock
+     * @param lockTimeoutInMillis the number of milliseconds that the lock should last before the lock times out; zero (0)
+     *        indicates that the connector default should be used
+     * @return the request; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public LockBranchRequest lockBranch( String workspaceName,
+                                         Location target,
+                                         LockScope lockScope,
+                                         long lockTimeoutInMillis ) {
+        return process(new LockBranchRequest(target, workspaceName, lockScope, lockTimeoutInMillis));
+    }
+
+    /**
+     * Create a request to unlock a branch or node
+     * <p>
+     * The lock on the node should be removed. If the lock was deep (i.e., locked the entire branch under the node, then all of
+     * the descendants of the node affected by the lock should also be unlocked after this request is processed.
+     * </p>
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param target the location of the top node in the existing branch that is to be unlocked
+     * @return the request; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public UnlockBranchRequest unlockBranch( String workspaceName,
+                                             Location target ) {
+        return process(new UnlockBranchRequest(target, workspaceName));
+    }
 }

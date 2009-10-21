@@ -5,10 +5,12 @@ import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
+import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
  * A repository implementation that uses JBoss Cache.
@@ -81,6 +83,19 @@ public class JBossCacheRepository extends MapRepository {
             assert nodeUuid != null;
             return workspaceNode.get(nodeUuid);
         }
+
+        @Override
+        public void lockNode( MapNode node,
+                              LockScope lockScope,
+                              long lockTimeoutInMillis ) throws LockFailedException {
+            // Locking is not supported by this connector
+        }
+
+        @Override
+        public void unlockNode( MapNode node ) {
+            // Locking is not supported by this connector
+        }
+
     }
 
 }

@@ -54,10 +54,12 @@ import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
@@ -100,6 +102,32 @@ public class MapRequestProcessor extends RequestProcessor {
         }
         request.setActualLocationOfNode(actualLocation);
         setCacheableInfo(request);
+    }
+
+    @Override
+    public void process( LockBranchRequest request ) {
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapNode node = getTargetNode(workspace, request, request.at());
+        if (node == null) return;
+
+        workspace.lockNode(node, request.lockScope(), request.lockTimeoutInMillis());
+
+        Location actualLocation = getActualLocation(request.at(), node);
+        request.setActualLocation(actualLocation);
+        recordChange(request);
+    }
+
+    @Override
+    public void process( UnlockBranchRequest request ) {
+        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapNode node = getTargetNode(workspace, request, request.at());
+        if (node == null) return;
+
+        workspace.unlockNode(node);
+
+        Location actualLocation = getActualLocation(request.at(), node);
+        request.setActualLocation(actualLocation);
+        recordChange(request);
     }
 
     @Override
