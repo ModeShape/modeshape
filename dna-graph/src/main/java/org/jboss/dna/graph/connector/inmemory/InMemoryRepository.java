@@ -126,14 +126,12 @@ public class InMemoryRepository extends MapRepository {
             return super.copyNode(context, original, newWorkspace, newParent, desiredName, recursive, oldToNewUuids);
         }
 
-        @Override
         public void lockNode( MapNode node,
                               LockScope lockScope,
                               long lockTimeoutInMillis ) throws LockFailedException {
             // Locking is not supported by this connector
         }
 
-        @Override
         public void unlockNode( MapNode node ) {
             // Locking is not supported by this connector
         }

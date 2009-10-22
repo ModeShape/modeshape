@@ -157,7 +157,7 @@ public class RewriteIdentityJoins implements OptimizerRule {
             ruleStack.addFirst(this);
 
             // After this rule is done as is no longer needed, we need to try to push SELECTs and PROJECTs again ...
-            if (!(ruleStack.peekFirst() instanceof PushSelectCriteria)) {
+            if (!(ruleStack.peek() instanceof PushSelectCriteria)) {
                 // We haven't already added these, so add them now ...
                 ruleStack.addFirst(PushProjects.INSTANCE);
                 if (context.getHints().hasCriteria) {

@@ -83,14 +83,12 @@ public class InfinispanRepository extends MapRepository {
             return workspaceCache.get(nodeUuid);
         }
 
-        @Override
         public void lockNode( MapNode node,
                               LockScope lockScope,
                               long lockTimeoutInMillis ) throws LockFailedException {
             // Locking is not supported by this connector
         }
 
-        @Override
         public void unlockNode( MapNode node ) {
             // Locking is not supported by this connector
         }

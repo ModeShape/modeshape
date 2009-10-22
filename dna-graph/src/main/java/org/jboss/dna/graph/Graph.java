@@ -4743,12 +4743,10 @@ public class Graph {
         public LockTimeout<T> andItsDescendants() {
             return new LockTimeout<T>() {
 
-                @Override
                 public T withDefaultTimeout() {
                     return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_AND_DESCENDANTS, 0);
                 }
 
-                @Override
                 public T withTimeoutOf( long milliseconds ) {
                     return submit(target,
                                   org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_AND_DESCENDANTS,
@@ -4761,12 +4759,10 @@ public class Graph {
         public LockTimeout<T> only() {
             return new LockTimeout<T>() {
 
-                @Override
                 public T withDefaultTimeout() {
                     return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_ONLY, 0);
                 }
 
-                @Override
                 public T withTimeoutOf( long milliseconds ) {
                     return submit(target, org.jboss.dna.graph.request.LockBranchRequest.LockScope.SELF_ONLY, milliseconds);
                 }

@@ -84,14 +84,12 @@ public class JBossCacheRepository extends MapRepository {
             return workspaceNode.get(nodeUuid);
         }
 
-        @Override
         public void lockNode( MapNode node,
                               LockScope lockScope,
                               long lockTimeoutInMillis ) throws LockFailedException {
             // Locking is not supported by this connector
         }
 
-        @Override
         public void unlockNode( MapNode node ) {
             // Locking is not supported by this connector
         }
