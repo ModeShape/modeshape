@@ -37,6 +37,7 @@ import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
 import org.apache.jackrabbit.test.api.NodeOrderableChildNodesTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
+import org.apache.jackrabbit.test.api.NodeTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
@@ -198,7 +199,7 @@ public class JcrTckTest {
             // addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
             // addTestSuite(SessionUUIDTest.class);
-            // DNA-518 addTestSuite(NodeTest.class);
+            addTestSuite(NodeTest.class);
             // addTestSuite(NodeUUIDTest.class);
             addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);

@@ -1152,13 +1152,14 @@ public class BasicRequestProcessor extends RequestProcessor {
                                      ActualLocation actualNewParent,
                                      UuidConflictBehavior uuidConflictBehavior,
                                      Name desiredName,
+                                     Path.Segment desiredSegment,
                                      Map<String, String> oldUuidsToNewUuids,
                                      Map<String, ChildEntity> addedLocations,
                                      Map<String, Location> deletedLocations ) {
         assert fromWorkspace != null;
         assert intoWorkspace != null;
         assert original != null;
-        assert desiredName != null;
+        assert (desiredName != null ? desiredSegment == null : desiredSegment != null) : "Either desiredName or desiredSegment must not be null";
         assert oldUuidsToNewUuids != null;
 
         // Assume that UUID isn't changing. If the conflict behavior says that it does change, the switch statement will handle it
@@ -1184,10 +1185,17 @@ public class BasicRequestProcessor extends RequestProcessor {
                 break;
             case REPLACE_EXISTING_NODE:
                 try {
-                    existingLocation = getActualLocation(intoWorkspace, Location.create(oldUuid));
-                    deletedLocations.putAll(computeDeletedLocations(intoWorkspace, existingLocation.location, true));
-                } catch (PathNotFoundException pnfe) {
+                    if (desiredSegment != null) {
+                        existingLocation = getActualLocation(intoWorkspace,
+                                                             Location.create(pathFactory.create(actualNewParent.location.getPath(),
+                                                                                                desiredSegment)));
+                        newUuid = existingLocation.childEntity.getId().getChildUuidString();
 
+                    } else {
+                        existingLocation = getActualLocation(intoWorkspace, Location.create(oldUuid));
+                        deletedLocations.putAll(computeDeletedLocations(intoWorkspace, existingLocation.location, true));
+                    }
+                } catch (PathNotFoundException pnfe) {
                 }
                 break;
             default:
@@ -1196,6 +1204,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         oldUuidsToNewUuids.put(original.getId().getChildUuidString(), newUuid);
 
         if (existingLocation != null && existingLocation.childEntity.getParentUuidString().equals(actualNewParent.uuid)) {
+            if (desiredName == null) desiredName = desiredSegment.getName();
             NamespaceEntity namespace = NamespaceEntity.findByUri(entities, desiredName.getNamespaceUri());
 
             ChildEntity existingChild = existingLocation.childEntity;
@@ -1285,6 +1294,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                                      actualNewParent,
                                                      UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID,
                                                      desiredName,
+                                                     null,
                                                      originalToNewUuid,
                                                      addedLocations,
                                                      deletedLocations).location;
@@ -1306,6 +1316,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                   actualNewParent,
                                   UuidConflictBehavior.ALWAYS_CREATE_NEW_UUID,
                                   desiredName,
+                                  null,
                                   originalToNewUuid,
                                   addedLocations,
                                   deletedLocations);
@@ -1472,7 +1483,6 @@ public class BasicRequestProcessor extends RequestProcessor {
                     ChildEntity original = originalIter.next();
 
                     Name desiredName = request.desiredName();
-                    if (desiredName == null) desiredName = fromPath.getLastSegment().getName();
                     actualToLocation = this.copyNode(entities,
                                                      fromWorkspace,
                                                      intoWorkspace,
@@ -1480,6 +1490,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                                      actualNewParent,
                                                      conflictBehavior,
                                                      desiredName,
+                                                     desiredName != null ? null : fromPath.getLastSegment(),
                                                      originalToNewUuid,
                                                      addedLocations,
                                                      deletedLocations).location;
@@ -1501,6 +1512,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                   actualNewParent,
                                   conflictBehavior,
                                   desiredName,
+                                  null,
                                   originalToNewUuid,
                                   addedLocations,
                                   deletedLocations);
@@ -2087,8 +2099,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                 } else {
 
                     ActualLocation actualBeforeLocation = getActualLocation(workspace, beforeLocation);
-                    ActualLocation actualIntoLocation = getActualLocation(workspace, Location.create(beforeLocation.getPath()
-                                                                                                                   .getParent()));
+                    ActualLocation actualIntoLocation = getActualLocation(workspace,
+                                                                          Location.create(beforeLocation.getPath().getParent()));
 
                     actualNewLocation = moveNodeBefore(workspace, actualLocation, actualIntoLocation, actualBeforeLocation);
                 }
