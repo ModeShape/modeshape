@@ -244,8 +244,9 @@ class WorkspaceLockManager {
         ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph().getNodeAt(pathFactory.create(locksPath,
-                                                                                                        pathFactory.createSegment(lockToken)));
+        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph()
+                                                      .getNodeAt(pathFactory.create(locksPath,
+                                                                                    pathFactory.createSegment(lockToken)));
 
         return booleanFactory.create(lockNode.getProperty(DnaLexicon.IS_HELD_BY_SESSION).getFirstValue());
 
@@ -294,7 +295,6 @@ class WorkspaceLockManager {
      * 
      * @param nodeLocation the node UUID
      * @return the corresponding lock, possibly null if there is no such lock
-     * @throws RepositoryException if there is a problem obtaining the information for a lock
      */
     DnaLock lockFor( Location nodeLocation ) {
         UUID nodeUuid = uuidFor(nodeLocation);
