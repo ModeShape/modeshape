@@ -465,7 +465,7 @@ public class Graph {
      * @return an object that allows the scope of the lock to be defined
      */
     public LockScope<LockTimeout<Conjunction<Graph>>> lock( Property firstIdProperty,
-                                               Property... additionalIdProperties ) {
+                                                            Property... additionalIdProperties ) {
         return lock(Location.create(firstIdProperty, additionalIdProperties));
     }
 
@@ -2006,13 +2006,15 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize).getChildren();
+                                return requests.readBlockOfChildren(at, getCurrentWorkspaceName(), startingIndex, blockSize)
+                                               .getChildren();
                             }
                         };
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize).getChildren();
+                        return requests.readNextBlockOfChildren(previousSibling, getCurrentWorkspaceName(), blockSize)
+                                       .getChildren();
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
@@ -2666,7 +2668,7 @@ public class Graph {
          * @return an object that allows the scope of the lock to be defined
          */
         public LockScope<LockTimeout<BatchConjunction>> lock( Property firstIdProperty,
-                                                 Property... additionalIdProperties ) {
+                                                              Property... additionalIdProperties ) {
             return lock(Location.create(firstIdProperty, additionalIdProperties));
         }
 
@@ -4740,6 +4742,7 @@ public class Graph {
                                      org.jboss.dna.graph.request.LockBranchRequest.LockScope lockScope,
                                      long lockTimeoutInMillis );
 
+        @SuppressWarnings( "synthetic-access" )
         public LockTimeout<T> andItsDescendants() {
             return new LockTimeout<T>() {
 
@@ -4756,6 +4759,7 @@ public class Graph {
             };
         }
 
+        @SuppressWarnings( "synthetic-access" )
         public LockTimeout<T> only() {
             return new LockTimeout<T>() {
 
@@ -6424,7 +6428,10 @@ public class Graph {
         }
 
         public SubgraphNode getNode( Name relativePath ) {
-            Path path = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), relativePath);
+            Path path = getGraph().getContext()
+                                  .getValueFactories()
+                                  .getPathFactory()
+                                  .create(getLocation().getPath(), relativePath);
             path = path.getNormalizedPath();
             return getNode(path);
         }
