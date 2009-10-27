@@ -66,18 +66,23 @@ import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadBranchRequest;
+import org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
@@ -839,6 +844,26 @@ class ForkRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadBlockOfChildrenRequest)
+     */
+    @Override
+    public void process( ReadBlockOfChildrenRequest request ) {
+        super.process(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest)
+     */
+    @Override
+    public void process( ReadNextBlockOfChildrenRequest request ) {
+        super.process(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllPropertiesRequest)
      */
     @Override
@@ -1112,6 +1137,42 @@ class ForkRequestProcessor extends RequestProcessor {
                 // Create and submit a request for the projection ...
                 UpdatePropertiesRequest pushDownRequest = new UpdatePropertiesRequest(proxy.location(), proxy.workspaceName(),
                                                                                       request.properties());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.on()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdateValuesRequest)
+     */
+    @Override
+    public void process( UpdateValuesRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                UpdateValuesRequest pushDownRequest = new UpdateValuesRequest(proxy.workspaceName(), proxy.location(),
+                                                                              request.property(), request.addedValues(),
+                                                                              request.removedValues());
                 federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
 
                 // Submit the requests for processing and then STOP ...
@@ -1481,6 +1542,75 @@ class ForkRequestProcessor extends RequestProcessor {
                 // Create and submit a request for the projection ...
                 RenameNodeRequest pushDownRequest = new RenameNodeRequest(proxy.location(), proxy.workspaceName(),
                                                                           request.toName());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.at()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.LockBranchRequest)
+     */
+    @Override
+    public void process( LockBranchRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                LockBranchRequest pushDownRequest = new LockBranchRequest(proxy.location(), proxy.workspaceName(),
+                                                                          request.lockScope(), request.lockTimeoutInMillis());
+                federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
+
+                // Submit the requests for processing and then STOP ...
+                submit(federatedRequest);
+                return;
+            }
+            assert projectedNode.isPlaceholder();
+            projectedNode = projectedNode.next();
+        }
+        // Unable to perform this update ...
+        String msg = GraphI18n.unableToUpdatePlaceholder.text(readable(request.at()), request.inWorkspace(), getSourceName());
+        request.setError(new UnsupportedRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UnlockBranchRequest)
+     */
+    @Override
+    public void process( UnlockBranchRequest request ) {
+        // Figure out where this request is projected ...
+        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
+        if (projectedNode == null) return;
+
+        // Create the federated request ...
+        FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        // Any non-read request should be submitted to the first ProxyNode ...
+        while (projectedNode != null) {
+            if (projectedNode.isProxy()) {
+                ProxyNode proxy = projectedNode.asProxy();
+                // Create and submit a request for the projection ...
+                UnlockBranchRequest pushDownRequest = new UnlockBranchRequest(proxy.location(), proxy.workspaceName());
                 federatedRequest.add(pushDownRequest, proxy.isSameLocationAsOriginal(), false, proxy.projection());
 
                 // Submit the requests for processing and then STOP ...

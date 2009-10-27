@@ -39,8 +39,10 @@ import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -53,7 +55,9 @@ import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
@@ -306,6 +310,20 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdateValuesRequest)
+     */
+    @Override
+    public void process( UpdateValuesRequest request ) {
+        UpdateValuesRequest source = (UpdateValuesRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        request.setActualLocation(source.getActualLocationOfNode(),
+                                  request.getActualAddedValues(),
+                                  request.getActualRemovedValues());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
      */
     @Override
@@ -343,6 +361,18 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        DeleteChildrenRequest source = (DeleteChildrenRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        request.setActualLocationOfNode(source.getActualLocationOfNode());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
     @Override
@@ -350,6 +380,30 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
         MoveBranchRequest source = (MoveBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocations(source.getActualLocationBefore(), source.getActualLocationAfter());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.LockBranchRequest)
+     */
+    @Override
+    public void process( LockBranchRequest request ) {
+        LockBranchRequest source = (LockBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        request.setActualLocation(source.getActualLocation());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UnlockBranchRequest)
+     */
+    @Override
+    public void process( UnlockBranchRequest request ) {
+        UnlockBranchRequest source = (UnlockBranchRequest)federatedRequest.getFirstProjectedRequest().getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        request.setActualLocation(source.getActualLocation());
     }
 
     /**
