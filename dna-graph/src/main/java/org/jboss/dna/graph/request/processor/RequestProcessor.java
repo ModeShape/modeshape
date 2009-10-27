@@ -866,6 +866,21 @@ public abstract class RequestProcessor {
      * @param request the request
      */
     public void process( LockBranchRequest request ) {
+        Location actualLocation = request.at();
+        if (!actualLocation.hasPath()) {
+            VerifyNodeExistsRequest nodeExists = new VerifyNodeExistsRequest(request.at(), request.inWorkspace());
+
+            process(nodeExists);
+
+            if (nodeExists.hasError()) {
+                request.setError(nodeExists.getError());
+                return;
+            }
+
+            actualLocation = nodeExists.getActualLocationOfNode();
+        }
+
+        request.setActualLocation(actualLocation);
     }
 
     /**
@@ -879,6 +894,21 @@ public abstract class RequestProcessor {
      * @param request the request
      */
     public void process( UnlockBranchRequest request ) {
+        Location actualLocation = request.at();
+        if (!actualLocation.hasPath()) {
+            VerifyNodeExistsRequest nodeExists = new VerifyNodeExistsRequest(request.at(), request.inWorkspace());
+
+            process(nodeExists);
+
+            if (nodeExists.hasError()) {
+                request.setError(nodeExists.getError());
+                return;
+            }
+
+            actualLocation = nodeExists.getActualLocationOfNode();
+        }
+
+        request.setActualLocation(actualLocation);
     }
 
     /**
