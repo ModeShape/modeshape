@@ -73,7 +73,7 @@ public final class DnaContentProvider extends ColumnLabelProvider
     /**
      * If a server connection cannot be established, wait this amount of time before trying again.
      */
-    private static final long RETRY_DURATION = 10000;
+    private static final long RETRY_DURATION = 2000;
 
     // ===========================================================================================================================
     // Class Methods
