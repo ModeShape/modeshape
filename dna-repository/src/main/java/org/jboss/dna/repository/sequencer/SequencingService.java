@@ -23,9 +23,9 @@
  */
 package org.jboss.dna.repository.sequencer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +49,9 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.observe.ChangeObserver;
 import org.jboss.dna.graph.observe.NetChangeObserver;
+import org.jboss.dna.graph.observe.NetChangeObserver.ChangeType;
 import org.jboss.dna.graph.observe.NetChangeObserver.NetChange;
+import org.jboss.dna.graph.observe.NetChangeObserver.NetChanges;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -388,95 +390,103 @@ public class SequencingService implements AdministeredService {
      * Do the work of processing by sequencing the node. This method is called by the {@link #executorService executor service}
      * when it performs it's work on the enqueued {@link NetChange NetChange runnable objects}.
      * 
-     * @param change the change describing the node to be processed.
+     * @param changes the change describing the node to be processed.
      */
-    protected void processChange( NetChange change ) {
+    protected void processChange( NetChanges changes ) {
         final ExecutionContext context = this.getExecutionContext();
         final Logger logger = context.getLogger(getClass());
         assert logger != null;
 
         try {
-            final String repositorySourceName = change.getRepositorySourceName();
-            final String repositoryWorkspaceName = change.getRepositoryWorkspaceName();
+            List<Sequencer> allSequencers = null;
+            final String repositorySourceName = changes.getSourceName();
+            for (NetChange change : changes.getNetChanges()) {
+                // Go through each net change, and only process node/property adds and property changes ...
+                if (change.includes(ChangeType.NODE_ADDED, ChangeType.PROPERTY_ADDED, ChangeType.PROPERTY_CHANGED)) {
+                    final String repositoryWorkspaceName = change.getRepositoryWorkspaceName();
 
-            // Figure out which sequencers accept this path,
-            // and track which output nodes should be passed to each sequencer...
-            final Path nodePath = change.getPath();
-            final String nodePathStr = context.getValueFactories().getStringFactory().create(nodePath);
-            Map<SequencerCall, Set<RepositoryNodePath>> sequencerCalls = new HashMap<SequencerCall, Set<RepositoryNodePath>>();
-            List<Sequencer> allSequencers = this.sequencerLibrary.getInstances();
-            List<Sequencer> sequencers = new ArrayList<Sequencer>(allSequencers.size());
-            for (Sequencer sequencer : allSequencers) {
-                final SequencerConfig config = sequencer.getConfiguration();
-                for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
-                    for (Property property : change.getModifiedProperties()) {
-                        Name propertyName = property.getName();
-                        String propertyNameStr = context.getValueFactories().getStringFactory().create(propertyName);
-                        String path = nodePathStr + "/@" + propertyNameStr;
-                        SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
-                        if (matcher.matches()) {
-                            // String selectedPath = matcher.getSelectedPath();
-                            RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(),
-                                                                                     repositorySourceName,
-                                                                                     repositoryWorkspaceName);
-                            SequencerCall call = new SequencerCall(sequencer, propertyNameStr);
-                            // Record the output path ...
-                            Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
-                            if (outputPaths == null) {
-                                outputPaths = new HashSet<RepositoryNodePath>();
-                                sequencerCalls.put(call, outputPaths);
+                    // Figure out which sequencers accept this path,
+                    // and track which output nodes should be passed to each sequencer...
+                    final Path nodePath = change.getPath();
+                    final String nodePathStr = context.getValueFactories().getStringFactory().create(nodePath);
+                    Map<SequencerCall, Set<RepositoryNodePath>> sequencerCalls = new HashMap<SequencerCall, Set<RepositoryNodePath>>();
+                    if (allSequencers == null) {
+                        allSequencers = this.sequencerLibrary.getInstances();
+                    }
+                    List<Sequencer> sequencers = new LinkedList<Sequencer>();
+                    for (Sequencer sequencer : allSequencers) {
+                        final SequencerConfig config = sequencer.getConfiguration();
+                        for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
+                            for (Property property : change.getModifiedProperties()) {
+                                Name propertyName = property.getName();
+                                String propertyNameStr = context.getValueFactories().getStringFactory().create(propertyName);
+                                String path = nodePathStr + "/@" + propertyNameStr;
+                                SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
+                                if (matcher.matches()) {
+                                    // String selectedPath = matcher.getSelectedPath();
+                                    RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(),
+                                                                                             repositorySourceName,
+                                                                                             repositoryWorkspaceName);
+                                    SequencerCall call = new SequencerCall(sequencer, propertyNameStr);
+                                    // Record the output path ...
+                                    Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
+                                    if (outputPaths == null) {
+                                        outputPaths = new HashSet<RepositoryNodePath>();
+                                        sequencerCalls.put(call, outputPaths);
+                                    }
+                                    outputPaths.add(outputPath);
+                                    sequencers.add(sequencer);
+                                    break;
+                                }
                             }
-                            outputPaths.add(outputPath);
-                            sequencers.add(sequencer);
-                            break;
                         }
                     }
-                }
-            }
 
-            RepositorySource source = repositoryLibrary.getSource(repositorySourceName);
-            Graph graph = Graph.create(source, context);
-            Node node = null;
-            if (!sequencers.isEmpty()) {
+                    RepositorySource source = repositoryLibrary.getSource(repositorySourceName);
+                    Graph graph = Graph.create(source, context);
+                    Node node = null;
+                    if (!sequencers.isEmpty()) {
 
-                // Find the changed node ...
-                node = graph.getNodeAt(nodePath);
+                        // Find the changed node ...
+                        node = graph.getNodeAt(nodePath);
 
-                // Figure out which sequencers should run ...
-                sequencers = this.sequencerSelector.selectSequencers(sequencers, node, change);
-            }
-            if (sequencers.isEmpty()) {
-                this.statistics.recordNodeSkipped();
-                if (logger.isDebugEnabled()) {
-                    logger.trace("Skipping '{0}': no sequencers matched this condition", change);
-                }
-            } else {
-                // Run each of those sequencers ...
-                for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
+                        // Figure out which sequencers should run ...
+                        sequencers = this.sequencerSelector.selectSequencers(sequencers, node, change);
+                    }
+                    if (sequencers.isEmpty()) {
+                        this.statistics.recordNodeSkipped();
+                        if (logger.isDebugEnabled()) {
+                            logger.trace("Skipping '{0}': no sequencers matched this condition", change);
+                        }
+                    } else {
+                        // Run each of those sequencers ...
+                        for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
 
-                    final SequencerCall sequencerCall = entry.getKey();
-                    final Set<RepositoryNodePath> outputPaths = entry.getValue();
-                    final Sequencer sequencer = sequencerCall.getSequencer();
-                    final String sequencerName = sequencer.getConfiguration().getName();
-                    final String propertyName = sequencerCall.getSequencedPropertyName();
+                            final SequencerCall sequencerCall = entry.getKey();
+                            final Set<RepositoryNodePath> outputPaths = entry.getValue();
+                            final Sequencer sequencer = sequencerCall.getSequencer();
+                            final String sequencerName = sequencer.getConfiguration().getName();
+                            final String propertyName = sequencerCall.getSequencedPropertyName();
 
-                    // Get the paths to the nodes where the sequencer should write it's output ...
-                    assert outputPaths != null && outputPaths.size() != 0;
+                            // Get the paths to the nodes where the sequencer should write it's output ...
+                            assert outputPaths != null && outputPaths.size() != 0;
 
-                    // Create a new execution context for each sequencer
-                    final SimpleProblems problems = new SimpleProblems();
-                    SequencerContext sequencerContext = new SequencerContext(context, graph);
-                    try {
-                        sequencer.execute(node, propertyName, change, outputPaths, sequencerContext, problems);
-                        sequencerContext.getDestination().submit();
-                    } catch (SequencerException e) {
-                        logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
+                            // Create a new execution context for each sequencer
+                            final SimpleProblems problems = new SimpleProblems();
+                            SequencerContext sequencerContext = new SequencerContext(context, graph);
+                            try {
+                                sequencer.execute(node, propertyName, change, outputPaths, sequencerContext, problems);
+                                sequencerContext.getDestination().submit();
+                            } catch (SequencerException e) {
+                                logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
+                            }
+                        }
+                        this.statistics.recordNodeSequenced();
                     }
                 }
-                this.statistics.recordNodeSequenced();
             }
         } catch (Throwable e) {
-            logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, change);
+            logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, changes);
         }
     }
 
@@ -594,22 +604,19 @@ public class SequencingService implements AdministeredService {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChange)
+         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChanges)
          */
         @Override
-        protected void notify( final NetChange change ) {
-            // Only care about new nodes or nodes that have new/changed properies ...
-            if (change.includes(ChangeType.NODE_ADDED, ChangeType.PROPERTY_ADDED, ChangeType.PROPERTY_CHANGED)) {
-                try {
-                    getExecutorService().execute(new Runnable() {
+        protected void notify( final NetChanges netChanges ) {
+            try {
+                getExecutorService().execute(new Runnable() {
 
-                        public void run() {
-                            processChange(change);
-                        }
-                    });
-                } catch (RejectedExecutionException e) {
-                    // The executor service has been shut down, so do nothing with this set of changes
-                }
+                    public void run() {
+                        processChange(netChanges);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                // The executor service has been shut down, so do nothing with this set of changes
             }
         }
     }

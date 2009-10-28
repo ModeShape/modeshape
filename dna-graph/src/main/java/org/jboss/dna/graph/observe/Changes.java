@@ -24,7 +24,7 @@
 package org.jboss.dna.graph.observe;
 
 import java.io.Serializable;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.SecurityContext;
@@ -35,15 +35,15 @@ import org.jboss.dna.graph.request.ChangeRequest;
  * A set of changes that were made atomically. Each change is in the form of a frozen {@link ChangeRequest}.
  */
 @Immutable
-public final class Changes implements Iterable<ChangeRequest>, Comparable<Changes>, Serializable {
+public class Changes implements Comparable<Changes>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String processId;
-    private final String userName;
-    private final String sourceName;
-    private final DateTime timestamp;
-    private final List<ChangeRequest> changeRequests;
+    protected final String processId;
+    protected final String userName;
+    protected final String sourceName;
+    protected final DateTime timestamp;
+    protected final List<ChangeRequest> changeRequests;
 
     public Changes( String userName,
                     String sourceName,
@@ -57,11 +57,31 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
                     String sourceName,
                     DateTime timestamp,
                     List<ChangeRequest> requests ) {
+        assert requests != null;
+        assert !requests.isEmpty();
         this.userName = userName;
         this.sourceName = sourceName;
         this.timestamp = timestamp;
-        this.changeRequests = requests;
+        this.changeRequests = Collections.unmodifiableList(requests);
         this.processId = processId != null ? processId : "";
+        assert this.userName != null;
+        assert this.sourceName != null;
+        assert this.timestamp != null;
+        assert this.changeRequests != null;
+        assert this.processId != null;
+    }
+
+    protected Changes( Changes changes ) {
+        this.userName = changes.userName;
+        this.sourceName = changes.sourceName;
+        this.timestamp = changes.timestamp;
+        this.changeRequests = changes.changeRequests;
+        this.processId = changes.processId;
+        assert this.userName != null;
+        assert this.sourceName != null;
+        assert this.timestamp != null;
+        assert this.changeRequests != null;
+        assert this.processId != null;
     }
 
     /**
@@ -102,12 +122,12 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
     }
 
     /**
-     * {@inheritDoc}
+     * Get the list of changes.
      * 
-     * @see java.lang.Iterable#iterator()
+     * @return the immutable list of change requests; never null and never empty
      */
-    public Iterator<ChangeRequest> iterator() {
-        return this.changeRequests.iterator();
+    public List<ChangeRequest> getChangeRequests() {
+        return changeRequests;
     }
 
     /**
@@ -147,5 +167,19 @@ public final class Changes implements Iterable<ChangeRequest>, Comparable<Change
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        if (processId.length() != 0) {
+            return getTimestamp() + " @" + getUserName() + " [" + getSourceName() + "] - " + changeRequests.size() + " events";
+        }
+        return getTimestamp() + " @" + getUserName() + " #" + getProcessId() + " [" + getSourceName() + "] - "
+               + changeRequests.size() + " events";
     }
 }

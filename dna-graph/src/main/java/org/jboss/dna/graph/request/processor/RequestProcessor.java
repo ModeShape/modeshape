@@ -847,6 +847,7 @@ public abstract class RequestProcessor {
         // Publish any changes ...
         if (observer != null && !this.changes.isEmpty()) {
             String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
+            if (userName == null) userName = "";
             Changes changes = new Changes(userName, getSourceName(), getNowInUtc(), this.changes);
             observer.notify(changes);
         }

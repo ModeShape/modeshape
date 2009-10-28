@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -42,8 +44,10 @@ import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DeleteChildrenRequest;
+import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 
 /**
@@ -74,7 +78,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
     public void notify( Changes changes ) {
         Map<String, Map<Location, NetChangeDetails>> detailsByLocationByWorkspace = new HashMap<String, Map<Location, NetChangeDetails>>();
         // Process each of the events, extracting the node path and property details for each ...
-        for (ChangeRequest change : changes) {
+        for (ChangeRequest change : changes.getChangeRequests()) {
             Location location = change.changedLocation();
             String workspace = change.changedWorkspace();
 
@@ -129,37 +133,84 @@ public abstract class NetChangeObserver extends ChangeObserver {
                     }
                     childDetails.addEventType(ChangeType.NODE_REMOVED);
                 }
+            } else if (change instanceof LockBranchRequest) {
+                details.setLockAction(LockAction.LOCKED);
+            } else if (change instanceof UnlockBranchRequest) {
+                details.setLockAction(LockAction.UNLOCKED);
             }
         }
 
         // Walk through the net changes ...
-        String sourceName = changes.getSourceName();
+        List<NetChange> netChanges = new LinkedList<NetChange>();
         for (Map.Entry<String, Map<Location, NetChangeDetails>> byWorkspaceEntry : detailsByLocationByWorkspace.entrySet()) {
             String workspaceName = byWorkspaceEntry.getKey();
             // Iterate over the entries. Since we've used a TreeSet, we'll get these with the lower paths first ...
             for (Map.Entry<Location, NetChangeDetails> entry : byWorkspaceEntry.getValue().entrySet()) {
                 Location location = entry.getKey();
                 NetChangeDetails details = entry.getValue();
-                notify(new NetChange(sourceName, workspaceName, location, details.getEventTypes(),
-                                     details.getModifiedProperties(), details.getRemovedProperties()));
+                netChanges.add(new NetChange(workspaceName, location, details.getEventTypes(), details.getModifiedProperties(),
+                                             details.getRemovedProperties()));
             }
         }
+        // Now notify of all of the changes ...
+        notify(new NetChanges(changes, netChanges));
     }
 
     /**
-     * Method that is called for each net change.
+     * Method that is called for the set of net changes.
      * 
-     * @param change the net change; never null
+     * @param netChanges the net changes; never null
      */
-    protected abstract void notify( NetChange change );
+    protected abstract void notify( NetChanges netChanges );
+
+    /**
+     * A set of net changes that were made atomically. Each change is in the form of a frozen {@link ChangeRequest}, and the net
+     * change is in the form.
+     */
+    @Immutable
+    public static final class NetChanges extends Changes {
+        private static final long serialVersionUID = 1L;
+
+        private final List<NetChange> netChanges;
+
+        public NetChanges( Changes changes,
+                           List<NetChange> netChanges ) {
+            super(changes);
+            assert netChanges != null;
+            assert !netChanges.isEmpty();
+            this.netChanges = Collections.unmodifiableList(netChanges);
+        }
+
+        /**
+         * Get the list of net changes.
+         * 
+         * @return the immutable list of net changes; never null and never empty
+         */
+        public List<NetChange> getNetChanges() {
+            return this.netChanges;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            if (processId.length() != 0) {
+                return getTimestamp() + " @" + getUserName() + " [" + getSourceName() + "] - " + netChanges.size() + " changes";
+            }
+            return getTimestamp() + " @" + getUserName() + " #" + getProcessId() + " [" + getSourceName() + "] - "
+                   + netChanges.size() + " changes";
+        }
+    }
 
     /**
      * A notification of changes to a node.
      */
     @Immutable
-    public static class NetChange {
+    public static final class NetChange {
 
-        private final String sourceName;
         private final String workspaceName;
         private final Location location;
         private final EnumSet<ChangeType> eventTypes;
@@ -167,16 +218,13 @@ public abstract class NetChangeObserver extends ChangeObserver {
         private final Set<Name> removedProperties;
         private final int hc;
 
-        public NetChange( String sourceName,
-                          String workspaceName,
+        public NetChange( String workspaceName,
                           Location location,
                           EnumSet<ChangeType> eventTypes,
                           Set<Property> modifiedProperties,
                           Set<Name> removedProperties ) {
-            assert sourceName != null;
             assert workspaceName != null;
             assert location != null;
-            this.sourceName = sourceName;
             this.workspaceName = workspaceName;
             this.location = location;
             this.hc = HashCode.compute(this.workspaceName, this.location);
@@ -192,13 +240,6 @@ public abstract class NetChangeObserver extends ChangeObserver {
          */
         public Path getPath() {
             return this.location.getPath();
-        }
-
-        /**
-         * @return repositorySourceName
-         */
-        public String getRepositorySourceName() {
-            return this.sourceName;
         }
 
         /**
@@ -308,6 +349,12 @@ public abstract class NetChangeObserver extends ChangeObserver {
         }
     }
 
+    private enum LockAction {
+        NO_CHANGE,
+        LOCKED,
+        UNLOCKED;
+    }
+
     /**
      * Internal utility class used in the computation of the net changes.
      */
@@ -317,8 +364,24 @@ public abstract class NetChangeObserver extends ChangeObserver {
         private final Set<Property> modifiedProperties = new HashSet<Property>();
         private final Set<Name> removedProperties = new HashSet<Name>();
         private EnumSet<ChangeType> eventTypes = EnumSet.noneOf(ChangeType.class);
+        private LockAction lockAction = LockAction.NO_CHANGE;
 
         protected NetChangeDetails() {
+        }
+
+        public void setLockAction( LockAction lockAction ) {
+            switch (lockAction) {
+                case LOCKED:
+                    // always mark as locked
+                    this.lockAction = lockAction;
+                    break;
+                case UNLOCKED:
+                    // mark as unlock or unchanged if previously locked ...
+                    this.lockAction = this.lockAction == LockAction.LOCKED ? LockAction.UNLOCKED : lockAction;
+                    break;
+                case NO_CHANGE:
+                    break;
+            }
         }
 
         public void addEventType( ChangeType eventType ) {
@@ -338,6 +401,13 @@ public abstract class NetChangeObserver extends ChangeObserver {
         public void removeProperty( Name propertyName ) {
             this.removedProperties.add(propertyName);
             this.eventTypes.add(ChangeType.PROPERTY_REMOVED);
+        }
+
+        /**
+         * @return lockAction
+         */
+        public LockAction getLockAction() {
+            return lockAction;
         }
 
         /**

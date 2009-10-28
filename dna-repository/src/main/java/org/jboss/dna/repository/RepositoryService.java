@@ -446,44 +446,47 @@ public class RepositoryService implements AdministeredService, Observer {
     }
 
     protected class ConfigurationChangeObserver extends NetChangeObserver {
+
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChange)
+         * @see org.jboss.dna.graph.observe.NetChangeObserver#notify(org.jboss.dna.graph.observe.NetChangeObserver.NetChanges)
          */
         @Override
-        protected void notify( NetChange change ) {
-            if (!getConfigurationSourceName().equals(change.getRepositorySourceName())) return;
-            if (!getConfigurationWorkspaceName().equals(change.getRepositoryWorkspaceName())) return;
-            Path changedPath = change.getPath();
-            Path configPath = getPathToConfigurationRoot();
-            if (!changedPath.isAtOrBelow(getPathToConfigurationRoot())) return;
-            boolean changedNodeIsPotentiallySource = configPath.size() + 1 == changedPath.size();
+        protected void notify( NetChanges netChanges ) {
+            if (!getConfigurationSourceName().equals(netChanges.getSourceName())) return;
+            for (NetChange change : netChanges.getNetChanges()) {
+                if (!getConfigurationWorkspaceName().equals(change.getRepositoryWorkspaceName())) return;
+                Path changedPath = change.getPath();
+                Path configPath = getPathToConfigurationRoot();
+                if (!changedPath.isAtOrBelow(getPathToConfigurationRoot())) return;
+                boolean changedNodeIsPotentiallySource = configPath.size() + 1 == changedPath.size();
 
-            // At this point, we know that something inside the configuration changed, so figure out what happened ...
-            if (changedNodeIsPotentiallySource && change.includes(ChangeType.NODE_REMOVED)) {
-                // Then potentially a source with the supplied name has been removed ...
-                String sourceName = changedPath.getLastSegment().getName().getLocalName();
-                getRepositoryLibrary().removeSource(sourceName);
-            } else {
-                // The add/change/remove is either at or below a source, so try to create a new source for it ...
-                Path sourcePath = changedNodeIsPotentiallySource ? changedPath : changedPath.subpath(0, configPath.size() + 1);
-                Problems problems = new SimpleProblems();
-                // Now read the node and create the source ...
-                Graph graph = Graph.create(getConfigurationSourceName(), getRepositoryLibrary(), getExecutionEnvironment());
-                try {
-                    String workspaceName = getConfigurationWorkspaceName();
-                    if (workspaceName != null) graph.useWorkspace(workspaceName);
-                    Map<Name, Property> properties = graph.getPropertiesByName().on(sourcePath);
-                    RepositorySource source = createRepositorySource(sourcePath, properties, problems);
-                    if (source != null) {
-                        // It was the config for a source, so try to add or replace an existing source ...
-                        getRepositoryLibrary().addSource(source, true);
-                    }
-                } catch (PathNotFoundException e) {
-                    // No source was found, and this is okay (since it may just been deleted)...
+                // At this point, we know that something inside the configuration changed, so figure out what happened ...
+                if (changedNodeIsPotentiallySource && change.includes(ChangeType.NODE_REMOVED)) {
+                    // Then potentially a source with the supplied name has been removed ...
                     String sourceName = changedPath.getLastSegment().getName().getLocalName();
                     getRepositoryLibrary().removeSource(sourceName);
+                } else {
+                    // The add/change/remove is either at or below a source, so try to create a new source for it ...
+                    Path sourcePath = changedNodeIsPotentiallySource ? changedPath : changedPath.subpath(0, configPath.size() + 1);
+                    Problems problems = new SimpleProblems();
+                    // Now read the node and create the source ...
+                    Graph graph = Graph.create(getConfigurationSourceName(), getRepositoryLibrary(), getExecutionEnvironment());
+                    try {
+                        String workspaceName = getConfigurationWorkspaceName();
+                        if (workspaceName != null) graph.useWorkspace(workspaceName);
+                        Map<Name, Property> properties = graph.getPropertiesByName().on(sourcePath);
+                        RepositorySource source = createRepositorySource(sourcePath, properties, problems);
+                        if (source != null) {
+                            // It was the config for a source, so try to add or replace an existing source ...
+                            getRepositoryLibrary().addSource(source, true);
+                        }
+                    } catch (PathNotFoundException e) {
+                        // No source was found, and this is okay (since it may just been deleted)...
+                        String sourceName = changedPath.getLastSegment().getName().getLocalName();
+                        getRepositoryLibrary().removeSource(sourceName);
+                    }
                 }
             }
         }
