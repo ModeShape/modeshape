@@ -133,7 +133,7 @@ public class UnlockBranchRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return at;
+        return actualLocation;
     }
 
     /**

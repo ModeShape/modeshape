@@ -167,7 +167,7 @@ public class LockBranchRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return at;
+        return actualLocation;
     }
 
     /**
