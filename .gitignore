@@ -62,3 +62,5 @@
 /extensions/dna-sequencer-msoffice/target
 /extensions/dna-sequencer-xml/target
 /extensions/dna-sequencer-zip/target
+
+/tools/org.jboss.dna.eclipse.jcr.rest.client/bin
