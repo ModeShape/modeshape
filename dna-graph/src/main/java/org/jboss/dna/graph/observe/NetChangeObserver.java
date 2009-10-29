@@ -63,7 +63,9 @@ public abstract class NetChangeObserver extends ChangeObserver {
         NODE_REMOVED,
         PROPERTY_ADDED,
         PROPERTY_REMOVED,
-        PROPERTY_CHANGED;
+        PROPERTY_CHANGED,
+        NODE_LOCKED,
+        NODE_UNLOCKED;
     }
 
     protected NetChangeObserver() {
@@ -350,7 +352,6 @@ public abstract class NetChangeObserver extends ChangeObserver {
     }
 
     private enum LockAction {
-        NO_CHANGE,
         LOCKED,
         UNLOCKED;
     }
@@ -364,7 +365,6 @@ public abstract class NetChangeObserver extends ChangeObserver {
         private final Set<Property> modifiedProperties = new HashSet<Property>();
         private final Set<Name> removedProperties = new HashSet<Name>();
         private EnumSet<ChangeType> eventTypes = EnumSet.noneOf(ChangeType.class);
-        private LockAction lockAction = LockAction.NO_CHANGE;
 
         protected NetChangeDetails() {
         }
@@ -372,14 +372,15 @@ public abstract class NetChangeObserver extends ChangeObserver {
         public void setLockAction( LockAction lockAction ) {
             switch (lockAction) {
                 case LOCKED:
-                    // always mark as locked
-                    this.lockAction = lockAction;
+                    // always mark as locked and remove any unlocked state
+                    eventTypes.add(ChangeType.NODE_LOCKED);
+                    eventTypes.remove(ChangeType.NODE_UNLOCKED);
                     break;
                 case UNLOCKED:
-                    // mark as unlock or unchanged if previously locked ...
-                    this.lockAction = this.lockAction == LockAction.LOCKED ? LockAction.UNLOCKED : lockAction;
-                    break;
-                case NO_CHANGE:
+                    if (!eventTypes.remove(ChangeType.NODE_LOCKED)) {
+                        // It was not previously locked by this change set, so we should unlock it ...
+                        eventTypes.add(ChangeType.NODE_UNLOCKED);
+                    }
                     break;
             }
         }
@@ -401,13 +402,6 @@ public abstract class NetChangeObserver extends ChangeObserver {
         public void removeProperty( Name propertyName ) {
             this.removedProperties.add(propertyName);
             this.eventTypes.add(ChangeType.PROPERTY_REMOVED);
-        }
-
-        /**
-         * @return lockAction
-         */
-        public LockAction getLockAction() {
-            return lockAction;
         }
 
         /**
