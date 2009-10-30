@@ -44,9 +44,8 @@
 + * (nt:nodeType) = nt:nodeType protected version
 
 [dna:lock] > nt:base
-- dna:lockedNode (string) protected ignore
+- dna:lockedUuid (string) protected ignore
 - jcr:lockOwner (string) protected ignore
-- jcr:uuid (string) protected ignore
 - dna:sessionScope (boolean) protected ignore
 - jcr:isDeep (boolean) protected ignore
 - dna:isHeldBySession (boolean) protected ignore

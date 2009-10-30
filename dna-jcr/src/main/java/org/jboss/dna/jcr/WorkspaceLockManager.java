@@ -94,9 +94,8 @@ class WorkspaceLockManager {
 
         batch.create(pathFactory.create(locksPath, pathFactory.createSegment(lockUuid.toString())),
                      propFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.LOCK),
-                     propFactory.create(JcrLexicon.UUID, nodeUuid.toString()),
                      propFactory.create(DnaLexicon.WORKSPACE, workspaceName),
-                     propFactory.create(DnaLexicon.LOCKED_NODE, nodeUuid.toString()),
+                     propFactory.create(DnaLexicon.LOCKED_UUID, nodeUuid.toString()),
                      propFactory.create(DnaLexicon.IS_SESSION_SCOPED, isSessionScoped),
                      // This gets set after the lock succeeds and the lock token gets added to the session
                      propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, false),

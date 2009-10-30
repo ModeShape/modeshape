@@ -228,6 +228,16 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
 
+            if (uuid == null) {
+                for (Property property : request.properties()) {
+                    if (property.getName().equals(JcrLexicon.UUID)) {
+                        uuid = uuidFactory.create(property.getFirstValue());
+                        uuidString = stringFactory.create(property.getFirstValue());
+                        break;
+                    }
+                }
+            }
+
             switch (request.conflictBehavior()) {
                 case DO_NOT_REPLACE:
                 case UPDATE:
@@ -1154,7 +1164,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                      Name desiredName,
                                      Path.Segment desiredSegment,
                                      Map<String, String> oldUuidsToNewUuids,
-                                     Map<String, ChildEntity> addedLocations,
+                                     Map<Location, ChildEntity> addedLocations,
                                      Map<String, Location> deletedLocations ) {
         assert fromWorkspace != null;
         assert intoWorkspace != null;
@@ -1186,9 +1196,12 @@ public class BasicRequestProcessor extends RequestProcessor {
             case REPLACE_EXISTING_NODE:
                 try {
                     if (desiredSegment != null) {
-                        existingLocation = getActualLocation(intoWorkspace,
-                                                             Location.create(pathFactory.create(actualNewParent.location.getPath(),
-                                                                                                desiredSegment)));
+                        Location nLocation = Location.create(pathFactory.create(actualNewParent.location.getPath(),
+                                                                                desiredSegment));
+                        existingLocation = getActualLocation(intoWorkspace, nLocation);
+                        nLocation = Location.create(nLocation.getPath(), UUID.fromString(existingLocation.uuid));
+                        assert nLocation.getUuid() != null;
+                        deletedLocations.putAll(computeDeletedLocations(intoWorkspace, nLocation, true));
                         newUuid = existingLocation.childEntity.getId().getChildUuidString();
 
                     } else {
@@ -1225,11 +1238,12 @@ public class BasicRequestProcessor extends RequestProcessor {
         } else {
             // Now add the new copy of the original ...
             boolean allowSnS = original.getAllowsSameNameChildren();
+            if (desiredName == null) desiredName = desiredSegment.getName();
             newLocation = addNewChild(intoWorkspace.getId(), actualNewParent, newUuid, desiredName, allowSnS);
         }
 
         assert newLocation != null;
-        addedLocations.put(newLocation.uuid, newLocation.childEntity);
+        addedLocations.put(newLocation.location, newLocation.childEntity);
 
         return newLocation;
     }
@@ -1278,7 +1292,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 // Walk through the original nodes, creating new ChildEntity object (i.e., copy) for each original ...
                 List<ChildEntity> originalNodes = query.getNodes(true, true);
                 Iterator<ChildEntity> originalIter = originalNodes.iterator();
-                Map<String, ChildEntity> addedLocations = new HashMap<String, ChildEntity>();
+                Map<Location, ChildEntity> addedLocations = new HashMap<Location, ChildEntity>();
                 Map<String, Location> deletedLocations = new HashMap<String, Location>();
 
                 // Start with the original (top-level) node first, since we need to add it to the list of children ...
@@ -1475,7 +1489,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 // Walk through the original nodes, creating new ChildEntity object (i.e., copy) for each original ...
                 List<ChildEntity> originalNodes = query.getNodes(true, true);
                 Iterator<ChildEntity> originalIter = originalNodes.iterator();
-                Map<String, ChildEntity> addedLocations = new HashMap<String, ChildEntity>();
+                Map<Location, ChildEntity> addedLocations = new HashMap<Location, ChildEntity>();
                 Map<String, Location> deletedLocations = new HashMap<String, Location>();
 
                 // Start with the original (top-level) node first, since we need to add it to the list of children ...
@@ -1618,17 +1632,18 @@ public class BasicRequestProcessor extends RequestProcessor {
                     * Now we need to clean up any nodes that were descendants of the old copies of the
                     * nodes but are not descendants of the new copies.
                     */
-                    deletedLocations.keySet().removeAll(addedLocations.keySet());
+                    Map<String, Location> netDeletedLocations = new HashMap<String, Location>(deletedLocations);
+                    netDeletedLocations.values().removeAll(addedLocations.keySet());
 
-                    if (deletedLocations.size() > 0) {
+                    if (netDeletedLocations.size() > 0) {
                         // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
                         List<ReferenceEntity> invalidReferences = ReferenceEntity.getReferencesToUuids(intoWorkspace.getId(),
-                                                                                                       deletedLocations.keySet(),
+                                                                                                       netDeletedLocations.keySet(),
                                                                                                        entities);
 
                         for (Iterator<ReferenceEntity> iter = invalidReferences.iterator(); iter.hasNext();) {
                             ReferenceEntity invalidRef = iter.next();
-                            if (deletedLocations.keySet().contains(invalidRef.getId().getFromUuidString())) {
+                            if (netDeletedLocations.keySet().contains(invalidRef.getId().getFromUuidString())) {
                                 iter.remove();
                             }
                         }
@@ -1657,14 +1672,21 @@ public class BasicRequestProcessor extends RequestProcessor {
                         /*
                          * This list of values that were deleted is expected to be fairly small
                          */
-                        for (Location location : deletedLocations.values()) {
+                        for (Location location : netDeletedLocations.values()) {
                             ActualLocation node = getActualLocation(intoWorkspace, location);
-                            entities.remove(node.childEntity);
+                            ChildEntity entity = node.childEntity;
+
+                            if (entity != null) {
+                                entities.remove(node.childEntity);
+                            }
                             PropertiesEntity.deletePropertiesFor(intoWorkspace.getId(), node.uuid, entities);
 
                         }
                         // Remove from the cache of children locations all entries for deleted nodes ...
-                        cache.removeBranch(intoWorkspaceId, deletedLocations.values());
+                        cache.removeBranch(intoWorkspaceId, netDeletedLocations.values());
+                    }
+
+                    if (!deletedLocations.isEmpty()) {
                         removedLocations = Collections.unmodifiableSet(new HashSet<Location>(deletedLocations.values()));
                     }
                     LargeValueEntity.deleteUnused(entities);
@@ -2077,6 +2099,11 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             Location fromLocation = request.from();
             ActualLocation actualLocation = getActualLocation(workspace, fromLocation);
+            if (actualLocation.childEntity == null) {
+                actualLocation = new ActualLocation(actualLocation.location, actualLocation.uuid, findNode(workspaceId,
+                                                                                                           actualLocation.uuid));
+            }
+
             actualOldLocation = actualLocation.location;
             Path oldPath = actualOldLocation.getPath();
 

@@ -37,7 +37,7 @@ public class DnaLexicon extends org.jboss.dna.repository.DnaLexicon {
     public static final Name IS_HELD_BY_SESSION = new BasicName(Namespace.URI, "isHeldBySession");
     public static final Name IS_SESSION_SCOPED = new BasicName(Namespace.URI, "isSessionScoped");    
     public static final Name LOCK = new BasicName(Namespace.URI, "lock");    
-    public static final Name LOCKED_NODE = new BasicName(Namespace.URI, "lockedNode");    
+    public static final Name LOCKED_UUID = new BasicName(Namespace.URI, "lockedUuid");
     public static final Name LOCKS = new BasicName(Namespace.URI, "locks");    
     public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
     public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");

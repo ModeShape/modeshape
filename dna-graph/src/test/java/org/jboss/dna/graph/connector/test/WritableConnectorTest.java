@@ -40,6 +40,7 @@ import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
@@ -1020,7 +1021,16 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     }
 
     private UUID uuidFor( Node node ) {
-        return (UUID)node.getProperty(DnaLexicon.UUID).getFirstValue();
+        UUID uuid = null;
+        if (node.getLocation().getUuid() != null) {
+            uuid = node.getLocation().getUuid();
+        }
+        
+        if (uuid == null && (node.getProperty(JcrLexicon.UUID) != null)) {
+            uuid = (UUID)node.getProperty(JcrLexicon.UUID).getFirstValue();
+        }
+        
+        return uuid;
     }
 
     protected void assertReference( String fromNodePath,
