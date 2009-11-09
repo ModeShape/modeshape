@@ -32,6 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.stub;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -1112,6 +1113,64 @@ public class GraphTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // Read set number of properties on multiple nodes ...
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReadOnePropertyOnMultipleNodes() {
+        List<Location> locations = new ArrayList<Location>();
+        locations.add(Location.create(createPath("/x/y/a")));
+        locations.add(Location.create(createPath("/x/y/b")));
+        locations.add(Location.create(createPath("/x/y/c")));
+        for (Location location : locations) {
+            Property prop1 = context.getPropertyFactory().create(validName, "1");
+            Property prop2 = context.getPropertyFactory().create(createName("otherName"), "2");
+            setPropertiesToReadOn(location, prop1, prop2);
+        }
+
+        Map<Location, Property> propertiesByLocation = graph.getProperty(validName).on(locations);
+        assertThat(numberOfExecutions, is(1));
+        extractRequestsFromComposite();
+        for (Location location : locations) {
+            Property prop = this.properties.get(location).iterator().next();
+            assertNextRequestReadProperty(location, prop);
+            assertThat(propertiesByLocation.get(location), is(prop));
+        }
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldReadMultiplePropertiesOnMultipleNodes() {
+        List<Location> locations = new ArrayList<Location>();
+        locations.add(Location.create(createPath("/x/y/a")));
+        locations.add(Location.create(createPath("/x/y/b")));
+        locations.add(Location.create(createPath("/x/y/c")));
+        Name name1 = createName("name1");
+        Name name2 = createName("name2");
+        for (Location location : locations) {
+            Property prop1 = context.getPropertyFactory().create(name1, "1");
+            Property prop2 = context.getPropertyFactory().create(name2, "2");
+            setPropertiesToReadOn(location, prop1, prop2);
+        }
+        Map<Location, Map<Name, Property>> propertiesByLocation = graph.getProperties(name1, name2).on(locations);
+        assertThat(numberOfExecutions, is(1));
+        extractRequestsFromComposite();
+        for (Location location : locations) {
+            Map<Name, Property> expectedProps = new HashMap<Name, Property>();
+            for (Property prop : this.properties.get(location)) {
+                expectedProps.put(prop.getName(), prop);
+            }
+            Property prop1 = expectedProps.get(name1);
+            Property prop2 = expectedProps.get(name2);
+            assertNextRequestReadProperty(location, prop1);
+            assertNextRequestReadProperty(location, prop2);
+            assertThat(propertiesByLocation.get(location).get(name1), is(prop1));
+            assertThat(propertiesByLocation.get(location).get(name2), is(prop2));
+        }
+        assertNoMoreRequests();
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // Implementation of RepositoryConnection and RequestProcessor for tests
     // ----------------------------------------------------------------------------------------------------------------
 
@@ -1148,7 +1207,7 @@ public class GraphTest {
             if (request.into().hasPath()) {
                 Name childName = request.desiredName();
                 if (childName == null) childName = request.desiredSegment().getName();
-                
+
                 Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), childName);
                 Location newChild = actualLocationOf(Location.create(childPath));
                 // Just update the actual location

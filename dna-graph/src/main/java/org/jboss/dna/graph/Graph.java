@@ -2062,8 +2062,9 @@ public class Graph {
      * @param name the name of the property that is to be read
      * @return the object that is used to specified the node whose property is to be read, and which will return the property
      */
-    public On<Property> getProperty( final Name name ) {
-        return new On<Property>() {
+    public OnMultiple<Property> getProperty( final Name name ) {
+        CheckArg.isNotNull(name, "name");
+        return new OnMultiple<Property>() {
             public Property on( String path ) {
                 return on(Location.create(createPath(path)));
             }
@@ -2091,6 +2092,233 @@ public class Graph {
 
             public Property on( Location at ) {
                 return requests.readProperty(at, getCurrentWorkspaceName(), name).getProperty();
+            }
+
+            public Map<Location, Property> on( Collection<Location> locations ) {
+                CheckArg.isNotNull(locations, "locations");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                for (Location location : locations) {
+                    requests.add(new ReadPropertyRequest(location, workspace, name));
+                }
+                return execute(requests);
+            }
+
+            public Map<Location, Property> on( Location first,
+                                               Location... additional ) {
+                CheckArg.isNotNull(first, "first");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                requests.add(new ReadPropertyRequest(first, workspace, name));
+                for (Location location : additional) {
+                    requests.add(new ReadPropertyRequest(location, workspace, name));
+                }
+                return execute(requests);
+            }
+
+            public Map<Location, Property> on( String first,
+                                               String... additional ) {
+                CheckArg.isNotNull(first, "first");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                requests.add(new ReadPropertyRequest(Location.create(createPath(first)), workspace, name));
+                for (String path : additional) {
+                    requests.add(new ReadPropertyRequest(Location.create(createPath(path)), workspace, name));
+                }
+                return execute(requests);
+            }
+
+            public Map<Location, Property> on( Path first,
+                                               Path... additional ) {
+                CheckArg.isNotNull(first, "first");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                requests.add(new ReadPropertyRequest(Location.create(first), workspace, name));
+                for (Path path : additional) {
+                    requests.add(new ReadPropertyRequest(Location.create(path), workspace, name));
+                }
+                return execute(requests);
+            }
+
+            public Map<Location, Property> on( UUID first,
+                                               UUID... additional ) {
+                CheckArg.isNotNull(first, "first");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                requests.add(new ReadPropertyRequest(Location.create(first), workspace, name));
+                for (UUID uuid : additional) {
+                    requests.add(new ReadPropertyRequest(Location.create(uuid), workspace, name));
+                }
+                return execute(requests);
+            }
+
+            protected Map<Location, Property> execute( List<ReadPropertyRequest> requests ) {
+                // Create a composite request ...
+                Request composite = CompositeRequest.with(requests);
+                Graph.this.execute(composite);
+                Map<Location, Property> results = new HashMap<Location, Property>();
+                for (ReadPropertyRequest request : requests) {
+                    Property property = request.getProperty();
+                    Location location = request.getActualLocationOfNode();
+                    results.put(location, property);
+                }
+                return results;
+            }
+        };
+    }
+
+    /**
+     * Request that the properties with the given names be read on the node defined via the <code>on(...)</code> method on the
+     * returned {@link On} object. Once the location is specified, the {@link Property property} is read and then returned.
+     * 
+     * @param names the name of the property that are to be read
+     * @return the object that is used to specified the node whose properties are to be read, and which will return the map of
+     *         properties keyed by their name; never null
+     */
+    public OnMultiple<Map<Name, Property>> getProperties( final Name... names ) {
+        return new OnMultiple<Map<Name, Property>>() {
+            public Map<Name, Property> on( String path ) {
+                return on(Location.create(createPath(path)));
+            }
+
+            public Map<Name, Property> on( Path path ) {
+                return on(Location.create(path));
+            }
+
+            public Map<Name, Property> on( Property idProperty ) {
+                return on(Location.create(idProperty));
+            }
+
+            public Map<Name, Property> on( Property firstIdProperty,
+                                           Property... additionalIdProperties ) {
+                return on(Location.create(firstIdProperty, additionalIdProperties));
+            }
+
+            public Map<Name, Property> on( Iterable<Property> idProperties ) {
+                return on(Location.create(idProperties));
+            }
+
+            public Map<Name, Property> on( UUID uuid ) {
+                return on(Location.create(uuid));
+            }
+
+            public Map<Name, Property> on( Location at ) {
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                for (Name propertyName : names) {
+                    requests.add(new ReadPropertyRequest(at, workspace, propertyName));
+                }
+                // Create a composite request ...
+                Request composite = CompositeRequest.with(requests);
+                Graph.this.execute(composite);
+                Map<Name, Property> results = new HashMap<Name, Property>();
+                for (ReadPropertyRequest request : requests) {
+                    Property property = request.getProperty();
+                    results.put(property.getName(), property);
+                }
+                return results;
+            }
+
+            public Map<Location, Map<Name, Property>> on( Collection<Location> locations ) {
+                CheckArg.isNotNull(locations, "locations");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                for (Location location : locations) {
+                    if (location == null) continue;
+                    for (Name propertyName : names) {
+                        if (propertyName == null) continue;
+                        requests.add(new ReadPropertyRequest(location, workspace, propertyName));
+                    }
+                }
+                return execute(requests);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.OnMultiple#on(org.jboss.dna.graph.Location, org.jboss.dna.graph.Location[])
+             */
+            public Map<Location, Map<Name, Property>> on( Location first,
+                                                          Location... additional ) {
+                CheckArg.isNotNull(first, "first");
+                final List<ReadPropertyRequest> requests = new LinkedList<ReadPropertyRequest>();
+                String workspace = getCurrentWorkspaceName();
+                for (Location location : additional) {
+                    if (location == null) continue;
+                    for (Name propertyName : names) {
+                        if (propertyName == null) continue;
+                        requests.add(new ReadPropertyRequest(first, workspace, propertyName));
+                        requests.add(new ReadPropertyRequest(location, workspace, propertyName));
+                    }
+                }
+                return execute(requests);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.OnMultiple#on(org.jboss.dna.graph.property.Path,
+             *      org.jboss.dna.graph.property.Path[])
+             */
+            public Map<Location, Map<Name, Property>> on( Path first,
+                                                          Path... additional ) {
+                CheckArg.isNotNull(first, "first");
+                List<Location> locations = new LinkedList<Location>();
+                locations.add(Location.create(first));
+                for (Path path : additional) {
+                    if (path != null) locations.add(Location.create(path));
+                }
+                return on(locations);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.OnMultiple#on(java.lang.String, java.lang.String[])
+             */
+            public Map<Location, Map<Name, Property>> on( String first,
+                                                          String... additional ) {
+                CheckArg.isNotNull(first, "first");
+                List<Location> locations = new LinkedList<Location>();
+                locations.add(Location.create(createPath(first)));
+                for (String path : additional) {
+                    if (path != null) locations.add(Location.create(createPath(path)));
+                }
+                return on(locations);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.OnMultiple#on(java.util.UUID, java.util.UUID[])
+             */
+            public Map<Location, Map<Name, Property>> on( UUID first,
+                                                          UUID... additional ) {
+                CheckArg.isNotNull(first, "first");
+                List<Location> locations = new LinkedList<Location>();
+                locations.add(Location.create(first));
+                for (UUID uuid : additional) {
+                    if (uuid != null) locations.add(Location.create(uuid));
+                }
+                return on(locations);
+            }
+
+            protected Map<Location, Map<Name, Property>> execute( List<ReadPropertyRequest> requests ) {
+                // Create a composite request ...
+                Request composite = CompositeRequest.with(requests);
+                Graph.this.execute(composite);
+                Map<Location, Map<Name, Property>> results = new HashMap<Location, Map<Name, Property>>();
+                for (ReadPropertyRequest request : requests) {
+                    Property property = request.getProperty();
+                    Location location = request.getActualLocationOfNode();
+                    Map<Name, Property> properties = results.get(location);
+                    if (properties == null) {
+                        properties = new HashMap<Name, Property>();
+                        results.put(location, properties);
+                    }
+                    properties.put(property.getName(), property);
+                }
+                return results;
             }
         };
     }
@@ -2395,8 +2623,6 @@ public class Graph {
      * Interface for creating multiple requests to perform various operations. Note that all the requests are accumulated until
      * the {@link #execute()} method is called. The results of all the operations are then available in the {@link Results} object
      * returned by the {@link #execute()}.
-     * 
-     * @author Randall Hauch
      */
     @Immutable
     public final class Batch implements Executable<Node> {
@@ -4259,7 +4485,6 @@ public class Graph {
     /**
      * A interface used to execute the accumulated {@link Batch requests}.
      * 
-     * @author Randall Hauch
      * @param <NodeType> the type of node that is returned
      */
     public interface Executable<NodeType extends Node> {
@@ -4281,7 +4506,6 @@ public class Graph {
      * A interface that can be used to finish the current request and start another.
      * 
      * @param <Next> the interface that will be used to start another request
-     * @author Randall Hauch
      */
     public interface Conjunction<Next> {
         /**
@@ -4296,7 +4520,6 @@ public class Graph {
      * A component that defines the location into which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface Into<Next> {
         /**
@@ -4376,7 +4599,6 @@ public class Graph {
      * or copied node as the last child of the new parent.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface Before<Next> {
         /**
@@ -4480,7 +4702,6 @@ public class Graph {
      * A component that defines the location to which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface To<Next> {
         /**
@@ -4555,7 +4776,6 @@ public class Graph {
      * A component that defines a new name for a node.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface AsName<Next> {
         /**
@@ -4579,7 +4799,6 @@ public class Graph {
      * A interface that is used to add more locations that are to be copied/moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface And<Next> {
         /**
@@ -4647,7 +4866,6 @@ public class Graph {
      * The interface for defining additional nodes to be moved and the parent into which the node(s) are to be moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface Move<Next> extends AsName<Into<Next>>, Into<Next>, Before<Next>, And<Move<Next>> {
     }
@@ -4659,7 +4877,6 @@ public class Graph {
      * is to be placed, which will assume the new copy will have the same name as the original.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface Copy<Next> extends FromWorkspace<CopyTarget<Next>>, CopyTarget<Next>, And<Copy<Next>> {
     }
@@ -4780,7 +4997,6 @@ public class Graph {
      * The interface for defining additional properties on a new node.
      * 
      * @param <Next> The interface that is to be returned when this create request is completed
-     * @author Randall Hauch
      */
     public interface Create<Next> extends Conjunction<Next> {
         /**
@@ -4929,7 +5145,6 @@ public class Graph {
      * The interface for defining additional properties on a new node.
      * 
      * @param <Next> The interface that is to be returned when this create request is completed
-     * @author Randall Hauch
      */
     public interface CreateAt<Next> extends Conjunction<Next> {
         /**
@@ -5060,7 +5275,6 @@ public class Graph {
      * The interface for defining the node upon which a request operates.
      * 
      * @param <Next> The interface that is to be returned when the request is completed
-     * @author Randall Hauch
      */
     public interface On<Next> {
         /**
@@ -5125,10 +5339,64 @@ public class Graph {
     }
 
     /**
+     * The interface for defining the node upon which a request operates, including a method that accepts multiple locations.
+     * 
+     * @param <Next> The interface that is to be returned when the request is completed
+     */
+    public interface OnMultiple<Next> extends On<Next> {
+        /**
+         * Specify the location of each node upon which the requests are to operate.
+         * 
+         * @param to the locations
+         * @return the interface for additional requests or actions
+         */
+        Map<Location, Next> on( Collection<Location> to );
+
+        /**
+         * Specify the location of each node upon which the requests are to operate.
+         * 
+         * @param firstTo the first location
+         * @param additional the additional location
+         * @return the interface for additional requests or actions
+         */
+        Map<Location, Next> on( Location firstTo,
+                                Location... additional );
+
+        /**
+         * Specify the path of each node upon which the requests are to operate.
+         * 
+         * @param firstPath the first path
+         * @param additional the additional path
+         * @return the interface for additional requests or actions
+         */
+        Map<Location, Next> on( String firstPath,
+                                String... additional );
+
+        /**
+         * Specify the path of each node upon which the requests are to operate.
+         * 
+         * @param firstPath the first path
+         * @param additional the additional path
+         * @return the interface for additional requests or actions
+         */
+        Map<Location, Next> on( Path firstPath,
+                                Path... additional );
+
+        /**
+         * Specify the UUID of each node upon which the requests are to operate.
+         * 
+         * @param firstPath the first UUID of the node
+         * @param additional the additional UUIDs
+         * @return the interface for additional requests or actions
+         */
+        Map<Location, Next> on( UUID firstPath,
+                                UUID... additional );
+    }
+
+    /**
      * The interface for defining the node upon which a request operates.
      * 
      * @param <Next> The interface that is to be returned when the request is completed
-     * @author Randall Hauch
      */
     public interface Of<Next> {
         /**
@@ -5196,7 +5464,6 @@ public class Graph {
      * The interface for defining the node upon which which a request operates.
      * 
      * @param <Next> The interface that is to be returned when the request is completed
-     * @author Randall Hauch
      */
     public interface At<Next> {
         /**
@@ -5267,7 +5534,6 @@ public class Graph {
      * the {@link BlockOfChildren block size and parent}.
      * 
      * @param <Next>
-     * @author Randall Hauch
      */
     public interface Children<Next> extends Of<Next> {
         /**
@@ -5284,7 +5550,6 @@ public class Graph {
      * {@link #startingAfter(Location) after a previous sibling}.
      * 
      * @param <Next>
-     * @author Randall Hauch
      */
     public interface BlockOfChildren<Next> {
         /**
@@ -5364,7 +5629,6 @@ public class Graph {
      * The interface for defining the node under which which a request operates.
      * 
      * @param <Next> The interface that is to be returned when the request is completed
-     * @author Randall Hauch
      */
     public interface Under<Next> {
         /**
@@ -5587,7 +5851,6 @@ public class Graph {
      * A component used to set the values on a property.
      * 
      * @param <Next> the next command
-     * @author Randall Hauch
      */
     public interface SetValues<Next> extends On<SetValuesTo<Next>>, SetValuesTo<On<Next>> {
     }
@@ -5596,7 +5859,6 @@ public class Graph {
      * A component used to set the values on a property.
      * 
      * @param <Next>
-     * @author Randall Hauch
      */
     public interface SetValuesTo<Next> {
 
@@ -5842,7 +6104,6 @@ public class Graph {
      * A component that defines a node that is to be created.
      * 
      * @param <Next> The interface that is to be returned to complete the create request
-     * @author Randall Hauch
      */
     public interface CreateNode<Next> {
         /**
@@ -5880,7 +6141,6 @@ public class Graph {
      * A component that defines a node that is to be created.
      * 
      * @param <Next> The interface that is to be returned to complete the create request
-     * @author Randall Hauch
      */
     public interface CreateNodeNamed<Next> {
         /**
@@ -5904,7 +6164,6 @@ public class Graph {
      * A component that defines the location into which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
-     * @author Randall Hauch
      */
     public interface ImportInto<Next> {
         /**
@@ -7183,7 +7442,6 @@ public class Graph {
      * A set of nodes returned from a {@link Graph graph}, with methods to access the properties and children of the nodes in the
      * result. The {@link #iterator()} method can be used to iterate all over the nodes in the result.
      * 
-     * @author Randall Hauch
      * @param <NodeType> the type of node that tis results deals with
      */
     @Immutable
