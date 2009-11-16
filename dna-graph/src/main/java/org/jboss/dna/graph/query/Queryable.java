@@ -23,10 +23,7 @@
  */
 package org.jboss.dna.graph.query;
 
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.plan.PlanHints;
-import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
  * An interface defining the ability to submit a query and obtain results.
@@ -38,26 +35,9 @@ public interface Queryable {
      * 
      * @param context the context in which the query should be executed
      * @param query the query that is to be executed
-     * @param schemata the schemata that should be used to validate the query
      * @return the query results; never null
      * @throws IllegalArgumentException if the context or query references are null
      */
-    QueryResults execute( ExecutionContext context,
-                          QueryCommand query,
-                          Schemata schemata );
-
-    /**
-     * Execute the supplied query by planning, optimizing, and then processing it.
-     * 
-     * @param context the context in which the query should be executed
-     * @param query the query that is to be executed
-     * @param schemata the schemata that should be used to validate the query
-     * @param hints the hints for the execution; may be null if there are no hints
-     * @return the query results; never null
-     * @throws IllegalArgumentException if the context or query references are null
-     */
-    QueryResults execute( ExecutionContext context,
-                          QueryCommand query,
-                          Schemata schemata,
-                          PlanHints hints );
+    QueryResults execute( QueryContext context,
+                          QueryCommand query );
 }

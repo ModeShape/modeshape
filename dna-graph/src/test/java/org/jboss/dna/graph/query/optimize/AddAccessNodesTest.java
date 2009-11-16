@@ -31,9 +31,6 @@ import java.util.LinkedList;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
-import org.jboss.dna.graph.query.optimize.AddAccessNodes;
-import org.jboss.dna.graph.query.optimize.OptimizerRule;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import org.jboss.dna.graph.query.validate.Schemata;
@@ -50,7 +47,7 @@ public class AddAccessNodesTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), new PlanHints(), mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
         rule = AddAccessNodes.INSTANCE;
     }
 

@@ -55,7 +55,7 @@ import org.jboss.dna.graph.request.ChangeRequest;
  * A search engine dedicated to a single workspace.
  */
 @ThreadSafe
-public class WorkspaceSearchEngine {
+class WorkspaceSearchEngine {
 
     protected static final String PATHS_INDEX_NAME = "paths";
     protected static final String CONTENT_INDEX_NAME = "content";
@@ -67,7 +67,7 @@ public class WorkspaceSearchEngine {
     private final String sourceName;
     private final String workspaceName;
     private final RepositoryConnectionFactory connectionFactory;
-    private final IndexingStrategy indexingStrategy;
+    private final IndexStrategy indexingStrategy;
     protected final AtomicInteger modifiedNodesSinceLastOptimize = new AtomicInteger(0);
 
     /**
@@ -86,7 +86,7 @@ public class WorkspaceSearchEngine {
      */
     protected WorkspaceSearchEngine( ExecutionContext context,
                                      DirectoryConfiguration directoryFactory,
-                                     IndexingStrategy indexingStrategy,
+                                     IndexStrategy indexingStrategy,
                                      String sourceName,
                                      String workspaceName,
                                      RepositoryConnectionFactory connectionFactory ) throws SearchEngineException {
@@ -168,7 +168,7 @@ public class WorkspaceSearchEngine {
         return context.getValueFactories().getStringFactory().create(path);
     }
 
-    final IndexingStrategy strategy() {
+    final IndexStrategy strategy() {
         return indexingStrategy;
     }
 
@@ -523,7 +523,7 @@ public class WorkspaceSearchEngine {
         final List<Location> results = new ArrayList<Location>(maxResults);
         return new Search() {
             public void execute( IndexContext indexes ) throws IOException, ParseException {
-                strategy().performQuery(fullTextSearch, maxResults, offset, indexes, results);
+                strategy().search(fullTextSearch, maxResults, offset, indexes, results);
             }
 
             public String messageFor( Throwable error ) {
@@ -550,9 +550,11 @@ public class WorkspaceSearchEngine {
                                   final Schemata schemata ) {
         return new Query() {
             private QueryResults results = null;
+            private SearchContext context = null;
 
-            public void execute( IndexContext indexes ) throws IOException, ParseException {
-                results = strategy().performQuery(query, schemata, indexes);
+            public void execute( IndexContext indexes ) {
+                context = new SearchContext(indexes, schemata);
+                results = strategy().query(context, query);
             }
 
             public String messageFor( Throwable error ) {

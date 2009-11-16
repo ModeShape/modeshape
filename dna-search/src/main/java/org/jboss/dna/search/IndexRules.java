@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.Name;
  * The set of rules that dictate how properties should be indexed.
  */
 @Immutable
-public class IndexingRules {
+class IndexRules {
 
     public static final int INDEX = 2 << 0;
     public static final int ANALYZE = 2 << 1;
@@ -52,7 +52,7 @@ public class IndexingRules {
     /**
      * A single rule that dictates how a single property should be indexed.
      * 
-     * @see IndexingRules#getRule(Name)
+     * @see IndexRules#getRule(Name)
      */
     @Immutable
     public static interface Rule {
@@ -86,7 +86,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getMask()
+         * @see org.jboss.dna.search.IndexRules.Rule#getMask()
          */
         public int getMask() {
             return 0;
@@ -95,7 +95,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isAnalyzed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzed()
          */
         public boolean isAnalyzed() {
             return false;
@@ -104,7 +104,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isAnalyzedWithoutNorms()
+         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzedWithoutNorms()
          */
         public boolean isAnalyzedWithoutNorms() {
             return false;
@@ -113,7 +113,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isFullText()
+         * @see org.jboss.dna.search.IndexRules.Rule#isFullText()
          */
         public boolean isFullText() {
             return false;
@@ -122,7 +122,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isIncluded()
+         * @see org.jboss.dna.search.IndexRules.Rule#isIncluded()
          */
         public boolean isIncluded() {
             return false;
@@ -131,7 +131,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isSkipped()
+         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
          */
         public boolean isSkipped() {
             return true;
@@ -140,7 +140,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isStored()
+         * @see org.jboss.dna.search.IndexRules.Rule#isStored()
          */
         public boolean isStored() {
             return false;
@@ -149,7 +149,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isStoredCompressed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isStoredCompressed()
          */
         public boolean isStoredCompressed() {
             return false;
@@ -158,7 +158,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isDate()
+         * @see org.jboss.dna.search.IndexRules.Rule#isDate()
          */
         public boolean isDate() {
             return false;
@@ -167,7 +167,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getIndexOption()
+         * @see org.jboss.dna.search.IndexRules.Rule#getIndexOption()
          */
         public Index getIndexOption() {
             return Field.Index.NO;
@@ -176,7 +176,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getStoreOption()
+         * @see org.jboss.dna.search.IndexRules.Rule#getStoreOption()
          */
         public Store getStoreOption() {
             return Field.Store.NO;
@@ -198,7 +198,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getMask()
+         * @see org.jboss.dna.search.IndexRules.Rule#getMask()
          */
         public int getMask() {
             return value;
@@ -207,7 +207,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isAnalyzed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzed()
          */
         public boolean isAnalyzed() {
             return (value & ANALYZE) == ANALYZE;
@@ -216,7 +216,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isAnalyzedWithoutNorms()
+         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzedWithoutNorms()
          */
         public boolean isAnalyzedWithoutNorms() {
             return (value & ANALYZED_WITHOUT_NORMS) == ANALYZED_WITHOUT_NORMS;
@@ -225,7 +225,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isFullText()
+         * @see org.jboss.dna.search.IndexRules.Rule#isFullText()
          */
         public boolean isFullText() {
             return (value & FULL_TEXT) == FULL_TEXT;
@@ -234,7 +234,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isIncluded()
+         * @see org.jboss.dna.search.IndexRules.Rule#isIncluded()
          */
         public boolean isIncluded() {
             return true;
@@ -243,7 +243,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isSkipped()
+         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
          */
         public boolean isSkipped() {
             return false;
@@ -252,7 +252,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isStored()
+         * @see org.jboss.dna.search.IndexRules.Rule#isStored()
          */
         public boolean isStored() {
             return (value & STORE) == STORE;
@@ -261,7 +261,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isStoredCompressed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isStoredCompressed()
          */
         public boolean isStoredCompressed() {
             return (value & STORE_COMPRESSED) == STORE_COMPRESSED;
@@ -270,7 +270,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#isDate()
+         * @see org.jboss.dna.search.IndexRules.Rule#isDate()
          */
         public boolean isDate() {
             return (value & TREAT_AS_DATE) == TREAT_AS_DATE;
@@ -283,7 +283,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getIndexOption()
+         * @see org.jboss.dna.search.IndexRules.Rule#getIndexOption()
          */
         public Index getIndexOption() {
             return index;
@@ -292,7 +292,7 @@ public class IndexingRules {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexingRules.Rule#getStoreOption()
+         * @see org.jboss.dna.search.IndexRules.Rule#getStoreOption()
          */
         public Store getStoreOption() {
             return store;
@@ -318,8 +318,8 @@ public class IndexingRules {
     private final Map<Name, Rule> rulesByName;
     private final Rule defaultRule;
 
-    protected IndexingRules( Map<Name, Rule> rulesByName,
-                             Rule defaultRule ) {
+    protected IndexRules( Map<Name, Rule> rulesByName,
+                          Rule defaultRule ) {
         this.rulesByName = rulesByName;
         this.defaultRule = defaultRule != null ? defaultRule : SKIP;
         assert this.defaultRule != null;
@@ -337,7 +337,7 @@ public class IndexingRules {
     }
 
     /**
-     * Return a new builder that can be used to create {@link IndexingRules} objects.
+     * Return a new builder that can be used to create {@link IndexRules} objects.
      * 
      * @return a builder; never null
      */
@@ -346,19 +346,19 @@ public class IndexingRules {
     }
 
     /**
-     * Return a new builder that can be used to create {@link IndexingRules} objects.
+     * Return a new builder that can be used to create {@link IndexRules} objects.
      * 
      * @param initialRules the rules that the builder should start with
      * @return a builder; never null
      * @throws IllegalArgumentException if the initial rules reference is null
      */
-    public static Builder createBuilder( IndexingRules initialRules ) {
+    public static Builder createBuilder( IndexRules initialRules ) {
         CheckArg.isNotNull(initialRules, "initialRules");
         return new Builder(initialRules.rulesByName).defaultTo(initialRules.defaultRule);
     }
 
     /**
-     * A builder of immutable {@link IndexingRules} objects.
+     * A builder of immutable {@link IndexRules} objects.
      */
     @NotThreadSafe
     public static class Builder {
@@ -621,8 +621,8 @@ public class IndexingRules {
          * 
          * @return the immutable indexing rules.
          */
-        public IndexingRules build() {
-            return new IndexingRules(Collections.unmodifiableMap(new HashMap<Name, Rule>(rulesByName)), defaultRule);
+        public IndexRules build() {
+            return new IndexRules(Collections.unmodifiableMap(new HashMap<Name, Rule>(rulesByName)), defaultRule);
         }
     }
 }

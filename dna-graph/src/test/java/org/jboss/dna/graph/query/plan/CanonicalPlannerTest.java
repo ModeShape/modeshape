@@ -112,7 +112,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanForSelectStarFromTable() {
         schemata = schemataBuilder.addTable("__ALLNODES__", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(context, hints, schemata, problems);
+        queryContext = new QueryContext(context, schemata, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.isEmpty(), is(true));
         assertProjectNode(plan, "column1", "column2", "column3");
@@ -128,7 +128,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(context, hints, schemata, problems);
+        queryContext = new QueryContext(context, schemata, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -137,7 +137,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantColumnOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column4").from("someTable").query();
-        queryContext = new QueryContext(context, hints, schemata, problems);
+        queryContext = new QueryContext(context, schemata, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -146,7 +146,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingAllColumnsOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().from("someTable").query();
-        queryContext = new QueryContext(context, hints, schemata, problems);
+        queryContext = new QueryContext(context, schemata, hints, problems);
         plan = planner.createPlan(queryContext, query);
         System.out.println(plan);
         assertThat(problems.hasErrors(), is(false));

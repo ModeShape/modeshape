@@ -47,7 +47,7 @@ public class WorkspaceSearchEngineTest {
     private InMemoryRepositorySource source;
     private RepositoryConnectionFactory connectionFactory;
     private DirectoryConfiguration directoryFactory;
-    private IndexingStrategy indexingStrategy;
+    private IndexStrategy indexingStrategy;
     private Graph content;
 
     @Before
@@ -74,10 +74,10 @@ public class WorkspaceSearchEngineTest {
         };
 
         // Set up the indexing strategy ...
-        IndexingRules rules = IndexingRules.createBuilder(StoreLittleIndexingStrategy.DEFAULT_RULES)
-                                           .defaultTo(IndexingRules.INDEX | IndexingRules.ANALYZE | IndexingRules.FULL_TEXT)
+        IndexRules rules = IndexRules.createBuilder(KitchenSinkIndexStrategy.DEFAULT_RULES)
+                                           .defaultTo(IndexRules.INDEX | IndexRules.ANALYZE | IndexRules.FULL_TEXT)
                                            .build();
-        indexingStrategy = new StoreLittleIndexingStrategy(rules);
+        indexingStrategy = new KitchenSinkIndexStrategy(rules);
 
         // Now set up the search engine ...
         directoryFactory = DirectoryConfigurations.inMemory();

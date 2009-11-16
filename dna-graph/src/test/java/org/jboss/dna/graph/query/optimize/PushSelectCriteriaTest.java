@@ -32,9 +32,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.JoinType;
-import org.jboss.dna.graph.query.optimize.OptimizerRule;
-import org.jboss.dna.graph.query.optimize.PushSelectCriteria;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
@@ -52,7 +49,7 @@ public class PushSelectCriteriaTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), new PlanHints(), mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
         rule = PushSelectCriteria.INSTANCE;
     }
 

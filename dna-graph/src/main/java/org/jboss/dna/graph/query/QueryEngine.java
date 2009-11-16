@@ -27,18 +27,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.FullTextSearch;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.Planner;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
@@ -53,17 +50,6 @@ import org.jboss.dna.graph.query.validate.Schemata;
  */
 @ThreadSafe
 public class QueryEngine implements Queryable {
-
-    /**
-     * A {@link Schemata} implementation that always returns null, meaning the table does not exist.
-     */
-    private static final Schemata DEFAULT_SCHEMATA = new Schemata() {
-        public Table getTable( SelectorName name ) {
-            // This won't allow the query engine to do anything (or much of anything),
-            // but it is legal and will result in meaningful problems
-            return null;
-        }
-    };
 
     private final Planner planner;
     private final Optimizer optimizer;
@@ -92,42 +78,25 @@ public class QueryEngine implements Queryable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.validate.Schemata)
+     * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.query.QueryContext,
+     *      org.jboss.dna.graph.query.model.QueryCommand)
      */
-    public QueryResults execute( ExecutionContext context,
-                                 QueryCommand query,
-                                 Schemata schemata ) {
-        return execute(context, query, schemata, new PlanHints());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.validate.Schemata,
-     *      org.jboss.dna.graph.query.plan.PlanHints)
-     */
-    public QueryResults execute( ExecutionContext context,
-                                 QueryCommand query,
-                                 Schemata schemata,
-                                 PlanHints hints ) {
+    public QueryResults execute( QueryContext context,
+                                 QueryCommand query ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(query, "query");
-        if (schemata == null) schemata = DEFAULT_SCHEMATA;
-        QueryContext queryContext = new QueryContext(context, hints, schemata);
 
         // Create the canonical plan ...
         long start = System.nanoTime();
-        PlanNode plan = planner.createPlan(queryContext, query);
+        PlanNode plan = planner.createPlan(context, query);
         long duration = System.nanoTime() - start;
         Statistics stats = new Statistics(duration);
 
         QueryResultColumns resultColumns = QueryResultColumns.empty();
-        if (!queryContext.getProblems().hasErrors()) {
+        if (!context.getProblems().hasErrors()) {
             // Optimize the plan ...
             start = System.nanoTime();
-            PlanNode optimizedPlan = optimizer.optimize(queryContext, plan);
+            PlanNode optimizedPlan = optimizer.optimize(context, plan);
             duration = System.nanoTime() - start;
             stats = stats.withOptimizationTime(duration);
 
@@ -137,11 +106,11 @@ public class QueryEngine implements Queryable {
             duration = System.nanoTime() - start;
             stats = stats.withOptimizationTime(duration);
 
-            if (!queryContext.getProblems().hasErrors()) {
+            if (!context.getProblems().hasErrors()) {
                 // Execute the plan ...
                 try {
                     start = System.nanoTime();
-                    return processor.execute(queryContext, query, stats, optimizedPlan);
+                    return processor.execute(context, query, stats, optimizedPlan);
                 } finally {
                     duration = System.nanoTime() - start;
                     stats = stats.withOptimizationTime(duration);
@@ -149,7 +118,7 @@ public class QueryEngine implements Queryable {
             }
         }
         // There were problems somewhere ...
-        return new org.jboss.dna.graph.query.process.QueryResults(queryContext, query, resultColumns, stats);
+        return new org.jboss.dna.graph.query.process.QueryResults(context, query, resultColumns, stats);
     }
 
     protected QueryResultColumns determineQueryResultColumns( PlanNode optimizedPlan ) {

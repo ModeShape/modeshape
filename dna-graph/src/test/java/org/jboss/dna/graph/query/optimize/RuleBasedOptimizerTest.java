@@ -86,7 +86,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addView("type2",
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
-        context = new QueryContext(execContext, new PlanHints(), schemata);
+        context = new QueryContext(execContext, schemata);
 
         node = new PlanNode(Type.ACCESS);
 

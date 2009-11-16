@@ -27,6 +27,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
@@ -50,8 +51,6 @@ import org.apache.lucene.util.Version;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.graph.DnaLexicon;
-import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.property.Binary;
@@ -61,17 +60,28 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.query.QueryContext;
+import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.validate.Schemata;
-import org.jboss.dna.graph.request.ChangeRequest;
-import org.jboss.dna.search.IndexingRules.Rule;
+import org.jboss.dna.graph.query.optimize.Optimizer;
+import org.jboss.dna.graph.query.optimize.OptimizerRule;
+import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
+import org.jboss.dna.graph.query.plan.CanonicalPlanner;
+import org.jboss.dna.graph.query.plan.PlanHints;
+import org.jboss.dna.graph.query.plan.PlanNode;
+import org.jboss.dna.graph.query.plan.Planner;
+import org.jboss.dna.graph.query.process.ProcessingComponent;
+import org.jboss.dna.graph.query.process.QueryProcessor;
+import org.jboss.dna.search.IndexRules.Rule;
 
 /**
- * A simple {@link IndexingStrategy} implementation that relies upon very few fields to be stored in the indexes.
+ * A simple {@link IndexStrategy} implementation that relies upon two separate indexes: one for the node content and a second
+ * one for paths and UUIDs.
  */
 @ThreadSafe
-class StoreLittleIndexingStrategy implements IndexingStrategy {
+abstract class DualIndexStrategy implements IndexStrategy {
 
     static class PathIndex {
         public static final String PATH = "path";
@@ -83,7 +93,11 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
         public static final String FULL_TEXT = "fts";
     }
 
-    public static final int SIZE_OF_DELETE_BATCHES = 100;
+    /**
+     * The number of results that should be returned when performing queries while deleting entire branches of content. The
+     * current value is {@value} .
+     */
+    protected static final int SIZE_OF_DELETE_BATCHES = 1000;
 
     private ThreadLocal<DateFormat> dateFormatter = new ThreadLocal<DateFormat>() {
         @Override
@@ -92,7 +106,10 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
         }
     };
 
-    private static final FieldSelector UUID_FIELD_SELECTOR = new FieldSelector() {
+    /**
+     * Obtain an immutable {@link FieldSelector} instance that accesses the UUID field.
+     */
+    protected static final FieldSelector UUID_FIELD_SELECTOR = new FieldSelector() {
         private static final long serialVersionUID = 1L;
 
         public FieldSelectorResult accept( String fieldName ) {
@@ -100,49 +117,73 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
         }
     };
 
-    /**
-     * The default set of {@link IndexingRules} used by {@link StoreLittleIndexingStrategy} instances when no rules are provided.
-     */
-    public static final IndexingRules DEFAULT_RULES;
-
-    static {
-        IndexingRules.Builder builder = IndexingRules.createBuilder();
-        // Configure the default behavior ...
-        builder.defaultTo(IndexingRules.INDEX | IndexingRules.ANALYZE);
-        // Configure the UUID properties to be just indexed (not stored, not analyzed, not included in full-text) ...
-        builder.index(JcrLexicon.UUID, DnaLexicon.UUID);
-        // Configure the properties that we'll treat as dates ...
-        builder.treatAsDates(JcrLexicon.CREATED, JcrLexicon.LAST_MODIFIED);
-        DEFAULT_RULES = builder.build();
-    }
-
-    private final IndexingRules rules;
+    private final IndexRules rules;
     private final Logger logger;
-    private final LuceneQueryEngine queryEngine;
-
-    /**
-     * Create a new indexing strategy instance that does not support queries.
-     */
-    public StoreLittleIndexingStrategy() {
-        this(null);
-    }
+    private final QueryEngine queryEngine;
 
     /**
      * Create a new indexing strategy instance.
      * 
-     * @param rules the indexing rules that govern how properties are to be index, or null if the {@link #DEFAULT_RULES default
-     *        rules} are to be used
+     * @param rules the indexing rules that govern how properties are to be index; may not be null
      */
-    public StoreLittleIndexingStrategy( IndexingRules rules ) {
-        this.rules = rules != null ? rules : DEFAULT_RULES;
+    protected DualIndexStrategy( IndexRules rules ) {
+        assert rules != null;
+        this.rules = rules;
         this.logger = Logger.getLogger(getClass());
-        this.queryEngine = new LuceneQueryEngine();
+        // Create the query engine ...
+        Planner planner = new CanonicalPlanner();
+        Optimizer optimizer = new RuleBasedOptimizer() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.query.optimize.RuleBasedOptimizer#populateRuleStack(java.util.LinkedList,
+             *      org.jboss.dna.graph.query.plan.PlanHints)
+             */
+            @Override
+            protected void populateRuleStack( LinkedList<OptimizerRule> ruleStack,
+                                              PlanHints hints ) {
+                super.populateRuleStack(ruleStack, hints);
+                // Add any custom rules here, either at the front of the stack or at the end
+            }
+        };
+        QueryProcessor processor = new QueryProcessor() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.query.process.QueryProcessor#createAccessComponent(org.jboss.dna.graph.query.QueryContext,
+             *      org.jboss.dna.graph.query.plan.PlanNode, org.jboss.dna.graph.query.QueryResults.Columns,
+             *      org.jboss.dna.graph.query.process.SelectComponent.Analyzer)
+             */
+            @Override
+            protected ProcessingComponent createAccessComponent( QueryContext context,
+                                                                 PlanNode accessNode,
+                                                                 Columns resultColumns,
+                                                                 org.jboss.dna.graph.query.process.SelectComponent.Analyzer analyzer ) {
+                return DualIndexStrategy.this.createAccessComponent((SearchContext)context, accessNode, resultColumns, analyzer);
+            }
+        };
+
+        this.queryEngine = new QueryEngine(planner, optimizer, processor);
+    }
+
+    protected abstract ProcessingComponent createAccessComponent( SearchContext context,
+                                                                  PlanNode accessNode,
+                                                                  Columns resultColumns,
+                                                                  org.jboss.dna.graph.query.process.SelectComponent.Analyzer analyzer );
+
+    /**
+     * Utility method to obtain a {@link DateFormat} instance that can be used safely within a single thread.
+     * 
+     * @return the date formatter; never null
+     */
+    protected final DateFormat dateFormatter() {
+        return dateFormatter.get();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#getNamespaceEncoder()
+     * @see org.jboss.dna.search.IndexStrategy#getNamespaceEncoder()
      */
     public TextEncoder getNamespaceEncoder() {
         return new NoOpEncoder();
@@ -151,7 +192,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#getChangeCountForAutomaticOptimization()
+     * @see org.jboss.dna.search.IndexStrategy#getChangeCountForAutomaticOptimization()
      */
     public int getChangeCountForAutomaticOptimization() {
         return 0;
@@ -160,7 +201,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#createAnalyzer()
+     * @see org.jboss.dna.search.IndexStrategy#createAnalyzer()
      */
     public Analyzer createAnalyzer() {
         return new StandardAnalyzer(Version.LUCENE_CURRENT);
@@ -181,7 +222,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
      * query.
      * </p>
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#deleteBelow(Path, IndexContext)
+     * @see org.jboss.dna.search.IndexStrategy#deleteBelow(Path, IndexContext)
      */
     public int deleteBelow( Path path,
                             IndexContext indexes ) throws IOException {
@@ -222,7 +263,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#index(Node, IndexContext)
+     * @see org.jboss.dna.search.IndexStrategy#index(Node, IndexContext)
      */
     public void index( Node node,
                        IndexContext indexes ) throws IOException {
@@ -260,7 +301,7 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
                 for (Object value : property) {
                     if (value == null) continue;
                     DateTime dateValue = dateFactory.create(value);
-                    stringValue = dateFormatter.get().format(dateValue.toDate());
+                    stringValue = dateFormatter().format(dateValue.toDate());
                     // Add a separate field for each property value ...
                     doc.add(new Field(nameString, stringValue, rule.getStoreOption(), rule.getIndexOption()));
                     // Dates are not added to the full-text search field (since this wouldn't make sense)
@@ -298,13 +339,13 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#performQuery(String, int, int, IndexContext, List)
+     * @see org.jboss.dna.search.IndexStrategy#search(String, int, int, IndexContext, List)
      */
-    public void performQuery( String fullTextString,
-                              int maxResults,
-                              int offset,
-                              IndexContext indexes,
-                              List<Location> results ) throws IOException, ParseException {
+    public void search( String fullTextString,
+                        int maxResults,
+                        int offset,
+                        IndexContext indexes,
+                        List<Location> results ) throws IOException, ParseException {
         assert fullTextString != null;
         assert fullTextString.length() > 0;
         assert offset >= 0;
@@ -348,25 +389,11 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#performQuery(org.jboss.dna.graph.query.model.QueryCommand,
-     *      org.jboss.dna.graph.query.validate.Schemata, org.jboss.dna.search.IndexContext)
+     * @see org.jboss.dna.search.IndexStrategy#query(org.jboss.dna.search.SearchContext,
+     *      org.jboss.dna.graph.query.model.QueryCommand)
      */
-    public QueryResults performQuery( QueryCommand query,
-                                      Schemata schemata,
-                                      IndexContext indexes ) throws IOException, ParseException {
-        return this.queryEngine.execute(query, schemata, indexes);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.search.IndexingStrategy#apply(Iterable, IndexContext)
-     */
-    public int apply( Iterable<ChangeRequest> changes,
-                      IndexContext indexes ) /*throws IOException*/{
-        for (ChangeRequest change : changes) {
-            if (change != null) continue;
-        }
-        return 0;
+    public QueryResults query( SearchContext context,
+                               QueryCommand query ) {
+        return this.queryEngine.execute(context, query);
     }
 }

@@ -40,10 +40,21 @@ import org.jboss.dna.graph.request.ChangeRequest;
 /**
  * Interface defining the behaviors associated with indexing graph content.
  */
-public interface IndexingStrategy {
+interface IndexStrategy {
 
+    /**
+     * Get the number of changes that are allowed before optimization is automatically run.
+     * 
+     * @return a positive number denoting the minimum number of changes between automatic optimization operations, or a
+     *         non-positive number if automatic optimization should never be run
+     */
     int getChangeCountForAutomaticOptimization();
 
+    /**
+     * Get the {@link TextEncoder} that should be used to encode the namespace URIs.
+     * 
+     * @return the encoder; may not be null
+     */
     TextEncoder getNamespaceEncoder();
 
     /**
@@ -102,25 +113,21 @@ public interface IndexingStrategy {
      * @throws IOException if there is a problem indexing or using the writers
      * @throws ParseException if there is a problem parsing the query
      */
-    void performQuery( String fullTextString,
-                       int maxResults,
-                       int offset,
-                       IndexContext indexes,
-                       List<Location> results ) throws IOException, ParseException;
+    void search( String fullTextString,
+                 int maxResults,
+                 int offset,
+                 IndexContext indexes,
+                 List<Location> results ) throws IOException, ParseException;
 
     /**
      * Perform a query of the content. The {@link QueryCommand query} is supplied in the form of the Abstract Query Model, with
      * the {@link Schemata} that defines the tables and views that are available to the query, and the set of index readers (and
      * writers) that should be used.
      * 
+     * @param context the context in which the query should be executed; never null
      * @param query the query; never null
-     * @param schemata the definition of the tables used in the query; never null
-     * @param indexes the set of index readers and writers; never null
      * @return the results of the query
-     * @throws IOException if there is a problem indexing or using the writers
-     * @throws ParseException if there is a problem parsing the query
      */
-    QueryResults performQuery( QueryCommand query,
-                               Schemata schemata,
-                               IndexContext indexes ) throws IOException, ParseException;
+    QueryResults query( SearchContext context,
+                        QueryCommand query );
 }

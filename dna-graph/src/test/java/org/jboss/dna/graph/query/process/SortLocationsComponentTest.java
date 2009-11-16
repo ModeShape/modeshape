@@ -31,9 +31,6 @@ import java.util.List;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
-import org.jboss.dna.graph.query.plan.PlanHints;
-import org.jboss.dna.graph.query.process.ProcessingComponent;
-import org.jboss.dna.graph.query.process.SortLocationsComponent;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +47,7 @@ public class SortLocationsComponentTest extends AbstractQueryResultsTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), new PlanHints(), mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
         inputTuples = new ArrayList<Object[]>();
         // Define the columns for the results ...
         columns = resultColumns("Selector1", "ColA", "ColB", "ColC");

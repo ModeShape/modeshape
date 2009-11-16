@@ -61,7 +61,7 @@ public class SearchEngine {
     private final String sourceName;
     private final RepositoryConnectionFactory connectionFactory;
     private final DirectoryConfiguration directoryFactory;
-    private final IndexingStrategy indexingStrategy;
+    private final IndexStrategy indexStrategy;
     private final PathFactory pathFactory;
     @GuardedBy( "workspaceEngineLock" )
     private final Map<String, WorkspaceSearchEngine> workspaceEnginesByName;
@@ -76,15 +76,12 @@ public class SearchEngine {
      * @param sourceName the name of the {@link RepositorySource}
      * @param connectionFactory the connection factory
      * @param directoryFactory the factory for Lucene {@link Directory directories}
-     * @param indexingStrategy the indexing strategy that governs how properties are to be indexed; or null if the default
-     *        strategy should be used
      * @throws IllegalArgumentException if any of the parameters (other than indexing strategy) are null
      */
     public SearchEngine( ExecutionContext context,
                          String sourceName,
                          RepositoryConnectionFactory connectionFactory,
-                         DirectoryConfiguration directoryFactory,
-                         IndexingStrategy indexingStrategy ) {
+                         DirectoryConfiguration directoryFactory ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(sourceName, "sourceName");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
@@ -95,7 +92,7 @@ public class SearchEngine {
         this.context = context;
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.workspaceEnginesByName = new HashMap<String, WorkspaceSearchEngine>();
-        this.indexingStrategy = indexingStrategy != null ? indexingStrategy : new StoreLittleIndexingStrategy();
+        this.indexStrategy = new KitchenSinkIndexStrategy();
     }
 
     /**
@@ -153,7 +150,7 @@ public class SearchEngine {
                 engine = workspaceEnginesByName.get(workspaceName);
                 if (engine == null) {
                     // Create the engine and register it ...
-                    engine = new WorkspaceSearchEngine(context, directoryFactory, indexingStrategy, sourceName, workspaceName,
+                    engine = new WorkspaceSearchEngine(context, directoryFactory, indexStrategy, sourceName, workspaceName,
                                                        connectionFactory);
                     workspaceEnginesByName.put(workspaceName, engine);
                 }

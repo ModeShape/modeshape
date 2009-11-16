@@ -38,7 +38,6 @@ import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SelectorName;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
@@ -67,7 +66,7 @@ public class ReplaceViewsTest extends AbstractQueryTest {
         builder.addView("v1", "SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
-        context = new QueryContext(execContext, new PlanHints(), schemata);
+        context = new QueryContext(execContext, schemata);
     }
 
     /**

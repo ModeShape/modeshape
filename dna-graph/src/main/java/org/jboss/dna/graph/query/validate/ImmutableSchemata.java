@@ -45,7 +45,6 @@ import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
@@ -394,7 +393,7 @@ public class ImmutableSchemata implements Schemata {
                 for (SelectorName name : viewNames) {
                     QueryCommand command = definitions.get(name);
                     // Create the canonical plan for the definition ...
-                    QueryContext queryContext = new QueryContext(context, new PlanHints(), schemata);
+                    QueryContext queryContext = new QueryContext(context, schemata);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) continue;

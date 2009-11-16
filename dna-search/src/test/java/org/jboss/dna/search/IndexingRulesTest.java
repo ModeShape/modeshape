@@ -25,7 +25,7 @@ package org.jboss.dna.search;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.search.IndexingRules.Builder;
+import org.jboss.dna.search.IndexRules.Builder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,23 +35,23 @@ import org.junit.Test;
 public class IndexingRulesTest {
 
     private Builder builder;
-    private IndexingRules rules;
+    private IndexRules rules;
 
     @Before
     public void beforeEach() {
-        builder = IndexingRules.createBuilder();
+        builder = IndexRules.createBuilder();
         rules = builder.build();
     }
 
     @Test
     public void shouldBuildValidRulesFromBuilderThatIsNotInvoked() {
-        builder = IndexingRules.createBuilder();
+        builder = IndexRules.createBuilder();
         rules = builder.build();
     }
 
     @Test
     public void shouldBuildValidRulesFromBuilderAfterJustSettingDefaultRules() {
-        builder.defaultTo(IndexingRules.FULL_TEXT);
+        builder.defaultTo(IndexRules.FULL_TEXT);
         rules = builder.build();
         assertThat(rules.getRule(null).isFullText(), is(true));
     }

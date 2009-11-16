@@ -31,16 +31,17 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactory;
 
 /**
- * A set of index readers and writers.
+ * A context for working with the index readers and writers.
  */
 @NotThreadSafe
-public final class IndexContext {
+final class IndexContext {
 
     private final ExecutionContext context;
     private final Directory pathsIndexDirectory;
@@ -276,6 +277,18 @@ public final class IndexContext {
         }
         if (ioError != null) throw ioError;
         if (runtimeError != null) throw runtimeError;
+    }
+
+    /**
+     * Create a copy of this index context, except that it uses the supplied execution context.
+     * 
+     * @param context the new execution context that should be used in the copy
+     * @return the new context; never null
+     * @throws IllegalArgumentException if the context is null
+     */
+    public IndexContext with( ExecutionContext context ) {
+        CheckArg.isNotNull(context, "context");
+        return new IndexContext(context, pathsIndexDirectory, contentIndexDirectory, analyzer, overwrite, readOnly);
     }
 
 }

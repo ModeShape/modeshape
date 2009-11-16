@@ -35,10 +35,7 @@ import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
 import org.jboss.dna.graph.query.model.DescendantNodeJoinCondition;
 import org.jboss.dna.graph.query.model.JoinCondition;
 import org.jboss.dna.graph.query.model.JoinType;
-import org.jboss.dna.graph.query.optimize.ChooseJoinAlgorithm;
-import org.jboss.dna.graph.query.optimize.OptimizerRule;
 import org.jboss.dna.graph.query.plan.JoinAlgorithm;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
@@ -57,7 +54,7 @@ public class ChooseJoinAlgorithmTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), new PlanHints(), mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
         bestRule = ChooseJoinAlgorithm.USE_BEST_JOIN_ALGORITHM;
         nestedRule = ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM;
     }

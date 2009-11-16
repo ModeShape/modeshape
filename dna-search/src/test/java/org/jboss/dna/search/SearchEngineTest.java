@@ -48,7 +48,6 @@ public class SearchEngineTest {
     private InMemoryRepositorySource source;
     private RepositoryConnectionFactory connectionFactory;
     private DirectoryConfiguration directoryFactory;
-    private IndexingStrategy indexingStrategy;
     private Graph content;
 
     @Before
@@ -81,15 +80,9 @@ public class SearchEngineTest {
             }
         };
 
-        // Set up the indexing strategy ...
-        IndexingRules rules = IndexingRules.createBuilder(StoreLittleIndexingStrategy.DEFAULT_RULES)
-                                           .defaultTo(IndexingRules.INDEX | IndexingRules.ANALYZE | IndexingRules.FULL_TEXT)
-                                           .build();
-        indexingStrategy = new StoreLittleIndexingStrategy(rules);
-
         // Now set up the search engine ...
         directoryFactory = DirectoryConfigurations.inMemory();
-        engine = new SearchEngine(context, sourceName, connectionFactory, directoryFactory, indexingStrategy);
+        engine = new SearchEngine(context, sourceName, connectionFactory, directoryFactory);
     }
 
     protected Path path( String string ) {

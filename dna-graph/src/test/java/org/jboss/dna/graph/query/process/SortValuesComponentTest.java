@@ -32,7 +32,6 @@ import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Ordering;
-import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +55,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
         columns = resultColumns("Selector1", "ColA", "ColB", "ColC");
         schemata = schemataFor(columns, PropertyType.STRING, PropertyType.LONG, PropertyType.STRING);
         // Define the context ...
-        context = new QueryContext(new ExecutionContext(), new PlanHints(), schemata);
+        context = new QueryContext(new ExecutionContext(), schemata);
         inputTuples = new ArrayList<Object[]>();
         // And define the delegating component ...
         delegate = new ProcessingComponent(context, columns) {

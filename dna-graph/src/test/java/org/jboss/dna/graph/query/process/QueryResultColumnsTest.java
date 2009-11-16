@@ -37,9 +37,6 @@ import org.jboss.dna.graph.query.QueryResults.Cursor;
 import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.plan.PlanHints;
-import org.jboss.dna.graph.query.process.QueryResultColumns;
-import org.jboss.dna.graph.query.process.QueryResults;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +63,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        context = new QueryContext(executionContext, new PlanHints(), schemata);
+        context = new QueryContext(executionContext, schemata);
         columnList = new ArrayList<Column>();
         columnList.add(new Column(selector("table1"), name("colA"), "colA"));
         columnList.add(new Column(selector("table1"), name("colB"), "colB"));
