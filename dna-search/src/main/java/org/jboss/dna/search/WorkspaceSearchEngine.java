@@ -48,6 +48,7 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.ChangeRequest;
 
 /**
@@ -252,11 +253,13 @@ public class WorkspaceSearchEngine {
      * representation of the query.
      * 
      * @param query the query that is to be executed, in the form of the Abstract Query Model
+     * @param schemata the definition of the tables available for the query; may not be null
      * @return the query results; never null
      * @throws IllegalArgumentException if the context or query references are null
      */
-    public QueryResults execute( QueryCommand query ) {
-        return execute(false, queryContent(query)).getResults();
+    public QueryResults execute( QueryCommand query,
+                                 Schemata schemata ) {
+        return execute(false, queryContent(query, schemata)).getResults();
     }
 
     /**
@@ -540,14 +543,16 @@ public class WorkspaceSearchEngine {
      * Create an activity that will perform a query against the index.
      * 
      * @param query the query to be performed; may not be null
+     * @param schemata the definition of the tables being used in the query; may not be null
      * @return the activity that will perform the work
      */
-    protected Query queryContent( final QueryCommand query ) {
+    protected Query queryContent( final QueryCommand query,
+                                  final Schemata schemata ) {
         return new Query() {
             private QueryResults results = null;
 
             public void execute( IndexContext indexes ) throws IOException, ParseException {
-                results = strategy().performQuery(query, indexes);
+                results = strategy().performQuery(query, schemata, indexes);
             }
 
             public String messageFor( Throwable error ) {

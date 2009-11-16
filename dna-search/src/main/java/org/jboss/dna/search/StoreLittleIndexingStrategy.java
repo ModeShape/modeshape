@@ -124,22 +124,19 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
      * Create a new indexing strategy instance that does not support queries.
      */
     public StoreLittleIndexingStrategy() {
-        this(null, null);
+        this(null);
     }
 
     /**
      * Create a new indexing strategy instance.
      * 
-     * @param schemata the schemata that defines the structure that can be queried; may be null if queries are not going to be
-     *        used
      * @param rules the indexing rules that govern how properties are to be index, or null if the {@link #DEFAULT_RULES default
      *        rules} are to be used
      */
-    public StoreLittleIndexingStrategy( Schemata schemata,
-                                        IndexingRules rules ) {
+    public StoreLittleIndexingStrategy( IndexingRules rules ) {
         this.rules = rules != null ? rules : DEFAULT_RULES;
         this.logger = Logger.getLogger(getClass());
-        this.queryEngine = new LuceneQueryEngine(schemata);
+        this.queryEngine = new LuceneQueryEngine();
     }
 
     /**
@@ -351,11 +348,13 @@ class StoreLittleIndexingStrategy implements IndexingStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.search.IndexingStrategy#performQuery(QueryCommand, IndexContext)
+     * @see org.jboss.dna.search.IndexingStrategy#performQuery(org.jboss.dna.graph.query.model.QueryCommand,
+     *      org.jboss.dna.graph.query.validate.Schemata, org.jboss.dna.search.IndexContext)
      */
     public QueryResults performQuery( QueryCommand query,
+                                      Schemata schemata,
                                       IndexContext indexes ) throws IOException, ParseException {
-        return this.queryEngine.execute(query, indexes);
+        return this.queryEngine.execute(query, schemata, indexes);
     }
 
     /**

@@ -54,10 +54,20 @@ import org.jboss.dna.graph.query.validate.Schemata;
 @ThreadSafe
 public class QueryEngine implements Queryable {
 
+    /**
+     * A {@link Schemata} implementation that always returns null, meaning the table does not exist.
+     */
+    private static final Schemata DEFAULT_SCHEMATA = new Schemata() {
+        public Table getTable( SelectorName name ) {
+            // This won't allow the query engine to do anything (or much of anything),
+            // but it is legal and will result in meaningful problems
+            return null;
+        }
+    };
+
     private final Planner planner;
     private final Optimizer optimizer;
     private final Processor processor;
-    private final Schemata schemata;
 
     /**
      * Create a new query engine given the {@link Planner planner}, {@link Optimizer optimizer}, {@link Processor processor}, and
@@ -68,49 +78,43 @@ public class QueryEngine implements Queryable {
      * @param optimizer the optimizer that should be used to optimize the canonical query plan; may be null if the
      *        {@link RuleBasedOptimizer} should be used
      * @param processor the processor implementation that should be used to process the planned query and return the results
-     * @param schemata the schemata implementation, or null if an empty schema should be used (resulting in errors when named
-     *        tables are queried)
      * @throws IllegalArgumentException if the processor reference is null
      */
     public QueryEngine( Planner planner,
                         Optimizer optimizer,
-                        Processor processor,
-                        Schemata schemata ) {
+                        Processor processor ) {
         CheckArg.isNotNull(processor, "processor");
         this.planner = planner != null ? planner : new CanonicalPlanner();
         this.optimizer = optimizer != null ? optimizer : new RuleBasedOptimizer();
         this.processor = processor;
-        this.schemata = schemata != null ? schemata : new Schemata() {
-            public Table getTable( SelectorName name ) {
-                // This won't allow the query engine to do anything (or much of anything),
-                // but it is legal and will result in meaningful problems
-                return null;
-            }
-        };
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.query.model.QueryCommand)
-     */
-    public QueryResults execute( ExecutionContext context,
-                                 QueryCommand query ) {
-        return execute(context, query, new PlanHints());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.plan.PlanHints)
+     *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.validate.Schemata)
      */
     public QueryResults execute( ExecutionContext context,
                                  QueryCommand query,
+                                 Schemata schemata ) {
+        return execute(context, query, schemata, new PlanHints());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.Queryable#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.validate.Schemata,
+     *      org.jboss.dna.graph.query.plan.PlanHints)
+     */
+    public QueryResults execute( ExecutionContext context,
+                                 QueryCommand query,
+                                 Schemata schemata,
                                  PlanHints hints ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(query, "query");
+        if (schemata == null) schemata = DEFAULT_SCHEMATA;
         QueryContext queryContext = new QueryContext(context, hints, schemata);
 
         // Create the canonical plan ...

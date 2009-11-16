@@ -40,7 +40,7 @@ import org.jboss.dna.graph.property.ValueFactory;
  * A set of index readers and writers.
  */
 @NotThreadSafe
-final class IndexContext {
+public final class IndexContext {
 
     private final ExecutionContext context;
     private final Directory pathsIndexDirectory;

@@ -26,7 +26,6 @@ package org.jboss.dna.search;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 import java.util.List;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -36,7 +35,6 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.query.validate.Schemata;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,7 +49,6 @@ public class WorkspaceSearchEngineTest {
     private DirectoryConfiguration directoryFactory;
     private IndexingStrategy indexingStrategy;
     private Graph content;
-    private Schemata schemata;
 
     @Before
     public void beforeEach() throws Exception {
@@ -76,14 +73,11 @@ public class WorkspaceSearchEngineTest {
             }
         };
 
-        // Set up the schemata for the queries ...
-        schemata = mock(Schemata.class);
-
         // Set up the indexing strategy ...
         IndexingRules rules = IndexingRules.createBuilder(StoreLittleIndexingStrategy.DEFAULT_RULES)
                                            .defaultTo(IndexingRules.INDEX | IndexingRules.ANALYZE | IndexingRules.FULL_TEXT)
                                            .build();
-        indexingStrategy = new StoreLittleIndexingStrategy(schemata, rules);
+        indexingStrategy = new StoreLittleIndexingStrategy(rules);
 
         // Now set up the search engine ...
         directoryFactory = DirectoryConfigurations.inMemory();

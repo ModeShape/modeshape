@@ -45,6 +45,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 
@@ -293,13 +294,17 @@ public class SearchEngine {
      * 
      * @param workspaceName the name of the workspace
      * @param query the query that is to be executed, in the form of the Abstract Query Model
+     * @param schemata the definition of the tables and views that can be used in the query; may not be null
      * @return the query results; never null
-     * @throws IllegalArgumentException if the context or query references are null
+     * @throws IllegalArgumentException if the context, query, or schemata references are null
      */
     public QueryResults execute( String workspaceName,
-                                 QueryCommand query ) {
+                                 QueryCommand query,
+                                 Schemata schemata ) {
         CheckArg.isNotNull(workspaceName, "workspaceName");
-        return getWorkspaceEngine(workspaceName).execute(query);
+        CheckArg.isNotNull(query, "query");
+        CheckArg.isNotNull(schemata, "schemata");
+        return getWorkspaceEngine(workspaceName).execute(query, schemata);
     }
 
 }

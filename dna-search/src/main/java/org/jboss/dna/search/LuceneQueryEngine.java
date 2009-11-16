@@ -49,14 +49,15 @@ class LuceneQueryEngine {
 
     private QueryEngine engine;
 
-    public LuceneQueryEngine( Schemata schemata ) {
-        engine = new QueryEngine(new CanonicalPlanner(), new LuceneOptimizer(), new LuceneProcessor(), schemata);
+    public LuceneQueryEngine() {
+        engine = new QueryEngine(new CanonicalPlanner(), new LuceneOptimizer(), new LuceneProcessor());
     }
 
     /**
      * Execute the supplied query by planning, optimizing, and then processing it.
      * 
      * @param query the query that is to be executed
+     * @param schemata the schemata that defines the tables used in the query
      * @param indexes the indexes that should be used to execute the query; never null
      * @return the query results; never null
      * @throws IllegalArgumentException if the context or query references are null
@@ -64,8 +65,9 @@ class LuceneQueryEngine {
      * @throws ParseException if there is a problem parsing the query
      */
     public QueryResults execute( QueryCommand query,
+                                 Schemata schemata,
                                  IndexContext indexes ) throws IOException, ParseException {
-        return engine.execute(indexes.context(), query, new PlanHints());
+        return engine.execute(indexes.context(), query, schemata, new PlanHints());
     }
 
     /**

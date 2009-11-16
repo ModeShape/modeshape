@@ -34,12 +34,13 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.ChangeRequest;
 
 /**
  * Interface defining the behaviors associated with indexing graph content.
  */
-interface IndexingStrategy {
+public interface IndexingStrategy {
 
     int getChangeCountForAutomaticOptimization();
 
@@ -108,14 +109,18 @@ interface IndexingStrategy {
                        List<Location> results ) throws IOException, ParseException;
 
     /**
-     * Perform a query of the content.
+     * Perform a query of the content. The {@link QueryCommand query} is supplied in the form of the Abstract Query Model, with
+     * the {@link Schemata} that defines the tables and views that are available to the query, and the set of index readers (and
+     * writers) that should be used.
      * 
      * @param query the query; never null
+     * @param schemata the definition of the tables used in the query; never null
      * @param indexes the set of index readers and writers; never null
      * @return the results of the query
      * @throws IOException if there is a problem indexing or using the writers
      * @throws ParseException if there is a problem parsing the query
      */
     QueryResults performQuery( QueryCommand query,
+                               Schemata schemata,
                                IndexContext indexes ) throws IOException, ParseException;
 }

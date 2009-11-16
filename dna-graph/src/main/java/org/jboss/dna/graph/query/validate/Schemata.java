@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
@@ -34,13 +35,13 @@ import org.jboss.dna.graph.query.model.SelectorName;
 /**
  * The interface used to access the structure being queried and validate a query.
  */
+@Immutable
 public interface Schemata {
 
     /**
      * Get the information for the table or view with the supplied name within this schema.
      * <p>
-     * The resulting definition is immutable, though subsequent calls to this method with the same argument may result in a
-     * different definition.
+     * The resulting definition is immutable.
      * </p>
      * 
      * @param name the table or view name; may not be null
