@@ -29,13 +29,24 @@ import org.jboss.dna.graph.query.validate.Schemata.Column;
 
 @Immutable
 class ImmutableColumn implements Column {
+
+    public static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = false;
+
+    private final boolean fullTextSearchable;
     private final String name;
     private final PropertyType type;
 
     protected ImmutableColumn( String name,
                                PropertyType type ) {
+        this(name, type, DEFAULT_FULL_TEXT_SEARCHABLE);
+    }
+
+    protected ImmutableColumn( String name,
+                               PropertyType type,
+                               boolean fullTextSearchable ) {
         this.name = name;
         this.type = type != null ? type : PropertyType.STRING;
+        this.fullTextSearchable = fullTextSearchable;
     }
 
     /**
@@ -54,6 +65,15 @@ class ImmutableColumn implements Column {
      */
     public PropertyType getPropertyType() {
         return type;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.validate.Schemata.Column#isFullTextSearchable()
+     */
+    public boolean isFullTextSearchable() {
+        return fullTextSearchable;
     }
 
     /**

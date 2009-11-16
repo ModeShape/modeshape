@@ -34,6 +34,7 @@ import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.graph.query.model.FullTextSearch.CompoundTerm;
 import org.jboss.dna.graph.query.model.FullTextSearch.Conjunction;
 import org.jboss.dna.graph.query.model.FullTextSearch.Disjunction;
+import org.jboss.dna.graph.query.model.FullTextSearch.NegationTerm;
 import org.jboss.dna.graph.query.model.FullTextSearch.SimpleTerm;
 import org.jboss.dna.graph.query.model.FullTextSearch.Term;
 import org.junit.Before;
@@ -159,9 +160,9 @@ public class FullTextSearchParserTest {
         Disjunction disjunction = (Disjunction)result;
         assertThat(disjunction.getTerms().size(), is(4));
         Conjunction conjunction1 = (Conjunction)disjunction.getTerms().get(0);
-        SimpleTerm term3 = (SimpleTerm)disjunction.getTerms().get(1);
-        SimpleTerm term4 = (SimpleTerm)disjunction.getTerms().get(2);
-        SimpleTerm term5 = (SimpleTerm)disjunction.getTerms().get(3);
+        Term term3 = disjunction.getTerms().get(1);
+        Term term4 = disjunction.getTerms().get(2);
+        Term term5 = disjunction.getTerms().get(3);
         assertHasSimpleTerms(conjunction1, "term1", "term2");
         assertSimpleTerm(term3, "term3", true, false);
         assertSimpleTerm(term4, "term4", true, false);
@@ -172,12 +173,12 @@ public class FullTextSearchParserTest {
                                              String... terms ) {
         List<Term> expectedTerms = new ArrayList<Term>();
         for (String term : terms) {
-            SimpleTerm expected = new SimpleTerm(term, false);
             if (term.startsWith("-")) {
                 term = term.substring(1);
-                expected = new SimpleTerm(term, true);
+                expectedTerms.add(new NegationTerm(new SimpleTerm(term)));
+            } else {
+                expectedTerms.add(new SimpleTerm(term));
             }
-            expectedTerms.add(expected);
         }
         assertHasTerms(compoundTerm, expectedTerms.toArray(new Term[expectedTerms.size()]));
     }
@@ -187,11 +188,20 @@ public class FullTextSearchParserTest {
                                          boolean excluded,
                                          boolean quotingRequired ) {
         assertThat(term, is(notNullValue()));
-        assertThat(term, is(instanceOf(SimpleTerm.class)));
-        SimpleTerm simpleTerm = (SimpleTerm)term;
-        assertThat(simpleTerm.getValue(), is(value));
-        assertThat(simpleTerm.isExcluded(), is(excluded));
-        assertThat(simpleTerm.isQuotingRequired(), is(quotingRequired));
+        if (excluded) {
+            assertThat(term, is(instanceOf(NegationTerm.class)));
+            NegationTerm negationTerm = (NegationTerm)term;
+            Term negated = negationTerm.getNegatedTerm();
+            assertThat(negated, is(instanceOf(SimpleTerm.class)));
+            SimpleTerm simpleTerm = (SimpleTerm)negated;
+            assertThat(simpleTerm.getValue(), is(value));
+            assertThat(simpleTerm.isQuotingRequired(), is(quotingRequired));
+        } else {
+            assertThat(term, is(instanceOf(SimpleTerm.class)));
+            SimpleTerm simpleTerm = (SimpleTerm)term;
+            assertThat(simpleTerm.getValue(), is(value));
+            assertThat(simpleTerm.isQuotingRequired(), is(quotingRequired));
+        }
     }
 
     public static void assertHasTerms( CompoundTerm compoundTerm,

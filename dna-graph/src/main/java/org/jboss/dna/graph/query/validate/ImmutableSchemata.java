@@ -328,15 +328,68 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
+            return addColumn(tableName, columnName, type, ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE);
+        }
+
+        /**
+         * Add a column with the supplied name and type to the named table. Any existing column with that name will be replaced
+         * with the new column. If the table does not yet exist, it will be added.
+         * 
+         * @param tableName the name of the new table
+         * @param columnName the names of the column
+         * @param type the type for the column
+         * @param fullTextSearchable true if the column should be full-text searchable, or false if not
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the table name is null or empty, the column name is null or empty, or if the
+         *         property type is null
+         */
+        public Builder addColumn( String tableName,
+                                  String columnName,
+                                  PropertyType type,
+                                  boolean fullTextSearchable ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            CheckArg.isNotEmpty(columnName, "columnName");
+            CheckArg.isNotNull(type, "type");
             SelectorName selector = new SelectorName(tableName);
             ImmutableTable existing = tables.get(selector);
             ImmutableTable table = null;
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, type));
+                columns.add(new ImmutableColumn(columnName, type, fullTextSearchable));
                 table = new ImmutableTable(selector, columns);
             } else {
                 table = existing.withColumn(columnName, type);
+            }
+            tables.put(table.getName(), table);
+            return this;
+        }
+
+        /**
+         * Make sure the column on the named table is searchable.
+         * 
+         * @param tableName the name of the new table
+         * @param columnName the names of the column
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the table name is null or empty or if the column name is null or empty
+         */
+        public Builder makeSearchable( String tableName,
+                                       String columnName ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            CheckArg.isNotEmpty(columnName, "columnName");
+            SelectorName selector = new SelectorName(tableName);
+            ImmutableTable existing = tables.get(selector);
+            ImmutableTable table = null;
+            if (existing == null) {
+                List<Column> columns = new ArrayList<Column>();
+                columns.add(new ImmutableColumn(columnName, PropertyType.STRING, true));
+                table = new ImmutableTable(selector, columns);
+            } else {
+                Column column = existing.getColumn(columnName);
+                PropertyType type = PropertyType.STRING;
+                if (column != null) {
+                    type = column.getPropertyType();
+                }
+                table = existing.withColumn(columnName, type, true);
             }
             tables.put(table.getName(), table);
             return this;
@@ -419,7 +472,8 @@ public class ImmutableSchemata implements Schemata {
                                                             "The view references a non-existant column '"
                                                             + column.getColumnName() + "' in '" + source.getName() + "'");
                         }
-                        viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType()));
+                        viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
+                                                            sourceColumn.isFullTextSearchable()));
                     }
                     if (viewColumns.size() != columns.size()) {
                         // We weren't able to resolve all of the columns,

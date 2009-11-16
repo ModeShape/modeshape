@@ -40,11 +40,14 @@ public class SearchI18n {
     public static I18n errorWhileRemovingContentAtPath;
     public static I18n errorWhileUpdatingContent;
     public static I18n errorWhileCommittingIndexChanges;
+    public static I18n errorWhileRollingBackIndexChanges;
     public static I18n errorCreatingIndexWriter;
     public static I18n errorWhileOptimizingIndexes;
     public static I18n errorWhilePerformingSearch;
     public static I18n errorWhilePerformingQuery;
     public static I18n errorWhileInitializingSearchEngine;
+    public static I18n errorWhileRemovingIndexesForWorkspace;
+    public static I18n errorWhilePerformingLuceneQuery;
 
     static {
         try {

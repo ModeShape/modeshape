@@ -77,6 +77,8 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addTable("all", "a1", "a2", "a3", "a4", "primaryType", "mixins");
+        builder.makeSearchable("all", "a2");
+        builder.makeSearchable("all", "a1");
         builder.addKey("all", "a1");
         builder.addKey("all", "a3");
         builder.addView("v1", "SELECT c11, c12 AS c2 FROM t1 WHERE c13 < CAST('3' AS LONG)");

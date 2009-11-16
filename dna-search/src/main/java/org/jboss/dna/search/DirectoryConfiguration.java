@@ -28,7 +28,8 @@ import org.apache.lucene.store.Directory;
 
 /**
  * Interface used to obtain the Lucene {@link Directory} instance that should be used for a workspace given the name of the
- * workspace. There are several implementations (see {@link DirectoryConfigurations}), but custom implementations can always be used.
+ * workspace. There are several implementations (see {@link DirectoryConfigurations}), but custom implementations can always be
+ * used.
  */
 @ThreadSafe
 public interface DirectoryConfiguration {
@@ -43,4 +44,16 @@ public interface DirectoryConfiguration {
      */
     Directory getDirectory( String workspaceName,
                             String indexName ) throws SearchEngineException;
+
+    /**
+     * Destroy the {@link Directory} that is used for the workspace with the supplied name.
+     * 
+     * @param workspaceName the workspace name
+     * @param indexName the name of the index to be created
+     * @return true if the directory existed and was destroyed, or false if the directory didn't exist
+     * @throws IllegalArgumentException if the workspace name is null
+     * @throws SearchEngineException if there is a problem creating the directory
+     */
+    boolean destroyDirectory( String workspaceName,
+                              String indexName ) throws SearchEngineException;
 }

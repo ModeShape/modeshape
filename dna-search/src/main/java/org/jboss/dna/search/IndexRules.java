@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.Name;
  * The set of rules that dictate how properties should be indexed.
  */
 @Immutable
-class IndexRules {
+public class IndexRules {
 
     public static final int INDEX = 2 << 0;
     public static final int ANALYZE = 2 << 1;

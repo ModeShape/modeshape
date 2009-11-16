@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.query.process;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -31,7 +32,6 @@ import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.AllNodes;
-import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.Limit;
@@ -50,7 +50,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
     protected final PlanNode accessNode;
     protected final SelectorName sourceName;
     protected final List<Column> projectedColumns;
-    protected final Constraint constraint;
+    protected final List<Constraint> andedConstraints;
     protected final Limit limit;
 
     protected AbstractAccessComponent( QueryContext context,
@@ -94,16 +94,13 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
         }
 
         // Add the criteria ...
-        Constraint constraint = null;
+        List<Constraint> andedConstraints = null;
         for (PlanNode select : accessNode.findAllAtOrBelow(Type.SELECT)) {
             Constraint selectConstraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-            if (constraint != null) {
-                constraint = new And(constraint, selectConstraint);
-            } else {
-                constraint = selectConstraint;
-            }
+            if (andedConstraints == null) andedConstraints = new ArrayList<Constraint>();
+            andedConstraints.add(selectConstraint);
         }
-        this.constraint = constraint;
+        this.andedConstraints = andedConstraints != null ? andedConstraints : Collections.<Constraint>emptyList();
 
         // Find the limit ...
         Limit limit = Limit.NONE;

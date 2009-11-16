@@ -159,4 +159,66 @@ public class CanonicalPlannerTest {
         assertThat(source.getChildCount(), is(0));
     }
 
+    @Test
+    public void shouldProduceErrorWhenFullTextSearchingTableWithNoSearchableColumns() {
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
+        // Make sure the query without the search criteria does not have an error
+        query = builder.select("column1", "column2").from("someTable").query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+
+        query = builder.select("column1", "column2").from("someTable").where().search("someTable", "term1").end().query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(true));
+    }
+
+    @Test
+    public void shouldProducePlanWhenFullTextSearchingTableWithAtLeastOneSearchableColumn() {
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
+                                  .makeSearchable("someTable", "column1")
+                                  .build();
+        query = builder.select("column1", "column4").from("someTable").where().search("someTable", "term1").end().query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(true));
+    }
+
+    @Test
+    public void shouldProduceErrorWhenFullTextSearchingColumnThatIsNotSearchable() {
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
+        // Make sure the query without the search criteria does not have an error
+        query = builder.select("column1", "column2").from("someTable").query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+
+        query = builder.select("column1", "column2")
+                       .from("someTable")
+                       .where()
+                       .search("someTable", "column2", "term1")
+                       .end()
+                       .query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(true));
+    }
+
+    @Test
+    public void shouldProducePlanWhenFullTextSearchingColumnThatIsSearchable() {
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
+                                  .makeSearchable("someTable", "column1")
+                                  .build();
+        query = builder.select("column1", "column4")
+                       .from("someTable")
+                       .where()
+                       .search("someTable", "column1", "term1")
+                       .end()
+                       .query();
+        queryContext = new QueryContext(context, schemata, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(true));
+    }
+
 }

@@ -179,6 +179,7 @@ public interface QueryResults {
      * {@link QueryResults#getTuples() tuples} in the results, and which can be used to access the individual values in each of
      * the tuples.
      */
+    @Immutable
     public interface Columns {
         /**
          * Get the columns.

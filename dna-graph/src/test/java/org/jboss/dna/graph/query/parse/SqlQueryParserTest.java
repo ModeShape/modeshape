@@ -70,7 +70,7 @@ import org.jboss.dna.graph.query.model.StaticOperand;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.FullTextSearch.Conjunction;
 import org.jboss.dna.graph.query.model.FullTextSearch.Disjunction;
-import org.jboss.dna.graph.query.model.FullTextSearch.SimpleTerm;
+import org.jboss.dna.graph.query.model.FullTextSearch.Term;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -680,15 +680,15 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParseFullTextSearchExpressionFromStringWithValidExpression() {
         Position pos = new Position(100, 13);
-        FullTextSearch.Term result = parser.parseFullTextSearchExpression("term1 term2 OR -term3 OR -term4 OR term5", pos);
+        Term result = parser.parseFullTextSearchExpression("term1 term2 OR -term3 OR -term4 OR term5", pos);
         assertThat(result, is(notNullValue()));
         assertThat(result, is(instanceOf(Disjunction.class)));
         Disjunction disjunction = (Disjunction)result;
         assertThat(disjunction.getTerms().size(), is(4));
         Conjunction conjunction1 = (Conjunction)disjunction.getTerms().get(0);
-        SimpleTerm term3 = (SimpleTerm)disjunction.getTerms().get(1);
-        SimpleTerm term4 = (SimpleTerm)disjunction.getTerms().get(2);
-        SimpleTerm term5 = (SimpleTerm)disjunction.getTerms().get(3);
+        Term term3 = disjunction.getTerms().get(1);
+        Term term4 = disjunction.getTerms().get(2);
+        Term term5 = disjunction.getTerms().get(3);
         FullTextSearchParserTest.assertHasSimpleTerms(conjunction1, "term1", "term2");
         FullTextSearchParserTest.assertSimpleTerm(term3, "term3", true, false);
         FullTextSearchParserTest.assertSimpleTerm(term4, "term4", true, false);

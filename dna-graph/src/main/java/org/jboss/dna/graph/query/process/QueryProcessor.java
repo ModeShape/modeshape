@@ -51,8 +51,8 @@ import org.jboss.dna.graph.query.process.SelectComponent.Analyzer;
 /**
  * An abstract {@link Processor} implementation that builds a tree of {@link ProcessingComponent} objects to perform the different
  * parts of the query processing logic. Subclasses are required to only implement one method: the
- * {@link #createAccessComponent(QueryContext, PlanNode, Columns, Analyzer)} should create a ProcessorComponent object that will
- * perform the (low-level access) query described by the {@link PlanNode plan} given as a parameter.
+ * {@link #createAccessComponent(QueryCommand,QueryContext, PlanNode, Columns, Analyzer)} should create a ProcessorComponent
+ * object that will perform the (low-level access) query described by the {@link PlanNode plan} given as a parameter.
  */
 public abstract class QueryProcessor implements Processor {
 
@@ -81,18 +81,24 @@ public abstract class QueryProcessor implements Processor {
 
             // Go through the plan and create the corresponding ProcessingComponents ...
             Analyzer analyzer = createAnalyzer(context);
-            ProcessingComponent component = createComponent(context, plan, columns, analyzer);
+            ProcessingComponent component = createComponent(command, context, plan, columns, analyzer);
             long nanos2 = System.nanoTime();
             statistics = statistics.withResultsFormulationTime(nanos2 - nanos);
-
-            // Now execute the component ...
             nanos = nanos2;
-            tuples = component.execute();
+
+            if (component != null) {
+                // Now execute the component ...
+                tuples = component.execute();
+            } else {
+                // There must have been an error ...
+                assert context.getProblems().hasErrors();
+                tuples = Collections.emptyList();
+            }
 
         } finally {
             statistics = statistics.withExecutionTime(System.nanoTime() - nanos);
         }
-        if (tuples == null) tuples = Collections.emptyList();
+        assert tuples != null;
         return new org.jboss.dna.graph.query.process.QueryResults(context, command, columns, statistics, tuples);
     }
 
@@ -100,7 +106,7 @@ public abstract class QueryProcessor implements Processor {
      * Create an {@link Analyzer} implementation that should be used by the non-access {@link ProcessingComponent}s that evaluate
      * criteria. By default, this method returns null, which means that any criteria evaluation will likely be pushed down under
      * an {@link Type#ACCESS ACCESS} node (and thus handled by an
-     * {@link #createAccessComponent(QueryContext, PlanNode, Columns, Analyzer) access component}.
+     * {@link #createAccessComponent(QueryCommand,QueryContext, PlanNode, Columns, Analyzer) access component}.
      * <p>
      * However, for more simple access components that are not capable of handling joins and other non-trivial criteria, simply
      * return an Analyzer implementation that implements the methods using the source.
@@ -116,13 +122,15 @@ public abstract class QueryProcessor implements Processor {
     /**
      * Create the {@link ProcessingComponent} that processes a single {@link Type#ACCESS} branch of a query plan.
      * 
+     * @param originalQuery the original query that is being executed; never null
      * @param context the context in which query is being evaluated; never null
      * @param accessNode the node in the query plan that represents the {@link Type#ACCESS} plan; never null
      * @param resultColumns the columns that are to be returned; never null
      * @param analyzer the criteria analyzer; never null
      * @return the processing component; may not be null
      */
-    protected abstract ProcessingComponent createAccessComponent( QueryContext context,
+    protected abstract ProcessingComponent createAccessComponent( QueryCommand originalQuery,
+                                                                  QueryContext context,
                                                                   PlanNode accessNode,
                                                                   Columns resultColumns,
                                                                   Analyzer analyzer );
@@ -133,17 +141,20 @@ public abstract class QueryProcessor implements Processor {
      * {@link PlanNode} objects in the optimized query plan, and the method is actually recursive (since the optimized query plan
      * forms a tree). However, whenever this call structure reaches the {@link Type#ACCESS ACCESS} nodes in the query plan (which
      * each represents a separate atomic low-level query to the underlying system), the
-     * {@link #createAccessComponent(QueryContext, PlanNode, Columns, Analyzer)} method is called. Subclasses should create an
-     * appropriate ProcessingComponent implementation that performs this atomic low-level query.
+     * {@link #createAccessComponent(QueryCommand,QueryContext, PlanNode, Columns, Analyzer)} method is called. Subclasses should
+     * create an appropriate ProcessingComponent implementation that performs this atomic low-level query.
      * 
+     * @param originalQuery the original query that is being executed; never null
      * @param context the context in which query is being evaluated
      * @param node the plan node for which the ProcessingComponent is to be created
      * @param columns the definition of the result columns for this portion of the query
      * @param analyzer the analyzer (returned from {@link #createAnalyzer(QueryContext)}) that should be used on the components
      *        that evaluate criteria; may be null if a best-effort should be made for the evaluation
-     * @return the processing component for this plan node; never null
+     * @return the processing component for this plan node; or null if there was an error recorded in the
+     *         {@link QueryContext#getProblems() problems}
      */
-    protected ProcessingComponent createComponent( QueryContext context,
+    protected ProcessingComponent createComponent( QueryCommand originalQuery,
+                                                   QueryContext context,
                                                    PlanNode node,
                                                    Columns columns,
                                                    Analyzer analyzer ) {
@@ -152,14 +163,18 @@ public abstract class QueryProcessor implements Processor {
             case ACCESS:
                 // Create the component to handle the ACCESS node ...
                 assert node.getChildCount() == 1;
-                component = createAccessComponent(context, node, columns, analyzer);
+                component = createAccessComponent(originalQuery, context, node, columns, analyzer);
                 // // Don't do anything special with an access node at the moment ...
                 // component = createComponent(context, node.getFirstChild(), columns, analyzer);
                 break;
             case DUP_REMOVE:
                 // Create the component under the DUP_REMOVE ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent distinctDelegate = createComponent(context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent distinctDelegate = createComponent(originalQuery,
+                                                                       context,
+                                                                       node.getFirstChild(),
+                                                                       columns,
+                                                                       analyzer);
                 component = new DistinctComponent(distinctDelegate);
                 break;
             case GROUP:
@@ -167,8 +182,8 @@ public abstract class QueryProcessor implements Processor {
             case JOIN:
                 // Create the components under the JOIN ...
                 assert node.getChildCount() == 2;
-                ProcessingComponent left = createComponent(context, node.getFirstChild(), columns, analyzer);
-                ProcessingComponent right = createComponent(context, node.getLastChild(), columns, analyzer);
+                ProcessingComponent left = createComponent(originalQuery, context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent right = createComponent(originalQuery, context, node.getLastChild(), columns, analyzer);
                 // Create the join component ...
                 JoinAlgorithm algorithm = node.getProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.class);
                 JoinType joinType = node.getProperty(Property.JOIN_TYPE, JoinType.class);
@@ -202,7 +217,11 @@ public abstract class QueryProcessor implements Processor {
             case LIMIT:
                 // Create the component under the LIMIT ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent limitDelegate = createComponent(context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent limitDelegate = createComponent(originalQuery,
+                                                                    context,
+                                                                    node.getFirstChild(),
+                                                                    columns,
+                                                                    analyzer);
                 // Then create the limit component ...
                 Integer rowLimit = node.getProperty(Property.LIMIT_COUNT, Integer.class);
                 Integer offset = node.getProperty(Property.LIMIT_OFFSET, Integer.class);
@@ -217,7 +236,11 @@ public abstract class QueryProcessor implements Processor {
             case PROJECT:
                 // Create the component under the PROJECT ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent projectDelegate = createComponent(context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent projectDelegate = createComponent(originalQuery,
+                                                                      context,
+                                                                      node.getFirstChild(),
+                                                                      columns,
+                                                                      analyzer);
                 // Then create the project component ...
                 List<Column> projectedColumns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
                 component = new ProjectComponent(projectDelegate, projectedColumns);
@@ -225,7 +248,11 @@ public abstract class QueryProcessor implements Processor {
             case SELECT:
                 // Create the component under the SELECT ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent selectDelegate = createComponent(context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent selectDelegate = createComponent(originalQuery,
+                                                                     context,
+                                                                     node.getFirstChild(),
+                                                                     columns,
+                                                                     analyzer);
                 // Then create the select component ...
                 Constraint constraint = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
                 component = new SelectComponent(selectDelegate, constraint, context.getVariables(), analyzer);
@@ -234,7 +261,7 @@ public abstract class QueryProcessor implements Processor {
                 // Create the components under the SET_OPERATION ...
                 List<ProcessingComponent> setDelegates = new LinkedList<ProcessingComponent>();
                 for (PlanNode child : node) {
-                    setDelegates.add(createComponent(context, child, columns, analyzer));
+                    setDelegates.add(createComponent(originalQuery, context, child, columns, analyzer));
                 }
                 // Then create the select component ...
                 Operation operation = node.getProperty(Property.SET_OPERATION, Operation.class);
@@ -255,7 +282,11 @@ public abstract class QueryProcessor implements Processor {
             case SORT:
                 // Create the component under the SORT ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent sortDelegate = createComponent(context, node.getFirstChild(), columns, analyzer);
+                ProcessingComponent sortDelegate = createComponent(originalQuery,
+                                                                   context,
+                                                                   node.getFirstChild(),
+                                                                   columns,
+                                                                   analyzer);
                 // Then create the sort component ...
                 List<Object> orderBys = node.getPropertyAsList(Property.SORT_ORDER_BY, Object.class);
                 if (orderBys.isEmpty()) {

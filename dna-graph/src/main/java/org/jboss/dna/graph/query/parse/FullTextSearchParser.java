@@ -31,6 +31,7 @@ import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.query.model.FullTextSearch.Conjunction;
 import org.jboss.dna.graph.query.model.FullTextSearch.Disjunction;
+import org.jboss.dna.graph.query.model.FullTextSearch.NegationTerm;
 import org.jboss.dna.graph.query.model.FullTextSearch.SimpleTerm;
 import org.jboss.dna.graph.query.model.FullTextSearch.Term;
 
@@ -88,10 +89,9 @@ public class FullTextSearchParser {
     }
 
     protected Term parseTerm( TokenStream tokens ) {
-        if (tokens.canConsume('-')) {
-            return new SimpleTerm(removeQuotes(tokens.consume()), true);
-        }
-        return new SimpleTerm(removeQuotes(tokens.consume()), false);
+        boolean negated = tokens.canConsume('-');
+        Term result = new SimpleTerm(removeQuotes(tokens.consume()));
+        return negated ? new NegationTerm(result) : result;
     }
 
     /**

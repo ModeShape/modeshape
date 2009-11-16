@@ -160,6 +160,13 @@ public interface Schemata {
          * @return the property type; never null
          */
         PropertyType getPropertyType();
+
+        /**
+         * Get whether the column can be used in a full-text search.
+         * 
+         * @return true if the column is full-text searchable, or false otherwise
+         */
+        boolean isFullTextSearchable();
     }
 
     /**

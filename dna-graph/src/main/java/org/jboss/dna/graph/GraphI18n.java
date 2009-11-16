@@ -133,6 +133,8 @@ public final class GraphI18n {
     public static I18n tableDoesNotExist;
     public static I18n columnDoesNotExistOnTable;
     public static I18n columnDoesNotExistInQuery;
+    public static I18n columnIsNotFullTextSearchable;
+    public static I18n tableIsNotFullTextSearchable;
     public static I18n selectorDoesNotExistInQuery;
     public static I18n propertyOnSelectorIsNotUsedInQuery;
     public static I18n errorResolvingNodesFromLocationsUsingSourceAndWorkspace;

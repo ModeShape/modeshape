@@ -187,10 +187,18 @@ class ImmutableTable implements Table {
         return new ImmutableTable(getName(), newColumns);
     }
 
+    public ImmutableTable withColumn( String name,
+                                      PropertyType type,
+                                      boolean fullTextSearchable ) {
+        List<Column> newColumns = new LinkedList<Column>(columns);
+        newColumns.add(new ImmutableColumn(name, type, fullTextSearchable));
+        return new ImmutableTable(getName(), newColumns);
+    }
+
     public ImmutableTable withColumns( Iterable<Column> columns ) {
         List<Column> newColumns = new LinkedList<Column>(this.getColumns());
         for (Column column : columns) {
-            newColumns.add(new ImmutableColumn(column.getName(), column.getPropertyType()));
+            newColumns.add(new ImmutableColumn(column.getName(), column.getPropertyType(), column.isFullTextSearchable()));
         }
         return new ImmutableTable(getName(), newColumns);
     }

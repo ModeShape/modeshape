@@ -190,25 +190,77 @@ public class FullTextSearch extends Constraint {
     }
 
     /**
+     * A {@link Term} that represents a search term that requires another term to not appear.
+     */
+    public static class NegationTerm implements Term {
+        private final Term negated;
+
+        public NegationTerm( Term negatedTerm ) {
+            assert negatedTerm != null;
+            this.negated = negatedTerm;
+        }
+
+        /**
+         * Get the term that is negated.
+         * 
+         * @return the negated term; never null
+         */
+        public Term getNegatedTerm() {
+            return negated;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return negated.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof NegationTerm) {
+                NegationTerm that = (NegationTerm)obj;
+                return this.getNegatedTerm().equals(that.getNegatedTerm());
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return "-" + negated.toString();
+        }
+    }
+
+    /**
      * A {@link Term} that represents a single search term. The term may be comprised of multiple words.
      */
     public static class SimpleTerm implements Term {
         private final String value;
-        private final boolean excluded;
         private final boolean quoted;
 
         /**
          * Create a simple term with the value and whether the term is excluded or included.
          * 
          * @param value the value that makes up the term
-         * @param excluded true if the term should not appear, or false if the term is required
          */
-        public SimpleTerm( String value,
-                           boolean excluded ) {
+        public SimpleTerm( String value ) {
             assert value != null;
             assert value.trim().length() > 0;
             this.value = value;
-            this.excluded = excluded;
             this.quoted = this.value.indexOf(' ') != -1;
         }
 
@@ -223,12 +275,12 @@ public class FullTextSearch extends Constraint {
         }
 
         /**
-         * Get whether or not this term is expected to appear in the results.
+         * Get the values of this term if the term is quoted.
          * 
-         * @return true if the term is expected to not appear, or false if the term is expected to appear
+         * @return the array of terms; never null
          */
-        public boolean isExcluded() {
-            return excluded;
+        public String[] getValues() {
+            return value.split("/w");
         }
 
         /**
@@ -260,7 +312,6 @@ public class FullTextSearch extends Constraint {
             if (obj == this) return true;
             if (obj instanceof SimpleTerm) {
                 SimpleTerm that = (SimpleTerm)obj;
-                if (this.isExcluded() != that.isExcluded()) return false;
                 return this.getValue().equals(that.getValue());
             }
             return false;
@@ -273,8 +324,7 @@ public class FullTextSearch extends Constraint {
          */
         @Override
         public String toString() {
-            String value = quoted ? "\"" + this.value + "\"" : this.value;
-            return excluded ? "-" + value : value;
+            return quoted ? "\"" + this.value + "\"" : this.value;
         }
     }
 
@@ -352,7 +402,7 @@ public class FullTextSearch extends Constraint {
     }
 
     /**
-     * A set of {@link Term}s that are ANDed together.
+     * A set of {@link Term}s that are ORed together.
      */
     public static class Disjunction extends CompoundTerm {
 

@@ -53,6 +53,7 @@ import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import org.jboss.dna.graph.query.validate.Schemata;
+import org.jboss.dna.graph.query.validate.Validator;
 import org.jboss.dna.graph.query.validate.Schemata.Table;
 import org.jboss.dna.graph.query.validate.Schemata.View;
 
@@ -143,7 +144,25 @@ public class CanonicalPlanner implements Planner {
         // Process the orderings and limits ...
         plan = attachSorting(context, plan, query.getOrderings());
         plan = attachLimits(context, plan, query.getLimits());
+
+        // Validate that all the parts of the query are resolvable ...
+        validate(context, query, usedSources);
+
         return plan;
+    }
+
+    /**
+     * Validate the supplied query.
+     * 
+     * @param context the context in which the query is being planned
+     * @param query the set query to be planned
+     * @param usedSelectors the map of {@link SelectorName}s (aliases or names) used in the query.
+     */
+    protected void validate( QueryContext context,
+                             QueryCommand query,
+                             Map<SelectorName, Table> usedSelectors ) {
+        // Resolve everything ...
+        Visitors.visitAll(query, new Validator(context, usedSelectors));
     }
 
     /**

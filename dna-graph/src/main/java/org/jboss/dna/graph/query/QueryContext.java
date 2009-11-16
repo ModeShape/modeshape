@@ -165,6 +165,24 @@ public class QueryContext {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof QueryContext) {
+            QueryContext that = (QueryContext)obj;
+            if (!this.context.equals(that.getExecutionContext())) return false;
+            if (!this.schemata.equals(that.getSchemata())) return false;
+            if (!this.variables.equals(that.getVariables())) return false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Obtain a copy of this context, except that the copy uses the supplied execution context.
      * 
      * @param context the execution context that should be used in the new query context

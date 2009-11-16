@@ -36,6 +36,7 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.common.util.HashCode;
 
 /**
@@ -146,6 +147,19 @@ public class DirectoryConfigurations {
         }
 
         /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.DirectoryConfiguration#destroyDirectory(java.lang.String, java.lang.String)
+         */
+        public boolean destroyDirectory( String workspaceName,
+                                         String indexName ) throws SearchEngineException {
+            CheckArg.isNotNull(workspaceName, "workspaceName");
+            IndexId id = new IndexId(workspaceName, indexName);
+            DirectoryType result = directories.remove(id);
+            return result != null ? doDestroy(result) : false;
+        }
+
+        /**
          * Method implemented by subclasses to create a new Directory implementation.
          * 
          * @param workspaceName the name of the workspace for which the {@link Directory} is to be created; never null
@@ -155,6 +169,8 @@ public class DirectoryConfigurations {
          */
         protected abstract DirectoryType createDirectory( String workspaceName,
                                                           String indexName ) throws SearchEngineException;
+
+        protected abstract boolean doDestroy( DirectoryType directory ) throws SearchEngineException;
     }
 
     /**
@@ -171,6 +187,16 @@ public class DirectoryConfigurations {
         protected RAMDirectory createDirectory( String workspaceName,
                                                 String indexName ) {
             return new RAMDirectory();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.DirectoryConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
+         */
+        @Override
+        protected boolean doDestroy( RAMDirectory directory ) throws SearchEngineException {
+            return directory != null;
         }
     }
 
@@ -301,6 +327,20 @@ public class DirectoryConfigurations {
             } catch (IOException e) {
                 throw new SearchEngineException(e);
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.DirectoryConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
+         */
+        @Override
+        protected boolean doDestroy( FSDirectory directory ) throws SearchEngineException {
+                File file = directory.getFile();
+                if (file.exists()) {
+                    return FileUtil.delete(file);
+                }
+                return false;
         }
 
         /**

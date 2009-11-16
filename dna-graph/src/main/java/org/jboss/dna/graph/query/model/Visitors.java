@@ -511,18 +511,23 @@ public class Visitors {
         }
 
         protected final void enqueue( Visitable objectToBeVisited ) {
-            itemQueue.add(objectToBeVisited);
+            if (objectToBeVisited != null) {
+                itemQueue.add(objectToBeVisited);
+            }
         }
 
         protected final void enqueue( Iterable<? extends Visitable> objectsToBeVisited ) {
             for (Visitable objectToBeVisited : objectsToBeVisited) {
-                itemQueue.add(objectToBeVisited);
+                if (objectToBeVisited != null) {
+                    itemQueue.add(objectToBeVisited);
+                }
             }
         }
 
         protected final void visitNext() {
             if (!itemQueue.isEmpty()) {
                 Visitable first = (Visitable)itemQueue.removeFirst();
+                assert first != null;
                 first.accept(this);
             }
         }
