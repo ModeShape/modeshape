@@ -179,7 +179,7 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
                                                              QueryContext context,
                                                              PlanNode accessNode,
                                                              Columns resultColumns,
-                                                             Analyzer analyzer ) throws IOException {
+                                                             Analyzer analyzer ) {
             // Create a processing component for this access query ...
             return new LuceneQueryComponent(this, originalQuery, context, resultColumns, accessNode, analyzer, sourceName,
                                             workspaceName);
@@ -193,8 +193,6 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
     protected static class LuceneQueryComponent extends AbstractAccessComponent {
         private final QueryCommand originalQuery;
         private final Session session;
-        private final IndexReader pathIndexReader;
-        private final Analyzer analyzer;
         private final String sourceName;
         private final String workspaceName;
 
@@ -205,12 +203,10 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
                                         PlanNode accessNode,
                                         Analyzer analyzer,
                                         String sourceName,
-                                        String workspaceName ) throws IOException {
+                                        String workspaceName ) {
             super(context, columns, accessNode);
             this.originalQuery = originalQuery;
-            this.analyzer = analyzer;
             this.session = session;
-            this.pathIndexReader = session.getPathsReader();
             this.sourceName = sourceName;
             this.workspaceName = workspaceName;
         }
