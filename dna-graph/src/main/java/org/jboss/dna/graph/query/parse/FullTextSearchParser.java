@@ -38,6 +38,24 @@ import org.jboss.dna.graph.query.model.FullTextSearch.Term;
 /**
  * A {@link QueryParser} implementation that parses a full-text search expression. This grammar is based on the full-text search
  * grammar as defined by the JCR 2.0 specification.
+ * <p>
+ * </p>
+ * <h3>Grammar</h3>
+ * <p>
+ * The grammar for the full-text expression is taken from the JCR 2.0 specification, and is as follows:
+ * </p>
+ * 
+ * <pre>
+ * FulltextSearch ::= Disjunct {Space 'OR' Space Disjunct}
+ * Disjunct ::= Term {Space Term}
+ * Term ::= ['-'] SimpleTerm
+ * SimpleTerm ::= Word | '&quot;' Word {Space Word} '&quot;'
+ * Word ::= NonSpaceChar {NonSpaceChar}
+ * Space ::= SpaceChar {SpaceChar}
+ * NonSpaceChar ::= Char - SpaceChar /* Any Char except SpaceChar &#42;/
+ * SpaceChar ::= ' '
+ * Char ::= /* Any character &#42;/
+ * </pre>
  */
 public class FullTextSearchParser {
 
