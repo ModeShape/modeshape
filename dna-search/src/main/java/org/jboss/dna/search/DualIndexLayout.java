@@ -1114,6 +1114,52 @@ public abstract class DualIndexLayout implements IndexLayout {
 
         }
 
+        protected Query findNodesWithNumericRange( PropertyValue propertyValue,
+                                                   Object lowerValue,
+                                                   Object upperValue,
+                                                   boolean includesLower,
+                                                   boolean includesUpper ) {
+            String field = stringFactory.create(propertyValue.getPropertyName());
+            return findNodesWithNumericRange(field, lowerValue, upperValue, includesLower, includesUpper);
+        }
+
+        protected Query findNodesWithNumericRange( NodeDepth depth,
+                                                   Object lowerValue,
+                                                   Object upperValue,
+                                                   boolean includesLower,
+                                                   boolean includesUpper ) {
+            return findNodesWithNumericRange(PathIndex.DEPTH, lowerValue, upperValue, includesLower, includesUpper);
+        }
+
+        protected Query findNodesWithNumericRange( String field,
+                                                   Object lowerValue,
+                                                   Object upperValue,
+                                                   boolean includesLower,
+                                                   boolean includesUpper ) {
+            PropertyType type = PropertyType.discoverType(lowerValue);
+            assert type == PropertyType.discoverType(upperValue);
+            ValueFactories factories = context.getValueFactories();
+            switch (type) {
+                case DATE:
+                    long lowerDate = factories.getLongFactory().create(lowerValue);
+                    long upperDate = factories.getLongFactory().create(upperValue);
+                    return NumericRangeQuery.newLongRange(field, lowerDate, upperDate, includesLower, includesUpper);
+                case LONG:
+                    long lowerLong = factories.getLongFactory().create(lowerValue);
+                    long upperLong = factories.getLongFactory().create(upperValue);
+                    return NumericRangeQuery.newLongRange(field, lowerLong, upperLong, includesLower, includesUpper);
+                case DECIMAL:
+                case DOUBLE:
+                    double lowerDouble = factories.getDoubleFactory().create(lowerValue);
+                    double upperDouble = factories.getDoubleFactory().create(upperValue);
+                    return NumericRangeQuery.newDoubleRange(field, lowerDouble, upperDouble, includesLower, includesUpper);
+                default:
+                    // This is not allowed ...
+                    assert false;
+                    return null;
+            }
+        }
+
         protected Query findNodesWith( NodePath nodePath,
                                        Operator operator,
                                        Object value,

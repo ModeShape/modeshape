@@ -39,6 +39,7 @@ import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.Constraint;
@@ -265,6 +266,108 @@ public class SqlQueryParserTest {
     protected void assertParseConstraint( String expression ) {
         NamedSelector selector = new NamedSelector(selectorName("tableA"));
         parser.parseConstraint(tokens(expression), context, selector);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseConstraint - between
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseConstraintFromStringWithValidBetweenExpressionUsing() {
+        NamedSelector selector = new NamedSelector(selectorName("tableA"));
+        Constraint constraint = parser.parseConstraint(tokens("tableA.id BETWEEN 'lower' AND 'upper'"), context, selector);
+        assertThat(constraint, is(instanceOf(Between.class)));
+        Between between = (Between)constraint;
+        assertThat(between.isLowerBoundIncluded(), is(true));
+        assertThat(between.isUpperBoundIncluded(), is(true));
+        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.getOperand();
+        assertThat(operand.getSelectorName(), is(selector.getName()));
+        assertThat(operand.getPropertyName(), is(name("id")));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
+        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+    }
+
+    @Test
+    public void shouldParseConstraintFromStringWithValidBetweenExpressionUsingExclusiveAndExclusive() {
+        NamedSelector selector = new NamedSelector(selectorName("tableA"));
+        Constraint constraint = parser.parseConstraint(tokens("tableA.id BETWEEN 'lower' EXCLUSIVE AND 'upper' EXCLUSIVE"),
+                                                       context,
+                                                       selector);
+        assertThat(constraint, is(instanceOf(Between.class)));
+        Between between = (Between)constraint;
+        assertThat(between.isLowerBoundIncluded(), is(false));
+        assertThat(between.isUpperBoundIncluded(), is(false));
+        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.getOperand();
+        assertThat(operand.getSelectorName(), is(selector.getName()));
+        assertThat(operand.getPropertyName(), is(name("id")));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
+        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+    }
+
+    @Test
+    public void shouldParseConstraintFromStringWithValidBetweenExpressionUsingInclusiveAndExclusive() {
+        NamedSelector selector = new NamedSelector(selectorName("tableA"));
+        Constraint constraint = parser.parseConstraint(tokens("tableA.id BETWEEN 'lower' AND 'upper' EXCLUSIVE"),
+                                                       context,
+                                                       selector);
+        assertThat(constraint, is(instanceOf(Between.class)));
+        Between between = (Between)constraint;
+        assertThat(between.isLowerBoundIncluded(), is(true));
+        assertThat(between.isUpperBoundIncluded(), is(false));
+        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.getOperand();
+        assertThat(operand.getSelectorName(), is(selector.getName()));
+        assertThat(operand.getPropertyName(), is(name("id")));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
+        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+    }
+
+    @Test
+    public void shouldParseConstraintFromStringWithValidBetweenExpressionUsingExclusiveAndInclusive() {
+        NamedSelector selector = new NamedSelector(selectorName("tableA"));
+        Constraint constraint = parser.parseConstraint(tokens("tableA.id BETWEEN 'lower' EXCLUSIVE AND 'upper'"),
+                                                       context,
+                                                       selector);
+        assertThat(constraint, is(instanceOf(Between.class)));
+        Between between = (Between)constraint;
+        assertThat(between.isLowerBoundIncluded(), is(false));
+        assertThat(between.isUpperBoundIncluded(), is(true));
+        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.getOperand();
+        assertThat(operand.getSelectorName(), is(selector.getName()));
+        assertThat(operand.getPropertyName(), is(name("id")));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
+        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+    }
+
+    @Test
+    public void shouldParseConstraintFromStringWithValidNotBetweenExpression() {
+        NamedSelector selector = new NamedSelector(selectorName("tableA"));
+        Constraint constraint = parser.parseConstraint(tokens("tableA.id NOT BETWEEN 'lower' AND 'upper'"), context, selector);
+        assertThat(constraint, is(instanceOf(Not.class)));
+        constraint = ((Not)constraint).getConstraint();
+        assertThat(constraint, is(instanceOf(Between.class)));
+        Between between = (Between)constraint;
+        assertThat(between.isLowerBoundIncluded(), is(true));
+        assertThat(between.isUpperBoundIncluded(), is(true));
+        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.getOperand();
+        assertThat(operand.getSelectorName(), is(selector.getName()));
+        assertThat(operand.getPropertyName(), is(name("id")));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
+        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
 import org.jboss.dna.graph.query.model.Column;
@@ -433,6 +434,15 @@ public class PlanUtil {
             if (replacement == null) return search;
             return new FullTextSearch(replacement, search.getPropertyName(), search.getFullTextSearchExpression());
         }
+        if (constraint instanceof Between) {
+            Between between = (Between)constraint;
+            DynamicOperand lhs = between.getOperand();
+            StaticOperand lower = between.getLowerBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand upper = between.getUpperBound(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand newLhs = replaceReferencesToRemovedSource(context, lhs, rewrittenSelectors);
+            if (lhs == newLhs) return between;
+            return new Between(newLhs, lower, upper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
+        }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
             DynamicOperand lhs = comparison.getOperand1();
@@ -652,6 +662,15 @@ public class PlanUtil {
             node.addSelector(sourceColumn.getSelectorName());
             return new FullTextSearch(sourceColumn.getSelectorName(), sourceColumn.getPropertyName(),
                                       search.getFullTextSearchExpression());
+        }
+        if (constraint instanceof Between) {
+            Between between = (Between)constraint;
+            DynamicOperand lhs = between.getOperand();
+            StaticOperand lower = between.getLowerBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand upper = between.getUpperBound(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand newLhs = replaceViewReferences(context, lhs, mapping, node);
+            if (lhs == newLhs) return between;
+            return new Between(newLhs, lower, upper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;

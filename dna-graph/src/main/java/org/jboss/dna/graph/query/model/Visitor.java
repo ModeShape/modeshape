@@ -32,6 +32,8 @@ public interface Visitor {
 
     void visit( And obj );
 
+    void visit( Between obj );
+
     void visit( BindVariableName obj );
 
     void visit( ChildNode obj );

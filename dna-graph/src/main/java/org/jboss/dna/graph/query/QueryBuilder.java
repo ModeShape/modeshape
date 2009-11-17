@@ -44,6 +44,7 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
@@ -1290,14 +1291,137 @@ public class QueryBuilder {
         }
     }
 
-    public class CastAs {
-        private final RightHandSide rhs;
-        private final Object value;
+    public abstract class CastAs<ReturnType> {
+        protected final Object value;
 
-        protected CastAs( RightHandSide rhs,
-                          Object value ) {
-            this.rhs = rhs;
+        protected CastAs( Object value ) {
             this.value = value;
+        }
+
+        /**
+         * Define the right-hand side literal value cast as the specified type.
+         * 
+         * @param type the property type; may not be null
+         * @return the constraint builder; never null
+         */
+        public abstract ReturnType as( PropertyType type );
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#STRING}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asString() {
+            return as(PropertyType.STRING);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#BOOLEAN}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asBoolean() {
+            return as(PropertyType.BOOLEAN);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#LONG}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asLong() {
+            return as(PropertyType.LONG);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DOUBLE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asDouble() {
+            return as(PropertyType.DOUBLE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DECIMAL}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asDecimal() {
+            return as(PropertyType.DECIMAL);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#DATE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asDate() {
+            return as(PropertyType.DATE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#NAME}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asName() {
+            return as(PropertyType.NAME);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#PATH}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asPath() {
+            return as(PropertyType.PATH);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#BINARY}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asBinary() {
+            return as(PropertyType.BINARY);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#REFERENCE}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asReference() {
+            return as(PropertyType.REFERENCE);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#URI}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asUri() {
+            return as(PropertyType.URI);
+        }
+
+        /**
+         * Define the right-hand side literal value cast as a {@link PropertyType#UUID}.
+         * 
+         * @return the constraint builder; never null
+         */
+        public ReturnType asUuid() {
+            return as(PropertyType.UUID);
+        }
+    }
+
+    public class CastAsRightHandSide extends CastAs<ConstraintBuilder> {
+        private final RightHandSide rhs;
+
+        protected CastAsRightHandSide( RightHandSide rhs,
+                                       Object value ) {
+            super(value);
+            this.rhs = rhs;
         }
 
         private ValueFactories factories() {
@@ -1310,116 +1434,61 @@ public class QueryBuilder {
          * @param type the property type; may not be null
          * @return the constraint builder; never null
          */
+        @Override
         public ConstraintBuilder as( PropertyType type ) {
             return rhs.comparisonBuilder.is(rhs.operator, factories().getValueFactory(type).create(value));
         }
+    }
 
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#STRING}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asString() {
-            return as(PropertyType.STRING);
+    public class CastAsUpperBoundary extends CastAs<ConstraintBuilder> {
+        private final UpperBoundary upperBoundary;
+
+        protected CastAsUpperBoundary( UpperBoundary upperBoundary,
+                                       Object value ) {
+            super(value);
+            this.upperBoundary = upperBoundary;
+        }
+
+        private ValueFactories factories() {
+            return QueryBuilder.this.context.getValueFactories();
         }
 
         /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#BOOLEAN}.
+         * Define the right-hand side literal value cast as the specified type.
          * 
+         * @param type the property type; may not be null
          * @return the constraint builder; never null
          */
-        public ConstraintBuilder asBoolean() {
-            return as(PropertyType.BOOLEAN);
+        @Override
+        public ConstraintBuilder as( PropertyType type ) {
+            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, factories().getValueFactory(type)
+                                                                                                  .create(value));
+        }
+    }
+
+    public class CastAsLowerBoundary extends CastAs<AndBuilder<UpperBoundary>> {
+        private final ComparisonBuilder builder;
+
+        protected CastAsLowerBoundary( ComparisonBuilder builder,
+                                       Object value ) {
+            super(value);
+            this.builder = builder;
+        }
+
+        private ValueFactories factories() {
+            return QueryBuilder.this.context.getValueFactories();
         }
 
         /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#LONG}.
+         * Define the left-hand side literal value cast as the specified type.
          * 
-         * @return the constraint builder; never null
+         * @param type the property type; may not be null
+         * @return the builder to complete the constraint; never null
          */
-        public ConstraintBuilder asLong() {
-            return as(PropertyType.LONG);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#DOUBLE}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asDouble() {
-            return as(PropertyType.DOUBLE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#DECIMAL}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asDecimal() {
-            return as(PropertyType.DECIMAL);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#DATE}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asDate() {
-            return as(PropertyType.DATE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#NAME}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asName() {
-            return as(PropertyType.NAME);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#PATH}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asPath() {
-            return as(PropertyType.PATH);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#BINARY}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asBinary() {
-            return as(PropertyType.BINARY);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#REFERENCE}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asReference() {
-            return as(PropertyType.REFERENCE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#URI}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asUri() {
-            return as(PropertyType.URI);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#UUID}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ConstraintBuilder asUuid() {
-            return as(PropertyType.UUID);
+        @Override
+        public AndBuilder<UpperBoundary> as( PropertyType type ) {
+            Object literal = factories().getValueFactory(type).create(value);
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(builder, new Literal(literal)));
         }
     }
 
@@ -1579,8 +1648,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( int literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( int literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1589,8 +1658,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( String literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( String literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1599,8 +1668,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( boolean literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( boolean literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1609,8 +1678,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( long literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( long literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1619,8 +1688,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( double literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( double literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1629,8 +1698,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( BigDecimal literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( BigDecimal literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1639,8 +1708,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( DateTime literal ) {
-            return new CastAs(this, literal.toUtcTimeZone());
+        public CastAs<ConstraintBuilder> cast( DateTime literal ) {
+            return new CastAsRightHandSide(this, literal.toUtcTimeZone());
         }
 
         /**
@@ -1649,8 +1718,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( Name literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( Name literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1659,8 +1728,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( Path literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( Path literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1669,8 +1738,8 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( UUID literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( UUID literal ) {
+            return new CastAsRightHandSide(this, literal);
         }
 
         /**
@@ -1679,8 +1748,528 @@ public class QueryBuilder {
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
-        public CastAs cast( URI literal ) {
-            return new CastAs(this, literal);
+        public CastAs<ConstraintBuilder> cast( URI literal ) {
+            return new CastAsRightHandSide(this, literal);
+        }
+    }
+
+    public class UpperBoundary {
+        protected final StaticOperand lowerBound;
+        protected final ComparisonBuilder comparisonBuilder;
+
+        protected UpperBoundary( ComparisonBuilder comparisonBuilder,
+                                 StaticOperand lowerBound ) {
+            this.lowerBound = lowerBound;
+            this.comparisonBuilder = comparisonBuilder;
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( String literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( int literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( long literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( float literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( double literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( DateTime literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Path literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Name literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( URI literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( UUID literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( Binary literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( BigDecimal literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( boolean literal ) {
+            return comparisonBuilder.isBetween(lowerBound, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param variableName the name of the variable
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder variable( String variableName ) {
+            return comparisonBuilder.constraintBuilder.setConstraint(new Between(comparisonBuilder.left, lowerBound,
+                                                                                 new BindVariableName(variableName)));
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( int literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( String literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( boolean literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( long literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( double literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( BigDecimal literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( DateTime literal ) {
+            return new CastAsUpperBoundary(this, literal.toUtcTimeZone());
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( Name literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( Path literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( UUID literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<ConstraintBuilder> cast( URI literal ) {
+            return new CastAsUpperBoundary(this, literal);
+        }
+    }
+
+    public class LowerBoundary {
+        protected final ComparisonBuilder comparisonBuilder;
+
+        protected LowerBoundary( ComparisonBuilder comparisonBuilder ) {
+            this.comparisonBuilder = comparisonBuilder;
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( String literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( int literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( long literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( float literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( double literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( DateTime literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( Path literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( Name literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( URI literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( UUID literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( Binary literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( BigDecimal literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value;
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> literal( boolean literal ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new Literal(literal)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param variableName the name of the variable
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> variable( String variableName ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new BindVariableName(variableName)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( int literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( String literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( boolean literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( long literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( double literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( BigDecimal literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( DateTime literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( Name literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( Path literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( UUID literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param literal the literal value that is to be cast
+         * @return the constraint builder; never null
+         */
+        public CastAs<AndBuilder<UpperBoundary>> cast( URI literal ) {
+            return new CastAsLowerBoundary(comparisonBuilder, literal);
         }
     }
 
@@ -1688,8 +2277,8 @@ public class QueryBuilder {
      * An interface used to set the right-hand side of a constraint.
      */
     public class ComparisonBuilder {
-        private final DynamicOperand left;
-        private final ConstraintBuilder constraintBuilder;
+        protected final DynamicOperand left;
+        protected final ConstraintBuilder constraintBuilder;
 
         protected ComparisonBuilder( ConstraintBuilder constraintBuilder,
                                      DynamicOperand left ) {
@@ -1815,7 +2404,25 @@ public class QueryBuilder {
         public ConstraintBuilder is( Operator operator,
                                      Object literal ) {
             assert operator != null;
-            return this.constraintBuilder.setConstraint(new Comparison(left, operator, new Literal(literal)));
+            Literal value = literal instanceof Literal ? (Literal)literal : new Literal(literal);
+            return this.constraintBuilder.setConstraint(new Comparison(left, operator, value));
+        }
+
+        /**
+         * Define the right-hand-side of the constraint using the supplied operator.
+         * 
+         * @param lowerBoundLiteral the literal value that represents the lower bound of the range (inclusive)
+         * @param upperBoundLiteral the literal value that represents the upper bound of the range (inclusive)
+         * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
+         *         complete already-started clauses; never null
+         */
+        public ConstraintBuilder isBetween( Object lowerBoundLiteral,
+                                            Object upperBoundLiteral ) {
+            assert lowerBoundLiteral != null;
+            assert upperBoundLiteral != null;
+            Literal lower = lowerBoundLiteral instanceof Literal ? (Literal)lowerBoundLiteral : new Literal(lowerBoundLiteral);
+            Literal upper = upperBoundLiteral instanceof Literal ? (Literal)upperBoundLiteral : new Literal(upperBoundLiteral);
+            return this.constraintBuilder.setConstraint(new Between(left, lower, upper));
         }
 
         /**
@@ -1970,6 +2577,34 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isNotEqualTo( Object literal ) {
             return is(Operator.NOT_EQUAL_TO, literal);
+        }
+
+        /**
+         * Define the constraint as a range between a lower boundary and an upper boundary.
+         * 
+         * @return the interface used to specify the lower boundary boundary, the upper boundary, and which will return the
+         *         builder interface; never null
+         */
+        public LowerBoundary isBetween() {
+            return new LowerBoundary(this);
+        }
+    }
+
+    public class AndBuilder<T> {
+        private final T object;
+
+        protected AndBuilder( T object ) {
+            assert object != null;
+            this.object = object;
+        }
+
+        /**
+         * Return the component
+         * 
+         * @return the component; never null
+         */
+        public T and() {
+            return this.object;
         }
     }
 }

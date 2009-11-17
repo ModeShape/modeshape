@@ -239,6 +239,14 @@ public class Visitors {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.Between)
+         */
+        public void visit( Between obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.BindVariableName)
          */
         public void visit( BindVariableName obj ) {
@@ -567,6 +575,19 @@ public class Visitors {
             strategy.visit(and);
             enqueue(and.getLeft());
             enqueue(and.getRight());
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.Between)
+         */
+        public void visit( Between between ) {
+            strategy.visit(between);
+            enqueue(between.getOperand());
+            enqueue(between.getLowerBound());
+            enqueue(between.getUpperBound());
             visitNext();
         }
 
@@ -999,6 +1020,21 @@ public class Visitors {
             append(" AND ");
             and.getRight().accept(this);
             append(')');
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.Between)
+         */
+        public void visit( Between between ) {
+            between.getOperand().accept(this);
+            append(" BETWEEN ");
+            between.getLowerBound().accept(this);
+            if (!between.isLowerBoundIncluded()) append(" EXCLUSIVE");
+            append(" AND ");
+            between.getUpperBound().accept(this);
+            if (!between.isUpperBoundIncluded()) append(" EXCLUSIVE");
         }
 
         /**

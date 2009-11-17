@@ -48,6 +48,7 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
@@ -416,13 +417,21 @@ public class SqlQueryParser implements QueryParser {
                         String msg = GraphI18n.expectingConstraintCondition.text(name, pos2.getLine(), pos2.getColumn());
                         throw new ParsingException(pos, msg);
                     }
-                    if (tokens.matches("IN", "(")) {
+                    if (tokens.matches("IN", "(") || tokens.matches("NOT", "IN", "(")) {
+                        boolean not = tokens.canConsume("NOT");
                         Collection<StaticOperand> staticOperands = parseInClause(tokens, context);
                         constraint = new SetCriteria(left, staticOperands);
-                    } else if (tokens.matches("NOT", "IN", "(")) {
-                        tokens.consume("NOT");
-                        Collection<StaticOperand> staticOperands = parseInClause(tokens, context);
-                        constraint = new Not(new SetCriteria(left, staticOperands));
+                        if (not) constraint = new Not(constraint);
+                    } else if (tokens.matches("BETWEEN") || tokens.matches("NOT", "BETWEEN")) {
+                        boolean not = tokens.canConsume("NOT");
+                        tokens.consume("BETWEEN");
+                        StaticOperand lowerBound = parseStaticOperand(tokens, context);
+                        boolean lowerInclusive = !tokens.canConsume("EXCLUSIVE");
+                        tokens.consume("AND");
+                        StaticOperand upperBound = parseStaticOperand(tokens, context);
+                        boolean upperInclusive = !tokens.canConsume("EXCLUSIVE");
+                        constraint = new Between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
+                        if (not) constraint = new Not(constraint);
                     } else {
                         Operator operator = parseComparisonOperator(tokens);
                         StaticOperand right = parseStaticOperand(tokens, context);

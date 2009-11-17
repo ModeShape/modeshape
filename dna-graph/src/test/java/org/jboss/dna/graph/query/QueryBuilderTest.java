@@ -280,6 +280,50 @@ public class QueryBuilderTest {
     }
 
     @Test
+    public void shouldBuildQueryWithBetweenRange() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .propertyValue("nodes", "col1")
+                       .isBetween()
+                       .literal("lower")
+                       .and()
+                       .literal(true)
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN 'lower' AND true"));
+
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .propertyValue("nodes", "col1")
+                       .isBetween()
+                       .literal("lower")
+                       .and()
+                       .literal("upper")
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN 'lower' AND 'upper'"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithBetweenRangeWithCast() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .propertyValue("nodes", "col1")
+                       .isBetween()
+                       .cast("true")
+                       .asBoolean()
+                       .and()
+                       .cast("false")
+                       .asBoolean()
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN true AND false"));
+    }
+
+    @Test
     public void shouldBuildQueryWithOneHasPropertyConstraint() {
         query = builder.selectStar().from("table AS nodes").where().hasProperty("nodes", "col1").end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 IS NOT NULL"));

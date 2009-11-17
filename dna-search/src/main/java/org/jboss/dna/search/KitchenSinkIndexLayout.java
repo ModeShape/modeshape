@@ -52,10 +52,12 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.Comparison;
@@ -381,6 +383,10 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
                 PropertyExistence existence = (PropertyExistence)constraint;
                 return createQuery(existence.getSelectorName(), existence.getPropertyName());
             }
+            if (constraint instanceof Between) {
+                Between between = (Between)constraint;
+                return createQuery(between);
+            }
             if (constraint instanceof Comparison) {
                 Comparison comparison = (Comparison)constraint;
                 return createQuery(comparison.getOperand1(), comparison.getOperator(), comparison.getOperand2());
@@ -433,20 +439,8 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
                                      StaticOperand right,
                                      boolean caseSensitive ) throws IOException {
             // Handle the static operand ...
-            Object value = null;
-            if (right instanceof Literal) {
-                Literal literal = (Literal)right;
-                value = literal.getValue();
-                if (!caseSensitive) value = lowerCase(value);
-            } else if (right instanceof BindVariableName) {
-                BindVariableName variable = (BindVariableName)right;
-                String variableName = variable.getVariableName();
-                value = getContext().getVariables().get(variableName);
-                if (!caseSensitive) value = lowerCase(value);
-            } else {
-                assert false;
-                return null;
-            }
+            Object value = createOperand(right, caseSensitive);
+            assert value != null;
 
             // Address the dynamic operand ...
             if (left instanceof FullTextSearchScore) {
@@ -479,6 +473,71 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
                 assert false;
                 return null;
             }
+        }
+
+        protected Object createOperand( StaticOperand operand,
+                                        boolean caseSensitive ) {
+            Object value = null;
+            if (operand instanceof Literal) {
+                Literal literal = (Literal)operand;
+                value = literal.getValue();
+                if (!caseSensitive) value = lowerCase(value);
+            } else if (operand instanceof BindVariableName) {
+                BindVariableName variable = (BindVariableName)operand;
+                String variableName = variable.getVariableName();
+                value = getContext().getVariables().get(variableName);
+                if (!caseSensitive) value = lowerCase(value);
+            } else {
+                assert false;
+            }
+            return value;
+        }
+
+        protected Query createQuery( DynamicOperand left,
+                                     StaticOperand lower,
+                                     StaticOperand upper,
+                                     boolean includesLower,
+                                     boolean includesUpper,
+                                     boolean caseSensitive ) throws IOException {
+            // Handle the static operands ...
+            Object lowerValue = createOperand(lower, caseSensitive);
+            Object upperValue = createOperand(upper, caseSensitive);
+            assert lowerValue != null;
+            assert upperValue != null;
+
+            // Only in the case of a PropertyValue and Depth will we need to do something special ...
+            if (left instanceof NodeDepth) {
+                return session.findNodesWithNumericRange((NodeDepth)left, lowerValue, upperValue, includesLower, includesUpper);
+            } else if (left instanceof PropertyValue) {
+                PropertyType lowerType = PropertyType.discoverType(lowerValue);
+                PropertyType upperType = PropertyType.discoverType(upperValue);
+                if (upperType == lowerType) {
+                    switch (upperType) {
+                        case DATE:
+                        case LONG:
+                        case DOUBLE:
+                        case DECIMAL:
+                            return session.findNodesWithNumericRange((PropertyValue)left,
+                                                                     lowerValue,
+                                                                     upperValue,
+                                                                     includesLower,
+                                                                     includesUpper);
+                        default:
+                            // continue on and handle as boolean query ...
+                    }
+                }
+            }
+
+            // Otherwise, just create a boolean query ...
+            BooleanQuery query = new BooleanQuery();
+            Operator lowerOp = includesLower ? Operator.GREATER_THAN_OR_EQUAL_TO : Operator.GREATER_THAN;
+            Operator upperOp = includesUpper ? Operator.LESS_THAN_OR_EQUAL_TO : Operator.LESS_THAN;
+            Query lowerQuery = createQuery(left, lowerOp, lower, caseSensitive);
+            Query upperQuery = createQuery(left, upperOp, upper, caseSensitive);
+            if (lowerQuery == null || upperQuery == null) return null;
+            query.add(lowerQuery, Occur.MUST);
+            query.add(upperQuery, Occur.MUST);
+            return query;
         }
 
         protected Object lowerCase( Object value ) {
