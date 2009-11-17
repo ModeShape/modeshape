@@ -482,6 +482,11 @@ public class SqlQueryParser implements QueryParser {
         Tokenizer tokenizer = new SqlTokenizer(false);
         TokenStream tokens = new TokenStream(query, tokenizer, false);
         tokens.start();
+        return parseQueryCommand(tokens, context);
+    }
+
+    protected QueryCommand parseQueryCommand( TokenStream tokens,
+                                              ExecutionContext context ) {
         QueryCommand command = null;
         if (tokens.matches("SELECT")) {
             command = parseQuery(tokens, context);
