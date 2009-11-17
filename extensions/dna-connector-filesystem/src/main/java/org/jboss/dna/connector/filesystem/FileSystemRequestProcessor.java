@@ -30,8 +30,6 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +40,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.FileUtil;
-import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
@@ -91,31 +88,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
     private static final String DEFAULT_MIME_TYPE = "application/octet";
 
-    /**
-     * Only certain properties are tolerated when writing content (dna:resource or jcr:resource) nodes. These properties are
-     * implicitly stored (primary type, data) or silently ignored (encoded, mimetype, last modified). The silently ignored
-     * properties must be accepted to stay compatible with the JCR specification.
-     */
-    private static final Set<Name> ALLOWABLE_PROPERTIES_FOR_CONTENT = Collections.unmodifiableSet(new HashSet<Name>(
-                                                                                                                    Arrays.asList(new Name[] {
-                                                                                                                        JcrLexicon.PRIMARY_TYPE,
-                                                                                                                        JcrLexicon.DATA,
-                                                                                                                        JcrLexicon.ENCODED,
-                                                                                                                        JcrLexicon.MIMETYPE,
-                                                                                                                        JcrLexicon.LAST_MODIFIED,
-                                                                                                                        JcrLexicon.UUID,
-                                                                                                                        DnaIntLexicon.NODE_DEFINITON})));
-    /**
-     * Only certain properties are tolerated when writing files (nt:file) or folders (nt:folder) nodes. These properties are
-     * implicitly stored in the file or folder (primary type, created).
-     */
-    private static final Set<Name> ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER = Collections.unmodifiableSet(new HashSet<Name>(
-                                                                                                                           Arrays.asList(new Name[] {
-                                                                                                                               JcrLexicon.PRIMARY_TYPE,
-                                                                                                                               JcrLexicon.CREATED,
-                                                                                                                               JcrLexicon.UUID,
-                                                                                                                               DnaIntLexicon.NODE_DEFINITON})));
-
     private final String defaultNamespaceUri;
     private final Map<String, File> availableWorkspaces;
     private final boolean creatingWorkspacesAllowed;
@@ -126,6 +98,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     private final boolean updatesAllowed;
     private final MimeTypeDetector mimeTypeDetector;
     private final UUID rootNodeUuid;
+    private final CustomPropertiesFactory customPropertiesFactory;
 
     /**
      * @param sourceName
@@ -141,6 +114,8 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      * @param filenameFilter the filename filter to use to restrict the allowable nodes, or null if all files/directories are to
      *        be exposed by this connector
      * @param updatesAllowed true if this connector supports updating the file system, or false if the connector is readonly
+     * @param customPropertiesFactory the factory that should be used to create custom properties for "nt:folder", "nt:file", and
+     *        "nt:resource" nodes
      */
     protected FileSystemRequestProcessor( String sourceName,
                                           String defaultWorkspaceName,
@@ -151,11 +126,13 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                           int maxPathLength,
                                           ExecutionContext context,
                                           FilenameFilter filenameFilter,
-                                          boolean updatesAllowed ) {
+                                          boolean updatesAllowed,
+                                          CustomPropertiesFactory customPropertiesFactory ) {
         super(sourceName, context, null);
         assert defaultWorkspaceName != null;
         assert availableWorkspaces != null;
         assert rootNodeUuid != null;
+        assert customPropertiesFactory != null;
         this.availableWorkspaces = availableWorkspaces;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
@@ -165,6 +142,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         this.defaultWorkspaceName = defaultWorkspaceName;
         this.updatesAllowed = updatesAllowed;
         this.mimeTypeDetector = context.getMimeTypeDetector();
+        this.customPropertiesFactory = customPropertiesFactory;
 
         if (workspaceRootPath != null) {
             this.workspaceRootPath = new File(workspaceRootPath);
@@ -279,24 +257,17 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             return;
         }
         // Generate the properties for this File object ...
-        DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
+        final ExecutionContext context = getExecutionContext();
+        final DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
         // Note that we don't have 'created' timestamps, just last modified, so we'll have to use them
         if (file.isDirectory()) {
             // Add properties for the directory ...
+            request.addProperties(customPropertiesFactory.getDirectoryProperties(context, location, file));
             request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
             request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
-
         } else {
             // It is a file, but ...
             if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                // The request is to get properties of the "jcr:content" child node ...
-                // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
-                // since we cannot assume that we control all access to this file and can track its movements
-                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE));
-                request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(file.lastModified())));
-                // Don't really know the encoding, either ...
-                // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
-
                 // Discover the mime type ...
                 String mimeType = null;
                 InputStream contents = null;
@@ -319,11 +290,25 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                     }
                 }
 
+                // First add any custom properties ...
+                request.addProperties(customPropertiesFactory.getResourceProperties(context, location, file, mimeType));
+
+                // The request is to get properties of the "jcr:content" child node ...
+                // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
+                // since we cannot assume that we control all access to this file and can track its movements
+                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE));
+                request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(file.lastModified())));
+                // Don't really know the encoding, either ...
+                // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
+
                 // Now put the file's content into the "jcr:data" property ...
-                BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
                 request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(file)));
 
             } else {
+                // First add any custom properties ...
+                request.addProperties(customPropertiesFactory.getFileProperties(context, location, file));
+
                 // The request is to get properties for the node representing the file
                 request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
                 request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
@@ -367,8 +352,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         Property primaryTypeProp = properties.get(JcrLexicon.PRIMARY_TYPE);
         Name primaryType = primaryTypeProp == null ? null : nameFactory().create(primaryTypeProp.getFirstValue());
 
+        Path newPath = pathFactory().create(parentPath, request.named());
+        Location actualLocation = Location.create(newPath);
         if (JcrNtLexicon.FILE.equals(primaryType)) {
-            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
 
             // The FILE node is represented by the existence of the file
             if (!parent.canWrite()) {
@@ -410,8 +396,12 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                                                                          ioe.getMessage()), ioe));
                 return;
             }
+            customPropertiesFactory.recordFileProperties(getExecutionContext(),
+                                                         getSourceName(),
+                                                         actualLocation,
+                                                         newFile,
+                                                         properties);
         } else if (JcrNtLexicon.RESOURCE.equals(primaryType) || DnaLexicon.RESOURCE.equals(primaryType)) {
-            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
             if (!JcrLexicon.CONTENT.equals(request.named())) {
                 I18n msg = FileSystemI18n.invalidNameForResource;
                 String nodeName = request.named().getString(registry);
@@ -526,9 +516,13 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                     }
                 }
             }
+            customPropertiesFactory.recordResourceProperties(getExecutionContext(),
+                                                             getSourceName(),
+                                                             actualLocation,
+                                                             newFile,
+                                                             properties);
 
         } else if (JcrNtLexicon.FOLDER.equals(primaryType) || primaryType == null) {
-            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
             ensureValidPathLength(newFile);
 
             if (!newFile.mkdir()) {
@@ -541,6 +535,11 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                                                         primaryType == null ? "null" : primaryType.getString(registry))));
                 return;
             }
+            customPropertiesFactory.recordDirectoryProperties(getExecutionContext(),
+                                                              getSourceName(),
+                                                              actualLocation,
+                                                              newFile,
+                                                              properties);
         } else {
             // Set error and return
             I18n msg = FileSystemI18n.unsupportedPrimaryType;
@@ -551,8 +550,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             return;
         }
 
-        Path newPath = pathFactory().create(parentPath, request.named());
-        request.setActualLocationOfNode(Location.create(newPath));
+        request.setActualLocationOfNode(actualLocation);
     }
 
     /**
@@ -564,8 +562,9 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     public void process( UpdatePropertiesRequest request ) {
         if (!updatesAllowed(request)) return;
 
+        Path path = request.on().getPath();
         File workspace = getWorkspaceDirectory(request.inWorkspace());
-        File target = getExistingFileFor(workspace, request.on().getPath(), request.on(), request);
+        File target = getExistingFileFor(workspace, path, request.on(), request);
 
         if (!target.exists()) {
             // getExistingFile fills in the PathNotFoundException for non-existent files
@@ -573,13 +572,31 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             return;
         }
 
+        Location location = request.on();
         if (target.isFile()) {
-            ensureValidProperties(request.properties().values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            if (path.endsWith(JcrLexicon.CONTENT)) {
+                customPropertiesFactory.recordResourceProperties(getExecutionContext(),
+                                                                 getSourceName(),
+                                                                 location,
+                                                                 target,
+                                                                 request.properties());
+            } else {
+                customPropertiesFactory.recordFileProperties(getExecutionContext(),
+                                                             getSourceName(),
+                                                             location,
+                                                             target,
+                                                             request.properties());
+            }
         } else {
-            ensureValidProperties(request.properties().values(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+            assert target.isDirectory();
+            customPropertiesFactory.recordDirectoryProperties(getExecutionContext(),
+                                                              getSourceName(),
+                                                              location,
+                                                              target,
+                                                              request.properties());
         }
 
-        request.setActualLocationOfNode(request.on());
+        request.setActualLocationOfNode(location);
     }
 
     /**
@@ -994,32 +1011,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
     protected UuidFactory uuidFactory() {
         return getExecutionContext().getValueFactories().getUuidFactory();
-    }
-
-    /**
-     * Checks that the collection of {@code properties} only contains properties with allowable names.
-     * 
-     * @param properties
-     * @param validPropertyNames
-     * @throws RepositorySourceException if {@code properties} contains a
-     * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
-     * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
-     */
-    protected void ensureValidProperties( Collection<Property> properties,
-                                          Set<Name> validPropertyNames ) {
-        List<String> invalidNames = new LinkedList<String>();
-        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
-
-        for (Property property : properties) {
-            if (!validPropertyNames.contains(property.getName())) {
-                invalidNames.add(property.getName().getString(registry));
-            }
-        }
-
-        if (!invalidNames.isEmpty()) {
-            throw new RepositorySourceException(this.getSourceName(),
-                                                FileSystemI18n.invalidPropertyNames.text(invalidNames.toString()));
-        }
     }
 
     protected void ensureValidPathLength( File root ) {

@@ -51,6 +51,7 @@ public final class FileSystemI18n {
     public static I18n sourceIsReadOnly;
     public static I18n pathIsReadOnly;
     public static I18n unableToCreateWorkspaces;
+    public static I18n errorSerializingCustomPropertiesFactory;
 
     // Writable messages
     public static I18n parentIsReadOnly;

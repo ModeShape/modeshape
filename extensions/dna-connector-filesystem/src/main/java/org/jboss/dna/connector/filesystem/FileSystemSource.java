@@ -24,16 +24,28 @@
 
 package org.jboss.dna.connector.filesystem;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
@@ -45,12 +57,19 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.DnaIntLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository. This
@@ -59,6 +78,12 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
  */
 @ThreadSafe
 public class FileSystemSource implements RepositorySource, ObjectFactory {
+
+    /**
+     * An immutable {@link CustomPropertiesFactory} implementation that is used by default when none is provided. Note that this
+     * implementation does restrict the properties that can be placed on file, folder and resource nodes.
+     */
+    protected static CustomPropertiesFactory DEFAULT_PROPERTIES_FACTORY = new StandardPropertiesFactory();
 
     /**
      * The first serialized version of this source. Version {@value} .
@@ -79,7 +104,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String MAX_PATH_LENGTH = "maxPathLength";
     protected static final String EXCLUSION_PATTERN = "exclusionPattern";
-    protected static final String ALLOW_UPDATES = "allowUpdates";
+    protected static final String CUSTOM_PROPERTY_FACTORY = "customPropertyFactory";
 
     /**
      * This source supports events.
@@ -125,6 +150,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                                                                                                   SUPPORTS_REFERENCES);
     private transient CachePolicy cachePolicy;
     private transient Map<String, File> availableWorkspaces;
+    private volatile CustomPropertiesFactory customPropertiesFactory;
 
     /**
      * 
@@ -404,6 +430,24 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes.
+     * 
+     * @return the factory, or null if no custom properties are to be created
+     */
+    public synchronized CustomPropertiesFactory getCustomPropertiesFactory() {
+        return customPropertiesFactory;
+    }
+
+    /**
+     * Set the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes.
+     * 
+     * @param customPropertiesFactory the factory reference, or null if no custom properties will be created
+     */
+    public synchronized void setCustomPropertiesFactory( CustomPropertiesFactory customPropertiesFactory ) {
+        this.customPropertiesFactory = customPropertiesFactory;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
@@ -435,6 +479,18 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
         }
+        if (getCustomPropertiesFactory() != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CustomPropertiesFactory factory = getCustomPropertiesFactory();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(factory);
+                ref.add(new BinaryRefAddr(CUSTOM_PROPERTY_FACTORY, baos.toByteArray()));
+            } catch (IOException e) {
+                I18n msg = FileSystemI18n.errorSerializingCustomPropertiesFactory;
+                throw new RepositorySourceException(getName(), msg.text(factory.getClass().getName(), getName()), e);
+            }
+        }
         return ref;
     }
 
@@ -446,7 +502,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                                      Context nameCtx,
                                      Hashtable<?, ?> environment ) throws Exception {
         if (obj instanceof Reference) {
-            Map<String, String> values = new HashMap<String, String>();
+            Map<String, Object> values = new HashMap<String, Object>();
             Reference ref = (Reference)obj;
             Enumeration<?> en = ref.getAll();
             while (en.hasMoreElements()) {
@@ -455,17 +511,28 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                     String key = subref.getType();
                     Object value = subref.getContent();
                     if (value != null) values.put(key, value.toString());
+                } else if (subref instanceof BinaryRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value instanceof byte[]) {
+                        // Deserialize ...
+                        ByteArrayInputStream bais = new ByteArrayInputStream((byte[])value);
+                        ObjectInputStream ois = new ObjectInputStream(bais);
+                        value = ois.readObject();
+                        values.put(key, value);
+                    }
                 }
             }
-            String sourceName = values.get(SOURCE_NAME);
-            String cacheTtlInMillis = values.get(CACHE_TIME_TO_LIVE_IN_MILLISECONDS);
-            String retryLimit = values.get(RETRY_LIMIT);
-            String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
-            String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
-            String exclusionPattern = values.get(DEFAULT_EXCLUSION_PATTERN);
-            String maxPathLength = values.get(DEFAULT_MAX_PATH_LENGTH);
+            String sourceName = (String)values.get(SOURCE_NAME);
+            String cacheTtlInMillis = (String)values.get(CACHE_TIME_TO_LIVE_IN_MILLISECONDS);
+            String retryLimit = (String)values.get(RETRY_LIMIT);
+            String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
+            String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
+            String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
+            String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
+            Object customPropertiesFactory = values.get(CUSTOM_PROPERTY_FACTORY);
 
-            String combinedWorkspaceNames = values.get(PREDEFINED_WORKSPACE_NAMES);
+            String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
             if (combinedWorkspaceNames != null) {
                 List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
@@ -482,6 +549,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
+            if (customPropertiesFactory != null) source.setCustomPropertiesFactory((CustomPropertiesFactory)customPropertiesFactory);
             return source;
         }
         return null;
@@ -562,9 +630,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             };
         }
 
+        CustomPropertiesFactory propFactory = customPropertiesFactory != null ? customPropertiesFactory : DEFAULT_PROPERTIES_FACTORY;
         return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
                                         cachePolicy, rootNodeUuid, workspaceRootPath, maxPathLength, filenameFilter,
-                                        getSupportsUpdates());
+                                        getSupportsUpdates(), propFactory);
     }
 
     /**
@@ -574,6 +643,127 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void close() {
         this.availableWorkspaces = null;
+    }
+
+    protected static class StandardPropertiesFactory implements CustomPropertiesFactory {
+        private static final long serialVersionUID = 1L;
+        private final Collection<Property> empty = Collections.emptyList();
+
+        /**
+         * Only certain properties are tolerated when writing content (dna:resource or jcr:resource) nodes. These properties are
+         * implicitly stored (primary type, data) or silently ignored (encoded, mimetype, last modified). The silently ignored
+         * properties must be accepted to stay compatible with the JCR specification.
+         */
+        private final Set<Name> ALLOWABLE_PROPERTIES_FOR_CONTENT = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                                 Arrays.asList(new Name[] {
+                                                                                                                     JcrLexicon.PRIMARY_TYPE,
+                                                                                                                     JcrLexicon.DATA,
+                                                                                                                     JcrLexicon.ENCODED,
+                                                                                                                     JcrLexicon.MIMETYPE,
+                                                                                                                     JcrLexicon.LAST_MODIFIED,
+                                                                                                                     JcrLexicon.UUID,
+                                                                                                                     DnaIntLexicon.NODE_DEFINITON})));
+        /**
+         * Only certain properties are tolerated when writing files (nt:file) or folders (nt:folder) nodes. These properties are
+         * implicitly stored in the file or folder (primary type, created).
+         */
+        private final Set<Name> ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                                        Arrays.asList(new Name[] {
+                                                                                                                            JcrLexicon.PRIMARY_TYPE,
+                                                                                                                            JcrLexicon.CREATED,
+                                                                                                                            JcrLexicon.UUID,
+                                                                                                                            DnaIntLexicon.NODE_DEFINITON})));
+
+        public Collection<Property> getDirectoryProperties( ExecutionContext context,
+                                                            Location location,
+                                                            File directory ) {
+            return empty;
+        }
+
+        public Collection<Property> getFileProperties( ExecutionContext context,
+                                                       Location location,
+                                                       File file ) {
+            return empty;
+        }
+
+        public Collection<Property> getResourceProperties( ExecutionContext context,
+                                                           Location location,
+                                                           File file,
+                                                           String mimeType ) {
+            return empty;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordDirectoryProperties(org.jboss.dna.graph.ExecutionContext,
+         *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
+         */
+        public void recordDirectoryProperties( ExecutionContext context,
+                                               String sourceName,
+                                               Location location,
+                                               File file,
+                                               Map<Name, Property> properties ) throws RepositorySourceException {
+            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordFileProperties(org.jboss.dna.graph.ExecutionContext,
+         *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
+         */
+        public void recordFileProperties( ExecutionContext context,
+                                          String sourceName,
+                                          Location location,
+                                          File file,
+                                          Map<Name, Property> properties ) throws RepositorySourceException {
+            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordResourceProperties(org.jboss.dna.graph.ExecutionContext,
+         *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
+         */
+        public void recordResourceProperties( ExecutionContext context,
+                                              String sourceName,
+                                              Location location,
+                                              File file,
+                                              Map<Name, Property> properties ) throws RepositorySourceException {
+            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+        }
+
+        /**
+         * Checks that the collection of {@code properties} only contains properties with allowable names.
+         * 
+         * @param context
+         * @param sourceName
+         * @param properties
+         * @param validPropertyNames
+         * @throws RepositorySourceException if {@code properties} contains a
+         * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
+         * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
+         */
+        protected void ensureValidProperties( ExecutionContext context,
+                                              String sourceName,
+                                              Collection<Property> properties,
+                                              Set<Name> validPropertyNames ) {
+            List<String> invalidNames = new LinkedList<String>();
+            NamespaceRegistry registry = context.getNamespaceRegistry();
+
+            for (Property property : properties) {
+                if (!validPropertyNames.contains(property.getName())) {
+                    invalidNames.add(property.getName().getString(registry));
+                }
+            }
+
+            if (!invalidNames.isEmpty()) {
+                throw new RepositorySourceException(sourceName, FileSystemI18n.invalidPropertyNames.text(invalidNames.toString()));
+            }
+        }
+
     }
 
     @Immutable

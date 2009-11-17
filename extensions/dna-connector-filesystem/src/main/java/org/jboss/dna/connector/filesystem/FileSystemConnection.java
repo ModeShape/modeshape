@@ -52,6 +52,7 @@ public class FileSystemConnection implements RepositoryConnection {
     private final int maxPathLength;
     private final String workspaceRootPath;
     private final boolean updatesAllowed;
+    private final CustomPropertiesFactory customPropertiesFactory;
 
     FileSystemConnection( String sourceName,
                           String defaultWorkspaceName,
@@ -62,11 +63,13 @@ public class FileSystemConnection implements RepositoryConnection {
                           String workspaceRootPath,
                           int maxPathLength,
                           FilenameFilter filenameFilter,
-                          boolean updatesAllowed ) {
+                          boolean updatesAllowed,
+                          CustomPropertiesFactory customPropertiesFactory ) {
         assert sourceName != null;
         assert sourceName.trim().length() != 0;
         assert availableWorkspaces != null;
         assert rootNodeUuid != null;
+        assert customPropertiesFactory != null;
         this.sourceName = sourceName;
         this.defaultWorkspaceName = defaultWorkspaceName;
         this.availableWorkspaces = availableWorkspaces;
@@ -77,6 +80,7 @@ public class FileSystemConnection implements RepositoryConnection {
         this.maxPathLength = maxPathLength;
         this.filenameFilter = filenameFilter;
         this.updatesAllowed = updatesAllowed;
+        this.customPropertiesFactory = customPropertiesFactory;
     }
 
     /**
@@ -126,7 +130,8 @@ public class FileSystemConnection implements RepositoryConnection {
                          Request request ) throws RepositorySourceException {
         RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspaceName, availableWorkspaces,
                                                                creatingWorkspacesAllowed, rootNodeUuid, workspaceRootPath,
-                                                               maxPathLength, context, filenameFilter, updatesAllowed);
+                                                               maxPathLength, context, filenameFilter, updatesAllowed,
+                                                               customPropertiesFactory);
         try {
             proc.process(request);
         } finally {
