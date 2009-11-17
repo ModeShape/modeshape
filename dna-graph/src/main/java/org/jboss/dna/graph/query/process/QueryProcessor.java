@@ -161,11 +161,16 @@ public abstract class QueryProcessor implements Processor {
         ProcessingComponent component = null;
         switch (node.getType()) {
             case ACCESS:
-                // Create the component to handle the ACCESS node ...
-                assert node.getChildCount() == 1;
-                component = createAccessComponent(originalQuery, context, node, columns, analyzer);
-                // // Don't do anything special with an access node at the moment ...
-                // component = createComponent(context, node.getFirstChild(), columns, analyzer);
+                // If the ACCESS node will not have results ...
+                if (node.getProperty(Property.ACCESS_NO_RESULTS, Boolean.class)) {
+                    component = new NoResultsComponent(context, columns);
+                } else {
+                    // Create the component to handle the ACCESS node ...
+                    assert node.getChildCount() == 1;
+                    component = createAccessComponent(originalQuery, context, node, columns, analyzer);
+                    // // Don't do anything special with an access node at the moment ...
+                    // component = createComponent(context, node.getFirstChild(), columns, analyzer);
+                }
                 break;
             case DUP_REMOVE:
                 // Create the component under the DUP_REMOVE ...

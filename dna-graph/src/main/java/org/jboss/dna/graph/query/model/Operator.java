@@ -87,6 +87,27 @@ public enum Operator {
     }
 
     /**
+     * Determine whether this operator is one that is used to define a range of values: {@link #LESS_THAN <},
+     * {@link #GREATER_THAN >}, {@link #LESS_THAN_OR_EQUAL_TO <=}, or {@link #GREATER_THAN_OR_EQUAL_TO >=}.
+     * 
+     * @return true if this operator is a range operator, or false otherwise
+     */
+    public boolean isRangeOperator() {
+        switch (this) {
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL_TO:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL_TO:
+                return true;
+            case EQUAL_TO:
+            case LIKE:
+            case NOT_EQUAL_TO:
+            default:
+                return false;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Enum#toString()

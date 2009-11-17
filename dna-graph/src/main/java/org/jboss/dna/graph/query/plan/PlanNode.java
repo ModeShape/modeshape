@@ -39,7 +39,6 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Column;
-import org.jboss.dna.graph.query.model.Command;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.JoinCondition;
 import org.jboss.dna.graph.query.model.JoinType;
@@ -189,9 +188,11 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
         /** For LIMIT nodes, the offset value. Value is an {@link Integer} object. */
         LIMIT_OFFSET,
 
-        /** For ACCESS nodes, the {@link Command} that is to be executed by the source */
-        // ACCESS_COMMAND,
-        BOGUS; // remove this
+        /**
+         * For ACESS nodes, this signifies that the node will never return results. Value is a {@link Boolean} object, though the
+         * mere presence of this property signifies that it is no longer needed.
+         */
+        ACCESS_NO_RESULTS
     }
 
     private Type type;

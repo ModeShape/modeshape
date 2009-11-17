@@ -206,7 +206,7 @@ public class PushSelectCriteriaTest extends AbstractQueryTest {
         // Execute the rule ...
         PlanNode result = rule.execute(context, project, new LinkedList<OptimizerRule>());
 
-        System.out.println(result);
+        // System.out.println(result);
 
         assertThat(result, is(sameInstance(project)));
         assertChildren(project, select3);

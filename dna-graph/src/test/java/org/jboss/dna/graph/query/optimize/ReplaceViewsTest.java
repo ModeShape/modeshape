@@ -131,8 +131,8 @@ public class ReplaceViewsTest extends AbstractQueryTest {
 
         // Execute the rule ...
         PlanNode result = rule.execute(context, project, new LinkedList<OptimizerRule>());
-        System.out.println(project);
-        System.out.println(result);
+        // System.out.println(project);
+        // System.out.println(result);
         assertThat(result.isSameAs(project), is(true));
         assertChildren(project, select1);
         assertChildren(select1, select2);
