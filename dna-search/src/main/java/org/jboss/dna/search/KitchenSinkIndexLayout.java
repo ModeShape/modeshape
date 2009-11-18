@@ -449,10 +449,7 @@ public class KitchenSinkIndexLayout extends DualIndexLayout {
             } else if (left instanceof PropertyValue) {
                 return session.findNodesWith((PropertyValue)left, operator, value, caseSensitive);
             } else if (left instanceof Length) {
-                Length length = (Length)left;
-                PropertyValue nested = length.getPropertyValue();
-
-                return null;
+                return session.findNodesWith((Length)left, operator, right);
             } else if (left instanceof LowerCase) {
                 LowerCase lowercase = (LowerCase)left;
                 return createQuery(lowercase.getOperand(), operator, right, false);

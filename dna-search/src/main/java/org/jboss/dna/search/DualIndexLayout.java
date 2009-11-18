@@ -87,6 +87,7 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.model.Length;
 import org.jboss.dna.graph.query.model.NodeDepth;
 import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
@@ -106,6 +107,7 @@ import org.jboss.dna.graph.query.process.ProcessingComponent;
 import org.jboss.dna.graph.query.process.QueryProcessor;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.search.IndexRules.Rule;
+import org.jboss.dna.search.query.CompareLengthQuery;
 import org.jboss.dna.search.query.CompareNameQuery;
 import org.jboss.dna.search.query.ComparePathQuery;
 import org.jboss.dna.search.query.CompareStringQuery;
@@ -958,6 +960,36 @@ public abstract class DualIndexLayout implements IndexLayout {
             return query;
         }
 
+        protected Query findNodesWith( Length propertyLength,
+                                       Operator operator,
+                                       Object value ) {
+            assert propertyLength != null;
+            assert value != null;
+            PropertyValue propertyValue = propertyLength.getPropertyValue();
+            String field = stringFactory.create(propertyValue.getPropertyName());
+            ValueFactories factories = context.getValueFactories();
+            int length = factories.getLongFactory().create(value).intValue();
+            switch (operator) {
+                case EQUAL_TO:
+                    return CompareLengthQuery.createQueryForNodesWithFieldEqualTo(length, field, factories);
+                case NOT_EQUAL_TO:
+                    return CompareLengthQuery.createQueryForNodesWithFieldNotEqualTo(length, field, factories);
+                case GREATER_THAN:
+                    return CompareLengthQuery.createQueryForNodesWithFieldGreaterThan(length, field, factories);
+                case GREATER_THAN_OR_EQUAL_TO:
+                    return CompareLengthQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(length, field, factories);
+                case LESS_THAN:
+                    return CompareLengthQuery.createQueryForNodesWithFieldLessThan(length, field, factories);
+                case LESS_THAN_OR_EQUAL_TO:
+                    return CompareLengthQuery.createQueryForNodesWithFieldLessThanOrEqualTo(length, field, factories);
+                case LIKE:
+                    // This is not allowed ...
+                    assert false;
+                    break;
+            }
+            return null;
+        }
+
         protected Query findNodesWith( PropertyValue propertyValue,
                                        Operator operator,
                                        Object value,
@@ -1111,7 +1143,6 @@ public abstract class DualIndexLayout implements IndexLayout {
                     return null;
             }
             return null;
-
         }
 
         protected Query findNodesWithNumericRange( PropertyValue propertyValue,
