@@ -38,7 +38,7 @@ import org.apache.lucene.search.Similarity;
 import org.jboss.dna.search.query.NotQuery;
 import org.junit.Test;
 
-public class LuceneNotQueryTest {
+public class NotQueryTest {
 
     @Test
     public void scorerShouldSkipAdjacentDocsIfScoredByOperandScorer() throws IOException {
