@@ -160,6 +160,16 @@ public final class GraphI18n {
     public static I18n expectingLiteralAndUnableToParseAsDouble;
     public static I18n expectingLiteralAndUnableToParseAsDate;
 
+    /* Search */
+    public static I18n errorWhileIndexingContentAtPath;
+    public static I18n errorWhileRemovingContentAtPath;
+    public static I18n errorWhileUpdatingContent;
+    public static I18n errorWhileCommittingIndexChanges;
+    public static I18n errorWhileOptimizingIndexes;
+    public static I18n errorWhilePerformingSearch;
+    public static I18n errorWhilePerformingQuery;
+    public static I18n errorWhileRemovingIndexesForWorkspace;
+
     static {
         try {
             I18n.initialize(GraphI18n.class);

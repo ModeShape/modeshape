@@ -38,23 +38,24 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.graph.search.SearchEngineException;
 
 /**
- * A family of {@link DirectoryConfiguration} implementations.
+ * A family of {@link LuceneConfiguration} implementations.
  */
-public class DirectoryConfigurations {
+public class LuceneConfigurations {
 
     /**
-     * Return a new {@link DirectoryConfiguration} that creates in-memory directories.
+     * Return a new {@link LuceneConfiguration} that creates in-memory directories.
      * 
      * @return the new directory configuration; never null
      */
-    public static final DirectoryConfiguration inMemory() {
+    public static final LuceneConfiguration inMemory() {
         return new RamDirectoryFactory();
     }
 
     /**
-     * Return a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+     * Return a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
      * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the allowable
      * workspace names.
      * 
@@ -62,12 +63,12 @@ public class DirectoryConfigurations {
      * @return the new directory configuration; never null
      * @throws IllegalArgumentException if the parent file is null
      */
-    public static final DirectoryConfiguration using( File parent ) {
+    public static final LuceneConfiguration using( File parent ) {
         return new FileSystemDirectoryFromNameFactory(parent);
     }
 
     /**
-     * Return a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+     * Return a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
      * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the allowable
      * workspace names.
      * 
@@ -76,13 +77,13 @@ public class DirectoryConfigurations {
      * @return the new directory configuration; never null
      * @throws IllegalArgumentException if the parent file is null
      */
-    public static final DirectoryConfiguration using( File parent,
+    public static final LuceneConfiguration using( File parent,
                                                       LockFactory lockFactory ) {
         return new FileSystemDirectoryFromNameFactory(parent, lockFactory);
     }
 
     /**
-     * Return a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+     * Return a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
      * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the allowable
      * workspace names.
      * 
@@ -92,14 +93,14 @@ public class DirectoryConfigurations {
      * @return the new directory configuration; never null
      * @throws IllegalArgumentException if the parent file is null
      */
-    public static final DirectoryConfiguration using( File parent,
+    public static final LuceneConfiguration using( File parent,
                                                       TextEncoder workspaceNameEncoder,
                                                       TextEncoder indexNameEncoder ) {
         return new FileSystemDirectoryFromNameFactory(parent, workspaceNameEncoder, indexNameEncoder);
     }
 
     /**
-     * Return a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+     * Return a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
      * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the allowable
      * workspace names.
      * 
@@ -110,7 +111,7 @@ public class DirectoryConfigurations {
      * @return the new directory configuration; never null
      * @throws IllegalArgumentException if the parent file is null
      */
-    public static final DirectoryConfiguration using( File parent,
+    public static final LuceneConfiguration using( File parent,
                                                       LockFactory lockFactory,
                                                       TextEncoder workspaceNameEncoder,
                                                       TextEncoder indexNameEncoder ) {
@@ -118,20 +119,20 @@ public class DirectoryConfigurations {
     }
 
     /**
-     * A {@link DirectoryConfiguration} implementation that creates {@link Directory} instances of the supplied type for each
+     * A {@link LuceneConfiguration} implementation that creates {@link Directory} instances of the supplied type for each
      * workspace and pools the results, ensuring that the same {@link Directory} instance is always returned for the same
      * workspace name.
      * 
      * @param <DirectoryType> the concrete type of the directory
      */
     @ThreadSafe
-    protected static abstract class PoolingDirectoryFactory<DirectoryType extends Directory> implements DirectoryConfiguration {
+    protected static abstract class PoolingDirectoryFactory<DirectoryType extends Directory> implements LuceneConfiguration {
         private final ConcurrentHashMap<IndexId, DirectoryType> directories = new ConcurrentHashMap<IndexId, DirectoryType>();
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.DirectoryConfiguration#getDirectory(java.lang.String, java.lang.String)
+         * @see org.jboss.dna.search.LuceneConfiguration#getDirectory(java.lang.String, java.lang.String)
          */
         public Directory getDirectory( String workspaceName,
                                        String indexName ) throws SearchEngineException {
@@ -149,7 +150,7 @@ public class DirectoryConfigurations {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.DirectoryConfiguration#destroyDirectory(java.lang.String, java.lang.String)
+         * @see org.jboss.dna.search.LuceneConfiguration#destroyDirectory(java.lang.String, java.lang.String)
          */
         public boolean destroyDirectory( String workspaceName,
                                          String indexName ) throws SearchEngineException {
@@ -174,7 +175,7 @@ public class DirectoryConfigurations {
     }
 
     /**
-     * A {@link DirectoryConfiguration} implementation that creates {@link RAMDirectory} instances for each workspace and index
+     * A {@link LuceneConfiguration} implementation that creates {@link RAMDirectory} instances for each workspace and index
      * name. Each factory instance maintains a pool of {@link RAMDirectory} instances, ensuring that the same {@link RAMDirectory}
      * is always returned for the same workspace name.
      */
@@ -192,7 +193,7 @@ public class DirectoryConfigurations {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.DirectoryConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
+         * @see org.jboss.dna.search.LuceneConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
          */
         @Override
         protected boolean doDestroy( RAMDirectory directory ) throws SearchEngineException {
@@ -201,7 +202,7 @@ public class DirectoryConfigurations {
     }
 
     /**
-     * A {@link DirectoryConfiguration} implementation that creates {@link FSDirectory} instances for each workspace and index
+     * A {@link LuceneConfiguration} implementation that creates {@link FSDirectory} instances for each workspace and index
      * name. This factory is created with a parent directory under which all workspace and index directories are created.
      * <p>
      * This uses the supplied encoders to translate the workspace and index names into valid directory names. By default, no
@@ -218,7 +219,7 @@ public class DirectoryConfigurations {
         private final TextEncoder indexNameEncoder;
 
         /**
-         * Create a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+         * Create a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
          * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the
          * allowable workspace names.
          * 
@@ -230,7 +231,7 @@ public class DirectoryConfigurations {
         }
 
         /**
-         * Create a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+         * Create a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
          * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the
          * allowable workspace names.
          * 
@@ -244,7 +245,7 @@ public class DirectoryConfigurations {
         }
 
         /**
-         * Create a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+         * Create a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
          * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the
          * allowable workspace names.
          * 
@@ -260,7 +261,7 @@ public class DirectoryConfigurations {
         }
 
         /**
-         * Create a new {@link DirectoryConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
+         * Create a new {@link LuceneConfiguration} that creates {@link FSDirectory} instances mapped to folders under a parent
          * folder, where the workspace name is used to create the workspace folder. Note that this has ramifications on the
          * allowable workspace names.
          * 
@@ -332,15 +333,15 @@ public class DirectoryConfigurations {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.DirectoryConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
+         * @see org.jboss.dna.search.LuceneConfigurations.PoolingDirectoryFactory#doDestroy(org.apache.lucene.store.Directory)
          */
         @Override
         protected boolean doDestroy( FSDirectory directory ) throws SearchEngineException {
-                File file = directory.getFile();
-                if (file.exists()) {
-                    return FileUtil.delete(file);
-                }
-                return false;
+            File file = directory.getFile();
+            if (file.exists()) {
+                return FileUtil.delete(file);
+            }
+            return false;
         }
 
         /**

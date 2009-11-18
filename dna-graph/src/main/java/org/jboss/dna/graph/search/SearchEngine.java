@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.search;
+package org.jboss.dna.graph.search;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +36,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.apache.lucene.queryParser.ParseException;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
@@ -55,6 +54,7 @@ import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.graph.search.SearchProvider.Session;
 
 /**
  * A component that acts as a search engine for the content within a single {@link RepositorySource}. This engine manages a set of
@@ -73,7 +73,7 @@ public class SearchEngine {
     protected final ExecutionContext context;
     private final String sourceName;
     private final RepositoryConnectionFactory connectionFactory;
-    protected final IndexLayout indexLayout;
+    protected final SearchProvider indexLayout;
     private final int maxChangesBeforeAutomaticOptimization;
     @GuardedBy( "workspacesLock" )
     private final Map<String, Workspace> workspacesByName = new HashMap<String, Workspace>();
@@ -82,7 +82,7 @@ public class SearchEngine {
     /**
      * Create a search engine instance given the supplied {@link ExecutionContext execution context}, name of the
      * {@link RepositorySource}, the {@link RepositoryConnectionFactory factory for RepositorySource connections}, and the
-     * {@link DirectoryConfiguration directory factory} that defines where each workspace's indexes should be placed.
+     * {@link SearchProvider search provider}.
      * 
      * @param context the execution context for indexing and optimization operations
      * @param sourceName the name of the {@link RepositorySource}
@@ -95,7 +95,7 @@ public class SearchEngine {
     public SearchEngine( ExecutionContext context,
                          String sourceName,
                          RepositoryConnectionFactory connectionFactory,
-                         IndexLayout indexLayout,
+                         SearchProvider indexLayout,
                          int maxChangesBeforeAutomaticOptimization ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(sourceName, "sourceName");
@@ -110,7 +110,7 @@ public class SearchEngine {
     /**
      * Create a search engine instance given the supplied {@link ExecutionContext execution context}, name of the
      * {@link RepositorySource}, the {@link RepositoryConnectionFactory factory for RepositorySource connections}, and the
-     * {@link DirectoryConfiguration directory factory} that defines where each workspace's indexes should be placed.
+     * {@link SearchProvider search provider} that defines where each workspace's indexes should be placed.
      * 
      * @param context the execution context for indexing and optimization operations
      * @param sourceName the name of the {@link RepositorySource}
@@ -121,7 +121,7 @@ public class SearchEngine {
     public SearchEngine( ExecutionContext context,
                          String sourceName,
                          RepositoryConnectionFactory connectionFactory,
-                         IndexLayout indexLayout ) {
+                         SearchProvider indexLayout ) {
         this(context, sourceName, connectionFactory, indexLayout, DEFAULT_MAX_CHANGES_BEFORE_AUTOMATIC_OPTIMIZATION);
     }
 
@@ -168,6 +168,12 @@ public class SearchEngine {
         return context.getValueFactories().getPathFactory().createRootPath();
     }
 
+    /**
+     * Utility to obtain a readable string representation of the supplied path.
+     * 
+     * @param path the path
+     * @return the readable string representation; may be null if path is null
+     */
     final String readable( Path path ) {
         return context.getValueFactories().getStringFactory().create(path);
     }
@@ -384,7 +390,7 @@ public class SearchEngine {
                 indexLayout.destroyIndexes(context, getSourceName(), workspaceName);
             }
         } catch (IOException e) {
-            String message = SearchI18n.errorWhileRemovingIndexesForWorkspace.text(sourceName, workspaceName, e.getMessage());
+            String message = GraphI18n.errorWhileRemovingIndexesForWorkspace.text(sourceName, workspaceName, e.getMessage());
             throw new SearchEngineException(message, e);
         } finally {
             workspacesLock.writeLock().unlock();
@@ -483,7 +489,7 @@ public class SearchEngine {
             }
 
             // Create a session ...
-            IndexSession session = indexLayout.createSession(context, sourceName, workspaceName, overwrite, readOnly);
+            Session session = indexLayout.createSession(context, sourceName, workspaceName, overwrite, readOnly);
             assert session != null;
 
             // Execute the various activities ...
@@ -493,12 +499,6 @@ public class SearchEngine {
                 for (Activity activity : activities) {
                     try {
                         numChanges += activity.execute(session);
-                    } catch (IOException e) {
-                        error = e;
-                        throw new SearchEngineException(activity.messageFor(e, sourceName, workspaceName), e);
-                    } catch (ParseException e) {
-                        error = e;
-                        throw new SearchEngineException(activity.messageFor(e, sourceName, workspaceName), e);
                     } catch (RuntimeException e) {
                         error = e;
                         throw e;
@@ -512,12 +512,6 @@ public class SearchEngine {
                         Activity optimizer = optimizeContent();
                         try {
                             optimizer.execute(session);
-                        } catch (ParseException e) {
-                            error = e;
-                            throw new SearchEngineException(optimizer.messageFor(e, sourceName, workspaceName), e);
-                        } catch (IOException e) {
-                            error = e;
-                            throw new SearchEngineException(optimizer.messageFor(e, sourceName, workspaceName), e);
                         } catch (RuntimeException e) {
                             error = e;
                             throw e;
@@ -531,10 +525,10 @@ public class SearchEngine {
                     } else {
                         session.rollback();
                     }
-                } catch (IOException e2) {
+                } catch (RuntimeException e2) {
                     // We don't want to lose the existing error, if there is one ...
                     if (error == null) {
-                        I18n msg = SearchI18n.errorWhileCommittingIndexChanges;
+                        I18n msg = GraphI18n.errorWhileCommittingIndexChanges;
                         throw new SearchEngineException(msg.text(workspaceName, sourceName, e2.getMessage()), e2);
                     }
                 }
@@ -552,17 +546,17 @@ public class SearchEngine {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.search.SearchEngine.Activity#execute(org.jboss.dna.search.IndexSession)
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
              */
-            public int execute( IndexSession indexSession ) throws IOException {
-                indexSession.optimize();
+            public int execute( Session session ) {
+                session.optimize();
                 return 0; // no lines changed
             }
 
             public String messageFor( Throwable error,
                                       String sourceName,
                                       String workspaceName ) {
-                return SearchI18n.errorWhileOptimizingIndexes.text(sourceName, workspaceName, error.getMessage());
+                return GraphI18n.errorWhileOptimizingIndexes.text(sourceName, workspaceName, error.getMessage());
             }
         };
     }
@@ -578,7 +572,7 @@ public class SearchEngine {
     protected Activity addContent( final Location location,
                                    final int depthPerRead ) {
         return new Activity() {
-            public int execute( IndexSession indexSession ) throws IOException {
+            public int execute( Session session ) {
 
                 // Create a queue that we'll use to walk the content ...
                 LinkedList<Location> locationsToRead = new LinkedList<Location>();
@@ -587,7 +581,7 @@ public class SearchEngine {
 
                 // Now read and index the content ...
                 Graph graph = graph();
-                graph.useWorkspace(indexSession.getWorkspaceName());
+                graph.useWorkspace(session.getWorkspaceName());
                 while (!locationsToRead.isEmpty()) {
                     Location location = locationsToRead.poll();
                     if (location == null) continue;
@@ -595,7 +589,7 @@ public class SearchEngine {
                     // Index all of the nodes within this subgraph ...
                     for (SubgraphNode node : subgraph) {
                         // Index the node ...
-                        indexSession.index(node);
+                        session.index(node);
                         ++count;
 
                         // Process the children ...
@@ -614,7 +608,7 @@ public class SearchEngine {
                                       String sourceName,
                                       String workspaceName ) {
                 String path = readable(location.getPath());
-                return SearchI18n.errorWhileIndexingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
+                return GraphI18n.errorWhileIndexingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
             }
         };
     }
@@ -629,16 +623,21 @@ public class SearchEngine {
     protected Activity removeContent( final Location location ) {
         return new Activity() {
 
-            public int execute( IndexSession indexSession ) throws IOException {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
+             */
+            public int execute( Session session ) {
                 // Delete the content at/below the path ...
-                return indexSession.deleteBelow(location.getPath());
+                return session.deleteBelow(location.getPath());
             }
 
             public String messageFor( Throwable error,
                                       String sourceName,
                                       String workspaceName ) {
                 String path = readable(location.getPath());
-                return SearchI18n.errorWhileRemovingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
+                return GraphI18n.errorWhileRemovingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
             }
         };
     }
@@ -652,14 +651,19 @@ public class SearchEngine {
     protected Activity updateContent( final Iterable<ChangeRequest> changes ) {
         return new Activity() {
 
-            public int execute( IndexSession indexSession ) throws IOException {
-                return indexSession.apply(changes);
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
+             */
+            public int execute( Session session ) {
+                return session.apply(changes);
             }
 
             public String messageFor( Throwable error,
                                       String sourceName,
                                       String workspaceName ) {
-                return SearchI18n.errorWhileUpdatingContent.text(workspaceName, sourceName, error.getMessage());
+                return GraphI18n.errorWhileUpdatingContent.text(workspaceName, sourceName, error.getMessage());
             }
         };
     }
@@ -682,9 +686,9 @@ public class SearchEngine {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.search.SearchEngine.Activity#execute(org.jboss.dna.search.IndexSession)
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
              */
-            public int execute( IndexSession session ) throws IOException, ParseException {
+            public int execute( Session session ) {
                 session.search(context, fullTextSearch, maxResults, offset, results);
                 return 0;
             }
@@ -692,13 +696,13 @@ public class SearchEngine {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
              *      java.lang.String)
              */
             public String messageFor( Throwable error,
                                       String sourceName,
                                       String workspaceName ) {
-                return SearchI18n.errorWhilePerformingSearch.text(fullTextSearch, workspaceName, sourceName, error.getMessage());
+                return GraphI18n.errorWhilePerformingSearch.text(fullTextSearch, workspaceName, sourceName, error.getMessage());
             }
 
             public List<Location> getResults() {
@@ -719,12 +723,7 @@ public class SearchEngine {
         return new Query() {
             private QueryResults results = null;
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.search.SearchEngine.Activity#execute(org.jboss.dna.search.IndexSession)
-             */
-            public int execute( IndexSession session ) throws IOException, ParseException {
+            public int execute( Session session ) throws SearchException {
                 results = session.query(context, query);
                 return 0;
             }
@@ -732,13 +731,13 @@ public class SearchEngine {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
+             * @see org.jboss.dna.graph.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
              *      java.lang.String)
              */
             public String messageFor( Throwable error,
                                       String sourceName,
                                       String workspaceName ) {
-                return SearchI18n.errorWhilePerformingQuery.text(query, workspaceName, sourceName, error.getMessage());
+                return GraphI18n.errorWhilePerformingQuery.text(query, workspaceName, sourceName, error.getMessage());
             }
 
             public QueryResults getResults() {
@@ -759,13 +758,11 @@ public class SearchEngine {
          * 
          * @param indexSession the index session that should be used by the activity; never null
          * @return the number of changes that were made by this activity
-         * @throws IOException if there is an error using the writer
-         * @throws ParseException if there is an error due to parsing
          */
-        int execute( IndexSession indexSession ) throws IOException, ParseException;
+        int execute( Session indexSession );
 
         /**
-         * Translate an exception obtained during {@link #execute(IndexSession) execution} into a single message.
+         * Translate an exception obtained during {@link #execute(Session) execution} into a single message.
          * 
          * @param t the exception
          * @param sourceName the name of the source

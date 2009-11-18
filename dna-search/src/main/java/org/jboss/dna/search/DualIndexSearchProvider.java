@@ -66,23 +66,22 @@ import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
 import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
-import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
@@ -95,7 +94,6 @@ import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.OptimizerRule;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
@@ -106,6 +104,8 @@ import org.jboss.dna.graph.query.plan.Planner;
 import org.jboss.dna.graph.query.process.ProcessingComponent;
 import org.jboss.dna.graph.query.process.QueryProcessor;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.search.SearchException;
+import org.jboss.dna.graph.search.SearchProvider;
 import org.jboss.dna.search.IndexRules.Rule;
 import org.jboss.dna.search.query.CompareLengthQuery;
 import org.jboss.dna.search.query.CompareNameQuery;
@@ -116,11 +116,31 @@ import org.jboss.dna.search.query.NotQuery;
 import org.jboss.dna.search.query.UuidsQuery;
 
 /**
- * A simple {@link IndexLayout} implementation that relies upon two separate indexes: one for the node content and a second one
+ * A simple {@link SearchProvider} implementation that relies upon two separate indexes: one for the node content and a second one
  * for paths and UUIDs.
  */
 @ThreadSafe
-public abstract class DualIndexLayout implements IndexLayout {
+public class DualIndexSearchProvider implements SearchProvider {
+
+    /**
+     * The default set of {@link IndexRules} used by {@link DualIndexSearchProvider} instances when no rules are provided. These
+     * rules default to index and analyze all properties, and to index the {@link DnaLexicon#UUID dna:uuid} and
+     * {@link JcrLexicon#UUID jcr:uuid} properties to be indexed and stored only (not analyzed and not included in full-text
+     * search. The rules also treat {@link JcrLexicon#CREATED jcr:created} and {@link JcrLexicon#LAST_MODIFIED jcr:lastModified}
+     * properties as dates.
+     */
+    public static final IndexRules DEFAULT_RULES;
+
+    static {
+        IndexRules.Builder builder = IndexRules.createBuilder();
+        // Configure the default behavior ...
+        builder.defaultTo(IndexRules.INDEX | IndexRules.ANALYZE);
+        // Configure the UUID properties to be just indexed (not stored, not analyzed, not included in full-text) ...
+        builder.store(JcrLexicon.UUID, DnaLexicon.UUID);
+        // Configure the properties that we'll treat as dates ...
+        builder.treatAsDates(JcrLexicon.CREATED, JcrLexicon.LAST_MODIFIED);
+        DEFAULT_RULES = builder.build();
+    }
 
     protected static final long MIN_DATE = 0;
     protected static final long MAX_DATE = Long.MAX_VALUE;
@@ -174,6 +194,21 @@ public abstract class DualIndexLayout implements IndexLayout {
         }
     };
 
+    private final IndexRules rules;
+    private final LuceneConfiguration directoryConfiguration;
+
+    public DualIndexSearchProvider( LuceneConfiguration directoryConfiguration,
+                                    IndexRules rules ) {
+        assert directoryConfiguration != null;
+        assert rules != null;
+        this.rules = rules;
+        this.directoryConfiguration = directoryConfiguration;
+    }
+
+    public DualIndexSearchProvider( LuceneConfiguration directoryConfiguration ) {
+        this(directoryConfiguration, DEFAULT_RULES);
+    }
+
     /**
      * Get the date formatter that can be reused safely within the current thread.
      * 
@@ -201,21 +236,44 @@ public abstract class DualIndexLayout implements IndexLayout {
         return new StandardAnalyzer(Version.LUCENE_CURRENT);
     }
 
-    protected abstract class LuceneSession implements IndexSession {
-        protected final ExecutionContext context;
-        protected final String sourceName;
-        protected final String workspaceName;
-        protected final IndexRules rules;
-        private final QueryEngine queryEngine;
-        private final Analyzer analyzer;
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.search.SearchProvider#createSession(org.jboss.dna.graph.ExecutionContext, java.lang.String,
+     *      java.lang.String, boolean, boolean)
+     */
+    public SearchProvider.Session createSession( ExecutionContext context,
+                                                 String sourceName,
+                                                 String workspaceName,
+                                                 boolean overwrite,
+                                                 boolean readOnly ) {
+        Directory pathIndexDirectory = directoryConfiguration.getDirectory(workspaceName, PATHS_INDEX_NAME);
+        Directory contentIndexDirectory = directoryConfiguration.getDirectory(workspaceName, CONTENT_INDEX_NAME);
+        assert pathIndexDirectory != null;
+        assert contentIndexDirectory != null;
+        Analyzer analyzer = createAnalyzer();
+        assert analyzer != null;
+        return new DualIndexSession(context, sourceName, workspaceName, rules, pathIndexDirectory, contentIndexDirectory,
+                                    analyzer, overwrite, readOnly);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.search.SearchProvider#destroyIndexes(org.jboss.dna.graph.ExecutionContext, java.lang.String,
+     *      java.lang.String)
+     */
+    public boolean destroyIndexes( ExecutionContext context,
+                                   String sourceName,
+                                   String workspaceName ) {
+        directoryConfiguration.destroyDirectory(workspaceName, PATHS_INDEX_NAME);
+        directoryConfiguration.destroyDirectory(workspaceName, CONTENT_INDEX_NAME);
+        return true;
+    }
+
+    protected class DualIndexSession extends LuceneSession {
         private final Directory pathsIndexDirectory;
         private final Directory contentIndexDirectory;
-        protected final boolean overwrite;
-        protected final boolean readOnly;
-        protected final ValueFactory<String> stringFactory;
-        protected final DateTimeFactory dateFactory;
-        protected final PathFactory pathFactory;
-        private int changeCount;
         private IndexReader pathsReader;
         private IndexWriter pathsWriter;
         private IndexSearcher pathsSearcher;
@@ -223,46 +281,28 @@ public abstract class DualIndexLayout implements IndexLayout {
         private IndexWriter contentWriter;
         private IndexSearcher contentSearcher;
 
-        protected LuceneSession( ExecutionContext context,
-                                 String sourceName,
-                                 String workspaceName,
-                                 IndexRules rules,
-                                 Directory pathsIndexDirectory,
-                                 Directory contentIndexDirectory,
-                                 boolean overwrite,
-                                 boolean readOnly ) {
-            this.context = context;
-            this.sourceName = sourceName;
-            this.workspaceName = workspaceName;
-            this.rules = rules;
-            this.overwrite = overwrite;
-            this.readOnly = readOnly;
+        protected DualIndexSession( ExecutionContext context,
+                                    String sourceName,
+                                    String workspaceName,
+                                    IndexRules rules,
+                                    Directory pathsIndexDirectory,
+                                    Directory contentIndexDirectory,
+                                    Analyzer analyzer,
+                                    boolean overwrite,
+                                    boolean readOnly ) {
+            super(context, sourceName, workspaceName, rules, analyzer, overwrite, readOnly);
             this.pathsIndexDirectory = pathsIndexDirectory;
             this.contentIndexDirectory = contentIndexDirectory;
-            this.analyzer = createAnalyzer();
-            this.stringFactory = context.getValueFactories().getStringFactory();
-            this.dateFactory = context.getValueFactories().getDateFactory();
-            this.pathFactory = context.getValueFactories().getPathFactory();
-            assert this.context != null;
-            assert this.sourceName != null;
-            assert this.workspaceName != null;
-            assert this.rules != null;
-            assert this.analyzer != null;
             assert this.pathsIndexDirectory != null;
             assert this.contentIndexDirectory != null;
-            assert this.stringFactory != null;
-            assert this.dateFactory != null;
-            // do this last ...
-            this.queryEngine = createQueryProcessor();
-            assert this.queryEngine != null;
         }
 
         /**
-         * Create the field name that will be used to store the full-text searchable property values.
+         * {@inheritDoc}
          * 
-         * @param propertyName the name of the property; may not be null
-         * @return the field name for the full-text searchable property values; never null
+         * @see org.jboss.dna.search.LuceneSession#fullTextFieldName(java.lang.String)
          */
+        @Override
         protected String fullTextFieldName( String propertyName ) {
             return propertyName + FULL_TEXT_SUFFIX;
         }
@@ -304,7 +344,8 @@ public abstract class DualIndexLayout implements IndexLayout {
             return pathsSearcher;
         }
 
-        protected IndexSearcher getContentSearcher() throws IOException {
+        @Override
+        public IndexSearcher getContentSearcher() throws IOException {
             if (contentSearcher == null) {
                 contentSearcher = new IndexSearcher(getContentReader());
             }
@@ -318,45 +359,9 @@ public abstract class DualIndexLayout implements IndexLayout {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#getContext()
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#index(org.jboss.dna.graph.Node)
          */
-        public final ExecutionContext getContext() {
-            return context;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexSession#getSourceName()
-         */
-        public final String getSourceName() {
-            return sourceName;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexSession#getWorkspaceName()
-         */
-        public String getWorkspaceName() {
-            return workspaceName;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexSession#hasChanges()
-         */
-        public boolean hasChanges() {
-            return changeCount > 0;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexSession#index(org.jboss.dna.graph.Node)
-         */
-        public void index( Node node ) throws IOException {
+        public void index( Node node ) {
             assert !readOnly;
             Location location = node.getLocation();
             UUID uuid = location.getUuid();
@@ -372,85 +377,96 @@ public abstract class DualIndexLayout implements IndexLayout {
                 logger.trace("indexing {0}", pathStr);
             }
 
-            // Create a separate document for the path, which makes it easier to handle moves since the path can
-            // be changed without changing any other content fields ...
-            Document doc = new Document();
-            doc.add(new Field(PathIndex.PATH, pathStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-            doc.add(new Field(PathIndex.LOCAL_NAME, nameStr, Field.Store.YES, Field.Index.ANALYZED));
-            doc.add(new NumericField(PathIndex.LOCAL_NAME, Field.Store.YES, true).setIntValue(sns));
-            doc.add(new Field(PathIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-            doc.add(new NumericField(PathIndex.DEPTH, Field.Store.YES, true).setIntValue(path.size()));
-            getPathsWriter().addDocument(doc);
+            try {
 
-            // Create the document for the content (properties) ...
-            doc = new Document();
-            doc.add(new Field(ContentIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-            String stringValue = null;
-            StringBuilder fullTextSearchValue = null;
-            for (Property property : node.getProperties()) {
-                Name name = property.getName();
-                Rule rule = rules.getRule(name);
-                if (rule.isSkipped()) continue;
-                String nameString = stringFactory.create(name);
-                if (rule.isDate()) {
-                    for (Object value : property) {
-                        if (value == null) continue;
-                        DateTime dateValue = dateFactory.create(value);
-                        // Add a separate field for each property value ...
-                        doc.add(new NumericField(nameString, rule.getStoreOption(), true).setLongValue(dateValue.getMillisecondsInUtc()));
-                        // Dates are not added to the full-text search field (since this wouldn't make sense)
-                    }
-                    continue;
-                }
-                for (Object value : property) {
-                    if (value == null) continue;
-                    if (value instanceof Binary) {
-                        // don't include binary values as individual fields but do include them in the full-text search ...
-                        // TODO : add to full-text search ...
+                // Create a separate document for the path, which makes it easier to handle moves since the path can
+                // be changed without changing any other content fields ...
+                Document doc = new Document();
+                doc.add(new Field(PathIndex.PATH, pathStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new Field(PathIndex.LOCAL_NAME, nameStr, Field.Store.YES, Field.Index.ANALYZED));
+                doc.add(new NumericField(PathIndex.LOCAL_NAME, Field.Store.YES, true).setIntValue(sns));
+                doc.add(new Field(PathIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new NumericField(PathIndex.DEPTH, Field.Store.YES, true).setIntValue(path.size()));
+                getPathsWriter().addDocument(doc);
+
+                // Create the document for the content (properties) ...
+                doc = new Document();
+                doc.add(new Field(ContentIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                String stringValue = null;
+                StringBuilder fullTextSearchValue = null;
+                for (Property property : node.getProperties()) {
+                    Name name = property.getName();
+                    Rule rule = rules.getRule(name);
+                    if (!rule.isIncluded()) continue;
+                    String nameString = stringFactory.create(name);
+                    if (rule.isDate()) {
+                        for (Object value : property) {
+                            if (value == null) continue;
+                            DateTime dateValue = dateFactory.create(value);
+                            // Add a separate field for each property value ...
+                            doc.add(new NumericField(nameString, rule.getStoreOption(), true).setLongValue(dateValue.getMillisecondsInUtc()));
+                            // Dates are not added to the full-text search field (since this wouldn't make sense)
+                        }
                         continue;
                     }
-                    stringValue = stringFactory.create(value);
-                    // Add a separate field for each property value ...
-                    doc.add(new Field(nameString, stringValue, rule.getStoreOption(), rule.getIndexOption()));
-
-                    if (rule.isFullText()) {
-                        // Add this text to the full-text field ...
-                        if (fullTextSearchValue == null) {
-                            fullTextSearchValue = new StringBuilder();
-                        } else {
-                            fullTextSearchValue.append(' ');
+                    for (Object value : property) {
+                        if (value == null) continue;
+                        if (value instanceof Binary) {
+                            // don't include binary values as individual fields but do include them in the full-text search ...
+                            // TODO : add to full-text search ...
+                            continue;
                         }
-                        fullTextSearchValue.append(stringValue);
+                        stringValue = stringFactory.create(value);
+                        // Add a separate field for each property value ...
+                        doc.add(new Field(nameString, stringValue, rule.getStoreOption(), rule.getIndexOption()));
 
-                        // Also create a full-text-searchable field ...
-                        String fullTextNameString = fullTextFieldName(nameString);
-                        doc.add(new Field(fullTextNameString, stringValue, Store.NO, Index.ANALYZED));
+                        if (rule.isFullText()) {
+                            // Add this text to the full-text field ...
+                            if (fullTextSearchValue == null) {
+                                fullTextSearchValue = new StringBuilder();
+                            } else {
+                                fullTextSearchValue.append(' ');
+                            }
+                            fullTextSearchValue.append(stringValue);
+
+                            // Also create a full-text-searchable field ...
+                            String fullTextNameString = fullTextFieldName(nameString);
+                            doc.add(new Field(fullTextNameString, stringValue, Store.NO, Index.ANALYZED));
+                        }
                     }
                 }
+                // Add the full-text-search field ...
+                if (fullTextSearchValue != null) {
+                    doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO,
+                                      Field.Index.ANALYZED));
+                }
+                getContentWriter().addDocument(doc);
+            } catch (IOException e) {
+                throw new LuceneException(e);
             }
-            // Add the full-text-search field ...
-            if (fullTextSearchValue != null) {
-                doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
-            }
-            getContentWriter().addDocument(doc);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#optimize()
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#optimize()
          */
-        public void optimize() throws IOException {
-            getContentWriter().optimize();
-            getPathsWriter().optimize();
+        public void optimize() {
+            try {
+                getContentWriter().optimize();
+                getPathsWriter().optimize();
+            } catch (IOException e) {
+                throw new LuceneException(e);
+
+            }
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#apply(java.lang.Iterable)
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#apply(java.lang.Iterable)
          */
-        public int apply( Iterable<ChangeRequest> changes ) /*throws IOException*/{
+        public int apply( Iterable<ChangeRequest> changes ) {
             for (ChangeRequest change : changes) {
                 if (change != null) continue;
             }
@@ -472,9 +488,9 @@ public abstract class DualIndexLayout implements IndexLayout {
          * content node using a query.
          * </p>
          * 
-         * @see org.jboss.dna.search.IndexSession#deleteBelow(org.jboss.dna.graph.property.Path)
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#deleteBelow(org.jboss.dna.graph.property.Path)
          */
-        public int deleteBelow( Path path ) throws IOException {
+        public int deleteBelow( Path path ) {
             assert !readOnly;
             // Perform a query using the reader to find those nodes at/below the path ...
             try {
@@ -506,78 +522,87 @@ public abstract class DualIndexLayout implements IndexLayout {
             } catch (FileNotFoundException e) {
                 // There are no index files yet, so nothing to delete ...
                 return 0;
+            } catch (IOException e) {
+                throw new LuceneException(e);
             }
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#search(org.jboss.dna.graph.ExecutionContext, java.lang.String, int, int,
-         *      java.util.List)
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#search(org.jboss.dna.graph.ExecutionContext, java.lang.String,
+         *      int, int, java.util.List)
          */
         public void search( ExecutionContext context,
                             String fullTextString,
                             int maxResults,
                             int offset,
-                            List<Location> results ) throws IOException, ParseException {
+                            List<Location> results ) {
             assert fullTextString != null;
             assert fullTextString.length() > 0;
             assert offset >= 0;
             assert maxResults > 0;
             assert results != null;
 
-            // Parse the full-text search and search against the 'fts' field ...
-            QueryParser parser = new QueryParser(ContentIndex.FULL_TEXT, createAnalyzer());
-            Query query = parser.parse(fullTextString);
-            TopDocs docs = getContentSearcher().search(query, maxResults + offset);
+            try {
+                // Parse the full-text search and search against the 'fts' field ...
+                QueryParser parser = new QueryParser(ContentIndex.FULL_TEXT, createAnalyzer());
+                Query query = parser.parse(fullTextString);
+                TopDocs docs = getContentSearcher().search(query, maxResults + offset);
 
-            // Collect the results ...
-            IndexReader contentReader = getContentReader();
-            IndexReader pathReader = getPathsReader();
-            IndexSearcher pathSearcher = getPathsSearcher();
-            ScoreDoc[] scoreDocs = docs.scoreDocs;
-            int numberOfResults = scoreDocs.length;
-            if (numberOfResults > offset) {
-                // There are enough results to satisfy the offset ...
-                PathFactory pathFactory = context.getValueFactories().getPathFactory();
-                for (int i = offset, num = scoreDocs.length; i != num; ++i) {
-                    ScoreDoc result = scoreDocs[i];
-                    int docId = result.doc;
-                    // Find the UUID of the node (this UUID might be artificial, so we have to find the path) ...
-                    Document doc = contentReader.document(docId, UUID_FIELD_SELECTOR);
-                    String uuid = doc.get(ContentIndex.UUID);
-                    // Find the path for this node (is there a better way to do this than one search per UUID?) ...
-                    TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.UUID, uuid)), 1);
-                    if (pathDocs.scoreDocs.length < 1) {
-                        // No path record found ...
-                        continue;
+                // Collect the results ...
+                IndexReader contentReader = getContentReader();
+                IndexReader pathReader = getPathsReader();
+                IndexSearcher pathSearcher = getPathsSearcher();
+                ScoreDoc[] scoreDocs = docs.scoreDocs;
+                int numberOfResults = scoreDocs.length;
+                if (numberOfResults > offset) {
+                    // There are enough results to satisfy the offset ...
+                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
+                    for (int i = offset, num = scoreDocs.length; i != num; ++i) {
+                        ScoreDoc result = scoreDocs[i];
+                        int docId = result.doc;
+                        // Find the UUID of the node (this UUID might be artificial, so we have to find the path) ...
+                        Document doc = contentReader.document(docId, UUID_FIELD_SELECTOR);
+                        String uuid = doc.get(ContentIndex.UUID);
+                        // Find the path for this node (is there a better way to do this than one search per UUID?) ...
+                        TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.UUID, uuid)), 1);
+                        if (pathDocs.scoreDocs.length < 1) {
+                            // No path record found ...
+                            continue;
+                        }
+                        Document pathDoc = pathReader.document(pathDocs.scoreDocs[0].doc);
+                        String pathString = pathDoc.get(PathIndex.PATH);
+                        Path path = pathFactory.create(pathString);
+                        // Now add the location ...
+                        results.add(Location.create(path, UUID.fromString(uuid)));
                     }
-                    Document pathDoc = pathReader.document(pathDocs.scoreDocs[0].doc);
-                    String pathString = pathDoc.get(PathIndex.PATH);
-                    Path path = pathFactory.create(pathString);
-                    // Now add the location ...
-                    results.add(Location.create(path, UUID.fromString(uuid)));
                 }
+            } catch (ParseException e) {
+                String msg = SearchI18n.errorWhilePerformingSearch.text(workspaceName, sourceName, fullTextString, e.getMessage());
+                throw new SearchException(fullTextString, msg, e);
+            } catch (IOException e) {
+                throw new LuceneException(e);
             }
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#query(org.jboss.dna.graph.query.QueryContext,
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#query(org.jboss.dna.graph.query.QueryContext,
          *      org.jboss.dna.graph.query.model.QueryCommand)
          */
         public QueryResults query( QueryContext queryContext,
                                    QueryCommand query ) {
-            return queryEngine.execute(queryContext, query);
+            return queryEngine().execute(queryContext, query);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#commit()
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#commit()
          */
-        public void commit() throws IOException {
+        public void commit() {
             IOException ioError = null;
             RuntimeException runtimeError = null;
             if (pathsReader != null) {
@@ -640,16 +665,19 @@ public abstract class DualIndexLayout implements IndexLayout {
                     }
                 }
             }
-            if (ioError != null) throw ioError;
+            if (ioError != null) {
+                String msg = SearchI18n.errorWhileCommittingIndexChanges.text(workspaceName, sourceName, ioError.getMessage());
+                throw new LuceneException(msg, ioError);
+            }
             if (runtimeError != null) throw runtimeError;
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexSession#rollback()
+         * @see org.jboss.dna.graph.search.SearchProvider.Session#rollback()
          */
-        public void rollback() throws IOException {
+        public void rollback() {
             IOException ioError = null;
             RuntimeException runtimeError = null;
             if (pathsReader != null) {
@@ -712,7 +740,10 @@ public abstract class DualIndexLayout implements IndexLayout {
                     }
                 }
             }
-            if (ioError != null) throw ioError;
+            if (ioError != null) {
+                String msg = SearchI18n.errorWhileRollingBackIndexChanges.text(workspaceName, sourceName, ioError.getMessage());
+                throw new LuceneException(msg, ioError);
+            }
             if (runtimeError != null) throw runtimeError;
         }
 
@@ -748,34 +779,34 @@ public abstract class DualIndexLayout implements IndexLayout {
                                                                      PlanNode accessNode,
                                                                      Columns resultColumns,
                                                                      org.jboss.dna.graph.query.process.SelectComponent.Analyzer analyzer ) {
-                    try {
-                        return LuceneSession.this.createAccessComponent(originalQuery,
-                                                                        context,
-                                                                        accessNode,
-                                                                        resultColumns,
-                                                                        analyzer);
-                    } catch (IOException e) {
-                        I18n msg = SearchI18n.errorWhilePerformingQuery;
-                        context.getProblems().addError(e,
-                                                       msg,
-                                                       Visitors.readable(originalQuery),
-                                                       getWorkspaceName(),
-                                                       getSourceName(),
-                                                       e.getMessage());
-                        return null;
-                    }
+                    return DualIndexSession.this.createAccessComponent(originalQuery,
+                                                                       context,
+                                                                       accessNode,
+                                                                       resultColumns,
+                                                                       analyzer);
                 }
             };
 
             return new QueryEngine(planner, optimizer, processor);
         }
 
-        protected abstract ProcessingComponent createAccessComponent( QueryCommand originalQuery,
-                                                                      QueryContext context,
-                                                                      PlanNode accessNode,
-                                                                      Columns resultColumns,
-                                                                      org.jboss.dna.graph.query.process.SelectComponent.Analyzer analyzer )
-            throws IOException;
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.LuceneSession#createAccessComponent(org.jboss.dna.graph.query.model.QueryCommand,
+         *      org.jboss.dna.graph.query.QueryContext, org.jboss.dna.graph.query.plan.PlanNode,
+         *      org.jboss.dna.graph.query.QueryResults.Columns, org.jboss.dna.graph.query.process.SelectComponent.Analyzer)
+         */
+        @Override
+        protected ProcessingComponent createAccessComponent( QueryCommand originalQuery,
+                                                             QueryContext context,
+                                                             PlanNode accessNode,
+                                                             Columns resultColumns,
+                                                             org.jboss.dna.graph.query.process.SelectComponent.Analyzer analyzer ) {
+            // Create a processing component for this access query ...
+            return new LuceneQueryComponent(this, originalQuery, context, resultColumns, accessNode, analyzer, sourceName,
+                                            workspaceName);
+        }
 
         /**
          * Get the set of UUIDs for the children of the node at the given path.
@@ -865,7 +896,8 @@ public abstract class DualIndexLayout implements IndexLayout {
          * @param uuids the UUIDs of the nodes that are to be found; may not be null
          * @return the query; never null
          */
-        protected Query findAllNodesWithUuids( Set<UUID> uuids ) {
+        @Override
+        public Query findAllNodesWithUuids( Set<UUID> uuids ) {
             if (uuids.isEmpty()) {
                 // There are no children, so return a null query ...
                 return new MatchNoneQuery();
@@ -888,7 +920,8 @@ public abstract class DualIndexLayout implements IndexLayout {
             return new UuidsQuery(ContentIndex.UUID, uuids, getContext().getValueFactories().getUuidFactory());
         }
 
-        protected Query findAllNodesBelow( Path ancestorPath ) throws IOException {
+        @Override
+        public Query findAllNodesBelow( Path ancestorPath ) throws IOException {
             if (ancestorPath.isRoot()) {
                 return new MatchAllDocsQuery();
             }
@@ -904,7 +937,8 @@ public abstract class DualIndexLayout implements IndexLayout {
          * @return the query; never null
          * @throws IOException if there is an error finding the UUIDs of the child nodes
          */
-        protected Query findChildNodes( Path parentPath ) throws IOException {
+        @Override
+        public Query findChildNodes( Path parentPath ) throws IOException {
             if (parentPath.isRoot()) {
                 return new MatchAllDocsQuery();
             }
@@ -921,7 +955,8 @@ public abstract class DualIndexLayout implements IndexLayout {
          * @return the query; never null
          * @throws IOException if there is an error finding the UUID for the supplied path
          */
-        protected Query findNodeAt( Path path ) throws IOException {
+        @Override
+        public Query findNodeAt( Path path ) throws IOException {
             UUID uuid = getUuidFor(path);
             if (uuid == null) return null;
             return new TermQuery(new Term(ContentIndex.UUID, uuid.toString()));
@@ -935,8 +970,9 @@ public abstract class DualIndexLayout implements IndexLayout {
          * @param likeExpression the JCR like expression
          * @return the query; never null
          */
-        protected Query findNodesLike( String fieldName,
-                                       String likeExpression ) {
+        @Override
+        public Query findNodesLike( String fieldName,
+                                    String likeExpression ) {
             assert likeExpression != null;
             assert likeExpression.length() > 0;
 
@@ -960,9 +996,10 @@ public abstract class DualIndexLayout implements IndexLayout {
             return query;
         }
 
-        protected Query findNodesWith( Length propertyLength,
-                                       Operator operator,
-                                       Object value ) {
+        @Override
+        public Query findNodesWith( Length propertyLength,
+                                    Operator operator,
+                                    Object value ) {
             assert propertyLength != null;
             assert value != null;
             PropertyValue propertyValue = propertyLength.getPropertyValue();
@@ -990,10 +1027,11 @@ public abstract class DualIndexLayout implements IndexLayout {
             return null;
         }
 
-        protected Query findNodesWith( PropertyValue propertyValue,
-                                       Operator operator,
-                                       Object value,
-                                       boolean caseSensitive ) {
+        @Override
+        public Query findNodesWith( PropertyValue propertyValue,
+                                    Operator operator,
+                                    Object value,
+                                    boolean caseSensitive ) {
             String field = stringFactory.create(propertyValue.getPropertyName());
             PropertyType valueType = PropertyType.discoverType(value);
             ValueFactories factories = context.getValueFactories();
@@ -1145,20 +1183,22 @@ public abstract class DualIndexLayout implements IndexLayout {
             return null;
         }
 
-        protected Query findNodesWithNumericRange( PropertyValue propertyValue,
-                                                   Object lowerValue,
-                                                   Object upperValue,
-                                                   boolean includesLower,
-                                                   boolean includesUpper ) {
+        @Override
+        public Query findNodesWithNumericRange( PropertyValue propertyValue,
+                                                Object lowerValue,
+                                                Object upperValue,
+                                                boolean includesLower,
+                                                boolean includesUpper ) {
             String field = stringFactory.create(propertyValue.getPropertyName());
             return findNodesWithNumericRange(field, lowerValue, upperValue, includesLower, includesUpper);
         }
 
-        protected Query findNodesWithNumericRange( NodeDepth depth,
-                                                   Object lowerValue,
-                                                   Object upperValue,
-                                                   boolean includesLower,
-                                                   boolean includesUpper ) {
+        @Override
+        public Query findNodesWithNumericRange( NodeDepth depth,
+                                                Object lowerValue,
+                                                Object upperValue,
+                                                boolean includesLower,
+                                                boolean includesUpper ) {
             return findNodesWithNumericRange(PathIndex.DEPTH, lowerValue, upperValue, includesLower, includesUpper);
         }
 
@@ -1191,10 +1231,11 @@ public abstract class DualIndexLayout implements IndexLayout {
             }
         }
 
-        protected Query findNodesWith( NodePath nodePath,
-                                       Operator operator,
-                                       Object value,
-                                       boolean caseSensitive ) throws IOException {
+        @Override
+        public Query findNodesWith( NodePath nodePath,
+                                    Operator operator,
+                                    Object value,
+                                    boolean caseSensitive ) throws IOException {
             if (!caseSensitive) value = stringFactory.create(value).toLowerCase();
             Path pathValue = operator != Operator.LIKE ? pathFactory.create(value) : null;
             Query query = null;
@@ -1238,10 +1279,11 @@ public abstract class DualIndexLayout implements IndexLayout {
             return findAllNodesWithUuids(uuidCollector.getUuids());
         }
 
-        protected Query findNodesWith( NodeName nodeName,
-                                       Operator operator,
-                                       Object value,
-                                       boolean caseSensitive ) throws IOException {
+        @Override
+        public Query findNodesWith( NodeName nodeName,
+                                    Operator operator,
+                                    Object value,
+                                    boolean caseSensitive ) throws IOException {
             String stringValue = stringFactory.create(value);
             if (!caseSensitive) stringValue = stringValue.toLowerCase();
             Path.Segment segment = operator != Operator.LIKE ? pathFactory.createSegment(stringValue) : null;
@@ -1331,10 +1373,11 @@ public abstract class DualIndexLayout implements IndexLayout {
             return findAllNodesWithUuids(uuidCollector.getUuids());
         }
 
-        protected Query findNodesWith( NodeLocalName nodeName,
-                                       Operator operator,
-                                       Object value,
-                                       boolean caseSensitive ) throws IOException {
+        @Override
+        public Query findNodesWith( NodeLocalName nodeName,
+                                    Operator operator,
+                                    Object value,
+                                    boolean caseSensitive ) throws IOException {
             String nameValue = stringFactory.create(value);
             Query query = null;
             switch (operator) {
@@ -1380,9 +1423,10 @@ public abstract class DualIndexLayout implements IndexLayout {
             return findAllNodesWithUuids(uuidCollector.getUuids());
         }
 
-        protected Query findNodesWith( NodeDepth depthConstraint,
-                                       Operator operator,
-                                       Object value ) throws IOException {
+        @Override
+        public Query findNodesWith( NodeDepth depthConstraint,
+                                    Operator operator,
+                                    Object value ) throws IOException {
             int depth = context.getValueFactories().getLongFactory().create(value).intValue();
             Query query = null;
             switch (operator) {
@@ -1462,57 +1506,11 @@ public abstract class DualIndexLayout implements IndexLayout {
     }
 
     /**
-     * Convert the JCR like expression to a Lucene wildcard expression. The JCR like expression uses '%' to match 0 or more
-     * characters, '_' to match any single character, '\x' to match the 'x' character, and all other characters to match
-     * themselves.
-     * 
-     * @param likeExpression the like expression; may not be null
-     * @return the expression that can be used with a WildcardQuery; never null
-     */
-    protected static String toWildcardExpression( String likeExpression ) {
-        assert likeExpression != null;
-        assert likeExpression.length() > 0;
-        return likeExpression.replace('%', '*').replace('_', '?').replaceAll("\\\\(.)", "$1");
-    }
-
-    /**
-     * Convert the JCR like expression to a regular expression. The JCR like expression uses '%' to match 0 or more characters,
-     * '_' to match any single character, '\x' to match the 'x' character, and all other characters to match themselves. Note that
-     * if any regex metacharacters appear in the like expression, they will be escaped within the resulting regular expression.
-     * 
-     * @param likeExpression the like expression; may not be null
-     * @return the expression that can be used with a WildcardQuery; never null
-     */
-    protected static String toRegularExpression( String likeExpression ) {
-        assert likeExpression != null;
-        assert likeExpression.length() > 0;
-        // Replace all '\x' with 'x' ...
-        String result = likeExpression.replaceAll("\\\\(.)", "$1");
-        // Escape characters used as metacharacters in regular expressions, including
-        // '[', '^', '\', '$', '.', '|', '?', '*', '+', '(', and ')'
-        result = result.replaceAll("([[^\\\\$.|?*+()])", "\\$1");
-        // Replace '%'->'[.]+' and '_'->'[.]
-        result = likeExpression.replace("%", "[.]+").replace("_", "[.]");
-        return result;
-    }
-
-    protected static String pathAsString( Path path,
-                                          ValueFactory<String> stringFactory ) {
-        assert path != null;
-        if (path.isRoot()) return "/";
-        String pathStr = stringFactory.create(path);
-        if (!pathStr.endsWith("]")) {
-            pathStr = pathStr + '[' + Path.DEFAULT_INDEX + ']';
-        }
-        return pathStr;
-    }
-
-    /**
      * A {@link Collector} implementation that only captures the UUID of the documents returned by a query. Score information is
      * not recorded. This is often used when querying the {@link PathIndex} to collect the UUIDs of a set of nodes satisfying some
      * path constraint.
      * 
-     * @see DualIndexLayout.LuceneSession#findChildNodes(Path)
+     * @see DualIndexSearchProvider.DualIndexSession#findChildNodes(Path)
      */
     protected static class UuidCollector extends Collector {
         private final Set<UUID> uuids = new HashSet<UUID>();

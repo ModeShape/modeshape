@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.search;
+package org.jboss.dna.graph.search;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -48,9 +48,7 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Query;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
-import org.jboss.dna.search.IndexLayout;
-import org.jboss.dna.search.IndexSession;
-import org.jboss.dna.search.SearchEngine;
+import org.jboss.dna.graph.search.SearchProvider.Session;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,10 +61,10 @@ public class SearchEngineTest {
     private String workspaceName2;
     private InMemoryRepositorySource source;
     private RepositoryConnectionFactory connectionFactory;
-    private IndexLayout layout;
-    private IndexSession sessionWs1;
-    private IndexSession sessionWs2;
-    private IndexSession sessionDefault;
+    private SearchProvider provider;
+    private SearchProvider.Session sessionWs1;
+    private SearchProvider.Session sessionWs2;
+    private SearchProvider.Session sessionDefault;
     private Graph content;
 
     @Before
@@ -94,22 +92,22 @@ public class SearchEngineTest {
         };
 
         // Set up the index layout ...
-        layout = mock(IndexLayout.class);
-        sessionWs1 = mockSession(layout, workspaceName1);
-        sessionWs2 = mockSession(layout, workspaceName2);
-        sessionDefault = mockSession(layout, "");
+        provider = mock(SearchProvider.class);
+        sessionWs1 = mockSession(provider, workspaceName1);
+        sessionWs2 = mockSession(provider, workspaceName2);
+        sessionDefault = mockSession(provider, "");
 
         // Now set up the search engine ...
-        engine = new SearchEngine(context, sourceName, connectionFactory, layout);
+        engine = new SearchEngine(context, sourceName, connectionFactory, provider);
     }
 
-    protected IndexSession mockSession( IndexLayout mockLayout,
-                                        String workspaceName ) {
-        IndexSession session = mock(IndexSession.class);
-        stub(layout.createSession(context, sourceName, workspaceName, false, false)).toReturn(session);
-        stub(layout.createSession(context, sourceName, workspaceName, false, true)).toReturn(session);
-        stub(layout.createSession(context, sourceName, workspaceName, true, false)).toReturn(session);
-        stub(layout.createSession(context, sourceName, workspaceName, true, true)).toReturn(session);
+    protected Session mockSession( SearchProvider mockProvider,
+                                   String workspaceName ) {
+        Session session = mock(Session.class);
+        stub(mockProvider.createSession(context, sourceName, workspaceName, false, false)).toReturn(session);
+        stub(mockProvider.createSession(context, sourceName, workspaceName, false, true)).toReturn(session);
+        stub(mockProvider.createSession(context, sourceName, workspaceName, true, false)).toReturn(session);
+        stub(mockProvider.createSession(context, sourceName, workspaceName, true, true)).toReturn(session);
         stub(session.getWorkspaceName()).toReturn(workspaceName);
         stub(session.getSourceName()).toReturn(sourceName);
         return session;
@@ -143,23 +141,23 @@ public class SearchEngineTest {
     @Test
     public void shouldDoNothingDuringRemoveWorkspaceIfWorkspaceHasNotBeenLoaded() throws Exception {
         engine.removeWorkspace(workspaceName1);
-        verifyZeroInteractions(layout);
+        verifyZeroInteractions(provider);
     }
 
     @Test
     public void shouldForwardRemoveWorkspaceToIndexLayout() throws Exception {
         engine.getWorkspace(workspaceName1);
         engine.removeWorkspace(workspaceName1);
-        verify(layout).destroyIndexes(context, sourceName, workspaceName1);
-        verifyNoMoreInteractions(layout);
+        verify(provider).destroyIndexes(context, sourceName, workspaceName1);
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void shouldForwardRemoveWorkspaceToIndexLayoutForEachWorkspaceThatWasLoaded() throws Exception {
         engine.getWorkspace(workspaceName1);
         engine.removeWorkspaces();
-        verify(layout).destroyIndexes(context, sourceName, workspaceName1);
-        verifyZeroInteractions(layout);
+        verify(provider).destroyIndexes(context, sourceName, workspaceName1);
+        verifyZeroInteractions(provider);
     }
 
     @Test
@@ -167,9 +165,9 @@ public class SearchEngineTest {
         engine.getWorkspace(workspaceName1);
         engine.getWorkspace(workspaceName2);
         engine.removeWorkspaces();
-        verify(layout).destroyIndexes(context, sourceName, workspaceName1);
-        verify(layout).destroyIndexes(context, sourceName, workspaceName2);
-        verifyNoMoreInteractions(layout);
+        verify(provider).destroyIndexes(context, sourceName, workspaceName1);
+        verify(provider).destroyIndexes(context, sourceName, workspaceName2);
+        verifyNoMoreInteractions(provider);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -253,101 +251,4 @@ public class SearchEngineTest {
         verify(sessionWs1).query(eq(new QueryContext(context, schemata)), eq(query));
         verify(sessionWs1).commit();
     }
-
-    // These tests expect there to be some real IndexLayout ...
-
-    // @Test
-    // public void shouldIndexAllContentInRepositorySource() throws Exception {
-    // loadContent();
-    // engine.index(3);
-    // }
-    //
-    // @Test
-    // public void shouldIndexAllContentInWorkspace() throws Exception {
-    // loadContent();
-    // engine.index(workspaceName1, 3);
-    // engine.index(workspaceName2, 5);
-    // }
-    //
-    // @Test
-    // public void shouldIndexAllContentInWorkspaceBelowPath() throws Exception {
-    // loadContent();
-    // engine.index(workspaceName1, path("/Cars/Hybrid"), 3);
-    // engine.index(workspaceName2, path("/Aircraft/Commercial"), 5);
-    // }
-    //
-    // @Test
-    // public void shouldReIndexAllContentInWorkspaceBelowPath() throws Exception {
-    // loadContent();
-    // for (int i = 0; i != 0; i++) {
-    // engine.index(workspaceName1, path("/Cars/Hybrid"), 3);
-    // engine.index(workspaceName2, path("/Aircraft/Commercial"), 5);
-    // }
-    // }
-    //
-    // @Test
-    // public void shouldHaveLoadedTestContentIntoRepositorySource() {
-    // assertThat(content.getNodeAt("/Cars/Hybrid/Toyota Prius").getProperty("msrp").getFirstValue(), is((Object)"$21,500"));
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfOne() {
-    // engine.index(workspaceName1, path("/"), 1);
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTwo() {
-    // engine.index(workspaceName1, path("/"), 2);
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfThree() {
-    // engine.index(workspaceName1, path("/"), 3);
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfFour() {
-    // engine.index(workspaceName1, path("/"), 4);
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTen() {
-    // engine.index(workspaceName1, path("/"), 10);
-    // }
-    //
-    // @Test
-    // public void shouldIndexRepositoryContentStartingAtNonRootNode() {
-    // engine.index(workspaceName1, path("/Cars"), 10);
-    // }
-    //
-    // @Test
-    // public void shouldReIndexRepositoryContentStartingAtNonRootNode() {
-    // for (int i = 0; i != 3; ++i) {
-    // engine.index(workspaceName1, path("/Cars"), 10);
-    // }
-    // }
-    //
-    // @Test
-    // public void shouldFindNodesByFullTextSearch() {
-    // engine.index(workspaceName1, path("/"), 100);
-    // List<Location> results = engine.fullTextSearch(context, workspaceName1, "Toyota Prius", 10, 0);
-    // assertThat(results, is(notNullValue()));
-    // assertThat(results.size(), is(2));
-    // assertThat(results.get(0).getPath(), is(path("/Cars/Hybrid/Toyota Prius")));
-    // assertThat(results.get(1).getPath(), is(path("/Cars/Hybrid/Toyota Highlander")));
-    // }
-    //
-    // @Test
-    // public void shouldFindNodesByFullTextSearchWithOffset() {
-    // engine.index(workspaceName1, path("/"), 100);
-    // List<Location> results = engine.fullTextSearch(context, workspaceName1, "toyota prius", 1, 0);
-    // assertThat(results, is(notNullValue()));
-    // assertThat(results.size(), is(1));
-    // assertThat(results.get(0).getPath(), is(path("/Cars/Hybrid/Toyota Prius")));
-    //
-    // results = engine.fullTextSearch(context, workspaceName1, "+Toyota", 1, 1);
-    // assertThat(results, is(notNullValue()));
-    // assertThat(results.size(), is(1));
-    // assertThat(results.get(0).getPath(), is(path("/Cars/Hybrid/Toyota Highlander")));
-    // }
 }

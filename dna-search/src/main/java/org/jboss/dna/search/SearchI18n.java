@@ -28,25 +28,15 @@ import java.util.Set;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 
-/**
- * 
- */
 public class SearchI18n {
 
     public static I18n locationForIndexesIsNotDirectory;
     public static I18n locationForIndexesCannotBeRead;
     public static I18n locationForIndexesCannotBeWritten;
-    public static I18n errorWhileIndexingContentAtPath;
-    public static I18n errorWhileRemovingContentAtPath;
-    public static I18n errorWhileUpdatingContent;
     public static I18n errorWhileCommittingIndexChanges;
     public static I18n errorWhileRollingBackIndexChanges;
-    public static I18n errorCreatingIndexWriter;
-    public static I18n errorWhileOptimizingIndexes;
     public static I18n errorWhilePerformingSearch;
     public static I18n errorWhilePerformingQuery;
-    public static I18n errorWhileInitializingSearchEngine;
-    public static I18n errorWhileRemovingIndexesForWorkspace;
     public static I18n errorWhilePerformingLuceneQuery;
 
     static {

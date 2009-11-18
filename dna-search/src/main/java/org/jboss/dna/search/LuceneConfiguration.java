@@ -25,14 +25,15 @@ package org.jboss.dna.search;
 
 import net.jcip.annotations.ThreadSafe;
 import org.apache.lucene.store.Directory;
+import org.jboss.dna.graph.search.SearchEngineException;
 
 /**
  * Interface used to obtain the Lucene {@link Directory} instance that should be used for a workspace given the name of the
- * workspace. There are several implementations (see {@link DirectoryConfigurations}), but custom implementations can always be
+ * workspace. There are several implementations (see {@link LuceneConfigurations}), but custom implementations can always be
  * used.
  */
 @ThreadSafe
-public interface DirectoryConfiguration {
+public interface LuceneConfiguration {
     /**
      * Get the {@link Directory} that should be used for the workspace with the supplied name.
      * 

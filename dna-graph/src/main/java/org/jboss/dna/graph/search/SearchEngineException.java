@@ -21,16 +21,47 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.search.filters;
-
-import org.jboss.dna.graph.query.QueryResults.Columns;
+package org.jboss.dna.graph.search;
 
 /**
- * 
+ * An exception that represents a problem within a search engine.
  */
-public interface ResultFilter {
+public class SearchEngineException extends RuntimeException {
 
-    boolean allows( Object[] tuple,
-                    Columns columns );
+    /**
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 
+     */
+    public SearchEngineException() {
+    }
+
+    /**
+     * @param message
+     */
+    public SearchEngineException( String message ) {
+        super(message);
+
+    }
+
+    /**
+     * @param cause
+     */
+    public SearchEngineException( Throwable cause ) {
+        super(cause);
+
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public SearchEngineException( String message,
+                                  Throwable cause ) {
+        super(message, cause);
+
+    }
 
 }

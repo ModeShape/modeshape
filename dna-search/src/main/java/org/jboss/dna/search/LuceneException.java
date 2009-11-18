@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
+ * individual contributors. 
  *
  * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * JBoss DNA is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,45 +21,52 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.jboss.dna.search;
 
 /**
- * An exception that represents a problem within a search engine.
+ * A {@link RuntimeException runtime exception} representing a problem operating against Lucene.
  */
-public class SearchEngineException extends RuntimeException {
+public class LuceneException extends RuntimeException {
 
     /**
      */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8281373010920861138L;
 
     /**
-     * 
+     * Construct a system failure exception with no message.
      */
-    public SearchEngineException() {
+    public LuceneException() {
     }
 
     /**
-     * @param message
+     * Construct a system failure exception with a single message.
+     * 
+     * @param message the message describing the failure
      */
-    public SearchEngineException( String message ) {
+    public LuceneException( String message ) {
         super(message);
 
     }
 
     /**
-     * @param cause
+     * Construct a system failure exception with another exception that is the cause of the failure.
+     * 
+     * @param cause the original cause of the failure
      */
-    public SearchEngineException( Throwable cause ) {
+    public LuceneException( Throwable cause ) {
         super(cause);
 
     }
 
     /**
-     * @param message
-     * @param cause
+     * Construct a system failure exception with a single message and another exception that is the cause of the failure.
+     * 
+     * @param message the message describing the failure
+     * @param cause the original cause of the failure
      */
-    public SearchEngineException( String message,
-                                  Throwable cause ) {
+    public LuceneException( String message,
+                            Throwable cause ) {
         super(message, cause);
 
     }

@@ -56,9 +56,12 @@ public class IndexRules {
      */
     @Immutable
     public static interface Rule {
+        /**
+         * Return whether this property should be included in the indexes.
+         * 
+         * @return true if it is to be included, or false otherwise
+         */
         boolean isIncluded();
-
-        boolean isSkipped();
 
         boolean isAnalyzed();
 
@@ -126,15 +129,6 @@ public class IndexRules {
          */
         public boolean isIncluded() {
             return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
-         */
-        public boolean isSkipped() {
-            return true;
         }
 
         /**
@@ -238,15 +232,6 @@ public class IndexRules {
          */
         public boolean isIncluded() {
             return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
-         */
-        public boolean isSkipped() {
-            return false;
         }
 
         /**
