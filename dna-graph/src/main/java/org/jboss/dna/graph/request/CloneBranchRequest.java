@@ -261,7 +261,7 @@ public class CloneBranchRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return into;
+        return actualIntoLocation != null ? actualIntoLocation : into;
     }
 
     /**

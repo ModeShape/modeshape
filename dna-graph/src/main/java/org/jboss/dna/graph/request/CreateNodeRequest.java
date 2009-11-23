@@ -322,7 +322,7 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
      */
     @Override
     public Location changedLocation() {
-        return actualLocation;
+        return actualLocation != null ? actualLocation : under;
     }
 
     /**

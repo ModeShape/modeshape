@@ -47,7 +47,8 @@ public abstract class ChangeRequest extends Request {
                                      Path path );
 
     /**
-     * Get the location of the top-most node that is to be changed by this request.
+     * Get the location of the top-most node that is to be changed by this request. If this request has been completed, this
+     * location will always have a {@link Location#getPath() path}.
      * 
      * @return the location changed by this request
      */

@@ -204,7 +204,7 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return on;
+        return actualLocation != null ? actualLocation : on;
     }
 
     /**

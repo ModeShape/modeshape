@@ -187,7 +187,7 @@ public class SetPropertyRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return on;
+        return actualLocation != null ? actualLocation : on;
     }
 
     /**

@@ -186,7 +186,7 @@ public class RemovePropertyRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return from;
+        return actualLocation != null ? actualLocation : from;
     }
 
     /**

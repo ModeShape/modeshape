@@ -217,7 +217,7 @@ public class DeleteChildrenRequest extends ChangeRequest {
      */
     @Override
     public Location changedLocation() {
-        return at;
+        return actualLocation != null ? actualLocation : at;
     }
 
     /**

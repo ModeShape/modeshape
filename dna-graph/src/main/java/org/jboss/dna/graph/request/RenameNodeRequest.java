@@ -138,6 +138,7 @@ public class RenameNodeRequest extends ChangeRequest {
             String msg = GraphI18n.actualNewLocationMustHaveSameNameAsRequest.text(newLocation, toName());
             throw new IllegalArgumentException(msg);
         }
+        this.actualOldLocation = oldLocation;
         this.actualNewLocation = newLocation;
     }
 
@@ -172,12 +173,15 @@ public class RenameNodeRequest extends ChangeRequest {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This method returns the {@link #getActualLocationAfter()} location, or if null the {@link #at()} location.
+     * </p>
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
     @Override
     public Location changedLocation() {
-        return at;
+        return actualNewLocation != null ? actualNewLocation : at;
     }
 
     /**

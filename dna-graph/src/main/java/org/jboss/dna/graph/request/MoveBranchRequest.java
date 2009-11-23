@@ -297,12 +297,15 @@ public class MoveBranchRequest extends ChangeRequest {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This method returns the {@link #getActualLocationAfter()} location, or if null the {@link #into()} location.
+     * </p>
      * 
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
     @Override
     public Location changedLocation() {
-        return into != null ? into : before;
+        return actualNewLocation != null ? actualNewLocation : into != null ? into : before;
     }
 
     /**
