@@ -705,7 +705,7 @@ public class GraphSession<Payload, PropertyPayload> {
                          boolean keepChanges ) throws InvalidStateException, RepositorySourceException {
         if (!node.isRoot() && node.isChanged(true)) {
             // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
-            if (!node.containsChangesWithExternalDependencies()) {
+            if (node.containsChangesWithExternalDependencies()) {
                 I18n msg = GraphI18n.unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
                 String path = node.getPath().getString(context.getNamespaceRegistry());
                 throw new InvalidStateException(msg.text(path, workspaceName));
@@ -847,7 +847,7 @@ public class GraphSession<Payload, PropertyPayload> {
         }
 
         // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
-        if (!node.containsChangesWithExternalDependencies()) {
+        if (node.containsChangesWithExternalDependencies()) {
             I18n msg = GraphI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
             String path = node.getPath().getString(context.getNamespaceRegistry());
             throw new ValidationException(msg.text(path, workspaceName));
@@ -1772,13 +1772,15 @@ public class GraphSession<Payload, PropertyPayload> {
                 if (!changedNode.isAtOrBelow(this)) {
                     // The node is not within this branch, so the original parent must not be at or below this node ...
                     if (cache.nodes.get(dependency.getMovedFrom()).isAtOrBelow(this)) {
-                        return false;
+                        // The original parent is below 'this' but the changed node is not ...
+                        return true;
                     }
                     // None of the other dependencies can be within this branch ...
                     for (NodeId dependentId : dependency.getRequireChangesTo()) {
                         // The dependent node must not be at or below this node ...
                         if (cache.nodes.get(dependentId).isAtOrBelow(this)) {
-                            return false;
+                            // The other node that must change is at or below 'this'
+                            return true;
                         }
                     }
                     // Otherwise, continue with the next change ...
@@ -1789,20 +1791,26 @@ public class GraphSession<Payload, PropertyPayload> {
                 // Second, check whether this node was moved from outside this branch ...
                 if (dependency.getMovedFrom() != null) {
                     Node<Payload, PropertyPayload> originalParent = cache.nodes.get(dependency.getMovedFrom());
+                    // If the original parent cannot be found ...
+                    if (originalParent == null) {
+                        continue;
+                    }
                     // The original parent must be at or below this node ...
                     if (!originalParent.isAtOrBelow(this)) {
-                        return false;
+                        // The original parent is not within this branch (but the new parent is)
+                        return true;
                     }
                     // All of the other dependencies must be within this branch ...
                     for (NodeId dependentId : dependency.getRequireChangesTo()) {
                         // The dependent node must not be at or below this node ...
                         if (!cache.nodes.get(dependentId).isAtOrBelow(this)) {
-                            return false;
+                            // Another dependent node is not at or below this branch either ...
+                            return true;
                         }
                     }
                 }
             }
-            return true;
+            return false;
         }
 
         /**
