@@ -12,39 +12,25 @@
 	<description>JBoss DNA REST support library</description>
 	<url>http://labs.jboss.org/dna</url>
 	<dependencies>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-jaxrs</artifactId>
-			<version>1.1.GA</version>
-		</dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <version>1.2.GA</version>
+        </dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxb-provider</artifactId>
-			<version>1.1.GA</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.sun.xml.bind</groupId>
-					<artifactId>jaxb-impl</artifactId>
-				</exclusion>
-			</exclusions>
+			<version>1.2.GA</version>
 		</dependency>
-
-		<!--
-			This is only included as a temp. workaround. Current release of
-			RESTEasy depends on 2.1.8, which is not in our repo at this time This
-			should be removed after RESTEasy 1.1GA is released and added to this
-			pom.
-		-->
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-			<version>2.1.9</version>
-		</dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jettison-provider</artifactId>
+            <version>1.2.GA</version>
+        </dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-jcr</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
