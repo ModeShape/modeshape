@@ -799,15 +799,12 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected Term parseFullTextSearchExpression( String expression,
-                                                  Position position ) {
+                                                  Position startOfExpression ) {
         try {
             return new FullTextSearchParser().parse(expression);
         } catch (ParsingException e) {
             // Convert the position in the exception into a position in the query.
-            Position exprPos = e.getPosition();
-            int line = position.getLine() + exprPos.getLine() - 1;
-            int column = exprPos.getLine() == 1 ? exprPos.getColumn() + position.getColumn() : exprPos.getColumn();
-            Position queryPos = new Position(line, column);
+        	Position queryPos = startOfExpression.add(e.getPosition());
             throw new ParsingException(queryPos, e.getMessage());
         }
     }
@@ -1264,14 +1261,14 @@ public class SqlQueryParser implements QueryParser {
                     case '|':
                     case '=':
                     case ':':
-                        tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                        tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                         break;
                     case '\'':
                     case '[':
                     case '\"':
                         int startIndex = input.index();
                         char closingChar = c == '[' ? ']' : c;
-                        Position pos = input.position();
+                        Position pos = input.position(startIndex);
                         boolean foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
@@ -1296,7 +1293,7 @@ public class SqlQueryParser implements QueryParser {
                         break;
                     case '-':
                         startIndex = input.index();
-                        pos = input.position();
+                        pos = input.position(input.index());
                         if (input.isNext('-')) {
                             // End-of-line comment ...
                             boolean foundLineTerminator = false;
@@ -1314,13 +1311,13 @@ public class SqlQueryParser implements QueryParser {
                                 tokens.addToken(pos, startIndex, endIndex, COMMENT);
                             }
                         } else {
-                            tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                            tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                             break;
                         }
                         break;
                     case '/':
                         startIndex = input.index();
-                        pos = input.position();
+                        pos = input.position(input.index());
                         if (input.isNext('*')) {
                             // Multi-line comment ...
                             while (input.hasNext() && !input.isNext('*', '/')) {
@@ -1333,13 +1330,13 @@ public class SqlQueryParser implements QueryParser {
                                 tokens.addToken(pos, startIndex, endIndex, COMMENT);
                             }
                         } else {
-                            tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                            tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                             break;
                         }
                         break;
                     default:
                         startIndex = input.index();
-                        pos = input.position();
+                        pos = input.position(input.index());
                         // Read as long as there is a valid XML character ...
                         int tokenType = (Character.isLetterOrDigit(c) || c == '_') ? WORD : OTHER;
                         while (input.isNextLetterOrDigit() || input.isNext('_')) {

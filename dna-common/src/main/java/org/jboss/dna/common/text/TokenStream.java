@@ -384,6 +384,20 @@ public class TokenStream {
     private final boolean caseSensitive;
     private final Tokenizer tokenizer;
     private List<Token> tokens;
+    /**
+     * This class navigates the Token objects using this iterator. However, because it very often needs to access the
+     * "current token" in the "consume(...)" and "canConsume(...)" and "matches(...)" methods, the class caches a "current token"
+     * and makes this iterator point to the 2nd token.
+     * 
+     * <pre>
+     *     T1     T2    T3    T4    T5
+     *         &circ;   &circ;  &circ;
+     *         |   |  |
+     *         |   |  +- The position of the tokenIterator, where tokenIterator.hasNext() will return T3
+     *         |   +---- The token referenced by currentToken
+     *         +-------- The logical position of the TokenStream object, where the &quot;consume()&quot; would return T2
+     * </pre>
+     */
     private ListIterator<Token> tokenIterator;
     private Token currentToken;
     private boolean completed;
@@ -412,13 +426,35 @@ public class TokenStream {
             TokenFactory tokenFactory = caseSensitive ? new CaseSensitiveTokenFactory() : new CaseInsensitiveTokenFactory();
             CharacterStream characterStream = new CharacterArrayStream(inputContent);
             tokenizer.tokenize(characterStream, tokenFactory);
-            this.tokens = tokenFactory.getTokens();
+            this.tokens = initializeTokens(tokenFactory.getTokens());
         }
 
         // Create the iterator ...
         tokenIterator = this.tokens.listIterator();
         moveToNextToken();
         return this;
+    }
+
+    /**
+     * Method to allow subclasses to preprocess the set of tokens and return the correct tokens to use. The default behavior is to
+     * simply return the supplied tokens.
+     * 
+     * @param tokens
+     * @return list of tokens.
+     */
+    protected List<Token> initializeTokens( List<Token> tokens ) {
+        return tokens;
+    }
+
+    /**
+     * Method to allow tokens to be re-used from the start without re-tokenizing content.
+     */
+    public void rewind() {
+        // recreate the iterator ...
+        tokenIterator = this.tokens.listIterator();
+        completed = false;
+        currentToken = null;
+        moveToNextToken();
     }
 
     /**
@@ -437,7 +473,7 @@ public class TokenStream {
      * 
      * @return the current token's position; never null
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
-     * @throws NoSuchElementException if there is no next token
+     * @throws NoSuchElementException if there is no previous token
      */
     public Position nextPosition() {
         return currentToken().position();
@@ -526,7 +562,7 @@ public class TokenStream {
 
     protected void throwNoMoreContent() throws ParsingException {
         String msg = CommonI18n.noMoreContent.text();
-        Position pos = tokens.isEmpty() ? new Position(1, 0) : tokens.get(tokens.size() - 1).position();
+        Position pos = tokens.isEmpty() ? new Position(-1, 1, 0) : tokens.get(tokens.size() - 1).position();
         throw new ParsingException(pos, msg);
     }
 
@@ -725,9 +761,12 @@ public class TokenStream {
      * 
      * <pre>
      * 
-     * if ( tokens.matches(currentExpected,expectedForNextTokens) ) { tokens.consume(currentExpected,expectedForNextTokens); }
+     * if (tokens.matches(currentExpected, expectedForNextTokens)) {
+     *     tokens.consume(currentExpected, expectedForNextTokens);
+     * }
      * 
      * </pre>
+     * 
      * </p>
      * <p>
      * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
@@ -770,9 +809,12 @@ public class TokenStream {
      * 
      * <pre>
      * 
-     * if ( tokens.matches(currentExpected,expectedForNextTokens) ) { tokens.consume(currentExpected,expectedForNextTokens); }
+     * if (tokens.matches(currentExpected, expectedForNextTokens)) {
+     *     tokens.consume(currentExpected, expectedForNextTokens);
+     * }
      * 
      * </pre>
+     * 
      * </p>
      * <p>
      * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
@@ -811,9 +853,12 @@ public class TokenStream {
      * 
      * <pre>
      * 
-     * if ( tokens.matches(currentExpected,expectedForNextTokens) ) { tokens.consume(currentExpected,expectedForNextTokens); }
+     * if (tokens.matches(currentExpected, expectedForNextTokens)) {
+     *     tokens.consume(currentExpected, expectedForNextTokens);
+     * }
      * 
      * </pre>
+     * 
      * </p>
      * <p>
      * The {@link #ANY_VALUE ANY_VALUE} constant can be used in the expected values as a wildcard.
@@ -954,7 +999,7 @@ public class TokenStream {
      * @throws IllegalStateException if this method was called before the stream was {@link #start() started}
      */
     public boolean matches( int expectedType ) throws IllegalStateException {
-        return !completed && (expectedType == ANY_TYPE || currentToken().type() == expectedType);
+        return !completed && currentToken().matches(expectedType);
     }
 
     /**
@@ -1075,7 +1120,7 @@ public class TokenStream {
             if (!iter.hasNext()) return false;
             token = iter.next();
             if (nextExpectedType == ANY_TYPE) continue;
-            if (token.type() != nextExpectedType) return false;
+            if (!token.matches(nextExpectedType)) return false;
         }
         return true;
     }
@@ -1233,6 +1278,30 @@ public class TokenStream {
     }
 
     /**
+     * Gets the content string starting at the first position (inclusive) and continuing up to the end position (exclusive).
+     * 
+     * @param starting the position marking the beginning of the desired content string.
+     * @param end the position located directly after the returned content string; can be null, which means end of content
+     * @return the content string; never null
+     */
+    public String getContentBetween( Position starting,
+                                     Position end ) {
+        CheckArg.isNotNull(starting, "starting");
+
+        int startIndex = starting.getIndexInContent();
+        int endIndex = inputString.length();
+        if (end != null) {
+            endIndex = end.getIndexInContent();
+        }
+
+        if (startIndex >= endIndex) {
+            throw new IllegalArgumentException(CommonI18n.endPositionMustBeGreaterThanStartingPosition.text(startIndex, endIndex));
+        }
+
+        return inputString.substring(startIndex, endIndex);
+    }
+
+    /**
      * Get the previous token. This does not modify the state.
      * 
      * @return the previous token; never null
@@ -1249,11 +1318,10 @@ public class TokenStream {
             }
             throw new IllegalStateException(CommonI18n.startMethodMustBeCalledBeforeConsumingOrMatching.text());
         }
-        if (!tokenIterator.hasPrevious()) {
+        if (tokenIterator.previousIndex() == 0) {
             throw new NoSuchElementException(CommonI18n.noMoreContent.text());
         }
-        ListIterator<Token> temp = tokens.listIterator(tokenIterator.previousIndex());
-        return temp.next();
+        return tokens.get(tokenIterator.previousIndex() - 1);
     }
 
     String generateFragment() {
@@ -1337,9 +1405,10 @@ public class TokenStream {
         /**
          * Get the position for the last character returned from {@link #next()}.
          * 
+         * @param startIndex
          * @return the position of the last character returned; never null
          */
-        Position position();
+        Position position( int startIndex );
 
         /**
          * Determine if the next character on the sream is a {@link Character#isWhitespace(char) whitespace character}. This
@@ -1513,6 +1582,14 @@ public class TokenStream {
         boolean matches( char expected );
 
         /**
+         * Determine if the token matches the supplied type.
+         * 
+         * @param expectedType the expected integer type
+         * @return true if the token's value matches the supplied integer type, or false otherwise
+         */
+        boolean matches( int expectedType );
+
+        /**
          * Get the type of the token.
          * 
          * @return the token's type
@@ -1546,6 +1623,14 @@ public class TokenStream {
          * @return the position; never null
          */
         Position position();
+
+        /**
+         * Bitmask ORed with existing type value.
+         * 
+         * @param typeMask
+         * @return copy of Token with new type
+         */
+        Token withType( int typeMask );
     }
 
     /**
@@ -1566,6 +1651,16 @@ public class TokenStream {
             this.endIndex = endIndex;
             this.type = type;
             this.position = position;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.Token#withType(int)
+         */
+        public Token withType( int typeMask ) {
+            int type = this.type | typeMask;
+            return new CaseSensitiveToken(startIndex, endIndex, type, position);
         }
 
         /**
@@ -1625,6 +1720,15 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.common.text.TokenStream.Token#matches(int)
+         */
+        public final boolean matches( int expectedType ) {
+            return expectedType == ANY_TYPE || (currentToken().type() & expectedType) == expectedType;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.common.text.TokenStream.Token#value()
          */
         public final String value() {
@@ -1672,6 +1776,17 @@ public class TokenStream {
         @Override
         protected String matchString() {
             return inputUppercased;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TokenStream.Token#withType(int)
+         */
+        @Override
+        public Token withType( int typeMask ) {
+            int type = this.type() | typeMask;
+            return new CaseInsensitiveToken(startIndex(), endIndex(), type, position());
         }
     }
 
@@ -1772,10 +1887,12 @@ public class TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#position()
+         * @param startIndex
+         * @return the position of the token. never null
+         * @see org.jboss.dna.common.text.TokenStream.CharacterStream#position(int)
          */
-        public Position position() {
-            return new Position(lineNumber, columnNumber);
+        public Position position( int startIndex ) {
+            return new Position(startIndex, lineNumber, columnNumber);
         }
 
         /**
@@ -1792,10 +1909,10 @@ public class TokenStream {
             if (result == '\r') {
                 nextCharMayBeLineFeed = true;
                 ++lineNumber;
-                columnNumber = 1;
+                columnNumber = 0;
             } else if (result == '\n') {
                 if (!nextCharMayBeLineFeed) ++lineNumber;
-                columnNumber = 1;
+                columnNumber = 0;
             } else if (nextCharMayBeLineFeed) {
                 nextCharMayBeLineFeed = false;
             }
@@ -1958,22 +2075,22 @@ public class TokenStream {
         /**
          * The {@link Token#type() token type} for tokens that consist of an individual '.' character.
          */
-        public static final int DECIMAL = 3;
+        public static final int DECIMAL = 4;
         /**
          * The {@link Token#type() token type} for tokens that consist of all the characters within single-quotes. Single quote
          * characters are included if they are preceded (escaped) by a '\' character.
          */
-        public static final int SINGLE_QUOTED_STRING = 4;
+        public static final int SINGLE_QUOTED_STRING = 8;
         /**
          * The {@link Token#type() token type} for tokens that consist of all the characters within double-quotes. Double quote
          * characters are included if they are preceded (escaped) by a '\' character.
          */
-        public static final int DOUBLE_QUOTED_STRING = 5;
+        public static final int DOUBLE_QUOTED_STRING = 16;
         /**
          * The {@link Token#type() token type} for tokens that consist of all the characters between "/*" and "&#42;/" or between
          * "//" and the next line terminator (e.g., '\n', '\r' or "\r\n").
          */
-        public static final int COMMENT = 6;
+        public static final int COMMENT = 32;
 
         private final boolean useComments;
 
@@ -2017,14 +2134,14 @@ public class TokenStream {
                     case '|':
                     case '=':
                     case ':':
-                        tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                        tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                         break;
                     case '.':
-                        tokens.addToken(input.position(), input.index(), input.index() + 1, DECIMAL);
+                        tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, DECIMAL);
                         break;
                     case '\"':
                         int startIndex = input.index();
-                        Position startingPosition = input.position();
+                        Position startingPosition = input.position(startIndex);
                         boolean foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
@@ -2041,11 +2158,11 @@ public class TokenStream {
                             throw new ParsingException(startingPosition, msg);
                         }
                         int endIndex = input.index() + 1; // beyond last character read
-                        tokens.addToken(input.position(), startIndex, endIndex, DOUBLE_QUOTED_STRING);
+                        tokens.addToken(startingPosition, startIndex, endIndex, DOUBLE_QUOTED_STRING);
                         break;
                     case '\'':
                         startIndex = input.index();
-                        startingPosition = input.position();
+                        startingPosition = input.position(startIndex);
                         foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
@@ -2062,10 +2179,11 @@ public class TokenStream {
                             throw new ParsingException(startingPosition, msg);
                         }
                         endIndex = input.index() + 1; // beyond last character read
-                        tokens.addToken(input.position(), startIndex, endIndex, SINGLE_QUOTED_STRING);
+                        tokens.addToken(startingPosition, startIndex, endIndex, SINGLE_QUOTED_STRING);
                         break;
                     case '/':
                         startIndex = input.index();
+                        startingPosition = input.position(startIndex);
                         if (input.isNext('/')) {
                             // End-of-line comment ...
                             boolean foundLineTerminator = false;
@@ -2080,7 +2198,7 @@ public class TokenStream {
                             if (!foundLineTerminator) ++endIndex; // must point beyond last char
                             if (c == '\r' && input.isNext('\n')) input.next();
                             if (useComments) {
-                                tokens.addToken(input.position(), startIndex, endIndex, COMMENT);
+                                tokens.addToken(startingPosition, startIndex, endIndex, COMMENT);
                             }
                         } else if (input.isNext('*')) {
                             // Multi-line comment ...
@@ -2091,21 +2209,22 @@ public class TokenStream {
                             if (input.hasNext()) input.next(); // consume the '/'
                             if (useComments) {
                                 endIndex = input.index() + 1; // the token will include the '/' and '*' characters
-                                tokens.addToken(input.position(), startIndex, endIndex, COMMENT);
+                                tokens.addToken(startingPosition, startIndex, endIndex, COMMENT);
                             }
                         } else {
                             // just a regular slash ...
-                            tokens.addToken(input.position(), startIndex, startIndex + 1, SYMBOL);
+                            tokens.addToken(startingPosition, startIndex, startIndex + 1, SYMBOL);
                         }
                         break;
                     default:
                         startIndex = input.index();
+                        startingPosition = input.position(startIndex);
                         // Read until another whitespace/symbol/decimal/slash is found
                         while (input.hasNext() && !(input.isNextWhitespace() || input.isNextAnyOf("/.-(){}*,;+%?$[]!<>|=:"))) {
                             c = input.next();
                         }
                         endIndex = input.index() + 1; // beyond last character that was included
-                        tokens.addToken(input.position(), startIndex, endIndex, WORD);
+                        tokens.addToken(startingPosition, startIndex, endIndex, WORD);
                 }
             }
         }

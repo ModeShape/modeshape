@@ -82,7 +82,7 @@ public class CndTokenizer implements Tokenizer {
                 case '(':
                 case ')':
                 case ',':
-                    tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                    tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                     break;
                 // case '.':
                 // tokens.addToken(input.position(), input.index(), input.index() + 1, DECIMAL);
@@ -90,7 +90,7 @@ public class CndTokenizer implements Tokenizer {
                 case '{':
                     // Vendor extension, meant to be excluded
                     int startIndex = input.index();
-                    Position startingPosition = input.position();
+                    Position startingPosition = input.position(startIndex);
                     boolean foundClosingBrace = false;
                     String vendorName = "";
                     while (input.hasNext()) {
@@ -114,7 +114,7 @@ public class CndTokenizer implements Tokenizer {
                     break;
                 case '\"':
                     startIndex = input.index();
-                    startingPosition = input.position();
+                    startingPosition = input.position(startIndex);
                     boolean foundClosingQuote = false;
                     while (input.hasNext()) {
                         c = input.next();
@@ -135,7 +135,7 @@ public class CndTokenizer implements Tokenizer {
                     break;
                 case '\'':
                     startIndex = input.index();
-                    startingPosition = input.position();
+                    startingPosition = input.position(startIndex);
                     foundClosingQuote = false;
                     while (input.hasNext()) {
                         c = input.next();
@@ -156,7 +156,7 @@ public class CndTokenizer implements Tokenizer {
                     break;
                 case '/':
                     startIndex = input.index();
-                    startingPosition = input.position();
+                    startingPosition = input.position(startIndex);
                     if (input.isNext('/')) {
                         // End-of-line comment ...
                         boolean foundLineTerminator = false;
@@ -211,7 +211,7 @@ public class CndTokenizer implements Tokenizer {
                     // since these do not appear in other rules above, they will result in one-character tokens.
                     //
                     startIndex = input.index();
-                    startingPosition = input.position();
+                    startingPosition = input.position(startIndex);
                     // Read as long as there is a valid XML character ...
                     while (input.hasNext() && !(input.isNextWhitespace() || input.isNextAnyOf("[]<>=-+(),\"'/{*|"))) {
                         c = input.next();

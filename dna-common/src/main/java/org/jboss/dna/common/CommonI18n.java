@@ -104,6 +104,7 @@ public final class CommonI18n {
     public static I18n expectingValidIntegerAtLineAndColumn;
     public static I18n expectingValidLongAtLineAndColumn;
     public static I18n expectingValidBooleanAtLineAndColumn;
+    public static I18n endPositionMustBeGreaterThanStartingPosition;
 
     static {
         try {

@@ -751,13 +751,13 @@ public class XPathParser {
                     case '\\':
                     case '#':
                     case '@':
-                        tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                        tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                         break;
                     case '\'':
                     case '\"':
                         int startIndex = input.index();
                         char closingChar = c;
-                        Position pos = input.position();
+                        Position pos = input.position(startIndex);
                         boolean foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
@@ -782,7 +782,7 @@ public class XPathParser {
                         startIndex = input.index();
                         if (input.isNext(':')) {
                             // This is a comment ...
-                            pos = input.position();
+                            pos = input.position(startIndex);
                             while (input.hasNext() && !input.isNext(':', ')')) {
                                 c = input.next();
                             }
@@ -793,13 +793,13 @@ public class XPathParser {
                                 tokens.addToken(pos, startIndex, endIndex, COMMENT);
                             }
                         } else {
-                            tokens.addToken(input.position(), input.index(), input.index() + 1, SYMBOL);
+                            tokens.addToken(input.position(startIndex), input.index(), input.index() + 1, SYMBOL);
                             break;
                         }
                         break;
                     default:
                         startIndex = input.index();
-                        pos = input.position();
+                        pos = input.position(startIndex);
                         // Read as long as there is a valid XML character ...
                         int tokenType = (XmlCharacters.isValidNcNameStart(c)) ? NAME : OTHER;
                         while (input.isNextValidXmlNcNameCharacter()) {

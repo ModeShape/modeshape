@@ -789,8 +789,8 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseFullTextSearchExpressionFromStringWithValidExpression() {
-        Position pos = new Position(100, 13);
-        Term result = parser.parseFullTextSearchExpression("term1 term2 OR -term3 OR -term4 OR term5", pos);
+        Position pos = new Position(500, 100, 13);
+        FullTextSearch.Term result = parser.parseFullTextSearchExpression("term1 term2 OR -term3 OR -term4 OR term5", pos);
         assertThat(result, is(notNullValue()));
         assertThat(result, is(instanceOf(Disjunction.class)));
         Disjunction disjunction = (Disjunction)result;
@@ -808,11 +808,12 @@ public class SqlQueryParserTest {
     @Test
     public void shouldConvertPositionWhenUnableToParseFullTextSearchExpression() {
         try {
-            parser.parseFullTextSearchExpression("", new Position(100, 13));
+            parser.parseFullTextSearchExpression("", new Position(500, 100, 13));
             fail("Should have thrown an exception");
         } catch (ParsingException e) {
             assertThat(e.getPosition().getLine(), is(100));
             assertThat(e.getPosition().getColumn(), is(13));
+            assertThat(e.getPosition().getIndexInContent(), is(500));
         }
     }
 

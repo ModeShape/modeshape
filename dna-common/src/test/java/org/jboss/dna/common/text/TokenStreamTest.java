@@ -336,6 +336,19 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume("FROM", "THIS", "TABLE"), is(true));
         assertThat(tokens.hasNext(), is(false));
     }
+    
+    @Test
+    public void shouldReturnTrueFromMatchIfAllTypeValuesMatch() {
+        makeCaseInsensitive();
+        assertThat(tokens.matches(BasicTokenizer.WORD, BasicTokenizer.WORD), is(true));
+    }
+    
+    @Test
+    public void shouldReturnFalseFromMatchIfAllTypeValuesDoNotMatch() {
+        makeCaseInsensitive();
+        assertThat(tokens.matches(BasicTokenizer.WORD, BasicTokenizer.DECIMAL), is(false));
+        assertThat(tokens.matches(BasicTokenizer.DECIMAL, BasicTokenizer.WORD), is(false));
+    }
 
     @Test
     public void shouldConsumeMultipleTokensWithAnyValueConstant() {
@@ -396,5 +409,52 @@ public class TokenStreamTest {
         assertThat(tokens.canConsume("SELECT"), is(false));
         assertThat(tokens.canConsume(TokenStream.ANY_VALUE), is(false));
         assertThat(tokens.canConsume(BasicTokenizer.SYMBOL), is(false));
+    }
+    
+    @Test
+    public void shouldFindNextPositionStartIndex() {
+    	makeCaseInsensitive();
+    	// "Select all columns from this table";
+    	tokens.consume();
+    	// Next position should be line 1, column 8
+    	assertThat(tokens.nextPosition().getIndexInContent(), is(7));
+    	assertThat(tokens.nextPosition().getColumn(), is(8));
+    	assertThat(tokens.nextPosition().getLine(), is(1));
+    }
+    
+    @Test
+    public void shouldFindPreviousPositionStartIndex() {
+    	makeCaseInsensitive();
+    	// "Select all columns from this table";
+    	tokens.consume();
+    	tokens.consume();
+    	// previous position should be line 1, column 8
+    	assertThat(tokens.previousPosition().getIndexInContent(), is(7));
+    	assertThat(tokens.previousPosition().getColumn(), is(8));
+    	assertThat(tokens.previousPosition().getLine(), is(1));
+    }
+    
+    @Test
+    public void shouldParseMultiLineString() {
+    	makeCaseInsensitive();
+    	String content = "ALTER DATABASE \n"
+    			+ "DO SOMETHING; \n"
+    			+ "ALTER DATABASE \n"
+    			+ "      SET DEFAULT BIGFILE TABLESPACE;";
+        tokens = new TokenStream(content, tokenizer, true);
+        tokens.start();
+
+    	tokens.consume(); // LINE
+    	tokens.consume(); // ONE
+    	tokens.consume(); // DO
+    	tokens.consume(); // SOMETHING
+    	tokens.consume(); // ;
+    	
+    	assertThat(tokens.nextPosition().getIndexInContent(), is(31));
+    	assertThat(tokens.nextPosition().getColumn(), is(1));
+    	tokens.consume(); // ALTER
+    	assertThat(tokens.nextPosition().getIndexInContent(), is(37));
+    	assertThat(tokens.nextPosition().getColumn(), is(7));
+
     }
 }
