@@ -134,7 +134,7 @@ public class DualIndexSearchProvider implements SearchProvider {
     static {
         IndexRules.Builder builder = IndexRules.createBuilder();
         // Configure the default behavior ...
-        builder.defaultTo(IndexRules.INDEX | IndexRules.ANALYZE);
+        builder.defaultTo(IndexRules.INDEX | IndexRules.ANALYZE | IndexRules.FULL_TEXT);
         // Configure the UUID properties to be just indexed (not stored, not analyzed, not included in full-text) ...
         builder.store(JcrLexicon.UUID, DnaLexicon.UUID);
         // Configure the properties that we'll treat as dates ...
@@ -324,7 +324,13 @@ public class DualIndexSearchProvider implements SearchProvider {
         protected IndexWriter getPathsWriter() throws IOException {
             assert !readOnly;
             if (pathsWriter == null) {
-                pathsWriter = new IndexWriter(pathsIndexDirectory, analyzer, overwrite, MaxFieldLength.UNLIMITED);
+                if (overwrite) {
+                    // Always overwrite it ...
+                    pathsWriter = new IndexWriter(pathsIndexDirectory, analyzer, overwrite, MaxFieldLength.UNLIMITED);
+                } else {
+                    // Don't overwrite, but create if missing ...
+                    pathsWriter = new IndexWriter(pathsIndexDirectory, analyzer, MaxFieldLength.UNLIMITED);
+                }
             }
             return pathsWriter;
         }
@@ -332,7 +338,13 @@ public class DualIndexSearchProvider implements SearchProvider {
         protected IndexWriter getContentWriter() throws IOException {
             assert !readOnly;
             if (contentWriter == null) {
-                contentWriter = new IndexWriter(contentIndexDirectory, analyzer, overwrite, MaxFieldLength.UNLIMITED);
+                if (overwrite) {
+                    // Always overwrite it ...
+                    contentWriter = new IndexWriter(contentIndexDirectory, analyzer, overwrite, MaxFieldLength.UNLIMITED);
+                } else {
+                    // Don't overwrite, but create if missing ...
+                    contentWriter = new IndexWriter(contentIndexDirectory, analyzer, MaxFieldLength.UNLIMITED);
+                }
             }
             return contentWriter;
         }
@@ -492,33 +504,14 @@ public class DualIndexSearchProvider implements SearchProvider {
          */
         public int deleteBelow( Path path ) {
             assert !readOnly;
-            // Perform a query using the reader to find those nodes at/below the path ...
             try {
-                IndexReader pathReader = getPathsReader();
-                IndexSearcher pathSearcher = new IndexSearcher(pathReader);
-                String pathStr = stringFactory.create(path) + "/";
-                PrefixQuery query = new PrefixQuery(new Term(PathIndex.PATH, pathStr));
-                int numberDeleted = 0;
-                while (true) {
-                    // Execute the query and get the results ...
-                    TopDocs results = pathSearcher.search(query, SIZE_OF_DELETE_BATCHES);
-                    int numResultsInBatch = results.scoreDocs.length;
-                    // Walk the results, delete the doc, and add to the query that we'll use against the content index ...
-                    IndexReader contentReader = getContentReader();
-                    for (ScoreDoc result : results.scoreDocs) {
-                        int docId = result.doc;
-                        // Find the UUID of the node ...
-                        Document doc = pathReader.document(docId, UUID_FIELD_SELECTOR);
-                        String uuid = doc.get(PathIndex.UUID);
-                        // Delete the document from the paths index ...
-                        pathReader.deleteDocument(docId);
-                        // Delete the corresponding document from the content index ...
-                        contentReader.deleteDocuments(new Term(ContentIndex.UUID, uuid));
-                    }
-                    numberDeleted += numResultsInBatch;
-                    if (numResultsInBatch < SIZE_OF_DELETE_BATCHES) break;
-                }
-                return numberDeleted;
+                // Create a query to find all the nodes at or below the specified path ...
+                Set<UUID> uuids = getUuidsForDescendantsOf(path, true);
+                Query uuidQuery = findAllNodesWithUuids(uuids);
+                // Now delete the documents from each index using this query, which we can reuse ...
+                getPathsWriter().deleteDocuments(uuidQuery);
+                getContentWriter().deleteDocuments(uuidQuery);
+                return uuids.size();
             } catch (FileNotFoundException e) {
                 // There are no index files yet, so nothing to delete ...
                 return 0;
@@ -628,42 +621,42 @@ public class DualIndexSearchProvider implements SearchProvider {
                 }
             }
             if (pathsWriter != null) {
+                // try {
+                // pathsWriter.commit();
+                // } catch (IOException e) {
+                // if (ioError == null) ioError = e;
+                // } catch (RuntimeException e) {
+                // if (runtimeError == null) runtimeError = e;
+                // } finally {
                 try {
-                    pathsWriter.commit();
-                } catch (IOException e) {
-                    ioError = e;
-                } catch (RuntimeException e) {
-                    runtimeError = e;
-                } finally {
-                    try {
-                        pathsWriter.close();
-                    } catch (IOException e) {
-                        ioError = e;
-                    } catch (RuntimeException e) {
-                        runtimeError = e;
-                    } finally {
-                        pathsWriter = null;
-                    }
-                }
-            }
-            if (contentWriter != null) {
-                try {
-                    contentWriter.commit();
+                    pathsWriter.close();
                 } catch (IOException e) {
                     if (ioError == null) ioError = e;
                 } catch (RuntimeException e) {
                     if (runtimeError == null) runtimeError = e;
                 } finally {
-                    try {
-                        contentWriter.close();
-                    } catch (IOException e) {
-                        ioError = e;
-                    } catch (RuntimeException e) {
-                        runtimeError = e;
-                    } finally {
-                        contentWriter = null;
-                    }
+                    pathsWriter = null;
                 }
+                // }
+            }
+            if (contentWriter != null) {
+                // try {
+                // contentWriter.commit();
+                // } catch (IOException e) {
+                // if (ioError == null) ioError = e;
+                // } catch (RuntimeException e) {
+                // if (runtimeError == null) runtimeError = e;
+                // } finally {
+                try {
+                    contentWriter.close();
+                } catch (IOException e) {
+                    if (ioError == null) ioError = e;
+                } catch (RuntimeException e) {
+                    if (runtimeError == null) runtimeError = e;
+                } finally {
+                    contentWriter = null;
+                }
+                // }
             }
             if (ioError != null) {
                 String msg = SearchI18n.errorWhileCommittingIndexChanges.text(workspaceName, sourceName, ioError.getMessage());
@@ -916,7 +909,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                 }
                 return query;
             }
-            // Returna query that will always find all of the UUIDs ...
+            // Return a query that will always find all of the UUIDs ...
             return new UuidsQuery(ContentIndex.UUID, uuids, getContext().getValueFactories().getUuidFactory());
         }
 
@@ -1515,7 +1508,8 @@ public class DualIndexSearchProvider implements SearchProvider {
     protected static class UuidCollector extends Collector {
         private final Set<UUID> uuids = new HashSet<UUID>();
         private String[] uuidsByDocId;
-        private int baseDocId;
+
+        // private int baseDocId;
 
         protected UuidCollector() {
         }
@@ -1555,10 +1549,9 @@ public class DualIndexSearchProvider implements SearchProvider {
          * @see org.apache.lucene.search.Collector#collect(int)
          */
         @Override
-        public void collect( int doc ) {
-            int index = doc - baseDocId;
-            assert index >= 0;
-            String uuidString = uuidsByDocId[index];
+        public void collect( int docId ) {
+            assert docId >= 0;
+            String uuidString = uuidsByDocId[docId];
             assert uuidString != null;
             uuids.add(UUID.fromString(uuidString));
         }
@@ -1572,7 +1565,7 @@ public class DualIndexSearchProvider implements SearchProvider {
         public void setNextReader( IndexReader reader,
                                    int docBase ) throws IOException {
             this.uuidsByDocId = FieldCache.DEFAULT.getStrings(reader, UUID_FIELD);
-            this.baseDocId = docBase;
+            // this.baseDocId = docBase;
         }
     }
 }
