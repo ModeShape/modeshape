@@ -539,7 +539,7 @@ public class DualIndexSearchProvider implements SearchProvider {
 
             try {
                 // Parse the full-text search and search against the 'fts' field ...
-                QueryParser parser = new QueryParser(ContentIndex.FULL_TEXT, createAnalyzer());
+                QueryParser parser = new QueryParser(Version.LUCENE_29, ContentIndex.FULL_TEXT, createAnalyzer());
                 Query query = parser.parse(fullTextString);
                 TopDocs docs = getContentSearcher().search(query, maxResults + offset);
 
