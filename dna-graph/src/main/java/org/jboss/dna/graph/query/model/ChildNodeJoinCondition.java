@@ -53,14 +53,18 @@ public class ChildNodeJoinCondition extends JoinCondition {
     }
 
     /**
-     * @return childSelectorName
+     * Get the name of the selector that represents the child.
+     * 
+     * @return the selector name of the child node; never null
      */
     public final SelectorName getChildSelectorName() {
         return childSelectorName;
     }
 
     /**
-     * @return parentSelectorName
+     * Get the name of the selector that represents the parent.
+     * 
+     * @return the selector name of the parent node; never null
      */
     public final SelectorName getParentSelectorName() {
         return parentSelectorName;

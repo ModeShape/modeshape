@@ -26,9 +26,14 @@ package org.jboss.dna.graph.query.model;
 import net.jcip.annotations.Immutable;
 
 /**
- * 
+ * An interface called by a visitor when that visitor is visiting the node.
  */
 @Immutable
 public interface Visitable {
+    /**
+     * Accept the supplied visitor, which should call back to the visitor to complete the double-dispatch operation.
+     * 
+     * @param visitor the visitor; never null
+     */
     void accept( Visitor visitor );
 }

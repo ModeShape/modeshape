@@ -120,10 +120,10 @@ public class QueryTest extends AbstractQueryObjectTest {
     public void shouldConstructReadableString() {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
-        constraint = new PropertyExistence(selector("selector1"), name("jcr:uuid"));
+        constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context),
+        assertThat(Visitors.readable(query),
                    is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC"));
     }
 
@@ -131,11 +131,11 @@ public class QueryTest extends AbstractQueryObjectTest {
     public void shouldConstructReadableStringWithLimits() {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
-        constraint = new PropertyExistence(selector("selector1"), name("jcr:uuid"));
+        constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         limits = new Limit(10, 100);
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context),
+        assertThat(Visitors.readable(query),
                    is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC LIMIT 10 OFFSET 100"));
     }
 
@@ -143,10 +143,10 @@ public class QueryTest extends AbstractQueryObjectTest {
     public void shouldConstructReadableStringWithNoColumns() {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.emptyList();
-        constraint = new PropertyExistence(selector("selector1"), name("jcr:uuid"));
+        constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context),
+        assertThat(Visitors.readable(query),
                    is("SELECT * FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC"));
     }
 
@@ -154,11 +154,10 @@ public class QueryTest extends AbstractQueryObjectTest {
     public void shouldConstructReadableStringWithNoOrderings() {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
-        constraint = new PropertyExistence(selector("selector1"), name("jcr:uuid"));
+        constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
         orderings = Collections.emptyList();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context),
-                   is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL"));
+        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL"));
     }
 
     @Test
@@ -168,7 +167,7 @@ public class QueryTest extends AbstractQueryObjectTest {
         constraint = null;
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context), is("SELECT selector1.* FROM nt:unstructured ORDER BY NAME(selector1) ASC"));
+        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM nt:unstructured ORDER BY NAME(selector1) ASC"));
     }
 
     @Test
@@ -179,11 +178,11 @@ public class QueryTest extends AbstractQueryObjectTest {
         orderings = Collections.emptyList();
         distinct = true;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context), is("SELECT DISTINCT * FROM nt:unstructured"));
+        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM nt:unstructured"));
 
         source = new AllNodes();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context), is("SELECT DISTINCT * FROM __ALLNODES__"));
+        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM __ALLNODES__"));
     }
 
     @Test
@@ -193,10 +192,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         constraint = null;
         orderings = Collections.emptyList();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM nt:unstructured"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM nt:unstructured"));
 
         source = new AllNodes();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM __ALLNODES__"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM __ALLNODES__"));
     }
 }

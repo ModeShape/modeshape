@@ -37,15 +37,7 @@ import org.jboss.dna.common.text.TokenStream.CharacterStream;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.common.text.TokenStream.Tokens;
 import org.jboss.dna.common.xml.XmlCharacters;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
-import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.Between;
@@ -90,9 +82,11 @@ import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.SetQuery;
 import org.jboss.dna.graph.query.model.Source;
 import org.jboss.dna.graph.query.model.StaticOperand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.FullTextSearch.Term;
 import org.jboss.dna.graph.query.model.SetQuery.Operation;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 
 /**
  * A {@link QueryParser} implementation that parses a subset of SQL select and set queries.
@@ -475,24 +469,24 @@ public class SqlQueryParser implements QueryParser {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(String, ExecutionContext)
+     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(String, TypeSystem)
      */
     public QueryCommand parseQuery( String query,
-                                    ExecutionContext context ) {
+                                    TypeSystem typeSystem ) {
         Tokenizer tokenizer = new SqlTokenizer(false);
         TokenStream tokens = new TokenStream(query, tokenizer, false);
         tokens.start();
-        return parseQueryCommand(tokens, context);
+        return parseQueryCommand(tokens, typeSystem);
     }
 
     protected QueryCommand parseQueryCommand( TokenStream tokens,
-                                              ExecutionContext context ) {
+                                              TypeSystem typeSystem ) {
         QueryCommand command = null;
         if (tokens.matches("SELECT")) {
-            command = parseQuery(tokens, context);
+            command = parseQuery(tokens, typeSystem);
             while (tokens.hasNext()) {
                 if (tokens.matchesAnyOf("UNION", "INTERSECT", "EXCEPT")) {
-                    command = parseSetQuery(tokens, command, context);
+                    command = parseSetQuery(tokens, command, typeSystem);
                 } else {
                     Position pos = tokens.previousPosition();
                     String msg = GraphI18n.unexpectedToken.text(tokens.consume(), pos.getLine(), pos.getColumn());
@@ -504,21 +498,21 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected Query parseQuery( TokenStream tokens,
-                                ExecutionContext context ) {
+                                TypeSystem typeSystem ) {
         AtomicBoolean isDistinct = new AtomicBoolean(false);
-        List<ColumnExpression> columnExpressions = parseSelect(tokens, isDistinct, context);
-        Source source = parseFrom(tokens, context);
-        Constraint constraint = parseWhere(tokens, context, source);
+        List<ColumnExpression> columnExpressions = parseSelect(tokens, isDistinct, typeSystem);
+        Source source = parseFrom(tokens, typeSystem);
+        Constraint constraint = parseWhere(tokens, typeSystem, source);
         // Parse the order by and limit (can be in any order) ...
-        List<Ordering> orderings = parseOrderBy(tokens, context, source);
+        List<Ordering> orderings = parseOrderBy(tokens, typeSystem, source);
         Limit limit = parseLimit(tokens);
-        if (orderings == null) parseOrderBy(tokens, context, source);
+        if (orderings == null) parseOrderBy(tokens, typeSystem, source);
 
         // Convert the column expressions to columns ...
         List<Column> columns = new ArrayList<Column>(columnExpressions.size());
         for (ColumnExpression expression : columnExpressions) {
             SelectorName selectorName = expression.getSelectorName();
-            Name propertyName = nameFrom(expression.getPropertyName(), expression.getPosition(), context);
+            String propertyName = expression.getPropertyName();
             if (selectorName == null) {
                 if (source instanceof Selector) {
                     selectorName = ((Selector)source).getName();
@@ -536,7 +530,7 @@ public class SqlQueryParser implements QueryParser {
 
     protected SetQuery parseSetQuery( TokenStream tokens,
                                       QueryCommand leftHandSide,
-                                      ExecutionContext context ) {
+                                      TypeSystem typeSystem ) {
         Operation operation = null;
         if (tokens.canConsume("UNION")) {
             operation = Operation.UNION;
@@ -548,13 +542,13 @@ public class SqlQueryParser implements QueryParser {
         }
         boolean all = tokens.canConsume("ALL");
         // Parse the next select
-        QueryCommand rightQuery = parseQuery(tokens, context);
+        QueryCommand rightQuery = parseQuery(tokens, typeSystem);
         return new SetQuery(leftHandSide, operation, rightQuery, all);
     }
 
     protected List<ColumnExpression> parseSelect( TokenStream tokens,
                                                   AtomicBoolean isDistinct,
-                                                  ExecutionContext context ) {
+                                                  TypeSystem typeSystem ) {
         tokens.consume("SELECT");
         if (tokens.canConsume("DISTINCT")) isDistinct.set(true);
         if (tokens.canConsume('*')) {
@@ -578,7 +572,7 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected Source parseFrom( TokenStream tokens,
-                                ExecutionContext context ) {
+                                TypeSystem typeSystem ) {
         Source source = null;
         tokens.consume("FROM");
         source = parseNamedSelector(tokens);
@@ -600,7 +594,7 @@ public class SqlQueryParser implements QueryParser {
             // Read the name of the selector on the right side of the join ...
             NamedSelector right = parseNamedSelector(tokens);
             // Read the join condition ...
-            JoinCondition joinCondition = parseJoinCondition(tokens, context);
+            JoinCondition joinCondition = parseJoinCondition(tokens, typeSystem);
             // Create the join ...
             source = new Join(source, joinType, right, joinCondition);
         }
@@ -608,14 +602,14 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected JoinCondition parseJoinCondition( TokenStream tokens,
-                                                ExecutionContext context ) {
+                                                TypeSystem typeSystem ) {
         tokens.consume("ON");
         if (tokens.canConsume("ISSAMENODE", "(")) {
             SelectorName selector1Name = parseSelectorName(tokens);
             tokens.consume(',');
             SelectorName selector2Name = parseSelectorName(tokens);
             if (tokens.canConsume('.')) {
-                Path path = parsePath(tokens, context);
+                String path = parsePath(tokens, typeSystem);
                 tokens.consume(')');
                 return new SameNodeJoinCondition(selector1Name, selector2Name, path);
             }
@@ -638,52 +632,52 @@ public class SqlQueryParser implements QueryParser {
         }
         SelectorName selector1 = parseSelectorName(tokens);
         tokens.consume('.');
-        Name property1 = parseName(tokens, context);
+        String property1 = parseName(tokens, typeSystem);
         tokens.consume('=');
         SelectorName selector2 = parseSelectorName(tokens);
         tokens.consume('.');
-        Name property2 = parseName(tokens, context);
+        String property2 = parseName(tokens, typeSystem);
         return new EquiJoinCondition(selector1, property1, selector2, property2);
     }
 
     protected Constraint parseWhere( TokenStream tokens,
-                                     ExecutionContext context,
+                                     TypeSystem typeSystem,
                                      Source source ) {
         if (tokens.canConsume("WHERE")) {
-            return parseConstraint(tokens, context, source);
+            return parseConstraint(tokens, typeSystem, source);
         }
         return null;
     }
 
     protected Constraint parseConstraint( TokenStream tokens,
-                                          ExecutionContext context,
+                                          TypeSystem typeSystem,
                                           Source source ) {
         Constraint constraint = null;
         Position pos = tokens.nextPosition();
         if (tokens.canConsume("(")) {
-            constraint = parseConstraint(tokens, context, source);
+            constraint = parseConstraint(tokens, typeSystem, source);
             tokens.consume(")");
         } else if (tokens.canConsume("NOT")) {
             tokens.canConsume('(');
-            constraint = new Not(parseConstraint(tokens, context, source));
+            constraint = new Not(parseConstraint(tokens, typeSystem, source));
             tokens.canConsume(')');
         } else if (tokens.canConsume("CONTAINS", "(")) {
             // Either 'selectorName.propertyName', or 'selectorName.*' or 'propertyName' ...
             String first = tokens.consume();
             SelectorName selectorName = null;
-            Name propertyName = null;
+            String propertyName = null;
             if (tokens.canConsume(".", "*")) {
                 selectorName = new SelectorName(removeBracketsAndQuotes(first));
             } else if (tokens.canConsume('.')) {
                 selectorName = new SelectorName(removeBracketsAndQuotes(first));
-                propertyName = parseName(tokens, context);
+                propertyName = parseName(tokens, typeSystem);
             } else {
                 if (!(source instanceof Selector)) {
                     String msg = GraphI18n.functionIsAmbiguous.text("CONTAINS()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).getName();
-                propertyName = nameFrom(first, pos, context);
+                propertyName = first;
             }
             tokens.consume(',');
 
@@ -704,7 +698,7 @@ public class SqlQueryParser implements QueryParser {
                 selectorName = parseSelectorName(tokens);
                 tokens.consume(',');
             }
-            Path path = parsePath(tokens, context);
+            String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
             constraint = new SameNode(selectorName, path);
         } else if (tokens.canConsume("ISCHILDNODE", "(")) {
@@ -719,7 +713,7 @@ public class SqlQueryParser implements QueryParser {
                 selectorName = parseSelectorName(tokens);
                 tokens.consume(',');
             }
-            Path path = parsePath(tokens, context);
+            String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
             constraint = new ChildNode(selectorName, path);
         } else if (tokens.canConsume("ISDESCENDANTNODE", "(")) {
@@ -734,41 +728,41 @@ public class SqlQueryParser implements QueryParser {
                 selectorName = parseSelectorName(tokens);
                 tokens.consume(',');
             }
-            Path path = parsePath(tokens, context);
+            String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
             constraint = new DescendantNode(selectorName, path);
         } else {
             // First try a property existance ...
             Position pos2 = tokens.nextPosition();
-            constraint = parsePropertyExistance(tokens, context, source);
+            constraint = parsePropertyExistance(tokens, typeSystem, source);
             if (constraint == null) {
                 // Try to parse as a dynamic operand ...
-                DynamicOperand left = parseDynamicOperand(tokens, context, source);
+                DynamicOperand left = parseDynamicOperand(tokens, typeSystem, source);
                 if (left != null) {
                     if (tokens.matches('(') && left instanceof PropertyValue) {
                         // This was probably a bad function that we parsed as the start of a dynamic operation ...
-                        String name = ((PropertyValue)left).getPropertyName().getLocalName(); // this may be the function name
+                        String name = ((PropertyValue)left).getPropertyName(); // this may be the function name
                         String msg = GraphI18n.expectingConstraintCondition.text(name, pos2.getLine(), pos2.getColumn());
                         throw new ParsingException(pos, msg);
                     }
                     if (tokens.matches("IN", "(") || tokens.matches("NOT", "IN", "(")) {
                         boolean not = tokens.canConsume("NOT");
-                        Collection<StaticOperand> staticOperands = parseInClause(tokens, context);
+                        Collection<StaticOperand> staticOperands = parseInClause(tokens, typeSystem);
                         constraint = new SetCriteria(left, staticOperands);
                         if (not) constraint = new Not(constraint);
                     } else if (tokens.matches("BETWEEN") || tokens.matches("NOT", "BETWEEN")) {
                         boolean not = tokens.canConsume("NOT");
                         tokens.consume("BETWEEN");
-                        StaticOperand lowerBound = parseStaticOperand(tokens, context);
+                        StaticOperand lowerBound = parseStaticOperand(tokens, typeSystem);
                         boolean lowerInclusive = !tokens.canConsume("EXCLUSIVE");
                         tokens.consume("AND");
-                        StaticOperand upperBound = parseStaticOperand(tokens, context);
+                        StaticOperand upperBound = parseStaticOperand(tokens, typeSystem);
                         boolean upperInclusive = !tokens.canConsume("EXCLUSIVE");
                         constraint = new Between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
                         if (not) constraint = new Not(constraint);
                     } else {
                         Operator operator = parseComparisonOperator(tokens);
-                        StaticOperand right = parseStaticOperand(tokens, context);
+                        StaticOperand right = parseStaticOperand(tokens, typeSystem);
                         constraint = new Comparison(left, operator, right);
                     }
                 }
@@ -781,23 +775,23 @@ public class SqlQueryParser implements QueryParser {
         }
         // AND has higher precedence than OR, so we need to evaluate it first ...
         while (tokens.canConsume("AND")) {
-            constraint = new And(constraint, parseConstraint(tokens, context, source));
+            constraint = new And(constraint, parseConstraint(tokens, typeSystem, source));
         }
         while (tokens.canConsume("OR")) {
-            constraint = new Or(constraint, parseConstraint(tokens, context, source));
+            constraint = new Or(constraint, parseConstraint(tokens, typeSystem, source));
         }
         return constraint;
     }
 
     protected List<StaticOperand> parseInClause( TokenStream tokens,
-                                                 ExecutionContext context ) {
+                                                 TypeSystem typeSystem ) {
         List<StaticOperand> result = new ArrayList<StaticOperand>();
         tokens.consume("IN");
         tokens.consume("(");
         if (!tokens.canConsume(")")) {
             // Not empty, so read the static operands ...
             do {
-                result.add(parseStaticOperand(tokens, context));
+                result.add(parseStaticOperand(tokens, typeSystem));
             } while (tokens.canConsume(','));
             tokens.consume(")");
         }
@@ -833,12 +827,12 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected List<Ordering> parseOrderBy( TokenStream tokens,
-                                           ExecutionContext context,
+                                           TypeSystem typeSystem,
                                            Source source ) {
         if (tokens.canConsume("ORDER", "BY")) {
             List<Ordering> orderings = new ArrayList<Ordering>();
             do {
-                orderings.add(parseOrdering(tokens, context, source));
+                orderings.add(parseOrdering(tokens, typeSystem, source));
             } while (tokens.canConsume(','));
             return orderings;
         }
@@ -846,9 +840,9 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected Ordering parseOrdering( TokenStream tokens,
-                                      ExecutionContext context,
+                                      TypeSystem typeSystem,
                                       Source source ) {
-        DynamicOperand operand = parseDynamicOperand(tokens, context, source);
+        DynamicOperand operand = parseDynamicOperand(tokens, typeSystem, source);
         Order order = Order.ASCENDING;
         if (tokens.canConsume("DESC")) order = Order.DESCENDING;
         if (tokens.canConsume("ASC")) order = Order.ASCENDING;
@@ -856,7 +850,7 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected Constraint parsePropertyExistance( TokenStream tokens,
-                                                 ExecutionContext context,
+                                                 TypeSystem typeSystem,
                                                  Source source ) {
         if (tokens.matches(ANY_VALUE, ".", ANY_VALUE, "IS", "NOT", "NULL")
             || tokens.matches(ANY_VALUE, ".", ANY_VALUE, "IS", "NULL") || tokens.matches(ANY_VALUE, "IS", "NOT", "NULL")
@@ -864,11 +858,11 @@ public class SqlQueryParser implements QueryParser {
             Position pos = tokens.nextPosition();
             String firstWord = tokens.consume();
             SelectorName selectorName = null;
-            Name propertyName = null;
+            String propertyName = null;
             if (tokens.canConsume('.')) {
                 // We actually read the selector name, so now read the property name ...
                 selectorName = new SelectorName(firstWord);
-                propertyName = parseName(tokens, context);
+                propertyName = parseName(tokens, typeSystem);
             } else {
                 // Otherwise the source should be a single named selector
                 if (!(source instanceof Selector)) {
@@ -876,7 +870,7 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).getName();
-                propertyName = nameFrom(firstWord, pos, context);
+                propertyName = firstWord;
             }
             if (tokens.canConsume("IS", "NOT", "NULL")) {
                 return new PropertyExistence(selectorName, propertyName);
@@ -888,7 +882,7 @@ public class SqlQueryParser implements QueryParser {
     }
 
     protected StaticOperand parseStaticOperand( TokenStream tokens,
-                                                ExecutionContext context ) {
+                                                TypeSystem typeSystem ) {
         if (tokens.canConsume('$')) {
             // The variable name must conform to a valid prefix, which is defined as a valid NCName ...
             String value = tokens.consume();
@@ -899,66 +893,52 @@ public class SqlQueryParser implements QueryParser {
             }
             return new BindVariableName(value);
         }
-        return parseLiteral(tokens, context);
+        return parseLiteral(tokens, typeSystem);
     }
 
     protected Literal parseLiteral( TokenStream tokens,
-                                    ExecutionContext context ) {
+                                    TypeSystem typeSystem ) {
         if (tokens.canConsume("CAST", "(")) {
             // Get the value that is to be cast ...
             Position pos = tokens.nextPosition();
-            String value = parseLiteralValue(tokens, context);
+            String value = parseLiteralValue(tokens, typeSystem);
             // Figure out the type we're supposed to cast to ...
-            ValueFactories factories = context.getValueFactories();
-            ValueFactory<?> factory = factories.getStringFactory();
             tokens.consume("AS");
-            if (tokens.canConsume("STRING")) factory = factories.getStringFactory();
-            else if (tokens.canConsume("BINARY")) factory = factories.getBinaryFactory();
-            else if (tokens.canConsume("DATE")) factory = factories.getDateFactory();
-            else if (tokens.canConsume("LONG")) factory = factories.getLongFactory();
-            else if (tokens.canConsume("DOUBLE")) factory = factories.getDoubleFactory();
-            else if (tokens.canConsume("DECIMAL")) factory = factories.getDecimalFactory();
-            else if (tokens.canConsume("BOOLEAN")) factory = factories.getBooleanFactory();
-            else if (tokens.canConsume("NAME")) factory = factories.getNameFactory();
-            else if (tokens.canConsume("PATH")) factory = factories.getPathFactory();
-            else if (tokens.canConsume("REFERENCE")) factory = factories.getReferenceFactory();
-            else if (tokens.canConsume("WEAKREFERENCE")) factory = factories.getPathFactory();
-            else if (tokens.canConsume("URI")) factory = factories.getUriFactory();
-            else {
-                Position typePos = tokens.nextPosition();
+            String typeName = tokens.consume();
+            TypeFactory<?> typeFactory = typeSystem.getTypeFactory(typeName);
+            if (typeFactory == null) {
+                Position typePos = tokens.previousPosition();
                 String msg = GraphI18n.invalidPropertyType.text(tokens.consume(), typePos.getLine(), typePos.getColumn());
                 throw new ParsingException(typePos, msg);
             }
             // Convert the supplied value to the desired value ...
             tokens.consume(')');
             try {
-                Object literal = factory.create(value);
-                if (literal instanceof DateTime) {
-                    // Convert the timestamp to UTC, since that's how everything should be stored ...
-                    literal = ((DateTime)literal).toUtcTimeZone();
-                }
+                Object literal = typeFactory.create(value);
                 return new Literal(literal);
             } catch (ValueFormatException e) {
                 String msg = GraphI18n.valueCannotBeCastToSpecifiedType.text(value,
                                                                              pos.getLine(),
                                                                              pos.getColumn(),
-                                                                             factory.getPropertyType().name(),
+                                                                             typeFactory.getTypeName(),
                                                                              e.getMessage());
                 throw new ParsingException(pos, msg);
             }
         }
         // Just create a literal out of the supplied value ...
-        return new Literal(parseLiteralValue(tokens, context));
+        return new Literal(parseLiteralValue(tokens, typeSystem));
     }
 
     protected String parseLiteralValue( TokenStream tokens,
-                                        ExecutionContext context ) {
+                                        TypeSystem typeSystem ) {
         if (tokens.matches(SqlTokenizer.QUOTED_STRING)) {
             return removeBracketsAndQuotes(tokens.consume());
         }
-        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
-        if (tokens.canConsume("TRUE")) return stringFactory.create(Boolean.TRUE);
-        if (tokens.canConsume("FALSE")) return stringFactory.create(Boolean.FALSE);
+        TypeFactory<Boolean> booleanFactory = typeSystem.getBooleanFactory();
+        if (booleanFactory != null) {
+            if (tokens.canConsume("TRUE")) return booleanFactory.asString(Boolean.TRUE);
+            if (tokens.canConsume("FALSE")) return booleanFactory.asString(Boolean.FALSE);
+        }
 
         // Otherwise it is an unquoted literal value ...
         Position pos = tokens.nextPosition();
@@ -968,95 +948,100 @@ public class SqlQueryParser implements QueryParser {
 
         // Try to parse this value as a number ...
         String integral = tokens.consume();
-        String decimal = null;
-        if (tokens.canConsume('.')) {
-            decimal = tokens.consume();
-            String value = sign + integral + "." + decimal;
-            if (decimal.endsWith("e") && (tokens.matches('+') || tokens.matches('-'))) {
-                // There's more to the number ...
-                value = value + tokens.consume() + tokens.consume(); // +/-EXP
-            }
-            try {
-                // Convert to a double and then back to a string to get canonical form ...
-                return stringFactory.create(context.getValueFactories().getDoubleFactory().create(value));
-            } catch (ValueFormatException e) {
-                String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
-                throw new ParsingException(pos, msg);
-            }
-        }
-        if (tokens.canConsume('-')) {
-            // Looks like a date (see Section 3.6.4.3 of the JCR 2.0 specification) ...
-            // sYYYY-MM-DDThh:mm:ss.sssTZD
-            String year = integral;
-            String month = tokens.consume();
-            tokens.consume('-');
-            String dateAndHour = tokens.consume();
-            tokens.consume(':');
-            String minutes = tokens.consume();
-            tokens.consume(':');
-            String seconds = tokens.consume();
-            tokens.consume('.');
-            String subSeconds = tokens.consume(); // should contain 'T' separator and possibly the TZ name and (if no +/-)
-            // hours
-            String tzSign = "+";
-            String tzHours = "00";
-            String tzMinutes = "00";
-            String tzDelim = ":";
-            if (tokens.canConsume('+')) {
-                // the fractionalSeconds did NOT contain the tzHours ...
-                tzHours = tokens.consume();
-                if (tokens.canConsume(':')) tzMinutes = tokens.consume();
-            } else if (tokens.canConsume('-')) {
-                // the fractionalSeconds did NOT contain the tzHours ...
-                tzSign = "-";
-                tzHours = tokens.consume();
-                if (tokens.canConsume(':')) tzMinutes = tokens.consume();
-            } else if (tokens.canConsume(':')) {
-                // fractionalSeconds DID contain the TZ hours (without + or -)
-                tzHours = tzSign = "";
-                if (tokens.canConsume(':')) tzMinutes = tokens.consume();
-            } else if (subSeconds.endsWith("Z")) {
-                tzSign = tzMinutes = tzDelim = tzHours = "";
-            } else if (subSeconds.endsWith("UTC")) {
-                subSeconds = subSeconds.length() > 3 ? subSeconds.substring(0, subSeconds.length() - 3) : subSeconds;
-            }
-            String value = sign + year + "-" + month + "-" + dateAndHour + ":" + minutes + ":" + seconds + "." + subSeconds
-                           + tzSign + tzHours + tzDelim + tzMinutes;
-            try {
-                // Convert to a date and then back to a string to get canonical form ...
-                DateTime dateTime = context.getValueFactories().getDateFactory().create(value);
-                dateTime = dateTime.toUtcTimeZone();
-                return stringFactory.create(dateTime);
-            } catch (ValueFormatException e) {
-                String msg = GraphI18n.expectingLiteralAndUnableToParseAsDate.text(value, pos.getLine(), pos.getColumn());
-                throw new ParsingException(pos, msg);
+        TypeFactory<Double> doubleFactory = typeSystem.getDoubleFactory();
+        if (doubleFactory != null) {
+            String decimal = null;
+            if (tokens.canConsume('.')) {
+                decimal = tokens.consume();
+                String value = sign + integral + "." + decimal;
+                if (decimal.endsWith("e") && (tokens.matches('+') || tokens.matches('-'))) {
+                    // There's more to the number ...
+                    value = value + tokens.consume() + tokens.consume(); // +/-EXP
+                }
+                try {
+                    // Convert to a double and then back to a string to get canonical form ...
+                    return doubleFactory.asString(doubleFactory.create(value));
+                } catch (ValueFormatException e) {
+                    String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
+                    throw new ParsingException(pos, msg);
+                }
             }
         }
+        TypeFactory<?> dateTimeFactory = typeSystem.getDateTimeFactory();
+        if (dateTimeFactory != null) {
+            if (tokens.canConsume('-')) {
+                // Looks like a date (see Section 3.6.4.3 of the JCR 2.0 specification) ...
+                // sYYYY-MM-DDThh:mm:ss.sssTZD
+                String year = integral;
+                String month = tokens.consume();
+                tokens.consume('-');
+                String dateAndHour = tokens.consume();
+                tokens.consume(':');
+                String minutes = tokens.consume();
+                tokens.consume(':');
+                String seconds = tokens.consume();
+                tokens.consume('.');
+                String subSeconds = tokens.consume(); // should contain 'T' separator and possibly the TZ name and (if no +/-)
+                // hours
+                String tzSign = "+";
+                String tzHours = "00";
+                String tzMinutes = "00";
+                String tzDelim = ":";
+                if (tokens.canConsume('+')) {
+                    // the fractionalSeconds did NOT contain the tzHours ...
+                    tzHours = tokens.consume();
+                    if (tokens.canConsume(':')) tzMinutes = tokens.consume();
+                } else if (tokens.canConsume('-')) {
+                    // the fractionalSeconds did NOT contain the tzHours ...
+                    tzSign = "-";
+                    tzHours = tokens.consume();
+                    if (tokens.canConsume(':')) tzMinutes = tokens.consume();
+                } else if (tokens.canConsume(':')) {
+                    // fractionalSeconds DID contain the TZ hours (without + or -)
+                    tzHours = tzSign = "";
+                    if (tokens.canConsume(':')) tzMinutes = tokens.consume();
+                } else if (subSeconds.endsWith("Z")) {
+                    tzSign = tzMinutes = tzDelim = tzHours = "";
+                } else if (subSeconds.endsWith("UTC")) {
+                    subSeconds = subSeconds.length() > 3 ? subSeconds.substring(0, subSeconds.length() - 3) : subSeconds;
+                }
+                String value = sign + year + "-" + month + "-" + dateAndHour + ":" + minutes + ":" + seconds + "." + subSeconds
+                               + tzSign + tzHours + tzDelim + tzMinutes;
+                try {
+                    // Convert to a date and then back to a string to get canonical form ...
+                    Object dateTime = dateTimeFactory.create(value);
+                    return dateTimeFactory.asString(dateTime);
+                } catch (ValueFormatException e) {
+                    String msg = GraphI18n.expectingLiteralAndUnableToParseAsDate.text(value, pos.getLine(), pos.getColumn());
+                    throw new ParsingException(pos, msg);
+                }
+            }
+        }
+        TypeFactory<Long> longFactory = typeSystem.getLongFactory();
         // try to parse an a long ...
         String value = sign + integral;
         try {
             // Convert to a long and then back to a string to get canonical form ...
-            return stringFactory.create(context.getValueFactories().getLongFactory().create(value));
+            return longFactory.asString(longFactory.create(value));
         } catch (ValueFormatException e) {
             String msg = GraphI18n.expectingLiteralAndUnableToParseAsLong.text(value, pos.getLine(), pos.getColumn());
             throw new ParsingException(pos, msg);
         }
-
     }
 
     protected DynamicOperand parseDynamicOperand( TokenStream tokens,
-                                                  ExecutionContext context,
+                                                  TypeSystem typeSystem,
                                                   Source source ) {
         DynamicOperand result = null;
         Position pos = tokens.nextPosition();
         if (tokens.canConsume("LENGTH", "(")) {
-            result = new Length(parsePropertyValue(tokens, context, source));
+            result = new Length(parsePropertyValue(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("LOWER", "(")) {
-            result = new LowerCase(parseDynamicOperand(tokens, context, source));
+            result = new LowerCase(parseDynamicOperand(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("UPPER", "(")) {
-            result = new UpperCase(parseDynamicOperand(tokens, context, source));
+            result = new UpperCase(parseDynamicOperand(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("NAME", "(")) {
             if (tokens.canConsume(")")) {
@@ -1109,13 +1094,13 @@ public class SqlQueryParser implements QueryParser {
             result = new NodePath(parseSelectorName(tokens));
             tokens.consume(")");
         } else {
-            result = parsePropertyValue(tokens, context, source);
+            result = parsePropertyValue(tokens, typeSystem, source);
         }
         return result;
     }
 
     protected PropertyValue parsePropertyValue( TokenStream tokens,
-                                                ExecutionContext context,
+                                                TypeSystem typeSystem,
                                                 Source source ) {
         Position pos = tokens.nextPosition();
         String firstWord = removeBracketsAndQuotes(tokens.consume());
@@ -1123,13 +1108,13 @@ public class SqlQueryParser implements QueryParser {
         if (tokens.canConsume('.')) {
             // We actually read the selector name, so now read the property name ...
             selectorName = new SelectorName(firstWord);
-            Name propertyName = parseName(tokens, context);
+            String propertyName = parseName(tokens, typeSystem);
             return new PropertyValue(selectorName, propertyName);
         }
         // Otherwise the source should be a single named selector
         if (source instanceof Selector) {
             selectorName = ((Selector)source).getName();
-            return new PropertyValue(selectorName, nameFrom(firstWord, pos, context));
+            return new PropertyValue(selectorName, firstWord);
         }
         String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
         throw new ParsingException(pos, msg);
@@ -1196,38 +1181,14 @@ public class SqlQueryParser implements QueryParser {
         return new SelectorName(removeBracketsAndQuotes(tokens.consume()));
     }
 
-    protected Path parsePath( TokenStream tokens,
-                              ExecutionContext context ) {
-        return pathFrom(removeBracketsAndQuotes(tokens.consume()), tokens.previousPosition(), context);
+    protected String parsePath( TokenStream tokens,
+                                TypeSystem typeSystem ) {
+        return removeBracketsAndQuotes(tokens.consume());
     }
 
-    protected Name parseName( TokenStream tokens,
-                              ExecutionContext context ) {
-        return nameFrom(removeBracketsAndQuotes(tokens.consume()), tokens.previousPosition(), context);
-    }
-
-    protected Path pathFrom( String name,
-                             Position position,
-                             ExecutionContext context ) {
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        try {
-            return pathFactory.create(name);
-        } catch (ValueFormatException e) {
-            String msg = GraphI18n.expectingValidPathAtLineAndColumn.text(name, position.getLine(), position.getColumn());
-            throw new ParsingException(position, msg);
-        }
-    }
-
-    protected Name nameFrom( String name,
-                             Position position,
-                             ExecutionContext context ) {
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
-        try {
-            return nameFactory.create(removeBracketsAndQuotes(name));
-        } catch (ValueFormatException e) {
-            String msg = GraphI18n.expectingValidNameAtLineAndColumn.text(name, position.getLine(), position.getColumn());
-            throw new ParsingException(position, msg);
-        }
+    protected String parseName( TokenStream tokens,
+                                TypeSystem typeSystem ) {
+        return removeBracketsAndQuotes(tokens.consume());
     }
 
     /**

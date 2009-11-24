@@ -27,8 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.AllNodes;
@@ -80,11 +78,10 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
                 // Get the columns from the source columns ...
                 List<Schemata.Column> schemataColumns = source.getPropertyAsList(Property.SOURCE_COLUMNS, Schemata.Column.class);
                 this.projectedColumns = new ArrayList<Column>(schemataColumns.size());
-                NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
                 for (Schemata.Column schemataColumn : schemataColumns) {
                     String columnName = schemataColumn.getName();
                     // PropertyType type = schemataColumn.getPropertyType();
-                    Name propertyName = nameFactory.create(columnName);
+                    String propertyName = columnName;
                     Column column = new Column(sourceName, propertyName, columnName);
                     this.projectedColumns.add(column);
                 }

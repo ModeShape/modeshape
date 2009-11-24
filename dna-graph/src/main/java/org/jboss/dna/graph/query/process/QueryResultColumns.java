@@ -35,7 +35,6 @@ import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Column;
 
@@ -66,7 +65,7 @@ public final class QueryResultColumns implements Columns {
     private final Map<String, Integer> locationIndexBySelectorName;
     private final Map<String, Integer> locationIndexByColumnName;
     private final Map<Integer, Integer> locationIndexByColumnIndex;
-    private final Map<String, Map<Name, Integer>> columnIndexByPropertyNameBySelectorName;
+    private final Map<String, Map<String, Integer>> columnIndexByPropertyNameBySelectorName;
     private final Map<String, Integer> fullTextSearchScoreIndexBySelectorName;
 
     /**
@@ -88,7 +87,7 @@ public final class QueryResultColumns implements Columns {
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
-        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<Name, Integer>>();
+        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         List<String> selectorNames = new ArrayList<String>(columnCount);
         List<String> names = new ArrayList<String>(columnCount);
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
@@ -110,9 +109,9 @@ public final class QueryResultColumns implements Columns {
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
-            Map<Name, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
             if (byPropertyName == null) {
-                byPropertyName = new HashMap<Name, Integer>();
+                byPropertyName = new HashMap<String, Integer>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
             byPropertyName.put(column.getPropertyName(), new Integer(i));
@@ -159,7 +158,7 @@ public final class QueryResultColumns implements Columns {
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
-        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<Name, Integer>>();
+        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         this.selectorNames = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
@@ -180,9 +179,9 @@ public final class QueryResultColumns implements Columns {
             locationIndexByColumnIndex.put(new Integer(0), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
-            Map<Name, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
             if (byPropertyName == null) {
-                byPropertyName = new HashMap<Name, Integer>();
+                byPropertyName = new HashMap<String, Integer>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
             byPropertyName.put(column.getPropertyName(), columnIndex);
@@ -336,7 +335,7 @@ public final class QueryResultColumns implements Columns {
      * 
      * @see org.jboss.dna.graph.query.QueryResults.Columns#getPropertyNameForColumn(int)
      */
-    public Name getPropertyNameForColumn( int columnIndex ) {
+    public String getPropertyNameForColumn( int columnIndex ) {
         return columns.get(columnIndex).getPropertyName();
     }
 
@@ -345,7 +344,7 @@ public final class QueryResultColumns implements Columns {
      * 
      * @see org.jboss.dna.graph.query.QueryResults.Columns#getPropertyNameForColumn(java.lang.String)
      */
-    public Name getPropertyNameForColumn( String columnName ) {
+    public String getPropertyNameForColumn( String columnName ) {
         Column result = columnsByName.get(columnName);
         if (result == null) {
             throw new NoSuchElementException(GraphI18n.columnDoesNotExistInQuery.text(columnName));
@@ -369,12 +368,11 @@ public final class QueryResultColumns implements Columns {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.QueryResults.Columns#getColumnIndexForProperty(java.lang.String,
-     *      org.jboss.dna.graph.property.Name)
+     * @see org.jboss.dna.graph.query.QueryResults.Columns#getColumnIndexForProperty(java.lang.String, java.lang.String)
      */
     public int getColumnIndexForProperty( String selectorName,
-                                          Name propertyName ) {
-        Map<Name, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+                                          String propertyName ) {
+        Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
         if (byPropertyName == null) {
             throw new NoSuchElementException(GraphI18n.selectorDoesNotExistInQuery.text(selectorName));
         }

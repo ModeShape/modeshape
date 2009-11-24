@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import org.hamcrest.Matcher;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.jcr.xpath.XPath.Component;
 import org.junit.After;
@@ -40,13 +41,15 @@ import org.junit.Test;
 public class XPathToQueryTranslatorTest {
 
     private ExecutionContext context;
+    private TypeSystem typeSystem;
     private XPathParser parser;
 
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
         context.getNamespaceRegistry().register("x", "http://example.com");
-        parser = new XPathParser(context);
+        typeSystem = context.getValueFactories().getTypeSystem();
+        parser = new XPathParser(typeSystem);
     }
 
     @After
@@ -276,18 +279,18 @@ public class XPathToQueryTranslatorTest {
 
     private QueryCommand translateToSql( String xpath ) {
         Component component = parser.parseXPath(xpath);
-        XPathToQueryTranslator translator = new XPathToQueryTranslator(context, xpath);
+        XPathToQueryTranslator translator = new XPathToQueryTranslator(typeSystem, xpath);
         return translator.createQuery(component);
     }
 
     private QueryCommand xpath( String xpath ) {
         Component component = parser.parseXPath(xpath);
-        XPathToQueryTranslator translator = new XPathToQueryTranslator(context, xpath);
+        XPathToQueryTranslator translator = new XPathToQueryTranslator(typeSystem, xpath);
         return translator.createQuery(component);
     }
 
     protected QueryCommand sql( String sql ) {
-        return new SqlQueryParser().parseQuery(sql, context);
+        return new SqlQueryParser().parseQuery(sql, typeSystem);
     }
 
     protected Matcher<QueryCommand> isSql( String sql ) {

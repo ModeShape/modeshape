@@ -26,7 +26,6 @@ package org.jboss.dna.graph.query.model;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
-import org.jboss.dna.graph.property.Name;
 
 /**
  * A dynamic operand that evaluates to the value(s) of a property on a selector, used in a {@link Comparison} constraint.
@@ -34,7 +33,7 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 public class PropertyValue extends DynamicOperand {
     private final SelectorName selectorName;
-    private final Name propertyName;
+    private final String propertyName;
     private final int hc;
 
     /**
@@ -45,7 +44,7 @@ public class PropertyValue extends DynamicOperand {
      * @throws IllegalArgumentException if the selector name or property name are null
      */
     public PropertyValue( SelectorName selectorName,
-                          Name propertyName ) {
+                          String propertyName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         CheckArg.isNotNull(propertyName, "propertyName");
         this.selectorName = selectorName;
@@ -68,7 +67,7 @@ public class PropertyValue extends DynamicOperand {
      * 
      * @return the property name; never null
      */
-    public final Name getPropertyName() {
+    public final String getPropertyName() {
         return propertyName;
     }
 

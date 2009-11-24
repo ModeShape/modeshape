@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.AbstractQueryTest;
@@ -45,6 +44,7 @@ import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.Ordering;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
 
@@ -54,10 +54,7 @@ import org.jboss.dna.graph.query.validate.Schemata;
 public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
 
     protected ExecutionContext executionContext = ExecutionContext.DEFAULT_CONTEXT;
-
-    protected Name name( String name ) {
-        return executionContext.getValueFactories().getNameFactory().create(name);
-    }
+    protected TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
 
     protected Path path( String name ) {
         return executionContext.getValueFactories().getPathFactory().create(name);
@@ -69,7 +66,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
 
     protected Schemata schemataFor( Columns columns,
                                     PropertyType... types ) {
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(executionContext);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
         for (String selectorName : columns.getSelectorNames()) {
             final SelectorName selector = selector(selectorName);
             int i = 0;
@@ -77,7 +74,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
                 final String name = column.getColumnName();
                 final PropertyType type = types != null && types.length > i && types[i] != null ? types[i] : PropertyType.STRING;
                 if (column.getSelectorName().equals(selector)) {
-                    builder.addColumn(selectorName, name, type);
+                    builder.addColumn(selectorName, name, type.getName().toUpperCase());
                     ++i;
                 }
             }
@@ -91,7 +88,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
         List<Column> columnObj = new ArrayList<Column>();
         SelectorName selector = selector(selectorName);
         for (String columnName : columnNames) {
-            columnObj.add(new Column(selector, name(columnName), columnName));
+            columnObj.add(new Column(selector, columnName, columnName));
         }
         return new QueryResultColumns(columnObj, false);
     }
@@ -102,7 +99,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
         List<Column> columnObj = new ArrayList<Column>();
         SelectorName selector = selector(selectorName);
         for (String columnName : columnNames) {
-            columnObj.add(new Column(selector, name(columnName), columnName));
+            columnObj.add(new Column(selector, columnName, columnName));
         }
         return new QueryResultColumns(columnObj, true);
     }

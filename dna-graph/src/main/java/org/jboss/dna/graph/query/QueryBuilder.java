@@ -33,15 +33,12 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.Between;
@@ -85,6 +82,7 @@ import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.SetQuery;
 import org.jboss.dna.graph.query.model.Source;
 import org.jboss.dna.graph.query.model.StaticOperand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.model.SetQuery.Operation;
@@ -232,7 +230,7 @@ import org.jboss.dna.graph.query.model.SetQuery.Operation;
 @NotThreadSafe
 public class QueryBuilder {
 
-    protected final ExecutionContext context;
+    protected final TypeSystem typeSystem;
     protected Source source = new AllNodes();
     protected Constraint constraint;
     protected List<Column> columns = new LinkedList<Column>();
@@ -249,9 +247,9 @@ public class QueryBuilder {
      * @param context the execution context
      * @throws IllegalArgumentException if the context is null
      */
-    public QueryBuilder( ExecutionContext context ) {
+    public QueryBuilder( TypeSystem context ) {
         CheckArg.isNotNull(context, "context");
-        this.context = context;
+        this.typeSystem = context;
     }
 
     /**
@@ -312,38 +310,6 @@ public class QueryBuilder {
     }
 
     /**
-     * Convenience method that creates a {@link Name} object given the supplied string. Leading and trailing whitespace are
-     * trimmed.
-     * 
-     * @param name the name; may not be null
-     * @return the name; never null
-     * @throws IllegalArgumentException if the supplied name is not a valid {@link Name} object
-     */
-    protected Name name( String name ) {
-        try {
-            return context.getValueFactories().getNameFactory().create(name.trim());
-        } catch (ValueFormatException e) {
-            throw new IllegalArgumentException(GraphI18n.expectingValidName.text(name));
-        }
-    }
-
-    /**
-     * Convenience method that creates a {@link Path} object given the supplied string. Leading and trailing whitespace are
-     * trimmed.
-     * 
-     * @param path the path; may not be null
-     * @return the path; never null
-     * @throws IllegalArgumentException if the supplied string is not a valid {@link Path} object
-     */
-    protected Path path( String path ) {
-        try {
-            return context.getValueFactories().getPathFactory().create(path.trim());
-        } catch (ValueFormatException e) {
-            throw new IllegalArgumentException(GraphI18n.expectingValidPath.text(path));
-        }
-    }
-
-    /**
      * Create a {@link Column} given the supplied expression. The expression has the form "<code>[tableName.]columnName</code>",
      * where "<code>tableName</code>" must be a valid table name or alias. If the table name/alias is not specified, then there is
      * expected to be a single FROM clause with a single named selector.
@@ -358,17 +324,17 @@ public class QueryBuilder {
             parts[i] = parts[i].trim();
         }
         SelectorName name = null;
-        Name propertyName = null;
+        String propertyName = null;
         String columnName = null;
         if (parts.length == 2) {
             name = selector(parts[0]);
-            propertyName = name(parts[1]);
+            propertyName = parts[1];
             columnName = parts[1];
         } else {
             if (source instanceof Selector) {
                 Selector selector = (Selector)source;
                 name = selector.hasAlias() ? selector.getAlias() : selector.getName();
-                propertyName = name(parts[0]);
+                propertyName = parts[0];
                 columnName = parts[0];
             } else {
                 throw new IllegalArgumentException(GraphI18n.columnMustBeScoped.text(parts[0]));
@@ -1087,7 +1053,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isSameNode( String table,
                                              String asNodeAtPath ) {
-            return setConstraint(new SameNode(selector(table), QueryBuilder.this.path(asNodeAtPath)));
+            return setConstraint(new SameNode(selector(table), asNodeAtPath));
         }
 
         /**
@@ -1100,7 +1066,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isChild( String childTable,
                                           String parentPath ) {
-            return setConstraint(new ChildNode(selector(childTable), QueryBuilder.this.path(parentPath)));
+            return setConstraint(new ChildNode(selector(childTable), parentPath));
         }
 
         /**
@@ -1113,7 +1079,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder isBelowPath( String descendantTable,
                                               String ancestorPath ) {
-            return setConstraint(new DescendantNode(selector(descendantTable), QueryBuilder.this.path(ancestorPath)));
+            return setConstraint(new DescendantNode(selector(descendantTable), ancestorPath));
         }
 
         /**
@@ -1126,7 +1092,7 @@ public class QueryBuilder {
          */
         public ConstraintBuilder hasProperty( String table,
                                               String propertyName ) {
-            return setConstraint(new PropertyExistence(selector(table), name(propertyName)));
+            return setConstraint(new PropertyExistence(selector(table), propertyName));
         }
 
         /**
@@ -1156,7 +1122,7 @@ public class QueryBuilder {
         public ConstraintBuilder search( String table,
                                          String propertyName,
                                          String searchExpression ) {
-            return setConstraint(new FullTextSearch(selector(table), name(propertyName), searchExpression));
+            return setConstraint(new FullTextSearch(selector(table), propertyName, searchExpression));
         }
 
         /**
@@ -1166,7 +1132,7 @@ public class QueryBuilder {
          */
         public ComparisonBuilder length( String table,
                                          String property ) {
-            return new ComparisonBuilder(this, new Length(new PropertyValue(selector(table), name(property))));
+            return new ComparisonBuilder(this, new Length(new PropertyValue(selector(table), property)));
         }
 
         /**
@@ -1176,7 +1142,7 @@ public class QueryBuilder {
          */
         public ComparisonBuilder propertyValue( String table,
                                                 String property ) {
-            return new ComparisonBuilder(this, new PropertyValue(selector(table), name(property)));
+            return new ComparisonBuilder(this, new PropertyValue(selector(table), property));
         }
 
         /**
@@ -1304,7 +1270,7 @@ public class QueryBuilder {
          * @param type the property type; may not be null
          * @return the constraint builder; never null
          */
-        public abstract ReturnType as( PropertyType type );
+        public abstract ReturnType as( String type );
 
         /**
          * Define the right-hand side literal value cast as a {@link PropertyType#STRING}.
@@ -1312,7 +1278,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asString() {
-            return as(PropertyType.STRING);
+            return as(typeSystem.getStringFactory().getTypeName());
         }
 
         /**
@@ -1321,7 +1287,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asBoolean() {
-            return as(PropertyType.BOOLEAN);
+            return as(typeSystem.getBooleanFactory().getTypeName());
         }
 
         /**
@@ -1330,7 +1296,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asLong() {
-            return as(PropertyType.LONG);
+            return as(typeSystem.getLongFactory().getTypeName());
         }
 
         /**
@@ -1339,16 +1305,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asDouble() {
-            return as(PropertyType.DOUBLE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#DECIMAL}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asDecimal() {
-            return as(PropertyType.DECIMAL);
+            return as(typeSystem.getDoubleFactory().getTypeName());
         }
 
         /**
@@ -1357,16 +1314,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asDate() {
-            return as(PropertyType.DATE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#NAME}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asName() {
-            return as(PropertyType.NAME);
+            return as(typeSystem.getDateTimeFactory().getTypeName());
         }
 
         /**
@@ -1375,43 +1323,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ReturnType asPath() {
-            return as(PropertyType.PATH);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#BINARY}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asBinary() {
-            return as(PropertyType.BINARY);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#REFERENCE}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asReference() {
-            return as(PropertyType.REFERENCE);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#URI}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asUri() {
-            return as(PropertyType.URI);
-        }
-
-        /**
-         * Define the right-hand side literal value cast as a {@link PropertyType#UUID}.
-         * 
-         * @return the constraint builder; never null
-         */
-        public ReturnType asUuid() {
-            return as(PropertyType.UUID);
+            return as(typeSystem.getPathFactory().getTypeName());
         }
     }
 
@@ -1424,10 +1336,6 @@ public class QueryBuilder {
             this.rhs = rhs;
         }
 
-        private ValueFactories factories() {
-            return QueryBuilder.this.context.getValueFactories();
-        }
-
         /**
          * Define the right-hand side literal value cast as the specified type.
          * 
@@ -1435,8 +1343,8 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         @Override
-        public ConstraintBuilder as( PropertyType type ) {
-            return rhs.comparisonBuilder.is(rhs.operator, factories().getValueFactory(type).create(value));
+        public ConstraintBuilder as( String type ) {
+            return rhs.comparisonBuilder.is(rhs.operator, typeSystem.getTypeFactory(type).create(value));
         }
     }
 
@@ -1449,10 +1357,6 @@ public class QueryBuilder {
             this.upperBoundary = upperBoundary;
         }
 
-        private ValueFactories factories() {
-            return QueryBuilder.this.context.getValueFactories();
-        }
-
         /**
          * Define the right-hand side literal value cast as the specified type.
          * 
@@ -1460,9 +1364,8 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         @Override
-        public ConstraintBuilder as( PropertyType type ) {
-            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, factories().getValueFactory(type)
-                                                                                                  .create(value));
+        public ConstraintBuilder as( String type ) {
+            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, typeSystem.getTypeFactory(type).create(value));
         }
     }
 
@@ -1475,10 +1378,6 @@ public class QueryBuilder {
             this.builder = builder;
         }
 
-        private ValueFactories factories() {
-            return QueryBuilder.this.context.getValueFactories();
-        }
-
         /**
          * Define the left-hand side literal value cast as the specified type.
          * 
@@ -1486,8 +1385,8 @@ public class QueryBuilder {
          * @return the builder to complete the constraint; never null
          */
         @Override
-        public AndBuilder<UpperBoundary> as( PropertyType type ) {
-            Object literal = factories().getValueFactory(type).create(value);
+        public AndBuilder<UpperBoundary> as( String type ) {
+            Object literal = typeSystem.getTypeFactory(type).create(value);
             return new AndBuilder<UpperBoundary>(new UpperBoundary(builder, new Literal(literal)));
         }
     }

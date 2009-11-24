@@ -30,11 +30,10 @@ import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * The resulting output of a query.
@@ -43,11 +42,11 @@ import org.jboss.dna.graph.query.model.QueryCommand;
 public interface QueryResults {
 
     /**
-     * Get the execution context in which the query was evaluated.
+     * Get the type system used to evaluate the query.
      * 
-     * @return the execution context; never null
+     * @return the type system; never null
      */
-    public ExecutionContext getContext();
+    public TypeSystem getTypeSystem();
 
     /**
      * Get the original query command.
@@ -280,7 +279,7 @@ public interface QueryResults {
          * @return the property name; never null
          * @throws IndexOutOfBoundsException if the column index is invalid
          */
-        public Name getPropertyNameForColumn( int columnIndex );
+        public String getPropertyNameForColumn( int columnIndex );
 
         /**
          * Get the name of the property that corresponds to the supplied column in each tuple.
@@ -289,7 +288,7 @@ public interface QueryResults {
          * @return the property name; never null
          * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
          */
-        public Name getPropertyNameForColumn( String columnName );
+        public String getPropertyNameForColumn( String columnName );
 
         /**
          * Get the index of the column given the column name.
@@ -310,7 +309,7 @@ public interface QueryResults {
          * @throws NoSuchElementException if the selector name or the property name are invalid
          */
         public int getColumnIndexForProperty( String selectorName,
-                                              Name propertyName );
+                                              String propertyName );
 
         /**
          * Get the index of the tuple value containing the full-text search score for the node taken from the named selector.

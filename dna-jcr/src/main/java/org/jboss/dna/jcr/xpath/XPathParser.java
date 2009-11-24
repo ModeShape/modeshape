@@ -34,11 +34,10 @@ import org.jboss.dna.common.text.TokenStream.CharacterStream;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.common.text.TokenStream.Tokens;
 import org.jboss.dna.common.xml.XmlCharacters;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.jcr.xpath.XPath.Add;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AnyKindTest;
@@ -79,10 +78,10 @@ import org.jboss.dna.jcr.xpath.XPath.Union;
  * defined by JCR 1.0, and is a subset of what is allowed by the W3C XPath 2.0 specification.
  */
 public class XPathParser {
-    private final ExecutionContext context;
+    private final TypeSystem typeSystem;
 
-    public XPathParser( ExecutionContext context ) {
-        this.context = context;
+    public XPathParser( TypeSystem context ) {
+        this.typeSystem = context;
     }
 
     public Component parseXPath( String xpath ) {
@@ -417,7 +416,6 @@ public class XPathParser {
         else if (tokens.canConsume('+')) sign = "";
 
         // Try to parse this value as a number ...
-        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         String number = tokens.consume();
         if (number.indexOf(".") != -1) {
             String value = sign + number;
@@ -427,7 +425,7 @@ public class XPathParser {
             }
             try {
                 // Convert to a double and then back to a string to get canonical form ...
-                String canonical = stringFactory.create(context.getValueFactories().getDoubleFactory().create(value));
+                String canonical = typeSystem.getDoubleFactory().asString(value);
                 return new Literal(canonical);
             } catch (ValueFormatException e) {
                 String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
@@ -438,7 +436,7 @@ public class XPathParser {
         String value = sign + number;
         try {
             // Convert to a long and then back to a string to get canonical form ...
-            String canonical = stringFactory.create(context.getValueFactories().getLongFactory().create(value));
+            String canonical = typeSystem.getLongFactory().asString(value);
             return new Literal(canonical);
         } catch (ValueFormatException e) {
             String msg = GraphI18n.expectingLiteralAndUnableToParseAsLong.text(value, pos.getLine(), pos.getColumn());

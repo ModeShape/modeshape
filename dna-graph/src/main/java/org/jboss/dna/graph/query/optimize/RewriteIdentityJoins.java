@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
@@ -118,9 +117,8 @@ public class RewriteIdentityJoins implements OptimizerRule {
                     context.getProblems().addError(GraphI18n.tableDoesNotExist, leftTableName);
                     continue;
                 }
-                ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-                String leftColumnName = stringFactory.create(equiJoin.getProperty1Name());
-                String rightColumnName = stringFactory.create(equiJoin.getProperty2Name());
+                String leftColumnName = equiJoin.getProperty1Name();
+                String rightColumnName = equiJoin.getProperty2Name();
                 Schemata.Column leftColumn = table.getColumn(leftColumnName);
                 Schemata.Column rightColumn = table.getColumn(rightColumnName);
                 if (leftColumn == null) {

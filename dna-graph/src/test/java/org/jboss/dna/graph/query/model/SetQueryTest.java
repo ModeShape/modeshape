@@ -74,7 +74,7 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         right = new Query(new NamedSelector(selector("B")));
         operation = SetQuery.Operation.UNION;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A UNION SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A UNION SELECT * FROM B"));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         operation = SetQuery.Operation.UNION;
         all = true;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A UNION ALL SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A UNION ALL SELECT * FROM B"));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         right = new Query(new NamedSelector(selector("B")));
         operation = SetQuery.Operation.INTERSECT;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A INTERSECT SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A INTERSECT SELECT * FROM B"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         operation = SetQuery.Operation.INTERSECT;
         all = true;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A INTERSECT ALL SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A INTERSECT ALL SELECT * FROM B"));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         right = new Query(new NamedSelector(selector("B")));
         operation = SetQuery.Operation.EXCEPT;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A EXCEPT SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A EXCEPT SELECT * FROM B"));
     }
 
     @Test
@@ -122,6 +122,6 @@ public class SetQueryTest extends AbstractQueryObjectTest {
         operation = SetQuery.Operation.EXCEPT;
         all = true;
         query = new SetQuery(left, operation, right, all);
-        assertThat(Visitors.readable(query, context), is("SELECT * FROM A EXCEPT ALL SELECT * FROM B"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM A EXCEPT ALL SELECT * FROM B"));
     }
 }

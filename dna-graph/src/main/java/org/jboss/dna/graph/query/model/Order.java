@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.model;
 
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * 
@@ -40,7 +39,9 @@ public enum Order implements Readable {
     }
 
     /**
-     * @return symbol
+     * Get the symbolic representation of the order
+     * 
+     * @return the symbolic representation; never null
      */
     public String getSymbol() {
         return symbol;
@@ -73,9 +74,9 @@ public enum Order implements Readable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.model.Readable#getString(org.jboss.dna.graph.ExecutionContext)
+     * @see org.jboss.dna.graph.query.model.Readable#getString()
      */
-    public String getString( ExecutionContext context ) {
+    public String getString() {
         return getSymbol();
     }
 }

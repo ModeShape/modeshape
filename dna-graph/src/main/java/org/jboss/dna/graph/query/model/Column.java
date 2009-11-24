@@ -26,7 +26,6 @@ package org.jboss.dna.graph.query.model;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ObjectUtil;
-import org.jboss.dna.graph.property.Name;
 
 /**
  * 
@@ -35,7 +34,7 @@ import org.jboss.dna.graph.property.Name;
 public class Column implements LanguageObject {
 
     private final SelectorName selectorName;
-    private final Name propertyName;
+    private final String propertyName;
     private final String columnName;
 
     /**
@@ -58,7 +57,7 @@ public class Column implements LanguageObject {
      * @param columnName the name of the column
      */
     public Column( SelectorName selectorName,
-                   Name propertyName,
+                   String propertyName,
                    String columnName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         CheckArg.isNotNull(propertyName, "propertyName");
@@ -69,21 +68,27 @@ public class Column implements LanguageObject {
     }
 
     /**
-     * @return selectorName
+     * Get the name of the selector for the node.
+     * 
+     * @return the selector name; never null
      */
     public final SelectorName getSelectorName() {
         return selectorName;
     }
 
     /**
-     * @return propertyName
+     * Get the name of the property that this column represents.
+     * 
+     * @return the property name; or null if this represents all selectable columns on the {@link #getSelectorName() selector}
      */
-    public final Name getPropertyName() {
+    public final String getPropertyName() {
         return propertyName;
     }
 
     /**
-     * @return columnName
+     * Get the name of the column.
+     * 
+     * @return the column name; or null if this represents all selectable columsn on the {@link #getSelectorName() selector}
      */
     public final String getColumnName() {
         return columnName;

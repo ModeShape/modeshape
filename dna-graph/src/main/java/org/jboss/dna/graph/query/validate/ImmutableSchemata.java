@@ -34,13 +34,11 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
@@ -58,13 +56,13 @@ public class ImmutableSchemata implements Schemata {
     /**
      * Obtain a new instance for building Schemata objects.
      * 
-     * @param context the execution context that can be used when building the schema
+     * @param typeSystem the type system that this schemata should use
      * @return the new builder; never null
      * @throws IllegalArgumentException if the context is null
      */
-    public static Builder createBuilder( ExecutionContext context ) {
-        CheckArg.isNotNull(context, "context");
-        return new Builder(context);
+    public static Builder createBuilder( TypeSystem typeSystem ) {
+        CheckArg.isNotNull(typeSystem, "typeSystem");
+        return new Builder(typeSystem);
     }
 
     /**
@@ -73,17 +71,17 @@ public class ImmutableSchemata implements Schemata {
     @NotThreadSafe
     public static class Builder {
 
-        private final ExecutionContext context;
+        private final TypeSystem typeSystem;
         private final Map<SelectorName, ImmutableTable> tables = new HashMap<SelectorName, ImmutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
 
-        protected Builder( ExecutionContext context ) {
-            this.context = context;
+        protected Builder( TypeSystem typeSystem ) {
+            this.typeSystem = typeSystem;
         }
 
         /**
-         * Add a table with the supplied name and column names. Each column will be given a type of {@link PropertyType#STRING}.
-         * The table will also overwrite any existing table definition with the same name.
+         * Add a table with the supplied name and column names. Each column will be given a default type. The table will also
+         * overwrite any existing table definition with the same name.
          * 
          * @param name the name of the new table
          * @param columnNames the names of the columns.
@@ -99,7 +97,7 @@ public class ImmutableSchemata implements Schemata {
             int i = 0;
             for (String columnName : columnNames) {
                 CheckArg.isNotEmpty(columnName, "columnName[" + (i++) + "]");
-                columns.add(new ImmutableColumn(columnName, PropertyType.STRING));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType()));
             }
             ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
             tables.put(table.getName(), table);
@@ -119,7 +117,7 @@ public class ImmutableSchemata implements Schemata {
          */
         public Builder addTable( String name,
                                  String[] columnNames,
-                                 PropertyType[] types ) {
+                                 String[] types ) {
             CheckArg.isNotEmpty(name, "name");
             CheckArg.isNotEmpty(columnNames, "columnNames");
             CheckArg.isNotEmpty(types, "types");
@@ -131,144 +129,6 @@ public class ImmutableSchemata implements Schemata {
                 CheckArg.isNotEmpty(columnName, "columnName[" + i + "]");
                 columns.add(new ImmutableColumn(columnName, types[i]));
             }
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
-            tables.put(table.getName(), table);
-            return this;
-        }
-
-        /**
-         * Add a table with the supplied name and single column name and type. The table will also overwrite any existing table
-         * definition with the same name.
-         * 
-         * @param name the name of the new table
-         * @param column1Name the name of the single column
-         * @param column1Type the type for the single column
-         * @return this builder, for convenience in method chaining; never null
-         * @throws IllegalArgumentException if the table name is null or empty, the column name is null or empty, or if the type
-         *         is null
-         */
-        public Builder addTable( String name,
-                                 String column1Name,
-                                 PropertyType column1Type ) {
-            CheckArg.isNotEmpty(name, "name");
-            CheckArg.isNotNull(column1Name, "column1Name");
-            CheckArg.isNotNull(column1Type, "column1Type");
-            List<Column> columns = new ArrayList<Column>();
-            columns.add(new ImmutableColumn(column1Name, column1Type));
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
-            tables.put(table.getName(), table);
-            return this;
-        }
-
-        /**
-         * Add a table with the supplied name and two column names and types. The table will also overwrite any existing table
-         * definition with the same name.
-         * 
-         * @param name the name of the new table
-         * @param column1Name the name of the first column
-         * @param column1Type the type for the first column
-         * @param column2Name the name of the second column
-         * @param column2Type the type for the second column
-         * @return this builder, for convenience in method chaining; never null
-         * @throws IllegalArgumentException if the table name is null or empty, any column name is null or empty, or any of the
-         *         types is null
-         */
-        public Builder addTable( String name,
-                                 String column1Name,
-                                 PropertyType column1Type,
-                                 String column2Name,
-                                 PropertyType column2Type ) {
-            CheckArg.isNotEmpty(name, "name");
-            CheckArg.isNotNull(column1Name, "column1Name");
-            CheckArg.isNotNull(column1Type, "column1Type");
-            CheckArg.isNotNull(column2Name, "column2Name");
-            CheckArg.isNotNull(column2Type, "column2Type");
-            List<Column> columns = new ArrayList<Column>();
-            columns.add(new ImmutableColumn(column1Name, column1Type));
-            columns.add(new ImmutableColumn(column2Name, column2Type));
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
-            tables.put(table.getName(), table);
-            return this;
-        }
-
-        /**
-         * Add a table with the supplied name and three column names and types. The table will also overwrite any existing table
-         * definition with the same name.
-         * 
-         * @param name the name of the new table
-         * @param column1Name the name of the first column
-         * @param column1Type the type for the first column
-         * @param column2Name the name of the second column
-         * @param column2Type the type for the second column
-         * @param column3Name the name of the third column
-         * @param column3Type the type for the third column
-         * @return this builder, for convenience in method chaining; never null
-         * @throws IllegalArgumentException if the table name is null or empty, any column name is null or empty, or any of the
-         *         types is null
-         */
-        public Builder addTable( String name,
-                                 String column1Name,
-                                 PropertyType column1Type,
-                                 String column2Name,
-                                 PropertyType column2Type,
-                                 String column3Name,
-                                 PropertyType column3Type ) {
-            CheckArg.isNotEmpty(name, "name");
-            CheckArg.isNotNull(column1Name, "column1Name");
-            CheckArg.isNotNull(column1Type, "column1Type");
-            CheckArg.isNotNull(column2Name, "column2Name");
-            CheckArg.isNotNull(column2Type, "column2Type");
-            CheckArg.isNotNull(column3Name, "column3Name");
-            CheckArg.isNotNull(column3Type, "column3Type");
-            List<Column> columns = new ArrayList<Column>();
-            columns.add(new ImmutableColumn(column1Name, column1Type));
-            columns.add(new ImmutableColumn(column2Name, column2Type));
-            columns.add(new ImmutableColumn(column3Name, column3Type));
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
-            tables.put(table.getName(), table);
-            return this;
-        }
-
-        /**
-         * Add a table with the supplied name and four column names and types. The table will also overwrite any existing table
-         * definition with the same name.
-         * 
-         * @param name the name of the new table
-         * @param column1Name the name of the first column
-         * @param column1Type the type for the first column
-         * @param column2Name the name of the second column
-         * @param column2Type the type for the second column
-         * @param column3Name the name of the third column
-         * @param column3Type the type for the third column
-         * @param column4Name the name of the fourth column
-         * @param column4Type the type for the fourth column
-         * @return this builder, for convenience in method chaining; never null
-         * @throws IllegalArgumentException if the table name is null or empty, any column name is null or empty, or any of the
-         *         types is null
-         */
-        public Builder addTable( String name,
-                                 String column1Name,
-                                 PropertyType column1Type,
-                                 String column2Name,
-                                 PropertyType column2Type,
-                                 String column3Name,
-                                 PropertyType column3Type,
-                                 String column4Name,
-                                 PropertyType column4Type ) {
-            CheckArg.isNotEmpty(name, "name");
-            CheckArg.isNotNull(column1Name, "column1Name");
-            CheckArg.isNotNull(column1Type, "column1Type");
-            CheckArg.isNotNull(column2Name, "column2Name");
-            CheckArg.isNotNull(column2Type, "column2Type");
-            CheckArg.isNotNull(column3Name, "column3Name");
-            CheckArg.isNotNull(column3Type, "column3Type");
-            CheckArg.isNotNull(column4Name, "column4Name");
-            CheckArg.isNotNull(column4Type, "column4Type");
-            List<Column> columns = new ArrayList<Column>();
-            columns.add(new ImmutableColumn(column1Name, column1Type));
-            columns.add(new ImmutableColumn(column2Name, column2Type));
-            columns.add(new ImmutableColumn(column3Name, column3Type));
-            columns.add(new ImmutableColumn(column4Name, column4Type));
             ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
             tables.put(table.getName(), table);
             return this;
@@ -289,7 +149,7 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(name, "name");
             CheckArg.isNotEmpty(definition, "definition");
             SqlQueryParser parser = new SqlQueryParser();
-            QueryCommand command = parser.parseQuery(definition, context);
+            QueryCommand command = parser.parseQuery(definition, typeSystem);
             this.viewDefinitions.put(new SelectorName(name), command);
             return this;
         }
@@ -324,7 +184,7 @@ public class ImmutableSchemata implements Schemata {
          */
         public Builder addColumn( String tableName,
                                   String columnName,
-                                  PropertyType type ) {
+                                  String type ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
@@ -345,7 +205,7 @@ public class ImmutableSchemata implements Schemata {
          */
         public Builder addColumn( String tableName,
                                   String columnName,
-                                  PropertyType type,
+                                  String type,
                                   boolean fullTextSearchable ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
@@ -381,11 +241,11 @@ public class ImmutableSchemata implements Schemata {
             ImmutableTable table = null;
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, PropertyType.STRING, true));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
                 table = new ImmutableTable(selector, columns);
             } else {
                 Column column = existing.getColumn(columnName);
-                PropertyType type = PropertyType.STRING;
+                String type = typeSystem.getDefaultType();
                 if (column != null) {
                     type = column.getPropertyType();
                 }
@@ -438,7 +298,6 @@ public class ImmutableSchemata implements Schemata {
 
             // Make a copy of the view definitions, and create the views ...
             Map<SelectorName, QueryCommand> definitions = new HashMap<SelectorName, QueryCommand>(viewDefinitions);
-            ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
             boolean added = false;
             do {
                 added = false;
@@ -446,7 +305,7 @@ public class ImmutableSchemata implements Schemata {
                 for (SelectorName name : viewNames) {
                     QueryCommand command = definitions.get(name);
                     // Create the canonical plan for the definition ...
-                    QueryContext queryContext = new QueryContext(context, schemata);
+                    QueryContext queryContext = new QueryContext(schemata, typeSystem);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) continue;
@@ -465,7 +324,7 @@ public class ImmutableSchemata implements Schemata {
                         Table source = schemata.getTable(column.getSelectorName());
                         if (source == null) break;
                         String viewColumnName = column.getColumnName();
-                        String sourceColumnName = stringFactory.create(column.getPropertyName()); // getColumnName() returns alias
+                        String sourceColumnName = column.getPropertyName(); // getColumnName() returns alias
                         Column sourceColumn = source.getColumn(sourceColumnName);
                         if (sourceColumn == null) {
                             throw new InvalidQueryException(Visitors.readable(command),

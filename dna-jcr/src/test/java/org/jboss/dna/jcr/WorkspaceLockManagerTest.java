@@ -8,7 +8,6 @@ import static org.mockito.Mockito.stub;
 import java.util.LinkedList;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
-import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -33,7 +32,7 @@ import org.mockito.stubbing.Answer;
 
 public class WorkspaceLockManagerTest {
 
-    private Graph graph;
+    protected Graph graph;
     private ExecutionContext context;
     private UUID validUuid;
     private Location validLocation;
@@ -43,7 +42,7 @@ public class WorkspaceLockManagerTest {
     private LinkedList<Request> executedRequests;
 
     private RepositoryNodeTypeManager repoTypeManager;
-    private WorkspaceLockManager workspaceLockManager;
+    protected WorkspaceLockManager workspaceLockManager;
 
     @Mock
     private RepositoryConnectionFactory connectionFactory;
@@ -51,7 +50,7 @@ public class WorkspaceLockManagerTest {
     protected JcrRepository repository;
 
     @Before
-    public void beforeEach() throws LoginException {
+    public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         executedRequests = new LinkedList<Request>();
         sourceName = "Source";

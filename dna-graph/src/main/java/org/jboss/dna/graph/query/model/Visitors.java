@@ -74,18 +74,6 @@ public class Visitors {
      * Using a visitor, obtain the readable string representation of the supplied {@link Visitable object}
      * 
      * @param visitable the visitable
-     * @param context the execution context in which the representation should be produced, or null if there is none
-     * @return the string representation
-     */
-    public static String readable( Visitable visitable,
-                                   ExecutionContext context ) {
-        return visit(visitable, new ReadableVisitor(context)).getString();
-    }
-
-    /**
-     * Using a visitor, obtain the readable string representation of the supplied {@link Visitable object}
-     * 
-     * @param visitable the visitable
      * @return the string representation
      */
     public static String readable( Visitable visitable ) {
@@ -955,7 +943,7 @@ public class Visitors {
         }
 
         protected final ReadableVisitor append( SelectorName name ) {
-            sb.append(name.getString(context));
+            sb.append(name.getString());
             return this;
         }
 
@@ -1082,10 +1070,9 @@ public class Visitors {
             if (column.getPropertyName() == null) {
                 append(".*");
             } else {
-                Name propertyName = column.getPropertyName();
-                String propName = propertyName.getString(registry, null, null);
-                append('.').append(propName);
-                if (!propName.equals(column.getColumnName()) && !propertyName.getLocalName().equals(column.getColumnName())) {
+                String propertyName = column.getPropertyName();
+                append('.').append(propertyName);
+                if (!propertyName.equals(column.getColumnName()) && !propertyName.equals(column.getColumnName())) {
                     append(" AS ").append(column.getColumnName());
                 }
             }

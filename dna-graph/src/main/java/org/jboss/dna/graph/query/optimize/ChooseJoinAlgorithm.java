@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
 import org.jboss.dna.graph.query.model.DescendantNodeJoinCondition;
@@ -206,8 +205,8 @@ public class ChooseJoinAlgorithm implements OptimizerRule {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
             SelectorName selector1 = joinCondition.getSelector1Name();
             SelectorName selector2 = joinCondition.getSelector2Name();
-            Name property1 = joinCondition.getProperty1Name();
-            Name property2 = joinCondition.getProperty2Name();
+            String property1 = joinCondition.getProperty1Name();
+            String property2 = joinCondition.getProperty2Name();
 
             // Create the Ordering for the first selector/property pair ...
             DynamicOperand operand1 = new PropertyValue(selector1, property1);

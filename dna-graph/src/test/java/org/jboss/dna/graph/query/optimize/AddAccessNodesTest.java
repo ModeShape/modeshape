@@ -47,7 +47,7 @@ public class AddAccessNodesTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
+        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
         rule = AddAccessNodes.INSTANCE;
     }
 

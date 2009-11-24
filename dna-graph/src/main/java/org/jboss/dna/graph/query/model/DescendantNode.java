@@ -25,7 +25,6 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * A constraint requiring that the selected node is a descendant of the node reachable by the supplied absolute path
@@ -33,7 +32,7 @@ import org.jboss.dna.graph.property.Path;
 @Immutable
 public class DescendantNode extends Constraint {
     private final SelectorName selectorName;
-    private final Path ancestorPath;
+    private final String ancestorPath;
 
     /**
      * Create a constraint requiring that the node identified by the selector is a descendant of the node reachable by the
@@ -43,7 +42,7 @@ public class DescendantNode extends Constraint {
      * @param ancestorPath the absolute path to the ancestor
      */
     public DescendantNode( SelectorName selectorName,
-                           Path ancestorPath ) {
+                           String ancestorPath ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         CheckArg.isNotNull(ancestorPath, "ancestorPath");
         this.selectorName = selectorName;
@@ -51,16 +50,20 @@ public class DescendantNode extends Constraint {
     }
 
     /**
-     * @return selectorName
+     * Get the name of the selector for the node.
+     * 
+     * @return the selector name; never null
      */
     public final SelectorName getSelectorName() {
         return selectorName;
     }
 
     /**
-     * @return ancestorPath
+     * Get the path of the node that is to be the ancestor of the target node.
+     * 
+     * @return the path of the ancestor node; never null
      */
-    public final Path getAncestorPath() {
+    public final String getAncestorPath() {
         return ancestorPath;
     }
 

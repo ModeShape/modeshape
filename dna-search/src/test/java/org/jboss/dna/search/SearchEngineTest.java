@@ -40,10 +40,10 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
-import org.jboss.dna.graph.query.validate.ImmutableSchemata.Builder;
 import org.jboss.dna.graph.search.SearchEngine;
 import org.jboss.dna.graph.search.SearchProvider;
 import org.junit.Before;
@@ -56,6 +56,7 @@ public class SearchEngineTest {
     private SearchEngine engine;
     private SearchProvider provider;
     private ExecutionContext context;
+    private TypeSystem typeSystem;
     private String sourceName;
     private String workspaceName1;
     private String workspaceName2;
@@ -68,6 +69,7 @@ public class SearchEngineTest {
     @Before
     public void beforeEach() throws Exception {
         context = new ExecutionContext();
+        typeSystem = context.getValueFactories().getTypeSystem();
         sourceName = "sourceA";
         workspaceName1 = "workspace1";
         workspaceName2 = "workspace2";
@@ -100,10 +102,7 @@ public class SearchEngineTest {
         loadContent();
 
         // Create the schemata for the workspaces ...
-        Builder builder = ImmutableSchemata.createBuilder(context);
-        builder.addTable("__ALLNODES__", "maker", "model", "year");
-        schemata = builder.build();
-        schemata = ImmutableSchemata.createBuilder(context)
+        schemata = ImmutableSchemata.createBuilder(typeSystem)
                                     .addTable("__ALLNODES__", "maker", "model", "year", "msrp")
                                     .makeSearchable("__ALLNODES__", "maker")
                                     .build();
@@ -227,7 +226,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleXpathQuery() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(18));
@@ -241,7 +240,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQuery() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(18));
@@ -251,7 +250,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithEqualityComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker = 'Toyota'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker = 'Toyota'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -262,7 +261,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithGreaterThanComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE mpgHighway > 20", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE mpgHighway > 20", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -272,7 +271,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithLowercaseEqualityComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) = 'toyota'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) = 'toyota'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -282,7 +281,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithUppercaseEqualityComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE UPPER(maker) = 'TOYOTA'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE UPPER(maker) = 'TOYOTA'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -292,7 +291,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithLikeComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE 'Toyo%'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE 'Toyo%'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -302,7 +301,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithLikeComparisonCriteriaWithLeadingWildcard() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE '%yota'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE '%yota'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -312,7 +311,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithLowercaseLikeComparisonCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) LIKE 'toyo%'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) LIKE 'toyo%'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertThat(results, is(notNullValue()));
         assertThat(results.getRowCount(), is(2));
@@ -322,7 +321,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'martin')", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'martin')", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -333,7 +332,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithDepthCriteria() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE DEPTH() > 2", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE DEPTH() > 2", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -345,7 +344,7 @@ public class SearchEngineTest {
     public void shouldFindNodesBySimpleQueryWithLocalNameCriteria() {
         engine.index(workspaceName1, path("/"), 100);
         QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE LOCALNAME() LIKE 'Toyota%' OR LOCALNAME() LIKE 'Land %'",
-                                            context);
+                                            typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -357,7 +356,7 @@ public class SearchEngineTest {
     public void shouldFindNodesBySimpleQueryWithNameCriteria() {
         engine.index(workspaceName1, path("/"), 100);
         QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE NAME() LIKE 'Toyota%[1]' OR NAME() LIKE 'Land %'",
-                                            context);
+                                            typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -368,7 +367,7 @@ public class SearchEngineTest {
     @Test
     public void shouldFindNodesBySimpleQueryWithNameCriteriaThatMatchesNoNodes() {
         engine.index(workspaceName1, path("/"), 100);
-        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE NAME() LIKE 'Toyota%[2]'", context);
+        QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE NAME() LIKE 'Toyota%[2]'", typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -380,7 +379,7 @@ public class SearchEngineTest {
     public void shouldFindNodesBySimpleQueryWithPathCriteria() {
         engine.index(workspaceName1, path("/"), 100);
         QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE PATH() LIKE '/Cars[%]/Hy%/Toyota%' OR PATH() LIKE '/Cars[1]/Utility[1]/%'",
-                                            context);
+                                            typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));
@@ -392,7 +391,7 @@ public class SearchEngineTest {
     public void shouldFindNodesBySimpleQueryWithDescendantCriteria() {
         engine.index(workspaceName1, path("/"), 100);
         QueryCommand query = sql.parseQuery("SELECT model, maker FROM __ALLNODES__ WHERE ISDESCENDANTNODE('/Cars/Hybrid')",
-                                            context);
+                                            typeSystem);
         QueryResults results = engine.query(context, workspaceName1, query, schemata);
         assertNoErrors(results);
         assertThat(results, is(notNullValue()));

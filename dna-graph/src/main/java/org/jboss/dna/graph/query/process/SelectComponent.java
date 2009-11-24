@@ -30,10 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.And;
@@ -50,6 +46,8 @@ import org.jboss.dna.graph.query.model.Or;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.StaticOperand;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 
 /**
  */
@@ -147,6 +145,9 @@ public class SelectComponent extends DelegatingComponent {
      * @see SelectComponent#SelectComponent(ProcessingComponent, Constraint, Map, Analyzer)
      */
     public static interface Analyzer {
+
+        int length( Object value );
+
         /**
          * Determine whether the node specified by the location is the same node as that supplied by the path. This determines if
          * the nodes at the supplied location and path are the same node.
@@ -156,7 +157,17 @@ public class SelectComponent extends DelegatingComponent {
          * @return true if the node given by the {@link Location} is also accessible at the supplied path, or false otherwise
          */
         boolean isSameNode( Location location,
-                            Path accessibleAtPath );
+                            String accessibleAtPath );
+
+        /**
+         * Determine whether the node specified by the location is a descendant of that supplied by the path.
+         * 
+         * @param location the location of the node; never null
+         * @param ancestorPath the path of the ancestor node
+         * @return true if the node given by the {@link Location} is also accessible at the supplied path, or false otherwise
+         */
+        boolean isDescendantOf( Location location,
+                                String ancestorPath );
 
         /**
          * Determine whether the node at the supplied location has the named property.
@@ -166,7 +177,7 @@ public class SelectComponent extends DelegatingComponent {
          * @return true if the node at the supplied {@link Location} does contain the property, or false if it does not
          */
         boolean hasProperty( Location location,
-                             Name propertyName );
+                             String propertyName );
 
         /**
          * Determine whether the node at the supplied location satisfies the supplied full-text query.
@@ -187,7 +198,7 @@ public class SelectComponent extends DelegatingComponent {
          * @return the full-text search score of the node, or 0.0d if the node does not satisfy the full-text query
          */
         double hasFullText( Location location,
-                            Name propertyName,
+                            String propertyName,
                             String fullTextQuery );
     }
 
@@ -258,7 +269,7 @@ public class SelectComponent extends DelegatingComponent {
         if (constraint instanceof ChildNode) {
             ChildNode childConstraint = (ChildNode)constraint;
             final int locationIndex = columns.getLocationIndex(childConstraint.getSelectorName().getName());
-            final Path parentPath = childConstraint.getParentPath();
+            final String parentPath = childConstraint.getParentPath();
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
@@ -270,19 +281,19 @@ public class SelectComponent extends DelegatingComponent {
         if (constraint instanceof DescendantNode) {
             DescendantNode descendantNode = (DescendantNode)constraint;
             final int locationIndex = columns.getLocationIndex(descendantNode.getSelectorName().getName());
-            final Path ancestorPath = descendantNode.getAncestorPath();
+            final String ancestorPath = descendantNode.getAncestorPath();
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
                     assert location.hasPath();
-                    return location.getPath().isDecendantOf(ancestorPath);
+                    return analyzer.isDescendantOf(location, ancestorPath);
                 }
             };
         }
         if (constraint instanceof SameNode) {
             SameNode sameNode = (SameNode)constraint;
             final int locationIndex = columns.getLocationIndex(sameNode.getSelectorName().getName());
-            final Path path = sameNode.getPath();
+            final String path = sameNode.getPath();
             if (analyzer != null) {
                 return new ConstraintChecker() {
                     public boolean satisfiesConstraints( Object[] tuple ) {
@@ -295,14 +306,14 @@ public class SelectComponent extends DelegatingComponent {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
                     assert location.hasPath();
-                    return location.getPath().isSameAs(path);
+                    return location.toString().equals(path);
                 }
             };
         }
         if (constraint instanceof PropertyExistence) {
             PropertyExistence propertyExistance = (PropertyExistence)constraint;
             String selectorName = propertyExistance.getSelectorName().getName();
-            final Name propertyName = propertyExistance.getPropertyName();
+            final String propertyName = propertyExistance.getPropertyName();
             if (analyzer != null) {
                 final int locationIndex = columns.getLocationIndex(selectorName);
                 return new ConstraintChecker() {
@@ -332,7 +343,7 @@ public class SelectComponent extends DelegatingComponent {
                         }
                     };
                 }
-                final Name propertyName = search.getPropertyName(); // may be null
+                final String propertyName = search.getPropertyName(); // may be null
                 final int scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
                 assert scoreIndex >= 0 : "Columns do not have room for the search scores";
                 if (propertyName != null) {
@@ -373,12 +384,11 @@ public class SelectComponent extends DelegatingComponent {
             };
         }
         if (constraint instanceof Comparison) {
-            final ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
             Comparison comparison = (Comparison)constraint;
 
             // Create the correct dynamic operation ...
             final DynamicOperation dynamicOperation = createDynamicOperation(context, columns, comparison.getOperand1());
-            final PropertyType expectedType = dynamicOperation.getExpectedType();
+            final String expectedType = dynamicOperation.getExpectedType();
 
             // Determine the literal value ...
             StaticOperand staticOperand = comparison.getOperand2();
@@ -392,9 +402,13 @@ public class SelectComponent extends DelegatingComponent {
                 literalValue = literal.getValue();
             }
             // Create the correct comparator ...
-            final Comparator<Object> comparator = (Comparator<Object>)expectedType.getComparator();
+            final TypeSystem typeSystem = context.getTypeSystem();
+            final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
+            assert typeFactory != null;
+            final Comparator<Object> comparator = (Comparator<Object>)typeFactory.getComparator();
+            assert comparator != null;
             // Create the correct operation ...
-            ValueFactory<?> literalFactory = context.getExecutionContext().getValueFactories().getValueFactory(expectedType);
+            final TypeFactory<?> literalFactory = typeSystem.getTypeFactory(expectedType);
             final Object rhs = literalFactory.create(literalValue);
             switch (comparison.getOperator()) {
                 case EQUAL_TO:
@@ -435,12 +449,12 @@ public class SelectComponent extends DelegatingComponent {
                     };
                 case LIKE:
                     // Convert the LIKE expression to a regular expression
-                    final Pattern pattern = createRegexFromLikeExpression(stringFactory.create(rhs));
+                    final Pattern pattern = createRegexFromLikeExpression(typeSystem.asString(rhs));
                     return new ConstraintChecker() {
                         public boolean satisfiesConstraints( Object[] tuples ) {
                             Object tupleValue = dynamicOperation.evaluate(tuples);
                             if (tupleValue == null) return false;
-                            String value = stringFactory.create(tupleValue);
+                            String value = typeSystem.asString(tupleValue);
                             return pattern.matcher(value).matches();
                         }
                     };

@@ -51,21 +51,27 @@ public class Comparison extends Constraint {
     }
 
     /**
-     * @return operand1
+     * Get the dynamic operand of this comparison.
+     * 
+     * @return the dynamic operand; never null
      */
     public final DynamicOperand getOperand1() {
         return operand1;
     }
 
     /**
-     * @return operand2
+     * Get the dynamic operand of this comparison.
+     * 
+     * @return the dynamic operand; never null
      */
     public final StaticOperand getOperand2() {
         return operand2;
     }
 
     /**
-     * @return operator
+     * Get the operator for this comparison
+     * 
+     * @return the operator; never null
      */
     public final Operator getOperator() {
         return operator;

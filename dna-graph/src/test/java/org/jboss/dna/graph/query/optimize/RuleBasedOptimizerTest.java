@@ -32,7 +32,6 @@ import java.util.List;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
@@ -46,6 +45,7 @@ import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.SetCriteria;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
 import org.jboss.dna.graph.query.plan.JoinAlgorithm;
@@ -72,8 +72,8 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        ExecutionContext execContext = new ExecutionContext();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(execContext);
+        TypeSystem typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addTable("all", "a1", "a2", "a3", "a4", "primaryType", "mixins");
@@ -88,7 +88,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addView("type2",
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
-        context = new QueryContext(execContext, schemata);
+        context = new QueryContext(schemata, typeSystem);
 
         node = new PlanNode(Type.ACCESS);
 
@@ -191,8 +191,8 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode project = new PlanNode(Type.PROJECT, expected, selector("t1"));
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
-        select.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c13")),
-                                                                    Operator.LESS_THAN, new Literal(3L)));
+        select.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"), Operator.LESS_THAN,
+                                                                    new Literal(3L)));
         PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
@@ -210,7 +210,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
-        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), name("c11"), selector("t2"), name("c21")));
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
@@ -239,13 +239,13 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("t1"));
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c11")),
-                                                                     Operator.EQUAL_TO, new Literal('x')));
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"), Operator.EQUAL_TO,
+                                                                     new Literal('x')));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("t1"));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c12")),
-                                                                     Operator.EQUAL_TO, new Literal('y')));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"), Operator.EQUAL_TO,
+                                                                     new Literal('y')));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c13")),
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"),
                                                                      Operator.LESS_THAN, new Literal(3L)));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
@@ -265,16 +265,16 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
-        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), name("c11"), selector("t2"), name("c21")));
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
         leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
-        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c11")),
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal('x')));
         PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
-        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c12")),
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
                                                                          Operator.EQUAL_TO, new Literal('y')));
         PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
         leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
@@ -284,7 +284,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
         rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
         PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
-        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), name("c21")),
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
                                                                           Operator.EQUAL_TO, new Literal('x')));
         PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
         rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
@@ -303,12 +303,12 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("all"));
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1", "a"), column("all", "a2", "b")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
-        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), "a2", "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
-        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                       new Literal("t1"), new Literal("t0")));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
-        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                       new Literal("t3"), new Literal("t4")));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("all"));
         source.setProperty(Property.SOURCE_NAME, selector("all"));
@@ -331,18 +331,18 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
                                                               column("all", "a3", "c"),
                                                               column("all", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
-        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), "a2", "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
-        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                       new Literal("t1"), new Literal("t0")));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
-        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                       new Literal("t3"), new Literal("t4")));
         PlanNode select4 = new PlanNode(Type.SELECT, select3, selector("all"));
-        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                       new Literal("t2"), new Literal("t0")));
         PlanNode select5 = new PlanNode(Type.SELECT, select4, selector("all"));
-        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                       new Literal("t4"), new Literal("t5")));
         PlanNode source = new PlanNode(Type.SOURCE, select5, selector("all"));
         source.setProperty(Property.SOURCE_NAME, selector("all"));
@@ -364,21 +364,20 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
                                                               column("all", "a3", "c"),
                                                               column("all", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
-        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a1"), "something"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), "a1", "something"));
         PlanNode join = new PlanNode(Type.JOIN, select1, selector("all"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
-        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("all"), name("a2"), selector("all"), name("a3")));
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("all"), "a2", selector("all"), "a3"));
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("all"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("all"));
         leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1"), column("all", "a2")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("all"));
-        leftSelect1.setProperty(Property.SELECT_CRITERIA,
-                                new SetCriteria(new PropertyValue(selector("all"), name("primaryType")), new Literal("t1"),
-                                                new Literal("t0")));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
+                                                                          new Literal("t1"), new Literal("t0")));
         PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("all"));
-        leftSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                           new Literal("t3"), new Literal("t4")));
         PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("all"));
         leftSource.setProperty(Property.SOURCE_NAME, selector("all"));
@@ -388,11 +387,10 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("all"));
         rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a3"), column("all", "a4")));
         PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("all"));
-        rightSelect1.setProperty(Property.SELECT_CRITERIA,
-                                 new SetCriteria(new PropertyValue(selector("all"), name("primaryType")), new Literal("t2"),
-                                                 new Literal("t0")));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
+                                                                           new Literal("t2"), new Literal("t0")));
         PlanNode rightSelect2 = new PlanNode(Type.SELECT, rightSelect1, selector("all"));
-        rightSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        rightSelect2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                            new Literal("t4"), new Literal("t5")));
         PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect2, selector("all"));
         rightSource.setProperty(Property.SOURCE_NAME, selector("all"));
@@ -415,18 +413,18 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
                                                               column("all", "a3", "c"),
                                                               column("all", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("all"));
-        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), name("a2"), "something"));
+        select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("all"), "a2", "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("all"));
-        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+        select2.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                       new Literal("t1"), new Literal("t0")));
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("all"));
-        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        select3.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                       new Literal("t3"), new Literal("t4")));
         PlanNode select4 = new PlanNode(Type.SELECT, select3, selector("all"));
-        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("primaryType")),
+        select4.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                       new Literal("t2"), new Literal("t0")));
         PlanNode select5 = new PlanNode(Type.SELECT, select4, selector("all"));
-        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), name("mixins")),
+        select5.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "mixins"),
                                                                       new Literal("t4"), new Literal("t5")));
         PlanNode source = new PlanNode(Type.SOURCE, select5, selector("all"));
         source.setProperty(Property.SOURCE_NAME, selector("all"));
@@ -446,21 +444,17 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     protected Column column( String table,
                              String columnName ) {
-        return new Column(new SelectorName(table), name(columnName), columnName);
+        return new Column(new SelectorName(table), columnName, columnName);
     }
 
     protected Column column( String table,
                              String columnName,
                              String alias ) {
-        return new Column(new SelectorName(table), name(columnName), alias);
-    }
-
-    protected Name name( String name ) {
-        return context.getExecutionContext().getValueFactories().getNameFactory().create(name);
+        return new Column(new SelectorName(table), columnName, alias);
     }
 
     protected PlanNode optimize( String sql ) {
-        QueryCommand query = new SqlQueryParser().parseQuery(sql, context.getExecutionContext());
+        QueryCommand query = new SqlQueryParser().parseQuery(sql, context.getTypeSystem());
         Problems problems = context.getProblems();
         assertThat("Problems parsing query: " + sql + "\n" + problems, problems.hasErrors(), is(false));
         PlanNode plan = new CanonicalPlanner().createPlan(context, query);

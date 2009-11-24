@@ -26,12 +26,20 @@ package org.jboss.dna.graph.property;
 import java.math.BigDecimal;
 import java.net.URI;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * The set of standard {@link ValueFactory} instances.
  */
 @ThreadSafe
 public interface ValueFactories extends Iterable<ValueFactory<?>> {
+
+    /**
+     * Get the type system associated with these factories.
+     * 
+     * @return the type system; never null
+     */
+    TypeSystem getTypeSystem();
 
     /**
      * Get the value factory that creates values of the supplied {@link PropertyType type}.

@@ -30,7 +30,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.LinkedList;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Between;
@@ -60,7 +59,7 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         rule = RewriteAsRangeCriteria.INSTANCE;
         rules = new LinkedList<OptimizerRule>();
         rules.add(rule);
-        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
+        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
     }
 
     protected void print( PlanNode node ) {
@@ -99,11 +98,11 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
-                                                                     Operator.LESS_THAN, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"), Operator.LESS_THAN,
+                                                                     new Literal(3L)));
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN, new Literal(1L)));
 
         // Execute the rule ...
@@ -160,11 +159,11 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.LESS_THAN_OR_EQUAL_TO, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN_OR_EQUAL_TO, new Literal(1L)));
 
         // Execute the rule ...
@@ -222,12 +221,12 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
-                                                                     Operator.LESS_THAN, new Literal(1L)));
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"), Operator.LESS_THAN,
+                                                                     new Literal(1L)));
 
         // Execute the rule ...
         print(access);
@@ -273,11 +272,11 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN_OR_EQUAL_TO, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.LESS_THAN_OR_EQUAL_TO, new Literal(1L)));
 
         // Execute the rule ...
@@ -323,11 +322,11 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.LESS_THAN_OR_EQUAL_TO, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN_OR_EQUAL_TO, new Literal(3L)));
 
         // Execute the rule ...
@@ -384,11 +383,11 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         PlanNode select3 = new PlanNode(Type.SELECT, select2, selector("t1"));
         PlanNode source = new PlanNode(Type.SOURCE, select3, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c2")),
-                                                                     Operator.EQUAL_TO, new Literal(100L)));
-        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
-                                                                     Operator.LESS_THAN, new Literal(3L)));
-        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c1")),
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c2"), Operator.EQUAL_TO,
+                                                                     new Literal(100L)));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"), Operator.LESS_THAN,
+                                                                     new Literal(3L)));
+        select3.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c1"),
                                                                      Operator.GREATER_THAN, new Literal(3L)));
 
         // Execute the rule ...
@@ -409,9 +408,5 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
             node = rule.execute(context, node, rules);
         }
         return node;
-    }
-
-    protected Name name( String name ) {
-        return context.getExecutionContext().getValueFactories().getNameFactory().create(name);
     }
 }

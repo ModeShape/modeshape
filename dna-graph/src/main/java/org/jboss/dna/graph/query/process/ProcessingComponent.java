@@ -29,11 +29,7 @@ import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.DynamicOperand;
@@ -45,7 +41,9 @@ import org.jboss.dna.graph.query.model.NodeLocalName;
 import org.jboss.dna.graph.query.model.NodeName;
 import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.PropertyValue;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.UpperCase;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 import org.jboss.dna.graph.query.validate.Schemata.Column;
 import org.jboss.dna.graph.query.validate.Schemata.Table;
 
@@ -126,7 +124,7 @@ public abstract class ProcessingComponent {
          * 
          * @return the property type; never null
          */
-        PropertyType getExpectedType();
+        String getExpectedType();
 
         /**
          * Perform the dynamic evaluation to obtain the desired result.
@@ -151,18 +149,17 @@ public abstract class ProcessingComponent {
         assert operand != null;
         assert columns != null;
         assert context != null;
-        final ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
         if (operand instanceof PropertyValue) {
             PropertyValue propValue = (PropertyValue)operand;
-            Name propertyName = propValue.getPropertyName();
+            String propertyName = propValue.getPropertyName();
             String selectorName = propValue.getSelectorName().getName();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
             Table table = context.getSchemata().getTable(propValue.getSelectorName());
-            Column schemaColumn = table.getColumn(stringFactory.create(propertyName));
-            final PropertyType expectedType = schemaColumn.getPropertyType();
+            Column schemaColumn = table.getColumn(propertyName);
+            final String expectedType = schemaColumn.getPropertyType();
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
+                public String getExpectedType() {
                     return expectedType;
                 }
 
@@ -171,25 +168,27 @@ public abstract class ProcessingComponent {
                 }
             };
         }
+        final TypeSystem typeSystem = context.getTypeSystem();
+        final TypeFactory<String> stringFactory = typeSystem.getStringFactory();
         if (operand instanceof Length) {
             Length length = (Length)operand;
             PropertyValue value = length.getPropertyValue();
-            Name propertyName = value.getPropertyName();
+            String propertyName = value.getPropertyName();
             String selectorName = value.getSelectorName().getName();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
+            // Find the expected property type of the value ...
+            Table table = context.getSchemata().getTable(value.getSelectorName());
+            Column schemaColumn = table.getColumn(propertyName);
+            final String expectedType = schemaColumn.getPropertyType();
+            final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.LONG; // length is always LONG
+                public String getExpectedType() {
+                    return typeSystem.getLongFactory().getTypeName(); // length is always LONG
                 }
 
                 public Object evaluate( Object[] tuple ) {
                     Object value = tuple[index];
-                    // Determine the length ...
-                    if (value instanceof Binary) {
-                        return ((Binary)value).getStream();
-                    }
-                    String result = stringFactory.create(value);
-                    return result != null ? result.length() : null;
+                    return typeFactory.length(typeFactory.create(value));
                 }
             };
         }
@@ -197,8 +196,8 @@ public abstract class ProcessingComponent {
             LowerCase lowerCase = (LowerCase)operand;
             final DynamicOperation delegate = createDynamicOperation(context, columns, lowerCase.getOperand());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.STRING;
+                public String getExpectedType() {
+                    return stringFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -211,8 +210,8 @@ public abstract class ProcessingComponent {
             UpperCase upperCase = (UpperCase)operand;
             final DynamicOperation delegate = createDynamicOperation(context, columns, upperCase.getOperand());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.STRING;
+                public String getExpectedType() {
+                    return stringFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -225,8 +224,8 @@ public abstract class ProcessingComponent {
             NodeDepth nodeDepth = (NodeDepth)operand;
             final int locationIndex = columns.getLocationIndex(nodeDepth.getSelectorName().getName());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.LONG;
+                public String getExpectedType() {
+                    return typeSystem.getLongFactory().getTypeName(); // depth is always LONG
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -242,16 +241,15 @@ public abstract class ProcessingComponent {
             NodePath nodePath = (NodePath)operand;
             final int locationIndex = columns.getLocationIndex(nodePath.getSelectorName().getName());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.PATH;
+                public String getExpectedType() {
+                    return stringFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
                     if (location == null) return null;
-                    Path path = location.getPath();
-                    assert path != null;
-                    return path;
+                    assert location.getPath() != null;
+                    return stringFactory.create(location.getPath());
                 }
             };
         }
@@ -259,8 +257,8 @@ public abstract class ProcessingComponent {
             NodeName nodeName = (NodeName)operand;
             final int locationIndex = columns.getLocationIndex(nodeName.getSelectorName().getName());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.STRING;
+                public String getExpectedType() {
+                    return stringFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -276,8 +274,8 @@ public abstract class ProcessingComponent {
             NodeLocalName nodeName = (NodeLocalName)operand;
             final int locationIndex = columns.getLocationIndex(nodeName.getSelectorName().getName());
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.STRING;
+                public String getExpectedType() {
+                    return stringFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -296,8 +294,8 @@ public abstract class ProcessingComponent {
             if (index < 0) {
                 // No full-text search score for this selector, so return 0.0d;
                 return new DynamicOperation() {
-                    public PropertyType getExpectedType() {
-                        return PropertyType.DOUBLE;
+                    public String getExpectedType() {
+                        return typeSystem.getDoubleFactory().getTypeName();
                     }
 
                     public Object evaluate( Object[] tuple ) {
@@ -306,8 +304,8 @@ public abstract class ProcessingComponent {
                 };
             }
             return new DynamicOperation() {
-                public PropertyType getExpectedType() {
-                    return PropertyType.DOUBLE;
+                public String getExpectedType() {
+                    return typeSystem.getDoubleFactory().getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {

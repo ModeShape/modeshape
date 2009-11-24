@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 
 public enum JoinType implements Readable {
     INNER("INNER JOIN"),
@@ -92,9 +91,9 @@ public enum JoinType implements Readable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.model.Readable#getString(org.jboss.dna.graph.ExecutionContext)
+     * @see org.jboss.dna.graph.query.model.Readable#getString()
      */
-    public String getString( ExecutionContext context ) {
+    public String getString() {
         return getSymbol();
     }
 }

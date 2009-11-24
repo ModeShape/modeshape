@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.validate;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.validate.Schemata.Column;
 
 @Immutable
@@ -34,19 +33,21 @@ class ImmutableColumn implements Column {
 
     private final boolean fullTextSearchable;
     private final String name;
-    private final PropertyType type;
+    private final String type;
 
     protected ImmutableColumn( String name,
-                               PropertyType type ) {
+                               String type ) {
         this(name, type, DEFAULT_FULL_TEXT_SEARCHABLE);
     }
 
     protected ImmutableColumn( String name,
-                               PropertyType type,
+                               String type,
                                boolean fullTextSearchable ) {
         this.name = name;
-        this.type = type != null ? type : PropertyType.STRING;
+        this.type = type;
         this.fullTextSearchable = fullTextSearchable;
+        assert this.name != null;
+        assert this.type != null;
     }
 
     /**
@@ -63,7 +64,7 @@ class ImmutableColumn implements Column {
      * 
      * @see org.jboss.dna.graph.query.validate.Schemata.Column#getPropertyType()
      */
-    public PropertyType getPropertyType() {
+    public String getPropertyType() {
         return type;
     }
 
@@ -83,6 +84,6 @@ class ImmutableColumn implements Column {
      */
     @Override
     public String toString() {
-        return this.name + "(" + type.getName() + ")";
+        return this.name + "(" + type + ")";
     }
 }

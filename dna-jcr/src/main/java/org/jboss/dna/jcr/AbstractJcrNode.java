@@ -1007,11 +1007,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
 
-
         if (isLocked() && !holdsLock()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
-        
+
         // Determine the path ...
         NodeEditor editor = null;
         Path path = null;
@@ -1336,7 +1335,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @return <code>false</code>
      * @see javax.jcr.Node#holdsLock()
      */
-    public final boolean holdsLock() throws RepositoryException {
+    public final boolean holdsLock() /*throws RepositoryException*/{
         WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(this.location);
 
         return lock != null && cache.session().lockTokens().contains(lock.getLockToken());
@@ -1351,7 +1350,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final boolean isLocked() throws LockException, RepositoryException {
         return lock() != null;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -1440,7 +1439,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (lock == null) throw new LockException(JcrI18n.notLocked.text(this.location));
         return lock.lockFor(cache);
     }
-    
+
     /**
      * {@inheritDoc}
      * 

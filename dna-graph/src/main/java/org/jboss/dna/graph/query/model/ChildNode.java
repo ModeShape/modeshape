@@ -26,7 +26,6 @@ package org.jboss.dna.graph.query.model;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * A constraint requiring that the selected node is a child of the node reachable by the supplied absolute path
@@ -34,7 +33,7 @@ import org.jboss.dna.graph.property.Path;
 @Immutable
 public class ChildNode extends Constraint {
     private final SelectorName selectorName;
-    private final Path parentPath;
+    private final String parentPath;
     private final int hc;
 
     /**
@@ -45,7 +44,7 @@ public class ChildNode extends Constraint {
      * @param parentPath the absolute path to the parent
      */
     public ChildNode( SelectorName selectorName,
-                      Path parentPath ) {
+                      String parentPath ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         CheckArg.isNotNull(parentPath, "parentPath");
         this.selectorName = selectorName;
@@ -54,16 +53,20 @@ public class ChildNode extends Constraint {
     }
 
     /**
-     * @return selectorName
+     * Get the name of the selector representing the child
+     * 
+     * @return the selector name; never null
      */
     public final SelectorName getSelectorName() {
         return selectorName;
     }
 
     /**
-     * @return parentPath
+     * Get the path of the parent.
+     * 
+     * @return the parent path; never null
      */
-    public final Path getParentPath() {
+    public final String getParentPath() {
         return parentPath;
     }
 

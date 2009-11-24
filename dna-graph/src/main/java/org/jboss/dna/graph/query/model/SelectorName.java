@@ -25,7 +25,6 @@ package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * A representation of a qualified or expanded name.
@@ -52,9 +51,9 @@ public class SelectorName implements Readable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.model.Readable#getString(ExecutionContext)
+     * @see org.jboss.dna.graph.query.model.Readable#getString()
      */
-    public String getString( ExecutionContext context ) {
+    public String getString() {
         return name;
     }
 

@@ -366,7 +366,7 @@ public class SearchEngine {
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(query, "query");
         CheckArg.isNotNull(schemata, "schemata");
-        QueryContext queryContext = new QueryContext(context, schemata);
+        QueryContext queryContext = new QueryContext(schemata, context.getValueFactories().getTypeSystem());
         Query queryActivity = queryContent(queryContext, query);
         getWorkspace(workspaceName).execute(false, queryActivity);
         return queryActivity.getResults();

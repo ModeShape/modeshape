@@ -30,12 +30,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryBuilder;
 import org.jboss.dna.graph.query.QueryBuilder.ConstraintBuilder;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AttributeNameTest;
@@ -65,33 +65,33 @@ import org.jboss.dna.jcr.xpath.XPath.Union;
  */
 public class XPathToQueryTranslator {
 
-    protected static final Map<NameTest, PropertyType> CAST_FUNCTION_NAME_TO_TYPE;
+    protected static final Map<NameTest, String> CAST_FUNCTION_NAME_TO_TYPE;
 
     static {
-        Map<NameTest, PropertyType> map = new HashMap<NameTest, PropertyType>();
-        map.put(new NameTest("fn", "string"), PropertyType.STRING);
-        map.put(new NameTest("xs", "string"), PropertyType.STRING);
-        map.put(new NameTest("xs", "base64Binary"), PropertyType.BINARY);
-        map.put(new NameTest("xs", "double"), PropertyType.DOUBLE);
-        map.put(new NameTest("xs", "long"), PropertyType.LONG);
-        map.put(new NameTest("xs", "boolean"), PropertyType.BOOLEAN);
-        map.put(new NameTest("xs", "dateTime"), PropertyType.DATE);
-        map.put(new NameTest("xs", "string"), PropertyType.PATH);
-        map.put(new NameTest("xs", "string"), PropertyType.NAME);
-        map.put(new NameTest("xs", "IDREF"), PropertyType.REFERENCE);
+        Map<NameTest, String> map = new HashMap<NameTest, String>();
+        map.put(new NameTest("fn", "string"), PropertyType.STRING.getName().toUpperCase());
+        map.put(new NameTest("xs", "string"), PropertyType.STRING.getName().toUpperCase());
+        map.put(new NameTest("xs", "base64Binary"), PropertyType.BINARY.getName().toUpperCase());
+        map.put(new NameTest("xs", "double"), PropertyType.DOUBLE.getName().toUpperCase());
+        map.put(new NameTest("xs", "long"), PropertyType.LONG.getName().toUpperCase());
+        map.put(new NameTest("xs", "boolean"), PropertyType.BOOLEAN.getName().toUpperCase());
+        map.put(new NameTest("xs", "dateTime"), PropertyType.DATE.getName().toUpperCase());
+        map.put(new NameTest("xs", "string"), PropertyType.PATH.getName().toUpperCase());
+        map.put(new NameTest("xs", "string"), PropertyType.NAME.getName().toUpperCase());
+        map.put(new NameTest("xs", "IDREF"), PropertyType.REFERENCE.getName().toUpperCase());
         CAST_FUNCTION_NAME_TO_TYPE = Collections.unmodifiableMap(map);
     }
 
     private final String query;
-    private final ExecutionContext context;
+    private final TypeSystem typeSystem;
     private final QueryBuilder builder;
     private final Set<String> aliases = new HashSet<String>();
 
-    public XPathToQueryTranslator( ExecutionContext context,
+    public XPathToQueryTranslator( TypeSystem context,
                                    String query ) {
         this.query = query;
-        this.context = context;
-        this.builder = new QueryBuilder(this.context);
+        this.typeSystem = context;
+        this.builder = new QueryBuilder(this.typeSystem);
     }
 
     public QueryCommand createQuery( Component xpath ) {
@@ -429,7 +429,7 @@ public class XPathToQueryTranslator {
                     NameTest functionName = call.getName();
                     List<Component> parameters = call.getParameters();
                     // Is this a cast ...
-                    PropertyType castType = CAST_FUNCTION_NAME_TO_TYPE.get(functionName);
+                    String castType = CAST_FUNCTION_NAME_TO_TYPE.get(functionName);
                     if (castType != null) {
                         if (parameters.size() == 1 && parameters.get(0).collapse() instanceof Literal) {
                             // The first parameter can be the type name (or table name) ...

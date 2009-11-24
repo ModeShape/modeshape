@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.validate.Schemata.Column;
 import org.jboss.dna.graph.query.validate.Schemata.Key;
@@ -181,14 +180,14 @@ class ImmutableTable implements Table {
     }
 
     public ImmutableTable withColumn( String name,
-                                      PropertyType type ) {
+                                      String type ) {
         List<Column> newColumns = new LinkedList<Column>(columns);
         newColumns.add(new ImmutableColumn(name, type));
         return new ImmutableTable(getName(), newColumns);
     }
 
     public ImmutableTable withColumn( String name,
-                                      PropertyType type,
+                                      String type,
                                       boolean fullTextSearchable ) {
         List<Column> newColumns = new LinkedList<Column>(columns);
         newColumns.add(new ImmutableColumn(name, type, fullTextSearchable));

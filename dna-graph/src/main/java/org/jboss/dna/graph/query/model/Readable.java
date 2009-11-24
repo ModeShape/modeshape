@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.graph.query.model;
 
-import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * 
@@ -32,9 +31,8 @@ public interface Readable {
     /**
      * Get the string representation of this query object.
      * 
-     * @param context the execution context in which the conversion is to take place
      * @return the string representation; never null
      */
-    String getString( ExecutionContext context );
+    String getString();
 
 }

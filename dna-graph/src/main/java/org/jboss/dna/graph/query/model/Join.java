@@ -64,28 +64,36 @@ public class Join extends Source {
     }
 
     /**
-     * @return left
+     * Get the source that represents the left-hand-side of the join.
+     * 
+     * @return the left-side source; never null
      */
     public final Source getLeft() {
         return left;
     }
 
     /**
-     * @return right
+     * Get the source that represents the right-hand-side of the join.
+     * 
+     * @return the right-side source; never null
      */
     public final Source getRight() {
         return right;
     }
 
     /**
-     * @return type
+     * Get the type of join.
+     * 
+     * @return the join type; never null
      */
     public final JoinType getType() {
         return type;
     }
 
     /**
-     * @return joinCondition
+     * Get the join condition
+     * 
+     * @return the join condition; never null
      */
     public final JoinCondition getJoinCondition() {
         return joinCondition;

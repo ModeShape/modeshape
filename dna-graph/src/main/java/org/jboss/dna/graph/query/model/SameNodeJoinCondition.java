@@ -27,7 +27,6 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * A join condition that tests whether two nodes are the same nodes (that is, have the same identifier or have the same relative
@@ -37,7 +36,7 @@ import org.jboss.dna.graph.property.Path;
 public class SameNodeJoinCondition extends JoinCondition {
     private final SelectorName selector1Name;
     private final SelectorName selector2Name;
-    private final Path selector2Path;
+    private final String selector2Path;
     private final int hc;
 
     /**
@@ -51,7 +50,7 @@ public class SameNodeJoinCondition extends JoinCondition {
      */
     public SameNodeJoinCondition( SelectorName selector1Name,
                                   SelectorName selector2Name,
-                                  Path selector2Path ) {
+                                  String selector2Path ) {
         CheckArg.isNotNull(selector1Name, "selector1Name");
         CheckArg.isNotNull(selector2Name, "selector2Name");
         CheckArg.isNotNull(selector2Path, "selector2Path");
@@ -102,7 +101,7 @@ public class SameNodeJoinCondition extends JoinCondition {
      * 
      * @return the relative path to the node; may be null if the second selector is the node being used
      */
-    public final Path getSelector2Path() {
+    public final String getSelector2Path() {
         return selector2Path;
     }
 

@@ -37,19 +37,17 @@ import org.junit.Test;
  */
 public class QueryBuilderTest {
 
-    private ExecutionContext context;
     private QueryBuilder builder;
     private QueryCommand query;
 
     @Before
     public void beforeEach() {
-        context = new ExecutionContext();
-        builder = new QueryBuilder(context);
+        builder = new QueryBuilder(new ExecutionContext().getValueFactories().getTypeSystem());
     }
 
     protected void assertThatSql( QueryCommand query,
                                   Matcher<String> expected ) {
-        assertThat(Visitors.readable(query, context), expected);
+        assertThat(Visitors.readable(query), expected);
     }
 
     @Test
@@ -332,19 +330,19 @@ public class QueryBuilderTest {
     @Test
     public void shouldBuildQueryWithChildConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isChild("nodes", "/parent/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISCHILDNODE(nodes,'/parent/path')"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISCHILDNODE(nodes,/parent/path)"));
     }
 
     @Test
     public void shouldBuildQueryWithDescendantConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isBelowPath("nodes", "/parent/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISDESCENDANTNODE(nodes,'/parent/path')"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISDESCENDANTNODE(nodes,/parent/path)"));
     }
 
     @Test
     public void shouldBuildQueryWithSameNodeConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isSameNode("nodes", "/other/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISSAMENODE(nodes,'/other/path')"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISSAMENODE(nodes,/other/path)"));
     }
 
     @Test

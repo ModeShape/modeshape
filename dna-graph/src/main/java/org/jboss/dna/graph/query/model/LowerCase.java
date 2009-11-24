@@ -45,7 +45,9 @@ public class LowerCase extends DynamicOperand {
     }
 
     /**
-     * @return operand
+     * Get the dynamic operand that is to be lower-cased.
+     * 
+     * @return the dynamic operand; never null
      */
     public final DynamicOperand getOperand() {
         return operand;

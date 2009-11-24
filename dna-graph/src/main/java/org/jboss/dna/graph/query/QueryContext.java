@@ -30,8 +30,8 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.BindVariableName;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.validate.Schemata;
 
@@ -41,7 +41,7 @@ import org.jboss.dna.graph.query.validate.Schemata;
  */
 @Immutable
 public class QueryContext {
-    private final ExecutionContext context;
+    private final TypeSystem typeSystem;
     private final PlanHints hints;
     private final Schemata schemata;
     private final Problems problems;
@@ -50,26 +50,26 @@ public class QueryContext {
     /**
      * Create a new context for query execution.
      * 
-     * @param context the execution context
      * @param schemata the schemata
+     * @param typeSystem the types system
      * @param hints the hints, or null if there are no hints
      * @param problems the problems container, or null if a new problems container should be created
      * @param variables the mapping of variables and values, or null if there are no such variables
-     * @throws IllegalArgumentException if the context or schmata are null
+     * @throws IllegalArgumentException if the values or schmata are null
      */
-    public QueryContext( ExecutionContext context,
-                         Schemata schemata,
+    public QueryContext( Schemata schemata,
+                         TypeSystem typeSystem,
                          PlanHints hints,
                          Problems problems,
                          Map<String, Object> variables ) {
-        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(typeSystem, "typeSystem");
         CheckArg.isNotNull(schemata, "schemata");
-        this.context = context;
+        this.typeSystem = typeSystem;
         this.hints = hints != null ? hints : new PlanHints();
         this.schemata = schemata;
         this.problems = problems != null ? problems : new SimpleProblems();
         this.variables = variables != null ? Collections.<String, Object>unmodifiableMap(new HashMap<String, Object>(variables)) : Collections.<String, Object>emptyMap();
-        assert this.context != null;
+        assert this.typeSystem != null;
         assert this.hints != null;
         assert this.schemata != null;
         assert this.problems != null;
@@ -79,52 +79,52 @@ public class QueryContext {
     /**
      * Create a new context for query execution.
      * 
-     * @param context the execution context
      * @param schemata the schemata
+     * @param typeSystem the types system
      * @param hints the hints, or null if there are no hints
      * @param problems the problems container, or null if a new problems container should be created
-     * @throws IllegalArgumentException if the context or schmata are null
+     * @throws IllegalArgumentException if the values or schmata are null
      */
-    public QueryContext( ExecutionContext context,
-                         Schemata schemata,
+    public QueryContext( Schemata schemata,
+                         TypeSystem typeSystem,
                          PlanHints hints,
                          Problems problems ) {
-        this(context, schemata, hints, problems, null);
+        this(schemata, typeSystem, hints, problems, null);
     }
 
     /**
      * Create a new context for query execution.
      * 
-     * @param context the execution context
      * @param schemata the schemata
+     * @param typeSystem the types system
      * @param hints the hints, or null if there are no hints
      * @throws IllegalArgumentException if the context or schmata are null
      */
-    public QueryContext( ExecutionContext context,
-                         Schemata schemata,
+    public QueryContext( Schemata schemata,
+                         TypeSystem typeSystem,
                          PlanHints hints ) {
-        this(context, schemata, hints, null, null);
+        this(schemata, typeSystem, hints, null, null);
     }
 
     /**
      * Create a new context for query execution.
      * 
-     * @param context the execution context
      * @param schemata the schemata
-     * @throws IllegalArgumentException if the context or schmata are null
+     * @param typeSystem the types system
+     * @throws IllegalArgumentException if the values or schmata are null
      */
-    public QueryContext( ExecutionContext context,
-                         Schemata schemata ) {
-        this(context, schemata, null, null, null);
+    public QueryContext( Schemata schemata,
+                         TypeSystem typeSystem ) {
+        this(schemata, typeSystem, null, null, null);
     }
 
     /**
-     * Get the execution context available to this query context.
+     * Get the interface for working with literal values and types.
      * 
-     * @return the execution context; never null
+     * @return the type system; never null
      */
-    public final ExecutionContext getExecutionContext() {
-        return context;
+    public TypeSystem getTypeSystem() {
+        return typeSystem;
     }
 
     /**
@@ -174,7 +174,7 @@ public class QueryContext {
         if (obj == this) return true;
         if (obj instanceof QueryContext) {
             QueryContext that = (QueryContext)obj;
-            if (!this.context.equals(that.getExecutionContext())) return false;
+            if (!this.typeSystem.equals(that.getTypeSystem())) return false;
             if (!this.schemata.equals(that.getSchemata())) return false;
             if (!this.variables.equals(that.getVariables())) return false;
             return true;
@@ -183,15 +183,15 @@ public class QueryContext {
     }
 
     /**
-     * Obtain a copy of this context, except that the copy uses the supplied execution context.
+     * Obtain a copy of this context, except that the copy uses the supplied type system.
      * 
-     * @param context the execution context that should be used in the new query context
+     * @param typeSystem the type system that should be used in the new query context
      * @return the new context; never null
      * @throws IllegalArgumentException if the execution context reference is null
      */
-    public QueryContext with( ExecutionContext context ) {
-        CheckArg.isNotNull(context, "context");
-        return new QueryContext(context, schemata, hints, problems, variables);
+    public QueryContext with( TypeSystem typeSystem ) {
+        CheckArg.isNotNull(typeSystem, "typeSystem");
+        return new QueryContext(schemata, typeSystem, hints, problems, variables);
     }
 
     /**
@@ -203,7 +203,7 @@ public class QueryContext {
      */
     public QueryContext with( Schemata schemata ) {
         CheckArg.isNotNull(schemata, "schemata");
-        return new QueryContext(context, schemata, hints, problems, variables);
+        return new QueryContext(schemata, typeSystem, hints, problems, variables);
     }
 
     /**
@@ -215,7 +215,7 @@ public class QueryContext {
      */
     public QueryContext with( PlanHints hints ) {
         CheckArg.isNotNull(hints, "hints");
-        return new QueryContext(context, schemata, hints, problems, variables);
+        return new QueryContext(schemata, typeSystem, hints, problems, variables);
     }
 
     /**
@@ -225,7 +225,7 @@ public class QueryContext {
      * @return the new context; never null
      */
     public QueryContext with( Problems problems ) {
-        return new QueryContext(context, schemata, hints, problems, variables);
+        return new QueryContext(schemata, typeSystem, hints, problems, variables);
     }
 
     /**
@@ -235,7 +235,7 @@ public class QueryContext {
      * @return the new context; never null
      */
     public QueryContext with( Map<String, Object> variables ) {
-        return new QueryContext(context, schemata, hints, problems, variables);
+        return new QueryContext(schemata, typeSystem, hints, problems, variables);
     }
 
 }

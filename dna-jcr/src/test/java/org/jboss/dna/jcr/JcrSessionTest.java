@@ -58,7 +58,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.JaasSecurityContext;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -159,9 +158,6 @@ public class JcrSessionTest extends AbstractSessionTest {
         sessionAttributes = new HashMap<String, Object>();
 
         // Now create the workspace ...
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        Path locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
-        WorkspaceLockManager wlm = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
         workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
 
         // Create the session and log in ...

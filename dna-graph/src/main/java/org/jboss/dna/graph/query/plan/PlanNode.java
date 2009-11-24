@@ -37,7 +37,6 @@ import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ObjectUtil;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.JoinCondition;
@@ -915,7 +914,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
      */
     @Override
     public String toString() {
-        return getString(ExecutionContext.DEFAULT_CONTEXT);
+        return getString();
     }
 
     /**
@@ -980,30 +979,28 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.model.Readable#getString(org.jboss.dna.graph.ExecutionContext)
+     * @see org.jboss.dna.graph.query.model.Readable#getString()
      */
-    public String getString( ExecutionContext context ) {
+    public String getString() {
         StringBuilder sb = new StringBuilder();
-        getRecursiveString(context, sb, 0);
+        getRecursiveString(sb, 0);
         return sb.toString();
     }
 
-    private void getRecursiveString( ExecutionContext context,
-                                     StringBuilder str,
+    private void getRecursiveString( StringBuilder str,
                                      int indentLevel ) {
         for (int i = 0; i < indentLevel; ++i) {
             str.append("  ");
         }
-        getNodeString(context, str).append('\n');
+        getNodeString(str).append('\n');
 
         // Recursively add children at one greater tab level
         for (PlanNode child : this) {
-            child.getRecursiveString(context, str, indentLevel + 1);
+            child.getRecursiveString(str, indentLevel + 1);
         }
     }
 
-    private StringBuilder getNodeString( ExecutionContext context,
-                                         StringBuilder str ) {
+    private StringBuilder getNodeString( StringBuilder str ) {
         str.append(this.type.getSymbol());
         if (!selectors.isEmpty()) {
             str.append(" [");
@@ -1024,7 +1021,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
                 str.append(entry.getKey()).append('=');
                 Object value = entry.getValue();
                 if (value instanceof Visitable) {
-                    str.append(Visitors.readable((Visitable)value, context));
+                    str.append(Visitors.readable((Visitable)value));
                 } else if (value instanceof Collection) {
                     boolean firstItem = true;
                     str.append('[');
@@ -1032,7 +1029,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
                         if (firstItem) firstItem = false;
                         else str.append(", ");
                         if (item instanceof Visitable) {
-                            str.append(Visitors.readable((Visitable)item, context));
+                            str.append(Visitors.readable((Visitable)item));
                         } else {
                             str.append(item);
                         }

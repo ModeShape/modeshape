@@ -28,9 +28,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
@@ -136,8 +133,8 @@ public class RaiseSelectCriteria implements OptimizerRule {
                 EquiJoinCondition equiJoinCondition = (EquiJoinCondition)joinCondition;
                 SelectorName selector1 = equiJoinCondition.getSelector1Name();
                 SelectorName selector2 = equiJoinCondition.getSelector2Name();
-                Name property1 = equiJoinCondition.getProperty1Name();
-                Name property2 = equiJoinCondition.getProperty2Name();
+                String property1 = equiJoinCondition.getProperty1Name();
+                String property2 = equiJoinCondition.getProperty2Name();
 
                 // Walk up the tree looking for SELECT nodes that apply to one of the sides ...
                 PlanNode node = join.getParent();
@@ -167,14 +164,14 @@ public class RaiseSelectCriteria implements OptimizerRule {
     protected PlanNode copySelectNode( QueryContext context,
                                        PlanNode selectNode,
                                        SelectorName selectorName,
-                                       Name propertyName,
+                                       String propertyName,
                                        SelectorName copySelectorName,
-                                       Name copyPropertyName ) {
+                                       String copyPropertyName ) {
         if (selectNode.isNot(Type.SELECT)) return null;
         if (selectNode.getSelectors().size() != 1 || !selectNode.getSelectors().contains(selectorName)) return null;
 
         Constraint constraint = selectNode.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-        Set<Column> columns = getColumnsReferencedBy(constraint, context.getExecutionContext());
+        Set<Column> columns = getColumnsReferencedBy(constraint);
         if (columns.size() != 1) return null;
         Column column = columns.iterator().next();
         if (!column.getSelectorName().equals(selectorName)) return null;
@@ -187,10 +184,8 @@ public class RaiseSelectCriteria implements OptimizerRule {
         PlanNode copy = new PlanNode(Type.SELECT, copySelectorName);
 
         // Copy the constraint, but change the references to the copy selector and property ...
-        ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
         PlanUtil.ColumnMapping mappings = new PlanUtil.ColumnMapping(selectorName);
-        mappings.map(stringFactory.create(propertyName), new Column(copySelectorName, copyPropertyName,
-                                                                    stringFactory.create(copyPropertyName)));
+        mappings.map(propertyName, new Column(copySelectorName, copyPropertyName, copyPropertyName));
         Constraint newCriteria = PlanUtil.replaceReferences(context, constraint, mappings, copy);
         copy.setProperty(Property.SELECT_CRITERIA, newCriteria);
 
@@ -211,20 +206,17 @@ public class RaiseSelectCriteria implements OptimizerRule {
      * Get the set of Column objects that represent those columns referenced by the visitable object.
      * 
      * @param visitable the object to be visited
-     * @param context the context; may not be null
      * @return the set of Column objects, with column names that always are the string-form of the
      *         {@link Column#getPropertyName() property name}; never null
      */
-    public static Set<Column> getColumnsReferencedBy( Visitable visitable,
-                                                      ExecutionContext context ) {
+    public static Set<Column> getColumnsReferencedBy( Visitable visitable ) {
         if (visitable == null) return Collections.emptySet();
-        final ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         final Set<Column> symbols = new HashSet<Column>();
         // Walk the entire structure, so only supply a StrategyVisitor (that does no navigation) ...
         Visitors.visitAll(visitable, new AbstractVisitor() {
             protected void addColumnFor( SelectorName selectorName,
-                                         Name property ) {
-                symbols.add(new Column(selectorName, property, stringFactory.create(property)));
+                                         String property ) {
+                symbols.add(new Column(selectorName, property, property));
             }
 
             @Override

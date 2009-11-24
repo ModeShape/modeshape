@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
@@ -55,7 +54,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
         columns = resultColumns("Selector1", "ColA", "ColB", "ColC");
         schemata = schemataFor(columns, PropertyType.STRING, PropertyType.LONG, PropertyType.STRING);
         // Define the context ...
-        context = new QueryContext(new ExecutionContext(), schemata);
+        context = new QueryContext(schemata, typeSystem);
         inputTuples = new ArrayList<Object[]>();
         // And define the delegating component ...
         delegate = new ProcessingComponent(context, columns) {

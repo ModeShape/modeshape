@@ -42,6 +42,7 @@ public class SetCriteria extends Constraint {
                         Collection<StaticOperand> setOperands ) {
         CheckArg.isNotNull(left, "left");
         CheckArg.isNotNull(setOperands, "setOperands");
+        CheckArg.isNotEmpty(setOperands, "setOperands");
         this.left = left;
         this.setOperands = setOperands;
     }
@@ -50,19 +51,24 @@ public class SetCriteria extends Constraint {
                         StaticOperand... setOperands ) {
         CheckArg.isNotNull(left, "left");
         CheckArg.isNotNull(setOperands, "setOperands");
+        CheckArg.isNotEmpty(setOperands, "setOperands");
         this.left = left;
         this.setOperands = Collections.unmodifiableList(Arrays.asList(setOperands));
     }
 
     /**
-     * @return operand1
+     * Get the dynamic operand to which the set constraint applies
+     * 
+     * @return the dynamic operand; never null
      */
     public final DynamicOperand getLeftOperand() {
         return left;
     }
 
     /**
-     * @return operand2
+     * Get the collection of static operands defining the constrained values.
+     * 
+     * @return the right-hand-side static operands; never null and never empty
      */
     public final Collection<StaticOperand> getRightOperands() {
         return setOperands;

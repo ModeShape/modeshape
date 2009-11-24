@@ -40,6 +40,8 @@ import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.ValueTypeSystem;
+import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * The standard set of {@link ValueFactory value factories}.
@@ -65,6 +67,8 @@ public class StandardValueFactories extends AbstractValueFactories {
     private final NamespaceRegistry namespaceRegistry;
     private final TextDecoder decoder;
     private final TextEncoder encoder;
+
+    private final TypeSystem typeSystem;
 
     /**
      * Create a standard set of value factories, using the {@link ValueFactory#DEFAULT_DECODER default decoder}.
@@ -122,6 +126,8 @@ public class StandardValueFactories extends AbstractValueFactories {
         this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(this.decoder, this.stringFactory));
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(this.decoder, this.stringFactory, this.binaryFactory));
+
+        this.typeSystem = new ValueTypeSystem(this);
     }
 
     @SuppressWarnings( "unchecked" )
@@ -134,6 +140,15 @@ public class StandardValueFactories extends AbstractValueFactories {
             factories.put(type, factory);
         }
         return (ValueFactory<T>)factory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.ValueFactories#getTypeSystem()
+     */
+    public TypeSystem getTypeSystem() {
+        return typeSystem;
     }
 
     /**

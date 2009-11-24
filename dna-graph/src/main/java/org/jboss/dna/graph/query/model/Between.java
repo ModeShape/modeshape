@@ -91,14 +91,18 @@ public class Between extends Constraint {
     }
 
     /**
-     * @return lowerBound
+     * Get the lower bound operand.
+     * 
+     * @return the lower bound; never null
      */
     public StaticOperand getLowerBound() {
         return lowerBound;
     }
 
     /**
-     * @return upperBound
+     * Get the upper bound operand.
+     * 
+     * @return the upper bound; never null
      */
     public StaticOperand getUpperBound() {
         return upperBound;

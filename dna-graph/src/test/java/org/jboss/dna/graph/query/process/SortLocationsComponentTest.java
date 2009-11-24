@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.validate.Schemata;
@@ -47,7 +46,7 @@ public class SortLocationsComponentTest extends AbstractQueryResultsTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
+        context = new QueryContext(mock(Schemata.class), typeSystem);
         inputTuples = new ArrayList<Object[]>();
         // Define the columns for the results ...
         columns = resultColumns("Selector1", "ColA", "ColB", "ColC");

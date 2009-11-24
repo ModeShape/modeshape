@@ -31,6 +31,8 @@ import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.Ordering;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 
 /**
@@ -105,7 +107,11 @@ public class SortValuesComponent extends DelegatingComponent {
         assert context != null;
         assert ordering != null;
         final DynamicOperation operation = createDynamicOperation(context, columns, ordering.getOperand());
-        final Comparator<Object> typeComparator = (Comparator<Object>)operation.getExpectedType().getComparator();
+        final TypeSystem typeSystem = context.getTypeSystem();
+        final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(operation.getExpectedType());
+        assert typeFactory != null;
+        final Comparator<Object> typeComparator = (Comparator<Object>)typeFactory.getComparator();
+        assert typeComparator != null;
         if (ordering.getOrder() == Order.DESCENDING) {
             return new Comparator<Object[]>() {
                 public int compare( Object[] tuple1,

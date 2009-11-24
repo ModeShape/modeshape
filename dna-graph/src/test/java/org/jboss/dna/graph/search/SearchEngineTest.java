@@ -248,7 +248,7 @@ public class SearchEngineTest {
         Query query = mock(Query.class);
         Schemata schemata = mock(Schemata.class);
         engine.query(context, workspaceName1, query, schemata);
-        verify(sessionWs1).query(eq(new QueryContext(context, schemata)), eq(query));
+        verify(sessionWs1).query(eq(new QueryContext(schemata, context.getValueFactories().getTypeSystem())), eq(query));
         verify(sessionWs1).commit();
     }
 }

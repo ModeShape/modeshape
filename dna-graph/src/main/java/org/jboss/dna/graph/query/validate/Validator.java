@@ -26,7 +26,6 @@ package org.jboss.dna.graph.query.validate;
 import java.util.Map;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.ChildNode;
@@ -302,10 +301,6 @@ public class Validator extends AbstractVisitor {
         verify(obj.getSelector2Name());
     }
 
-    protected String string( Name name ) {
-        return context.getExecutionContext().getValueFactories().getStringFactory().create(name);
-    }
-
     protected Table verify( SelectorName selectorName ) {
         Table table = selectorsByName.get(selectorName);
         if (table == null) {
@@ -323,15 +318,15 @@ public class Validator extends AbstractVisitor {
     }
 
     protected Schemata.Column verify( SelectorName selectorName,
-                                      Name propertyName ) {
+                                      String propertyName ) {
         Table table = selectorsByName.get(selectorName);
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, selectorName.getName());
             return null;
         }
-        Schemata.Column column = table.getColumn(string(propertyName));
+        Schemata.Column column = table.getColumn(propertyName);
         if (column == null) {
-            problems.addError(GraphI18n.columnDoesNotExistOnTable, string(propertyName), selectorName.getName());
+            problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.getName());
         }
         return column;
     }

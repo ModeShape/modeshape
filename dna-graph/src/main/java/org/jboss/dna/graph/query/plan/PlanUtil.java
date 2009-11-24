@@ -31,9 +31,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.Between;
@@ -124,7 +121,7 @@ public class PlanUtil {
         }
 
         // Add the PROJECT columns first ...
-        RequiredColumnVisitor collectionVisitor = new RequiredColumnVisitor(context.getExecutionContext(), names);
+        RequiredColumnVisitor collectionVisitor = new RequiredColumnVisitor(names);
         if (columns != null) {
             for (Column projectedColumn : columns) {
                 collectionVisitor.visit(projectedColumn);
@@ -157,15 +154,12 @@ public class PlanUtil {
     }
 
     protected static class RequiredColumnVisitor extends AbstractVisitor {
-        private final ExecutionContext context;
         private final Set<SelectorName> names;
         private final List<Column> columns = new LinkedList<Column>();
-        private final Set<Name> requiredColumnNames = new HashSet<Name>();
+        private final Set<String> requiredColumnNames = new HashSet<String>();
 
-        protected RequiredColumnVisitor( ExecutionContext context,
-                                         Set<SelectorName> names ) {
+        protected RequiredColumnVisitor( Set<SelectorName> names ) {
             this.names = names;
-            this.context = context;
         }
 
         /**
@@ -210,11 +204,11 @@ public class PlanUtil {
         }
 
         protected void requireColumn( SelectorName selector,
-                                      Name propertyName ) {
+                                      String propertyName ) {
             if (names.contains(selector)) {
                 // The column is part of the table we're interested in ...
                 if (requiredColumnNames.add(propertyName)) {
-                    String alias = context.getValueFactories().getStringFactory().create(propertyName);
+                    String alias = propertyName;
                     columns.add(new Column(selector, propertyName, alias));
                 }
             }
@@ -496,7 +490,6 @@ public class PlanUtil {
 
         // Walk up the plan to change any references to the view columns into references to the source columns...
         PlanNode node = topOfViewInPlan;
-        ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
         List<PlanNode> potentiallyRemovableSources = new LinkedList<PlanNode>();
         do {
             // Remove the view from the selectors ...
@@ -510,7 +503,7 @@ public class PlanUtil {
                                 Column column = columns.get(i);
                                 if (column.getSelectorName().equals(viewName)) {
                                     // This column references the view ...
-                                    String columnName = stringFactory.create(column.getPropertyName());
+                                    String columnName = column.getPropertyName();
                                     String columnAlias = column.getColumnName();
                                     // Find the source column that this view column corresponds to ...
                                     Column sourceColumn = mappings.getMappedColumn(columnName);
@@ -647,8 +640,7 @@ public class PlanUtil {
         if (constraint instanceof PropertyExistence) {
             PropertyExistence existence = (PropertyExistence)constraint;
             if (!mapping.getOriginalName().equals(existence.getSelectorName())) return existence;
-            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-            Column sourceColumn = mapping.getMappedColumn(stringFactory.create(existence.getPropertyName()));
+            Column sourceColumn = mapping.getMappedColumn(existence.getPropertyName());
             if (sourceColumn == null) return existence;
             node.addSelector(sourceColumn.getSelectorName());
             return new PropertyExistence(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
@@ -656,8 +648,7 @@ public class PlanUtil {
         if (constraint instanceof FullTextSearch) {
             FullTextSearch search = (FullTextSearch)constraint;
             if (!mapping.getOriginalName().equals(search.getSelectorName())) return search;
-            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-            Column sourceColumn = mapping.getMappedColumn(stringFactory.create(search.getPropertyName()));
+            Column sourceColumn = mapping.getMappedColumn(search.getPropertyName());
             if (sourceColumn == null) return search;
             node.addSelector(sourceColumn.getSelectorName());
             return new FullTextSearch(sourceColumn.getSelectorName(), sourceColumn.getPropertyName(),
@@ -722,8 +713,7 @@ public class PlanUtil {
         if (operand instanceof PropertyValue) {
             PropertyValue value = (PropertyValue)operand;
             if (!mapping.getOriginalName().equals(value.getSelectorName())) return value;
-            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-            Column sourceColumn = mapping.getMappedColumn(stringFactory.create(value.getPropertyName()));
+            Column sourceColumn = mapping.getMappedColumn(value.getPropertyName());
             if (sourceColumn == null) return value;
             node.addSelector(sourceColumn.getSelectorName());
             return new PropertyValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
@@ -753,19 +743,17 @@ public class PlanUtil {
             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
             SelectorName replacement1 = condition.getSelector1Name();
             SelectorName replacement2 = condition.getSelector2Name();
-            Name property1 = condition.getProperty1Name();
-            Name property2 = condition.getProperty2Name();
+            String property1 = condition.getProperty1Name();
+            String property2 = condition.getProperty2Name();
             if (replacement1.equals(mapping.getOriginalName())) {
-                ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-                Column sourceColumn = mapping.getMappedColumn(stringFactory.create(property1));
+                Column sourceColumn = mapping.getMappedColumn(property1);
                 if (sourceColumn != null) {
                     replacement1 = sourceColumn.getSelectorName();
                     property1 = sourceColumn.getPropertyName();
                 }
             }
             if (replacement2.equals(mapping.getOriginalName())) {
-                ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-                Column sourceColumn = mapping.getMappedColumn(stringFactory.create(property2));
+                Column sourceColumn = mapping.getMappedColumn(property2);
                 if (sourceColumn != null) {
                     replacement2 = sourceColumn.getSelectorName();
                     property2 = sourceColumn.getPropertyName();

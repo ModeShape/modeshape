@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -138,7 +139,8 @@ public class QueryParsersTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToParseUnknownLanguage() {
-        parsers.parse(new ExecutionContext(), "unknown language", "This is a bogus query");
+        TypeSystem typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
+        parsers.parse(typeSystem, "unknown language", "This is a bogus query");
     }
 
     protected static class MockParser implements QueryParser {
@@ -161,10 +163,11 @@ public class QueryParsersTest {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.ExecutionContext)
+         * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String,
+         *      org.jboss.dna.graph.query.model.TypeSystem)
          */
         public QueryCommand parseQuery( String query,
-                                        ExecutionContext context ) throws InvalidQueryException {
+                                        TypeSystem typeSystem ) throws InvalidQueryException {
             throw new UnsupportedOperationException();
         }
 

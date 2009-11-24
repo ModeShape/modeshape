@@ -34,11 +34,9 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.And;
@@ -68,9 +66,11 @@ import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.StaticOperand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.model.FullTextSearch.NegationTerm;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.process.AbstractAccessComponent;
 import org.jboss.dna.graph.query.process.ProcessingComponent;
@@ -106,8 +106,9 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         this.workspaceName = workspaceName;
     }
 
-    protected String fieldNameFor( Name name ) {
-        return session.stringFactory.create(name);
+    protected String fieldNameFor( String name ) {
+        // Convert to a name and then to a string, so that the namespaces are resolved
+        return session.stringFactory.create(session.nameFactory.create(name));
     }
 
     /**
@@ -175,14 +176,14 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
             // There was a error working with the constraints (such as a ValueFormatException) ...
             QueryContext context = getContext();
             I18n msg = SearchI18n.errorWhilePerformingQuery;
-            String origQueryString = Visitors.readable(originalQuery, context.getExecutionContext());
+            String origQueryString = Visitors.readable(originalQuery);
             context.getProblems().addError(e, msg, origQueryString, workspaceName, sourceName, e.getMessage());
             return emptyTuples();
         } catch (RuntimeException e) {
             // There was a error working with the constraints (such as a ValueFormatException) ...
             QueryContext context = getContext();
             I18n msg = SearchI18n.errorWhilePerformingQuery;
-            String origQueryString = Visitors.readable(originalQuery, context.getExecutionContext());
+            String origQueryString = Visitors.readable(originalQuery);
             context.getProblems().addError(e, msg, origQueryString, workspaceName, sourceName, e.getMessage());
             return emptyTuples();
         }
@@ -196,7 +197,6 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         List<Object[]> tuples = null;
         final Columns columns = getColumns();
         final QueryContext context = getContext();
-        final ExecutionContext execContext = context.getExecutionContext();
         try {
             // Execute the query against the content indexes ...
             IndexSearcher searcher = session.getContentSearcher();
@@ -206,7 +206,7 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         } catch (IOException e) {
             // There was a problem executing the Lucene query ...
             I18n msg = SearchI18n.errorWhilePerformingLuceneQuery;
-            String origQueryString = Visitors.readable(originalQuery, execContext);
+            String origQueryString = Visitors.readable(originalQuery);
             context.getProblems().addError(e, msg, pushDownQuery, origQueryString, workspaceName, sourceName, e.getMessage());
             return emptyTuples();
         }
@@ -287,7 +287,7 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         if (constraint instanceof FullTextSearch) {
             FullTextSearch search = (FullTextSearch)constraint;
             String fieldName = ContentIndex.FULL_TEXT;
-            Name propertyName = search.getPropertyName();
+            String propertyName = search.getPropertyName();
             if (propertyName != null) {
                 fieldName = session.fullTextFieldName(fieldNameFor(propertyName));
             }
@@ -296,15 +296,18 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         try {
             if (constraint instanceof SameNode) {
                 SameNode sameNode = (SameNode)constraint;
-                return session.findNodeAt(sameNode.getPath());
+                Path path = session.pathFactory.create(sameNode.getPath());
+                return session.findNodeAt(path);
             }
             if (constraint instanceof ChildNode) {
                 ChildNode childNode = (ChildNode)constraint;
-                return session.findChildNodes(childNode.getParentPath());
+                Path path = session.pathFactory.create(childNode.getParentPath());
+                return session.findChildNodes(path);
             }
             if (constraint instanceof DescendantNode) {
                 DescendantNode descendantNode = (DescendantNode)constraint;
-                return session.findAllNodesBelow(descendantNode.getAncestorPath());
+                Path path = session.pathFactory.create(descendantNode.getAncestorPath());
+                return session.findAllNodesBelow(path);
             }
         } catch (IOException e) {
             I18n msg = SearchI18n.errorWhilePerformingQuery;
@@ -435,13 +438,14 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
             return ((String)value).toLowerCase();
         }
         assert !(value instanceof Binary);
-        ValueFactory<String> stringFactory = getContext().getExecutionContext().getValueFactories().getStringFactory();
-        ValueFactory<?> valueFactory = getContext().getExecutionContext().getValueFactories().getValueFactory(value);
+        TypeSystem typeSystem = getContext().getTypeSystem();
+        TypeFactory<String> stringFactory = typeSystem.getStringFactory();
+        TypeFactory<?> valueFactory = typeSystem.getTypeFactory(value);
         return valueFactory.create(stringFactory.create(value).toLowerCase());
     }
 
     protected Query createQuery( SelectorName selectorName,
-                                 Name propertyName ) {
+                                 String propertyName ) {
         Term term = new Term(fieldNameFor(propertyName));
         return new TermQuery(term);
     }

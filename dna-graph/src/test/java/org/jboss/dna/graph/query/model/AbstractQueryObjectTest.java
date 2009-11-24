@@ -24,8 +24,6 @@
 package org.jboss.dna.graph.query.model;
 
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 
 /**
@@ -38,14 +36,6 @@ public abstract class AbstractQueryObjectTest {
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
-    }
-
-    protected Name name( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
-    }
-
-    protected Path path( String name ) {
-        return context.getValueFactories().getPathFactory().create(name);
     }
 
     protected SelectorName selector( String name ) {

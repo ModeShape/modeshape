@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Column;
-import org.jboss.dna.graph.query.process.QueryResultColumns;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,12 +45,12 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         columnList = new ArrayList<Column>();
-        columnList.add(new Column(selector("table1"), name("colA"), "colA"));
-        columnList.add(new Column(selector("table1"), name("colB"), "colB"));
-        columnList.add(new Column(selector("table1"), name("colC"), "colC"));
-        columnList.add(new Column(selector("table2"), name("colA"), "colA2"));
-        columnList.add(new Column(selector("table2"), name("colB"), "colB2"));
-        columnList.add(new Column(selector("table2"), name("colX"), "colX"));
+        columnList.add(new Column(selector("table1"), "colA", "colA"));
+        columnList.add(new Column(selector("table1"), "colB", "colB"));
+        columnList.add(new Column(selector("table1"), "colC", "colC"));
+        columnList.add(new Column(selector("table2"), "colA", "colA2"));
+        columnList.add(new Column(selector("table2"), "colB", "colB2"));
+        columnList.add(new Column(selector("table2"), "colX", "colX"));
         columnsWithoutScores = new QueryResultColumns(columnList, false);
         columnsWithScores = new QueryResultColumns(columnList, true);
     }
@@ -148,22 +147,22 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
 
     @Test( expected = NoSuchElementException.class )
     public void shouldFailToFindIndexOfColumnGivenUnusedSelectorName() {
-        columnsWithScores.getColumnIndexForProperty("non-existant", name("colA"));
+        columnsWithScores.getColumnIndexForProperty("non-existant", "colA");
     }
 
     @Test( expected = NoSuchElementException.class )
     public void shouldFailToFindIndexOfColumnGivenNullSelectorName() {
-        columnsWithScores.getColumnIndexForProperty(null, name("colA"));
+        columnsWithScores.getColumnIndexForProperty(null, "colA");
     }
 
     @Test( expected = NoSuchElementException.class )
     public void shouldFailToFindIndexOfColumnGivenEmptySelectorName() {
-        columnsWithScores.getColumnIndexForProperty("", name("colA"));
+        columnsWithScores.getColumnIndexForProperty("", "colA");
     }
 
     @Test( expected = NoSuchElementException.class )
     public void shouldFailToFindIndexOfColumnGivenUnusedPropertyNameName() {
-        columnsWithScores.getColumnIndexForProperty("table1", name("non-existant"));
+        columnsWithScores.getColumnIndexForProperty("table1", "non-existant");
     }
 
     @Test( expected = NoSuchElementException.class )
@@ -344,7 +343,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
         for (Column column : columnsWithScores.getColumns()) {
             columnListCopy.add(new Column(column.getSelectorName(), column.getPropertyName(), column.getColumnName()));
         }
-        columnListCopy.add(new Column(selector("table2"), name("colZ"), "colZ"));
+        columnListCopy.add(new Column(selector("table2"), "colZ", "colZ"));
         Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(false));
     }

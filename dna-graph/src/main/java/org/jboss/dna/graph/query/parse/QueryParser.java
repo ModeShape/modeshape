@@ -25,8 +25,8 @@ package org.jboss.dna.graph.query.parse;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.ParsingException;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * The basic interface defining a component that is able to parse a string query into a {@link QueryCommand}.
@@ -45,12 +45,12 @@ public interface QueryParser {
      * Parse the supplied query from a string representation into a {@link QueryCommand}.
      * 
      * @param query the query in string form; may not be null
-     * @param context the context in which the query is being parsed
+     * @param typeSystem the type system used by the query; may not be null
      * @return the query command
      * @throws ParsingException if there is an error parsing the supplied query
      * @throws InvalidQueryException if the supplied query can be parsed but is invalid
      */
     QueryCommand parseQuery( String query,
-                             ExecutionContext context ) throws InvalidQueryException;
+                             TypeSystem typeSystem ) throws InvalidQueryException;
 
 }

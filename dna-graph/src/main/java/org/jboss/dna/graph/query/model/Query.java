@@ -126,34 +126,81 @@ public class Query extends QueryCommand {
         return distinct;
     }
 
+    /**
+     * Create a copy of this query, but one in which there are no duplicate rows in the results.
+     * 
+     * @return the copy of the query with no duplicate result rows; never null
+     */
     public Query distinct() {
         return new Query(source, constraint, getOrderings(), columns, getLimits(), true);
     }
 
+    /**
+     * Create a copy of this query, but one in which there may be duplicate rows in the results.
+     * 
+     * @return the copy of the query with potentially duplicate result rows; never null
+     */
     public Query noDistinct() {
         return new Query(source, constraint, getOrderings(), columns, getLimits(), false);
     }
 
+    /**
+     * Create a copy of this query, but one that uses the supplied constraint.
+     * 
+     * @param constraint the constraint that should be used; never null
+     * @return the copy of the query that uses the supplied constraint; never null
+     */
     public Query constrainedBy( Constraint constraint ) {
         return new Query(source, constraint, getOrderings(), columns, getLimits(), distinct);
     }
 
+    /**
+     * Create a copy of this query, but one whose results should be ordered by the supplied orderings.
+     * 
+     * @param orderings the result ordering specification that should be used; never null
+     * @return the copy of the query that uses the supplied ordering; never null
+     */
     public Query orderedBy( List<Ordering> orderings ) {
         return new Query(source, constraint, orderings, columns, getLimits(), distinct);
     }
 
+    /**
+     * Create a copy of this query, but one that uses the supplied limit on the number of result rows.
+     * 
+     * @param rowLimit the limit that should be used; must be a positive number
+     * @return the copy of the query that uses the supplied limit; never null
+     */
     public Query withLimit( int rowLimit ) {
         return new Query(source, constraint, getOrderings(), columns, getLimits().withRowLimit(rowLimit), distinct);
     }
 
+    /**
+     * Create a copy of this query, but one that uses the supplied offset.
+     * 
+     * @param offset the limit that should be used; may not be negative
+     * @return the copy of the query that uses the supplied offset; never null
+     */
     public Query withOffset( int offset ) {
         return new Query(source, constraint, getOrderings(), columns, getLimits().withOffset(offset), distinct);
     }
 
+    /**
+     * Create a copy of this query, but that returns results with the supplied columns.
+     * 
+     * @param columns the columns of the results; may not be null
+     * @return the copy of the query returning the supplied result columns; never null
+     */
     public Query returning( List<Column> columns ) {
         return new Query(source, constraint, getOrderings(), columns, getLimits(), distinct);
     }
 
+    /**
+     * Create a copy of this query, but that returns results that are ordered by the {@link #getOrderings() orderings} of this
+     * column as well as those supplied.
+     * 
+     * @param orderings the additional orderings of the result rows; may no be null
+     * @return the copy of the query returning the supplied result columns; never null
+     */
     public Query adding( Ordering... orderings ) {
         List<Ordering> newOrderings = null;
         if (this.getOrderings() != null) {
@@ -167,6 +214,13 @@ public class Query extends QueryCommand {
         return new Query(source, constraint, newOrderings, columns, getLimits(), distinct);
     }
 
+    /**
+     * Create a copy of this query, but that returns results that include the columns specified by this query as well as the
+     * supplied columns.
+     * 
+     * @param columns the additional columns that should be included in the the results; may not be null
+     * @return the copy of the query returning the supplied result columns; never null
+     */
     public Query adding( Column... columns ) {
         List<Column> newColumns = null;
         if (this.columns != null) {

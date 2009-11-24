@@ -63,14 +63,14 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        context = new QueryContext(executionContext, schemata);
+        context = new QueryContext(schemata, typeSystem);
         columnList = new ArrayList<Column>();
-        columnList.add(new Column(selector("table1"), name("colA"), "colA"));
-        columnList.add(new Column(selector("table1"), name("colB"), "colB"));
-        columnList.add(new Column(selector("table1"), name("colC"), "colC"));
-        columnList.add(new Column(selector("table2"), name("colA"), "colA2"));
-        columnList.add(new Column(selector("table2"), name("colB"), "colB2"));
-        columnList.add(new Column(selector("table2"), name("colX"), "colX"));
+        columnList.add(new Column(selector("table1"), "colA", "colA"));
+        columnList.add(new Column(selector("table1"), "colB", "colB"));
+        columnList.add(new Column(selector("table1"), "colC", "colC"));
+        columnList.add(new Column(selector("table2"), "colA", "colA2"));
+        columnList.add(new Column(selector("table2"), "colB", "colB2"));
+        columnList.add(new Column(selector("table2"), "colX", "colX"));
         columns = new QueryResultColumns(columnList, false);
         tuples = new ArrayList<Object[]>();
         tuples.add(tuple(columns, new String[] {"/a/b/c", "/a/x/y"}, 1, 2, 3, "2a", "2b", "x"));

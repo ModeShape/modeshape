@@ -26,7 +26,6 @@ package org.jboss.dna.graph.query.model;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
-import org.jboss.dna.graph.property.Name;
 
 /**
  * A join condition that tests whether a property on a node is equal to a property on another node. A node-tuple satisfies the
@@ -40,15 +39,23 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 public class EquiJoinCondition extends JoinCondition {
     private final SelectorName selector1Name;
-    private final Name property1Name;
+    private final String property1Name;
     private final SelectorName selector2Name;
-    private final Name property2Name;
+    private final String property2Name;
     private final int hc;
 
+    /**
+     * Create an equi-join condition, given the names of the selector and property for the left- and right-hand-side of the join.
+     * 
+     * @param selector1Name the selector name appearing on the left-side of the join; never null
+     * @param property1Name the property name for the left-side of the join; never null
+     * @param selector2Name the selector name appearing on the right-side of the join; never null
+     * @param property2Name the property name for the right-side of the join; never null
+     */
     public EquiJoinCondition( SelectorName selector1Name,
-                              Name property1Name,
+                              String property1Name,
                               SelectorName selector2Name,
-                              Name property2Name ) {
+                              String property2Name ) {
         CheckArg.isNotNull(selector1Name, "selector1Name");
         CheckArg.isNotNull(property1Name, "property1Name");
         CheckArg.isNotNull(selector2Name, "selector2Name");
@@ -60,36 +67,50 @@ public class EquiJoinCondition extends JoinCondition {
         this.hc = HashCode.compute(this.selector1Name, this.property1Name, this.selector2Name, this.property2Name);
     }
 
+    /**
+     * Create an equi-join condition, given the columns.
+     * 
+     * @param column1 the column for the left-side of the join; never null
+     * @param column2 the column for the right-side of the join; never null
+     */
     public EquiJoinCondition( Column column1,
                               Column column2 ) {
         this(column1.getSelectorName(), column1.getPropertyName(), column2.getSelectorName(), column2.getPropertyName());
     }
 
     /**
-     * @return selector1Name
+     * Get the name of the selector that appears on the left-side of the join.
+     * 
+     * @return the selector name appearing on the left-side of the join; never null
      */
     public final SelectorName getSelector1Name() {
         return selector1Name;
     }
 
     /**
-     * @return property1Name
+     * Get the name of the property that appears on the left-side of the join.
+     * 
+     * @return the property name for the left-side of the join; never null
      */
-    public final Name getProperty1Name() {
+    public final String getProperty1Name() {
         return property1Name;
     }
 
     /**
-     * @return selector2Name
+     * Get the name of the selector that appears on the right-side of the join.
+     * 
+     * @return the selector name appearing on the right-side of the join; never null
      */
     public final SelectorName getSelector2Name() {
         return selector2Name;
     }
 
     /**
-     * @return property2Name
+     * Get the name of the property that appears on the left-side of the join.
+     * 
+     * @return the property name for the left-side of the join; never null
      */
-    public final Name getProperty2Name() {
+    public final String getProperty2Name() {
         return property2Name;
     }
 

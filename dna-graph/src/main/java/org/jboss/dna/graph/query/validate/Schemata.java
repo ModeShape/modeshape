@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
 
@@ -159,7 +158,7 @@ public interface Schemata {
          * 
          * @return the property type; never null
          */
-        PropertyType getPropertyType();
+        String getPropertyType();
 
         /**
          * Get whether the column can be used in a full-text search.

@@ -24,8 +24,8 @@
 package org.jboss.dna.jcr.xpath;
 
 import org.jboss.dna.common.text.ParsingException;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
 import org.jboss.dna.graph.query.parse.QueryParser;
 import org.jboss.dna.jcr.xpath.XPath.Component;
@@ -76,15 +76,15 @@ public class XPathQueryParser implements QueryParser {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.ExecutionContext)
+     * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.query.model.TypeSystem)
      */
     public QueryCommand parseQuery( String query,
-                                    ExecutionContext context ) throws InvalidQueryException, ParsingException {
-        Component xpath = new XPathParser(context).parseXPath(query);
+                                    TypeSystem typeSystem ) throws InvalidQueryException, ParsingException {
+        Component xpath = new XPathParser(typeSystem).parseXPath(query);
         System.out.println(query);
         System.out.println(" --> " + xpath);
         // Convert the result into a QueryCommand ...
-        QueryCommand command = new XPathToQueryTranslator(context, query).createQuery(xpath);
+        QueryCommand command = new XPathToQueryTranslator(typeSystem, query).createQuery(xpath);
         return command;
     }
 }

@@ -57,7 +57,9 @@ public enum Operator {
     }
 
     /**
-     * @return symbol
+     * Get the symbol for this operator
+     * 
+     * @return the symbolic representation; never null
      */
     public String getSymbol() {
         return symbol;

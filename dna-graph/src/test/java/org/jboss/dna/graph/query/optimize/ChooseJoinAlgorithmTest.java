@@ -54,7 +54,7 @@ public class ChooseJoinAlgorithmTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), mock(Schemata.class));
+        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
         bestRule = ChooseJoinAlgorithm.USE_BEST_JOIN_ALGORITHM;
         nestedRule = ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM;
     }

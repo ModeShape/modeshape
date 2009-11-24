@@ -36,6 +36,7 @@ import org.jboss.dna.common.text.TokenStream;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AnyKindTest;
 import org.jboss.dna.jcr.xpath.XPath.AttributeNameTest;
@@ -70,13 +71,13 @@ import org.junit.Test;
  */
 public class XPathParserTest {
 
-    private ExecutionContext context;
+    private TypeSystem typeSystem;
     private XPathParser parser;
 
     @Before
     public void beforeEach() {
-        context = new ExecutionContext();
-        parser = new XPathParser(context);
+        typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
+        parser = new XPathParser(typeSystem);
     }
 
     @After
@@ -961,7 +962,7 @@ public class XPathParserTest {
     }
 
     protected void assertParsable( String xpath ) {
-        new XPathQueryParser().parseQuery(xpath, context);
+        new XPathQueryParser().parseQuery(xpath, typeSystem);
     }
 
     protected void assertParsable( String xpath,
@@ -976,7 +977,7 @@ public class XPathParserTest {
 
     protected void assertNotParsable( String xpath ) {
         try {
-            new XPathQueryParser().parseQuery(xpath, context);
+            new XPathQueryParser().parseQuery(xpath, typeSystem);
             fail("Expected an invalid XPath:  " + xpath);
         } catch (ParsingException e) {
             // expected

@@ -27,11 +27,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueComparators;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
@@ -42,6 +39,8 @@ import org.jboss.dna.graph.query.model.JoinCondition;
 import org.jboss.dna.graph.query.model.JoinType;
 import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
@@ -166,8 +165,7 @@ public abstract class JoinComponent extends ProcessingComponent {
                 /**
                  * {@inheritDoc}
                  * 
-                 * @see org.jboss.dna.graph.query.process.JoinComponent.TupleMerger#merge(java.lang.Object[],
-                 *      java.lang.Object[])
+                 * @see org.jboss.dna.graph.query.process.JoinComponent.TupleMerger#merge(java.lang.Object[], java.lang.Object[])
                  */
                 public Object[] merge( Object[] leftTuple,
                                        Object[] rightTuple ) {
@@ -275,12 +273,12 @@ public abstract class JoinComponent extends ProcessingComponent {
         } else if (condition instanceof EquiJoinCondition) {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
             SelectorName selector1Name = joinCondition.getSelector1Name();
-            Name propName1 = joinCondition.getProperty1Name();
+            String propName1 = joinCondition.getProperty1Name();
             if (source.getColumns().hasSelector(selector1Name.getName())) {
                 return selectValue(source, selector1Name, propName1);
             }
             SelectorName selector2Name = joinCondition.getSelector2Name();
-            Name propName2 = joinCondition.getProperty2Name();
+            String propName2 = joinCondition.getProperty2Name();
             return selectValue(source, selector2Name, propName2);
         }
         throw new IllegalArgumentException();
@@ -299,7 +297,7 @@ public abstract class JoinComponent extends ProcessingComponent {
 
     private static ValueSelector selectValue( ProcessingComponent component,
                                               SelectorName selectorName,
-                                              Name propertyName ) {
+                                              String propertyName ) {
         final int index = component.getColumns().getColumnIndexForProperty(selectorName.getName(), propertyName);
         return new ValueSelector() {
             public Object evaluate( Object[] tuple ) {
@@ -457,20 +455,26 @@ public abstract class JoinComponent extends ProcessingComponent {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
             SelectorName leftSelectorName = joinCondition.getSelector1Name();
             SelectorName rightSelectorName = joinCondition.getSelector2Name();
-            Name leftPropertyName = joinCondition.getProperty1Name();
-            Name rightPropertyName = joinCondition.getProperty2Name();
+            String leftPropertyName = joinCondition.getProperty1Name();
+            String rightPropertyName = joinCondition.getProperty2Name();
 
-            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
             Schemata schemata = context.getSchemata();
             Schemata.Table leftTable = schemata.getTable(leftSelectorName);
-            Schemata.Column leftColumn = leftTable.getColumn(stringFactory.create(leftPropertyName));
-            PropertyType leftType = leftColumn.getPropertyType();
+            Schemata.Column leftColumn = leftTable.getColumn(leftPropertyName);
+            String leftType = leftColumn.getPropertyType();
 
             Schemata.Table rightTable = schemata.getTable(rightSelectorName);
-            Schemata.Column rightColumn = rightTable.getColumn(stringFactory.create(rightPropertyName));
-            PropertyType rightType = rightColumn.getPropertyType();
+            Schemata.Column rightColumn = rightTable.getColumn(rightPropertyName);
+            String rightType = rightColumn.getPropertyType();
 
-            return leftType == rightType ? (Comparator<Object>)leftType.getComparator() : ValueComparators.OBJECT_COMPARATOR;
+            TypeSystem typeSystem = context.getTypeSystem();
+            if (leftType.equals(rightType)) {
+                TypeFactory<?> typeFactory = typeSystem.getTypeFactory(leftType);
+                if (typeFactory != null) {
+                    return (Comparator<Object>)typeFactory.getComparator();
+                }
+            }
+            return typeSystem.getDefaultComparator();
         }
         throw new IllegalArgumentException();
     }

@@ -47,14 +47,18 @@ public class And extends Constraint {
     }
 
     /**
-     * @return left
+     * Get the constraint that is on the left-hand-side of the AND operation.
+     * 
+     * @return the left-hand-side constraint
      */
     public final Constraint getLeft() {
         return left;
     }
 
     /**
-     * @return right
+     * Get the constraint that is on the right-hand-side of the AND operation.
+     * 
+     * @return the right-hand-side constraint
      */
     public final Constraint getRight() {
         return right;

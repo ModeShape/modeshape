@@ -32,9 +32,9 @@ import java.util.concurrent.ConcurrentMap;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * A thread-safe collection of {@link QueryParser} implementations that can be used to parse queries by language.
@@ -155,7 +155,7 @@ public class QueryParsers {
     /**
      * Execute the supplied query by planning, optimizing, and then processing it.
      * 
-     * @param context the context in which the query should be executed
+     * @param typeSystem the type system that should be used
      * @param language the language in which the query is expressed; must be one of the supported {@link #getLanguages()
      *        languages}
      * @param query the query that is to be executed
@@ -164,17 +164,17 @@ public class QueryParsers {
      * @throws ParsingException if there is an error parsing the supplied query
      * @throws InvalidQueryException if the supplied query can be parsed but is invalid
      */
-    public QueryCommand parse( ExecutionContext context,
+    public QueryCommand parse( TypeSystem typeSystem,
                                String language,
                                String query ) {
         CheckArg.isNotNull(language, "language");
-        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(typeSystem, "typeSystem");
         CheckArg.isNotNull(query, "query");
         QueryParser parser = parsers.get(language.toLowerCase());
         if (parser == null) {
             throw new IllegalArgumentException(GraphI18n.unknownQueryLanguage.text(language));
         }
-        return parser.parseQuery(query, context);
+        return parser.parseQuery(query, typeSystem);
     }
 
     /**

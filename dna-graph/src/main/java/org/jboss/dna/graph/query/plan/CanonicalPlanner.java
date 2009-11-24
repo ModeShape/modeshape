@@ -29,9 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jboss.dna.graph.GraphI18n;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
@@ -223,8 +220,7 @@ public class CanonicalPlanner implements Planner {
                 }
                 node.setProperty(Property.SOURCE_COLUMNS, table.getColumns());
             } else {
-                context.getProblems().addError(GraphI18n.tableDoesNotExist,
-                                               selector.getName().getString(context.getExecutionContext()));
+                context.getProblems().addError(GraphI18n.tableDoesNotExist, selector.getName());
             }
             return node;
         }
@@ -395,20 +391,18 @@ public class CanonicalPlanner implements Planner {
         if (columns.isEmpty()) {
             columns = new LinkedList<Column>();
             // SELECT *, so find all of the columns that are available from all the sources ...
-            NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
             for (Table table : selectors.values()) {
                 // Add the selector that is being used ...
                 projectNode.addSelector(table.getName());
                 // Compute the columns from this selector ...
                 for (Schemata.Column column : table.getColumns()) {
                     String columnName = column.getName();
-                    Name propertyName = nameFactory.create(columnName);
+                    String propertyName = columnName;
                     columns.add(new Column(table.getName(), propertyName, columnName));
                 }
             }
         } else {
             // Add the selector used by each column ...
-            ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
             for (Column column : columns) {
                 SelectorName tableName = column.getSelectorName();
                 // Add the selector that is being used ...
@@ -417,16 +411,13 @@ public class CanonicalPlanner implements Planner {
                 // Verify that each column is available in the appropriate source ...
                 Table table = selectors.get(tableName);
                 if (table == null) {
-                    context.getProblems().addError(GraphI18n.tableDoesNotExist,
-                                                   tableName.getString(context.getExecutionContext()));
+                    context.getProblems().addError(GraphI18n.tableDoesNotExist, tableName);
                 } else {
                     // Make sure that the column is in the table ...
-                    Name columnName = column.getPropertyName();
-                    String name = stringFactory.create(columnName);
+                    String columnName = column.getPropertyName();
+                    String name = columnName;
                     if (table.getColumn(name) == null) {
-                        context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable,
-                                                       name,
-                                                       tableName.getString(context.getExecutionContext()));
+                        context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, name, tableName);
                     }
                 }
             }

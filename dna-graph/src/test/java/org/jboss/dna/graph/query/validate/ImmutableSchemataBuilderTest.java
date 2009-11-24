@@ -41,6 +41,8 @@ import org.junit.Test;
  */
 public class ImmutableSchemataBuilderTest {
 
+    private static final String STRING_TYPE = PropertyType.STRING.getName().toUpperCase();
+
     private ExecutionContext context;
     private ImmutableSchemata.Builder builder;
     private Schemata schemata;
@@ -48,7 +50,7 @@ public class ImmutableSchemataBuilderTest {
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
-        builder = ImmutableSchemata.createBuilder(context);
+        builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
     }
 
     @After
@@ -64,9 +66,9 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c2").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c3").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c2").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c3").getPropertyType(), is(STRING_TYPE));
     }
 
     @Test
@@ -76,14 +78,14 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c11").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c13").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c11").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c13").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("t2"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c21").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c22").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c23").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c21").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c22").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c23").getPropertyType(), is(STRING_TYPE));
     }
 
     @Test
@@ -93,14 +95,14 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c2").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c3").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c2").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c3").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("t2"));
         assertThat(table, is(instanceOf(View.class)));
-        assertThat(table.getColumn("c1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c2").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c3").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c2").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c3").getPropertyType(), is(STRING_TYPE));
     }
 
     @Test
@@ -110,13 +112,13 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c2").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c3").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c2").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c3").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("t2"));
         assertThat(table, is(instanceOf(View.class)));
-        assertThat(table.getColumn("v1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c2").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("v1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c2").getPropertyType(), is(STRING_TYPE));
     }
 
     @Test
@@ -127,20 +129,20 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c11").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c13").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c11").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c13").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("t2"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c21").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c22").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c23").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c21").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c22").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c23").getPropertyType(), is(STRING_TYPE));
         schemata = builder.build();
         table = schemata.getTable(selector("v1"));
         assertThat(table, is(instanceOf(View.class)));
-        assertThat(table.getColumn("x1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c23").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("x1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c23").getPropertyType(), is(STRING_TYPE));
     }
 
     @Test
@@ -152,24 +154,24 @@ public class ImmutableSchemataBuilderTest {
         schemata = builder.build();
         Table table = schemata.getTable(selector("t1"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c11").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c13").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c11").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c13").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("t2"));
         assertThat(table, is(notNullValue()));
-        assertThat(table.getColumn("c21").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c22").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c23").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("c21").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c22").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c23").getPropertyType(), is(STRING_TYPE));
         schemata = builder.build();
         table = schemata.getTable(selector("v1"));
         assertThat(table, is(instanceOf(View.class)));
-        assertThat(table.getColumn("x1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c23").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("x1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c23").getPropertyType(), is(STRING_TYPE));
         table = schemata.getTable(selector("v2"));
         assertThat(table, is(instanceOf(View.class)));
-        assertThat(table.getColumn("x1").getPropertyType(), is(PropertyType.STRING));
-        assertThat(table.getColumn("c12").getPropertyType(), is(PropertyType.STRING));
+        assertThat(table.getColumn("x1").getPropertyType(), is(STRING_TYPE));
+        assertThat(table.getColumn("c12").getPropertyType(), is(STRING_TYPE));
     }
 
     protected SelectorName selector( String name ) {

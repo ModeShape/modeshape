@@ -29,14 +29,12 @@ import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 
 /**
  * The resulting output of a query.
@@ -93,10 +91,10 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.query.QueryResults#getContext()
+     * @see org.jboss.dna.graph.query.QueryResults#getTypeSystem()
      */
-    public ExecutionContext getContext() {
-        return context.getExecutionContext();
+    public TypeSystem getTypeSystem() {
+        return context.getTypeSystem();
     }
 
     /**
@@ -219,12 +217,11 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      */
     public void toString( StringBuilder sb,
                           int maxTuples ) {
-        ValueFactory<String> stringFactory = context.getExecutionContext().getValueFactories().getStringFactory();
-        int[] columnWidths = determineColumnWidths(Integer.MAX_VALUE, true, stringFactory);
+        int[] columnWidths = determineColumnWidths(Integer.MAX_VALUE, true);
         printDelimiterLine(sb, columnWidths, true);
         printHeader(sb, columnWidths);
         printDelimiterLine(sb, columnWidths, true);
-        printLines(sb, columnWidths, stringFactory, maxTuples);
+        printLines(sb, columnWidths, maxTuples);
         printDelimiterLine(sb, columnWidths, false);
     }
 
@@ -233,12 +230,10 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      * 
      * @param maxWidth the maximum width; must be positive
      * @param useData true if the data should be used to compute the length, or false if just the column names should be used
-     * @param stringFactory the value factory for creating strings; may not be null
      * @return the array of widths for each column, excluding any decorating characters; never null
      */
     protected int[] determineColumnWidths( int maxWidth,
-                                           boolean useData,
-                                           ValueFactory<String> stringFactory ) {
+                                           boolean useData ) {
         assert maxWidth > 0;
         int tupleLength = columns.getTupleSize();
         int[] columnWidths = new int[tupleLength + 1]; // +1 for the row number column
@@ -246,7 +241,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
             columnWidths[i] = 0;
         }
         // Determine the width of the first column that shows the row number ...
-        String rowNumber = stringFactory.create(getTuples().size());
+        String rowNumber = Integer.toString(getTuples().size());
         columnWidths[0] = rowNumber.length();
 
         // Compute the column names ...
@@ -259,7 +254,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         if (useData) {
             for (Object[] tuple : getTuples()) {
                 for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-                    String valueStr = stringOf(tuple[i], stringFactory);
+                    String valueStr = stringOf(tuple[i]);
                     if (valueStr == null) continue;
                     columnWidths[j] = Math.max(Math.min(maxWidth, valueStr.length()), columnWidths[j]);
                 }
@@ -268,14 +263,10 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         return columnWidths;
     }
 
-    protected String stringOf( Object value,
-                               ValueFactory<String> stringFactory ) {
-        if (value instanceof Binary) {
-            // Just print out the SHA-1 hash in Base64, plus length
-            Binary binary = (Binary)value;
-            return "(Binary,length=" + binary.getSize() + ",SHA1=" + Base64.encode(binary.getHash()) + ")";
-        }
-        return stringFactory.create(value);
+    protected String stringOf( Object value ) {
+        if (value == null) return null;
+        TypeFactory<?> typeFactory = context.getTypeSystem().getTypeFactory(value);
+        return typeFactory.asReadableString(value);
     }
 
     protected void printHeader( StringBuilder sb,
@@ -296,7 +287,6 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
 
     protected void printLines( StringBuilder sb,
                                int[] columnWidths,
-                               ValueFactory<String> stringFactory,
                                int maxRowsToPrint ) {
         int rowNumber = 1;
         int tupleLength = columns.getTupleSize();
@@ -304,13 +294,13 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         if (maxRowsToPrint > tuples.size()) {
             // Print all tuples ...
             for (Object[] tuple : getTuples()) {
-                printTuple(sb, columnWidths, stringFactory, rowNumber, tupleLength, tuple);
+                printTuple(sb, columnWidths, rowNumber, tupleLength, tuple);
                 ++rowNumber;
             }
         } else {
             // Print max number of rows ...
             for (Object[] tuple : getTuples()) {
-                printTuple(sb, columnWidths, stringFactory, rowNumber, tupleLength, tuple);
+                printTuple(sb, columnWidths, rowNumber, tupleLength, tuple);
                 if (rowNumber >= maxRowsToPrint) break;
                 ++rowNumber;
             }
@@ -321,14 +311,12 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     /**
      * @param sb
      * @param columnWidths
-     * @param stringFactory
      * @param rowNumber
      * @param tupleLength
      * @param tuple
      */
     private final void printTuple( StringBuilder sb,
                                    int[] columnWidths,
-                                   ValueFactory<String> stringFactory,
                                    int rowNumber,
                                    int tupleLength,
                                    Object[] tuple ) {
@@ -336,7 +324,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         sb.append("| ").append(StringUtil.justifyLeft(Integer.toString(rowNumber), columnWidths[0], ' ')).append(' ');
         // Print the remaining columns ...
         for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-            String valueStr = stringOf(tuple[i], stringFactory);
+            String valueStr = stringOf(tuple[i]);
             valueStr = StringUtil.justifyLeft(valueStr, columnWidths[j], ' ');
             sb.append('|').append(' ').append(valueStr).append(' ');
         }

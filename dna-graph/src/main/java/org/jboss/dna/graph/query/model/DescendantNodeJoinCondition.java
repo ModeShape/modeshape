@@ -53,14 +53,18 @@ public class DescendantNodeJoinCondition extends JoinCondition {
     }
 
     /**
-     * @return descendantSelectorName
+     * Get the name of the selector for the descedant node.
+     * 
+     * @return the selector name of the descendant node; never null
      */
     public final SelectorName getDescendantSelectorName() {
         return descendantSelectorName;
     }
 
     /**
-     * @return ancestorSelectorName
+     * Get the name of the selector for the ancestor node.
+     * 
+     * @return the selector name of the ancestor node; never null
      */
     public final SelectorName getAncestorSelectorName() {
         return ancestorSelectorName;

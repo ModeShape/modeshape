@@ -33,7 +33,6 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
-import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * This object acts as a Set operator on multiple {@link QueryCommand queries}, such as performing UNION, INTERSECT, and EXCEPT
@@ -91,9 +90,9 @@ public class SetQuery extends QueryCommand {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.query.model.Readable#getString(org.jboss.dna.graph.ExecutionContext)
+         * @see org.jboss.dna.graph.query.model.Readable#getString()
          */
-        public String getString( ExecutionContext context ) {
+        public String getString() {
             return getSymbol();
         }
     }
@@ -104,6 +103,15 @@ public class SetQuery extends QueryCommand {
     private final boolean all;
     private final int hc;
 
+    /**
+     * Create a set query involving the supplied left- and right-hand-side queries.
+     * 
+     * @param left the left-hand-side query being combined
+     * @param operation the set operation
+     * @param right the right-hand-side query being combined
+     * @param all true if all of the results should be included
+     * @throws IllegalArgumentException if the left-hand-side query, right-hand-side query, or operation are null
+     */
     public SetQuery( QueryCommand left,
                      Operation operation,
                      QueryCommand right,
@@ -119,6 +127,17 @@ public class SetQuery extends QueryCommand {
         this.hc = HashCode.compute(this.left, this.right, this.operation);
     }
 
+    /**
+     * Create a set query involving the supplied left- and right-hand-side queries.
+     * 
+     * @param left the left-hand-side query being combined
+     * @param operation the set operation
+     * @param right the right-hand-side query being combined
+     * @param all true if all of the results should be included
+     * @param orderings the specification of the order of the result rows, or null if the results need not be ordered
+     * @param limit the limit for the result rows, or null if there are no limits
+     * @throws IllegalArgumentException if the left-hand-side query, right-hand-side query, or operation are null
+     */
     public SetQuery( QueryCommand left,
                      Operation operation,
                      QueryCommand right,

@@ -30,7 +30,6 @@ import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.parse.FullTextSearchParser;
 
 /**
@@ -40,7 +39,7 @@ import org.jboss.dna.graph.query.parse.FullTextSearchParser;
 @Immutable
 public class FullTextSearch extends Constraint {
     private final SelectorName selectorName;
-    private final Name propertyName;
+    private final String propertyName;
     private final String fullTextSearchExpression;
     private Term term;
     private final int hc;
@@ -54,7 +53,7 @@ public class FullTextSearch extends Constraint {
      * @param term the term representation, if it is known; may be null
      */
     public FullTextSearch( SelectorName selectorName,
-                           Name propertyName,
+                           String propertyName,
                            String fullTextSearchExpression,
                            Term term ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -73,7 +72,7 @@ public class FullTextSearch extends Constraint {
      * @param fullTextSearchExpression the search expression
      */
     public FullTextSearch( SelectorName selectorName,
-                           Name propertyName,
+                           String propertyName,
                            String fullTextSearchExpression ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         CheckArg.isNotEmpty(fullTextSearchExpression, "fullTextSearchExpression");
@@ -101,21 +100,27 @@ public class FullTextSearch extends Constraint {
     }
 
     /**
-     * @return selectorName
+     * Get the name of the selector that is to be searched
+     * 
+     * @return the selector name; never null
      */
     public final SelectorName getSelectorName() {
         return selectorName;
     }
 
     /**
-     * @return propertyName
+     * Get the name of the property that is to be searched.
+     * 
+     * @return the property name; never null
      */
-    public final Name getPropertyName() {
+    public final String getPropertyName() {
         return propertyName;
     }
 
     /**
-     * @return fullTextSearchExpression
+     * Get the full-text search expression, as a string.
+     * 
+     * @return the search expression; never null
      */
     public final String getFullTextSearchExpression() {
         return fullTextSearchExpression;

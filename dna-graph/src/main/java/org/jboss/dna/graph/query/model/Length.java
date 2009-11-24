@@ -54,7 +54,9 @@ public class Length extends DynamicOperand {
     }
 
     /**
-     * @return propertyValue
+     * Get the property value whose length is being constrained.
+     * 
+     * @return the property value being constrained; never null
      */
     public final PropertyValue getPropertyValue() {
         return propertyValue;

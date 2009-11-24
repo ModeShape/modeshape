@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Column;
@@ -38,6 +37,7 @@ import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
@@ -58,15 +58,15 @@ public class ReplaceViewsTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        ExecutionContext execContext = new ExecutionContext();
+        TypeSystem typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
         rule = ReplaceViews.INSTANCE;
-        builder = ImmutableSchemata.createBuilder(execContext);
+        builder = ImmutableSchemata.createBuilder(typeSystem);
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addView("v1", "SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
-        context = new QueryContext(execContext, schemata);
+        context = new QueryContext(schemata, typeSystem);
     }
 
     /**
@@ -124,7 +124,7 @@ public class ReplaceViewsTest extends AbstractQueryTest {
         PlanNode viewSelect = new PlanNode(Type.SELECT, viewProject, selector("t1"));
         PlanNode viewSource = new PlanNode(Type.SOURCE, viewSelect, selector("t1"));
         viewProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
-        viewSelect.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), name("c13")),
+        viewSelect.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"),
                                                                         Operator.LESS_THAN, new Literal(3L)));
         viewSource.setProperty(Property.SOURCE_NAME, selector("t1"));
         viewSource.setProperty(Property.SOURCE_COLUMNS, schemata.getTable(selector("t1")).getColumns());
@@ -145,16 +145,12 @@ public class ReplaceViewsTest extends AbstractQueryTest {
 
     protected Column column( String table,
                              String columnName ) {
-        return new Column(new SelectorName(table), name(columnName), columnName);
+        return new Column(new SelectorName(table), columnName, columnName);
     }
 
     protected Column column( String table,
                              String columnName,
                              String alias ) {
-        return new Column(new SelectorName(table), name(columnName), alias);
-    }
-
-    protected Name name( String name ) {
-        return context.getExecutionContext().getValueFactories().getNameFactory().create(name);
+        return new Column(new SelectorName(table), columnName, alias);
     }
 }
