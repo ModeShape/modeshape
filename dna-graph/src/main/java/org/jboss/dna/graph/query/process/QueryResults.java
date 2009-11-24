@@ -138,6 +138,15 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.query.QueryResults#getRowCount()
+     */
+    public int getRowCount() {
+        return tuples.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.query.QueryResults#getProblems()
      */
     public Problems getProblems() {
@@ -251,6 +260,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
             for (Object[] tuple : getTuples()) {
                 for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
                     String valueStr = stringOf(tuple[i], stringFactory);
+                    if (valueStr == null) continue;
                     columnWidths[j] = Math.max(Math.min(maxWidth, valueStr.length()), columnWidths[j]);
                 }
             }

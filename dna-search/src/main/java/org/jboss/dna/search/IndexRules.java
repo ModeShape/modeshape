@@ -339,7 +339,7 @@ public class IndexRules {
      */
     public static Builder createBuilder( IndexRules initialRules ) {
         CheckArg.isNotNull(initialRules, "initialRules");
-        return new Builder(initialRules.rulesByName).defaultTo(initialRules.defaultRule);
+        return new Builder(new HashMap<Name, Rule>(initialRules.rulesByName)).defaultTo(initialRules.defaultRule);
     }
 
     /**

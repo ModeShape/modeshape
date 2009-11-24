@@ -162,7 +162,7 @@ public abstract class QueryProcessor implements Processor {
         switch (node.getType()) {
             case ACCESS:
                 // If the ACCESS node will not have results ...
-                if (node.getProperty(Property.ACCESS_NO_RESULTS, Boolean.class)) {
+                if (node.hasProperty(Property.ACCESS_NO_RESULTS)) {
                     component = new NoResultsComponent(context, columns);
                 } else {
                     // Create the component to handle the ACCESS node ...

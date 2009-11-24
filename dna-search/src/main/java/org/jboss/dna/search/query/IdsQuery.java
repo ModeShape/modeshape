@@ -25,7 +25,6 @@ package org.jboss.dna.search.query;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.UUID;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
@@ -36,41 +35,35 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
-import org.jboss.dna.graph.property.ValueFactory;
 
 /**
- * A Lucene {@link Query} implementation that is used to score positively those documents that have a UUID in the supplied set.
- * This works for large sets of UUIDs; in smaller numbers, it may be more efficient to create a boolean query that checks for each
- * fo the UUIDs.
+ * A Lucene {@link Query} implementation that is used to score positively those documents that have a ID in the supplied set. This
+ * works for large sets of IDs; in smaller numbers, it may be more efficient to create a boolean query that checks for each of the
+ * IDs.
  */
-public class UuidsQuery extends Query {
+public class IdsQuery extends Query {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * The operand that is being negated by this query.
      */
-    protected final Set<UUID> uuids;
+    protected final Set<String> uuids;
     protected final FieldSelector fieldSelector;
     protected final String fieldName;
-    protected final ValueFactory<UUID> uuidFactory;
 
     /**
      * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
      * 
      * @param fieldName the name of the document field containing the value; may not be null
-     * @param uuids the set of UUID values; may not be null
-     * @param uuidFactory the factory to create UUID values; may not be null
+     * @param ids the set of ID values; may not be null
      */
-    public UuidsQuery( String fieldName,
-                       Set<UUID> uuids,
-                       ValueFactory<UUID> uuidFactory ) {
+    public IdsQuery( String fieldName,
+                     Set<String> ids ) {
         this.fieldName = fieldName;
-        this.uuids = uuids;
-        this.uuidFactory = uuidFactory;
+        this.uuids = ids;
         assert this.fieldName != null;
         assert this.uuids != null;
-        assert this.uuidFactory != null;
         this.fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
@@ -84,7 +77,7 @@ public class UuidsQuery extends Query {
                                        int docId ) throws IOException {
         Document doc = reader.document(docId, fieldSelector);
         String valueString = doc.get(fieldName);
-        return uuids.contains(uuidFactory.create(valueString));
+        return uuids.contains(valueString);
     }
 
     /**
@@ -94,7 +87,7 @@ public class UuidsQuery extends Query {
      */
     @Override
     public Weight createWeight( Searcher searcher ) {
-        return new UuidSetWeight(searcher);
+        return new IdSetWeight(searcher);
     }
 
     /**
@@ -110,11 +103,11 @@ public class UuidsQuery extends Query {
     /**
      * Calculates query weights and builds query scores for our NOT queries.
      */
-    protected class UuidSetWeight extends Weight {
+    protected class IdSetWeight extends Weight {
         private static final long serialVersionUID = 1L;
         private final Searcher searcher;
 
-        protected UuidSetWeight( Searcher searcher ) {
+        protected IdSetWeight( Searcher searcher ) {
             this.searcher = searcher;
             assert this.searcher != null;
         }
@@ -126,7 +119,7 @@ public class UuidsQuery extends Query {
          */
         @Override
         public Query getQuery() {
-            return UuidsQuery.this;
+            return IdsQuery.this;
         }
 
         /**
@@ -178,7 +171,7 @@ public class UuidsQuery extends Query {
                               boolean scoreDocsInOrder,
                               boolean topScorer ) {
             // Return a custom scorer ...
-            return new UuidScorer(reader);
+            return new IdScorer(reader);
         }
 
         /**
@@ -196,12 +189,12 @@ public class UuidsQuery extends Query {
     /**
      * A scorer for the Path query.
      */
-    protected class UuidScorer extends Scorer {
+    protected class IdScorer extends Scorer {
         private int docId = -1;
         private final int maxDocId;
         private final IndexReader reader;
 
-        protected UuidScorer( IndexReader reader ) {
+        protected IdScorer( IndexReader reader ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
             super(Similarity.getDefault());
             this.reader = reader;

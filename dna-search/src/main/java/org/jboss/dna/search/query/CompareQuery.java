@@ -96,7 +96,7 @@ public abstract class CompareQuery<ValueType> extends Query {
      * @param fieldSelector the field selector that should load the fields needed to recover the value; may be null if the field
      *        selector should be generated automatically
      */
-    protected CompareQuery( String fieldName,
+    protected CompareQuery( final String fieldName,
                             ValueType constraintValue,
                             ValueFactory<ValueType> valueTypeFactory,
                             ValueFactory<String> stringFactory,
@@ -114,7 +114,7 @@ public abstract class CompareQuery<ValueType> extends Query {
             private static final long serialVersionUID = 1L;
 
             public FieldSelectorResult accept( String fieldName ) {
-                return fieldName.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+                return CompareQuery.this.fieldName.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
             }
         };
     }
@@ -133,7 +133,7 @@ public abstract class CompareQuery<ValueType> extends Query {
      */
     @Override
     public Weight createWeight( Searcher searcher ) {
-        return new NotWeight(searcher);
+        return new CompareWeight(searcher);
     }
 
     /**
@@ -149,11 +149,11 @@ public abstract class CompareQuery<ValueType> extends Query {
     /**
      * Calculates query weights and builds query scores for our NOT queries.
      */
-    protected class NotWeight extends Weight {
+    protected class CompareWeight extends Weight {
         private static final long serialVersionUID = 1L;
         private final Searcher searcher;
 
-        protected NotWeight( Searcher searcher ) {
+        protected CompareWeight( Searcher searcher ) {
             this.searcher = searcher;
             assert this.searcher != null;
         }
@@ -217,7 +217,7 @@ public abstract class CompareQuery<ValueType> extends Query {
                               boolean scoreDocsInOrder,
                               boolean topScorer ) {
             // Return a custom scorer ...
-            return new NotScorer(reader);
+            return new CompareScorer(reader);
         }
 
         /**
@@ -235,17 +235,17 @@ public abstract class CompareQuery<ValueType> extends Query {
     /**
      * A scorer for the Path query.
      */
-    protected class NotScorer extends Scorer {
+    protected class CompareScorer extends Scorer {
         private int docId = -1;
         private final int maxDocId;
         private final IndexReader reader;
 
-        protected NotScorer( IndexReader reader ) {
+        protected CompareScorer( IndexReader reader ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
             super(Similarity.getDefault());
             this.reader = reader;
             assert this.reader != null;
-            this.maxDocId = this.reader.maxDoc();
+            this.maxDocId = this.reader.maxDoc() - 1;
         }
 
         /**

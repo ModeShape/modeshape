@@ -24,10 +24,16 @@
 package org.jboss.dna.search.query;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Searcher;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
+import org.apache.lucene.search.regex.RegexQuery;
 import org.jboss.dna.graph.property.ValueComparators;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
@@ -42,6 +48,19 @@ import org.jboss.dna.graph.query.model.Comparison;
 public class CompareStringQuery extends CompareQuery<String> {
 
     private static final long serialVersionUID = 1L;
+    protected static final Evaluator<String> EQUAL_TO = new Evaluator<String>() {
+        private static final long serialVersionUID = 1L;
+
+        public boolean satisfiesConstraint( String nodeValue,
+                                            String constraintValue ) {
+            return constraintValue.equals(nodeValue);
+        }
+
+        @Override
+        public String toString() {
+            return " = ";
+        }
+    };
     protected static final Evaluator<String> IS_LESS_THAN = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
@@ -94,6 +113,29 @@ public class CompareStringQuery extends CompareQuery<String> {
             return " >= ";
         }
     };
+
+    /**
+     * Construct a {@link Query} implementation that scores documents with a string field value that is equal to the supplied
+     * constraint value.
+     * 
+     * @param constraintValue the constraint value; may not be null
+     * @param fieldName the name of the document field containing the value; may not be null
+     * @param factories the value factories that can be used during the scoring; may not be null
+     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
+     *        case-insensitive
+     * @return the query; never null
+     */
+    public static Query createQueryForNodesWithFieldEqualTo( String constraintValue,
+                                                             String fieldName,
+                                                             ValueFactories factories,
+                                                             boolean caseSensitive ) {
+        if (caseSensitive) {
+            // We can just do a normal TermQuery ...
+            return new TermQuery(new Term(fieldName, constraintValue));
+        }
+        return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
+                                      EQUAL_TO, caseSensitive);
+    }
 
     /**
      * Construct a {@link Query} implementation that scores documents with a string field value that is greater than the supplied
@@ -171,6 +213,83 @@ public class CompareStringQuery extends CompareQuery<String> {
                                       IS_LESS_THAN_OR_EQUAL_TO, caseSensitive);
     }
 
+    /**
+     * Construct a {@link Query} implementation that scores documents with a string field value that is LIKE the supplied
+     * constraint value.
+     * 
+     * @param likeExpression the LIKE expression; may not be null
+     * @param fieldName the name of the document field containing the value; may not be null
+     * @param factories the value factories that can be used during the scoring; may not be null
+     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
+     *        case-insensitive
+     * @return the query; never null
+     */
+    public static Query createQueryForNodesWithFieldLike( String likeExpression,
+                                                          String fieldName,
+                                                          ValueFactories factories,
+                                                          boolean caseSensitive ) {
+        assert likeExpression != null;
+        assert likeExpression.length() > 0;
+        if (likeExpression.indexOf('%') == -1 && likeExpression.indexOf('_') == -1) {
+            // This is not a like expression, so just do an equals ...
+            return createQueryForNodesWithFieldEqualTo(likeExpression, fieldName, factories, caseSensitive);
+        }
+        if (caseSensitive) {
+            // We can just do a normal Wildcard or RegEx query ...
+
+            // '%' matches 0 or more characters
+            // '_' matches any single character
+            // '\x' matches 'x'
+            // all other characters match themselves
+
+            // Wildcard queries are a better match, but they can be slow and should not be used
+            // if the first character of the expression is a '%' or '_' ...
+            char firstChar = likeExpression.charAt(0);
+            if (firstChar != '%' && firstChar != '_') {
+                // Create a wildcard query ...
+                String expression = toWildcardExpression(likeExpression);
+                return new WildcardQuery(new Term(fieldName, expression));
+            }
+        }
+        // Create a regex query (which will be done using the correct case) ...
+        String regex = toRegularExpression(likeExpression);
+        RegexQuery query = new RegexQuery(new Term(fieldName, regex));
+        int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+        query.setRegexImplementation(new JavaUtilRegexCapabilities(flags));
+        return query;
+    }
+
+    /**
+     * Convert the JCR like expression to a Lucene wildcard expression. The JCR like expression uses '%' to match 0 or more
+     * characters, '_' to match any single character, '\x' to match the 'x' character, and all other characters to match
+     * themselves.
+     * 
+     * @param likeExpression the like expression; may not be null
+     * @return the expression that can be used with a WildcardQuery; never null
+     */
+    protected static String toWildcardExpression( String likeExpression ) {
+        return likeExpression.replace('%', '*').replace('_', '?').replaceAll("\\\\(.)", "$1");
+    }
+
+    /**
+     * Convert the JCR like expression to a regular expression. The JCR like expression uses '%' to match 0 or more characters,
+     * '_' to match any single character, '\x' to match the 'x' character, and all other characters to match themselves. Note that
+     * if any regex metacharacters appear in the like expression, they will be escaped within the resulting regular expression.
+     * 
+     * @param likeExpression the like expression; may not be null
+     * @return the expression that can be used with a WildcardQuery; never null
+     */
+    protected static String toRegularExpression( String likeExpression ) {
+        // Replace all '\x' with 'x' ...
+        String result = likeExpression.replaceAll("\\\\(.)", "$1");
+        // Escape characters used as metacharacters in regular expressions, including
+        // '[', '^', '\', '$', '.', '|', '?', '*', '+', '(', and ')'
+        result = result.replaceAll("([\\[^\\\\$.|?*+()])", "\\$1");
+        // Replace '%'->'[.]+' and '_'->'[.]
+        result = likeExpression.replace("%", ".+").replace("_", ".");
+        return result;
+    }
+
     private final boolean caseSensitive;
 
     /**
@@ -204,6 +323,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected String readFromDocument( IndexReader reader,
                                        int docId ) throws IOException {
         String result = super.readFromDocument(reader, docId);
+        if (result == null) return null;
         return caseSensitive ? result : result.toLowerCase();
     }
 

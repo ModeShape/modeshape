@@ -24,28 +24,17 @@
 package org.jboss.dna.search;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.document.FieldSelectorResult;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.PropertyType;
@@ -88,6 +77,7 @@ import org.jboss.dna.graph.query.process.ProcessingComponent;
 import org.jboss.dna.graph.query.process.SelectComponent;
 import org.jboss.dna.graph.query.process.SelectComponent.Analyzer;
 import org.jboss.dna.search.DualIndexSearchProvider.ContentIndex;
+import org.jboss.dna.search.LuceneSession.TupleCollector;
 
 /**
  * 
@@ -210,7 +200,7 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         try {
             // Execute the query against the content indexes ...
             IndexSearcher searcher = session.getContentSearcher();
-            TupleCollector collector = new TupleCollector(columns, execContext.getValueFactories().getUuidFactory());
+            TupleCollector collector = session.createTupleCollector(columns);
             searcher.search(pushDownQuery, collector);
             tuples = collector.getTuples();
         } catch (IOException e) {
@@ -497,113 +487,5 @@ public class LuceneQueryComponent extends AbstractAccessComponent {
         // Should not get here ...
         assert false;
         return null;
-    }
-
-    /**
-     * This collector is responsible for loading the value for each of the columns into each tuple array.
-     */
-    protected static class TupleCollector extends Collector {
-        private final LinkedList<Object[]> tuples = new LinkedList<Object[]>();
-        private final Columns columns;
-        private final int numValues;
-        private final boolean recordScore;
-        private final int scoreIndex;
-        private final FieldSelector fieldSelector;
-        private final int locationIndex;
-        private final ValueFactory<UUID> uuidFactory;
-        private Scorer scorer;
-        private IndexReader currentReader;
-        private int docOffset;
-
-        protected TupleCollector( Columns columns,
-                                  ValueFactory<UUID> uuidFactory ) {
-            this.columns = columns;
-            this.uuidFactory = uuidFactory;
-            assert this.columns != null;
-            assert this.uuidFactory != null;
-            this.numValues = this.columns.getTupleSize();
-            assert this.numValues >= 0;
-            assert this.columns.getSelectorNames().size() == 1;
-            final String selectorName = this.columns.getSelectorNames().get(0);
-            this.locationIndex = this.columns.getLocationIndex(selectorName);
-            this.recordScore = this.columns.hasFullTextSearchScores();
-            this.scoreIndex = this.recordScore ? this.columns.getFullTextSearchScoreIndexFor(selectorName) : -1;
-            final Set<String> columnNames = new HashSet<String>(this.columns.getColumnNames());
-            columnNames.add(ContentIndex.UUID); // add the UUID, which we'll put into the Location ...
-            this.fieldSelector = new FieldSelector() {
-                private static final long serialVersionUID = 1L;
-
-                public FieldSelectorResult accept( String fieldName ) {
-                    return columnNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
-                }
-            };
-        }
-
-        /**
-         * @return tuples
-         */
-        public LinkedList<Object[]> getTuples() {
-            return tuples;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#acceptsDocsOutOfOrder()
-         */
-        @Override
-        public boolean acceptsDocsOutOfOrder() {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#setNextReader(org.apache.lucene.index.IndexReader, int)
-         */
-        @Override
-        public void setNextReader( IndexReader reader,
-                                   int docBase ) {
-            this.currentReader = reader;
-            this.docOffset = docBase;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#setScorer(org.apache.lucene.search.Scorer)
-         */
-        @Override
-        public void setScorer( Scorer scorer ) {
-            this.scorer = scorer;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#collect(int)
-         */
-        @Override
-        public void collect( int doc ) throws IOException {
-            int docId = doc + docOffset;
-            Object[] tuple = new Object[numValues];
-            Document document = currentReader.document(docId, fieldSelector);
-            for (String columnName : columns.getColumnNames()) {
-                int index = columns.getColumnIndexForName(columnName);
-                // We just need to retrieve the first value if there is more than one ...
-                tuple[index] = document.get(columnName);
-            }
-
-            // Set the score column if required ...
-            if (recordScore) {
-                assert scorer != null;
-                tuple[scoreIndex] = scorer.score();
-            }
-
-            // Load the UUID into a Location object ...
-            UUID uuid = uuidFactory.create(document.get(ContentIndex.UUID));
-            tuple[locationIndex] = Location.create(uuid);
-            tuples.add(tuple);
-        }
     }
 }

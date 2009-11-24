@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -60,15 +61,14 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
-import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.jboss.dna.common.text.NoOpEncoder;
+import org.jboss.dna.common.text.SecureHashTextEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.SecureHash.Algorithm;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
@@ -77,8 +77,8 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -107,13 +107,14 @@ import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.search.SearchException;
 import org.jboss.dna.graph.search.SearchProvider;
 import org.jboss.dna.search.IndexRules.Rule;
+import org.jboss.dna.search.LuceneSession.TupleCollector;
 import org.jboss.dna.search.query.CompareLengthQuery;
 import org.jboss.dna.search.query.CompareNameQuery;
 import org.jboss.dna.search.query.ComparePathQuery;
 import org.jboss.dna.search.query.CompareStringQuery;
+import org.jboss.dna.search.query.IdsQuery;
 import org.jboss.dna.search.query.MatchNoneQuery;
 import org.jboss.dna.search.query.NotQuery;
-import org.jboss.dna.search.query.UuidsQuery;
 
 /**
  * A simple {@link SearchProvider} implementation that relies upon two separate indexes: one for the node content and a second one
@@ -134,8 +135,8 @@ public class DualIndexSearchProvider implements SearchProvider {
     static {
         IndexRules.Builder builder = IndexRules.createBuilder();
         // Configure the default behavior ...
-        builder.defaultTo(IndexRules.INDEX | IndexRules.ANALYZE | IndexRules.FULL_TEXT);
-        // Configure the UUID properties to be just indexed (not stored, not analyzed, not included in full-text) ...
+        builder.defaultTo(IndexRules.INDEX | IndexRules.FULL_TEXT | IndexRules.STORE);
+        // Configure the UUID properties to be just indexed and stored (not analyzed, not included in full-text) ...
         builder.store(JcrLexicon.UUID, DnaLexicon.UUID);
         // Configure the properties that we'll treat as dates ...
         builder.treatAsDates(JcrLexicon.CREATED, JcrLexicon.LAST_MODIFIED);
@@ -150,24 +151,40 @@ public class DualIndexSearchProvider implements SearchProvider {
     protected static final double MAX_DOUBLE = Double.MAX_VALUE;
     protected static final int MIN_DEPTH = 0;
     protected static final int MAX_DEPTH = 100;
+    protected static final int MIN_SNS_INDEX = 1;
+    protected static final int MAX_SNS_INDEX = 1000; // assume there won't be more than 1000 same-name-siblings
 
     protected static final String PATHS_INDEX_NAME = "paths";
     protected static final String CONTENT_INDEX_NAME = "content";
 
-    protected static final String UUID_FIELD = "uuid";
-    protected static final String FULL_TEXT_SUFFIX = "/fs"; // the slash character is not allowed in a property name unescaped
+    /**
+     * Given the name of a property field of the form "&lt;namespace>:&lt;local>" (where &lt;namespace> can be zero-length), this
+     * provider also stores the value(s) for free-text searching in a field named ":ft:&lt;namespace>:&lt;local>". Thus, even if
+     * the namespace is zero-length, the free-text search field will be named ":ft::&lt;local>" and will not clash with any other
+     * property name.
+     */
+    protected static final String FULL_TEXT_PREFIX = ":ft:";
 
+    /**
+     * This index stores only these fields, so we can use the most obvious names and not worry about clashes.
+     */
     static class PathIndex {
-        public static final String PATH = "path";
-        public static final String LOCAL_NAME = "name";
+        public static final String PATH = "pth";
+        public static final String NODE_NAME = "nam";
+        public static final String LOCAL_NAME = "loc";
         public static final String SNS_INDEX = "sns";
-        public static final String UUID = UUID_FIELD;
-        public static final String DEPTH = "depth";
+        public static final String LOCATION_ID_PROPERTIES = "idp";
+        public static final String ID = ContentIndex.ID;
+        public static final String DEPTH = "dep";
     }
 
+    /**
+     * This index stores these two fields <i>plus</i> all properties. Therefore, we have to worry about name clashes, which is why
+     * these field names are prefixed with '::', which is something that does appear in property names as they are serialized.
+     */
     static class ContentIndex {
-        public static final String UUID = UUID_FIELD;
-        public static final String FULL_TEXT = "fts";
+        public static final String ID = "::id";
+        public static final String FULL_TEXT = "::fts";
     }
 
     /**
@@ -190,12 +207,13 @@ public class DualIndexSearchProvider implements SearchProvider {
         private static final long serialVersionUID = 1L;
 
         public FieldSelectorResult accept( String fieldName ) {
-            return PathIndex.UUID.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+            return PathIndex.ID.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
         }
     };
 
     private final IndexRules rules;
     private final LuceneConfiguration directoryConfiguration;
+    private final TextEncoder namespaceEncoder;
 
     public DualIndexSearchProvider( LuceneConfiguration directoryConfiguration,
                                     IndexRules rules ) {
@@ -203,6 +221,7 @@ public class DualIndexSearchProvider implements SearchProvider {
         assert rules != null;
         this.rules = rules;
         this.directoryConfiguration = directoryConfiguration;
+        this.namespaceEncoder = new SecureHashTextEncoder(Algorithm.SHA_1, 10);
     }
 
     public DualIndexSearchProvider( LuceneConfiguration directoryConfiguration ) {
@@ -253,7 +272,9 @@ public class DualIndexSearchProvider implements SearchProvider {
         assert contentIndexDirectory != null;
         Analyzer analyzer = createAnalyzer();
         assert analyzer != null;
-        return new DualIndexSession(context, sourceName, workspaceName, rules, pathIndexDirectory, contentIndexDirectory,
+        NamespaceRegistry encodingRegistry = new EncodingNamespaceRegistry(context.getNamespaceRegistry(), namespaceEncoder);
+        ExecutionContext encodingContext = context.with(encodingRegistry);
+        return new DualIndexSession(encodingContext, sourceName, workspaceName, rules, pathIndexDirectory, contentIndexDirectory,
                                     analyzer, overwrite, readOnly);
     }
 
@@ -304,7 +325,80 @@ public class DualIndexSearchProvider implements SearchProvider {
          */
         @Override
         protected String fullTextFieldName( String propertyName ) {
-            return propertyName + FULL_TEXT_SUFFIX;
+            return FULL_TEXT_PREFIX + propertyName;
+        }
+
+        protected void addIdProperties( Location location,
+                                        Document doc ) {
+            if (!location.hasIdProperties()) return;
+            for (Property idProp : location.getIdProperties()) {
+                String fieldValue = serializeProperty(idProp);
+                doc.add(new Field(PathIndex.LOCATION_ID_PROPERTIES, fieldValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
+            }
+        }
+
+        protected Location readLocation( Document doc ) {
+            // Read the path ...
+            String pathString = doc.get(PathIndex.PATH);
+            Path path = pathFactory.create(pathString);
+            // Look for the Location's ID properties ...
+            String[] idProps = doc.getValues(PathIndex.LOCATION_ID_PROPERTIES);
+            if (idProps.length == 0) {
+                return Location.create(path);
+            }
+            if (idProps.length == 1) {
+                Property idProp = deserializeProperty(idProps[0]);
+                if (idProp == null) return Location.create(path);
+                if (idProp.isSingle() && (idProp.getName().equals(JcrLexicon.UUID) || idProp.getName().equals(DnaLexicon.UUID))) {
+                    return Location.create(path, (UUID)idProp.getFirstValue()); // know that deserialize returns UUID value
+                }
+                return Location.create(path, idProp);
+            }
+            List<Property> properties = new LinkedList<Property>();
+            for (String idProp : doc.getValues(PathIndex.LOCATION_ID_PROPERTIES)) {
+                Property prop = deserializeProperty(idProp);
+                if (prop != null) properties.add(prop);
+            }
+            return properties.isEmpty() ? Location.create(path) : Location.create(path, properties);
+
+        }
+
+        protected final String serializeProperty( Property property ) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(stringFactory.create(property.getName()));
+            sb.append('=');
+            Iterator<?> iter = property.getValues();
+            if (iter.hasNext()) {
+                sb.append(stringFactory.create(iter.next()));
+            }
+            while (iter.hasNext()) {
+                sb.append('\n');
+                sb.append(stringFactory.create(iter.next()));
+            }
+            return sb.toString();
+        }
+
+        protected final Property deserializeProperty( String propertyString ) {
+            int index = propertyString.indexOf('=');
+            assert index > -1;
+            if (index == propertyString.length() - 1) return null;
+            Name propName = nameFactory.create(propertyString.substring(0, index));
+            String valueString = propertyString.substring(index + 1);
+            // Break into multiple values if multiple lines ...
+            String[] values = valueString.split("\\n");
+            if (values.length == 0) return null;
+            if (values.length == 1) {
+                Object value = values[0];
+                if (DnaLexicon.UUID.equals(propName) || JcrLexicon.UUID.equals(propName)) {
+                    value = uuidFactory.create(value);
+                }
+                return context.getPropertyFactory().create(propName, value);
+            }
+            List<String> propValues = new LinkedList<String>();
+            for (String value : values) {
+                propValues.add(value);
+            }
+            return context.getPropertyFactory().create(propName, propValues);
         }
 
         protected IndexReader getPathsReader() throws IOException {
@@ -379,9 +473,10 @@ public class DualIndexSearchProvider implements SearchProvider {
             UUID uuid = location.getUuid();
             if (uuid == null) uuid = UUID.randomUUID();
             Path path = location.getPath();
-            String uuidStr = stringFactory.create(uuid);
+            String idStr = stringFactory.create(uuid);
             String pathStr = pathAsString(path, stringFactory);
             String nameStr = path.isRoot() ? "" : stringFactory.create(path.getLastSegment().getName());
+            String localNameStr = path.isRoot() ? "" : path.getLastSegment().getName().getLocalName();
             int sns = path.isRoot() ? 1 : path.getLastSegment().getIndex();
 
             Logger logger = Logger.getLogger(getClass());
@@ -395,15 +490,17 @@ public class DualIndexSearchProvider implements SearchProvider {
                 // be changed without changing any other content fields ...
                 Document doc = new Document();
                 doc.add(new Field(PathIndex.PATH, pathStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-                doc.add(new Field(PathIndex.LOCAL_NAME, nameStr, Field.Store.YES, Field.Index.ANALYZED));
-                doc.add(new NumericField(PathIndex.LOCAL_NAME, Field.Store.YES, true).setIntValue(sns));
-                doc.add(new Field(PathIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new Field(PathIndex.NODE_NAME, nameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new Field(PathIndex.LOCAL_NAME, localNameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new NumericField(PathIndex.SNS_INDEX, Field.Store.YES, true).setIntValue(sns));
+                doc.add(new Field(PathIndex.ID, idStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
                 doc.add(new NumericField(PathIndex.DEPTH, Field.Store.YES, true).setIntValue(path.size()));
+                addIdProperties(location, doc);
                 getPathsWriter().addDocument(doc);
 
                 // Create the document for the content (properties) ...
                 doc = new Document();
-                doc.add(new Field(ContentIndex.UUID, uuidStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                doc.add(new Field(ContentIndex.ID, idStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
                 String stringValue = null;
                 StringBuilder fullTextSearchValue = null;
                 for (Property property : node.getProperties()) {
@@ -506,12 +603,12 @@ public class DualIndexSearchProvider implements SearchProvider {
             assert !readOnly;
             try {
                 // Create a query to find all the nodes at or below the specified path ...
-                Set<UUID> uuids = getUuidsForDescendantsOf(path, true);
-                Query uuidQuery = findAllNodesWithUuids(uuids);
+                Set<String> ids = getIdsForDescendantsOf(path, true);
+                Query uuidQuery = findAllNodesWithIds(ids);
                 // Now delete the documents from each index using this query, which we can reuse ...
                 getPathsWriter().deleteDocuments(uuidQuery);
                 getContentWriter().deleteDocuments(uuidQuery);
-                return uuids.size();
+                return ids.size();
             } catch (FileNotFoundException e) {
                 // There are no index files yet, so nothing to delete ...
                 return 0;
@@ -551,24 +648,19 @@ public class DualIndexSearchProvider implements SearchProvider {
                 int numberOfResults = scoreDocs.length;
                 if (numberOfResults > offset) {
                     // There are enough results to satisfy the offset ...
-                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
                     for (int i = offset, num = scoreDocs.length; i != num; ++i) {
                         ScoreDoc result = scoreDocs[i];
                         int docId = result.doc;
                         // Find the UUID of the node (this UUID might be artificial, so we have to find the path) ...
                         Document doc = contentReader.document(docId, UUID_FIELD_SELECTOR);
-                        String uuid = doc.get(ContentIndex.UUID);
-                        // Find the path for this node (is there a better way to do this than one search per UUID?) ...
-                        TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.UUID, uuid)), 1);
-                        if (pathDocs.scoreDocs.length < 1) {
+                        String id = doc.get(ContentIndex.ID);
+                        Location location = getLocationForDocument(id, pathReader, pathSearcher);
+                        if (location == null) {
                             // No path record found ...
                             continue;
                         }
-                        Document pathDoc = pathReader.document(pathDocs.scoreDocs[0].doc);
-                        String pathString = pathDoc.get(PathIndex.PATH);
-                        Path path = pathFactory.create(pathString);
                         // Now add the location ...
-                        results.add(Location.create(path, UUID.fromString(uuid)));
+                        results.add(location);
                     }
                 }
             } catch (ParseException e) {
@@ -577,6 +669,26 @@ public class DualIndexSearchProvider implements SearchProvider {
             } catch (IOException e) {
                 throw new LuceneException(e);
             }
+        }
+
+        protected Location getLocationForDocument( String id,
+                                                   IndexReader pathReader,
+                                                   IndexSearcher pathSearcher ) throws IOException {
+            // Find the path for this node (is there a better way to do this than one search per ID?) ...
+            TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.ID, id)), 1);
+            if (pathDocs.scoreDocs.length < 1) {
+                // No path record found ...
+                return null;
+            }
+            Document pathDoc = pathReader.document(pathDocs.scoreDocs[0].doc);
+            return readLocation(pathDoc);
+        }
+
+        protected UUID getUuid( Document document,
+                                Name name ) {
+            String nameString = stringFactory.create(name);
+            String value = document.get(nameString);
+            return value != null ? uuidFactory.create(value) : null;
         }
 
         /**
@@ -802,13 +914,23 @@ public class DualIndexSearchProvider implements SearchProvider {
         }
 
         /**
-         * Get the set of UUIDs for the children of the node at the given path.
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.LuceneSession#createTupleCollector(Columns)
+         */
+        @Override
+        public TupleCollector createTupleCollector( Columns columns ) {
+            return new DualIndexTupleCollector(this, columns);
+        }
+
+        /**
+         * Get the set of IDs for the children of the node at the given path.
          * 
          * @param parentPath the path to the parent node; may not be null
-         * @return the UUIDs of the child nodes; never null but possibly empty
+         * @return the doc IDs of the child nodes; never null but possibly empty
          * @throws IOException if there is an error accessing the indexes
          */
-        protected Set<UUID> getUuidsForChildrenOf( Path parentPath ) throws IOException {
+        protected Set<String> getIdsForChildrenOf( Path parentPath ) throws IOException {
             // Find the path of the parent ...
             String stringifiedPath = pathAsString(parentPath, stringFactory);
             // Append a '/' to the parent path, so we'll only get decendants ...
@@ -825,23 +947,23 @@ public class DualIndexSearchProvider implements SearchProvider {
             combinedQuery.add(depthQuery, Occur.MUST);
             query = combinedQuery;
 
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return uuidCollector.getUuids();
+            searcher.search(query, idCollector);
+            return idCollector.getIds();
         }
 
         /**
-         * Get the set of UUIDs for the nodes that are descendants of the node at the given path.
+         * Get the set of IDs for the nodes that are descendants of the node at the given path.
          * 
          * @param parentPath the path to the parent node; may not be null and <i>may not be the root node</i>
          * @param includeParent true if the parent node should be included in the results, or false if only the descendants should
          *        be included
-         * @return the UUIDs of the nodes; never null but possibly empty
+         * @return the IDs of the nodes; never null but possibly empty
          * @throws IOException if there is an error accessing the indexes
          */
-        protected Set<UUID> getUuidsForDescendantsOf( Path parentPath,
+        protected Set<String> getIdsForDescendantsOf( Path parentPath,
                                                       boolean includeParent ) throws IOException {
             assert !parentPath.isRoot();
 
@@ -855,21 +977,21 @@ public class DualIndexSearchProvider implements SearchProvider {
             // Create a prefix query ...
             Query query = new PrefixQuery(new Term(PathIndex.PATH, stringifiedPath));
 
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return uuidCollector.getUuids();
+            searcher.search(query, idCollector);
+            return idCollector.getIds();
         }
 
         /**
-         * Get the set containing the single UUID for the node at the given path.
+         * Get the set containing the single ID for the node at the given path.
          * 
          * @param path the path to the node; may not be null
-         * @return the UUID of the supplied node; or null if the node cannot be found
+         * @return the ID of the supplied node; or null if the node cannot be found
          * @throws IOException if there is an error accessing the indexes
          */
-        protected UUID getUuidFor( Path path ) throws IOException {
+        protected String getIdFor( Path path ) throws IOException {
             // Create a query to find all the nodes below the parent path ...
             IndexSearcher searcher = getPathsSearcher();
             String stringifiedPath = pathAsString(path, stringFactory);
@@ -879,38 +1001,38 @@ public class DualIndexSearchProvider implements SearchProvider {
             TopDocs topDocs = searcher.search(query, 1);
             if (topDocs.totalHits == 0) return null;
             Document pathDoc = getPathsReader().document(topDocs.scoreDocs[0].doc);
-            String uuidString = pathDoc.get(PathIndex.UUID);
-            return UUID.fromString(uuidString);
+            String idString = pathDoc.get(PathIndex.ID);
+            assert idString != null;
+            return idString;
         }
 
         /**
-         * Utility method to create a query to find all of the documents representing nodes with the supplied UUIDs.
+         * {@inheritDoc}
          * 
-         * @param uuids the UUIDs of the nodes that are to be found; may not be null
-         * @return the query; never null
+         * @see org.jboss.dna.search.LuceneSession#findAllNodesWithIds(java.util.Set)
          */
         @Override
-        public Query findAllNodesWithUuids( Set<UUID> uuids ) {
-            if (uuids.isEmpty()) {
+        public Query findAllNodesWithIds( Set<String> ids ) {
+            if (ids.isEmpty()) {
                 // There are no children, so return a null query ...
                 return new MatchNoneQuery();
             }
-            if (uuids.size() == 1) {
-                UUID uuid = uuids.iterator().next();
-                if (uuid == null) return new MatchNoneQuery();
-                return new TermQuery(new Term(ContentIndex.UUID, uuid.toString()));
+            if (ids.size() == 1) {
+                String id = ids.iterator().next();
+                if (id == null) return new MatchNoneQuery();
+                return new TermQuery(new Term(ContentIndex.ID, id));
             }
-            if (uuids.size() < 50) {
+            if (ids.size() < 50) {
                 // Create an OR boolean query for all the UUIDs, since this is probably more efficient ...
                 BooleanQuery query = new BooleanQuery();
-                for (UUID uuid : uuids) {
-                    Query uuidQuery = new TermQuery(new Term(ContentIndex.UUID, uuid.toString()));
+                for (String id : ids) {
+                    Query uuidQuery = new TermQuery(new Term(ContentIndex.ID, id));
                     query.add(uuidQuery, Occur.SHOULD);
                 }
                 return query;
             }
             // Return a query that will always find all of the UUIDs ...
-            return new UuidsQuery(ContentIndex.UUID, uuids, getContext().getValueFactories().getUuidFactory());
+            return new IdsQuery(ContentIndex.ID, ids);
         }
 
         @Override
@@ -918,8 +1040,8 @@ public class DualIndexSearchProvider implements SearchProvider {
             if (ancestorPath.isRoot()) {
                 return new MatchAllDocsQuery();
             }
-            Set<UUID> uuids = getUuidsForDescendantsOf(ancestorPath, false);
-            return findAllNodesWithUuids(uuids);
+            Set<String> ids = getIdsForDescendantsOf(ancestorPath, false);
+            return findAllNodesWithIds(ids);
         }
 
         /**
@@ -935,58 +1057,37 @@ public class DualIndexSearchProvider implements SearchProvider {
             if (parentPath.isRoot()) {
                 return new MatchAllDocsQuery();
             }
-            Set<UUID> childUuids = getUuidsForChildrenOf(parentPath);
-            return findAllNodesWithUuids(childUuids);
+            Set<String> childIds = getIdsForChildrenOf(parentPath);
+            return findAllNodesWithIds(childIds);
         }
 
         /**
          * Create a query that can be used to find the one document (or node) that exists at the exact path supplied. This method
-         * first queries the {@link PathIndex path index} to find the UUID of the node at the supplied path, and then returns a
-         * query that matches the UUID.
+         * first queries the {@link PathIndex path index} to find the ID of the node at the supplied path, and then returns a
+         * query that matches the ID.
          * 
          * @param path the path of the node
          * @return the query; never null
-         * @throws IOException if there is an error finding the UUID for the supplied path
+         * @throws IOException if there is an error finding the ID for the supplied path
          */
         @Override
         public Query findNodeAt( Path path ) throws IOException {
-            UUID uuid = getUuidFor(path);
-            if (uuid == null) return null;
-            return new TermQuery(new Term(ContentIndex.UUID, uuid.toString()));
+            String id = getIdFor(path);
+            if (id == null) return null;
+            return new TermQuery(new Term(ContentIndex.ID, id));
         }
 
         /**
-         * Create a query that can be used to find documents (or nodes) that have a field value that satisfies the supplied LIKE
-         * expression.
+         * {@inheritDoc}
          * 
-         * @param fieldName the name of the document field to search
-         * @param likeExpression the JCR like expression
-         * @return the query; never null
+         * @see org.jboss.dna.search.LuceneSession#findNodesLike(java.lang.String, java.lang.String, boolean)
          */
         @Override
         public Query findNodesLike( String fieldName,
-                                    String likeExpression ) {
-            assert likeExpression != null;
-            assert likeExpression.length() > 0;
-
-            // '%' matches 0 or more characters
-            // '_' matches any single character
-            // '\x' matches 'x'
-            // all other characters match themselves
-
-            // Wildcard queries are a better match, but they can be slow and should not be used
-            // if the first character of the expression is a '%' or '_' ...
-            char firstChar = likeExpression.charAt(0);
-            if (firstChar != '%' && firstChar != '_') {
-                // Create a wildcard query ...
-                String expression = toWildcardExpression(likeExpression);
-                return new WildcardQuery(new Term(fieldName, expression));
-            }
-            // Create a regex query,
-            String regex = toRegularExpression(likeExpression);
-            RegexQuery query = new RegexQuery(new Term(fieldName, regex));
-            query.setRegexImplementation(new JavaUtilRegexCapabilities());
-            return query;
+                                    String likeExpression,
+                                    boolean caseSensitive ) {
+            ValueFactories factories = context.getValueFactories();
+            return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseSensitive);
         }
 
         @Override
@@ -1042,9 +1143,15 @@ public class DualIndexSearchProvider implements SearchProvider {
                     if (!caseSensitive) stringValue = stringValue.toLowerCase();
                     switch (operator) {
                         case EQUAL_TO:
-                            return new TermQuery(new Term(field, stringValue));
+                            return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                          field,
+                                                                                          factories,
+                                                                                          caseSensitive);
                         case NOT_EQUAL_TO:
-                            Query query = new TermQuery(new Term(field, stringValue));
+                            Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                                 field,
+                                                                                                 factories,
+                                                                                                 caseSensitive);
                             return new NotQuery(query);
                         case GREATER_THAN:
                             return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
@@ -1067,7 +1174,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                                                                                                     factories,
                                                                                                     caseSensitive);
                         case LIKE:
-                            return findNodesLike(field, stringValue);
+                            return findNodesLike(field, stringValue, caseSensitive);
                     }
                     break;
                 case DATE:
@@ -1239,7 +1346,8 @@ public class DualIndexSearchProvider implements SearchProvider {
                     return new NotQuery(findNodeAt(pathValue));
                 case LIKE:
                     String likeExpression = stringFactory.create(value);
-                    return findNodesLike(PathIndex.PATH, likeExpression);
+                    query = findNodesLike(PathIndex.PATH, likeExpression, caseSensitive);
+                    break;
                 case GREATER_THAN:
                     query = ComparePathQuery.createQueryForNodesWithPathGreaterThan(pathValue,
                                                                                     PathIndex.PATH,
@@ -1265,11 +1373,11 @@ public class DualIndexSearchProvider implements SearchProvider {
                                                                                           caseSensitive);
                     break;
             }
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return findAllNodesWithUuids(uuidCollector.getUuids());
+            searcher.search(query, idCollector);
+            return findAllNodesWithIds(idCollector.getIds());
         }
 
         @Override
@@ -1277,6 +1385,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                                     Operator operator,
                                     Object value,
                                     boolean caseSensitive ) throws IOException {
+            ValueFactories factories = getContext().getValueFactories();
             String stringValue = stringFactory.create(value);
             if (!caseSensitive) stringValue = stringValue.toLowerCase();
             Path.Segment segment = operator != Operator.LIKE ? pathFactory.createSegment(stringValue) : null;
@@ -1285,42 +1394,42 @@ public class DualIndexSearchProvider implements SearchProvider {
             switch (operator) {
                 case EQUAL_TO:
                     BooleanQuery booleanQuery = new BooleanQuery();
-                    booleanQuery.add(new TermQuery(new Term(PathIndex.LOCAL_NAME, stringValue)), Occur.MUST);
+                    booleanQuery.add(new TermQuery(new Term(PathIndex.NODE_NAME, stringValue)), Occur.MUST);
                     booleanQuery.add(NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
                                      Occur.MUST);
                     return booleanQuery;
                 case NOT_EQUAL_TO:
                     booleanQuery = new BooleanQuery();
-                    booleanQuery.add(new TermQuery(new Term(PathIndex.LOCAL_NAME, stringValue)), Occur.MUST);
+                    booleanQuery.add(new TermQuery(new Term(PathIndex.NODE_NAME, stringValue)), Occur.MUST);
                     booleanQuery.add(NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
                                      Occur.MUST);
                     return new NotQuery(booleanQuery);
                 case GREATER_THAN:
                     query = CompareNameQuery.createQueryForNodesWithNameGreaterThan(segment,
-                                                                                    PathIndex.LOCAL_NAME,
+                                                                                    PathIndex.NODE_NAME,
                                                                                     PathIndex.SNS_INDEX,
-                                                                                    context.getValueFactories(),
+                                                                                    factories,
                                                                                     caseSensitive);
                     break;
                 case GREATER_THAN_OR_EQUAL_TO:
                     query = CompareNameQuery.createQueryForNodesWithNameGreaterThanOrEqualTo(segment,
-                                                                                             PathIndex.LOCAL_NAME,
+                                                                                             PathIndex.NODE_NAME,
                                                                                              PathIndex.SNS_INDEX,
-                                                                                             context.getValueFactories(),
+                                                                                             factories,
                                                                                              caseSensitive);
                     break;
                 case LESS_THAN:
                     query = CompareNameQuery.createQueryForNodesWithNameLessThan(segment,
-                                                                                 PathIndex.LOCAL_NAME,
+                                                                                 PathIndex.NODE_NAME,
                                                                                  PathIndex.SNS_INDEX,
-                                                                                 context.getValueFactories(),
+                                                                                 factories,
                                                                                  caseSensitive);
                     break;
                 case LESS_THAN_OR_EQUAL_TO:
                     query = CompareNameQuery.createQueryForNodesWithNameLessThanOrEqualTo(segment,
-                                                                                          PathIndex.LOCAL_NAME,
+                                                                                          PathIndex.NODE_NAME,
                                                                                           PathIndex.SNS_INDEX,
-                                                                                          context.getValueFactories(),
+                                                                                          factories,
                                                                                           caseSensitive);
                     break;
                 case LIKE:
@@ -1330,7 +1439,10 @@ public class DualIndexSearchProvider implements SearchProvider {
                     if (openBracketIndex != -1) {
                         String localNameExpression = likeExpression.substring(0, openBracketIndex);
                         String snsIndexExpression = likeExpression.substring(openBracketIndex);
-                        Query localNameQuery = createLocalNameQuery(localNameExpression);
+                        Query localNameQuery = CompareStringQuery.createQueryForNodesWithFieldLike(localNameExpression,
+                                                                                                   PathIndex.NODE_NAME,
+                                                                                                   factories,
+                                                                                                   caseSensitive);
                         Query snsQuery = createSnsIndexQuery(snsIndexExpression);
                         if (localNameQuery == null) {
                             if (snsQuery == null) {
@@ -1353,17 +1465,20 @@ public class DualIndexSearchProvider implements SearchProvider {
                         }
                     } else {
                         // There is no SNS expression ...
-                        query = createLocalNameQuery(likeExpression);
+                        query = CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
+                                                                                    PathIndex.NODE_NAME,
+                                                                                    factories,
+                                                                                    caseSensitive);
                     }
                     assert query != null;
                     break;
             }
 
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return findAllNodesWithUuids(uuidCollector.getUuids());
+            searcher.search(query, idCollector);
+            return findAllNodesWithIds(idCollector.getIds());
         }
 
         @Override
@@ -1376,12 +1491,20 @@ public class DualIndexSearchProvider implements SearchProvider {
             switch (operator) {
                 case LIKE:
                     String likeExpression = stringFactory.create(value);
-                    return findNodesLike(PathIndex.LOCAL_NAME, likeExpression); // already is a query with UUIDs
+                    query = findNodesLike(PathIndex.LOCAL_NAME, likeExpression, caseSensitive);
+                    break;
                 case EQUAL_TO:
-                    query = new TermQuery(new Term(PathIndex.LOCAL_NAME, nameValue));
+                    query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
+                                                                                   PathIndex.LOCAL_NAME,
+                                                                                   context.getValueFactories(),
+                                                                                   caseSensitive);
                     break;
                 case NOT_EQUAL_TO:
-                    query = new NotQuery(new TermQuery(new Term(PathIndex.LOCAL_NAME, nameValue)));
+                    query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
+                                                                                   PathIndex.LOCAL_NAME,
+                                                                                   context.getValueFactories(),
+                                                                                   caseSensitive);
+                    query = new NotQuery(query);
                     break;
                 case GREATER_THAN:
                     query = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(nameValue,
@@ -1409,11 +1532,11 @@ public class DualIndexSearchProvider implements SearchProvider {
                     break;
             }
 
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return findAllNodesWithUuids(uuidCollector.getUuids());
+            searcher.search(query, idCollector);
+            return findAllNodesWithIds(idCollector.getIds());
         }
 
         @Override
@@ -1447,25 +1570,34 @@ public class DualIndexSearchProvider implements SearchProvider {
                     return null;
             }
 
-            // Now execute and collect the UUIDs ...
-            UuidCollector uuidCollector = new UuidCollector();
+            // Now execute and collect the IDs ...
+            IdCollector idCollector = new IdCollector();
             IndexSearcher searcher = getPathsSearcher();
-            searcher.search(query, uuidCollector);
-            return findAllNodesWithUuids(uuidCollector.getUuids());
+            searcher.search(query, idCollector);
+            return findAllNodesWithIds(idCollector.getIds());
         }
 
-        protected Query createLocalNameQuery( String likeExpression ) {
+        protected Query createLocalNameQuery( String likeExpression,
+                                              boolean caseSensitive ) {
             if (likeExpression == null) return null;
-            likeExpression = likeExpression.trim();
-            if (likeExpression.length() == 0) return null;
-            if (likeExpression.indexOf('?') != -1 || likeExpression.indexOf('*') != -1) {
-                // The local name is a like ...
-                return findNodesLike(PathIndex.LOCAL_NAME, likeExpression);
-            }
-            // The local name is an exact match ...
-            return new TermQuery(new Term(PathIndex.LOCAL_NAME, likeExpression));
+            ValueFactories factories = getContext().getValueFactories();
+            return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
+                                                                       PathIndex.LOCAL_NAME,
+                                                                       factories,
+                                                                       caseSensitive);
         }
 
+        /**
+         * Utility method to generate a query against the SNS indexes. This method attempts to generate a query that works most
+         * efficiently, depending upon the supplied expression. For example, if the supplied expression is just "[3]", then a
+         * range query is used to find all values matching '3'. However, if "[3_]" is used (where '_' matches any
+         * single-character, or digit in this case), then a range query is used to find all values between '30' and '39'.
+         * Similarly, if "[3%]" is used, then a regular expression query is used.
+         * 
+         * @param likeExpression the expression that uses the JCR 2.0 LIKE representation, and which includes the leading '[' and
+         *        trailing ']' characters
+         * @return the query, or null if the expression cannot be represented as a query
+         */
         protected Query createSnsIndexQuery( String likeExpression ) {
             if (likeExpression == null) return null;
             likeExpression = likeExpression.trim();
@@ -1480,16 +1612,51 @@ public class DualIndexSearchProvider implements SearchProvider {
             if (closeBracketIndex != -1) {
                 likeExpression = likeExpression.substring(0, closeBracketIndex);
             }
-            // If SNS expression contains '?' or '*' ...
-            if (likeExpression.indexOf('?') != -1 || likeExpression.indexOf('*') != -1) {
-                // There is a LIKE expression for the SNS ...
-                return findNodesLike(PathIndex.SNS_INDEX, likeExpression);
+            if (likeExpression.equals("_")) {
+                // The SNS expression can only be one digit ...
+                return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, MIN_SNS_INDEX, 9, true, true);
+            }
+            if (likeExpression.equals("%")) {
+                // The SNS expression can be any digits ...
+                return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, MIN_SNS_INDEX, MAX_SNS_INDEX, true, true);
+            }
+            if (likeExpression.indexOf('_') != -1) {
+                if (likeExpression.indexOf('%') != -1) {
+                    // Contains both ...
+                    return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
+                }
+                // It presumably contains some numbers and at least one '_' character ...
+                int firstWildcardChar = likeExpression.indexOf('_');
+                if (firstWildcardChar + 1 < likeExpression.length()) {
+                    // There's at least some characters after the first '_' ...
+                    int secondWildcardChar = likeExpression.indexOf('_', firstWildcardChar + 1);
+                    if (secondWildcardChar != -1) {
+                        // There are multiple '_' characters ...
+                        return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
+                    }
+                }
+                // There's only one '_', so parse the lowermost value and uppermost value ...
+                String lowerExpression = likeExpression.replace('_', '0');
+                String upperExpression = likeExpression.replace('_', '9');
+                try {
+                    // This SNS is just a number ...
+                    int lowerSns = Integer.parseInt(lowerExpression);
+                    int upperSns = Integer.parseInt(upperExpression);
+                    return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, lowerSns, upperSns, true, true);
+                } catch (NumberFormatException e) {
+                    // It's not a number but it's in the SNS field, so there will be no results ...
+                    return new MatchNoneQuery();
+                }
+            }
+            if (likeExpression.indexOf('%') != -1) {
+                // It presumably contains some numbers and at least one '%' character ...
+                return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
             }
             // This is not a LIKE expression but an exact value specification and should be a number ...
             try {
                 // This SNS is just a number ...
                 int sns = Integer.parseInt(likeExpression);
-                return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, sns, sns, true, false);
+                return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, sns, sns, true, true);
             } catch (NumberFormatException e) {
                 // It's not a number but it's in the SNS field, so there will be no results ...
                 return new MatchNoneQuery();
@@ -1505,13 +1672,13 @@ public class DualIndexSearchProvider implements SearchProvider {
      * 
      * @see DualIndexSearchProvider.DualIndexSession#findChildNodes(Path)
      */
-    protected static class UuidCollector extends Collector {
-        private final Set<UUID> uuids = new HashSet<UUID>();
-        private String[] uuidsByDocId;
+    protected static class IdCollector extends Collector {
+        private final Set<String> ids = new HashSet<String>();
+        private String[] idsByDocId;
 
         // private int baseDocId;
 
-        protected UuidCollector() {
+        protected IdCollector() {
         }
 
         /**
@@ -1519,8 +1686,8 @@ public class DualIndexSearchProvider implements SearchProvider {
          * 
          * @return the set of UUIDs; never null
          */
-        public Set<UUID> getUuids() {
-            return uuids;
+        public Set<String> getIds() {
+            return ids;
         }
 
         /**
@@ -1551,9 +1718,9 @@ public class DualIndexSearchProvider implements SearchProvider {
         @Override
         public void collect( int docId ) {
             assert docId >= 0;
-            String uuidString = uuidsByDocId[docId];
-            assert uuidString != null;
-            uuids.add(UUID.fromString(uuidString));
+            String idString = idsByDocId[docId];
+            assert idString != null;
+            ids.add(idString);
         }
 
         /**
@@ -1564,8 +1731,148 @@ public class DualIndexSearchProvider implements SearchProvider {
         @Override
         public void setNextReader( IndexReader reader,
                                    int docBase ) throws IOException {
-            this.uuidsByDocId = FieldCache.DEFAULT.getStrings(reader, UUID_FIELD);
+            this.idsByDocId = FieldCache.DEFAULT.getStrings(reader, ContentIndex.ID); // same value as PathIndex.ID
             // this.baseDocId = docBase;
+        }
+    }
+
+    /**
+     * This collector is responsible for loading the value for each of the columns into each tuple array.
+     */
+    protected class DualIndexTupleCollector extends TupleCollector {
+        private final DualIndexSession session;
+        private final LinkedList<Object[]> tuples = new LinkedList<Object[]>();
+        private final Columns columns;
+        private final int numValues;
+        private final boolean recordScore;
+        private final int scoreIndex;
+        private final FieldSelector fieldSelector;
+        private final int locationIndex;
+        private Scorer scorer;
+        private IndexReader currentReader;
+        private int docOffset;
+        private boolean resolvedLocations = false;
+
+        protected DualIndexTupleCollector( DualIndexSession session,
+                                           Columns columns ) {
+            this.session = session;
+            this.columns = columns;
+            assert this.session != null;
+            assert this.columns != null;
+            this.numValues = this.columns.getTupleSize();
+            assert this.numValues >= 0;
+            assert this.columns.getSelectorNames().size() == 1;
+            final String selectorName = this.columns.getSelectorNames().get(0);
+            this.locationIndex = this.columns.getLocationIndex(selectorName);
+            this.recordScore = this.columns.hasFullTextSearchScores();
+            this.scoreIndex = this.recordScore ? this.columns.getFullTextSearchScoreIndexFor(selectorName) : -1;
+            final Set<String> columnNames = new HashSet<String>(this.columns.getColumnNames());
+            columnNames.add(ContentIndex.ID); // add the UUID, which we'll put into the Location ...
+            this.fieldSelector = new FieldSelector() {
+                private static final long serialVersionUID = 1L;
+
+                public FieldSelectorResult accept( String fieldName ) {
+                    return columnNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
+                }
+            };
+        }
+
+        /**
+         * @return tuples
+         */
+        @Override
+        public LinkedList<Object[]> getTuples() {
+            resolveLocations();
+            return tuples;
+        }
+
+        protected void resolveLocations() {
+            if (resolvedLocations) return;
+            try {
+                // The Location field in the tuples all contain the ID of the document, so we need to replace these
+                // with the appropriate Location objects, using the content from the PathIndex ...
+                IndexReader pathReader = session.getPathsReader();
+                IndexSearcher pathSearcher = session.getPathsSearcher();
+                for (Object[] tuple : tuples) {
+                    String id = (String)tuple[locationIndex];
+                    assert id != null;
+                    Location location = session.getLocationForDocument(id, pathReader, pathSearcher);
+                    assert location != null;
+                    tuple[locationIndex] = location;
+                }
+                resolvedLocations = true;
+            } catch (IOException e) {
+                throw new LuceneException(e);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#acceptsDocsOutOfOrder()
+         */
+        @Override
+        public boolean acceptsDocsOutOfOrder() {
+            return true;
+        }
+
+        /**
+         * Get the location index.
+         * 
+         * @return locationIndex
+         */
+        public int getLocationIndex() {
+            return locationIndex;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#setNextReader(org.apache.lucene.index.IndexReader, int)
+         */
+        @Override
+        public void setNextReader( IndexReader reader,
+                                   int docBase ) {
+            this.currentReader = reader;
+            this.docOffset = docBase;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#setScorer(org.apache.lucene.search.Scorer)
+         */
+        @Override
+        public void setScorer( Scorer scorer ) {
+            this.scorer = scorer;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#collect(int)
+         */
+        @Override
+        public void collect( int doc ) throws IOException {
+            int docId = doc + docOffset;
+            Object[] tuple = new Object[numValues];
+            Document document = currentReader.document(docId, fieldSelector);
+            for (String columnName : columns.getColumnNames()) {
+                int index = columns.getColumnIndexForName(columnName);
+                // We just need to retrieve the first value if there is more than one ...
+                tuple[index] = document.get(columnName);
+            }
+
+            // Set the score column if required ...
+            if (recordScore) {
+                assert scorer != null;
+                tuple[scoreIndex] = scorer.score();
+            }
+
+            // Load the document ID (which is a stringified UUID) into the Location slot,
+            // which will be replaced later with a real Location ...
+            tuple[locationIndex] = document.get(ContentIndex.ID);
+            tuples.add(tuple);
         }
     }
 }

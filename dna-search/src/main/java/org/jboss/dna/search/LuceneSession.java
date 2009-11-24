@@ -26,16 +26,19 @@ package org.jboss.dna.search;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTimeFactory;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.UuidFactory;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
@@ -76,6 +79,8 @@ public abstract class LuceneSession implements SearchProvider.Session {
     protected final ValueFactory<String> stringFactory;
     protected final DateTimeFactory dateFactory;
     protected final PathFactory pathFactory;
+    protected final UuidFactory uuidFactory;
+    protected final NameFactory nameFactory;
     private int changeCount;
     private QueryEngine queryEngine;
 
@@ -93,9 +98,12 @@ public abstract class LuceneSession implements SearchProvider.Session {
         this.overwrite = overwrite;
         this.readOnly = readOnly;
         this.analyzer = analyzer;
-        this.stringFactory = context.getValueFactories().getStringFactory();
-        this.dateFactory = context.getValueFactories().getDateFactory();
-        this.pathFactory = context.getValueFactories().getPathFactory();
+        ValueFactories factories = context.getValueFactories();
+        this.stringFactory = factories.getStringFactory();
+        this.dateFactory = factories.getDateFactory();
+        this.pathFactory = factories.getPathFactory();
+        this.uuidFactory = factories.getUuidFactory();
+        this.nameFactory = factories.getNameFactory();
         assert this.context != null;
         assert this.sourceName != null;
         assert this.workspaceName != null;
@@ -227,13 +235,21 @@ public abstract class LuceneSession implements SearchProvider.Session {
         throws IOException;
 
     /**
-     * Utility method to create a query to find all of the documents representing nodes with the supplied UUIDs.
+     * Create a {@link TupleCollector} instance that collects the results from the index(es).
      * 
-     * @param uuids the UUIDs of the nodes that are to be found; may not be null
+     * @param columns the column definitions; never null
+     * @return the collector; never null
+     */
+    public abstract TupleCollector createTupleCollector( Columns columns );
+
+    /**
+     * Utility method to create a query to find all of the documents representing nodes with the supplied IDs.
+     * 
+     * @param ids the IDs of the nodes that are to be found; may not be null
      * @return the query; never null
      * @throws IOException if there is a problem creating this query
      */
-    public abstract Query findAllNodesWithUuids( Set<UUID> uuids ) throws IOException;
+    public abstract Query findAllNodesWithIds( Set<String> ids ) throws IOException;
 
     public abstract Query findAllNodesBelow( Path ancestorPath ) throws IOException;
 
@@ -264,11 +280,13 @@ public abstract class LuceneSession implements SearchProvider.Session {
      * 
      * @param fieldName the name of the document field to search
      * @param likeExpression the JCR like expression
+     * @param caseSensitive true if the evaluation should be performed in a case sensitive manner, or false otherwise
      * @return the query; never null
      * @throws IOException if there is an error creating the query
      */
     public abstract Query findNodesLike( String fieldName,
-                                         String likeExpression ) throws IOException;
+                                         String likeExpression,
+                                         boolean caseSensitive ) throws IOException;
 
     public abstract Query findNodesWith( Length propertyLength,
                                          Operator operator,
@@ -320,49 +338,28 @@ public abstract class LuceneSession implements SearchProvider.Session {
 
     // public abstract Query createSnsIndexQuery( String likeExpression ) throws IOException;
 
-    /**
-     * Convert the JCR like expression to a Lucene wildcard expression. The JCR like expression uses '%' to match 0 or more
-     * characters, '_' to match any single character, '\x' to match the 'x' character, and all other characters to match
-     * themselves.
-     * 
-     * @param likeExpression the like expression; may not be null
-     * @return the expression that can be used with a WildcardQuery; never null
-     */
-    public String toWildcardExpression( String likeExpression ) {
-        assert likeExpression != null;
-        assert likeExpression.length() > 0;
-        return likeExpression.replace('%', '*').replace('_', '?').replaceAll("\\\\(.)", "$1");
-    }
-
-    /**
-     * Convert the JCR like expression to a regular expression. The JCR like expression uses '%' to match 0 or more characters,
-     * '_' to match any single character, '\x' to match the 'x' character, and all other characters to match themselves. Note that
-     * if any regex metacharacters appear in the like expression, they will be escaped within the resulting regular expression.
-     * 
-     * @param likeExpression the like expression; may not be null
-     * @return the expression that can be used with a WildcardQuery; never null
-     */
-    public String toRegularExpression( String likeExpression ) {
-        assert likeExpression != null;
-        assert likeExpression.length() > 0;
-        // Replace all '\x' with 'x' ...
-        String result = likeExpression.replaceAll("\\\\(.)", "$1");
-        // Escape characters used as metacharacters in regular expressions, including
-        // '[', '^', '\', '$', '.', '|', '?', '*', '+', '(', and ')'
-        result = result.replaceAll("([[^\\\\$.|?*+()])", "\\$1");
-        // Replace '%'->'[.]+' and '_'->'[.]
-        result = likeExpression.replace("%", "[.]+").replace("_", "[.]");
-        return result;
-    }
-
     public String pathAsString( Path path,
                                 ValueFactory<String> stringFactory ) {
         assert path != null;
         if (path.isRoot()) return "/";
-        String pathStr = stringFactory.create(path);
-        if (!pathStr.endsWith("]")) {
-            pathStr = pathStr + '[' + Path.DEFAULT_INDEX + ']';
+        StringBuilder sb = new StringBuilder();
+        for (Path.Segment segment : path) {
+            sb.append('/');
+            sb.append(stringFactory.create(segment.getName()));
+            sb.append('[');
+            sb.append(segment.getIndex());
+            sb.append(']');
         }
-        return pathStr;
+        return sb.toString();
+    }
+
+    public static abstract class TupleCollector extends Collector {
+
+        /**
+         * Get the tuples.
+         * 
+         * @return the tuples; never null
+         */
+        public abstract LinkedList<Object[]> getTuples();
     }
 }

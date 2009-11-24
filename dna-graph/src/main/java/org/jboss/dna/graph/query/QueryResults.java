@@ -80,6 +80,13 @@ public interface QueryResults {
     public List<Object[]> getTuples();
 
     /**
+     * Get the number of rows in the results.
+     * 
+     * @return the number of rows; never negative
+     */
+    public int getRowCount();
+
+    /**
      * Get the problems encountered during execution.
      * 
      * @return the problems; never null but possibly empty
