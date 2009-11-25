@@ -111,8 +111,8 @@ public class SetPropertyRequest extends ChangeRequest {
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!on.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
+        if (!on.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, on));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -172,7 +172,7 @@ public class SetPropertyRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             SetPropertyRequest that = (SetPropertyRequest)obj;
-            if (!this.on().equals(that.on())) return false;
+            if (!this.on().isSame(that.on())) return false;
             if (!this.property().equals(that.property())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

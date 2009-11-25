@@ -426,7 +426,7 @@ public class BatchRequestBuilder {
         // If there's a pending request ...
         if (pendingRequest != null) {
             // Compare the supplied location with that of the pending request
-            if (pendingRequest.location.equals(on)) {
+            if (pendingRequest.location.isSame(on)) {
                 // They are the same location, so we can add the properties to the pending request ...
                 pendingRequest.pendingProperties.put(property.getName(), property);
                 return this;
@@ -456,7 +456,7 @@ public class BatchRequestBuilder {
         // If there's a pending request ...
         if (pendingRequest != null) {
             // Compare the supplied location with that of the pending request
-            if (pendingRequest.location.equals(on)) {
+            if (pendingRequest.location.isSame(on)) {
                 // They are the same location, so we can add the properties to the pending request ...
                 for (Property property : properties) {
                     pendingRequest.pendingProperties.put(property.getName(), property);
@@ -492,7 +492,7 @@ public class BatchRequestBuilder {
         // If there's a pending request ...
         if (pendingRequest != null) {
             // Compare the supplied location with that of the pending request
-            if (pendingRequest.location.equals(on)) {
+            if (pendingRequest.location.isSame(on)) {
                 // They are the same location, so we can add the properties to the pending request ...
                 pendingRequest.pendingProperties.put(propertyName, null);
                 return this;
@@ -523,7 +523,7 @@ public class BatchRequestBuilder {
         // If there's a pending request ...
         if (pendingRequest != null) {
             // Compare the supplied location with that of the pending request
-            if (pendingRequest.location.equals(on)) {
+            if (pendingRequest.location.isSame(on)) {
                 // They are the same location, so we can add the properties to the pending request ...
                 for (Name propertyName : propertyNames) {
                     pendingRequest.pendingProperties.put(propertyName, null);

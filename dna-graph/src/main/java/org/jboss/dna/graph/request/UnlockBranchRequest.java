@@ -95,7 +95,7 @@ public class UnlockBranchRequest extends ChangeRequest {
     public void setActualLocation( Location actualLocation ) {
         checkNotFrozen();
         if (!at.isSame(actualLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actualLocation, at));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actualLocation, at));
         }
         assert actualLocation != null;
         if (!actualLocation.hasPath()) {
@@ -175,7 +175,7 @@ public class UnlockBranchRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             UnlockBranchRequest that = (UnlockBranchRequest)obj;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }

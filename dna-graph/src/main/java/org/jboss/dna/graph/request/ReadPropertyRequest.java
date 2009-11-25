@@ -134,8 +134,8 @@ public class ReadPropertyRequest extends CacheableRequest {
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!on.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
+        if (!on.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, on));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -185,7 +185,7 @@ public class ReadPropertyRequest extends CacheableRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadPropertyRequest that = (ReadPropertyRequest)obj;
-            if (!this.on().equals(that.on())) return false;
+            if (!this.on().isSame(that.on())) return false;
             if (!this.named().equals(that.named())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

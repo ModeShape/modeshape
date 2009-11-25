@@ -282,7 +282,7 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
         CheckArg.isNotNull(actual, "actual");
-        if (!under.isSame(actual, false)) { // not same if actual is null
+        if (!under.equals(actual, false)) { // not same if actual is null
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -290,7 +290,7 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
         }
         assert actual.hasPath();
         if (under.hasPath() && !under.getPath().equals(actual.getPath().getParent())) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, under));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, under));
         }
         this.actualLocation = actual;
     }
@@ -366,7 +366,7 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             CreateNodeRequest that = (CreateNodeRequest)obj;
-            if (!this.under().equals(that.under())) return false;
+            if (!this.under().isSame(that.under())) return false;
             if (!this.conflictBehavior().equals(that.conflictBehavior())) return false;
             if (!this.inWorkspace().equals(that.conflictBehavior())) return false;
             if (!this.properties().equals(that.properties())) return false;

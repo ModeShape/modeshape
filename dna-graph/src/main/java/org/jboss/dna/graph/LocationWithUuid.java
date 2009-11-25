@@ -130,7 +130,7 @@ final class LocationWithUuid extends Location {
      */
     @Override
     public Location with( UUID uuid ) {
-        return new LocationWithUuid(uuid);
+        return Location.create(uuid);
     }
 
     /**

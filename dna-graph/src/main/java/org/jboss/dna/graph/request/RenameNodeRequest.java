@@ -117,11 +117,11 @@ public class RenameNodeRequest extends ChangeRequest {
                                     Location newLocation ) {
         checkNotFrozen();
         if (!at.isSame(oldLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, at));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(oldLocation, at));
         }
         assert oldLocation != null;
         if (newLocation == null) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, at));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(newLocation, at));
         }
         if (!oldLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
@@ -226,7 +226,7 @@ public class RenameNodeRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             RenameNodeRequest that = (RenameNodeRequest)obj;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (!this.toName().equals(that.toName())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

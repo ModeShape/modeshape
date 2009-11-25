@@ -240,8 +240,8 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!of.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, of));
+        if (!of.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, of));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -291,7 +291,7 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadBlockOfChildrenRequest that = (ReadBlockOfChildrenRequest)obj;
-            if (!this.of().equals(that.of())) return false;
+            if (!this.of().isSame(that.of())) return false;
             if (this.startingAtIndex() != that.startingAtIndex()) return false;
             if (this.count() != that.count()) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;

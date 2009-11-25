@@ -40,7 +40,7 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-final class LocationWithProperties extends Location {
+class LocationWithProperties extends Location {
 
     private final List<Property> idProperties;
     private final int hashCode;
@@ -57,7 +57,7 @@ final class LocationWithProperties extends Location {
         // Paths are immutable, Properties are immutable, the idProperties list
         // is wrapped in an unmodifiableList by the Location factory methods...
         // ... so we can cache the hash code.
-        hashCode = HashCode.compute(null, idProperties);
+        hashCode = HashCode.compute(idProperties);
     }
 
     /**
@@ -128,7 +128,7 @@ final class LocationWithProperties extends Location {
         }
         newIdProperties.add(newIdProperty);
         newIdProperties = Collections.unmodifiableList(newIdProperties);
-        return new LocationWithProperties(newIdProperties);
+        return create(newIdProperties);
     }
 
     /**
@@ -139,7 +139,7 @@ final class LocationWithProperties extends Location {
     @Override
     public Location with( Path newPath ) {
         if (newPath == null) return this;
-        return new LocationWithPathAndProperties(newPath, idProperties);
+        return create(newPath, idProperties);
     }
 
     /**
@@ -159,6 +159,6 @@ final class LocationWithProperties extends Location {
         List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
         newIdProperties.addAll(idProperties);
         newIdProperties.add(newProperty);
-        return new LocationWithProperties(newIdProperties);
+        return create(newIdProperties);
     }
 }

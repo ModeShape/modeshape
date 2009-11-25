@@ -1442,7 +1442,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 org.jboss.dna.graph.Node persistentNode = cache.store.getNodeAt(getLocation());
                 // Check the actual location ...
                 Location actualLocation = persistentNode.getLocation();
-                if (!this.location.equals(actualLocation)) {
+                if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
                     this.location = actualLocation;
                 }
@@ -1452,7 +1452,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 // Then read the node from the store ...
                 Subgraph subgraph = cache.store.getSubgraphOfDepth(depth).at(getLocation());
                 Location actualLocation = subgraph.getLocation();
-                if (!this.location.equals(actualLocation)) {
+                if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
                     this.location = actualLocation;
                 }
@@ -2708,7 +2708,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 Node<Payload, PropertyPayload> that = (Node<Payload, PropertyPayload>)obj;
                 if (this.isStale() || that.isStale()) return false;
                 if (!this.nodeId.equals(that.nodeId)) return false;
-                return this.location.equals(that.location);
+                return this.location.isSame(that.location);
             }
             return false;
         }

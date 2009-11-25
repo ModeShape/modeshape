@@ -195,8 +195,8 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!at.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        if (!at.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, at));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -245,7 +245,7 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadAllPropertiesRequest that = (ReadAllPropertiesRequest)obj;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }

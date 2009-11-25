@@ -178,7 +178,7 @@ public class MergeJoinComponent extends JoinComponent {
         for (int i = columns.getColumnCount(); i != columns.getLocationCount(); ++i) {
             Location location = (Location)tuple1[i];
             Location location2 = (Location)tuple2[i];
-            if (!location.equals(location2)) return false;
+            if (!location.isSame(location2)) return false;
         }
         return true;
     }

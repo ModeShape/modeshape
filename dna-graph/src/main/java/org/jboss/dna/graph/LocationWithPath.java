@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.Property;
  * @see Location
  */
 @Immutable
-final class LocationWithPath extends Location {
+class LocationWithPath extends Location {
 
     private final Path path;
     private final int hashCode;
@@ -79,7 +79,7 @@ final class LocationWithPath extends Location {
      * @see Location#getIdProperties()
      */
     @Override
-    public final List<Property> getIdProperties() {
+    public List<Property> getIdProperties() {
         return null;
     }
 
@@ -89,7 +89,7 @@ final class LocationWithPath extends Location {
      * @see Location#hasIdProperties()
      */
     @Override
-    public final boolean hasIdProperties() {
+    public boolean hasIdProperties() {
         return false;
     }
 
@@ -99,7 +99,7 @@ final class LocationWithPath extends Location {
      * @see Location#getUuid()
      */
     @Override
-    public final UUID getUuid() {
+    public UUID getUuid() {
         return null;
     }
 
@@ -137,7 +137,7 @@ final class LocationWithPath extends Location {
     @Override
     public Location with( Property newIdProperty ) {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
-        return Location.create(path, newIdProperty);
+        return create(path, newIdProperty);
     }
 
     /**
@@ -148,7 +148,7 @@ final class LocationWithPath extends Location {
     @Override
     public Location with( Path newPath ) {
         if (newPath == null || path.equals(newPath)) return this;
-        return Location.create(newPath);
+        return create(newPath);
     }
 
     /**
@@ -159,6 +159,6 @@ final class LocationWithPath extends Location {
     @Override
     public Location with( UUID uuid ) {
         if (uuid == null) return this;
-        return Location.create(path, uuid);
+        return create(path, uuid);
     }
 }

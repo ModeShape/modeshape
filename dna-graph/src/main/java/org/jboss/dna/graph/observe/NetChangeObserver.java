@@ -303,7 +303,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
             if (that == this) return true;
             if (this.hc != that.hc) return false;
             if (!this.workspaceName.equals(that.workspaceName)) return false;
-            if (!this.location.equals(that.location)) return false;
+            if (!this.location.isSame(that.location)) return false;
             return true;
         }
 

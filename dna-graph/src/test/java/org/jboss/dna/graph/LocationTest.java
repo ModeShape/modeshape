@@ -128,11 +128,11 @@ public class LocationTest {
     }
 
     @Test
-    public void locationsWithSamePathsAndDifferentPropertyAreNotEqual() {
+    public void locationsWithSamePathsAndDifferentPropertyAreEqual() {
         Location locationA1 = Location.create(pathA, propA);
         Location locationA2 = Location.create(pathA, propB);
 
-        assertThat("Locations created with identical paths and different property must not be equal", locationA1, not(locationA2));
+        assertThat("Locations created with identical paths and different property must not be equal", locationA1.equals(locationA2), is(true));
     }
 
     @Test
@@ -187,8 +187,8 @@ public class LocationTest {
         Location locationA2 = Location.create(pathA, propListABU);
 
         assertThat("Locations created with identical paths and different properties must not be equal",
-                   locationA1,
-                   not(locationA2));
+                   locationA1.equals(locationA2),
+                   is(true));
     }
 
     @Test

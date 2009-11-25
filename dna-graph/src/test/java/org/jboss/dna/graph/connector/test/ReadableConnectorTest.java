@@ -93,7 +93,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
         Node root = graph.getNodeAt("/");
         for (int i = 0; i != 10; ++i) {
             Node anotherRoot = graph.getNodeAt("/");
-            assertThat(anotherRoot.getLocation().equals(root.getLocation()), is(true));
+            assertThat(anotherRoot.getLocation().isSame(root.getLocation()), is(true));
             assertThat(anotherRoot.getLocation().getPath(), is(root.getLocation().getPath()));
             assertThat(anotherRoot.getLocation().getIdProperties(), is(root.getLocation().getIdProperties()));
         }
@@ -117,7 +117,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
             }
             // Find the root node using the identification properties ...
             Node anotherRoot = graph.getNodeAt(firstProperty, additionalProperties);
-            assertThat(anotherRoot.getLocation().equals(root.getLocation()), is(true));
+            assertThat(anotherRoot.getLocation().isSame(root.getLocation()), is(true));
             assertThat(anotherRoot.getLocation().getPath(), is(root.getLocation().getPath()));
             assertThat(anotherRoot.getLocation().getIdProperties(), is(root.getLocation().getIdProperties()));
         }
@@ -131,7 +131,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
         if (uuid != null) {
             // Find the root node using the identification properties ...
             Node anotherRoot = graph.getNodeAt(uuid);
-            assertThat(anotherRoot.getLocation().equals(root.getLocation()), is(true));
+            assertThat(anotherRoot.getLocation().isSame(root.getLocation()), is(true));
             assertThat(anotherRoot.getLocation().getPath(), is(root.getLocation().getPath()));
             assertThat(anotherRoot.getLocation().getIdProperties(), is(root.getLocation().getIdProperties()));
             assertThat(anotherRoot.getLocation().getUuid(), is(root.getLocation().getUuid()));

@@ -27,8 +27,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.HashCode;
+
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
@@ -40,12 +41,9 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-final class LocationWithPathAndProperties extends Location {
+class LocationWithPathAndProperties extends LocationWithPath {
 
-    private final Path path;
     private final List<Property> idProperties;
-
-    private final int hashCode;
 
     /**
      * Create a new location with a given path and set of identification properties.
@@ -55,25 +53,10 @@ final class LocationWithPathAndProperties extends Location {
      */
     LocationWithPathAndProperties( Path path,
                                    List<Property> idProperties ) {
-        assert path != null;
+    	super(path);
         assert idProperties != null;
         assert !idProperties.isEmpty();
-        this.path = path;
         this.idProperties = Collections.unmodifiableList(idProperties);
-        // Paths are immutable, Properties are immutable, the idProperties list
-        // is wrapped in an unmodifiableList by the Location factory methods...
-        // ... so we can cache the hash code.
-        hashCode = HashCode.compute(path, idProperties);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see Location#getPath()
-     */
-    @Override
-    public final Path getPath() {
-        return path;
     }
 
     /**
@@ -87,23 +70,28 @@ final class LocationWithPathAndProperties extends Location {
     }
 
     /**
-     * {@inheritDoc}
+     * Get the first UUID that is in one of the {@link #getIdProperties() identification properties}.
      * 
-     * @see Location#hasIdProperties()
+     * @return the UUID for this location, or null if there is no such identification property
      */
     @Override
-    public final boolean hasIdProperties() {
-        return idProperties.size() > 0;
+    public UUID getUuid() {
+        Property property = getIdProperty(DnaLexicon.UUID);
+        if (property != null && !property.isEmpty()) {
+            Object value = property.getFirstValue();
+            if (value instanceof UUID) return (UUID)value;
+        }
+        return null;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see Location#hashCode()
+     * @see Location#hasIdProperties()
      */
     @Override
-    public int hashCode() {
-        return hashCode;
+    public boolean hasIdProperties() {
+        return idProperties.size() > 0;
     }
 
     /**
@@ -124,9 +112,9 @@ final class LocationWithPathAndProperties extends Location {
             }
             newIdProperties.add(newIdProperty);
             newIdProperties = Collections.unmodifiableList(newIdProperties);
-            return new LocationWithPathAndProperties(path, newIdProperties);
+            return create(getPath(), newIdProperties);
         }
-        return new LocationWithPathAndProperty(path, newIdProperty);
+        return create(getPath(), newIdProperty);
     }
 
     /**
@@ -137,7 +125,7 @@ final class LocationWithPathAndProperties extends Location {
     @Override
     public Location with( Path newPath ) {
         if (newPath == null || newPath.equals(this.getPath())) return this;
-        return new LocationWithPathAndProperties(newPath, idProperties);
+        return create(newPath, idProperties);
     }
 
     /**
@@ -157,6 +145,6 @@ final class LocationWithPathAndProperties extends Location {
         List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
         newIdProperties.addAll(idProperties);
         newIdProperties.add(newProperty);
-        return new LocationWithPathAndProperties(path, newIdProperties);
+        return create(getPath(), newIdProperties);
     }
 }

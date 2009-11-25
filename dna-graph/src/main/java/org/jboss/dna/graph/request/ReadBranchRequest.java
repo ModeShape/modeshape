@@ -367,8 +367,8 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      *         location} as the {@link #at() current location}, or if the actual location does not have a path.
      */
     public void setActualLocationOfNode( Location actual ) {
-        if (!at.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        if (!at.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, at));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -418,7 +418,7 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadBranchRequest that = (ReadBranchRequest)obj;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (this.maximumDepth() != that.maximumDepth()) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

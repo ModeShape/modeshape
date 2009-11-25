@@ -38,7 +38,6 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.LockFailedException;
-import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
@@ -549,7 +548,7 @@ public abstract class RequestProcessor {
             if (count > request.count()) break;
             if (!found) {
                 // Set to true if we find the child we're looking for ...
-                found = child.equals(request.startingAfter());
+                found = child.isSame(request.startingAfter());
             } else {
                 // Add the child to the block ...
                 ++count;

@@ -127,8 +127,8 @@ public class UpdateValuesRequest extends ChangeRequest {
 
     public void setActualLocation(Location actual, List<Object> actualAddedValues, List<Object> actualRemovedValues) {
         checkNotFrozen();
-        if (!on.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
+        if (!on.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, on));
         }
         assert actual != null;
         if (!actual.hasPath()) {

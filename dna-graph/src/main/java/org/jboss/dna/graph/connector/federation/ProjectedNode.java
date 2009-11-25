@@ -140,7 +140,7 @@ class ProxyNode extends ProjectedNode {
         super(locationInSource);
         this.projection = projection;
         this.federatedLocation = locationInFederated;
-        this.sameLocationAsOriginal = locationInSource.equals(locationInFederated);
+        this.sameLocationAsOriginal = locationInSource.isSame(locationInFederated);
     }
 
     protected ProxyNode( Projection projection,

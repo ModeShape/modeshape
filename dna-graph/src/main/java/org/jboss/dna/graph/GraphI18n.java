@@ -73,7 +73,7 @@ public final class GraphI18n {
     public static I18n unableToCreateReferenceToNodeWithoutUuid;
     public static I18n unableToCopyToLocationWithoutAPath;
     public static I18n unableToCopyToTheRoot;
-    public static I18n actualLocationIsNotSameAsInputLocation;
+    public static I18n actualLocationNotEqualToInputLocation;
     public static I18n actualLocationIsNotChildOfInputLocation;
     public static I18n actualLocationIsNotAtCorrectChildSegment;
     public static I18n actualLocationDoesNotHaveCorrectChildName;

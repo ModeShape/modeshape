@@ -128,8 +128,8 @@ public class LockBranchRequest extends ChangeRequest {
      */
     public void setActualLocation( Location actualLocation ) {
         checkNotFrozen();
-        if (!at.isSame(actualLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actualLocation, at));
+        if (!at.equals(actualLocation)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actualLocation, at));
         }
         assert actualLocation != null;
         if (!actualLocation.hasPath()) {
@@ -210,7 +210,7 @@ public class LockBranchRequest extends ChangeRequest {
         if (this.getClass().isInstance(obj)) {
             LockBranchRequest that = (LockBranchRequest)obj;
             if (this.lockTimeoutInMillis() != that.lockTimeoutInMillis()) return false;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (this.lockScope() != that.lockScope()) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

@@ -1773,7 +1773,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (obj instanceof AbstractJcrNode) {
             AbstractJcrNode that = (AbstractJcrNode)obj;
             if (this.cache != that.cache) return false;
-            return this.location.equals(that.location);
+            return this.location.isSame(that.location);
         }
         return false;
     }

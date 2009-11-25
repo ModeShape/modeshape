@@ -194,8 +194,8 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     public void setActualLocationOfNode( Location actualLocation ) {
         checkNotFrozen();
-        if (!this.of.isSame(actualLocation)) { // not same if actualLocation is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actualLocation, of));
+        if (!this.of.equals(actualLocation)) { // not same if actualLocation is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actualLocation, of));
         }
         assert actualLocation != null;
         if (!actualLocation.hasPath()) {
@@ -244,7 +244,7 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadAllChildrenRequest that = (ReadAllChildrenRequest)obj;
-            if (!this.of().equals(that.of())) return false;
+            if (!this.of().isSame(that.of())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }

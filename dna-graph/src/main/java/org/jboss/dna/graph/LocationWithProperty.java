@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
@@ -42,11 +41,7 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-final class LocationWithProperty extends Location {
-
-    protected final List<Property> idProperties;
-
-    private final int hashCode;
+final class LocationWithProperty extends LocationWithProperties {
 
     /**
      * Create a new location with a given path and identification property.
@@ -54,55 +49,9 @@ final class LocationWithProperty extends Location {
      * @param idProperty the identification property
      */
     LocationWithProperty( Property idProperty ) {
+        super(Collections.singletonList(idProperty));
         assert idProperty != null;
         assert !idProperty.isEmpty();
-        // The path could be null
-        this.idProperties = Collections.singletonList(idProperty);
-
-        // Paths are immutable, Properties are immutable, the idProperties list
-        // is wrapped in an unmodifiableList by the Location factory methods...
-        // ... so we can cache the hash code.
-        hashCode = HashCode.compute(null, idProperties);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see Location#getPath()
-     */
-    @Override
-    public final Path getPath() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.Location#hasPath()
-     */
-    @Override
-    public boolean hasPath() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see Location#getIdProperties()
-     */
-    @Override
-    public final List<Property> getIdProperties() {
-        return idProperties;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see Location#hasIdProperties()
-     */
-    @Override
-    public final boolean hasIdProperties() {
-        return true;
     }
 
     /**
@@ -113,7 +62,7 @@ final class LocationWithProperty extends Location {
     @Override
     public final Property getIdProperty( Name name ) {
         CheckArg.isNotNull(name, "name");
-        Property property = idProperties.get(0); // this is fast
+        Property property = getIdProperties().get(0); // this is fast
         return property.getName().equals(name) ? property : null;
     }
 
@@ -124,7 +73,7 @@ final class LocationWithProperty extends Location {
      */
     @Override
     public UUID getUuid() {
-        Property property = idProperties.get(0); // this is fast
+        Property property = getIdProperties().get(0); // this is fast
         if (DnaLexicon.UUID.equals(property.getName())) {
             Object value = property.getFirstValue();
             if (value instanceof UUID) return (UUID)value;
@@ -136,29 +85,19 @@ final class LocationWithProperty extends Location {
     /**
      * {@inheritDoc}
      * 
-     * @see Location#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see Location#with(Property)
      */
     @Override
     public Location with( Property newIdProperty ) {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
-        Property idProperty = idProperties.get(0); // fast
+        Property idProperty = getIdProperties().get(0); // fast
         if (newIdProperty.getName().equals(idProperty.getName())) {
             return Location.create(newIdProperty);
         }
-        List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
+        List<Property> newIdProperties = new ArrayList<Property>(getIdProperties().size() + 1);
         newIdProperties.add(newIdProperty);
-        newIdProperties.addAll(idProperties);
-        return new LocationWithProperties(newIdProperties);
+        newIdProperties.addAll(getIdProperties());
+        return Location.create(newIdProperties);
     }
 
     /**
@@ -169,8 +108,8 @@ final class LocationWithProperty extends Location {
     @Override
     public Location with( Path newPath ) {
         if (newPath == null) return this;
-        Property idProperty = idProperties.get(0); // fast
-        return new LocationWithPathAndProperty(newPath, idProperty);
+        Property idProperty = getIdProperties().get(0); // fast
+        return Location.create(newPath, idProperty);
     }
 
     /**
@@ -181,13 +120,13 @@ final class LocationWithProperty extends Location {
     @Override
     public Location with( UUID uuid ) {
         if (uuid == null) return this;
-        Property idProperty = idProperties.get(0); // fast
+        Property idProperty = getIdProperties().get(0); // fast
         if (DnaLexicon.UUID.equals(idProperty.getName())) {
-            return new LocationWithUuid(uuid);
+            return Location.create(uuid);
         }
-        List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
+        List<Property> newIdProperties = new ArrayList<Property>(getIdProperties().size() + 1);
         newIdProperties.add(new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
-        newIdProperties.addAll(idProperties);
-        return new LocationWithProperties(newIdProperties);
+        newIdProperties.addAll(getIdProperties());
+        return Location.create(newIdProperties);
     }
 }

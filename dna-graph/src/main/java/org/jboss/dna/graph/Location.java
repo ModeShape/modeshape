@@ -41,7 +41,8 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
 /**
- * The location of a node, as specified by either its path, UUID, and/or identification properties.
+ * The location of a node, as specified by either its path, UUID, and/or identification properties. Hash codes are not implemented
+ * in this base class to allow immutable subclasses to calculate and cache the hash code during object construction.
  */
 @Immutable
 public abstract class Location implements Iterable<Property>, Comparable<Location> {
@@ -97,7 +98,6 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public static Location create( Path path ) {
         CheckArg.isNotNull(path, "path");
-
         return new LocationWithPath(path);
     }
 
@@ -125,11 +125,8 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public static Location create( Path path,
                                    UUID uuid ) {
-        if (path == null) {
-            CheckArg.isNotNull(uuid, "uuid");
-            return new LocationWithUuid(uuid);
-        }
-        if (uuid == null) return new LocationWithPath(path);
+        if (path == null) return create(uuid);
+        if (uuid == null) return create(path);
         return new LocationWithPathAndUuid(path, uuid);
     }
 
@@ -145,6 +142,11 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
                                    Property idProperty ) {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotNull(idProperty, "idProperty");
+        if (DnaLexicon.UUID.equals(idProperty.getName()) && idProperty.isSingle()) {
+            Object uuid = idProperty.getFirstValue();
+            assert uuid instanceof UUID;
+            return new LocationWithPathAndUuid(path, (UUID)uuid);
+        }
         return new LocationWithPathAndProperty(path, idProperty);
     }
 
@@ -190,14 +192,8 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         for (Property property : idProperties) {
             if (names.add(property.getName())) idPropertiesList.add(property);
         }
-        switch (idPropertiesList.size()) {
-            case 0:
-                return new LocationWithPath(path);
-            case 1:
-                return new LocationWithPathAndProperty(path, idPropertiesList.get(0));
-            default:
-                return new LocationWithPathAndProperties(path, idPropertiesList);
-        }
+        if (idPropertiesList.isEmpty()) return new LocationWithPath(path);
+        return new LocationWithPathAndProperties(path, idPropertiesList);
     }
 
     /**
@@ -209,6 +205,11 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public static Location create( Property idProperty ) {
         CheckArg.isNotNull(idProperty, "idProperty");
+        if (DnaLexicon.UUID.equals(idProperty.getName()) && idProperty.isSingle()) {
+            Object uuid = idProperty.getFirstValue();
+            assert uuid instanceof UUID;
+            return new LocationWithUuid((UUID)uuid);
+        }
         return new LocationWithProperty(idProperty);
     }
 
@@ -224,7 +225,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
                                    Property... remainingIdProperties ) {
         CheckArg.isNotNull(firstIdProperty, "firstIdProperty");
         CheckArg.isNotNull(remainingIdProperties, "remainingIdProperties");
-        if (remainingIdProperties.length == 0) return new LocationWithProperty(firstIdProperty);
+        if (remainingIdProperties.length == 0) return create(firstIdProperty);
         List<Property> idProperties = new ArrayList<Property>(1 + remainingIdProperties.length);
         Set<Name> names = new HashSet<Name>();
         names.add(firstIdProperty.getName());
@@ -249,16 +250,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         for (Property property : idProperties) {
             if (names.add(property.getName())) idPropertiesList.add(property);
         }
-        switch (idPropertiesList.size()) {
-            case 0:
-                CheckArg.isNotEmpty(idPropertiesList, "idProperties");
-                assert false;
-                return null; // never get here
-            case 1:
-                return new LocationWithProperty(idPropertiesList.get(0));
-            default:
-                return new LocationWithProperties(idPropertiesList);
-        }
+        return create(idPropertiesList);
     }
 
     /**
@@ -337,79 +329,16 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         return null;
     }
 
-    /**
-     * Compare this location to the supplied location, and determine whether the two locations represent the same logical
-     * location. One location is considered the same as another location when one location is a superset of the other. For
-     * example, consider the following locations:
-     * <ul>
-     * <li>location A is defined with a "<code>/x/y</code>" path</li>
-     * <li>location B is defined with an identification property {id=3}</li>
-     * <li>location C is defined with a "<code>/x/y/z</code>"</li>
-     * <li>location D is defined with a "<code>/x/y/z</code>" path and an identification property {id=3}</li>
-     * </ul>
-     * Locations C and D would be considered the same, and B and D would also be considered the same. None of the other
-     * combinations would be considered the same.
-     * <p>
-     * Note that passing a null location as a parameter will always return false.
-     * </p>
-     * 
-     * @param other the other location to compare
-     * @return true if the two locations represent the same location, or false otherwise
-     */
-    public boolean isSame( Location other ) {
-        return isSame(other, true);
-    }
-
-    /**
-     * Compare this location to the supplied location, and determine whether the two locations represent the same logical
-     * location. One location is considered the same as another location when one location is a superset of the other. For
-     * example, consider the following locations:
-     * <ul>
-     * <li>location A is defined with a "<code>/x/y</code>" path</li>
-     * <li>location B is defined with an identification property {id=3}</li>
-     * <li>location C is defined with a "<code>/x/y/z</code>"</li>
-     * <li>location D is defined with a "<code>/x/y/z</code>" path and an identification property {id=3}</li>
-     * </ul>
-     * Locations C and D would be considered the same, and B and D would also be considered the same. None of the other
-     * combinations would be considered the same.
-     * <p>
-     * Note that passing a null location as a parameter will always return false.
-     * </p>
-     * 
-     * @param other the other location to compare
-     * @param requireSameNameSiblingIndexes true if the paths must have equivalent {@link Path.Segment#getIndex()
-     *        same-name-sibling indexes}, or false if the same-name-siblings may be different
-     * @return true if the two locations represent the same location, or false otherwise
-     */
-    public boolean isSame( Location other,
-                           boolean requireSameNameSiblingIndexes ) {
-        if (other != null) {
-            if (this.hasPath() && other.hasPath()) {
-                // Paths on both, so the paths MUST match
-                if (requireSameNameSiblingIndexes) {
-                    if (!this.getPath().equals(other.getPath())) return false;
-                } else {
-                    Path thisPath = this.getPath();
-                    Path thatPath = other.getPath();
-                    if (thisPath.isRoot()) return thatPath.isRoot();
-                    if (thatPath.isRoot()) return thisPath.isRoot();
-                    // The parents must match ...
-                    if (!thisPath.hasSameAncestor(thatPath)) return false;
-                    // And the names of the last segments must match ...
-                    if (!thisPath.getLastSegment().getName().equals(thatPath.getLastSegment().getName())) return false;
-                }
-
-                // And the identification properties must match only if they exist on both
-                if (this.hasIdProperties() && other.hasIdProperties()) {
-                    return this.getIdProperties().containsAll(other.getIdProperties());
-                }
-                return true;
-            }
-            // Path only in one, so the identification properties MUST match
-            if (!other.hasIdProperties()) return false;
-            return this.getIdProperties().containsAll(other.getIdProperties());
+    public boolean isSame( Location that ) {
+        if (that == null) return false;
+        if (this.hasPath()) {
+            if (!this.getPath().equals(that.getPath())) return false;
+        } else if (that.hasPath()) return false;
+        if (this.hasIdProperties()) {
+            if (that.hasIdProperties()) return this.getIdProperties().containsAll(that.getIdProperties());
+            return false;
         }
-        return false;
+        return (!that.hasIdProperties());
     }
 
     /**
@@ -438,20 +367,69 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     @Override
     public boolean equals( Object obj ) {
+        return equals(obj, true);
+    }
+
+    /**
+     * Compare this location to the supplied location, and determine whether the two locations represent the same logical
+     * location. One location is considered the same as another location when one location is a superset of the other. For
+     * example, consider the following locations:
+     * <ul>
+     * <li>location A is defined with a "<code>/x/y</code>" path</li>
+     * <li>location B is defined with an identification property {id=3}</li>
+     * <li>location C is defined with a "<code>/x/y/z</code>"</li>
+     * <li>location D is defined with a "<code>/x/y/z</code>" path and an identification property {id=3}</li>
+     * </ul>
+     * Locations C and D would be considered the same, and B and D would also be considered the same. None of the other
+     * combinations would be considered the same.
+     * <p>
+     * Note that passing a null location as a parameter will always return false.
+     * </p>
+     * 
+     * @param obj the other location to compare
+     * @param requireSameNameSiblingIndexes true if the paths must have equivalent {@link Path.Segment#getIndex()
+     *        same-name-sibling indexes}, or false if the same-name-siblings may be different
+     * @return true if the two locations represent the same location, or false otherwise
+     */
+    public boolean equals( Object obj,
+                           boolean requireSameNameSiblingIndexes ) {
+        // if (obj instanceof Location) {
+        // Location that = (Location)obj;
+        // if (this.hasPath()) {
+        // if (!this.getPath().equals(that.getPath())) return false;
+        // } else {
+        // if (that.hasPath()) return false;
+        // }
+        // if (this.hasIdProperties()) {
+        // if (!this.getIdProperties().equals(that.getIdProperties())) return
+        // false;
+        // } else {
+        // if (that.hasIdProperties()) return false;
+        // }
+        // return true;
+        // }
+        // return false;
         if (obj instanceof Location) {
             Location that = (Location)obj;
-            if (this.hasPath()) {
-                if (!this.getPath().equals(that.getPath())) return false;
+
+            // if both have same path they are equal
+            if (requireSameNameSiblingIndexes) {
+                if (this.hasPath() && that.hasPath()) return (this.getPath().equals(that.getPath()));
             } else {
-                if (that.hasPath()) return false;
+                Path thisPath = this.getPath();
+                Path thatPath = that.getPath();
+                if (thisPath.isRoot()) return thatPath.isRoot();
+                if (thatPath.isRoot()) return thisPath.isRoot();
+                // The parents must match ...
+                if (!thisPath.hasSameAncestor(thatPath)) return false;
+                // And the names of the last segments must match ...
+                if (!thisPath.getLastSegment().getName().equals(thatPath.getLastSegment().getName())) return false;
             }
-            if (this.hasIdProperties()) {
-                if (!this.getIdProperties().equals(that.getIdProperties())) return false;
-            } else {
-                if (that.hasIdProperties()) return false;
-            }
-            return true;
+
+            // one or both is/are missing path so check properties instead
+            if (this.hasIdProperties()) return (this.getIdProperties().equals(that.getIdProperties()));
         }
+
         return false;
     }
 

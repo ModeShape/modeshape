@@ -259,8 +259,8 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!at.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        if (!at.equals(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, at));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -311,7 +311,7 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadNodeRequest that = (ReadNodeRequest)obj;
-            if (!this.at().equals(that.at())) return false;
+            if (!this.at().isSame(that.at())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }

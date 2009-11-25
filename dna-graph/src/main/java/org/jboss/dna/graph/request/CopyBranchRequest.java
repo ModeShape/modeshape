@@ -212,8 +212,8 @@ public class CopyBranchRequest extends ChangeRequest {
     public void setActualLocations( Location fromLocation,
                                     Location intoLocation ) {
         checkNotFrozen();
-        if (!from.isSame(fromLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(fromLocation, from));
+        if (!from.equals(fromLocation)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(fromLocation, from));
         }
         CheckArg.isNotNull(intoLocation, "intoLocation");
         assert fromLocation != null;
@@ -313,8 +313,8 @@ public class CopyBranchRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             CopyBranchRequest that = (CopyBranchRequest)obj;
-            if (!this.from().equals(that.from())) return false;
-            if (!this.into().equals(that.into())) return false;
+            if (!this.from().isSame(that.from())) return false;
+            if (!this.into().isSame(that.into())) return false;
             if (!this.nodeConflictBehavior().equals(that.nodeConflictBehavior())) return false;
             if (!this.fromWorkspace.equals(that.fromWorkspace)) return false;
             if (!this.intoWorkspace.equals(that.intoWorkspace)) return false;

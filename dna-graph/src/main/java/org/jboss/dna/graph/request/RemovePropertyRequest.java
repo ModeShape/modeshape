@@ -111,7 +111,7 @@ public class RemovePropertyRequest extends ChangeRequest {
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
         if (!from.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, from));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, from));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -171,7 +171,7 @@ public class RemovePropertyRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             RemovePropertyRequest that = (RemovePropertyRequest)obj;
-            if (!this.from().equals(that.from())) return false;
+            if (!this.from().isSame(that.from())) return false;
             if (!this.propertyName().equals(that.propertyName())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;

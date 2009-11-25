@@ -447,7 +447,7 @@ public abstract class AbstractConnectorTest {
 
             // Check the result has the correct location ...
             assertThat("The node that was read doesn't have the expected location",
-                       result.getLocation().isSame(location, true),
+                       result.getLocation().equals(location),
                        is(true));
         }
 
@@ -667,7 +667,7 @@ public abstract class AbstractConnectorTest {
         assertThat(subgraph2, is(notNullValue()));
 
         // Shortcut ...
-        if (subgraph1.getLocation().equals(subgraph2.getLocation())) return;
+        if (subgraph1.getLocation().isSame(subgraph2.getLocation())) return;
 
         Path rootPath1 = subgraph1.getRoot().getLocation().getPath();
         Path rootPath2 = subgraph2.getRoot().getLocation().getPath();
@@ -738,7 +738,7 @@ public abstract class AbstractConnectorTest {
         // Check the locations ...
         Location location1 = node1.getLocation();
         Location location2 = node2.getLocation();
-        assertThat(location1.isSame(location2, true), is(true));
+        assertThat(location1.isSame(location2), is(true));
 
         // Check the paths ...
         assertThat(location1.getPath(), is(location2.getPath()));

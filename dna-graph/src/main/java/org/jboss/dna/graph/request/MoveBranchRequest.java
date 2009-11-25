@@ -236,8 +236,8 @@ public class MoveBranchRequest extends ChangeRequest {
         checkNotFrozen();
         CheckArg.isNotNull(oldLocation, "oldLocation");
         CheckArg.isNotNull(newLocation, "newLocation");
-        if (!from.isSame(oldLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, from));
+        if (!from.equals(oldLocation)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(oldLocation, from));
         }
         if (!oldLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
@@ -246,12 +246,12 @@ public class MoveBranchRequest extends ChangeRequest {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
         }
         if (into() != null && into().hasPath() && !newLocation.getPath().getParent().isSameAs(into.getPath())) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(newLocation, into));
         }
         Name actualNewName = newLocation.getPath().getLastSegment().getName();
         Name expectedNewName = desiredName() != null ? desiredName() : oldLocation.getPath().getLastSegment().getName();
         if (!actualNewName.equals(expectedNewName)) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
+            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(newLocation, into));
         }
         this.actualOldLocation = oldLocation;
         this.actualNewLocation = newLocation;
@@ -350,8 +350,8 @@ public class MoveBranchRequest extends ChangeRequest {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             MoveBranchRequest that = (MoveBranchRequest)obj;
-            if (!this.from().equals(that.from())) return false;
-            if (!this.into().equals(that.into())) return false;
+            if (!this.from().isSame(that.from())) return false;
+            if (!this.into().isSame(that.into())) return false;
             if (!this.conflictBehavior().equals(that.conflictBehavior())) return false;
             if (!this.workspaceName.equals(that.workspaceName)) return false;
             return true;

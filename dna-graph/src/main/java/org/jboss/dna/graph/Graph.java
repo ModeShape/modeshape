@@ -6323,7 +6323,7 @@ public class Graph {
         public boolean equals( Object obj ) {
             if (obj instanceof Node) {
                 Node that = (Node)obj;
-                return this.getLocation().equals(that.getLocation());
+                return this.getLocation().isSame(that.getLocation());
             }
             return false;
         }
@@ -6591,7 +6591,7 @@ public class Graph {
         public boolean equals( Object obj ) {
             if (obj instanceof Node) {
                 Node that = (Node)obj;
-                return this.location.equals(that.getLocation());
+                return this.location.isSame(that.getLocation());
             }
             return false;
         }
@@ -6799,7 +6799,7 @@ public class Graph {
         public boolean equals( Object obj ) {
             if (obj instanceof Node) {
                 Node that = (Node)obj;
-                return this.location.equals(that.getLocation());
+                return this.location.isSame(that.getLocation());
             }
             return false;
         }
