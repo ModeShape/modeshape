@@ -133,6 +133,7 @@
 		<module>extensions/dna-sequencer-msoffice</module>
 		<module>extensions/dna-sequencer-xml</module>
 		<module>extensions/dna-sequencer-zip</module>
+		<module>extensions/dna-sequencer-ddl</module>
 		<module>extensions/dna-connector-filesystem</module>
 		<module>extensions/dna-connector-infinispan</module>
 		<module>extensions/dna-connector-jbosscache</module>
