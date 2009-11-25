@@ -481,7 +481,14 @@
             <emphasis role="strong">dna-sequencer-java</emphasis>
             is a DNA sequencer that extracts the structure (methods, fields) from Java source files.
           </para>
-        </listitem>        
+        </listitem>  
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-ddl</emphasis>
+            is a DNA sequencer that extracts the structure and content from DDL files.
+                <emphasis>This is still under development and only includes a limited number of dialects and basic DDL statements.</emphasis>
+          </para>
+        </listitem>      
         <listitem>
           <para>
             <emphasis role="strong">dna-mimetype-detector-aperture</emphasis>

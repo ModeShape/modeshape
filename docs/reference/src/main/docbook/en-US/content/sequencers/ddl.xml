@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"  [
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="ddl-file-sequencer">
+  <title>DDL File Sequencer</title>
+    <para>
+        The DDL file sequencer is included in JBoss DNA and is capable of parsing the more important DDL statements from several 
+        different dialects, and constructing a graph structure that is largely the same for all dialects (though some dialects will 
+        result in dialect-specific properties and maybe nodes). The sequencer attempts to detect the dialect by running multiple 
+        parsers and finding the one with the "best fit".</para>
+    <para>
+        One very interesting capability of this sequencer is that, although only a subset of the (more common) DDL statements 
+        are supported, the sequencer is still extremely functional since it does still add all statements into the output graph, 
+        just without much detail other than just the statement text and the position in the DDL file. Thus, if a DDL file 
+        contains statements the sequencer understands and statements that the sequencer does not understand, the graph will 
+        still contain all statements and those statements understood by the sequencer will have their full detail. 
+        Since the underlying parsers are able to operate upon a single statement, it is possible to go back later 
+        (after the parsers have been enhanced to support additional DDL statements) and re-parse only those incomplete statements 
+        in the graph.
+    </para>
+    <para>
+        Initially the following ddl dialects are included with this sequencer: Oracle, Derby, Postgres and MySql.</para>
+    <para>
+        Each specific dialect extends a basic parser framework implementing the SQL 92 spec and includes
+        <itemizedlist>
+            <listitem>
+                <para>Detailed parsing of CREATE SCHEMA, CREATE TABLE and ALTER TABLE.</para>
+            </listitem>
+            <listitem>
+                <para>Partial parsing of DROP statements</para>
+            </listitem>
+            <listitem>
+                <para>General parsing of remaining schema definition statements (i.e. CREATE VIEW, CREATE DOMAIN, etc.</para>
+            </listitem>
+            <listitem>
+                <para>Does NOT perform detailed parsing of SQL (i.e. SELECT, INSERT, UPDATE, etc....) statements.</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        To use this sequencer, simply include the <code>dna-sequencer-ddl</code> JAR
+        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
+    </para>
+   <programlisting>
+JcrConfiguration config = ...
+
+config.sequencer("DDL Sequencer")
+      .usingClass("org.jboss.dna.sequencer.ddl.DdlSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+      .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/ddls/$1"); 
+    </programlisting>
+</chapter>

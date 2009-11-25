@@ -134,6 +134,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/java_source.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/image.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/mp3.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/ddl.xml"/>
 	</part>
 	<part id="provied-mime-type-detectors-part">
 		<title>MIME Type Detector Library</title>
