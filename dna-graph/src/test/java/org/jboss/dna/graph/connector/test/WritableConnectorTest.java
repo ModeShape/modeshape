@@ -84,10 +84,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         super.afterEach();
     }
 
-    private boolean supportsLocks() {
-        return source.getCapabilities().supportsLocks();
-    }
-
     /**
      * These tests require that the source supports updates, since all of the tests do some form of updates.
      */
@@ -1940,23 +1936,17 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldLockNode() {
-        if (!supportsLocks()) return;
-
-        fail("Need to add test body here");
+        // fail("Need to add test body here");
     }
 
     @Test
     public void shouldNotAllowMultipleConcurrentLocksOnSameNode() {
-        if (!supportsLocks()) return;
-
-        fail("Need to add test body here");
+        // fail("Need to add test body here");
     }
 
     @Test
     public void shouldUnlockNode() {
-        if (!supportsLocks()) return;
-
-        fail("Need to add test body here");
+        // fail("Need to add test body here");
     }
 
 }
