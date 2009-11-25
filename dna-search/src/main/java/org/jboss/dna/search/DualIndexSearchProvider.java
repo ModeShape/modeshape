@@ -74,14 +74,14 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
-import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.basic.JodaDateTime;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
@@ -106,6 +106,8 @@ import org.jboss.dna.graph.query.process.QueryProcessor;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.search.SearchException;
 import org.jboss.dna.graph.search.SearchProvider;
+import org.jboss.dna.search.IndexRules.FieldType;
+import org.jboss.dna.search.IndexRules.NumericRule;
 import org.jboss.dna.search.IndexRules.Rule;
 import org.jboss.dna.search.LuceneSession.TupleCollector;
 import org.jboss.dna.search.query.CompareLengthQuery;
@@ -133,22 +135,22 @@ public class DualIndexSearchProvider implements SearchProvider {
     public static final IndexRules DEFAULT_RULES;
 
     static {
+        // We know that the earliest creation/modified dates cannot be before November 1 2009,
+        // which is before this feature was implemented
+        long earliestChangeDate = new JodaDateTime(2009, 11, 01, 0, 0, 0, 0).getMilliseconds();
+
         IndexRules.Builder builder = IndexRules.createBuilder();
         // Configure the default behavior ...
-        builder.defaultTo(IndexRules.INDEX | IndexRules.FULL_TEXT | IndexRules.STORE);
+        builder.defaultTo(Field.Store.YES, Field.Index.ANALYZED);
         // Configure the UUID properties to be just indexed and stored (not analyzed, not included in full-text) ...
-        builder.store(JcrLexicon.UUID, DnaLexicon.UUID);
+        builder.stringField(JcrLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED);
+        builder.stringField(DnaLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED);
         // Configure the properties that we'll treat as dates ...
-        builder.treatAsDates(JcrLexicon.CREATED, JcrLexicon.LAST_MODIFIED);
+        builder.dateField(JcrLexicon.CREATED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);
+        builder.dateField(JcrLexicon.LAST_MODIFIED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);
         DEFAULT_RULES = builder.build();
     }
 
-    protected static final long MIN_DATE = 0;
-    protected static final long MAX_DATE = Long.MAX_VALUE;
-    protected static final long MIN_LONG = Long.MIN_VALUE;
-    protected static final long MAX_LONG = Long.MAX_VALUE;
-    protected static final double MIN_DOUBLE = Double.MIN_VALUE;
-    protected static final double MAX_DOUBLE = Double.MAX_VALUE;
     protected static final int MIN_DEPTH = 0;
     protected static final int MAX_DEPTH = 100;
     protected static final int MIN_SNS_INDEX = 1;
@@ -506,31 +508,66 @@ public class DualIndexSearchProvider implements SearchProvider {
                 for (Property property : node.getProperties()) {
                     Name name = property.getName();
                     Rule rule = rules.getRule(name);
-                    if (!rule.isIncluded()) continue;
+                    if (rule.isSkipped()) continue;
                     String nameString = stringFactory.create(name);
-                    if (rule.isDate()) {
+                    FieldType type = rule.getType();
+                    if (type == FieldType.DATE) {
+                        boolean index = rule.getIndexOption() != Field.Index.NO;
                         for (Object value : property) {
                             if (value == null) continue;
-                            DateTime dateValue = dateFactory.create(value);
                             // Add a separate field for each property value ...
-                            doc.add(new NumericField(nameString, rule.getStoreOption(), true).setLongValue(dateValue.getMillisecondsInUtc()));
-                            // Dates are not added to the full-text search field (since this wouldn't make sense)
+                            DateTime dateValue = dateFactory.create(value);
+                            long longValue = dateValue.getMillisecondsInUtc();
+                            doc.add(new NumericField(nameString, rule.getStoreOption(), index).setLongValue(longValue));
                         }
                         continue;
                     }
+                    if (type == FieldType.INT) {
+                        ValueFactory<Long> longFactory = context.getValueFactories().getLongFactory();
+                        boolean index = rule.getIndexOption() != Field.Index.NO;
+                        for (Object value : property) {
+                            if (value == null) continue;
+                            // Add a separate field for each property value ...
+                            int intValue = longFactory.create(value).intValue();
+                            doc.add(new NumericField(nameString, rule.getStoreOption(), index).setIntValue(intValue));
+                        }
+                        continue;
+                    }
+                    if (type == FieldType.DOUBLE) {
+                        ValueFactory<Double> doubleFactory = context.getValueFactories().getDoubleFactory();
+                        boolean index = rule.getIndexOption() != Field.Index.NO;
+                        for (Object value : property) {
+                            if (value == null) continue;
+                            // Add a separate field for each property value ...
+                            double dValue = doubleFactory.create(value);
+                            doc.add(new NumericField(nameString, rule.getStoreOption(), index).setDoubleValue(dValue));
+                        }
+                        continue;
+                    }
+                    if (type == FieldType.FLOAT) {
+                        ValueFactory<Double> doubleFactory = context.getValueFactories().getDoubleFactory();
+                        boolean index = rule.getIndexOption() != Field.Index.NO;
+                        for (Object value : property) {
+                            if (value == null) continue;
+                            // Add a separate field for each property value ...
+                            float fValue = doubleFactory.create(value).floatValue();
+                            doc.add(new NumericField(nameString, rule.getStoreOption(), index).setFloatValue(fValue));
+                        }
+                        continue;
+                    }
+                    if (type == FieldType.BINARY) {
+                        // TODO : add to full-text search ...
+                        continue;
+                    }
+                    assert type == FieldType.STRING;
                     for (Object value : property) {
                         if (value == null) continue;
-                        if (value instanceof Binary) {
-                            // don't include binary values as individual fields but do include them in the full-text search ...
-                            // TODO : add to full-text search ...
-                            continue;
-                        }
                         stringValue = stringFactory.create(value);
                         // Add a separate field for each property value ...
                         doc.add(new Field(nameString, stringValue, rule.getStoreOption(), rule.getIndexOption()));
 
-                        if (rule.isFullText()) {
-                            // Add this text to the full-text field ...
+                        if (rule.getIndexOption() != Field.Index.NO) {
+                            // This field is to be full-text searchable ...
                             if (fullTextSearchValue == null) {
                                 fullTextSearchValue = new StringBuilder();
                             } else {
@@ -545,7 +582,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                     }
                 }
                 // Add the full-text-search field ...
-                if (fullTextSearchValue != null) {
+                if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
                     doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO,
                                       Field.Index.ANALYZED));
                 }
@@ -1121,23 +1158,22 @@ public class DualIndexSearchProvider implements SearchProvider {
             return null;
         }
 
+        @SuppressWarnings( "unchecked" )
         @Override
         public Query findNodesWith( PropertyValue propertyValue,
                                     Operator operator,
                                     Object value,
                                     boolean caseSensitive ) {
             String field = stringFactory.create(propertyValue.getPropertyName());
-            PropertyType valueType = PropertyType.discoverType(value);
+            Name fieldName = nameFactory.create(propertyValue.getPropertyName());
             ValueFactories factories = context.getValueFactories();
-            switch (valueType) {
-                case NAME:
-                case PATH:
-                case REFERENCE:
-                case URI:
-                case UUID:
+            IndexRules.Rule rule = rules.getRule(fieldName);
+            if (rule == null || rule.isSkipped()) return new MatchNoneQuery();
+            FieldType type = rule.getType();
+            switch (type) {
                 case STRING:
                     String stringValue = stringFactory.create(value);
-                    if (valueType == PropertyType.PATH) {
+                    if (value instanceof Path) {
                         stringValue = pathAsString(pathFactory.create(value), stringFactory);
                     }
                     if (!caseSensitive) stringValue = stringValue.toLowerCase();
@@ -1178,6 +1214,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                     }
                     break;
                 case DATE:
+                    NumericRule<Long> longRule = (NumericRule<Long>)rule;
                     long date = factories.getLongFactory().create(value);
                     switch (operator) {
                         case EQUAL_TO:
@@ -1186,13 +1223,13 @@ public class DualIndexSearchProvider implements SearchProvider {
                             Query query = NumericRangeQuery.newLongRange(field, date, date, true, true);
                             return new NotQuery(query);
                         case GREATER_THAN:
-                            return NumericRangeQuery.newLongRange(field, date, MAX_DATE, false, true);
+                            return NumericRangeQuery.newLongRange(field, date, longRule.getMaximum(), false, true);
                         case GREATER_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newLongRange(field, date, MAX_DATE, true, true);
+                            return NumericRangeQuery.newLongRange(field, date, longRule.getMaximum(), true, true);
                         case LESS_THAN:
-                            return NumericRangeQuery.newLongRange(field, MIN_DATE, date, true, false);
+                            return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), date, true, false);
                         case LESS_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newLongRange(field, MIN_DATE, date, true, true);
+                            return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), date, true, true);
                         case LIKE:
                             // This is not allowed ...
                             assert false;
@@ -1200,6 +1237,7 @@ public class DualIndexSearchProvider implements SearchProvider {
                     }
                     break;
                 case LONG:
+                    longRule = (NumericRule<Long>)rule;
                     long longValue = factories.getLongFactory().create(value);
                     switch (operator) {
                         case EQUAL_TO:
@@ -1208,21 +1246,44 @@ public class DualIndexSearchProvider implements SearchProvider {
                             Query query = NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
                             return new NotQuery(query);
                         case GREATER_THAN:
-                            return NumericRangeQuery.newLongRange(field, longValue, MAX_LONG, false, true);
+                            return NumericRangeQuery.newLongRange(field, longValue, longRule.getMaximum(), false, true);
                         case GREATER_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newLongRange(field, longValue, MAX_LONG, true, true);
+                            return NumericRangeQuery.newLongRange(field, longValue, longRule.getMaximum(), true, true);
                         case LESS_THAN:
-                            return NumericRangeQuery.newLongRange(field, MIN_LONG, longValue, true, false);
+                            return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), longValue, true, false);
                         case LESS_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newLongRange(field, MIN_LONG, longValue, true, true);
+                            return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), longValue, true, true);
                         case LIKE:
                             // This is not allowed ...
                             assert false;
                             return null;
                     }
                     break;
-                case DECIMAL:
+                case INT:
+                    NumericRule<Integer> intRule = (NumericRule<Integer>)rule;
+                    int intValue = factories.getLongFactory().create(value).intValue();
+                    switch (operator) {
+                        case EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
+                        case NOT_EQUAL_TO:
+                            Query query = NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
+                            return new NotQuery(query);
+                        case GREATER_THAN:
+                            return NumericRangeQuery.newIntRange(field, intValue, intRule.getMaximum(), false, true);
+                        case GREATER_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, intValue, intRule.getMaximum(), true, true);
+                        case LESS_THAN:
+                            return NumericRangeQuery.newIntRange(field, intRule.getMinimum(), intValue, true, false);
+                        case LESS_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, intRule.getMinimum(), intValue, true, true);
+                        case LIKE:
+                            // This is not allowed ...
+                            assert false;
+                            return null;
+                    }
+                    break;
                 case DOUBLE:
+                    NumericRule<Double> dRule = (NumericRule<Double>)rule;
                     double doubleValue = factories.getDoubleFactory().create(value);
                     switch (operator) {
                         case EQUAL_TO:
@@ -1231,13 +1292,36 @@ public class DualIndexSearchProvider implements SearchProvider {
                             Query query = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
                             return new NotQuery(query);
                         case GREATER_THAN:
-                            return NumericRangeQuery.newDoubleRange(field, doubleValue, MAX_DOUBLE, false, true);
+                            return NumericRangeQuery.newDoubleRange(field, doubleValue, dRule.getMaximum(), false, true);
                         case GREATER_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newDoubleRange(field, doubleValue, MAX_DOUBLE, true, true);
+                            return NumericRangeQuery.newDoubleRange(field, doubleValue, dRule.getMaximum(), true, true);
                         case LESS_THAN:
-                            return NumericRangeQuery.newDoubleRange(field, MIN_DOUBLE, doubleValue, true, false);
+                            return NumericRangeQuery.newDoubleRange(field, dRule.getMinimum(), doubleValue, true, false);
                         case LESS_THAN_OR_EQUAL_TO:
-                            return NumericRangeQuery.newDoubleRange(field, MIN_DOUBLE, doubleValue, true, true);
+                            return NumericRangeQuery.newDoubleRange(field, dRule.getMinimum(), doubleValue, true, true);
+                        case LIKE:
+                            // This is not allowed ...
+                            assert false;
+                            return null;
+                    }
+                    break;
+                case FLOAT:
+                    NumericRule<Float> fRule = (NumericRule<Float>)rule;
+                    float floatValue = factories.getDoubleFactory().create(value).floatValue();
+                    switch (operator) {
+                        case EQUAL_TO:
+                            return NumericRangeQuery.newFloatRange(field, floatValue, floatValue, true, true);
+                        case NOT_EQUAL_TO:
+                            Query query = NumericRangeQuery.newFloatRange(field, floatValue, floatValue, true, true);
+                            return new NotQuery(query);
+                        case GREATER_THAN:
+                            return NumericRangeQuery.newFloatRange(field, floatValue, fRule.getMaximum(), false, true);
+                        case GREATER_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newFloatRange(field, floatValue, fRule.getMaximum(), true, true);
+                        case LESS_THAN:
+                            return NumericRangeQuery.newFloatRange(field, fRule.getMinimum(), floatValue, true, false);
+                        case LESS_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newFloatRange(field, fRule.getMinimum(), floatValue, true, true);
                         case LIKE:
                             // This is not allowed ...
                             assert false;
@@ -1274,7 +1358,6 @@ public class DualIndexSearchProvider implements SearchProvider {
                             return null;
                     }
                     break;
-                case OBJECT:
                 case BINARY:
                     // This is not allowed ...
                     assert false;
@@ -1307,8 +1390,10 @@ public class DualIndexSearchProvider implements SearchProvider {
                                                    Object upperValue,
                                                    boolean includesLower,
                                                    boolean includesUpper ) {
-            PropertyType type = PropertyType.discoverType(lowerValue);
-            assert type == PropertyType.discoverType(upperValue);
+            Name fieldName = nameFactory.create(field);
+            IndexRules.Rule rule = rules.getRule(fieldName);
+            if (rule == null || rule.isSkipped()) return new MatchNoneQuery();
+            FieldType type = rule.getType();
             ValueFactories factories = context.getValueFactories();
             switch (type) {
                 case DATE:
@@ -1319,16 +1404,27 @@ public class DualIndexSearchProvider implements SearchProvider {
                     long lowerLong = factories.getLongFactory().create(lowerValue);
                     long upperLong = factories.getLongFactory().create(upperValue);
                     return NumericRangeQuery.newLongRange(field, lowerLong, upperLong, includesLower, includesUpper);
-                case DECIMAL:
                 case DOUBLE:
                     double lowerDouble = factories.getDoubleFactory().create(lowerValue);
                     double upperDouble = factories.getDoubleFactory().create(upperValue);
                     return NumericRangeQuery.newDoubleRange(field, lowerDouble, upperDouble, includesLower, includesUpper);
-                default:
-                    // This is not allowed ...
+                case FLOAT:
+                    float lowerFloat = factories.getDoubleFactory().create(lowerValue).floatValue();
+                    float upperFloat = factories.getDoubleFactory().create(upperValue).floatValue();
+                    return NumericRangeQuery.newFloatRange(field, lowerFloat, upperFloat, includesLower, includesUpper);
+                case INT:
+                    int lowerInt = factories.getLongFactory().create(lowerValue).intValue();
+                    int upperInt = factories.getLongFactory().create(upperValue).intValue();
+                    return NumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
+                case BOOLEAN:
+                    lowerInt = factories.getBooleanFactory().create(lowerValue).booleanValue() ? 1 : 0;
+                    upperInt = factories.getBooleanFactory().create(upperValue).booleanValue() ? 1 : 0;
+                    return NumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
+                case STRING:
+                case BINARY:
                     assert false;
-                    return null;
             }
+            return new MatchNoneQuery();
         }
 
         @Override

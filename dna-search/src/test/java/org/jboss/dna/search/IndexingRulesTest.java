@@ -25,6 +25,7 @@ package org.jboss.dna.search;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import org.apache.lucene.document.Field;
 import org.jboss.dna.search.IndexRules.Builder;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,8 +52,9 @@ public class IndexingRulesTest {
 
     @Test
     public void shouldBuildValidRulesFromBuilderAfterJustSettingDefaultRules() {
-        builder.defaultTo(IndexRules.FULL_TEXT);
+        builder.defaultTo(Field.Store.NO, Field.Index.ANALYZED_NO_NORMS);
         rules = builder.build();
-        assertThat(rules.getRule(null).isFullText(), is(true));
+        assertThat(rules.getRule(null).getIndexOption(), is(Field.Index.ANALYZED_NO_NORMS));
+        assertThat(rules.getRule(null).getStoreOption(), is(Field.Store.NO));
     }
 }

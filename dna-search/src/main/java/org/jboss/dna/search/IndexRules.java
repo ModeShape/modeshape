@@ -26,7 +26,6 @@ package org.jboss.dna.search;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.document.Field;
@@ -41,13 +40,16 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 public class IndexRules {
 
-    public static final int INDEX = 2 << 0;
-    public static final int ANALYZE = 2 << 1;
-    public static final int STORE = 2 << 2;
-    public static final int STORE_COMPRESSED = 2 << 3;
-    public static final int ANALYZED_WITHOUT_NORMS = 2 << 4;
-    public static final int FULL_TEXT = 2 << 5;
-    public static final int TREAT_AS_DATE = 2 << 6;
+    public static enum FieldType {
+        STRING,
+        DOUBLE,
+        FLOAT,
+        INT,
+        BOOLEAN,
+        LONG,
+        DATE,
+        BINARY;
+    }
 
     /**
      * A single rule that dictates how a single property should be indexed.
@@ -56,106 +58,44 @@ public class IndexRules {
      */
     @Immutable
     public static interface Rule {
-        /**
-         * Return whether this property should be included in the indexes.
-         * 
-         * @return true if it is to be included, or false otherwise
-         */
-        boolean isIncluded();
 
-        boolean isAnalyzed();
+        boolean isSkipped();
 
-        boolean isAnalyzedWithoutNorms();
-
-        boolean isStored();
-
-        boolean isStoredCompressed();
-
-        boolean isFullText();
-
-        boolean isDate();
-
-        int getMask();
+        FieldType getType();
 
         Field.Store getStoreOption();
 
         Field.Index getIndexOption();
     }
 
+    @Immutable
+    public static interface NumericRule<T> extends Rule {
+        T getMinimum();
+
+        T getMaximum();
+    }
+
     public static final Rule SKIP = new SkipRule();
 
     @Immutable
     protected static class SkipRule implements Rule {
+
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexRules.Rule#getMask()
+         * @see org.jboss.dna.search.IndexRules.Rule#getType()
          */
-        public int getMask() {
-            return 0;
+        public FieldType getType() {
+            return FieldType.STRING;
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
          */
-        public boolean isAnalyzed() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzedWithoutNorms()
-         */
-        public boolean isAnalyzedWithoutNorms() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isFullText()
-         */
-        public boolean isFullText() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isIncluded()
-         */
-        public boolean isIncluded() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isStored()
-         */
-        public boolean isStored() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isStoredCompressed()
-         */
-        public boolean isStoredCompressed() {
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isDate()
-         */
-        public boolean isDate() {
-            return false;
+        public boolean isSkipped() {
+            return true;
         }
 
         /**
@@ -178,91 +118,38 @@ public class IndexRules {
     }
 
     @Immutable
-    public static final class GeneralRule implements Rule {
-        private final int value;
-        private final Field.Store store;
-        private final Field.Index index;
+    protected static class TypedRule implements Rule {
+        protected final FieldType type;
+        protected final Field.Store store;
+        protected final Field.Index index;
 
-        protected GeneralRule( int value ) {
-            this.value = value;
-            this.index = isAnalyzed() ? Field.Index.ANALYZED : Field.Index.NOT_ANALYZED;
-            this.store = isStored() ? Field.Store.YES : Field.Store.NO;
+        protected TypedRule( FieldType type,
+                             Field.Store store,
+                             Field.Index index ) {
+            this.type = type;
+            this.index = index;
+            this.store = store;
+            assert this.type != null;
+            assert this.index != null;
+            assert this.store != null;
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexRules.Rule#getMask()
+         * @see org.jboss.dna.search.IndexRules.Rule#getType()
          */
-        public int getMask() {
-            return value;
+        public FieldType getType() {
+            return type;
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzed()
+         * @see org.jboss.dna.search.IndexRules.Rule#isSkipped()
          */
-        public boolean isAnalyzed() {
-            return (value & ANALYZE) == ANALYZE;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isAnalyzedWithoutNorms()
-         */
-        public boolean isAnalyzedWithoutNorms() {
-            return (value & ANALYZED_WITHOUT_NORMS) == ANALYZED_WITHOUT_NORMS;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isFullText()
-         */
-        public boolean isFullText() {
-            return (value & FULL_TEXT) == FULL_TEXT;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isIncluded()
-         */
-        public boolean isIncluded() {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isStored()
-         */
-        public boolean isStored() {
-            return (value & STORE) == STORE;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isStoredCompressed()
-         */
-        public boolean isStoredCompressed() {
-            return (value & STORE_COMPRESSED) == STORE_COMPRESSED;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.search.IndexRules.Rule#isDate()
-         */
-        public boolean isDate() {
-            return (value & TREAT_AS_DATE) == TREAT_AS_DATE;
-        }
-
-        protected Rule with( int options ) {
-            return createRule(value | options);
+        public boolean isSkipped() {
+            return false;
         }
 
         /**
@@ -282,22 +169,62 @@ public class IndexRules {
         public Store getStoreOption() {
             return store;
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return type.name() + " rule (" + store + "," + index + ")";
+        }
     }
 
-    private static final ConcurrentHashMap<Integer, Rule> CACHE = new ConcurrentHashMap<Integer, Rule>();
+    @Immutable
+    protected static class NumericTypedRule<T> extends TypedRule implements NumericRule<T> {
+        protected final T minValue;
+        protected final T maxValue;
 
-    protected static Rule createRule( int value ) {
-        if (value <= 0) {
-            return SKIP;
+        protected NumericTypedRule( FieldType type,
+                                    Field.Store store,
+                                    Field.Index index,
+                                    T minValue,
+                                    T maxValue ) {
+            super(type, store, index);
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            assert this.minValue != null;
+            assert this.maxValue != null;
         }
-        Integer key = new Integer(value);
-        Rule rule = CACHE.get(key);
-        if (rule == null) {
-            Rule newRule = new GeneralRule(value);
-            rule = CACHE.putIfAbsent(value, newRule);
-            if (rule == null) rule = newRule;
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.IndexRules.NumericRule#getMaximum()
+         */
+        public T getMaximum() {
+            return maxValue;
         }
-        return rule;
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.search.IndexRules.NumericRule#getMinimum()
+         */
+        public T getMinimum() {
+            return minValue;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return super.toString() + " with range [" + minValue + "," + maxValue + "]";
+        }
     }
 
     private final Map<Name, Rule> rulesByName;
@@ -327,7 +254,7 @@ public class IndexRules {
      * @return a builder; never null
      */
     public static Builder createBuilder() {
-        return new Builder(new HashMap<Name, Rule>());
+        return new Builder(new HashMap<Name, Rule>(), null);
     }
 
     /**
@@ -339,7 +266,7 @@ public class IndexRules {
      */
     public static Builder createBuilder( IndexRules initialRules ) {
         CheckArg.isNotNull(initialRules, "initialRules");
-        return new Builder(new HashMap<Name, Rule>(initialRules.rulesByName)).defaultTo(initialRules.defaultRule);
+        return new Builder(new HashMap<Name, Rule>(initialRules.rulesByName), initialRules.defaultRule);
     }
 
     /**
@@ -350,41 +277,11 @@ public class IndexRules {
         private final Map<Name, Rule> rulesByName;
         private Rule defaultRule;
 
-        Builder( Map<Name, Rule> rulesByName ) {
+        Builder( Map<Name, Rule> rulesByName,
+                 Rule defaultRule ) {
             assert rulesByName != null;
             this.rulesByName = rulesByName;
-        }
-
-        /**
-         * Set the default rules.
-         * 
-         * @param rule the default rule to use
-         * @return this builder for convenience and method chaining; never null
-         * @throws IllegalArgumentException if the rule mask is negative
-         */
-        public Builder defaultTo( Rule rule ) {
-            CheckArg.isNotNull(rule, "rule");
-            defaultRule = rule;
-            return this;
-        }
-
-        /**
-         * Set the default rules.
-         * 
-         * @param ruleMask the bitmask of rule to use
-         * @return this builder for convenience and method chaining; never null
-         * @throws IllegalArgumentException if the rule mask is negative
-         */
-        public Builder defaultTo( int ruleMask ) {
-            CheckArg.isNonNegative(ruleMask, "options");
-            if (ruleMask == 0) {
-                defaultRule = SKIP;
-            } else {
-                // Make sure the index flag is set ...
-                ruleMask |= INDEX;
-                defaultRule = createRule(ruleMask);
-            }
-            return this;
+            this.defaultRule = defaultRule;
         }
 
         /**
@@ -403,202 +300,331 @@ public class IndexRules {
         }
 
         /**
-         * Set the properties with the supplied names to use the supplied rules.
+         * Define a string-based field as the default.
          * 
-         * @param ruleMask the bitmask of rules to use
-         * @param namesToIndex the names of the properties that are to be skipped
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @return this builder for convenience and method chaining; never null
-         * @throws IllegalArgumentException if the rule mask is negative
          */
-        public Builder set( int ruleMask,
-                            Name... namesToIndex ) {
-            CheckArg.isNonNegative(ruleMask, "options");
-            if (namesToIndex != null) {
-                if (ruleMask > 0) {
-                    skip(namesToIndex);
-                } else {
-                    // Make sure the index flag is set ...
-                    ruleMask |= INDEX;
-                    Rule rule = createRule(ruleMask);
-                    for (Name name : namesToIndex) {
-                        rulesByName.put(name, rule);
-                    }
-                }
-            }
+        public Builder defaultTo( Field.Store store,
+                                  Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            defaultRule = new TypedRule(FieldType.STRING, store, index);
             return this;
         }
 
         /**
-         * Mark the properties with the supplied names to use the supplied rule mask. This does not remove any other rules for
-         * these properties.
+         * Define a string-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param ruleMask the bitmask of rules to add
-         * @param namesToIndex the names of the properties that are to be skipped
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @return this builder for convenience and method chaining; never null
-         * @throws IllegalArgumentException if the rule mask is negative
          */
-        public Builder add( int ruleMask,
-                            Name... namesToIndex ) {
-            CheckArg.isNonNegative(ruleMask, "options");
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, ruleMask);
-                }
-            }
+        public Builder stringField( Name name,
+                                    Field.Store store,
+                                    Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new TypedRule(FieldType.STRING, store, index);
+            rulesByName.put(name, rule);
             return this;
         }
 
         /**
-         * Mark the properties with the supplied names to be indexed. This does not remove any other rules for these properties.
+         * Define a binary-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be indexed
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder index( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, INDEX);
-                }
-            }
+        public Builder binaryField( Name name,
+                                    Field.Store store,
+                                    Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new TypedRule(FieldType.BINARY, store, index);
+            rulesByName.put(name, rule);
+            return this;
+        }
+
+        protected <T> Builder numericField( Name name,
+                                            FieldType type,
+                                            Field.Store store,
+                                            Field.Index index,
+                                            T minValue,
+                                            T maxValue ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new NumericTypedRule<T>(type, store, index, minValue, maxValue);
+            rulesByName.put(name, rule);
             return this;
         }
 
         /**
-         * Mark the properties with the supplied names to be analyzed (and obviously indexed). This does not remove any other
-         * rules for these properties.
+         * Define a boolean-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be analyzed
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder analyze( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, ANALYZE | INDEX);
-                }
-            }
-            return this;
+        public Builder booleanField( Name name,
+                                     Field.Store store,
+                                     Field.Index index ) {
+            return numericField(name, FieldType.BOOLEAN, store, index, Boolean.FALSE, Boolean.TRUE);
         }
 
         /**
-         * Mark the properties with the supplied names to be stored (and obviously indexed). This does not remove any other rules
-         * for these properties.
+         * Define a integer-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be stored
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @param maxValue the maximum value for this field, or null if there is no maximum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder store( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, STORE | INDEX);
-                }
-            }
-            return this;
+        public Builder integerField( Name name,
+                                     Field.Store store,
+                                     Field.Index index,
+                                     Integer minValue,
+                                     Integer maxValue ) {
+            if (minValue == null) minValue = Integer.MIN_VALUE;
+            if (maxValue == null) maxValue = Integer.MAX_VALUE;
+            return numericField(name, FieldType.INT, store, index, minValue, maxValue);
         }
 
         /**
-         * Mark the properties with the supplied names to be included in full-text searches (and obviously indexed). This does not
-         * remove any other rules for these properties.
+         * Define a long-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be included in full-text searches
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @param maxValue the maximum value for this field, or null if there is no maximum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder fullText( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, FULL_TEXT | INDEX);
-                }
-            }
-            return this;
+        public Builder longField( Name name,
+                                  Field.Store store,
+                                  Field.Index index,
+                                  Long minValue,
+                                  Long maxValue ) {
+            if (minValue == null) minValue = Long.MIN_VALUE;
+            if (maxValue == null) maxValue = Long.MAX_VALUE;
+            return numericField(name, FieldType.LONG, store, index, minValue, maxValue);
         }
 
         /**
-         * Mark the properties with the supplied names to be treated as dates (and obviously indexed). This does not remove any
-         * other rules for these properties.
+         * Define a date-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be included in full-text searches
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @param maxValue the maximum value for this field, or null if there is no maximum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder treatAsDates( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, TREAT_AS_DATE | INDEX);
-                }
-            }
-            return this;
+        public Builder dateField( Name name,
+                                  Field.Store store,
+                                  Field.Index index,
+                                  Long minValue,
+                                  Long maxValue ) {
+            if (minValue == null) minValue = 0L;
+            if (maxValue == null) maxValue = Long.MAX_VALUE;
+            return numericField(name, FieldType.DATE, store, index, minValue, maxValue);
         }
 
         /**
-         * Mark the properties with the supplied names to be indexed, analyzed and stored. This does not remove any other rules
-         * for these properties.
+         * Define a float-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be indexed, analyzed and stored
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @param maxValue the maximum value for this field, or null if there is no maximum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder analyzeAndStore( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, INDEX | ANALYZE | STORE);
-                }
-            }
-            return this;
+        public Builder floatField( Name name,
+                                   Field.Store store,
+                                   Field.Index index,
+                                   Float minValue,
+                                   Float maxValue ) {
+            if (minValue == null) minValue = Float.MIN_VALUE;
+            if (maxValue == null) maxValue = Float.MAX_VALUE;
+            return numericField(name, FieldType.FLOAT, store, index, minValue, maxValue);
         }
 
         /**
-         * Mark the properties with the supplied names to be indexed, analyzed, stored and included in full-text searches. This
-         * does not remove any other rules for these properties.
+         * Define a double-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be indexed, analyzed, stored and included in full-text
-         *        searches
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @param maxValue the maximum value for this field, or null if there is no maximum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder analyzeAndStoreAndFullText( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, INDEX | ANALYZE | STORE | FULL_TEXT);
-                }
-            }
-            return this;
+        public Builder doubleField( Name name,
+                                    Field.Store store,
+                                    Field.Index index,
+                                    Double minValue,
+                                    Double maxValue ) {
+            if (minValue == null) minValue = Double.MIN_VALUE;
+            if (maxValue == null) maxValue = Double.MAX_VALUE;
+            return numericField(name, FieldType.DOUBLE, store, index, minValue, maxValue);
         }
 
         /**
-         * Mark the properties with the supplied names to be indexed, analyzed and included in full-text searches. This does not
-         * remove any other rules for these properties.
+         * Define a integer-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be indexed, analyzed and included in full-text searches
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder analyzeAndFullText( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, INDEX | ANALYZE | FULL_TEXT);
-                }
-            }
-            return this;
+        public Builder integerField( Name name,
+                                     Field.Store store,
+                                     Field.Index index,
+                                     Integer minValue ) {
+            return integerField(name, store, index, minValue, null);
         }
 
         /**
-         * Mark the properties with the supplied names to be indexed, stored and included in full-text searches. This does not
-         * remove any other rules for these properties.
+         * Define a long-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
-         * @param namesToIndex the names of the properties that are to be indexed, stored and included in full-text searches
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
          * @return this builder for convenience and method chaining; never null
          */
-        public Builder storeAndFullText( Name... namesToIndex ) {
-            if (namesToIndex != null) {
-                for (Name name : namesToIndex) {
-                    add(name, INDEX | STORE | FULL_TEXT);
-                }
-            }
-            return this;
+        public Builder longField( Name name,
+                                  Field.Store store,
+                                  Field.Index index,
+                                  Long minValue ) {
+            return longField(name, store, index, minValue, null);
         }
 
-        protected void add( Name name,
-                            int option ) {
-            Rule rule = rulesByName.get(name);
-            if (rule != null) {
-                option |= rule.getMask();
-            }
-            rulesByName.put(name, createRule(option));
+        /**
+         * Define a date-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder dateField( Name name,
+                                  Field.Store store,
+                                  Field.Index index,
+                                  Long minValue ) {
+            return dateField(name, store, index, minValue, null);
+        }
+
+        /**
+         * Define a float-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder floatField( Name name,
+                                   Field.Store store,
+                                   Field.Index index,
+                                   Float minValue ) {
+            return floatField(name, store, index, minValue, null);
+        }
+
+        /**
+         * Define a double-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param minValue the minimum value for this field, or null if there is no minimum value
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder doubleField( Name name,
+                                    Field.Store store,
+                                    Field.Index index,
+                                    Double minValue ) {
+            return doubleField(name, store, index, minValue, null);
+        }
+
+        /**
+         * Define a integer-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder integerField( Name name,
+                                     Field.Store store,
+                                     Field.Index index ) {
+            return integerField(name, store, index, null, null);
+        }
+
+        /**
+         * Define a long-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder longField( Name name,
+                                  Field.Store store,
+                                  Field.Index index ) {
+            return longField(name, store, index, null, null);
+        }
+
+        /**
+         * Define a date-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder dateField( Name name,
+                                  Field.Store store,
+                                  Field.Index index ) {
+            return dateField(name, store, index, null, null);
+        }
+
+        /**
+         * Define a float-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder floatField( Name name,
+                                   Field.Store store,
+                                   Field.Index index ) {
+            return floatField(name, store, index, null, null);
+        }
+
+        /**
+         * Define a double-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder doubleField( Name name,
+                                    Field.Store store,
+                                    Field.Index index ) {
+            return doubleField(name, store, index, null, null);
         }
 
         /**
