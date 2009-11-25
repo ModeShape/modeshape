@@ -16,7 +16,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.LockFailedException;
-import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -133,9 +132,8 @@ class WorkspaceLockManager {
      * {@link Item#refresh(boolean) item} level.
      * <p>
      * This method will also attempt to {@link Graph#lock(Location) lock the node in the underlying repository}. If the underlying
-     * repository {@link RepositorySourceCapabilities#supportsLocks() supports locks} and {@link LockFailedException the lock
-     * attempt fails}, this method will cancel the lock attempt by calling {@link #unlock(DnaLock)} and will throw a {@code
-     * RepositoryException}.
+     * repository supports locks and {@link LockFailedException the lock attempt fails}, this method will cancel the lock attempt
+     * by calling {@link #unlock(DnaLock)} and will throw a {@code RepositoryException}.
      * </p>
      * <p>
      * This method does not modify the system graph. In other words, it will not create the record for the lock in the {@code
@@ -243,9 +241,8 @@ class WorkspaceLockManager {
         ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph()
-                                                      .getNodeAt(pathFactory.create(locksPath,
-                                                                                    pathFactory.createSegment(lockToken)));
+        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph().getNodeAt(pathFactory.create(locksPath,
+                                                                                                        pathFactory.createSegment(lockToken)));
 
         return booleanFactory.create(lockNode.getProperty(DnaLexicon.IS_HELD_BY_SESSION).getFirstValue());
 
@@ -266,9 +263,8 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repository.createSystemGraph()
-                  .set(propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, value))
-                  .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
+        repository.createSystemGraph().set(propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
+                                                                                                                           pathFactory.createSegment(lockToken)));
     }
 
     /**

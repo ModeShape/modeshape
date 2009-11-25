@@ -27,12 +27,10 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.property.Path;
 
 /**
- * Instruction to unlock an existing node or branch. Connectors that do not support locking (as defined in
- * {@link RepositorySourceCapabilities#supportsLocks()}) must ignore this request.
+ * Instruction to unlock an existing node or branch. Connectors that do not support locking must ignore this request.
  */
 public class UnlockBranchRequest extends ChangeRequest {
 

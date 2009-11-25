@@ -856,9 +856,8 @@ public abstract class RequestProcessor {
     /**
      * Process a request to lock a node or branch within a workspace
      * <p>
-     * The default implementation of this method does nothing, as most connectors will not support locking (as defined in
-     * {@link RepositorySourceCapabilities#supportsLocks()}). Any implementation of this method should do nothing if the request
-     * is null.
+     * The default implementation of this method does nothing, as most connectors will not support locking. Any implementation of
+     * this method should do nothing if the request is null.
      * </p>
      * <p>
      * Implementations that do support locking should throw a {@link LockFailedException} if the request could not be fulfilled.
@@ -887,9 +886,8 @@ public abstract class RequestProcessor {
     /**
      * Process a request to unlock a node or branch within a workspace
      * <p>
-     * The default implementation of this method does nothing, as most connectors will not support locking (as defined in
-     * {@link RepositorySourceCapabilities#supportsLocks()}). Any implementation of this method should do nothing if the request
-     * is null.
+     * The default implementation of this method does nothing, as most connectors will not support locking. Any implementation of
+     * this method should do nothing if the request is null.
      * </p>
      * 
      * @param request the request
