@@ -645,9 +645,16 @@ public class GraphSession<Payload, PropertyPayload> {
         Location locationOfCopy = request.getActualLocationAfter();
 
         // Remove from the session all of the nodes that were removed as part of this clone ...
+        Set<Path> removedAlready = new HashSet<Path>();
         for (Location removed : request.getRemovedNodes()) {
-            Node<Payload, PropertyPayload> removedNode = findNodeWith(removed.getPath(), false);
-            if (removedNode != null) removedNode.remove(false);
+            Path path = removed.getPath();
+            if (isBelow(path, removedAlready)) {
+                // This node is below a node we've already removed, so skip it ...
+                continue;
+            }
+            Node<Payload, PropertyPayload> removedNode = findNodeWith(path, false);
+            removedNode.remove(false);
+            removedAlready.add(path);
         }
 
         // Find the parent node in the session ...
@@ -656,6 +663,14 @@ public class GraphSession<Payload, PropertyPayload> {
             // Update the children to make them match the latest snapshot from the store ...
             parent.synchronizeWithNewlyPersistedNode(locationOfCopy);
         }
+    }
+
+    private static final boolean isBelow( Path path,
+                                          Collection<Path> paths ) {
+        for (Path aPath : paths) {
+            if (aPath.isAncestorOf(path)) return true;
+        }
+        return false;
     }
 
     /**
