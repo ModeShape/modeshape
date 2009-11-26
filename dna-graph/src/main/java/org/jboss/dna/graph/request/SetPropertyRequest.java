@@ -43,6 +43,7 @@ public class SetPropertyRequest extends ChangeRequest {
     private final String workspaceName;
     private final Property property;
     private Location actualLocation;
+    private boolean actualCreation;
 
     /**
      * Create a request to set the property on the node at the supplied location.
@@ -128,6 +129,27 @@ public class SetPropertyRequest extends ChangeRequest {
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * Record that the property did not exist prior to the processing of this request and was actually created by this request.
+     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}
+     * .
+     * 
+     * @param created true if the property was created by this request, or false if this request updated an existing property
+     * @throws IllegalStateException if the request is frozen
+     */
+    public void setNewProperty( boolean created ) {
+        this.actualCreation = true;
+    }
+
+    /**
+     * Get whether the {@link #property() property} was created.
+     * 
+     * @return true if this request created the property, or false if this request changed an existing property
+     */
+    public boolean isNewProperty() {
+        return actualCreation;
     }
 
     /**

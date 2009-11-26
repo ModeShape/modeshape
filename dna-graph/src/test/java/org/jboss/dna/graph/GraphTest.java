@@ -1304,6 +1304,7 @@ public class GraphTest {
         public void process( UpdatePropertiesRequest request ) {
             // Just update the actual location
             request.setActualLocationOfNode(actualLocationOf(request.on()));
+            request.setNewProperties();
         }
 
         @Override

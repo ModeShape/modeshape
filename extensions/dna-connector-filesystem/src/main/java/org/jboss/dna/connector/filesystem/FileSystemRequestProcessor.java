@@ -573,30 +573,34 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         }
 
         Location location = request.on();
+        Set<Name> createdProperties = null;
         if (target.isFile()) {
             if (path.endsWith(JcrLexicon.CONTENT)) {
-                customPropertiesFactory.recordResourceProperties(getExecutionContext(),
-                                                                 getSourceName(),
-                                                                 location,
-                                                                 target,
-                                                                 request.properties());
+                createdProperties = customPropertiesFactory.recordResourceProperties(getExecutionContext(),
+                                                                                     getSourceName(),
+                                                                                     location,
+                                                                                     target,
+                                                                                     request.properties());
             } else {
-                customPropertiesFactory.recordFileProperties(getExecutionContext(),
-                                                             getSourceName(),
-                                                             location,
-                                                             target,
-                                                             request.properties());
+                createdProperties = customPropertiesFactory.recordFileProperties(getExecutionContext(),
+                                                                                 getSourceName(),
+                                                                                 location,
+                                                                                 target,
+                                                                                 request.properties());
             }
         } else {
             assert target.isDirectory();
-            customPropertiesFactory.recordDirectoryProperties(getExecutionContext(),
-                                                              getSourceName(),
-                                                              location,
-                                                              target,
-                                                              request.properties());
+            createdProperties = customPropertiesFactory.recordDirectoryProperties(getExecutionContext(),
+                                                                                  getSourceName(),
+                                                                                  location,
+                                                                                  target,
+                                                                                  request.properties());
         }
 
         request.setActualLocationOfNode(location);
+        if (createdProperties != null) {
+            request.setNewProperties(createdProperties);
+        }
     }
 
     /**

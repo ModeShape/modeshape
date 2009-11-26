@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
@@ -106,13 +107,14 @@ public interface CustomPropertiesFactory extends Serializable {
      * @param file the file system object; never null, and both {@link File#exists()} and {@link File#isDirectory()} will always
      *        return true
      * @param properties the properties that are to be set
+     * @return the names of the properties that were created, or an empty or null set if no properties were created on the file
      * @throws RepositorySourceException if any properties are invalid or cannot be set on these nodes
      */
-    void recordDirectoryProperties( ExecutionContext context,
-                                    String sourceName,
-                                    Location location,
-                                    File file,
-                                    Map<Name, Property> properties ) throws RepositorySourceException;
+    Set<Name> recordDirectoryProperties( ExecutionContext context,
+                                         String sourceName,
+                                         Location location,
+                                         File file,
+                                         Map<Name, Property> properties ) throws RepositorySourceException;
 
     /**
      * Record the supplied properties as being set on the designated "nt:file" node.
@@ -123,13 +125,14 @@ public interface CustomPropertiesFactory extends Serializable {
      * @param file the file system object; never null, and both {@link File#exists()} and {@link File#isFile()} will always return
      *        true
      * @param properties the properties that are to be set
+     * @return the names of the properties that were created, or an empty or null set if no properties were created on the file
      * @throws RepositorySourceException if any properties are invalid or cannot be set on these nodes
      */
-    void recordFileProperties( ExecutionContext context,
-                               String sourceName,
-                               Location location,
-                               File file,
-                               Map<Name, Property> properties ) throws RepositorySourceException;
+    Set<Name> recordFileProperties( ExecutionContext context,
+                                    String sourceName,
+                                    Location location,
+                                    File file,
+                                    Map<Name, Property> properties ) throws RepositorySourceException;
 
     /**
      * Record the supplied properties as being set on the designated "nt:resource" node.
@@ -140,12 +143,13 @@ public interface CustomPropertiesFactory extends Serializable {
      * @param file the file system object; never null, and both {@link File#exists()} and {@link File#isFile()} will always return
      *        true
      * @param properties the properties that are to be set
+     * @return the names of the properties that were created, or an empty or null set if no properties were created on the file
      * @throws RepositorySourceException if any properties are invalid or cannot be set on these nodes
      */
-    void recordResourceProperties( ExecutionContext context,
-                                   String sourceName,
-                                   Location location,
-                                   File file,
-                                   Map<Name, Property> properties ) throws RepositorySourceException;
+    Set<Name> recordResourceProperties( ExecutionContext context,
+                                        String sourceName,
+                                        Location location,
+                                        File file,
+                                        Map<Name, Property> properties ) throws RepositorySourceException;
 
 }

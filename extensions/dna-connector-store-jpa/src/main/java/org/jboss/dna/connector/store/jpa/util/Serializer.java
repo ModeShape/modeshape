@@ -352,6 +352,7 @@ public class Serializer {
      * @param updatedProperties the properties that are being updated (or removed, if there are no values); may not be null
      * @param largeValues the interface to use for writing large values; may not be null
      * @param removedLargeValues the interface to use for recording the large values that were removed; may not be null
+     * @param createdProperties the set into which should be placed the names of the properties that were created; may not be null
      * @param references the interface to use for recording which {@link Reference} values were found during serialization, or
      *        null if the references do not need to be accumulated
      * @return the number of properties
@@ -363,18 +364,23 @@ public class Serializer {
                                       Map<Name, Property> updatedProperties,
                                       LargeValues largeValues,
                                       LargeValues removedLargeValues,
+                                      Set<Name> createdProperties,
                                       ReferenceValues references ) throws IOException, ClassNotFoundException {
         assert input != null;
         assert output != null;
         assert updatedProperties != null;
+        assert createdProperties != null;
         assert largeValues != null;
         assert references != null;
         // Assemble a set of property names to skip deserializing
         Map<Name, Property> allProperties = new HashMap<Name, Property>();
 
+        // Start out by assuming that all properties are new ...
+        createdProperties.addAll(updatedProperties.keySet());
+
         // Read the number of properties ...
         int count = input.readInt();
-        // Deserialize all of the proeprties ...
+        // Deserialize all of the properties ...
         for (int i = 0; i != count; ++i) {
             // Read the property name ...
             String nameStr = (String)input.readObject();
@@ -391,15 +397,18 @@ public class Serializer {
                 assert property != null;
                 allProperties.put(name, property);
             }
+            // This is an existing property, so remove it from the set of created properties ...
+            createdProperties.remove(name);
         }
 
         // Add all the updated properties ...
         for (Map.Entry<Name, Property> entry : updatedProperties.entrySet()) {
             Property updated = entry.getValue();
+            Name name = entry.getKey();
             if (updated == null) {
-                allProperties.remove(entry.getKey());
+                allProperties.remove(name);
             } else {
-                allProperties.put(updated.getName(), updated);
+                allProperties.put(name, updated);
             }
         }
 

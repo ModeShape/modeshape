@@ -85,6 +85,7 @@ public final class GraphI18n {
     public static I18n actualNewLocationMustHaveSameParentAsOldLocation;
     public static I18n actualNewLocationMustHaveSameNameAsRequest;
     public static I18n requestIsFrozenAndMayNotBeChanged;
+    public static I18n propertyIsNotPartOfRequest;
 
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;

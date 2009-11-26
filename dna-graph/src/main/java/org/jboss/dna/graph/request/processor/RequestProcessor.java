@@ -746,8 +746,9 @@ public abstract class RequestProcessor {
         if (update.hasError()) {
             request.setError(update.getError());
         } else {
-            // Set the actual location ...
+            // Set the actual location and created flags ...
             request.setActualLocationOfNode(update.getActualLocationOfNode());
+            request.setNewProperty(update.isNewProperty(property.getName()));
         }
     }
 

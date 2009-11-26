@@ -365,7 +365,10 @@ public class MapRequestProcessor extends RequestProcessor {
             }
             Name propName = property.getName();
             if (!propName.equals(DnaLexicon.UUID)) {
-                node.getProperties().put(propName, property);
+                if (node.getProperties().put(propName, property) == null) {
+                    // It is a new property ...
+                    request.setNewProperty(propName);
+                }
             }
         }
         Location actualLocation = getActualLocation(request.on(), node);

@@ -416,15 +416,20 @@ public class SerializerTest {
                                          Name[] removedProperties ) throws IOException, ClassNotFoundException {
         Collection<Name> propertiesThatStay = new HashSet<Name>();
         Collection<Name> propertiesThatAreDeleted = new HashSet<Name>();
+        Set<Name> propertiesThatAreNew = new HashSet<Name>();
         for (Property prop : originalProperties) {
             propertiesThatStay.add(prop.getName());
         }
         for (Property prop : updatedProperties) {
-            propertiesThatStay.add(prop.getName());
+            if (propertiesThatStay.add(prop.getName())) {
+                // The property is new since it wasn't in the original set of names ...
+                propertiesThatAreNew.add(prop.getName());
+            }
         }
         for (Name removedPropertyName : removedProperties) {
             propertiesThatAreDeleted.add(removedPropertyName);
             propertiesThatStay.remove(removedPropertyName);
+            assertThat(propertiesThatAreNew.contains(removedPropertyName), is(false));
         }
 
         // Serialize the properties one at a time ...
@@ -439,8 +444,15 @@ public class SerializerTest {
         ObjectInputStream ois = new ObjectInputStream(bais);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
+        Set<Name> createdProperties = new HashSet<Name>();
         try {
-            serializer.reserializeProperties(ois, oos, updatedProps, largeValues, removedLargeValues, references);
+            serializer.reserializeProperties(ois,
+                                             oos,
+                                             updatedProps,
+                                             largeValues,
+                                             removedLargeValues,
+                                             createdProperties,
+                                             references);
         } finally {
             oos.close();
             ois.close();
@@ -460,6 +472,7 @@ public class SerializerTest {
         for (Name deleted : propertiesThatAreDeleted) {
             assertThat(namesAfter.contains(deleted), is(false));
         }
+        assertThat(createdProperties, is(propertiesThatAreNew));
     }
 
     protected class SkippedLargeValues implements Serializer.LargeValues {

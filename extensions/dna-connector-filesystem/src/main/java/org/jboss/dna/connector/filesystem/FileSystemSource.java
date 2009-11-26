@@ -699,12 +699,13 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
          * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordDirectoryProperties(org.jboss.dna.graph.ExecutionContext,
          *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
          */
-        public void recordDirectoryProperties( ExecutionContext context,
-                                               String sourceName,
-                                               Location location,
-                                               File file,
-                                               Map<Name, Property> properties ) throws RepositorySourceException {
+        public Set<Name> recordDirectoryProperties( ExecutionContext context,
+                                                    String sourceName,
+                                                    Location location,
+                                                    File file,
+                                                    Map<Name, Property> properties ) throws RepositorySourceException {
             ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            return null;
         }
 
         /**
@@ -713,12 +714,13 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
          * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordFileProperties(org.jboss.dna.graph.ExecutionContext,
          *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
          */
-        public void recordFileProperties( ExecutionContext context,
-                                          String sourceName,
-                                          Location location,
-                                          File file,
-                                          Map<Name, Property> properties ) throws RepositorySourceException {
+        public Set<Name> recordFileProperties( ExecutionContext context,
+                                               String sourceName,
+                                               Location location,
+                                               File file,
+                                               Map<Name, Property> properties ) throws RepositorySourceException {
             ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            return null;
         }
 
         /**
@@ -727,12 +729,13 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
          * @see org.jboss.dna.connector.filesystem.CustomPropertiesFactory#recordResourceProperties(org.jboss.dna.graph.ExecutionContext,
          *      java.lang.String, org.jboss.dna.graph.Location, java.io.File, java.util.Map)
          */
-        public void recordResourceProperties( ExecutionContext context,
-                                              String sourceName,
-                                              Location location,
-                                              File file,
-                                              Map<Name, Property> properties ) throws RepositorySourceException {
+        public Set<Name> recordResourceProperties( ExecutionContext context,
+                                                   String sourceName,
+                                                   Location location,
+                                                   File file,
+                                                   Map<Name, Property> properties ) throws RepositorySourceException {
             ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+            return null;
         }
 
         /**

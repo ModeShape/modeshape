@@ -24,7 +24,9 @@
 package org.jboss.dna.graph.request;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
@@ -58,6 +60,7 @@ public class UpdatePropertiesRequest extends ChangeRequest {
     private final Location on;
     private final String workspaceName;
     private final Map<Name, Property> properties;
+    private Set<Name> createdPropertyNames;
     private Location actualLocation;
 
     /**
@@ -125,6 +128,9 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      * @throws IllegalArgumentException if the actual location does represent the {@link Location#isSame(Location) same location}
      *         as the {@link #on() current location}, or if the actual location does not have a path.
      * @throws IllegalStateException if the request is frozen
+     * @see #setNewProperties(Iterable)
+     * @see #setNewProperties(Name...)
+     * @see #setNewProperty(Name)
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
@@ -145,6 +151,122 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * Record that the named property did not exist prior to the processing of this request and was actually created by this
+     * request. This method (or one of its sibling methods) must be called at least once when processing the request, and may be
+     * called repeatedly for additional properties.
+     * 
+     * @param nameOfCreatedProperty the name of one of the {@link #properties() properties} that was created by this request
+     * @throws IllegalStateException if the request is frozen
+     * @throws IllegalArgumentException if the name is null or if it is not the name of one of the {@link #properties()
+     *         properties}
+     * @see #setActualLocationOfNode(Location)
+     * @see #setNewProperties(Name...)
+     * @see #setNewProperties(Iterable)
+     */
+    public void setNewProperty( Name nameOfCreatedProperty ) {
+        CheckArg.isNotNull(nameOfCreatedProperty, "nameOfCreatedProperty");
+        checkNotFrozen();
+        if (!properties().containsKey(nameOfCreatedProperty)) {
+            throw new IllegalStateException(GraphI18n.propertyIsNotPartOfRequest.text(nameOfCreatedProperty, this));
+        }
+        if (createdPropertyNames == null) createdPropertyNames = new HashSet<Name>();
+        createdPropertyNames.add(nameOfCreatedProperty);
+    }
+
+    /**
+     * Record that the named properties did not exist prior to the processing of this request and were actually created by this
+     * request. This method (or one of its sibling methods) must be called at least once when processing the request, and may be
+     * called repeatedly for additional properties.
+     * 
+     * @param nameOfCreatedProperties the names of the {@link #properties() properties} that were created by this request
+     * @throws IllegalStateException if the request is frozen
+     * @throws IllegalArgumentException if the name is null or if it is not the name of one of the {@link #properties()
+     *         properties}
+     * @see #setActualLocationOfNode(Location)
+     * @see #setNewProperties(Iterable)
+     * @see #setNewProperty(Name)
+     */
+    public void setNewProperties( Name... nameOfCreatedProperties ) {
+        checkNotFrozen();
+        if (createdPropertyNames == null) createdPropertyNames = new HashSet<Name>();
+        for (Name name : nameOfCreatedProperties) {
+            if (name != null) {
+                if (!properties().containsKey(name)) {
+                    throw new IllegalStateException(GraphI18n.propertyIsNotPartOfRequest.text(name, this));
+                }
+                createdPropertyNames.add(name);
+            }
+        }
+    }
+
+    /**
+     * Record that the named properties did not exist prior to the processing of this request and were actually created by this
+     * request. This method (or one of its sibling methods) must be called at least once when processing the request, and may be
+     * called repeatedly for additional properties.
+     * 
+     * @param nameOfCreatedProperties the names of the {@link #properties() properties} that were created by this request
+     * @throws IllegalStateException if the request is frozen
+     * @throws IllegalArgumentException if any of the names are not in the updated {@link #properties() properties}
+     * @see #setActualLocationOfNode(Location)
+     * @see #setNewProperties(Name...)
+     * @see #setNewProperty(Name)
+     */
+    public void setNewProperties( Iterable<Name> nameOfCreatedProperties ) {
+        checkNotFrozen();
+        if (nameOfCreatedProperties == null) return;
+        if (createdPropertyNames == null) createdPropertyNames = new HashSet<Name>();
+        for (Name name : nameOfCreatedProperties) {
+            if (name != null) {
+                if (!properties().containsKey(name)) {
+                    throw new IllegalStateException(GraphI18n.propertyIsNotPartOfRequest.text(name, this));
+                }
+                createdPropertyNames.add(name);
+            }
+        }
+    }
+
+    /**
+     * Get the names of the {@link #properties() properties} that were created by this request.
+     * 
+     * @return the names of the properties
+     */
+    public Set<Name> getNewPropertyNames() {
+        return createdPropertyNames;
+    }
+
+    /**
+     * Determine whether the named property was created by this request
+     * 
+     * @param name the property name
+     * @return true if the named property was created by the request, or false otherwise
+     */
+    public boolean isNewProperty( Name name ) {
+        return createdPropertyNames != null && createdPropertyNames.contains(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#freeze()
+     */
+    @Override
+    public boolean freeze() {
+        if (super.freeze()) {
+            if (createdPropertyNames != null) {
+                if (createdPropertyNames.isEmpty()) {
+                    createdPropertyNames = Collections.emptySet();
+                } else if (createdPropertyNames.size() == 1) {
+                    createdPropertyNames = Collections.singleton(createdPropertyNames.iterator().next());
+                } else {
+                    createdPropertyNames = Collections.unmodifiableSet(createdPropertyNames);
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

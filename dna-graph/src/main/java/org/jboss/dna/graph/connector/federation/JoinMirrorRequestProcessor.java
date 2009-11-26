@@ -213,7 +213,9 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
     public void process( SetPropertyRequest request ) {
         SetPropertyRequest source = (SetPropertyRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
+        // Set the actual location and created flags ...
         request.setActualLocationOfNode(source.getActualLocationOfNode());
+        request.setNewProperty(source.isNewProperty());
     }
 
     /**
@@ -305,6 +307,7 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
         UpdatePropertiesRequest source = (UpdatePropertiesRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
         request.setActualLocationOfNode(source.getActualLocationOfNode());
+        request.setNewProperties(source.getNewPropertyNames());
     }
 
     /**

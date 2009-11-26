@@ -863,6 +863,7 @@ class JoinRequestProcessor extends RequestProcessor {
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
+        request.setNewProperties(source.getNewPropertyNames());
     }
 
     /**
@@ -876,8 +877,10 @@ class JoinRequestProcessor extends RequestProcessor {
         assert !projected.hasNext();
         SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
+        // Set the actual location and created flags ...
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
+        request.setNewProperty(source.isNewProperty());
     }
 
     /**

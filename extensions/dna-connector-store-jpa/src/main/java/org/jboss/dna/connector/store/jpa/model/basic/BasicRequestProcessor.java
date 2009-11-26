@@ -909,6 +909,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     public void process( UpdatePropertiesRequest request ) {
         logger.trace(request.toString());
         Location actualLocation = null;
+        Set<Name> createdProperties = null;
         try {
             // Find the workspace ...
             WorkspaceEntity workspace = getExistingWorkspace(request.inWorkspace(), request);
@@ -950,6 +951,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 if (originalData == null) {
                     largeValues = new LargeValueSerializer(entity);
                     numProps = props.size();
+                    createdProperties = props.keySet(); // all properties were created
                     serializer.serializeProperties(oos, numProps, props.values(), largeValues, refs);
                     if (gos != null) gos.finish();
                 } else {
@@ -960,9 +962,16 @@ public class BasicRequestProcessor extends RequestProcessor {
                     InputStream is = compressed ? new GZIPInputStream(bais) : bais;
                     ObjectInputStream ois = new ObjectInputStream(is);
                     SkippedLargeValues removedValues = new SkippedLargeValues(largeValues);
+                    createdProperties = new HashSet<Name>();
                     try {
                         Serializer.ReferenceValues refValues = refs != null ? refs : Serializer.NO_REFERENCES_VALUES;
-                        numProps = serializer.reserializeProperties(ois, oos, props, largeValues, removedValues, refValues);
+                        numProps = serializer.reserializeProperties(ois,
+                                                                    oos,
+                                                                    props,
+                                                                    largeValues,
+                                                                    removedValues,
+                                                                    createdProperties,
+                                                                    refValues);
                         if (gos != null) gos.finish();
                     } finally {
                         try {
@@ -1025,6 +1034,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             } catch (NoResultException e) {
                 // there are no properties yet ...
                 createProperties(workspace, actual.uuid, request.properties().values());
+                createdProperties = request.properties().keySet();
             }
 
         } catch (Throwable e) { // Includes PathNotFoundException
@@ -1032,6 +1042,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        request.setNewProperties(createdProperties);
         recordChange(request);
     }
 
@@ -1217,7 +1228,10 @@ public class BasicRequestProcessor extends RequestProcessor {
         oldUuidsToNewUuids.put(original.getId().getChildUuidString(), newUuid);
 
         if (existingLocation != null && existingLocation.childEntity.getParentUuidString().equals(actualNewParent.uuid)) {
-            if (desiredName == null) desiredName = desiredSegment.getName();
+            if (desiredName == null) {
+                assert desiredSegment != null;
+                desiredName = desiredSegment.getName();
+            }
             NamespaceEntity namespace = NamespaceEntity.findByUri(entities, desiredName.getNamespaceUri());
 
             ChildEntity existingChild = existingLocation.childEntity;
@@ -1238,7 +1252,10 @@ public class BasicRequestProcessor extends RequestProcessor {
         } else {
             // Now add the new copy of the original ...
             boolean allowSnS = original.getAllowsSameNameChildren();
-            if (desiredName == null) desiredName = desiredSegment.getName();
+            if (desiredName == null) {
+                assert desiredSegment != null;
+                desiredName = desiredSegment.getName();
+            }
             newLocation = addNewChild(intoWorkspace.getId(), actualNewParent, newUuid, desiredName, allowSnS);
         }
 
@@ -2126,8 +2143,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                 } else {
 
                     ActualLocation actualBeforeLocation = getActualLocation(workspace, beforeLocation);
-                    ActualLocation actualIntoLocation = getActualLocation(workspace,
-                                                                          Location.create(beforeLocation.getPath().getParent()));
+                    ActualLocation actualIntoLocation = getActualLocation(workspace, Location.create(beforeLocation.getPath()
+                                                                                                                   .getParent()));
 
                     actualNewLocation = moveNodeBefore(workspace, actualLocation, actualIntoLocation, actualBeforeLocation);
                 }

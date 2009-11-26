@@ -151,13 +151,17 @@ public abstract class Request implements Serializable {
 
     /**
      * Freeze this request to prevent any further modification. This method does nothing if the request is already frozen.
+     * 
+     * @return true if this request was frozen, or false if it was already frozen
      */
-    public void freeze() {
+    public boolean freeze() {
         if (frozen.compareAndSet(false, true)) {
             // Was not already frozen, so decrement the latch (atomically)
             CountDownLatch latch = this.freezingLatch;
             if (latch != null) latch.countDown();
+            return true;
         }
+        return false;
     }
 
     /**
