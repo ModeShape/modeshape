@@ -170,6 +170,7 @@ public class Changes implements Comparable<Changes>, Serializable {
         if (obj instanceof Changes) {
             Changes that = (Changes)obj;
             if (!this.getProcessId().equals(that.getProcessId())) return false;
+            if (!this.getContextId().equals(that.getContextId())) return false;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
             if (!this.getTimestamp().equals(that.getTimestamp())) return false;
             if (!this.getUserName().equals(that.getUserName())) return false;

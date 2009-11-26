@@ -185,6 +185,10 @@ class JcrSession implements Session {
         return this.executionContext;
     }
 
+    String sessionId() {
+        return this.executionContext.getId();
+    }
+
     JcrNodeTypeManager nodeTypeManager() {
         return this.workspace.nodeTypeManager();
     }
@@ -204,7 +208,7 @@ class JcrSession implements Session {
     final Collection<String> lockTokens() {
         return lockTokens;
     }
-    
+
     Graph.Batch createBatch() {
         return graph.batch();
     }
@@ -306,11 +310,11 @@ class JcrSession implements Session {
         if (lockTokens.contains(lt)) {
             return;
         }
-        
+
         if (workspace().lockManager().isHeldBySession(lt)) {
             throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lt));
         }
-        
+
         workspace().lockManager().setHeldBySession(lt, true);
         lockTokens.add(lt);
     }
@@ -849,7 +853,7 @@ class JcrSession implements Session {
             lockTokens.remove(lt);
             return;
         }
-        
+
         if (lock.isSessionScoped()) {
             throw new IllegalStateException(JcrI18n.cannotRemoveLockToken.text(lt));
         }
