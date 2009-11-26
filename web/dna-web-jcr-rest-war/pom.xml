@@ -15,7 +15,7 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-web-jcr-rest</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>

@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common-jdbc</artifactId>
-      <version>${pom.version}</version>
+      <version>${project.version}</version>
     </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 

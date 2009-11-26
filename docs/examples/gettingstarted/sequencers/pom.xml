@@ -31,25 +31,25 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-images</artifactId>
-      <version>${pom.version}</version>
+      <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-mp3</artifactId>
-      <version>${pom.version}</version>
+      <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-java</artifactId>
-      <version>${pom.version}</version>
+      <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-zip</artifactId>
-      <version>${pom.version}</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- 

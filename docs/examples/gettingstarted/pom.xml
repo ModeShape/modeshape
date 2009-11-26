@@ -18,47 +18,47 @@
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-common</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-graph</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-repository</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-jcr</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-maven-classloader</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-sequencer-images</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-sequencer-java</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-jbosscache</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-federation</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
         <scope>runtime</scope>
       </dependency>
       <!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->

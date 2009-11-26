@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-common</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
@@ -34,7 +34,7 @@
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-web-jcr-rest-war</artifactId>
 			<type>war</type>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<scope>integration-test</scope>
 		</dependency>
         <dependency>

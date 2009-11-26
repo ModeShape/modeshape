@@ -50,14 +50,14 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-common</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-jcr</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
@@ -65,25 +65,25 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-jbosscache</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-filesystem</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-infinispan</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
         <dependency>
             <groupId>org.jboss.dna</groupId>
             <artifactId>dna-connector-svn</artifactId>
-            <version>${pom.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -93,7 +93,7 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-connector-store-jpa</artifactId>
-			<version>${pom.version}</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
