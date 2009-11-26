@@ -848,7 +848,9 @@ public abstract class RequestProcessor {
         if (observer != null && !this.changes.isEmpty()) {
             String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
             if (userName == null) userName = "";
-            Changes changes = new Changes(userName, getSourceName(), getNowInUtc(), this.changes);
+            String contextId = context.getId();
+            String processId = null;
+            Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes);
             observer.notify(changes);
         }
     }

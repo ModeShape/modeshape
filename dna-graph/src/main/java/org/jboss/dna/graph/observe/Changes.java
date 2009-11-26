@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.request.ChangeRequest;
@@ -40,19 +41,14 @@ public class Changes implements Comparable<Changes>, Serializable {
     private static final long serialVersionUID = 1L;
 
     protected final String processId;
+    protected final String contextId;
     protected final String userName;
     protected final String sourceName;
     protected final DateTime timestamp;
     protected final List<ChangeRequest> changeRequests;
 
-    public Changes( String userName,
-                    String sourceName,
-                    DateTime timestamp,
-                    List<ChangeRequest> requests ) {
-        this("", userName, sourceName, timestamp, requests);
-    }
-
     public Changes( String processId,
+                    String contextId,
                     String userName,
                     String sourceName,
                     DateTime timestamp,
@@ -64,6 +60,7 @@ public class Changes implements Comparable<Changes>, Serializable {
         this.timestamp = timestamp;
         this.changeRequests = Collections.unmodifiableList(requests);
         this.processId = processId != null ? processId : "";
+        this.contextId = contextId != null ? contextId : "";
         assert this.userName != null;
         assert this.sourceName != null;
         assert this.timestamp != null;
@@ -77,11 +74,13 @@ public class Changes implements Comparable<Changes>, Serializable {
         this.timestamp = changes.timestamp;
         this.changeRequests = changes.changeRequests;
         this.processId = changes.processId;
+        this.contextId = changes.contextId;
         assert this.userName != null;
         assert this.sourceName != null;
         assert this.timestamp != null;
         assert this.changeRequests != null;
         assert this.processId != null;
+        assert this.contextId != null;
     }
 
     /**
@@ -118,6 +117,16 @@ public class Changes implements Comparable<Changes>, Serializable {
      * @return the process identifier; never null
      */
     public String getProcessId() {
+        return processId;
+    }
+
+    /**
+     * Get the {@link ExecutionContext#getId() identifier} of the {@link ExecutionContext} where these changes originated. This
+     * identifier may be useful in preventing feedbacks.
+     * 
+     * @return the context identifier; never null
+     */
+    public String getContextId() {
         return processId;
     }
 

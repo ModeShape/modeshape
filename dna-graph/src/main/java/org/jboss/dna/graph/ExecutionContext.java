@@ -25,6 +25,7 @@ package org.jboss.dna.graph;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.UUID;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
@@ -65,6 +66,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     private final NamespaceRegistry namespaceRegistry;
     private final MimeTypeDetector mimeTypeDetector;
     private final SecurityContext securityContext;
+    /** The unique ID string, which is always generated so that it can be final and not volatile. */
+    private final String id = UUID.randomUUID().toString();
 
     /**
      * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
@@ -235,6 +238,15 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     /**
+     * Get the unique identifier for this context.
+     * 
+     * @return the unique identifier string; never null and never empty
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
      * Create a new execution context that mirrors this context but that uses the supplied namespace registry. The resulting
      * context's {@link #getValueFactories() value factories} and {@link #getPropertyFactory() property factory} all make use of
      * the new namespace registry.
@@ -312,7 +324,11 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @Override
     public String toString() {
-        return "Execution context for " + getSecurityContext() == null ? "null" : getSecurityContext().getUserName();
+        StringBuilder sb = new StringBuilder("Execution context for ");
+        if (getSecurityContext() == null) sb.append("null");
+        else sb.append(getSecurityContext().getUserName());
+        sb.append(" (").append(id).append(')');
+        return sb.toString();
     }
 
     /**
