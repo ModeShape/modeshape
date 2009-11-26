@@ -195,7 +195,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * 
      * @see org.jboss.dna.sequencer.ddl.DdlParser#getNumberOfKeyWords(org.jboss.dna.sequencer.ddl.DdlTokenStream)
      */
-    @Override
     public int getNumberOfKeyWords( DdlTokenStream tokens ) {
         int count = 0;
 
@@ -2545,7 +2544,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * 
      * @see org.jboss.dna.sequencer.ddl.DdlParser#isType(String)
      */
-    @Override
     public boolean isType( String ddl ) {
         String trimmedDDL = ddl.trim();
         int endIndex = 400;
