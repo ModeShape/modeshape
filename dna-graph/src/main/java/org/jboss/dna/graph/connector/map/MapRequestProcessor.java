@@ -233,7 +233,7 @@ public class MapRequestProcessor extends RequestProcessor {
             if (property.getName().equals(DnaLexicon.UUID) || property.getName().equals(JcrLexicon.UUID)) {
                 uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
             } else {
-                propsToStore.add(property);
+                if (property.size() > 0) propsToStore.add(property);
             }
         }
 
