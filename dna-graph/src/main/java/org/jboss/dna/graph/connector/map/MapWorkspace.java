@@ -32,6 +32,7 @@ import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
@@ -81,12 +82,13 @@ public interface MapWorkspace {
     MapNode getNode( Path path );
 
     /**
-     * Removes the given node. This method will return silently if the given node does not exist in this workspace.
+     * Removes the given node. This method will return false if the given node does not exist in this workspace.
      * 
      * @param context the current execution context; may not be null
      * @param node the node to be removed; may not be null
+     * @return whether a node was removed as a result of this operation
      */
-    void removeNode( ExecutionContext context,
+    boolean removeNode( ExecutionContext context,
                      MapNode node );
 
     /**
@@ -94,10 +96,12 @@ public interface MapWorkspace {
      * 
      * @param context the environment; may not be null
      * @param pathToNewNode the path to the new node; may not be null
+     * @param properties the properties for the new node
      * @return the new node (or root if the path specified the root)
      */
     MapNode createNode( ExecutionContext context,
-                        String pathToNewNode );
+                        String pathToNewNode,
+                        Iterable<Property> properties );
 
     /**
      * Create a new node with the supplied name, as a child of the supplied parent.
@@ -106,12 +110,14 @@ public interface MapWorkspace {
      * @param parentNode the parent node; may not be null
      * @param name the name; may not be null
      * @param uuid the UUID of the node, or null if the UUID is to be generated
+     * @param properties the properties for the new node
      * @return the new node
      */
     MapNode createNode( ExecutionContext context,
                         MapNode parentNode,
                         Name name,
-                        UUID uuid );
+                        UUID uuid,
+                        Iterable<Property> properties );
 
     /**
      * Move the supplied node to the new parent. This method automatically removes the node from its existing parent, and also

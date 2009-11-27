@@ -29,6 +29,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.map.MapNode;
@@ -131,12 +133,13 @@ public class InMemoryRepositoryTest {
 
         // Populate the workspace with a few nodes ...
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        final Collection<Property> NO_PROPS = Collections.emptySet();
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -202,12 +205,13 @@ public class InMemoryRepositoryTest {
 
         // Populate the workspace with a few nodes ...
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        final Collection<Property> NO_PROPS = Collections.emptySet();
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");

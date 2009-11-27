@@ -30,6 +30,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -63,6 +65,7 @@ public class InMemoryRepositoryWorkspaceTest {
     private PathFactory pathFactory;
     private NameFactory nameFactory;
     private PropertyFactory propertyFactory;
+    private final Collection<Property> NO_PROPS = Collections.emptySet();
 
     @Before
     public void beforeEach() throws Exception {
@@ -103,21 +106,21 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldCreateNodesByPath() {
         Name name_a = nameFactory.create("a");
-        MapNode node_a = workspace.createNode(context, workspace.getRoot(), name_a, null);
+        MapNode node_a = workspace.createNode(context, workspace.getRoot(), name_a, null, NO_PROPS);
         assertThat(node_a, is(notNullValue()));
         assertThat(node_a.getParent(), is(workspace.getRoot()));
         assertThat(node_a.getName().getName(), is(name_a));
         assertThat(node_a.getName().hasIndex(), is(false));
 
         Name name_b = nameFactory.create("b");
-        MapNode node_b = workspace.createNode(context, node_a, name_b, null);
+        MapNode node_b = workspace.createNode(context, node_a, name_b, null, NO_PROPS);
         assertThat(node_b, is(notNullValue()));
         assertThat(node_b.getParent(), is(node_a));
         assertThat(node_b.getName().getName(), is(name_b));
         assertThat(node_b.getName().hasIndex(), is(false));
 
         Name name_c = nameFactory.create("c");
-        MapNode node_c = workspace.createNode(context, node_b, name_c, null);
+        MapNode node_c = workspace.createNode(context, node_b, name_c, null, NO_PROPS);
         assertThat(node_c, is(notNullValue()));
         assertThat(node_c.getParent(), is(node_b));
         assertThat(node_c.getName().getName(), is(name_c));
@@ -132,9 +135,9 @@ public class InMemoryRepositoryWorkspaceTest {
 
     @Test
     public void shouldNotFindNodesThatDoNotExist() {
-        MapNode node_a = workspace.createNode(context, workspace.getRoot(), nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        /*Node node_c =*/workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        MapNode node_a = workspace.createNode(context, workspace.getRoot(), nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        /*Node node_c =*/workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
 
         assertThat(workspace.size(), is(4));
         assertThat(workspace.getNode(pathFactory.create("/a")), is(node_a));
@@ -150,14 +153,14 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldCorrectlyManageIndexesOfSiblingsWithSameNames() {
         Name name_a1 = nameFactory.create("a");
-        MapNode node_a1 = workspace.createNode(context, workspace.getRoot(), name_a1, null);
+        MapNode node_a1 = workspace.createNode(context, workspace.getRoot(), name_a1, null, NO_PROPS);
         assertThat(node_a1, is(notNullValue()));
         assertThat(node_a1.getParent(), is(workspace.getRoot()));
         assertThat(node_a1.getName().getName(), is(name_a1));
         assertThat(node_a1.getName().hasIndex(), is(false));
 
         Name name_a2 = nameFactory.create("a");
-        MapNode node_a2 = workspace.createNode(context, workspace.getRoot(), name_a2, null);
+        MapNode node_a2 = workspace.createNode(context, workspace.getRoot(), name_a2, null, NO_PROPS);
         assertThat(node_a2, is(notNullValue()));
         assertThat(node_a2.getParent(), is(workspace.getRoot()));
         assertThat(node_a2.getName().getName(), is(name_a2));
@@ -169,7 +172,7 @@ public class InMemoryRepositoryWorkspaceTest {
 
         // Add another node without the same name ..
         Name name_b = nameFactory.create("b");
-        MapNode node_b = workspace.createNode(context, workspace.getRoot(), name_b, null);
+        MapNode node_b = workspace.createNode(context, workspace.getRoot(), name_b, null, NO_PROPS);
         assertThat(node_b, is(notNullValue()));
         assertThat(node_b.getParent(), is(workspace.getRoot()));
         assertThat(node_b.getName().getName(), is(name_b));
@@ -177,7 +180,7 @@ public class InMemoryRepositoryWorkspaceTest {
 
         // Add a third node with the same name ..
         Name name_a3 = nameFactory.create("a");
-        MapNode node_a3 = workspace.createNode(context, workspace.getRoot(), name_a3, null);
+        MapNode node_a3 = workspace.createNode(context, workspace.getRoot(), name_a3, null, NO_PROPS);
         assertThat(node_a3, is(notNullValue()));
         assertThat(node_a3.getParent(), is(workspace.getRoot()));
         assertThat(node_a3.getName().getName(), is(name_a3));
@@ -213,12 +216,12 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldMoveNodesWithinSameWorkspace() {
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         assertThat(workspace.size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
@@ -253,12 +256,12 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldMoveNodeBeforeAnother() {
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
         Name propName = nameFactory.create("prop");
         node_b.setProperty(propertyFactory.create(propName, "node_b"));
         node_b2.setProperty(propertyFactory.create(propName, "node_b2"));
@@ -305,12 +308,12 @@ public class InMemoryRepositoryWorkspaceTest {
     public void shouldMoveNodesFromOneWorkspaceToAnother() {
         // Populate the workspace with some content ..
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         assertThat(workspace.size(), is(7));
         assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
@@ -326,12 +329,12 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(new_workspace, is(notNullValue()));
 
         MapNode new_root = new_workspace.getRoot();
-        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null);
-        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null);
-        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null);
-        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null);
-        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null);
-        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null);
+        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null, NO_PROPS);
 
         assertThat(new_workspace.size(), is(7));
         assertThat(new_workspace.getNode(pathFactory.create("/")), is(sameInstance(new_root)));
@@ -365,12 +368,12 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldCopyNodesWithinSameWorkspace() {
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -409,12 +412,12 @@ public class InMemoryRepositoryWorkspaceTest {
     public void shouldCopyNodesFromOneWorkspaceToAnotherAndKeepSameUuids() {
         // Populate the workspace with some content ..
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -437,12 +440,12 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(new_workspace, is(notNullValue()));
 
         MapNode new_root = new_workspace.getRoot();
-        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null);
-        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null);
-        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null);
-        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null);
-        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null);
-        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null);
+        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null, NO_PROPS);
 
         assertThat(new_workspace.size(), is(7));
         assertThat(new_workspace.getNode(pathFactory.create("/")), is(sameInstance(new_root)));
@@ -492,12 +495,12 @@ public class InMemoryRepositoryWorkspaceTest {
     public void shouldCopyNodesFromOneWorkspaceToAnotherAndGenerateNewUuids() {
         // Populate the workspace with some content ..
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -520,12 +523,12 @@ public class InMemoryRepositoryWorkspaceTest {
         assertThat(new_workspace, is(notNullValue()));
 
         MapNode new_root = new_workspace.getRoot();
-        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null);
-        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null);
-        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null);
-        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null);
-        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null);
-        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null);
+        MapNode new_node_a = new_workspace.createNode(context, new_root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode new_node_b = new_workspace.createNode(context, new_node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode new_node_c = new_workspace.createNode(context, new_node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode new_node_d = new_workspace.createNode(context, new_root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode new_node_e = new_workspace.createNode(context, new_node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode new_node_b2 = new_workspace.createNode(context, new_node_d, nameFactory.create("b"), null, NO_PROPS);
 
         assertThat(new_workspace.size(), is(7));
         assertThat(new_workspace.getNode(pathFactory.create("/")), is(sameInstance(new_root)));
@@ -578,12 +581,12 @@ public class InMemoryRepositoryWorkspaceTest {
     @Test
     public void shouldCopyNodesWhenDesiredNameIsSpecified() {
         MapNode root = workspace.getRoot();
-        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
-        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
-        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
-        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
-        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
-        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+        MapNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null, NO_PROPS);
+        MapNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null, NO_PROPS);
+        MapNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null, NO_PROPS);
+        MapNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null, NO_PROPS);
+        MapNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null, NO_PROPS);
+        MapNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null, NO_PROPS);
 
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -620,12 +623,14 @@ public class InMemoryRepositoryWorkspaceTest {
 
     @Test
     public void shouldCreateRepositoryStructure() {
-        workspace.createNode(context, "/a")
+        workspace.createNode(context, "/a", NO_PROPS)
                  .setProperty(context, "name", "value")
-                 .setProperty(context, "desc", "Some description");
-        workspace.createNode(context, "/a/b").setProperty(context, "name", "value2").setProperty(context,
+.setProperty(context,
+                                                                                                        "desc",
+                                                                                                        "Some description");
+        workspace.createNode(context, "/a/b", NO_PROPS).setProperty(context, "name", "value2").setProperty(context,
                                                                                                  "desc",
-                                                                                                 "Some description 2");
+                                                                                                           "Some description 2");
         assertThat(workspace.getNode(context, "/a").getProperty(context, "name").getValuesAsArray(), is(new Object[] {"value"}));
         assertThat(workspace.getNode(context, "/a").getProperty(context, "desc").getValuesAsArray(),
                    is(new Object[] {"Some description"}));

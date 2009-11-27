@@ -115,7 +115,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      */
     protected MapNode createMapNode( UUID uuid ) {
         assert uuid != null;
-        return new MapNode(uuid);
+        return new DefaultMapNode(uuid);
     }
 
     /**
@@ -233,26 +233,30 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     }
 
     /**
-     * Removes the given node and its children, correcting the SNS and child indices for its parent.
+     * Removes the given node and its children, correcting the SNS and child indices for its parent. This method will return false
+     * if the given node does not exist in this workspace.
      * 
-     * @param context the current execution context
-     * @param node the node to be removed
+     * @param context the current execution context; may not be null
+     * @param node the node to be removed; may not be null
+     * @return whether a node was removed as a result of this operation
      */
-    public void removeNode( ExecutionContext context,
-                            MapNode node ) {
+    public boolean removeNode( ExecutionContext context,
+                               MapNode node ) {
         assert context != null;
         assert node != null;
+
         if (getRoot().equals(node)) {
             removeAllNodesFromMap();
             // Recreate the root node ...
             addNodeToMap(createMapNode(repository.getRootNodeUuid()));
-            return;
+            return true;
         }
         MapNode parent = node.getParent();
         assert parent != null;
-        parent.getChildren().remove(node);
+        if (!parent.removeChild(node)) return false;
         correctSameNameSiblingIndexes(context, parent, node.getName().getName());
         removeUuidReference(node);
+        return true;
     }
 
     /**
@@ -274,10 +278,12 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      * 
      * @param context the environment; may not be null
      * @param pathToNewNode the path to the new node; may not be null
+     * @param properties the properties for the new node
      * @return the new node (or root if the path specified the root)
      */
     public MapNode createNode( ExecutionContext context,
-                               String pathToNewNode ) {
+                               String pathToNewNode,
+                               Iterable<Property> properties ) {
         assert context != null;
         assert pathToNewNode != null;
         Path path = context.getValueFactories().getPathFactory().create(pathToNewNode);
@@ -285,7 +291,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         Path parentPath = path.getParent();
         MapNode parentNode = getNode(parentPath);
         Name name = path.getLastSegment().getName();
-        return createNode(context, parentNode, name, null);
+        return createNode(context, parentNode, name, null, properties);
     }
 
     /**
@@ -295,25 +301,27 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      * @param parentNode the parent node; may not be null
      * @param name the name; may not be null
      * @param uuid the UUID of the node, or null if the UUID is to be generated
+     * @param properties the properties for the new node
      * @return the new node
      */
     public MapNode createNode( ExecutionContext context,
                                MapNode parentNode,
                                Name name,
-                               UUID uuid ) {
+                               UUID uuid,
+                               Iterable<Property> properties ) {
         assert context != null;
         assert name != null;
         if (parentNode == null) parentNode = getRoot();
         if (uuid == null) uuid = UUID.randomUUID();
 
         MapNode node = createMapNode(uuid);
-        addNodeToMap(node);
 
-        node.setParent(parentNode);
         // Find the last node with this same name ...
         int nextIndex = 1;
-        if (parentNode.existingNames.contains(name)) {
-            ListIterator<MapNode> iter = parentNode.getChildren().listIterator(parentNode.getChildren().size());
+        Set<Name> uniqueNames = parentNode.getUniqueChildNames();
+        if (uniqueNames.contains(name)) {
+            List<MapNode> children = parentNode.getChildren();
+            ListIterator<MapNode> iter = children.listIterator(children.size());
             while (iter.hasPrevious()) {
                 MapNode prev = iter.previous();
                 if (prev.getName().getName().equals(name)) {
@@ -322,10 +330,15 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
                 }
             }
         }
+
         Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, nextIndex);
         node.setName(newName);
-        parentNode.getChildren().add(node);
-        parentNode.existingNames.add(name);
+        node.setProperties(properties);
+        node.setParent(parentNode);
+
+        parentNode.addChild(node);
+        parentNode.getUniqueChildNames().add(name);
+        addNodeToMap(node);
         return node;
     }
 
@@ -366,7 +379,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         }
 
         if (oldParent != null) {
-            boolean removed = oldParent.getChildren().remove(node);
+            boolean removed = oldParent.removeChild(node);
             assert removed == true;
             node.setParent(null);
             correctSameNameSiblingIndexes(context, oldParent, oldName);
@@ -379,10 +392,10 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         }
 
         if (beforeNode == null) {
-            newParent.getChildren().add(node);
+            newParent.addChild(node);
         } else {
             int index = newParent.getChildren().indexOf(beforeNode);
-            newParent.getChildren().add(index, node);
+            newParent.addChild(index, node);
         }
         correctSameNameSiblingIndexes(context, newParent, newName);
 
@@ -464,15 +477,14 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         // Get or create the new node ...
         Name childName = desiredName != null ? desiredName : original.getName().getName();
         UUID uuidForCopy = reuseUuids ? original.getUuid() : UUID.randomUUID();
-        MapNode copy = newWorkspace.createNode(context, newParent, childName, uuidForCopy);
+
+        MapNode copy = newWorkspace.createNode(context, newParent, childName, uuidForCopy, original.getProperties().values());
+
         if (!reuseUuids) {
             assert oldToNewUuids != null;
             oldToNewUuids.put(original.getUuid(), copy.getUuid());
         }
 
-        // Copy the properties ...
-        copy.getProperties().clear();
-        copy.getProperties().putAll(original.getProperties());
         if (recursive) {
             // Loop over each child and call this method ...
             for (MapNode child : original.getChildren()) {
@@ -553,11 +565,11 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             // a node that has the UUID of the original node (as this will be handled later) ...
             for (UUID uuid : uuidsInFromBranch) {
                 if (null != (existing = newWorkspace.getNode(uuid))) {
-                    newWorkspace.removeNode(context, existing);
                     if (removedExistingNodes != null) {
                         Path path = pathFor(pathFactory, existing);
                         removedExistingNodes.add(Location.create(path, uuid));
                     }
+                    newWorkspace.removeNode(context, existing);
                 }
             }
         } else {
@@ -583,13 +595,11 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             assert newRoot != null;
 
             newRoot.getProperties().clear();
-            for (MapNode child : newRoot.getChildren()) {
-                newWorkspace.removeNode(context, child);
-            }
+            newRoot.setProperties(original.getProperties().values());
 
-            for (Property property : original.getProperties().values()) {
-                newRoot.setProperty(property);
-            }
+            newRoot.clearChildren();
+
+            assert newRoot.getChildren().isEmpty();
 
             for (MapNode child : original.getChildren()) {
                 copyNode(context, child, newWorkspace, newRoot, null, true, (Map<UUID, UUID>)null);
@@ -600,11 +610,11 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
         // Now deal with an existing node that has the same UUID as the original node ...
         existing = newWorkspace.getNode(original.getUuid());
         if (existing != null) {
-            newWorkspace.removeNode(context, existing);
             if (removedExistingNodes != null) {
                 Path path = pathFor(pathFactory, existing);
                 removedExistingNodes.add(Location.create(path, original.getUuid()));
             }
+            newWorkspace.removeNode(context, existing);
         }
         return copyNode(context, original, newWorkspace, newParent, desiredName, true, (Map<UUID, UUID>)null);
     }

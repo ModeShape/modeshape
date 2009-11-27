@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.connector.map;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -224,16 +225,21 @@ public class MapRequestProcessor extends RequestProcessor {
                                                        GraphI18n.inMemoryNodeDoesNotExist.text(parent)));
             return;
         }
+
         UUID uuid = null;
+        // Make a list of the properties that we will store: all props except dna:uuid and jcr:uuid
+        List<Property> propsToStore = new ArrayList<Property>(request.properties().size());
         for (Property property : request.properties()) {
             if (property.getName().equals(DnaLexicon.UUID) || property.getName().equals(JcrLexicon.UUID)) {
                 uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
-                break;
+            } else {
+                propsToStore.add(property);
             }
         }
+
         switch (request.conflictBehavior()) {
             case APPEND:
-                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid, propsToStore);
                 break;
             case DO_NOT_REPLACE:
                 for (MapNode child : parentNode.getChildren()) {
@@ -243,7 +249,7 @@ public class MapRequestProcessor extends RequestProcessor {
                     }
                 }
                 if (node == null) {
-                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid, propsToStore);
                 }
                 break;
             case REPLACE:
@@ -252,29 +258,19 @@ public class MapRequestProcessor extends RequestProcessor {
                 if (node != null) {
                     workspace.removeNode(getExecutionContext(), node);
                 }
-                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid, propsToStore);
                 break;
             case UPDATE:
                 // See if the node already exists (this doesn't record an error on the request) ...
                 node = getTargetNode(workspace, null, Location.create(pathFactory.create(parent, request.named()), uuid));
                 if (node == null) {
-                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid);
+                    node = workspace.createNode(getExecutionContext(), parentNode, request.named(), uuid, propsToStore);
                 } // otherwise, we found it and we're setting any properties below
                 break;
         }
         assert node != null;
         Path path = getExecutionContext().getValueFactories().getPathFactory().create(parent, node.getName());
-        // Now add the properties to the supplied node ...
-        for (Property property : request.properties()) {
-            Name propName = property.getName();
-            if (property.size() == 0) {
-                node.getProperties().remove(propName);
-                continue;
-            }
-            if (!propName.equals(DnaLexicon.UUID)) {
-                node.getProperties().put(propName, property);
-            }
-        }
+
         Location actualLocation = getActualLocation(Location.create(path), node);
         request.setActualLocationOfNode(actualLocation);
         recordChange(request);
@@ -323,7 +319,7 @@ public class MapRequestProcessor extends RequestProcessor {
             // Build the path from the before node to the root.
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
             MapNode current = beforeNode.getParent();
-            while (current != workspace.getRoot()) {
+            while (!current.equals(workspace.getRoot())) {
                 segments.addFirst(current.getName());
                 current = current.getParent();
             }
@@ -338,7 +334,7 @@ public class MapRequestProcessor extends RequestProcessor {
             return;
         }
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
-        assert node.getParent() == newParent;
+        assert node.getParent().equals(newParent);
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
         Location oldLocation = getActualLocation(request.from(), node);
         Location newLocation = Location.create(newPath, node.getUuid());
@@ -360,15 +356,16 @@ public class MapRequestProcessor extends RequestProcessor {
         for (Map.Entry<Name, Property> propertyEntry : request.properties().entrySet()) {
             Property property = propertyEntry.getValue();
             if (property == null) {
-                node.getProperties().remove(propertyEntry.getKey());
+                node.removeProperty(propertyEntry.getKey());
                 continue;
             }
             Name propName = property.getName();
             if (!propName.equals(DnaLexicon.UUID)) {
-                if (node.getProperties().put(propName, property) == null) {
+                if (node.getProperties().get(propName) == null) {
                     // It is a new property ...
                     request.setNewProperty(propName);
                 }
+                node.setProperty(property);
             }
         }
         Location actualLocation = getActualLocation(request.on(), node);

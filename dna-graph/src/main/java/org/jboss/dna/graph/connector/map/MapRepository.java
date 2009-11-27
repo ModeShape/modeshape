@@ -96,6 +96,10 @@ public abstract class MapRepository {
 
     }
 
+    protected String getDefaultWorkspaceName() {
+        return defaultWorkspaceName;
+    }
+
     /**
      * Returns the UUID used by the root nodes in each workspace.
      * <p>

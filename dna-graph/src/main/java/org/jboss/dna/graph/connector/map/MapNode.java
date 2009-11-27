@@ -23,9 +23,7 @@
  */
 package org.jboss.dna.graph.connector.map;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,75 +34,97 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 
-/**
- * A node within a {@link MapRepository}.
- */
-public class MapNode {
+public interface MapNode {
 
-    private final UUID uuid;
-    private MapNode parent;
-    private Path.Segment name;
-    private final Map<Name, Property> properties = new HashMap<Name, Property>();
-    private final LinkedList<MapNode> children = new LinkedList<MapNode>();
-    final Set<Name> existingNames = new HashSet<Name>();
-
-    public MapNode( UUID uuid ) {
-        assert uuid != null;
-        this.uuid = uuid;
-    }
-
-    /* (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.map.MapNode#getUuid()
+    /**
+     * Returns the UUID for this node
+     * 
+     * @return the UUID for this node
      */
-    public UUID getUuid() {
-        return uuid;
-    }
+    public UUID getUuid();
 
-    /* (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.map.MapNode#getName()
+    /**
+     * Returns the name of this node along with its SNS index within its parent's children
+     * 
+     * @return the name of this node along with its SNS index within its parent's children
      */
-    public Path.Segment getName() {
-        return name;
-    }
+    public Path.Segment getName();
 
     /**
      * @param name Sets name to the specified value.
      */
-    public void setName( Path.Segment name ) {
-        this.name = name;
-    }
+    public void setName( Path.Segment name );
 
-    public Set<Name> getUniqueChildNames() {
-        return existingNames;
-    }
-
-    /* (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.map.MapNode#getParent()
+    /**
+     * Returns the set of child names for this node
+     * 
+     * @return the set of child names for this node
      */
-    public MapNode getParent() {
-        return parent;
-    }
+    public Set<Name> getUniqueChildNames();
+
+    /**
+     * Returns the parent of this node or null if the node is the root node for its workspace.
+     * 
+     * @return the parent of this node; may be null if the node is the root node for its workspace
+     */
+    public MapNode getParent();
 
     /**
      * @param parent Sets parent to the specified value.
      */
-    public void setParent( MapNode parent ) {
-        this.parent = parent;
-    }
+    public void setParent( MapNode parent );
 
     /**
      * @return children
      */
-    public LinkedList<MapNode> getChildren() {
-        return children;
-    }
+    public List<MapNode> getChildren();
 
     /**
-     * @return properties
+     * Removes all of the children for this node in a single operation.
      */
-    protected Map<Name, Property> getProperties() {
-        return properties;
-    }
+    public void clearChildren();
+
+    /**
+     * Adds the given child to the end of the list of children for this node
+     * 
+     * @param child the child to add to this node
+     */
+    public void addChild( MapNode child );
+
+    /**
+     * Inserts the specified child at the specified position in the list of children. Shifts the child currently at that position
+     * (if any) and any subsequent children to the right (adds one to their indices).
+     * 
+     * @param index index at which the specified child is to be inserted
+     * @param child the child to be inserted
+     */
+    public void addChild( int index,
+                          MapNode child );
+
+    /**
+     * Removes the given child from the list of children
+     * 
+     * @param child the child to be removed
+     * @return true if the child was one of this node's children (and was removed); false otherwise
+     */
+    public boolean removeChild( MapNode child );
+
+    /**
+     * Returns a map of property names to the property for the given name
+     * 
+     * @return a map of property names to the property for the given name
+     */
+    public Map<Name, Property> getProperties();
+
+    /**
+     * Sets the given properties in a single operation, overwriting any previous properties for the same name This bulk mutator
+     * should be used when multiple properties are being set in order to allow underlying implementations to optimize their access
+     * to their respective persistent storage mechanism.
+     * 
+     * @param properties the properties to set
+     * @return this map node
+     */
+    public MapNode setProperties( Iterable<Property> properties );
 
     /**
      * Sets the property with the given name, overwriting any previous property for the given name
@@ -112,12 +132,7 @@ public class MapNode {
      * @param property the property to set
      * @return this map node
      */
-    public MapNode setProperty( Property property ) {
-        if (property != null) {
-            this.properties.put(property.getName(), property);
-        }
-        return this;
-    }
+    public MapNode setProperty( Property property );
 
     /**
      * Sets the property with the given name, overwriting any previous property for the given name
@@ -130,11 +145,15 @@ public class MapNode {
      */
     public MapNode setProperty( ExecutionContext context,
                                 String name,
-                                Object... values ) {
-        PropertyFactory propertyFactory = context.getPropertyFactory();
-        Name propertyName = context.getValueFactories().getNameFactory().create(name);
-        return setProperty(propertyFactory.create(propertyName, values));
-    }
+                                Object... values );
+
+    /**
+     * Removes the property with the given name
+     * 
+     * @param propertyName the name of the property to remove
+     * @return this map node
+     */
+    public MapNode removeProperty( Name propertyName );
 
     /**
      * Returns the named property
@@ -144,10 +163,7 @@ public class MapNode {
      * @return the property for the given name
      */
     public Property getProperty( ExecutionContext context,
-                                 String name ) {
-        Name propertyName = context.getValueFactories().getNameFactory().create(name);
-        return getProperty(propertyName);
-    }
+                                 String name );
 
     /**
      * Returns the named property
@@ -155,51 +171,6 @@ public class MapNode {
      * @param name the name of the property to return
      * @return the property for the given name
      */
-    public Property getProperty( Name name ) {
-        return this.properties.get(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        return uuid.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof MapNode) {
-            MapNode that = (MapNode)obj;
-            if (!this.getUuid().equals(that.getUuid())) return false;
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (this.name == null) {
-            sb.append("");
-        } else {
-            sb.append(this.name);
-        }
-        sb.append(" (").append(uuid).append(")");
-        return sb.toString();
-    }
+    public Property getProperty( Name name );
 
 }
