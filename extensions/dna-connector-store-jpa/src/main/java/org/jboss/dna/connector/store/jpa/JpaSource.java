@@ -59,7 +59,6 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.observe.Observer;
 
 /**
  * The {@link RepositorySource} for the connector that stores content in a (custom) relational database. This connector uses Java
@@ -75,7 +74,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static class Models {
         public static final Model BASIC = new BasicModel();
-        private static final Model[] ALL_ARRAY = new Model[] {BASIC};
+        // public static final Model SIMPLE = new SimpleModel();
+        private static final Model[] ALL_ARRAY = new Model[] {BASIC /*, SIMPLE */};
         private static final List<Model> MODIFIABLE_MODELS = new ArrayList<Model>(Arrays.asList(ALL_ARRAY));
         public static final Collection<Model> ALL = Collections.unmodifiableCollection(MODIFIABLE_MODELS);
         public static final Model DEFAULT = BASIC;
@@ -367,10 +367,35 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Returns the current cache policy
+     * 
+     * @return the current cache policy
+     */
+    public CachePolicy getCachePolicy() {
+        return cachePolicy;
+    }
+
+    /**
+     * Returns the current {@code EntityManagers} reference.
+     * 
+     * @return the current {@code EntityManagers} reference.
+     */
+    public EntityManagers getEntityManagers() {
+        return entityManagers;
+    }
+
+    /**
      * @return rootNodeUuid
      */
     public String getRootNodeUuid() {
         return rootNodeUuid;
+    }
+
+    /**
+     * @return rootUuid
+     */
+    public UUID getRootUuid() {
+        return rootUuid;
     }
 
     /**
@@ -812,6 +837,15 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Returns the current repository context for the source, as set with a call to {@link #initialize(RepositoryContext)}.
+     * 
+     * @return the current repository context for the source
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public Object getObjectInstance( Object obj,
@@ -1000,10 +1034,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             // Now, create another entity manager with the classes from the correct model and without changing the schema...
             entityManagers = new EntityManagers(configurator);
         }
-        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        return new JpaConnection(getName(), observer, cachePolicy, entityManagers, model, rootUuid, defaultWorkspace,
-                                 getPredefinedWorkspaceNames(), largeValueSizeInBytes, isCreatingWorkspacesAllowed(),
-                                 compressData, referentialIntegrityEnforced);
+
+        return model.createConnection(this);
     }
 
     /**

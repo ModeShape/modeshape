@@ -30,16 +30,17 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import net.jcip.annotations.ThreadSafe;
 import org.hibernate.ejb.Ejb3Configuration;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 
 /**
  * Utility class that owns an {@link EntityManagerFactory} instance and that provides references to {@link EntityManager}
  * instances while providing the ability to properly clean up all resources by closing the EntityManager and EntityManagerFactory
  * objects when no longer needed.
  * <p>
- * This class is instantiated by the {@link JpaSource} and passed to the {@link JpaConnection} objects, which use this class to
- * obtain an EntityManager. When the JpaConnection object is {@link JpaConnection#close() closed}, it returns the EntityManager to
- * this object. Because this class maintains a count of the EntityManager references handed out, the last EntityManager to be
- * returned will cause the EntityManagerFactory to be closed.
+ * This class is instantiated by the {@link JpaSource} and passed to the {@link RepositoryConnection} objects, which use this
+ * class to obtain an EntityManager. When the JPA connection object is {@link RepositoryConnection#close() closed}, it returns the
+ * EntityManager to this object. Because this class maintains a count of the EntityManager references handed out, the last
+ * EntityManager to be returned will cause the EntityManagerFactory to be closed.
  * </p>
  * <p>
  * This class does put the EntityManager implementations inside a HashMap, and therefore does expect that the EntityManager uses
@@ -47,7 +48,7 @@ import org.hibernate.ejb.Ejb3Configuration;
  * </p>
  */
 @ThreadSafe
-class EntityManagers {
+public class EntityManagers {
 
     private final Ejb3Configuration configuration;
     private final Map<EntityManager, AtomicInteger> referenceCounts = new HashMap<EntityManager, AtomicInteger>();

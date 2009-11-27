@@ -39,11 +39,12 @@ import javax.persistence.EntityTransaction;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.connector.store.jpa.EntityManagers;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
+import org.jboss.dna.connector.store.jpa.JpaSource;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
-import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.property.PropertyType;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -62,7 +63,6 @@ public class BasicModelTest {
     private EntityManagerFactory factory;
     private EntityManager manager;
     private BasicModel model;
-    private ExecutionContext context;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -71,7 +71,6 @@ public class BasicModelTest {
     @Before
     public void beforeEach() throws Exception {
         model = new BasicModel();
-        context = new ExecutionContext();
     }
 
     @After
@@ -122,22 +121,22 @@ public class BasicModelTest {
     }
 
     @Test
-    public void shouldCreateRequestProcessor() {
+    public void shouldCreateConnection() {
         EntityManager manager = mock(EntityManager.class);
         EntityTransaction txn = mock(EntityTransaction.class);
+        EntityManagers managers = mock(EntityManagers.class);
+        JpaSource source = mock(JpaSource.class);
+        
         stub(manager.getTransaction()).toReturn(txn);
-        RequestProcessor proc = model.createRequestProcessor("test source",
-                                                             context,
-                                                             null,
-                                                             manager,
-                                                             UUID.randomUUID(),
-                                                             "default workspace",
-                                                             new String[] {"default workspace", "workspace1"},
-                                                             100,
-                                                             true,
-                                                             false,
-                                                             false);
-        assertThat(proc, is(notNullValue()));
+        
+        stub(managers.checkout()).toReturn(manager);
+
+        stub(source.getRootUuid()).toReturn(UUID.randomUUID());
+        stub(source.getEntityManagers()).toReturn(managers);
+
+        RepositoryConnection conn = model.createConnection(source);
+
+        assertThat(conn, is(notNullValue()));
     }
 
     @Test

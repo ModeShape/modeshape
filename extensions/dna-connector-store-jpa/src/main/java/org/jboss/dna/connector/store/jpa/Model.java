@@ -24,14 +24,10 @@
 package org.jboss.dna.connector.store.jpa;
 
 import java.util.Locale;
-import java.util.UUID;
-import javax.persistence.EntityManager;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 
 /**
  * A descriptor of a schema used by this connector.
@@ -76,17 +72,7 @@ public abstract class Model {
         return description.text(locale);
     }
 
-    public abstract RequestProcessor createRequestProcessor( String sourceName,
-                                                             ExecutionContext context,
-                                                             Observer observer,
-                                                             EntityManager entityManager,
-                                                             UUID rootNodeUuid,
-                                                             String nameOfDefaultWorkspace,
-                                                             String[] predefinedWorkspaceNames,
-                                                             long largeValueMinimumSizeInBytes,
-                                                             boolean creatingWorkspacesAllowed,
-                                                             boolean comparessData,
-                                                             boolean enforceReferentialIntegrity );
+    public abstract RepositoryConnection createConnection( JpaSource source );
 
     /**
      * Configure the entity class that will be used by JPA to store information in the database.

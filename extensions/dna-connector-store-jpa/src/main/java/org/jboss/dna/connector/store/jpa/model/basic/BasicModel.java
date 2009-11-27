@@ -23,21 +23,20 @@
  */
 package org.jboss.dna.connector.store.jpa.model.basic;
 
-import java.util.UUID;
-import javax.persistence.EntityManager;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
+import org.jboss.dna.connector.store.jpa.JpaSource;
 import org.jboss.dna.connector.store.jpa.Model;
 import org.jboss.dna.connector.store.jpa.model.common.ChangeLogEntity;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 import org.jboss.dna.connector.store.jpa.model.common.WorkspaceEntity;
-import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadBranchRequest;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * Database model that stores node properties as opaque records and children as transparent records. Large property values are
@@ -98,29 +97,6 @@ public class BasicModel extends Model {
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(String, ExecutionContext, Observer, EntityManager,
-     *      UUID, String, String[], long, boolean, boolean, boolean)
-     */
-    @Override
-    public RequestProcessor createRequestProcessor( String sourceName,
-                                                    ExecutionContext context,
-                                                    Observer observer,
-                                                    EntityManager entityManager,
-                                                    UUID rootNodeUuid,
-                                                    String nameOfDefaultWorkspace,
-                                                    String[] predefinedWorkspaceNames,
-                                                    long largeValueMinimumSizeInBytes,
-                                                    boolean creatingWorkspacesAllowed,
-                                                    boolean compressData,
-                                                    boolean enforceReferentialIntegrity ) {
-        return new BasicRequestProcessor(sourceName, context, observer, entityManager, rootNodeUuid, nameOfDefaultWorkspace,
-                                         predefinedWorkspaceNames, largeValueMinimumSizeInBytes, creatingWorkspacesAllowed,
-                                         compressData, enforceReferentialIntegrity);
-    }
-
-    /**
      * Configure the entity class that will be used by JPA to store information in the database.
      * 
      * @param configurator the Hibernate {@link Ejb3Configuration} component; never null
@@ -146,6 +122,17 @@ public class BasicModel extends Model {
         // configurator.setProperty("hibernate.ejb.classcache." + KidpackNode.class.getName(), "read-write");
         // configurator.setProperty("hibernate.ejb.collectioncache" + KidpackNode.class.getName() + ".distributors",
         // "read-write, RegionName");
+    }
+
+    @Override
+    public RepositoryConnection createConnection( JpaSource source ) {
+        RepositoryContext repositoryContext = source.getRepositoryContext();
+        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
+        return new BasicJpaConnection(getName(), observer, source.getCachePolicy(), source.getEntityManagers(),
+                                 source.getRootUuid(),
+                                 source.getDefaultWorkspaceName(), source.getPredefinedWorkspaceNames(),
+                                 source.getLargeValueSizeInBytes(), source.isCreatingWorkspacesAllowed(),
+                                 source.isCompressData(), source.isReferentialIntegrityEnforced());
     }
 
 }

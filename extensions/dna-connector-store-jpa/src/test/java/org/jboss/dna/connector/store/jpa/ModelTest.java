@@ -26,13 +26,9 @@ package org.jboss.dna.connector.store.jpa;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import java.util.UUID;
-import javax.persistence.EntityManager;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -50,7 +46,7 @@ public class ModelTest {
     private Model model2;
     private Model model3;
     @Mock
-    private RequestProcessor requestProcessor;
+    private RepositoryConnection connection;
 
     @Before
     public void beforeEach() throws Exception {
@@ -104,20 +100,10 @@ public class ModelTest {
         public void configure( Ejb3Configuration configurator ) {
         }
 
-        @SuppressWarnings( "synthetic-access" )
         @Override
-        public RequestProcessor createRequestProcessor( String sourceName,
-                                                        ExecutionContext context,
-                                                        Observer observer,
-                                                        EntityManager entityManager,
-                                                        UUID rootNodeUuid,
-                                                        String nameOfDefaultWorkspace,
-                                                        String[] predefinedWorkspaceNames,
-                                                        long largeValueMinimumSizeInBytes,
-                                                        boolean createWorkspacesAllowed,
-                                                        boolean compressData,
-                                                        boolean enforceReferentialIntegrity ) {
-            return requestProcessor;
+        public RepositoryConnection createConnection( JpaSource source ) {
+            return connection;
         }
+
     }
 }
