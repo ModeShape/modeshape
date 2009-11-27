@@ -145,6 +145,7 @@
 		<module>web/dna-web-jcr-rest</module> 
 		<module>web/dna-web-jcr-rest-client</module> 
 		<module>web/dna-web-jcr-rest-war</module> 
+		<module>utils/dna-jpa-ddl-gen</module> 
 	</modules>
 	<properties>
 		<!-- These are properties used in the database profiles. Must initialize them to be empty so that Maven applies

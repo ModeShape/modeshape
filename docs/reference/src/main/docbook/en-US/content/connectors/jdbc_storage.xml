@@ -263,6 +263,25 @@ config.repositorySource("source A")
 		Of course, setting other more advanced properties would entail calling <code>setProperty(...)</code> for each.  Since almost all
 		of the properties have acceptable default values, however, we don't need to set very many of them.
 	</para>
+	<para>
+	DNA users who prefer not to give DDL privileges to the DNA database user for this connector can use the DNA JPA DDL generation 
+	tool to create the proper DDL files for their database dialect.  This tool is packaged as an executable jar in the 
+	utils/dna-jpa-ddl-gen subproject and can be executed with the following syntax:
+	</para>
+<programlisting>
+java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
+</programlisting>
+	<para>
+	The dialect and model parameters should match the value of the <code>dialect</code> and <code>model</code> properties specified for the
+	JPA connector.  
+	</para>
+	<para>
+	Running this executable will create two files in the output directory (or the current directory if no output directory
+	was specified): create.dna-jpa-connector.ddl and drop.dna-jpa-connector.ddl.  The former contains the DDL to create or replace the tables,
+	foreign keys, indices, and sequences needed by the JPA connector and the latter containts the DDL to drop any tables, foreign keys, indices, and 
+	sequences needed by the JPA connector.
+	</para>
+
 	<sect2>
 		<title>Basic Model</title>
 		<para>
