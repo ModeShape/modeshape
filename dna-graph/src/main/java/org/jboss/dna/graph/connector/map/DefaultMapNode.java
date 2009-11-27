@@ -103,35 +103,29 @@ public class DefaultMapNode implements MapNode {
         return properties;
     }
 
-    @Override
     public void addChild( int index,
                           MapNode child ) {
         children.add(index, child);
     }
 
-    @Override
     public void addChild( MapNode child ) {
         children.add(child);
 
     }
 
-    @Override
     public void clearChildren() {
         children.clear();
     }
 
-    @Override
     public boolean removeChild( MapNode child ) {
         return children.remove(child);
     }
 
-    @Override
     public MapNode removeProperty( Name propertyName ) {
         properties.remove(propertyName);
         return this;
     }
 
-    @Override
     public MapNode setProperties( Iterable<Property> properties ) {
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
