@@ -41,7 +41,7 @@ import org.junit.Test;
 public class JpaSourceTest {
 
     private JpaSource source;
-    private JpaConnection connection;
+    private RepositoryConnection connection;
 
     @Before
     public void beforeEach() throws Exception {
@@ -73,7 +73,7 @@ public class JpaSourceTest {
 
     @Test
     public void shouldCreateConnection() throws Exception {
-        connection = (JpaConnection)source.getConnection();
+        connection = source.getConnection();
         assertThat(connection, is(notNullValue()));
     }
 
