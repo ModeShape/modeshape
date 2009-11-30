@@ -3,6 +3,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
@@ -71,7 +72,7 @@ public class WorkspaceLockManagerTest {
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(sourceName);
         stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
-        stub(repository.createWorkspaceGraph(anyString())).toAnswer(new Answer<Graph>() {
+        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
@@ -150,7 +151,9 @@ public class WorkspaceLockManagerTest {
     @Test
     public void shouldCreateLockRequestWhenUnlockingNode() {
         DnaLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
-        workspaceLockManager.unlockNodeInRepository(lock);
+        JcrSession session = mock(JcrSession.class);
+        stub(session.getExecutionContext()).toReturn(context);
+        workspaceLockManager.unlockNodeInRepository(session, lock);
 
         assertNextRequestIsUnlock(validLocation);
     }

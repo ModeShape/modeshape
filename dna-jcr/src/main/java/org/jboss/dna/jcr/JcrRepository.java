@@ -424,8 +424,9 @@ public class JcrRepository implements Repository {
         // Right now, the other nodes will be created as needed
     }
 
-    Graph createWorkspaceGraph( String workspaceName ) {
-        Graph graph = Graph.create(this.federatedSource, this.executionContext);
+    Graph createWorkspaceGraph( String workspaceName,
+                                ExecutionContext workspaceContext ) {
+        Graph graph = Graph.create(this.federatedSource, workspaceContext);
         graph.useWorkspace(workspaceName);
         return graph;
     }

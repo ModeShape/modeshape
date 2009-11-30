@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.stub;
 import java.io.IOException;
@@ -137,7 +138,7 @@ public abstract class AbstractSessionTest {
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
-        stub(repository.createWorkspaceGraph(anyString())).toAnswer(new Answer<Graph>() {
+        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }

@@ -160,7 +160,7 @@ class WorkspaceLockManager {
                                DnaLock lock,
                                boolean isDeep ) throws RepositoryException {
         // Write them directly to the underlying graph
-        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(workspaceName).batch();
+        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(workspaceName, session.getExecutionContext()).batch();
         workspaceBatch.set(lockOwnerProp, lockIsDeepProp).on(nodeUuid);
         if (isDeep) {
             workspaceBatch.lock(nodeUuid).andItsDescendants().withDefaultTimeout();
@@ -195,7 +195,7 @@ class WorkspaceLockManager {
             batch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
             batch.execute();
 
-            unlockNodeInRepository(lock);
+            unlockNodeInRepository(session, lock);
 
             workspaceLocksByNodeUuid.remove(lock.nodeUuid);
         } catch (PathNotFoundException pnfe) {
@@ -221,10 +221,12 @@ class WorkspaceLockManager {
      * /jcr:system/dna:locks} subgraph.
      * </p>
      * 
+     * @param session the session in which the node is being unlocked
      * @param lock
      */
-    void unlockNodeInRepository( DnaLock lock ) {
-        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName).batch();
+    void unlockNodeInRepository( JcrSession session,
+                                 DnaLock lock ) {
+        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName, session.getExecutionContext()).batch();
 
         workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
         workspaceBatch.unlock(lock.nodeUuid);

@@ -102,7 +102,7 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * The reference to the {@link JcrRepository} instance that owns this {@link Workspace} instance. Very few methods on this
-     * repository object are used; mainly {@link JcrRepository#createWorkspaceGraph(String)},
+     * repository object are used; mainly {@link JcrRepository#createWorkspaceGraph(String,ExecutionContext)},
      * {@link JcrRepository#getPersistentRegistry()} and {@link JcrRepository#getRepositorySourceName()}.
      */
     private final JcrRepository repository;
@@ -158,7 +158,7 @@ final class JcrWorkspace implements Workspace {
         this.context = context.with(local);
 
         // Now create a graph for the session ...
-        this.graph = this.repository.createWorkspaceGraph(workspaceName);
+        this.graph = this.repository.createWorkspaceGraph(this.name, this.context);
 
         // Set up the session for this workspace ...
         this.session = new JcrSession(this.repository, this, this.context, globalRegistry, sessionAttributes);
@@ -312,7 +312,7 @@ final class JcrWorkspace implements Workspace {
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
              */
-            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace).getNodeAt(srcPath);
+            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace, context).getNodeAt(srcPath);
             Property uuidProp = sourceNode.getProperty(DnaLexicon.UUID);
 
             if (uuidProp != null) {
@@ -467,7 +467,7 @@ final class JcrWorkspace implements Workspace {
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
              */
-            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace).getNodeAt(srcPath);
+            org.jboss.dna.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace, context).getNodeAt(srcPath);
             Property uuidProp = sourceNode.getProperty(DnaLexicon.UUID);
 
             if (uuidProp != null) {
