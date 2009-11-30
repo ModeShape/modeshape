@@ -225,10 +225,9 @@ public class MoveBranchRequest extends ChangeRequest {
      * 
      * @param oldLocation the actual location of the node before being moved
      * @param newLocation the actual new location of the node
-     * @throws IllegalArgumentException if the either location is null, if the old location does not represent the
-     *         {@link Location#isSame(Location) same location} as the {@link #from() from location}, if the new location does not
-     *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}, or if the
-     *         either location does not have a path
+     * @throws IllegalArgumentException if the either location is null, if the old location is not {@link Location#equals(Object)
+     *         equal to} the {@link #from() from location}, if the new location is not {@link Location#equals(Object) equal to}
+     *         the {@link #into() into location}, or if the either location does not have a path
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location oldLocation,

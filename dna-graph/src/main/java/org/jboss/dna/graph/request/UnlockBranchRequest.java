@@ -88,13 +88,13 @@ public class UnlockBranchRequest extends ChangeRequest {
      * and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param actualLocation the actual location of the node before being unlocked
-     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location does not
-     *         represent the {@link Location#isSame(Location) same location} as the {@link #at() current location}
+     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location is not
+     *         {@link Location#equals(Object) equal to} the {@link #at() current location}
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocation( Location actualLocation ) {
         checkNotFrozen();
-        if (!at.isSame(actualLocation)) { // not same if actual is null
+        if (!at.equals(actualLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actualLocation, at));
         }
         assert actualLocation != null;

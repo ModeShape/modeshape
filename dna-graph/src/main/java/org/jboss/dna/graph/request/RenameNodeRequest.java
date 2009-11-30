@@ -106,17 +106,16 @@ public class RenameNodeRequest extends ChangeRequest {
      * 
      * @param oldLocation the actual location of the node before being renamed
      * @param newLocation the actual location of the node after being renamed
-     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location does not
-     *         represent the {@link Location#isSame(Location) same location} as the {@link #at() current location}, if the new
-     *         location does not have the same parent as the old location, or if the new location does not have the same
-     *         {@link Path.Segment#getName() name} on {@link Path#getLastSegment() last segment} as that {@link #toName()
-     *         specified on the request}
+     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location is not
+     *         {@link Location#equals(Object) equal to} the {@link #at() current location}, if the new location does not have the
+     *         same parent as the old location, or if the new location does not have the same {@link Path.Segment#getName() name}
+     *         on {@link Path#getLastSegment() last segment} as that {@link #toName() specified on the request}
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location oldLocation,
                                     Location newLocation ) {
         checkNotFrozen();
-        if (!at.isSame(oldLocation)) { // not same if actual is null
+        if (!at.equals(oldLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(oldLocation, at));
         }
         assert oldLocation != null;

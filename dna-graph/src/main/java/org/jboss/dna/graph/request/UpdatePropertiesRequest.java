@@ -125,8 +125,8 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      * and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param actual the actual location of the node being updated, or null if the {@link #on() current location} should be used
-     * @throws IllegalArgumentException if the actual location does represent the {@link Location#isSame(Location) same location}
-     *         as the {@link #on() current location}, or if the actual location does not have a path.
+     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the {@link #on()
+     *         current location}, or if the actual location does not have a path.
      * @throws IllegalStateException if the request is frozen
      * @see #setNewProperties(Iterable)
      * @see #setNewProperties(Name...)

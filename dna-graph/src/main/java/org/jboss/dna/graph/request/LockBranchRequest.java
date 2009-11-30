@@ -122,8 +122,8 @@ public class LockBranchRequest extends ChangeRequest {
      * the actual location must have a {@link Location#getPath() path}.
      * 
      * @param actualLocation the actual location of the node before being locked
-     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location does not
-     *         represent the {@link Location#isSame(Location) same location} as the {@link #at() current location}
+     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location is not
+     *         {@link Location#equals(Object) equal to} the {@link #at() current location}
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocation( Location actualLocation ) {

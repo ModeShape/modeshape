@@ -65,9 +65,8 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.session.GraphSession.Authorizer.Action;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimaps;
+import com.google.common.collect.ListMultimap;
 
 /**
  * This class represents an interactive session for working with the content within a graph. This session maintains a cache of

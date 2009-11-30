@@ -88,8 +88,8 @@ public class DeleteBranchRequest extends ChangeRequest {
      * and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param actual the actual location of the node being deleted, or null if the {@link #at() current location} should be used
-     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
-     *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the {@link #at()
+     *         current location}, or if the actual location does not have a path.
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {

@@ -48,7 +48,6 @@ import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 
 /**
  * An {@link OptimizerRule optimizer rule} that rewrites two {@link And AND-ed} {@link Constraint}s that constraint a dynamic
