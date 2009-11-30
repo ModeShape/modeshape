@@ -119,7 +119,7 @@ public class JcrRepositoryTest {
         sourceGraph = Graph.create(source, context);
 
         // Set up the graph that goes directly to the system source ...
-        systemGraph = repository.createSystemGraph();
+        systemGraph = repository.createSystemGraph(context);
     }
 
     @After

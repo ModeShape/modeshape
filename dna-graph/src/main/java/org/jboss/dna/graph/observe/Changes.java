@@ -127,7 +127,7 @@ public class Changes implements Comparable<Changes>, Serializable {
      * @return the context identifier; never null
      */
     public String getContextId() {
-        return processId;
+        return contextId;
     }
 
     /**

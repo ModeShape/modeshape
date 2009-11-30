@@ -65,7 +65,6 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.jboss.dna.graph.session.GraphSession;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
@@ -143,21 +142,21 @@ class JcrSession implements Session {
 
     JcrSession( JcrRepository repository,
                 JcrWorkspace workspace,
-                ExecutionContext workspaceContext,
+                ExecutionContext sessionContext,
+                NamespaceRegistry globalNamespaceRegistry,
                 Map<String, Object> sessionAttributes ) {
         assert repository != null;
         assert workspace != null;
         assert sessionAttributes != null;
-        assert workspaceContext != null;
+        assert sessionContext != null;
         this.repository = repository;
         this.sessionAttributes = sessionAttributes;
         this.workspace = workspace;
 
         // Create an execution context for this session, which should use the local namespace registry ...
-        NamespaceRegistry workspaceRegistry = workspaceContext.getNamespaceRegistry();
-        NamespaceRegistry local = new LocalNamespaceRegistry(workspaceRegistry);
-        this.executionContext = workspaceContext.with(local);
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, workspaceRegistry, this);
+        this.executionContext = sessionContext;
+        NamespaceRegistry local = sessionContext.getNamespaceRegistry();
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, globalNamespaceRegistry, this);
         this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
@@ -311,11 +310,11 @@ class JcrSession implements Session {
             return;
         }
 
-        if (workspace().lockManager().isHeldBySession(lt)) {
+        if (workspace().lockManager().isHeldBySession(this, lt)) {
             throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lt));
         }
 
-        workspace().lockManager().setHeldBySession(lt, true);
+        workspace().lockManager().setHeldBySession(this, lt, true);
         lockTokens.add(lt);
     }
 
@@ -776,7 +775,7 @@ class JcrSession implements Session {
             return;
         }
 
-        this.workspace().lockManager().cleanLocks(lockTokens);
+        this.workspace().lockManager().cleanLocks(this);
         this.executionContext.getSecurityContext().logout();
         isLive = false;
     }
@@ -858,7 +857,7 @@ class JcrSession implements Session {
             throw new IllegalStateException(JcrI18n.cannotRemoveLockToken.text(lt));
         }
 
-        workspace().lockManager().setHeldBySession(lt, false);
+        workspace().lockManager().setHeldBySession(this, lt, false);
         lockTokens.remove(lt);
     }
 

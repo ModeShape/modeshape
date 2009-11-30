@@ -142,7 +142,7 @@ public abstract class AbstractSessionTest {
                 return graph;
             }
         });
-        stub(repository.createSystemGraph()).toAnswer(new Answer<Graph>() {
+        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
@@ -164,7 +164,7 @@ public abstract class AbstractSessionTest {
         // Set up the session attributes ...
         sessionAttributes = new HashMap<String, Object>();
         sessionAttributes.put("attribute1", "value1");
-        
+
         // Now create the workspace ...
         SecurityContext mockSecurityContext = new MockSecurityContext(null,
                                                                       Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));

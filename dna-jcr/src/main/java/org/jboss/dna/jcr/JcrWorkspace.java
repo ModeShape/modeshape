@@ -34,7 +34,6 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
-import javax.jcr.NamespaceRegistry;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -61,10 +60,12 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.session.GraphSession;
@@ -132,7 +133,7 @@ final class JcrWorkspace implements Workspace {
     private final JcrQueryManager queryManager;
 
     private final WorkspaceLockManager lockManager;
-    
+
     /**
      * The {@link Session} instance that this corresponds with this workspace.
      */
@@ -151,34 +152,16 @@ final class JcrWorkspace implements Workspace {
         this.repository = repository;
         this.lockManager = repository.getLockManager(workspaceName);
 
-        // // Set up the execution context for this workspace, which should use the namespace registry that persists
-        // // the namespaces in the graph ...
-        // Graph namespaceGraph = Graph.create(this.repository.getRepositorySourceName(),
-        // this.repository.getConnectionFactory(),
-        // context);
-        // namespaceGraph.useWorkspace(workspaceName);
-        //
-        // // Make sure the "/jcr:system" node exists ...
-        // PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        // Path root = pathFactory.createRootPath();
-        // Path systemPath = pathFactory.create(root, JcrLexicon.SYSTEM);
-        // Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.SYSTEM);
-        // namespaceGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
-        //
-        // Name uriProperty = DnaLexicon.NAMESPACE_URI;
-        // Path namespacesPath = pathFactory.create(systemPath, DnaLexicon.NAMESPACES);
-        // PropertyFactory propertyFactory = context.getPropertyFactory();
-        // Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
-        // org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
-        // namespacesPath,
-        // uriProperty, namespaceType);
-        this.context = context;
+        // Create an execution context for this session, which should use the local namespace registry ...
+        NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
+        NamespaceRegistry local = new LocalNamespaceRegistry(globalRegistry);
+        this.context = context.with(local);
 
         // Now create a graph for the session ...
         this.graph = this.repository.createWorkspaceGraph(workspaceName);
 
         // Set up the session for this workspace ...
-        this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
+        this.session = new JcrSession(this.repository, this, this.context, globalRegistry, sessionAttributes);
 
         // This must be initialized after the session
         this.nodeTypeManager = new JcrNodeTypeManager(session, this.repository.getRepositoryTypeManager());
@@ -213,7 +196,7 @@ final class JcrWorkspace implements Workspace {
     final WorkspaceLockManager lockManager() {
         return this.lockManager;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -233,7 +216,7 @@ final class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#getNamespaceRegistry()
      */
-    public final NamespaceRegistry getNamespaceRegistry() {
+    public final javax.jcr.NamespaceRegistry getNamespaceRegistry() {
         return workspaceRegistry;
     }
 
@@ -325,7 +308,6 @@ final class JcrWorkspace implements Workspace {
             // This also performs the check permission for reading the parent ...
             Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
-            
 
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
@@ -336,7 +318,7 @@ final class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                DnaLock sourceLock = lockManager().lockFor(Location.create(sourceUuid));
+                DnaLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
                 }
@@ -350,7 +332,7 @@ final class JcrWorkspace implements Workspace {
                     throw new LockException(destAbsPath);
                 }
             }
-            
+
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
@@ -481,7 +463,6 @@ final class JcrWorkspace implements Workspace {
             // This also performs the check permission for reading the parent ...
             Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
-            
 
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
@@ -492,7 +473,7 @@ final class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                DnaLock sourceLock = lockManager().lockFor(Location.create(sourceUuid));
+                DnaLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(srcAbsPath);
                 }
@@ -506,7 +487,7 @@ final class JcrWorkspace implements Workspace {
                     throw new LockException(destAbsPath);
                 }
             }
-            
+
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
@@ -633,7 +614,7 @@ final class JcrWorkspace implements Workspace {
                 if (newParentLock != null && newParentLock.getLockToken() == null) {
                     throw new LockException(destAbsPath);
                 }
-            }            
+            }
 
             // Now perform the clone, using the direct (non-session) method ...
             cache.graphSession().immediateMove(srcPath, destPath);

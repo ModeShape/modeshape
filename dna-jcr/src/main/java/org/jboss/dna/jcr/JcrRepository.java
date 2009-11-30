@@ -410,7 +410,7 @@ public class JcrRepository implements Repository {
         this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
 
         this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
-        this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);    
+        this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {
@@ -430,12 +430,12 @@ public class JcrRepository implements Repository {
         return graph;
     }
 
-    Graph createSystemGraph() {
+    Graph createSystemGraph( ExecutionContext sessionContext ) {
         assert this.systemSourceName != null;
         assert this.connectionFactory != null;
-        assert this.executionContext != null;
+        assert sessionContext != null;
         // The default workspace should be the system workspace ...
-        Graph result = Graph.create(this.systemSourceName, this.connectionFactory, this.executionContext);
+        Graph result = Graph.create(this.systemSourceName, this.connectionFactory, sessionContext);
         if (this.systemWorkspaceName != null) {
             result.useWorkspace(systemWorkspaceName);
         }

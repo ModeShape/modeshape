@@ -4,6 +4,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.LinkedList;
 import java.util.UUID;
@@ -75,7 +76,7 @@ public class WorkspaceLockManagerTest {
                 return graph;
             }
         });
-        stub(repository.createSystemGraph()).toAnswer(new Answer<Graph>() {
+        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
@@ -139,7 +140,9 @@ public class WorkspaceLockManagerTest {
         Property lockOwnerProp = propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner);
         Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
 
-        workspaceLockManager.lockNodeInRepository(validUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
+        JcrSession session = mock(JcrSession.class);
+        stub(session.getExecutionContext()).toReturn(context);
+        workspaceLockManager.lockNodeInRepository(session, validUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
 
         assertNextRequestIsLock(validLocation, LockScope.SELF_ONLY, 0);
     }

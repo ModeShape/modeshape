@@ -117,6 +117,11 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
     }
 
     @Test
+    public void shouldHaveSameContextIdAsSession() {
+        assertThat(workspace.context().getId(), is(session.getExecutionContext().getId()));
+    }
+
+    @Test
     public void shouldProvideNamespaceRegistry() throws Exception {
         NamespaceRegistry registry = workspace.getNamespaceRegistry();
         assertThat(registry, is(notNullValue()));

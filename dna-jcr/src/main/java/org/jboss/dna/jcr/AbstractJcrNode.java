@@ -1336,7 +1336,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#holdsLock()
      */
     public final boolean holdsLock() /*throws RepositoryException*/{
-        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(this.location);
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(session(), this.location);
 
         return lock != null && cache.session().lockTokens().contains(lock.getLockToken());
     }
@@ -1368,9 +1368,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
             while (!nodesToVisit.isEmpty()) {
                 Node<JcrNodePayload, JcrPropertyPayload> node = nodesToVisit.remove(nodesToVisit.size() - 1);
-                if (session().workspace().lockManager().lockFor(node.getLocation()) != null) throw new LockException(
-                                                                                                                     JcrI18n.parentAlreadyLocked.text(this.location,
-                                                                                                                                                      node.getLocation()));
+                if (session().workspace().lockManager().lockFor(session(), node.getLocation()) != null) throw new LockException(
+                                                                                                                                JcrI18n.parentAlreadyLocked.text(this.location,
+                                                                                                                                                                 node.getLocation()));
 
                 for (Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
                     nodesToVisit.add(child);
@@ -1378,9 +1378,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             }
         }
 
-        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lock(cache,
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lock(session(),
                                                                                      this.location,
-                                                                                     session().getUserID(),
                                                                                      isDeep,
                                                                                      isSessionScoped);
 
@@ -1394,7 +1393,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#unlock()
      */
     public final void unlock() throws LockException, RepositoryException {
-        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(this.location);
+        WorkspaceLockManager.DnaLock lock = session().workspace().lockManager().lockFor(session(), this.location);
 
         if (lock == null) {
             throw new LockException(JcrI18n.notLocked.text(this.location));
@@ -1404,7 +1403,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
-        session().workspace().lockManager().unlock(lock);
+        session().workspace().lockManager().unlock(session(), lock);
         session().removeLockToken(lock.getLockToken());
     }
 
@@ -1413,14 +1412,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (session() == null || session().workspace() == null) return null;
 
         WorkspaceLockManager lockManager = session().workspace().lockManager();
-        WorkspaceLockManager.DnaLock lock = lockManager.lockFor(this.location);
+        WorkspaceLockManager.DnaLock lock = lockManager.lockFor(session(), this.location);
         if (lock != null) return lock;
 
         AbstractJcrNode parent = this;
         while (!parent.isRoot()) {
             parent = parent.getParent();
 
-            WorkspaceLockManager.DnaLock parentLock = lockManager.lockFor(parent.location);
+            WorkspaceLockManager.DnaLock parentLock = lockManager.lockFor(session(), parent.location);
             if (parentLock != null && parentLock.isLive()) {
                 return parentLock.isDeep() ? parentLock : null;
             }

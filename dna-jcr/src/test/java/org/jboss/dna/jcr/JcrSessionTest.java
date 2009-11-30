@@ -56,7 +56,9 @@ import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeType;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.junit.After;
 import org.junit.Before;
@@ -203,8 +205,9 @@ public class JcrSessionTest extends AbstractSessionTest {
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
         LoginContext loginContext = mock(LoginContext.class);
         stub(loginContext.getSubject()).toReturn(subject);
-        Session session = new JcrSession(repository, workspace, context.with(new JaasSecurityContext(loginContext)),
-                                         sessionAttributes);
+        NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
+        ExecutionContext sessionContext = context.with(new JaasSecurityContext(loginContext));
+        Session session = new JcrSession(repository, workspace, sessionContext, globalRegistry, sessionAttributes);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {
