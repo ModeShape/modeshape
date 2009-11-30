@@ -41,6 +41,8 @@
 /web/dna-web-jcr-rest-war/target/
 /web/dna-web-jcr-rest-client/target/
 
+/utils/dna-jpa-ddl-gen/target/
+
 /extensions/dna-classloader-maven/target
 /extensions/dna-common-jdbc/target
 /extensions/dna-connector-federation/target

@@ -53,7 +53,7 @@ final class DefinitionCache {
      * first, followed by those of the immediate supertypes, followed by those from those supertypes' supertypes, etc.
      * </p>
      */
-    private final Multimap<Name, JcrNodeDefinition> childNodeDefinitionsThatAllowSns = new LinkedListMultimap<Name, JcrNodeDefinition>();
+    private final Multimap<Name, JcrNodeDefinition> childNodeDefinitionsThatAllowSns = LinkedListMultimap.create();
     /**
      * A local cache of all defined and inherited child node definitions, keyed by their name, that do <i>not</i> allow
      * same-name-sibilings. This includes residual child node definitions, which are keyed by the
@@ -67,7 +67,7 @@ final class DefinitionCache {
      * first, followed by those of the immediate supertypes, followed by those from those supertypes' supertypes, etc.
      * </p>
      */
-    private final Multimap<Name, JcrNodeDefinition> childNodeDefinitionsThatAllowNoSns = new LinkedListMultimap<Name, JcrNodeDefinition>();
+    private final Multimap<Name, JcrNodeDefinition> childNodeDefinitionsThatAllowNoSns = LinkedListMultimap.create();
 
     /**
      * A local cache of all defined and inherited property definitions, keyed by their name, that allow multiple values. This
@@ -80,7 +80,7 @@ final class DefinitionCache {
      * or the multiple attribute" (Section 4.7.15 of the JSR-283 draft specification).
      * </p>
      */
-    private final Multimap<Name, JcrPropertyDefinition> multiValuedPropertyDefinitions = new LinkedListMultimap<Name, JcrPropertyDefinition>();
+    private final Multimap<Name, JcrPropertyDefinition> multiValuedPropertyDefinitions = LinkedListMultimap.create();
     /**
      * A local cache of all defined and inherited property definitions, keyed by their name, that allow single values. This
      * includes residual property definitions, which are keyed by the {@link JcrNodeType#RESIDUAL_NAME}. The content of this map
@@ -92,10 +92,10 @@ final class DefinitionCache {
      * or the multiple attribute" (Section 4.7.15 of the JSR-283 draft specification).
      * </p>
      */
-    private final Multimap<Name, JcrPropertyDefinition> singleValuedPropertyDefinitions = new LinkedListMultimap<Name, JcrPropertyDefinition>();
+    private final Multimap<Name, JcrPropertyDefinition> singleValuedPropertyDefinitions = LinkedListMultimap.create();
 
-    private final Multimap<Name, JcrNodeDefinition> allChildNodeDefinitions = new LinkedListMultimap<Name, JcrNodeDefinition>();
-    private final Multimap<Name, JcrPropertyDefinition> allPropertyDefinitions = new LinkedListMultimap<Name, JcrPropertyDefinition>();
+    private final Multimap<Name, JcrNodeDefinition> allChildNodeDefinitions = LinkedListMultimap.create();
+    private final Multimap<Name, JcrPropertyDefinition> allPropertyDefinitions = LinkedListMultimap.create();
 
     DefinitionCache( JcrNodeType nodeType ) {
         addDefinitionsForTypeAndAllSupertypes(nodeType);

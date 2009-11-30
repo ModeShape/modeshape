@@ -46,6 +46,7 @@ import org.jboss.dna.graph.query.model.Visitor;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
@@ -80,7 +81,7 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
         for (PlanNode access : plan.findAllAtOrBelow(Type.ACCESS)) {
             // Look for select nodes below an ACCESS node that have a single Comparison constraint,
             // and accumulate them keyed by the dynamic operand ...
-            Multimap<DynamicOperand, PlanNode> selectNodeByOperand = Multimaps.newArrayListMultimap();
+            Multimap<DynamicOperand, PlanNode> selectNodeByOperand = ArrayListMultimap.create();
             for (PlanNode select : access.findAllAtOrBelow(Type.SELECT)) {
                 Constraint constraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
                 // Look for Comparison constraints that use a range operator

@@ -66,6 +66,7 @@ import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.session.GraphSession.Authorizer.Action;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimaps;
 
 /**
@@ -86,7 +87,7 @@ import com.google.common.collect.Multimaps;
 @NotThreadSafe
 public class GraphSession<Payload, PropertyPayload> {
 
-    protected final ListMultimap<Name, Node<Payload, PropertyPayload>> NO_CHILDREN = Multimaps.immutableMultimap();
+    protected final ListMultimap<Name, Node<Payload, PropertyPayload>> NO_CHILDREN = LinkedListMultimap.create();
     protected final Map<Name, PropertyInfo<PropertyPayload>> NO_PROPERTIES = Collections.emptyMap();
 
     protected final Authorizer authorizer;
@@ -1621,7 +1622,7 @@ public class GraphSession<Payload, PropertyPayload> {
             if (children.isEmpty()) {
                 childrenByName = cache.NO_CHILDREN;
             } else {
-                childrenByName = Multimaps.newLinkedListMultimap();
+                childrenByName = LinkedListMultimap.create();
                 for (Location location : children) {
                     NodeId id = cache.idFactory.create();
                     Name childName = location.getPath().getLastSegment().getName();
@@ -1699,7 +1700,7 @@ public class GraphSession<Payload, PropertyPayload> {
             Name childName = childPath.getLastSegment().getName();
             if (this.childrenByName.isEmpty()) {
                 // Just have to add the child ...
-                this.childrenByName = Multimaps.newLinkedListMultimap();
+                this.childrenByName = LinkedListMultimap.create();
                 if (childPath.getLastSegment().hasIndex()) {
                     // The child has a SNS index, but this is an only child ...
                     newChild = newChild.with(cache.pathFactory.create(childPath.getParent(), childName));
@@ -1710,7 +1711,7 @@ public class GraphSession<Payload, PropertyPayload> {
             }
 
             // Unfortunately, there is no efficient way to insert into the multi-map, so we need to recreate it ...
-            ListMultimap<Name, Node<Payload, PropertyPayload>> children = Multimaps.newLinkedListMultimap();
+            ListMultimap<Name, Node<Payload, PropertyPayload>> children = LinkedListMultimap.create();
             boolean added = false;
             for (Node<Payload, PropertyPayload> child : this.childrenByName.values()) {
                 if (!added && child.isNew()) {
@@ -1988,7 +1989,7 @@ public class GraphSession<Payload, PropertyPayload> {
             child.remove();
             // Now add the child ...
             if (parent.childrenByName == cache.NO_CHILDREN) {
-                parent.childrenByName = Multimaps.newLinkedListMultimap();
+                parent.childrenByName = LinkedListMultimap.create();
             }
             parent.childrenByName.put(newNodeName, child);
             child.parent = parent;
@@ -2035,7 +2036,7 @@ public class GraphSession<Payload, PropertyPayload> {
 
             parent.load();
             if (parent.childrenByName == cache.NO_CHILDREN) {
-                parent.childrenByName = Multimaps.newLinkedListMultimap();
+                parent.childrenByName = LinkedListMultimap.create();
             }
 
             cache.nodeOperations.preCopy(this, parent);
@@ -2101,7 +2102,7 @@ public class GraphSession<Payload, PropertyPayload> {
             }
 
             // Unfortunately, there is no efficient way to insert into the multi-map, so we need to recreate it ...
-            ListMultimap<Name, Node<Payload, PropertyPayload>> children = Multimaps.newLinkedListMultimap();
+            ListMultimap<Name, Node<Payload, PropertyPayload>> children = LinkedListMultimap.create();
             for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
                 if (child == nodeToBeMoved) continue;
                 if (before != null && child.getSegment().equals(before)) {
@@ -2388,7 +2389,7 @@ public class GraphSession<Payload, PropertyPayload> {
             Node<Payload, PropertyPayload> child = cache.createNode(this, cache.idFactory.create(), newChild);
             child.markAsNew(); // marks parent as changed
             if (childrenByName == cache.NO_CHILDREN) {
-                childrenByName = Multimaps.newLinkedListMultimap();
+                childrenByName = LinkedListMultimap.create();
             }
             childrenByName.put(name, child);
 

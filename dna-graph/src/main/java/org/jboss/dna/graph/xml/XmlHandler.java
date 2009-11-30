@@ -513,7 +513,7 @@ public class XmlHandler extends DefaultHandler2 {
             this.pathToParent = pathToParent;
             this.name = name;
             this.state = ElementEntryState.TBD;
-            properties = new LinkedHashMultimap<Name, Object>();
+            properties = LinkedHashMultimap.create();
         }
 
         protected void setName( Name name ) {
