@@ -32,6 +32,7 @@ import org.jboss.dna.common.util.HashCode;
  */
 @Immutable
 public class Join extends Source {
+    private static final long serialVersionUID = 1L;
 
     private final Source left;
     private final Source right;

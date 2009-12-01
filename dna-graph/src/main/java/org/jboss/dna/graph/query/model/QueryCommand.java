@@ -30,6 +30,7 @@ import java.util.List;
  * Represents the abstract base class for all query commands. Subclasses include {@link Query} and {@link SetQuery}.
  */
 public abstract class QueryCommand extends Command {
+    private static final long serialVersionUID = 1L;
 
     private final List<Ordering> orderings;
     private final Limit limits;

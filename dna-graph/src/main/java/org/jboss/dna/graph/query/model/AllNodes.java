@@ -32,6 +32,8 @@ import org.jboss.dna.common.util.ObjectUtil;
 @Immutable
 public class AllNodes extends Selector {
 
+    private static final long serialVersionUID = 1L;
+
     public static final SelectorName ALL_NODES_NAME = new SelectorName("__ALLNODES__");
 
     public AllNodes() {

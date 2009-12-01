@@ -34,6 +34,8 @@ import org.jboss.dna.common.util.ObjectUtil;
  */
 @Immutable
 public class SameNodeJoinCondition extends JoinCondition {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName selector1Name;
     private final SelectorName selector2Name;
     private final String selector2Path;

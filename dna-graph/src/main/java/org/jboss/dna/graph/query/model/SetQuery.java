@@ -44,6 +44,7 @@ import org.jboss.dna.common.util.ObjectUtil;
  */
 @Immutable
 public class SetQuery extends QueryCommand {
+    private static final long serialVersionUID = 1L;
 
     public enum Operation implements Readable {
         UNION("UNION"),

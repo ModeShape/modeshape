@@ -48,6 +48,8 @@ import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.property.basic.RootPath;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.model.QueryCommand;
 
 /**
  * A default implementation of {@link MapWorkspace} that only requires the user to implement some simple, map-like operations.
@@ -617,6 +619,27 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             newWorkspace.removeNode(context, existing);
         }
         return copyNode(context, original, newWorkspace, newParent, desiredName, true, (Map<UUID, UUID>)null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.map.MapWorkspace#query(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.query.model.QueryCommand)
+     */
+    public QueryResults query( ExecutionContext context,
+                               QueryCommand command ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.map.MapWorkspace#search(org.jboss.dna.graph.ExecutionContext, java.lang.String)
+     */
+    public QueryResults search( ExecutionContext context,
+                                String fullTextSearchExpression ) {
+        return null;
     }
 
     /**

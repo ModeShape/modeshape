@@ -23,8 +23,10 @@
  */
 package org.jboss.dna.graph.query.model;
 
+import java.io.Serializable;
+
 /**
  * A common interface for all query language objects.
  */
-public interface LanguageObject extends Visitable {
+public interface LanguageObject extends Visitable, Serializable {
 }

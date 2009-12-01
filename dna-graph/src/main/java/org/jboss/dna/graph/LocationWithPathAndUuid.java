@@ -38,6 +38,8 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 @Immutable
 final class LocationWithPathAndUuid extends LocationWithPathAndProperty {
 
+    private static final long serialVersionUID = 1L;
+
     private final UUID uuid;
 
     /**

@@ -31,6 +31,7 @@ import org.jboss.dna.common.util.ObjectUtil;
  */
 @Immutable
 public class NamedSelector extends Selector {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Create a selector with a name.

@@ -43,6 +43,7 @@ import org.jboss.dna.graph.query.model.Column;
  */
 @Immutable
 public final class QueryResultColumns implements Columns {
+    private static final long serialVersionUID = 1L;
 
     private static final QueryResultColumns EMPTY = new QueryResultColumns(Collections.<Column>emptyList(), false);
 

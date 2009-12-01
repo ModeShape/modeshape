@@ -33,7 +33,6 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 
 /**
@@ -41,6 +40,7 @@ import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
  */
 @Immutable
 public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
+    private static final long serialVersionUID = 1L;
 
     private final QueryContext context;
     private final QueryCommand command;
@@ -86,15 +86,6 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
                          Columns columns,
                          Statistics statistics ) {
         this(context, command, columns, statistics, Collections.<Object[]>emptyList());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.query.QueryResults#getTypeSystem()
-     */
-    public TypeSystem getTypeSystem() {
-        return context.getTypeSystem();
     }
 
     /**

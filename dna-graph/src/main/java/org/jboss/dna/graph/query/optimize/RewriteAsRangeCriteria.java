@@ -58,6 +58,8 @@ import com.google.common.collect.Multimap;
 public class RewriteAsRangeCriteria implements OptimizerRule {
 
     protected static final Constraint CONFLICTING_CONSTRAINT = new Constraint() {
+        private static final long serialVersionUID = 1L;
+
         public void accept( Visitor visitor ) {
             throw new UnsupportedOperationException();
         }

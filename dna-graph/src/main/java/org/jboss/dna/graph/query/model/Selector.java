@@ -31,6 +31,7 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public abstract class Selector extends Source {
+    private static final long serialVersionUID = 1L;
 
     private final SelectorName name;
     private final SelectorName alias;

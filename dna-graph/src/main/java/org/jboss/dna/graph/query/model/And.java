@@ -33,6 +33,8 @@ import org.jboss.dna.common.util.HashCode;
 @Immutable
 public class And extends Constraint {
 
+    private static final long serialVersionUID = 1L;
+
     private final Constraint left;
     private final Constraint right;
     private final int hc;

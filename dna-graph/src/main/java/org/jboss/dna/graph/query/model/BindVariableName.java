@@ -32,6 +32,8 @@ import org.jboss.dna.common.util.CheckArg;
 @Immutable
 public class BindVariableName extends StaticOperand {
 
+    private static final long serialVersionUID = 1L;
+
     private final String variableName;
 
     public BindVariableName( String variableName ) {

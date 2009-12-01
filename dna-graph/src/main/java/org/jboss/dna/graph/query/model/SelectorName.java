@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.query.model;
 
+import java.io.Serializable;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
@@ -30,7 +31,8 @@ import org.jboss.dna.common.util.CheckArg;
  * A representation of a qualified or expanded name.
  */
 @Immutable
-public class SelectorName implements Readable {
+public class SelectorName implements Readable, Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final String name;
 

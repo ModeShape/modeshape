@@ -32,6 +32,8 @@ import org.jboss.dna.common.util.HashCode;
  */
 @Immutable
 public class ChildNodeJoinCondition extends JoinCondition {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName childSelectorName;
     private final SelectorName parentSelectorName;
     private final int hc;

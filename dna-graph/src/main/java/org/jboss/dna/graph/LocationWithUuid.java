@@ -41,6 +41,8 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 @Immutable
 final class LocationWithUuid extends Location {
 
+    private static final long serialVersionUID = 1L;
+
     private final UUID uuid;
     private final int hashCode;
     private final List<Property> properties;

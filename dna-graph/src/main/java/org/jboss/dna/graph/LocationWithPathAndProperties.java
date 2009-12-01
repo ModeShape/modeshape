@@ -27,9 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 import net.jcip.annotations.Immutable;
-
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
@@ -43,6 +41,8 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 @Immutable
 class LocationWithPathAndProperties extends LocationWithPath {
 
+    private static final long serialVersionUID = 1L;
+
     private final List<Property> idProperties;
 
     /**
@@ -53,7 +53,7 @@ class LocationWithPathAndProperties extends LocationWithPath {
      */
     LocationWithPathAndProperties( Path path,
                                    List<Property> idProperties ) {
-    	super(path);
+        super(path);
         assert idProperties != null;
         assert !idProperties.isEmpty();
         this.idProperties = Collections.unmodifiableList(idProperties);

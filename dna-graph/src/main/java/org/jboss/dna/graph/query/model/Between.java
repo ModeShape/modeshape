@@ -33,6 +33,8 @@ import org.jboss.dna.common.util.HashCode;
 @Immutable
 public class Between extends Constraint {
 
+    private static final long serialVersionUID = 1L;
+
     private final DynamicOperand operand;
     private final StaticOperand lowerBound;
     private final StaticOperand upperBound;

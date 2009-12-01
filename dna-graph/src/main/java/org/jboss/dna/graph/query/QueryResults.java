@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.query;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -33,20 +34,12 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.model.TypeSystem;
 
 /**
  * The resulting output of a query.
  */
 @Immutable
-public interface QueryResults {
-
-    /**
-     * Get the type system used to evaluate the query.
-     * 
-     * @return the type system; never null
-     */
-    public TypeSystem getTypeSystem();
+public interface QueryResults extends Serializable {
 
     /**
      * Get the original query command.
@@ -186,7 +179,7 @@ public interface QueryResults {
      * the tuples.
      */
     @Immutable
-    public interface Columns {
+    public interface Columns extends Serializable {
         /**
          * Get the columns.
          * 
@@ -365,7 +358,10 @@ public interface QueryResults {
         public Columns subSelect( Column... columns );
     }
 
-    public static class Statistics implements Comparable<Statistics> {
+    @Immutable
+    public static class Statistics implements Comparable<Statistics>, Serializable {
+        private static final long serialVersionUID = 1L;
+
         protected static final Statistics EMPTY_STATISTICS = new Statistics();
 
         private final long planningNanos;

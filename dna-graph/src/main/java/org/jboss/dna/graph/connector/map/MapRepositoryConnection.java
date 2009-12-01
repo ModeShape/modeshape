@@ -101,7 +101,8 @@ public class MapRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        RequestProcessor processor = new MapRequestProcessor(context, this.repository, this.source.getRepositoryContext());
+        RequestProcessor processor = new MapRequestProcessor(context, this.repository, this.source.getRepositoryContext()
+                                                                                                  .getObserver());
 
         Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
         lock.lock();
@@ -131,5 +132,4 @@ public class MapRepositoryConnection implements RepositoryConnection {
     public String toString() {
         return "Connection to the \"" + getSourceName() + "\" " + repository.getClass().getSimpleName();
     }
-
 }

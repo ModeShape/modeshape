@@ -57,8 +57,8 @@ public abstract class MapRepository {
      * @param rootNodeUuid the UUID that will be used as the root node UUID for each workspace in the repository; may not be null
      *        or empty
      */
-    public MapRepository( String sourceName,
-                          UUID rootNodeUuid ) {
+    protected MapRepository( String sourceName,
+                             UUID rootNodeUuid ) {
         this(sourceName, rootNodeUuid, null);
     }
 
@@ -71,9 +71,9 @@ public abstract class MapRepository {
      *        or empty
      * @param defaultWorkspaceName the name of the default, auto-created workspace
      */
-    public MapRepository( String sourceName,
-                          UUID rootNodeUuid,
-                          String defaultWorkspaceName ) {
+    protected MapRepository( String sourceName,
+                             UUID rootNodeUuid,
+                             String defaultWorkspaceName ) {
         CheckArg.isNotEmpty(sourceName, "sourceName");
         CheckArg.isNotNull(rootNodeUuid, "rootNodeUUID");
         this.rootNodeUuid = rootNodeUuid;

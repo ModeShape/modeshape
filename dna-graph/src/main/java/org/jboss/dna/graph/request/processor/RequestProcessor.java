@@ -56,10 +56,12 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -272,6 +274,10 @@ public abstract class RequestProcessor {
                 process((DestroyWorkspaceRequest)request);
             } else if (request instanceof UpdateValuesRequest) {
                 process((UpdateValuesRequest)request);
+            } else if (request instanceof QueryRequest) {
+                process((QueryRequest)request);
+            } else if (request instanceof FullTextSearchRequest) {
+                process((FullTextSearchRequest)request);
             } else {
                 processUnknownRequest(request);
             }
@@ -910,6 +916,32 @@ public abstract class RequestProcessor {
         }
 
         request.setActualLocation(actualLocation);
+    }
+
+    /**
+     * Process a request to query a workspace.
+     * <p>
+     * The default implementation of this method behaves as though the implementation does not support queries by setting an error
+     * on the request
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( QueryRequest request ) {
+        processUnknownRequest(request);
+    }
+
+    /**
+     * Process a request to search a workspace.
+     * <p>
+     * The default implementation of this method behaves as though the implementation does not support full-text searches by
+     * setting an error on the request
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( FullTextSearchRequest request ) {
+        processUnknownRequest(request);
     }
 
     /**

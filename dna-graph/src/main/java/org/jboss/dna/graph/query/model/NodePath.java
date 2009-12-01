@@ -31,6 +31,8 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public class NodePath extends DynamicOperand {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName selectorName;
 
     /**

@@ -38,6 +38,8 @@ import org.jboss.dna.common.util.HashCode;
  */
 @Immutable
 public class EquiJoinCondition extends JoinCondition {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName selector1Name;
     private final String property1Name;
     private final SelectorName selector2Name;

@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -45,7 +46,9 @@ import org.jboss.dna.graph.property.Property;
  * in this base class to allow immutable subclasses to calculate and cache the hash code during object construction.
  */
 @Immutable
-public abstract class Location implements Iterable<Property>, Comparable<Location> {
+public abstract class Location implements Iterable<Property>, Comparable<Location>, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final Comparator<Location> COMPARATOR = new Comparator<Location>() {
         /**

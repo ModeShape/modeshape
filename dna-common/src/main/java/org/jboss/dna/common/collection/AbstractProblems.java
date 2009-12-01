@@ -33,6 +33,7 @@ import org.jboss.dna.common.i18n.I18n;
  * were encountered (although this cannot be guaranteed in contexts involving multiple threads or processes).
  */
 public abstract class AbstractProblems implements Problems {
+    private static final long serialVersionUID = 1L;
 
     protected static final List<Problem> EMPTY_PROBLEMS = Collections.emptyList();
 

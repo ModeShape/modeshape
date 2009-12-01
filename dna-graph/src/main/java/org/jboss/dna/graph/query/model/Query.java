@@ -37,6 +37,7 @@ import org.jboss.dna.common.util.ObjectUtil;
  */
 @Immutable
 public class Query extends QueryCommand {
+    private static final long serialVersionUID = 1L;
 
     public static final boolean IS_DISTINCT_DEFAULT = false;
 

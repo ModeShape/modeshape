@@ -37,6 +37,7 @@ import net.jcip.annotations.ThreadSafe;
  */
 @ThreadSafe
 public class ThreadSafeProblems extends AbstractProblems {
+    private static final long serialVersionUID = 1L;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final List<Problem> problems = new LinkedList<Problem>();

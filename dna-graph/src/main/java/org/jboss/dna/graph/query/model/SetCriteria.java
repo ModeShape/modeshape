@@ -34,6 +34,7 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public class SetCriteria extends Constraint {
+    private static final long serialVersionUID = 1L;
 
     private final DynamicOperand left;
     private final Collection<StaticOperand> setOperands;

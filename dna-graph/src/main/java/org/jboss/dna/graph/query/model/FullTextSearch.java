@@ -38,6 +38,8 @@ import org.jboss.dna.graph.query.parse.FullTextSearchParser;
  */
 @Immutable
 public class FullTextSearch extends Constraint {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName selectorName;
     private final String propertyName;
     private final String fullTextSearchExpression;

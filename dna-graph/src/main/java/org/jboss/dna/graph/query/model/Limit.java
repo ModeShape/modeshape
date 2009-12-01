@@ -31,6 +31,7 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public class Limit implements LanguageObject {
+    private static final long serialVersionUID = 1L;
 
     public static final Limit NONE = new Limit(Integer.MAX_VALUE, 0);
 

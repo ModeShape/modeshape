@@ -32,6 +32,8 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public class UpperCase extends DynamicOperand {
+    private static final long serialVersionUID = 1L;
+
     private final DynamicOperand operand;
 
     /**

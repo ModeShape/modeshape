@@ -32,6 +32,7 @@ import org.jboss.dna.common.util.ObjectUtil;
  */
 @Immutable
 public class Column implements LanguageObject {
+    private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
     private final String propertyName;

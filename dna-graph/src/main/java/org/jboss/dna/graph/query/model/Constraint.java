@@ -30,5 +30,5 @@ import net.jcip.annotations.Immutable;
  */
 @Immutable
 public abstract class Constraint implements LanguageObject {
-
+    private static final long serialVersionUID = 1L;
 }

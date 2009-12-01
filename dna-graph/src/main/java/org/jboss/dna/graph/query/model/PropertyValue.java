@@ -32,6 +32,8 @@ import org.jboss.dna.common.util.HashCode;
  */
 @Immutable
 public class PropertyValue extends DynamicOperand {
+    private static final long serialVersionUID = 1L;
+
     private final SelectorName selectorName;
     private final String propertyName;
     private final int hc;

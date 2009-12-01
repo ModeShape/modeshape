@@ -41,6 +41,8 @@ import org.jboss.dna.graph.property.Property;
 @Immutable
 class LocationWithPath extends Location {
 
+    private static final long serialVersionUID = 1L;
+
     private final Path path;
     private final int hashCode;
 

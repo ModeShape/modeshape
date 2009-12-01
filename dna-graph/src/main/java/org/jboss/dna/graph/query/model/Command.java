@@ -27,5 +27,5 @@ package org.jboss.dna.graph.query.model;
  * Represents the abstract base class for all top-level language objects that are the root of a language object tree.
  */
 public abstract class Command implements LanguageObject {
-
+    private static final long serialVersionUID = 1L;
 }

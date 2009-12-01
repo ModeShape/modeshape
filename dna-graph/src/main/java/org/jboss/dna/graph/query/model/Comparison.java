@@ -33,6 +33,8 @@ import org.jboss.dna.common.util.HashCode;
 @Immutable
 public class Comparison extends Constraint {
 
+    private static final long serialVersionUID = 1L;
+
     private final DynamicOperand operand1;
     private final StaticOperand operand2;
     private final Operator operator;

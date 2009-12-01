@@ -23,10 +23,13 @@
  */
 package org.jboss.dna.graph.query.plan;
 
+import java.io.Serializable;
 import net.jcip.annotations.NotThreadSafe;
 
 @NotThreadSafe
-public final class PlanHints {
+public final class PlanHints implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** This flag indicates that the plan has a criteria somewhere */
     public boolean hasCriteria = false;

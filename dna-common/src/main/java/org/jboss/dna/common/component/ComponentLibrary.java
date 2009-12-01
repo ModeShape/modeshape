@@ -40,9 +40,9 @@ import org.jboss.dna.common.util.Reflection;
 
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
- * is designed to properly maintain the sequencer instances when those configurations are changed by other callers. If the
- * components are subclasses of {@link Component}, then they will be {@link Component#setConfiguration(ComponentConfig)
- * configured} with the appropriate configuration.
+ * is designed to properly maintain the instances when those configurations are changed by other callers. If the components are
+ * subclasses of {@link Component}, then they will be {@link Component#setConfiguration(ComponentConfig) configured} with the
+ * appropriate configuration.
  * <p>
  * Therefore, this library does guarantee that the {@link #getInstances() instances} at the time they are {@link #getInstances()
  * obtained} are always reflected by the configurations.
@@ -106,7 +106,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Set the Maven Repository that should be used to load the sequencer classes. Unless changed, the library uses the
+     * Set the Maven Repository that should be used to load the component classes. Unless changed, the library uses the
      * {@link #DEFAULT default} class loader factory, which uses the {@link Thread#getContextClassLoader() current thread's
      * context class loader} if not null or the class loader that loaded the library class.
      * 
@@ -120,7 +120,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Add the configuration for a sequencer, or update any existing one that represents the {@link ConfigType#equals(Object) same
+     * Add the configuration for a component, or update any existing one that represents the {@link ConfigType#equals(Object) same
      * configuration}
      * 
      * @param config the new configuration
@@ -161,7 +161,25 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Update the configuration for a sequencer, or add it if there is no {@link ConfigType#equals(Object) matching configuration}
+     * Get the instance given by the configuration with the supplied name.
+     * 
+     * @param name the configuration name
+     * @return the instance, or null if the configuration doesn't exist
+     */
+    public ComponentType getInstance( String name ) {
+        CheckArg.isNotNull(name, "name");
+        try {
+            this.lock.lock();
+            // Find an existing configuration that matches ...
+            int index = findIndexOfMatchingConfiguration(name);
+            return index >= 0 ? this.instances.get(index) : null;
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    /**
+     * Update the configuration for a component, or add it if there is no {@link ConfigType#equals(Object) matching configuration}
      * .
      * 
      * @param config the updated (or new) configuration
@@ -176,7 +194,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Remove the configuration for a sequencer.
+     * Remove the configuration for a component.
      * 
      * @param config the configuration to be removed
      * @return true if the component was remove, or false if there was no existing configuration
@@ -191,7 +209,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             // Find an existing configuration that matches ...
             int index = findIndexOfMatchingConfiguration(config);
             if (index >= 0) {
-                // Remove the configuration and the sequencer instance ...
+                // Remove the configuration and the component instance ...
                 this.configs.remove(index);
                 this.instances.remove(index);
                 return true;
@@ -226,21 +244,21 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Return the list of sequencers.
+     * Return the list of components.
      * 
-     * @return the unmodifiable list of sequencers; never null
+     * @return the unmodifiable list of components; never null
      */
     public List<ComponentType> getInstances() {
         return this.unmodifiableInstances;
     }
 
     /**
-     * Instantiate, configure and return a new sequencer described by the supplied configuration. This method does not manage the
+     * Instantiate, configure and return a new component described by the supplied configuration. This method does not manage the
      * returned instance.
      * 
-     * @param config the configuration describing the sequencer
-     * @return the new sequencer, or null if the sequencer could not be successfully configured
-     * @throws IllegalArgumentException if the sequencer could not be configured properly
+     * @param config the configuration describing the component
+     * @return the new component, or null if the component could not be successfully configured
+     * @throws IllegalArgumentException if the component could not be configured properly
      */
     @SuppressWarnings( "unchecked" )
     protected ComponentType newInstance( ConfigType config ) {
@@ -288,7 +306,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Find the index for the matching {@link #configs configuration} and {@link #instances sequencer}.
+     * Find the index for the matching {@link #configs configuration} and {@link #instances component}.
      * 
      * @param config the configuration; may not be null
      * @return the index, or -1 if not found
@@ -306,4 +324,22 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
         return -1;
     }
 
+    /**
+     * Find the index for the matching {@link #configs configuration} and {@link #instances component}.
+     * 
+     * @param name the configuration name; may not be null
+     * @return the index, or -1 if not found
+     */
+    @GuardedBy( value = "lock" )
+    protected int findIndexOfMatchingConfiguration( String name ) {
+        // Iterate through the configurations and look for an existing one that matches
+        for (int i = 0, length = this.configs.size(); i != length; i++) {
+            ConfigType existingConfig = this.configs.get(i);
+            assert existingConfig != null;
+            if (existingConfig.getName().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

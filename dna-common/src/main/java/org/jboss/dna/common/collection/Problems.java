@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.common.collection;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import org.jboss.dna.common.i18n.I18n;
 
@@ -30,7 +31,7 @@ import org.jboss.dna.common.i18n.I18n;
  * An interface for a collection of {@link Problem} objects, with multiple overloaded methods for adding errors, warnings, and
  * informational messages.
  */
-public interface Problems extends Iterable<Problem> {
+public interface Problems extends Iterable<Problem>, Serializable {
 
     /**
      * Add an error message with the parameters that should be used when localizing the message.

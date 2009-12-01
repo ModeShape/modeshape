@@ -33,6 +33,8 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
@@ -89,7 +91,7 @@ public interface MapWorkspace {
      * @return whether a node was removed as a result of this operation
      */
     boolean removeNode( ExecutionContext context,
-                     MapNode node );
+                        MapNode node );
 
     /**
      * Create a node at the supplied path. The parent of the new node must already exist.
@@ -226,4 +228,24 @@ public interface MapWorkspace {
      */
     Path pathFor( PathFactory pathFactory,
                   MapNode node );
+
+    /**
+     * Perform a query of this workspace.
+     * 
+     * @param context the context in which the query is to be executed; may not be null
+     * @param command the query command; may not be null
+     * @return the query results, or null if the query is not supported
+     */
+    QueryResults query( ExecutionContext context,
+                        QueryCommand command );
+
+    /**
+     * Perform a full-text search of this workspace.
+     * 
+     * @param context the context in which the query is to be executed; may not be null
+     * @param fullTextSearchExpression the full-text search expression; may not be null
+     * @return the query results, or null if the query is not supported
+     */
+    QueryResults search( ExecutionContext context,
+                         String fullTextSearchExpression );
 }

@@ -43,6 +43,8 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 @Immutable
 final class LocationWithProperty extends LocationWithProperties {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Create a new location with a given path and identification property.
      * 

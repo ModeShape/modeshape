@@ -29,29 +29,81 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
- * 
+ * An interface that defines the value types used in tuples.
  */
 @Immutable
 public interface TypeSystem {
 
+    /**
+     * Get the type factory given the name of the type.
+     * 
+     * @param typeName the name of the type
+     * @return the type factory, or null if there is no such type in this system
+     */
     TypeFactory<?> getTypeFactory( String typeName );
 
+    /**
+     * Get the type factory for the type denoted by the supplied prototype value.
+     * 
+     * @param prototype the value whose type is to be identified
+     * @return the type factory, or null if there is no such type in this system
+     */
     TypeFactory<?> getTypeFactory( Object prototype );
 
+    /**
+     * Get the type factory for boolean types.
+     * 
+     * @return the boolean factory; never null
+     */
     TypeFactory<Boolean> getBooleanFactory();
 
+    /**
+     * Get the type factory for long types.
+     * 
+     * @return the long factory; never null
+     */
     TypeFactory<Long> getLongFactory();
 
+    /**
+     * Get the type factory for string types.
+     * 
+     * @return the string factory; never null
+     */
     TypeFactory<String> getStringFactory();
 
+    /**
+     * Get the type factory for double types.
+     * 
+     * @return the double factory; never null
+     */
     TypeFactory<Double> getDoubleFactory();
 
+    /**
+     * Get the type factory for date-time objects.
+     * 
+     * @return the date-time factory, or null if this type system doesn't support date-time objects
+     */
     TypeFactory<?> getDateTimeFactory();
 
+    /**
+     * Get the type factory for path objects.
+     * 
+     * @return the path factory, or null if this type system doesn't support path objects
+     */
     TypeFactory<?> getPathFactory();
 
+    /**
+     * Get the name of the type that is used by default.
+     * 
+     * @return the default type name; never null
+     */
     String getDefaultType();
 
+    /**
+     * Get the comparator that should be used by default.
+     * 
+     * @return the default comparator; never null
+     */
     Comparator<Object> getDefaultComparator();
 
     /**

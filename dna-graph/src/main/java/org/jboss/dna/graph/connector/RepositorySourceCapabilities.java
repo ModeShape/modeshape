@@ -55,9 +55,19 @@ public class RepositorySourceCapabilities {
     public static final boolean DEFAULT_SUPPORT_CREATING_WORKSPACES = false;
 
     /**
-     * The default support for creating workspaces is {@value} .
+     * The default support for references is {@value} .
      */
     public static final boolean DEFAULT_SUPPORT_REFERENCES = true;
+
+    /**
+     * The default support for querying workspaces is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_QUERIES = false;
+
+    /**
+     * The default support for searching workspaces is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_SEARCHES = false;
 
     /**
      * The default support for creating locks is {@value} .
@@ -69,19 +79,23 @@ public class RepositorySourceCapabilities {
     private final boolean events;
     private final boolean creatingWorkspaces;
     private final boolean references;
+    private final boolean locks;
+    private final boolean queries;
+    private final boolean searches;
 
     /**
      * Create a capabilities object using the defaults, .
      */
     public RepositorySourceCapabilities() {
         this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS,
-             DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES);
+             DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES,
+             DEFAULT_SUPPORT_SEARCHES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
         this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES,
-             DEFAULT_SUPPORT_REFERENCES);
+             DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
@@ -89,12 +103,27 @@ public class RepositorySourceCapabilities {
                                          boolean supportsEvents,
                                          boolean supportsCreatingWorkspaces,
                                          boolean supportsReferences ) {
+        this(supportsSameNameSiblings, supportsUpdates, supportsEvents, supportsCreatingWorkspaces, supportsReferences,
+             DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES);
+    }
+
+    public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
+                                         boolean supportsUpdates,
+                                         boolean supportsEvents,
+                                         boolean supportsCreatingWorkspaces,
+                                         boolean supportsReferences,
+                                         boolean supportsLocks,
+                                         boolean supportsQueries,
+                                         boolean supportsSearches ) {
 
         this.sameNameSiblings = supportsSameNameSiblings;
         this.updates = supportsUpdates;
         this.events = supportsEvents;
         this.creatingWorkspaces = supportsCreatingWorkspaces;
         this.references = supportsReferences;
+        this.locks = supportsLocks;
+        this.queries = supportsQueries;
+        this.searches = supportsSearches;
     }
 
     /**
@@ -142,5 +171,32 @@ public class RepositorySourceCapabilities {
      */
     public boolean supportsCreatingWorkspaces() {
         return creatingWorkspaces;
+    }
+
+    /**
+     * Return whether the source supports creating locks.
+     * 
+     * @return true if locks are supported, or false if the source is not capable of creating locks
+     */
+    public boolean supportsLocks() {
+        return locks;
+    }
+
+    /**
+     * Return whether the source supports queries.
+     * 
+     * @return true if queries are supported, or false if the source is not capable of querying content
+     */
+    public boolean supportsQueries() {
+        return queries;
+    }
+
+    /**
+     * Return whether the source supports full-text searches.
+     * 
+     * @return true if searches are supported, or false if the source is not capable of searching content
+     */
+    public boolean supportsSearches() {
+        return searches;
     }
 }

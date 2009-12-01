@@ -31,6 +31,7 @@ import org.jboss.dna.common.util.CheckArg;
  */
 @Immutable
 public class Ordering implements LanguageObject {
+    private static final long serialVersionUID = 1L;
 
     private final DynamicOperand operand;
     private final Order order;

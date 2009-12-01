@@ -34,6 +34,7 @@ import net.jcip.annotations.NotThreadSafe;
  */
 @NotThreadSafe
 public class SimpleProblems extends AbstractProblems {
+    private static final long serialVersionUID = 1L;
 
     private List<Problem> problems;
 

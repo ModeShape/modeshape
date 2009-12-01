@@ -139,6 +139,7 @@
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
+		<module>extensions/dna-connector-store-lucene</module>
 		<module>extensions/dna-mimetype-detector-aperture</module>
 		<!--module>extensions/dna-common-jdbc</module--> 
 		<!--module>extensions/dna-connector-jdbc-metadata</module--> 

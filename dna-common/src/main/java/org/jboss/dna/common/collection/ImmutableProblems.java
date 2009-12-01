@@ -34,6 +34,7 @@ import org.jboss.dna.common.util.CheckArg;
 @Immutable
 public class ImmutableProblems implements Problems {
 
+    private static final long serialVersionUID = 1L;
     private final Problems delegate;
 
     public ImmutableProblems( Problems delegate ) {
