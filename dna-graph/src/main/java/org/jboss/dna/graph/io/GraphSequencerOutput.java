@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.io;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -77,6 +78,7 @@ public class GraphSequencerOutput implements SequencerOutput {
     public void setProperty( String nodePath,
                              String propertyName,
                              Object... values ) {
+        assert valuesAreNotIterators(values);
         Path path = pathFactory.create(nodePath);
         if (paths.add(path)) {
             batch.create(path).and();
@@ -93,6 +95,7 @@ public class GraphSequencerOutput implements SequencerOutput {
     public void setProperty( Path nodePath,
                              Name propertyName,
                              Object... values ) {
+        assert valuesAreNotIterators(values);
         if (paths.add(nodePath)) {
             batch.create(nodePath).and();
         }
@@ -116,6 +119,21 @@ public class GraphSequencerOutput implements SequencerOutput {
 
     public void close() {
         batch.execute();
+    }
+
+    /**
+     * Utility method to ensure that the value objects are not {@link Iterator} instances. This may be a common mistake if the
+     * sequencer calls the {@link #setProperty(Path, Name, Object...)} or {@link #setProperty(String, String, Object...)} methods
+     * with <code>output.setProperty(path, property.getName(), property.getValues());</code>
+     * 
+     * @param values the values
+     * @return true if the values are not iterators, or false if they are
+     */
+    private final boolean valuesAreNotIterators( Object... values ) {
+        for (Object value : values) {
+            if (value instanceof Iterator<?>) return false;
+        }
+        return true;
     }
 
 }
