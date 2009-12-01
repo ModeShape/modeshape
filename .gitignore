@@ -52,7 +52,6 @@
 /extensions/dna-connector-infinispan/target
 /extensions/dna-connector-jdbc-metadata/target
 /extensions/dna-connector-store-jpa/target
-/extensions/dna-connector-store-lucene/target
 /extensions/dna-connector-svn/target
 /extensions/dna-mimetype-detector-aperture/.settings
 /extensions/dna-mimetype-detector-aperture/target
