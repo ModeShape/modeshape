@@ -35,7 +35,6 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Similarity;
-import org.jboss.dna.search.query.NotQuery;
 import org.junit.Test;
 
 public class NotQueryTest {
@@ -99,6 +98,29 @@ public class NotQueryTest {
                 ids.add(new Integer(docId));
             }
             this.docIds = ids.iterator();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.DocIdSetIterator#advance(int)
+         */
+        @Override
+        public int advance( int target ) {
+            int doc;
+            while ((doc = nextDoc()) < target) {
+            }
+            return doc;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.DocIdSetIterator#docID()
+         */
+        @Override
+        public int docID() {
+            return nextDoc();
         }
 
         /**
