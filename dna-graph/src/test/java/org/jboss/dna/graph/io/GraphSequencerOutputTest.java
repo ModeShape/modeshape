@@ -29,7 +29,10 @@ import static org.junit.Assert.assertThat;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
@@ -47,8 +50,31 @@ public class GraphSequencerOutputTest {
     public void beforeEach() {
         context = new ExecutionContext();
 
-        InMemoryRepositorySource source = new InMemoryRepositorySource();
+        final InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName("actual");
+        RepositoryContext repositoryContext = new RepositoryContext() {
+            @SuppressWarnings( "synthetic-access" )
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return null;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Subgraph getConfiguration( int depth ) {
+                Graph result = Graph.create(source, context);
+                result.useWorkspace("configSpace");
+                return result.getSubgraphOfDepth(depth).at("/");
+            }
+        };
+        source.initialize(repositoryContext);
+
         graph = Graph.create(source, context);
 
         output = new GraphSequencerOutput(graph);

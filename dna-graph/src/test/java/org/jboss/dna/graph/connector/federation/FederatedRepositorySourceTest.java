@@ -107,6 +107,7 @@ public class FederatedRepositorySourceTest {
                 return result.getSubgraphOfDepth(depth).at("/a/b/Test Repository");
             }
         };
+        configRepositorySource.initialize(repositoryContext);
 
         source = new FederatedRepositorySource();
         source.setName(repositoryName);

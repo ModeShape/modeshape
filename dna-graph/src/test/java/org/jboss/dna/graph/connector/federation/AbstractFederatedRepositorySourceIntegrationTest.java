@@ -96,12 +96,8 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         configRepositorySource = new InMemoryRepositorySource();
         configRepositorySource.setName("Configuration Repository");
         configRepositorySource.setDefaultWorkspaceName(configurationWorkspaceName);
-        Graph config = Graph.create(configRepositorySource, context);
-        config.create("/a").and();
-        config.create("/a/b").and();
-        config.create("/a/b/Test Repository").and();
-        config.create("/a/b/Test Repository/dna:workspaces").and();
 
+        // Set up the repository context ...
         repositoryContext = new RepositoryContext() {
             public ExecutionContext getExecutionContext() {
                 return context;
@@ -123,6 +119,14 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
                 return result.getSubgraphOfDepth(depth).at("/a/b/Test Repository");
             }
         };
+        configRepositorySource.initialize(repositoryContext);
+
+        // Populate the configuration repository ...
+        Graph config = Graph.create(configRepositorySource, context);
+        config.create("/a").and();
+        config.create("/a/b").and();
+        config.create("/a/b/Test Repository").and();
+        config.create("/a/b/Test Repository/dna:workspaces").and();
 
         // Set up the source ...
         source = new FederatedRepositorySource();
@@ -217,6 +221,7 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
                     return newSource.getConnection();
                 }
             });
+            source.initialize(repositoryContext);
         }
         // Make sure there's a workspace for it ...
         Graph sourceGraph = Graph.create(sourceName, connectionFactory, context);

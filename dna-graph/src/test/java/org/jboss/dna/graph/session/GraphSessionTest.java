@@ -35,10 +35,13 @@ import java.util.List;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -79,6 +82,28 @@ public class GraphSessionTest {
                 return null;
             }
         };
+
+        RepositoryContext repositoryContext = new RepositoryContext() {
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return null;
+            }
+
+            public Subgraph getConfiguration( int depth ) {
+                Graph result = Graph.create(source, context);
+                result.useWorkspace("configSpace");
+                return result.getSubgraphOfDepth(depth).at("/");
+            }
+        };
+        source.initialize(repositoryContext);
+
         store = Graph.create(source.getName(), connectionFactory, context);
 
         // Load the store with content ...

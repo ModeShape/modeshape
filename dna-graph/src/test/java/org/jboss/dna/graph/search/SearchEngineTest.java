@@ -39,10 +39,13 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.Query;
@@ -77,6 +80,28 @@ public class SearchEngineTest {
         // Set up the source and graph instance ...
         source = new InMemoryRepositorySource();
         source.setName(sourceName);
+        RepositoryContext repositoryContext = new RepositoryContext() {
+            @SuppressWarnings( "synthetic-access" )
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return null;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Subgraph getConfiguration( int depth ) {
+                Graph result = Graph.create(source, context);
+                result.useWorkspace("configSpace");
+                return result.getSubgraphOfDepth(depth).at("/");
+            }
+        };
+        source.initialize(repositoryContext);
         content = Graph.create(source, context);
 
         // Create the workspaces ...

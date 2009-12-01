@@ -31,7 +31,9 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -101,8 +103,9 @@ public class MapRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        RequestProcessor processor = new MapRequestProcessor(context, this.repository, this.source.getRepositoryContext()
-                                                                                                  .getObserver());
+        RepositoryContext repositoryContext = this.source.getRepositoryContext();
+        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
+        RequestProcessor processor = new MapRequestProcessor(context, this.repository, observer);
 
         Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
         lock.lock();
