@@ -694,7 +694,7 @@ public class JcrRepository implements Repository {
                 // Verify that the workspace exists (or can be created) ...
                 Set<String> workspaces = graph.getWorkspaces();
                 if (!workspaces.contains(workspaceName)) {
-                    if (this.federatedSource != null) {
+                    if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
                         // Make sure there isn't a federated workspace ...
                         this.federatedSource.removeWorkspace(workspaceName);
                     }
