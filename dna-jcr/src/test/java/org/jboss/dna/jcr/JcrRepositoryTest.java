@@ -135,6 +135,12 @@ public class JcrRepositoryTest {
     }
 
     @Test
+    public void shouldFailIfWorkspacesSharingSystemBranchConstantIsFalse() {
+        // Check that the debugging flag is ALWAYS set to true...
+        assertThat(JcrRepository.WORKSPACES_SHARE_SYSTEM_BRANCH, is(true));
+    }
+
+    @Test
     public void shouldAllowNullDescriptors() {
         new JcrRepository(context, connectionFactory, sourceName, null, null);
     }

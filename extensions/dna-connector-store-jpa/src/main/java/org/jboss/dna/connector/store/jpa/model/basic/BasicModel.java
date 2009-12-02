@@ -128,11 +128,11 @@ public class BasicModel extends Model {
     public RepositoryConnection createConnection( JpaSource source ) {
         RepositoryContext repositoryContext = source.getRepositoryContext();
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        return new BasicJpaConnection(getName(), observer, source.getCachePolicy(), source.getEntityManagers(),
-                                 source.getRootUuid(),
-                                 source.getDefaultWorkspaceName(), source.getPredefinedWorkspaceNames(),
-                                 source.getLargeValueSizeInBytes(), source.isCreatingWorkspacesAllowed(),
-                                 source.isCompressData(), source.isReferentialIntegrityEnforced());
+        return new BasicJpaConnection(source.getName(), observer, source.getCachePolicy(), source.getEntityManagers(),
+                                      source.getRootUuid(), source.getDefaultWorkspaceName(),
+                                      source.getPredefinedWorkspaceNames(), source.getLargeValueSizeInBytes(),
+                                      source.isCreatingWorkspacesAllowed(), source.isCompressData(),
+                                      source.isReferentialIntegrityEnforced());
     }
 
 }

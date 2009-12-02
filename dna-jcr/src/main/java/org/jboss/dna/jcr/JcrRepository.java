@@ -104,6 +104,16 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 public class JcrRepository implements Repository {
 
     /**
+     * A flag that controls whether the repository uses a shared repository (or workspace) for the "/jcr:system" content in all of
+     * the workspaces. In production, this needs to be "true" for proper JCR functionality, but in some debugging cases it can be
+     * set to false to simplify the architecture by removing the federated connector layer.
+     * <p>
+     * This should be changed to 'false' only in advanced situations, and never for production.
+     * </p>
+     */
+    static final boolean WORKSPACES_SHARE_SYSTEM_BRANCH = true;
+
+    /**
      * The available options for the {@code JcrRepository}.
      */
     public enum Option {
@@ -405,23 +415,28 @@ public class JcrRepository implements Repository {
             ioe.printStackTrace();
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
-        if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
-            // Note that the node types are written directly to the system workspace.
-            Path parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
-            this.repositoryTypeManager.projectOnto(systemGraph, parentOfTypeNodes);
+        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
+            if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
+                // Note that the node types are written directly to the system workspace.
+                Path parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
+                this.repositoryTypeManager.projectOnto(systemGraph, parentOfTypeNodes);
+            }
+
+            // Create the projection for the system repository ...
+            ProjectionParser projectionParser = ProjectionParser.getInstance();
+            String rule = "/jcr:system => /jcr:system";
+            Projection.Rule[] systemProjectionRules = projectionParser.rulesFromString(this.executionContext, rule);
+            this.systemSourceProjection = new Projection(systemSourceName, systemWorkspaceName, true, systemProjectionRules);
+
+            // Define the federated repository source. Use the same name as the repository, since this federated source
+            // will not be in the connection factory ...
+            this.federatedSource = new FederatedRepositorySource();
+            this.federatedSource.setName("JCR " + repositorySourceName);
+            this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
+        } else {
+            this.federatedSource = null;
+            this.systemSourceProjection = null;
         }
-
-        // Create the projection for the system repository ...
-        ProjectionParser projectionParser = ProjectionParser.getInstance();
-        String rule = "/jcr:system => /jcr:system";
-        Projection.Rule[] systemProjectionRules = projectionParser.rulesFromString(this.executionContext, rule);
-        this.systemSourceProjection = new Projection(systemSourceName, systemWorkspaceName, true, systemProjectionRules);
-
-        // Define the federated repository source. Use the same name as the repository, since this federated source
-        // will not be in the connection factory ...
-        this.federatedSource = new FederatedRepositorySource();
-        this.federatedSource.setName("JCR " + repositorySourceName);
-        this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
 
         this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
@@ -468,7 +483,15 @@ public class JcrRepository implements Repository {
 
     Graph createWorkspaceGraph( String workspaceName,
                                 ExecutionContext workspaceContext ) {
-        Graph graph = Graph.create(this.federatedSource, workspaceContext);
+        Graph graph = null;
+        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
+            // Connect via the federated source ...
+            assert this.federatedSource != null;
+            graph = Graph.create(this.federatedSource, workspaceContext);
+        } else {
+            // Otherwise, just create a graph directly to the connection factory ...
+            graph = Graph.create(this.sourceName, this.connectionFactory, workspaceContext);
+        }
         graph.useWorkspace(workspaceName);
         return graph;
     }
@@ -671,8 +694,10 @@ public class JcrRepository implements Repository {
                 // Verify that the workspace exists (or can be created) ...
                 Set<String> workspaces = graph.getWorkspaces();
                 if (!workspaces.contains(workspaceName)) {
-                    // Make sure there isn't a federated workspace ...
-                    this.federatedSource.removeWorkspace(workspaceName);
+                    if (this.federatedSource != null) {
+                        // Make sure there isn't a federated workspace ...
+                        this.federatedSource.removeWorkspace(workspaceName);
+                    }
                     // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
                     throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
@@ -686,16 +711,25 @@ public class JcrRepository implements Repository {
             }
         }
 
-        synchronized (this.federatedSource) {
-            if (!this.federatedSource.hasWorkspace(workspaceName)) {
-                // Add the workspace to the federated source ...
-                ProjectionParser projectionParser = ProjectionParser.getInstance();
-                Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
-                List<Projection> projections = new ArrayList<Projection>(2);
-                projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
-                projections.add(this.systemSourceProjection);
-                this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
+        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
+            assert this.federatedSource != null;
+            assert this.systemSourceProjection != null;
+            synchronized (this.federatedSource) {
+                if (!this.federatedSource.hasWorkspace(workspaceName)) {
+                    // Add the workspace to the federated source ...
+                    ProjectionParser projectionParser = ProjectionParser.getInstance();
+                    Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
+                    List<Projection> projections = new ArrayList<Projection>(2);
+                    projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
+                    projections.add(this.systemSourceProjection);
+                    this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
+                }
             }
+        } else {
+            // We're not sharing a '/jcr:system' branch, so we need to make sure there is one in the source.
+            // Note that this doesn't always work with some connectors (e.g., the FileSystem or SVN connectors)
+            // that don't allow arbitrary nodes.
+            initializeSystemContent(graph);
         }
 
         // Create the workspace, which will create its own session ...
