@@ -29,6 +29,7 @@ import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -46,7 +47,6 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
@@ -57,6 +57,7 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -137,7 +138,13 @@ public class JcrRepository implements Repository {
         /**
          * The depth of the subgraphs that should be loaded the connectors. The default value is 1.
          */
-        READ_DEPTH;
+        READ_DEPTH,
+
+        /**
+         * A comma-delimited list of default roles provided for anonymous access. A null or empty value for this option means that
+         * anonymous access is disabled.
+         */
+        ANONYMOUS_USER_ROLES;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -186,6 +193,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#READ_DEPTH} option is {@value} .
          */
         public static final String READ_DEPTH = "1";
+
+        /**
+         * The default value for the {@link Option#READ_DEPTH} option is {@value} .
+         */
+        public static final String ANONYMOUS_USER_ROLES = null;
     }
 
     /**
@@ -199,6 +211,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
         defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
         defaults.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
+        defaults.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -217,6 +230,7 @@ public class JcrRepository implements Repository {
     private final FederatedRepositorySource federatedSource;
     private final Observer observer;
     private final NamespaceRegistry persistentRegistry;
+    private final SecurityContext anonymousUserContext;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -411,6 +425,34 @@ public class JcrRepository implements Repository {
 
         this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
+
+        /*
+         * Set up the anonymous role, if appropriate
+         */
+        SecurityContext anonymousUserContext = null;
+        String rawAnonRoles = options != null ? options.get(Option.ANONYMOUS_USER_ROLES) : null;
+        if (rawAnonRoles != null) {
+            String[] anonRoles = rawAnonRoles.split("\\s*,\\s*");
+            final List<String> roles = Arrays.asList(anonRoles);
+            if (anonRoles.length > 0) {
+                anonymousUserContext = new SecurityContext() {
+
+                    public String getUserName() {
+                        return null;
+                    }
+
+                    public boolean hasRole( String roleName ) {
+                        return roles.contains(roleName);
+                    }
+
+                    public void logout() {
+                    }
+
+                };
+            }
+        }
+
+        this.anonymousUserContext = anonymousUserContext;
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {
@@ -563,15 +605,15 @@ public class JcrRepository implements Repository {
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext = null;
         if (credentials == null) {
-            try {
-                Subject subject = Subject.getSubject(AccessController.getContext());
-                if (subject == null) {
-                    throw new javax.jcr.LoginException(JcrI18n.mustBeInPrivilegedAction.text());
-                }
+            Subject subject = Subject.getSubject(AccessController.getContext());
+            if (subject != null) {
                 execContext = executionContext.with(new JaasSecurityContext(subject));
-            } catch (LoginException le) {
-                // This really can't happen if you're creating the JAAS security context with an existing subject
-                throw new IllegalStateException(le);
+            }
+            // Well. There's no JAAS subject. Try using an anonymous user (if that's enabled).
+            else if (anonymousUserContext != null) {
+                execContext = executionContext.with(this.anonymousUserContext);
+            } else {
+                throw new javax.jcr.LoginException(JcrI18n.mustBeInPrivilegedAction.text());
             }
         } else {
             try {

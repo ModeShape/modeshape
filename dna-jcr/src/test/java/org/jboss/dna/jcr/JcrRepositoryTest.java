@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -223,6 +224,19 @@ public class JcrRepositoryTest {
         assertThat(session, is(notNullValue()));
         assertThat(session.getUserID(), is("superuser"));
         login.logout();
+    }
+
+    @Test
+    public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
+        Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_READ_PERMISSION);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, options);
+
+        session = (JcrSession)repository.login();
+
+        assertThat(session, is(notNullValue()));
+        assertThat(session.getUserID(), is(nullValue()));
+
     }
 
     @Test

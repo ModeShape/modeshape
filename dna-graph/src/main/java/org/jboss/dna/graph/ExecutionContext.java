@@ -26,7 +26,6 @@ package org.jboss.dna.graph;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.UUID;
-import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
@@ -300,10 +299,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * @return the execution context that is identical with this execution context, but with a different security context; never
      *         null
      * @throws IllegalArgumentException if the <code>name</code> is null
-     * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
-     *         default callback handler JAAS property was not set or could not be loaded
      */
-    public ExecutionContext with( SecurityContext securityContext ) throws LoginException {
+    public ExecutionContext with( SecurityContext securityContext ) {
         return new ExecutionContext(this, securityContext);
     }
 

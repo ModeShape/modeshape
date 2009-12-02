@@ -249,6 +249,7 @@ public class JcrConfigurationTest {
         options.put(Option.JAAS_LOGIN_CONFIG_NAME, "test");
         options.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
         options.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
+        options.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
         assertThat(repository.getOptions(), is(options));
     }
 

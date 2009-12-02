@@ -38,7 +38,6 @@ import org.jboss.dna.jcr.JcrEngine;
 import org.jboss.dna.jcr.SecurityContextCredentials;
 import org.jboss.dna.web.jcr.rest.ServletSecurityContext;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.xml.sax.SAXException;
 
 /**
@@ -102,12 +101,6 @@ public class DnaJcrRepositoryProvider implements RepositoryProvider {
                                String repositoryName,
                                String workspaceName ) throws RepositoryException {
         assert request != null;
-        assert request.getUserPrincipal() != null : "Request must be authorized";
-
-        // Sanity check in case assertions are disabled
-        if (request.getUserPrincipal() == null) {
-            throw new UnauthorizedException("Client is not authorized");
-        }
 
         Repository repository;
 
@@ -116,6 +109,11 @@ public class DnaJcrRepositoryProvider implements RepositoryProvider {
 
         } catch (RepositoryException re) {
             throw new NotFoundException(re.getMessage(), re);
+        }
+
+        // If there's no authenticated user, try an anonymous login
+        if (request.getUserPrincipal() == null) {
+            return repository.login(workspaceName);
         }
 
         return repository.login(new SecurityContextCredentials(new ServletSecurityContext(request)), workspaceName);

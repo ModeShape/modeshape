@@ -185,12 +185,6 @@ public class JcrResources {
                                 String rawRepositoryName,
                                 String rawWorkspaceName ) throws RepositoryException {
         assert request != null;
-        assert request.getUserPrincipal() != null : "Request must be authorized";
-
-        // Sanity check
-        if (request.getUserPrincipal() == null) {
-            throw new UnauthorizedException("Client is not authorized");
-        }
 
         return RepositoryFactory.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
     }
