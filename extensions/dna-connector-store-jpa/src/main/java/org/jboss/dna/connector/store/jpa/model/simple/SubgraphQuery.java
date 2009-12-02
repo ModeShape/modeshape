@@ -21,22 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.store.jpa.model.basic;
+package org.jboss.dna.connector.store.jpa.model.simple;
 
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
 
 /**
  * Represents a temporary working area for a query that efficiently retrieves the nodes in a subgraph. This class uses the
@@ -71,10 +65,10 @@ public class SubgraphQuery {
         assert subgraphRootUuid != null;
         assert workspaceId != null;
         assert maxDepth >= 0;
-
         if (maxDepth == 0) maxDepth = Integer.MAX_VALUE;
         final String subgraphRootUuidString = subgraphRootUuid.toString();
         // Create a new subgraph query, and add a child for the root ...
+
         SubgraphQueryEntity query = new SubgraphQueryEntity(workspaceId, subgraphRootUuidString);
         entities.persist(query);
         Long queryId = query.getId();
@@ -115,7 +109,7 @@ public class SubgraphQuery {
         return new SubgraphQuery(context, entities, workspaceId, query, subgraphRootPath, maxDepth);
     }
 
-    private final ExecutionContext context;
+    // private final ExecutionContext context;
     private final EntityManager manager;
     private final Long workspaceId;
     private SubgraphQueryEntity query;
@@ -131,9 +125,9 @@ public class SubgraphQuery {
         assert manager != null;
         assert query != null;
         assert context != null;
-        assert subgraphRootPath != null;
+        // assert subgraphRootPath != null;
         assert workspaceId != null;
-        this.context = context;
+        // this.context = context;
         this.manager = manager;
         this.workspaceId = workspaceId;
         this.query = query;
@@ -178,18 +172,18 @@ public class SubgraphQuery {
 
         // Now process the nodes below the subgraph's root ...
         try {
-            return (Integer)search.getSingleResult() - (includeRoot ? 0 : 1);
+            return ((Long)search.getSingleResult()).intValue() - (includeRoot ? 0 : 1);
         } catch (NoResultException e) {
             return 0;
         }
     }
 
     /**
-     * Get the {@link ChildEntity root node} of the subgraph. This must be called before the query is {@link #close() closed}.
+     * Get the {@link NodeEntity root node} of the subgraph. This must be called before the query is {@link #close() closed}.
      * 
      * @return the subgraph's root nodes
      */
-    public ChildEntity getNode() {
+    public NodeEntity getNode() {
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
         search.setParameter("queryId", query.getId());
@@ -198,11 +192,11 @@ public class SubgraphQuery {
         search.setParameter("maxDepth", 0);
 
         // Now process the nodes below the subgraph's root ...
-        return (ChildEntity)search.getSingleResult();
+        return (NodeEntity)search.getSingleResult();
     }
 
     /**
-     * Get the {@link ChildEntity nodes} in the subgraph. This must be called before the query is {@link #close() closed}.
+     * Get the {@link NodeEntity nodes} in the subgraph. This must be called before the query is {@link #close() closed}.
      * 
      * @param includeRoot true if the subgraph's root node is to be included, or false otherwise
      * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
@@ -210,35 +204,11 @@ public class SubgraphQuery {
      * @return the list of nodes, in breadth-first order
      */
     @SuppressWarnings( "unchecked" )
-    public List<ChildEntity> getNodes( boolean includeRoot,
+    public List<NodeEntity> getNodes( boolean includeRoot,
                                        boolean includeChildrenOfMaxDepthNodes ) {
         if (query == null) throw new IllegalStateException();
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
-        search.setParameter("queryId", query.getId());
-        search.setParameter("workspaceId", workspaceId);
-        search.setParameter("depth", includeRoot ? 0 : 1);
-        search.setParameter("maxDepth", includeChildrenOfMaxDepthNodes ? maxDepth : maxDepth - 1);
-
-        // Now process the nodes below the subgraph's root ...
-        return search.getResultList();
-    }
-
-    /**
-     * Get the {@link PropertiesEntity properties} for each of the nodes in the subgraph. This must be called before the query is
-     * {@link #close() closed}.
-     * 
-     * @param includeRoot true if the properties for the subgraph's root node are to be included, or false otherwise
-     * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
-     *        maximum depth, or false if only nodes up to the maximum depth are to be included
-     * @return the list of properties for each of the nodes, in breadth-first order
-     */
-    @SuppressWarnings( "unchecked" )
-    public List<PropertiesEntity> getProperties( boolean includeRoot,
-                                                 boolean includeChildrenOfMaxDepthNodes ) {
-        if (query == null) throw new IllegalStateException();
-        // Now query for all the nodes and put into a list ...
-        Query search = manager.createNamedQuery("SubgraphNodeEntity.getPropertiesEntities");
         search.setParameter("queryId", query.getId());
         search.setParameter("workspaceId", workspaceId);
         search.setParameter("depth", includeRoot ? 0 : 1);
@@ -261,40 +231,40 @@ public class SubgraphQuery {
      *        maximum depth, or false if only nodes up to the maximum depth are to be included
      * @return the list of {@link Location locations}, one for each of the nodes in the subgraph, in breadth-first order
      */
-    public List<Location> getNodeLocations( boolean includeRoot,
-                                            boolean includeChildrenOfMaxDepthNodes ) {
-        if (query == null) throw new IllegalStateException();
-        // Set up a map of the paths to the nodes, keyed by UUIDs. This saves us from having to build
-        // the paths every time ...
-        Map<String, Path> pathByUuid = new HashMap<String, Path>();
-        LinkedList<Location> locations = new LinkedList<Location>();
-        String subgraphRootUuid = query.getRootUuid();
-        pathByUuid.put(subgraphRootUuid, subgraphRootPath);
-        UUID uuid = UUID.fromString(subgraphRootUuid);
-        if (includeRoot) {
-            locations.add(Location.create(subgraphRootPath, uuid));
-        }
-
-        // Now iterate over the child nodes in the subgraph (we've already included the root) ...
-        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        final NameFactory nameFactory = context.getValueFactories().getNameFactory();
-        for (ChildEntity entity : getNodes(false, includeChildrenOfMaxDepthNodes)) {
-            String parentUuid = entity.getParentUuidString();
-            Path parentPath = pathByUuid.get(parentUuid);
-            assert parentPath != null;
-            String nsUri = entity.getChildNamespace().getUri();
-            String localName = entity.getChildName();
-            int sns = entity.getSameNameSiblingIndex();
-            Name childName = nameFactory.create(nsUri, localName);
-            Path childPath = pathFactory.create(parentPath, childName, sns);
-            String childUuid = entity.getId().getChildUuidString();
-            pathByUuid.put(childUuid, childPath);
-            uuid = UUID.fromString(childUuid);
-            locations.add(Location.create(childPath, uuid));
-
-        }
-        return locations;
-    }
+    // public List<Location> getNodeLocations( boolean includeRoot,
+    // boolean includeChildrenOfMaxDepthNodes ) {
+    // if (query == null) throw new IllegalStateException();
+    // // Set up a map of the paths to the nodes, keyed by UUIDs. This saves us from having to build
+    // // the paths every time ...
+    // Map<String, Path> pathByUuid = new HashMap<String, Path>();
+    // LinkedList<Location> locations = new LinkedList<Location>();
+    // String subgraphRootUuid = query.getRootUuid();
+    // pathByUuid.put(subgraphRootUuid, subgraphRootPath);
+    // UUID uuid = UUID.fromString(subgraphRootUuid);
+    // if (includeRoot) {
+    // locations.add(Location.create(subgraphRootPath, uuid));
+    // }
+    //
+    // // Now iterate over the child nodes in the subgraph (we've already included the root) ...
+    // final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+    // final NameFactory nameFactory = context.getValueFactories().getNameFactory();
+    // for (ChildEntity entity : getNodes(false, includeChildrenOfMaxDepthNodes)) {
+    // String parentUuid = entity.getParentUuidString();
+    // Path parentPath = pathByUuid.get(parentUuid);
+    // assert parentPath != null;
+    // String nsUri = entity.getChildNamespace().getUri();
+    // String localName = entity.getChildName();
+    // int sns = entity.getSameNameSiblingIndex();
+    // Name childName = nameFactory.create(nsUri, localName);
+    // Path childPath = pathFactory.create(parentPath, childName, sns);
+    // String childUuid = entity.getId().getChildUuidString();
+    // pathByUuid.put(childUuid, childPath);
+    // uuid = UUID.fromString(childUuid);
+    // locations.add(Location.create(childPath, uuid));
+    //
+    // }
+    // return locations;
+    // }
 
     /**
      * Get the list of references that are owned by nodes within the subgraph and that point to other nodes <i>in this same
@@ -351,43 +321,44 @@ public class SubgraphQuery {
     public void deleteSubgraph( boolean includeRoot ) {
         if (query == null) throw new IllegalStateException();
 
-        // Delete the PropertiesEntities ...
-        //
-        // Right now, Hibernate is not able to support deleting PropertiesEntity in bulk because of the
-        // large value association (and there's no way to clear the association in bulk).
-        // Therefore, the only way to do this with Hibernate is to load each PropertiesEntity that has
-        // large values and clear them. (Theoretically, fewer PropertiesEntity objects will have large values
-        // than the total number in the subgraph.)
-        // Then we can delete the properties.
-        Query withLargeValues = manager.createNamedQuery("SubgraphNodeEntity.getPropertiesEntitiesWithLargeValues");
+        List<NodeEntity> nodes = getNodes(true, true);
+        List<String> uuids = new ArrayList<String>(nodes.size());
+        for (NodeEntity node : nodes) {
+            uuids.add(node.getNodeUuidString());
+        }
+
+        // Delete the LargeValueEntities ...
+        Query withLargeValues = manager.createNamedQuery("SubgraphNodeEntity.getNodeEntitiesWithLargeValues");
         withLargeValues.setParameter("queryId", query.getId());
         withLargeValues.setParameter("depth", includeRoot ? 0 : 1);
         withLargeValues.setParameter("workspaceId", workspaceId);
-        List<PropertiesEntity> propertiesWithLargeValues = withLargeValues.getResultList();
-        if (propertiesWithLargeValues.size() != 0) {
-            for (PropertiesEntity props : propertiesWithLargeValues) {
-                props.getLargeValues().clear();
+        List<NodeEntity> nodesWithLargeValues = withLargeValues.getResultList();
+        if (nodesWithLargeValues.size() != 0) {
+            for (NodeEntity node : nodesWithLargeValues) {
+                node.getLargeValues().clear();
             }
             manager.flush();
         }
 
-        // Delete the PropertiesEntities, none of which will have large values ...
-        Query delete = manager.createNamedQuery("SubgraphNodeEntity.deletePropertiesEntities");
+        // Delete the ChildEntities ...
+        Query delete = manager.createNamedQuery("SubgraphNodeEntity.clearParentReferences");
         delete.setParameter("queryId", query.getId());
+        delete.setParameter("depth", includeRoot ? 0 : 1);
         delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
 
-        // Delete the ChildEntities ...
         delete = manager.createNamedQuery("SubgraphNodeEntity.deleteChildEntities");
         delete.setParameter("queryId", query.getId());
+        delete.setParameter("depth", includeRoot ? 0 : 1);
         delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
 
         // Delete references ...
-        delete = manager.createNamedQuery("SubgraphNodeEntity.deleteReferences");
-        delete.setParameter("queryId", query.getId());
-        delete.setParameter("workspaceId", workspaceId);
-        delete.executeUpdate();
+        // delete = manager.createNamedQuery("SubgraphNodeEntity.deleteReferences");
+        // delete.setParameter("queryId", query.getId());
+        // delete.setParameter("depth", includeRoot ? 0 : 1);
+        // delete.setParameter("workspaceId", workspaceId);
+        // delete.executeUpdate();
 
         // Delete unused large values ...
         LargeValueEntity.deleteUnused(manager);

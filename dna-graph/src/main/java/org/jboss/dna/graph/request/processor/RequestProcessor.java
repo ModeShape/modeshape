@@ -951,14 +951,22 @@ public abstract class RequestProcessor {
      * @author Randall Hauch
      */
     @Immutable
-    protected static class LocationWithDepth {
+    protected class LocationWithDepth {
         protected final Location location;
         protected final int depth;
 
-        protected LocationWithDepth( Location location,
+        public LocationWithDepth( Location location,
                                      int depth ) {
             this.location = location;
             this.depth = depth;
+        }
+
+        public Location getLocation() {
+            return location;
+        }
+
+        public int getDepth() {
+            return depth;
         }
 
         @Override

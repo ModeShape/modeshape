@@ -456,6 +456,13 @@ public class MapRequestProcessor extends RequestProcessor {
         String nameOfWorkspaceToBeCloned = request.nameOfWorkspaceToBeCloned();
         MapWorkspace original = repository.getWorkspace(nameOfWorkspaceToBeCloned);
         MapWorkspace target = repository.getWorkspace(targetWorkspaceName);
+
+        if (target != null) {
+            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(targetWorkspaceName, repository.getSourceName());
+            request.setError(new InvalidWorkspaceException(msg));
+            return;
+        }
+
         if (original == null) {
             switch (request.cloneConflictBehavior()) {
                 case DO_NOT_CLONE:
@@ -465,14 +472,11 @@ public class MapRequestProcessor extends RequestProcessor {
                     return;
                 case SKIP_CLONE:
                     target = repository.createWorkspace(context, targetWorkspaceName, request.targetConflictBehavior());
-                    if (target == null) {
-                        msg = GraphI18n.workspaceAlreadyExistsInRepository.text(targetWorkspaceName, repository.getSourceName());
-                        request.setError(new InvalidWorkspaceException(msg));
-                    } else {
-                        MapNode root = target.getRoot();
-                        request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
-                        request.setActualWorkspaceName(target.getName());
-                    }
+                    assert target != null;
+
+                    MapNode root = target.getRoot();
+                    request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
+                    request.setActualWorkspaceName(target.getName());
                     return;
             }
         }
@@ -481,17 +485,11 @@ public class MapRequestProcessor extends RequestProcessor {
                                             targetWorkspaceName,
                                             request.targetConflictBehavior(),
                                             nameOfWorkspaceToBeCloned);
-        if (target == null) {
-            // Since the original was there, the only reason the target wasn't created was because the workspace already existed
-            // ...
-            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(targetWorkspaceName, repository.getSourceName());
-            request.setError(new InvalidWorkspaceException(msg));
-        } else {
-            MapNode root = target.getRoot();
-            request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
-            request.setActualWorkspaceName(target.getName());
-            recordChange(request);
-        }
+        assert target != null;
+        MapNode root = target.getRoot();
+        request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
+        request.setActualWorkspaceName(target.getName());
+        recordChange(request);
     }
 
     /**

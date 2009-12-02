@@ -31,7 +31,7 @@ public class TestEnvironment {
     public static JpaSource configureJpaSource( String sourceName,
                                                 Object testCase ) {
         Properties properties = new Properties();
-        ClassLoader loader = testCase instanceof Class ? ((Class<?>)testCase).getClassLoader() : testCase.getClass()
+        ClassLoader loader = testCase instanceof Class<?> ? ((Class<?>)testCase).getClassLoader() : testCase.getClass()
                                                                                                          .getClassLoader();
         try {
             properties.load(loader.getResourceAsStream("database.properties"));

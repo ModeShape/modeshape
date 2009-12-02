@@ -40,7 +40,7 @@ import org.junit.Test;
  */
 public class JpaConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
 
-    private String[] predefinedWorkspaces;
+    protected String[] predefinedWorkspaces;
 
     /**
      * {@inheritDoc}

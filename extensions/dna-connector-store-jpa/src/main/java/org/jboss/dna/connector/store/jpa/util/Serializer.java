@@ -786,7 +786,7 @@ public class Serializer {
                     // Read the length of the content ...
                     long binaryLength = stream.readLong();
                     byte[] content = new byte[(int)binaryLength];
-                    stream.read(content);
+                    stream.readFully(content, 0, content.length);
                     if (!skip) {
                         value = valueFactories.getBinaryFactory().create(content);
                     }
@@ -796,7 +796,7 @@ public class Serializer {
                     // Read the hash ...
                     int hashLength = stream.readInt();
                     byte[] hash = new byte[hashLength];
-                    stream.read(hash);
+                    stream.readFully(hash, 0, hashLength);
                     // Read the length of the content ...
                     long length = stream.readLong();
                     if (skip) {

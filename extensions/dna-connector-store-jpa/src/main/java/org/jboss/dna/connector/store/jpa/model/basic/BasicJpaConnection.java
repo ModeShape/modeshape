@@ -38,7 +38,7 @@ import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
- * The repository connection to JPA repository sources.
+ * The repository connection to JPA repository sources that use the {@link BasicModel basic model}.
  */
 class BasicJpaConnection implements RepositoryConnection {
 

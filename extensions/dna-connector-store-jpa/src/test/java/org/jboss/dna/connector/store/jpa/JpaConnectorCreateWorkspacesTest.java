@@ -30,7 +30,6 @@ import java.util.Set;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Workspace;
-import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.WorkspaceConnectorTest;
 import org.junit.Test;
 
@@ -38,28 +37,9 @@ import org.junit.Test;
  * These tests verify that the JPA connector behaves correctly when the source is configured to
  * {@link JpaSource#setCreatingWorkspacesAllowed(boolean) allow the creation of workspaces}.
  */
-public class JpaConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
+public abstract class JpaConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
 
-    private String[] predefinedWorkspaces;
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#setUpSource()
-     */
-    @Override
-    protected RepositorySource setUpSource() {
-        predefinedWorkspaces = new String[] {"workspace1", "workspace1a"};
-
-        // Set the connection properties using the environment defined in the POM files ...
-        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
-
-        // Override the inherited properties, since that's the focus of these tests ...
-        source.setCreatingWorkspacesAllowed(true);
-        source.setPredefinedWorkspaceNames(predefinedWorkspaces);
-
-        return source;
-    }
+    protected String[] predefinedWorkspaces;
 
     /**
      * {@inheritDoc}

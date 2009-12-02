@@ -50,6 +50,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
+import org.jboss.dna.connector.store.jpa.model.simple.SimpleModel;
 import org.jboss.dna.connector.store.jpa.util.StoreOptionEntity;
 import org.jboss.dna.connector.store.jpa.util.StoreOptions;
 import org.jboss.dna.graph.ExecutionContext;
@@ -74,8 +75,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static class Models {
         public static final Model BASIC = new BasicModel();
-        // public static final Model SIMPLE = new SimpleModel();
-        private static final Model[] ALL_ARRAY = new Model[] {BASIC /*, SIMPLE */};
+        public static final Model SIMPLE = new SimpleModel();
+        private static final Model[] ALL_ARRAY = new Model[] {BASIC, SIMPLE};
         private static final List<Model> MODIFIABLE_MODELS = new ArrayList<Model>(Arrays.asList(ALL_ARRAY));
         public static final Collection<Model> ALL = Collections.unmodifiableCollection(MODIFIABLE_MODELS);
         public static final Model DEFAULT = BASIC;
@@ -169,7 +170,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final int DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE = 100;
     private static final int DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED = 1;
     private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
-    private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 2 ^ 10; // 1 kilobyte
+    private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 1 << 10; // 1 kilobyte
     private static final boolean DEFAULT_COMPRESS_DATA = true;
     private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
