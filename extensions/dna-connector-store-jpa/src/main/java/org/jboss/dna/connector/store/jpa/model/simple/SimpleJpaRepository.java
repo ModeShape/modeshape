@@ -551,7 +551,6 @@ public class SimpleJpaRepository extends MapRepository {
             }
         }
 
-        @Override
         public MapNode removeProperty( Name propertyName ) {
             ensurePropertiesLoaded();
 

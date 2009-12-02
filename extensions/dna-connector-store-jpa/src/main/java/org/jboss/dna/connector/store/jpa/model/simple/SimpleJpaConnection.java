@@ -73,7 +73,6 @@ public class SimpleJpaConnection implements RepositoryConnection {
         return source.getName();
     }
 
-    @Override
     public XAResource getXAResource() {
         return null;
     }
