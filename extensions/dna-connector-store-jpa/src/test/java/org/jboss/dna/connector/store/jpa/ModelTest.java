@@ -100,6 +100,7 @@ public class ModelTest {
         public void configure( Ejb3Configuration configurator ) {
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public RepositoryConnection createConnection( JpaSource source ) {
             return connection;

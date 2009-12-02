@@ -126,17 +126,19 @@ public class BasicModelTest {
         EntityTransaction txn = mock(EntityTransaction.class);
         EntityManagers managers = mock(EntityManagers.class);
         JpaSource source = mock(JpaSource.class);
-        
+
         stub(manager.getTransaction()).toReturn(txn);
-        
+
         stub(managers.checkout()).toReturn(manager);
 
+        stub(source.getName()).toReturn("some name");
         stub(source.getRootUuid()).toReturn(UUID.randomUUID());
         stub(source.getEntityManagers()).toReturn(managers);
 
         RepositoryConnection conn = model.createConnection(source);
 
         assertThat(conn, is(notNullValue()));
+        assertThat(conn.getSourceName(), is("some name"));
     }
 
     @Test
