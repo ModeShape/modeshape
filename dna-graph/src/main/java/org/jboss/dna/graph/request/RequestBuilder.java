@@ -651,4 +651,17 @@ public abstract class RequestBuilder {
                                              Location target ) {
         return process(new UnlockBranchRequest(target, workspaceName));
     }
+
+    /**
+     * Create a request to perform a full-text search of the workspace.
+     * 
+     * @param workspaceName the name of the workspace containing the node
+     * @param fullTextSearchExpression the full-text search expression
+     * @return the request; never null
+     * @throws IllegalArgumentException if any of the parameters are null or if the expression is empty
+     */
+    public FullTextSearchRequest search( String workspaceName,
+                                         String fullTextSearchExpression ) {
+        return process(new FullTextSearchRequest(fullTextSearchExpression, workspaceName));
+    }
 }

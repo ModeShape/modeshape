@@ -68,6 +68,7 @@ public final class GraphI18n {
     public static I18n closedRequestProcessor;
     public static I18n multipleErrorsWhileExecutingManyRequests;
     public static I18n multipleErrorsWhileExecutingRequests;
+    public static I18n errorWhilePerformingAccessQuery;
     public static I18n unsupportedRequestType;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
     public static I18n unableToCreateReferenceToNodeWithoutUuid;

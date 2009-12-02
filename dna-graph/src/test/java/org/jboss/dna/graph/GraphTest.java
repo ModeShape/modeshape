@@ -31,6 +31,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,19 @@ import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.model.Column;
+import org.jboss.dna.graph.query.model.Constraint;
+import org.jboss.dna.graph.query.model.Limit;
+import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.parse.SqlQueryParser;
+import org.jboss.dna.graph.query.process.QueryResultColumns;
+import org.jboss.dna.graph.query.validate.ImmutableSchemata;
+import org.jboss.dna.graph.query.validate.Schemata;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
@@ -63,9 +77,12 @@ import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -107,6 +124,7 @@ public class GraphTest {
     private String sourceName;
     private MockRepositoryConnection connection;
     private LinkedList<Request> executedRequests;
+    private QueryResults nextQueryResults;
     private int numberOfExecutions;
     /** Populate this with the properties (by location) that are to be read */
     private Map<Location, Collection<Property>> properties;
@@ -137,6 +155,8 @@ public class GraphTest {
 
         properties = new HashMap<Location, Collection<Property>>();
         children = new HashMap<Location, List<Location>>();
+
+        nextQueryResults = null;
     }
 
     static class IsAnyRequest extends ArgumentMatcher<Request> {
@@ -364,6 +384,21 @@ public class GraphTest {
         SetPropertyRequest read = (SetPropertyRequest)request;
         assertThat(read.on(), is(on));
         assertThat(read.property(), is(property));
+    }
+
+    protected void assertNextRequestAccessQuery( String workspaceName,
+                                                 String tableName,
+                                                 Columns columns,
+                                                 Limit limit,
+                                                 Constraint... andedConstraints ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(AccessQueryRequest.class)));
+        AccessQueryRequest access = (AccessQueryRequest)request;
+        assertThat(access.workspace(), is(workspaceName));
+        assertThat(access.selectorName().getName(), is(tableName));
+        assertThat(access.resultColumns(), is(columns));
+        assertThat(access.limit(), is(limit));
+        assertThat(access.andedConstraints(), is(Arrays.asList(andedConstraints)));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1170,6 +1205,83 @@ public class GraphTest {
         assertNoMoreRequests();
     }
 
+    @Test
+    public void shouldPerformSearchWhenConnectorSupportsQueries() {
+        // Set the expected results that will be returned from the connector ...
+        QueryResults expected = mock(QueryResults.class);
+        nextQueryResults = expected;
+
+        // Execute the seach, and verify the results were consumed by the processor ...
+        String fullTextSearchExpression = "term1 term2";
+        QueryResults results = graph.search(fullTextSearchExpression);
+        assertThat(nextQueryResults, is(nullValue()));
+
+        // The actual results should be what the processor returned ...
+        assertThat(results, is(sameInstance(expected)));
+    }
+
+    @Test( expected = InvalidRequestException.class )
+    public void shouldFailToPerformSearchWhenConnectorDoesNotSupportsQueries() {
+        // Set the expected results that will be returned from the connector ...
+        nextQueryResults = null;
+        // Execute the seach, and verify the results were consumed by the processor ...
+        String fullTextSearchExpression = "term1 term2";
+        graph.search(fullTextSearchExpression);
+    }
+
+    @Test
+    public void shouldPerformQueryWhenConnectorSupportsQueries() {
+        // Set the expected results that will be returned from the connector ...
+        QueryResults expected = mock(QueryResults.class);
+        List<Object[]> tuples = Collections.singletonList(new Object[] {"v1", "v2", "v3"});
+        stub(expected.getTuples()).toReturn(tuples);
+        nextQueryResults = expected;
+
+        // Execute the query, and verify the results were consumed by the processor ...
+        TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
+        Schemata schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
+        QueryCommand query = new SqlQueryParser().parseQuery("SELECT * FROM t1", typeSystem);
+        QueryResults results = graph.query(query, schemata).execute();
+        assertThat(nextQueryResults, is(nullValue()));
+
+        // The actual results should be what the processor returned ...
+        List<Object[]> actualTuples = results.getTuples();
+        assertThat(actualTuples, is(tuples));
+        assertNextRequestAccessQuery(graph.getCurrentWorkspaceName(), "t1", columns("t1", "c1", "c2", "c3"), Limit.NONE);
+    }
+
+    @Test( expected = InvalidRequestException.class )
+    public void shouldFailToPerformQueryWhenConnectorDoesNotSupportsQueries() {
+        // Set the expected results that will be returned from the connector ...
+        nextQueryResults = null;
+
+        // Execute the query, and verify the results were consumed by the processor ...
+        TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
+        Schemata schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
+        QueryCommand query = new SqlQueryParser().parseQuery("SELECT * FROM t1", typeSystem);
+        graph.query(query, schemata).execute();
+    }
+
+    protected Columns columns( String tableName,
+                               String... columnNames ) {
+        return new QueryResultColumns(columnList(tableName, columnNames), false);
+    }
+
+    protected Columns columnsWithScores( String tableName,
+                                         String... columnNames ) {
+        return new QueryResultColumns(columnList(tableName, columnNames), true);
+    }
+
+    protected List<Column> columnList( String tableName,
+                                       String... columnNames ) {
+        List<Column> columns = new ArrayList<Column>();
+        SelectorName selectorName = new SelectorName(tableName);
+        for (String columnName : columnNames) {
+            columns.add(new Column(selectorName, columnName, columnName));
+        }
+        return columns;
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Implementation of RepositoryConnection and RequestProcessor for tests
     // ----------------------------------------------------------------------------------------------------------------
@@ -1341,6 +1453,48 @@ public class GraphTest {
             assert workspaceName != null;
             request.setActualWorkspaceName(workspaceName);
             request.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.AccessQueryRequest)
+         */
+        @Override
+        public void process( AccessQueryRequest request ) {
+            if (nextQueryResults == null) {
+                super.process(request); // should result in error
+            }
+            request.setResults(nextQueryResults);
+            nextQueryResults = null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.FullTextSearchRequest)
+         */
+        @Override
+        public void process( FullTextSearchRequest request ) {
+            if (nextQueryResults == null) {
+                super.process(request); // should result in error
+            }
+            request.setResults(nextQueryResults);
+            nextQueryResults = null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
+         */
+        @Override
+        public void process( QueryRequest request ) {
+            if (nextQueryResults == null) {
+                super.process(request); // should result in error
+            }
+            request.setResults(nextQueryResults);
+            nextQueryResults = null;
         }
 
         private Location actualLocationOf( Location location ) {

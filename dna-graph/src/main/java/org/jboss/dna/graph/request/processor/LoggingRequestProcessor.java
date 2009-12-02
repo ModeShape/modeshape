@@ -27,6 +27,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
@@ -34,10 +35,13 @@ import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DeleteChildrenRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -51,6 +55,7 @@ import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 
@@ -190,6 +195,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
     @Override
@@ -242,6 +259,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdateValuesRequest)
+     */
+    @Override
+    public void process( UpdateValuesRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);
@@ -374,6 +403,42 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UnlockBranchRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
+     */
+    @Override
+    public void process( QueryRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.AccessQueryRequest)
+     */
+    @Override
+    public void process( AccessQueryRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.FullTextSearchRequest)
+     */
+    @Override
+    public void process( FullTextSearchRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);

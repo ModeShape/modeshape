@@ -51,16 +51,6 @@ public class FullTextSearchRequest extends SearchRequest {
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.Request#isReadOnly()
-     */
-    @Override
-    public boolean isReadOnly() {
-        return true;
-    }
-
-    /**
      * Get the full-text search expression that is to be executed.
      * 
      * @return the full-text search expression; never null and never empty

@@ -29,7 +29,6 @@ import java.util.List;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
-import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.Limit;
@@ -61,9 +60,9 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
         PlanNode source = accessNode.findAtOrBelow(Type.SOURCE);
         if (source != null) {
             this.sourceName = source.getProperty(Property.SOURCE_NAME, SelectorName.class);
-            if (!AllNodes.ALL_NODES_NAME.equals(this.sourceName)) {
-                throw new IllegalArgumentException();
-            }
+            // if (!AllNodes.ALL_NODES_NAME.equals(this.sourceName)) {
+            // throw new IllegalArgumentException();
+            // }
         } else {
             throw new IllegalArgumentException();
         }

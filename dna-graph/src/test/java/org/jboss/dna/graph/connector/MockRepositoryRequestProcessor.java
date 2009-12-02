@@ -26,6 +26,7 @@ package org.jboss.dna.graph.connector;
 import java.util.Queue;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -33,9 +34,11 @@ import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -328,11 +331,40 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.AccessQueryRequest)
+     */
+    @Override
+    public void process( AccessQueryRequest request ) {
+        record(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
+     */
+    @Override
+    public void process( QueryRequest request ) {
+        record(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.FullTextSearchRequest)
+     */
+    @Override
+    public void process( FullTextSearchRequest request ) {
+        record(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#processUnknownRequest(org.jboss.dna.graph.request.Request)
      */
     @Override
     protected void processUnknownRequest( Request request ) {
         record(request);
     }
-
 }

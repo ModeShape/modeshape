@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.collection.EmptyIterator;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -63,12 +65,32 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.query.QueryContext;
+import org.jboss.dna.graph.query.QueryEngine;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.optimize.Optimizer;
+import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
+import org.jboss.dna.graph.query.plan.CanonicalPlanner;
+import org.jboss.dna.graph.query.plan.PlanHints;
+import org.jboss.dna.graph.query.plan.PlanNode;
+import org.jboss.dna.graph.query.plan.Planner;
+import org.jboss.dna.graph.query.process.AbstractAccessComponent;
+import org.jboss.dna.graph.query.process.ProcessingComponent;
+import org.jboss.dna.graph.query.process.Processor;
+import org.jboss.dna.graph.query.process.QueryProcessor;
+import org.jboss.dna.graph.query.process.SelectComponent.Analyzer;
+import org.jboss.dna.graph.query.validate.Schemata;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
+import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
@@ -165,6 +187,7 @@ public class Graph {
     protected final RequestBuilder requests;
     protected final Conjunction<Graph> nextGraph;
     private Workspace currentWorkspace;
+    private QueryEngine queryEngine;
 
     protected Graph( String sourceName,
                      RepositoryConnectionFactory connectionFactory,
@@ -2451,6 +2474,196 @@ public class Graph {
     }
 
     /**
+     * Search the current workspace using the supplied full-text search expression.
+     * 
+     * @param fullTextSearchExpression the full-text search expression
+     * @return the results of the search; never null
+     * @throws IllegalArgumentException if the expression is null
+     */
+    public QueryResults search( final String fullTextSearchExpression ) {
+        FullTextSearchRequest request = requests.search(getCurrentWorkspaceName(), fullTextSearchExpression);
+        return request.getResults();
+    }
+
+    /**
+     * Query the current workspace using the supplied {@link Schemata}.
+     * 
+     * @param query the query that is to be executed against the current workspace
+     * @param schemata the schemata defining the structure of the tables that are being queried
+     * @return the interface used to continue specifying the options for the query and to obtain the results
+     * @throws IllegalArgumentException if the query or schemata references are null
+     */
+    public BuildQuery query( final QueryCommand query,
+                             final Schemata schemata ) {
+        CheckArg.isNotNull(query, "query");
+        CheckArg.isNotNull(schemata, "schemata");
+        return new BuildQuery() {
+            private PlanHints hints;
+            private Problems problems;
+            private Map<String, Object> variables;
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.BuildQuery#using(java.util.Map)
+             */
+            public BuildQuery using( Map<String, Object> variables ) {
+                CheckArg.isNotNull(variables, "variables");
+                if (this.variables == null) this.variables = new HashMap<String, Object>();
+                this.variables.putAll(variables);
+                return this;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.BuildQuery#using(java.lang.String, java.lang.Object)
+             */
+            public BuildQuery using( String variableName,
+                                     Object variableValue ) {
+                CheckArg.isNotNull(variableName, "variableName");
+                if (this.variables == null) this.variables = new HashMap<String, Object>();
+                this.variables.put(variableName, variableValue);
+                return this;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.BuildQuery#using(org.jboss.dna.graph.query.plan.PlanHints)
+             */
+            public BuildQuery using( PlanHints hints ) {
+                this.hints = hints;
+                return this;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.BuildQuery#execute()
+             */
+            public QueryResults execute() {
+                Batch batch = batch();
+                TypeSystem typeSystem = getContext().getValueFactories().getTypeSystem();
+                QueryContext context = new GraphQueryContext(schemata, typeSystem, hints, problems, variables, batch);
+                QueryEngine engine = getQueryEngine();
+                return engine.execute(context, query);
+            }
+        };
+    }
+
+    protected QueryEngine getQueryEngine() {
+        if (queryEngine == null) {
+            queryEngine = getQueryEngine(new RuleBasedOptimizer());
+        }
+        return queryEngine;
+    }
+
+    protected QueryEngine getQueryEngine( Optimizer optimizer ) {
+        Planner planner = new CanonicalPlanner();
+        Processor processor = new QueryProcessor() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.query.process.QueryProcessor#createAccessComponent(org.jboss.dna.graph.query.model.QueryCommand,
+             *      org.jboss.dna.graph.query.QueryContext, org.jboss.dna.graph.query.plan.PlanNode,
+             *      org.jboss.dna.graph.query.QueryResults.Columns, org.jboss.dna.graph.query.process.SelectComponent.Analyzer)
+             */
+            @Override
+            protected ProcessingComponent createAccessComponent( QueryCommand originalQuery,
+                                                                 QueryContext context,
+                                                                 PlanNode accessNode,
+                                                                 Columns resultColumns,
+                                                                 Analyzer analyzer ) {
+                return new AccessQueryProcessor(getSourceName(), getCurrentWorkspaceName(), context, resultColumns, accessNode);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.query.process.QueryProcessor#preExecute(QueryContext)
+             */
+            @Override
+            protected void preExecute( QueryContext context ) {
+                // Submit the batch before the processing the query. No need to hold onto the batch results,
+                // because each ProcessingComponent holds onto its AccessQueryRequest ...
+                ((GraphQueryContext)context).getBatch().execute();
+            }
+        };
+        return new QueryEngine(planner, optimizer, processor);
+    }
+
+    protected class GraphQueryContext extends QueryContext {
+        private final Batch batch;
+
+        protected GraphQueryContext( Schemata schemata,
+                                     TypeSystem typeSystem,
+                                     PlanHints hints,
+                                     Problems problems,
+                                     Map<String, Object> variables,
+                                     Batch batch ) {
+            super(schemata, typeSystem, hints, problems, variables);
+            this.batch = batch;
+            assert this.batch != null;
+        }
+
+        /**
+         * Get the {@link Batch} that is being used to execute these queries
+         * 
+         * @return the batch; never null
+         */
+        public Batch getBatch() {
+            return batch;
+        }
+    }
+
+    protected static class AccessQueryProcessor extends AbstractAccessComponent {
+        private final AccessQueryRequest accessRequest;
+        private final String graphSourceName;
+
+        protected AccessQueryProcessor( String graphSourceName,
+                                        String workspaceName,
+                                        QueryContext context,
+                                        Columns columns,
+                                        PlanNode accessNode ) {
+            super(context, columns, accessNode);
+            this.graphSourceName = graphSourceName;
+            accessRequest = new AccessQueryRequest(workspaceName, sourceName, getColumns(), andedConstraints, limit,
+                                                   context.getVariables());
+            ((GraphQueryContext)context).getBatch().requestQueue.submit(accessRequest);
+        }
+
+        /**
+         * Get the access query request.
+         * 
+         * @return the access query request; never null
+         */
+        public AccessQueryRequest getAccessRequest() {
+            return accessRequest;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.process.ProcessingComponent#execute()
+         */
+        @Override
+        public List<Object[]> execute() {
+            if (accessRequest.getError() != null) {
+                I18n msg = GraphI18n.errorWhilePerformingQuery;
+                getContext().getProblems().addError(accessRequest.getError(),
+                                                    msg,
+                                                    accessNode.getString(),
+                                                    accessRequest.workspace(),
+                                                    graphSourceName);
+                return emptyTuples();
+            }
+            return accessRequest.getResults().getTuples();
+        }
+
+    }
+
+    /**
      * Import the content from the provided stream of XML data, specifying via the returned {@link ImportInto object} where the
      * content is to be imported.
      * 
@@ -4439,6 +4652,47 @@ public class Graph {
     protected static DateTime computeExpirationTime( CacheableRequest request ) {
         CachePolicy policy = request.getCachePolicy();
         return policy == null ? null : request.getTimeLoaded().plus(policy.getTimeToLive(), TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * The interface used to complete a query submission.
+     */
+    public interface BuildQuery {
+        /**
+         * Use the supplied hints when executing the query.
+         * 
+         * @param hints the hints
+         * @return this same interface for method chaining purposes; never null
+         * @throws IllegalArgumentException if the hints reference is null
+         */
+        BuildQuery using( PlanHints hints );
+
+        /**
+         * Use the supplied variables when executing the query.
+         * 
+         * @param variables the variables
+         * @return this same interface for method chaining purposes; never null
+         * @throws IllegalArgumentException if the variables reference is null
+         */
+        BuildQuery using( Map<String, Object> variables );
+
+        /**
+         * Use the supplied value for the given variable name when executing the query.
+         * 
+         * @param variableName the variable value
+         * @param value the value to replace the variable during execution
+         * @return this same interface for method chaining purposes; never null
+         * @throws IllegalArgumentException if the variable name is null
+         */
+        BuildQuery using( String variableName,
+                          Object value );
+
+        /**
+         * Execute the query and get the results.
+         * 
+         * @return the query results
+         */
+        QueryResults execute();
     }
 
     /**

@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
@@ -712,6 +713,18 @@ public class BatchRequestBuilder {
     public BatchRequestBuilder deleteBranch( Location at,
                                              String workspaceName ) {
         return add(new DeleteBranchRequest(at, workspaceName));
+    }
+
+    /**
+     * Submit any request to this batch.
+     * 
+     * @param request the request to be batched; may not be null
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if the request is null
+     */
+    public BatchRequestBuilder submit( Request request ) {
+        CheckArg.isNotNull(request, "request");
+        return add(request);
     }
 
     /**

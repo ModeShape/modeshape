@@ -53,7 +53,9 @@ import org.jboss.dna.graph.query.validate.Schemata;
  * A representation of a single node within a plan tree.
  */
 @NotThreadSafe
-public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable {
+public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * An enumeration dictating the type of plan tree nodes.

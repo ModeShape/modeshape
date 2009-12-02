@@ -88,6 +88,7 @@ public abstract class QueryProcessor implements Processor {
 
             if (component != null) {
                 // Now execute the component ...
+                preExecute(context);
                 tuples = component.execute();
             } else {
                 // There must have been an error ...
@@ -100,6 +101,16 @@ public abstract class QueryProcessor implements Processor {
         }
         assert tuples != null;
         return new org.jboss.dna.graph.query.process.QueryResults(context, command, columns, statistics, tuples);
+    }
+
+    /**
+     * A method that can be overridden when a hook is required immediately before the top-level {@link ProcessingComponent} is
+     * executed. By default, this method does nothing.
+     * 
+     * @param context the context in which the query is being executed; may not be null
+     */
+    protected void preExecute( QueryContext context ) {
+        // do nothing ...
     }
 
     /**

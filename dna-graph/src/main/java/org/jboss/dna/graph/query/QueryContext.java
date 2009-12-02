@@ -119,6 +119,17 @@ public class QueryContext {
     }
 
     /**
+     * Create a new context that is a copy of the supplied context. This constructor is useful for subclasses that wish to add
+     * store additional fields in a QueryContext.
+     * 
+     * @param original the original context
+     * @throws IllegalArgumentException if the original is null
+     */
+    protected QueryContext( QueryContext original ) {
+        this(original.schemata, original.typeSystem, original.hints, original.problems, original.variables);
+    }
+
+    /**
      * Get the interface for working with literal values and types.
      * 
      * @return the type system; never null

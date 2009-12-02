@@ -90,16 +90,6 @@ public class QueryRequest extends SearchRequest {
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.Request#isReadOnly()
-     */
-    @Override
-    public boolean isReadOnly() {
-        return true;
-    }
-
-    /**
      * Get the query that is to be executed.
      * 
      * @return the query; never null

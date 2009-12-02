@@ -45,6 +45,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
@@ -274,6 +275,8 @@ public abstract class RequestProcessor {
                 process((DestroyWorkspaceRequest)request);
             } else if (request instanceof UpdateValuesRequest) {
                 process((UpdateValuesRequest)request);
+            } else if (request instanceof AccessQueryRequest) {
+                process((AccessQueryRequest)request);
             } else if (request instanceof QueryRequest) {
                 process((QueryRequest)request);
             } else if (request instanceof FullTextSearchRequest) {
@@ -928,6 +931,20 @@ public abstract class RequestProcessor {
      * @param request the request
      */
     public void process( QueryRequest request ) {
+        processUnknownRequest(request);
+    }
+
+    /**
+     * Process a request to query a workspace with an access query, which is is a low-level atomic query that is part of a larger,
+     * planned query.
+     * <p>
+     * The default implementation of this method behaves as though the implementation does not support queries by setting an error
+     * on the request
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( AccessQueryRequest request ) {
         processUnknownRequest(request);
     }
 

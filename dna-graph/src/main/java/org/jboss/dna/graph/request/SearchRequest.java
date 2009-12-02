@@ -35,6 +35,16 @@ public abstract class SearchRequest extends Request {
     private QueryResults results;
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#isReadOnly()
+     */
+    @Override
+    public final boolean isReadOnly() {
+        return true;
+    }
+
+    /**
      * Set the results for this request.
      * 
      * @param results the results
