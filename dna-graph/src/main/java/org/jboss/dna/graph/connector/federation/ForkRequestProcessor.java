@@ -70,7 +70,6 @@ import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -1716,16 +1715,6 @@ class ForkRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( AccessQueryRequest request ) {
-        processUnknownRequest(request);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
-     */
-    @Override
-    public void process( QueryRequest request ) {
         processUnknownRequest(request);
     }
 

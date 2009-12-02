@@ -62,7 +62,6 @@ import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -277,8 +276,6 @@ public abstract class RequestProcessor {
                 process((UpdateValuesRequest)request);
             } else if (request instanceof AccessQueryRequest) {
                 process((AccessQueryRequest)request);
-            } else if (request instanceof QueryRequest) {
-                process((QueryRequest)request);
             } else if (request instanceof FullTextSearchRequest) {
                 process((FullTextSearchRequest)request);
             } else {
@@ -919,19 +916,6 @@ public abstract class RequestProcessor {
         }
 
         request.setActualLocation(actualLocation);
-    }
-
-    /**
-     * Process a request to query a workspace.
-     * <p>
-     * The default implementation of this method behaves as though the implementation does not support queries by setting an error
-     * on the request
-     * </p>
-     * 
-     * @param request the request
-     */
-    public void process( QueryRequest request ) {
-        processUnknownRequest(request);
     }
 
     /**

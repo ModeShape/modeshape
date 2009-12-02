@@ -38,7 +38,6 @@ import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -335,16 +334,6 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( AccessQueryRequest request ) {
-        record(request);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
-     */
-    @Override
-    public void process( QueryRequest request ) {
         record(request);
     }
 

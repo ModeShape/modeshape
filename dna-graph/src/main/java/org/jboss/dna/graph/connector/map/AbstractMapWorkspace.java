@@ -49,7 +49,7 @@ import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.property.basic.RootPath;
 import org.jboss.dna.graph.query.QueryResults;
-import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 
 /**
  * A default implementation of {@link MapWorkspace} that only requires the user to implement some simple, map-like operations.
@@ -625,10 +625,10 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connector.map.MapWorkspace#query(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.query.model.QueryCommand)
+     *      org.jboss.dna.graph.request.AccessQueryRequest)
      */
     public QueryResults query( ExecutionContext context,
-                               QueryCommand command ) {
+                               AccessQueryRequest accessQuery ) {
         return null;
     }
 

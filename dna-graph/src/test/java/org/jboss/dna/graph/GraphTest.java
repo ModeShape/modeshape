@@ -82,7 +82,6 @@ import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
@@ -1476,20 +1475,6 @@ public class GraphTest {
          */
         @Override
         public void process( FullTextSearchRequest request ) {
-            if (nextQueryResults == null) {
-                super.process(request); // should result in error
-            }
-            request.setResults(nextQueryResults);
-            nextQueryResults = null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
-         */
-        @Override
-        public void process( QueryRequest request ) {
             if (nextQueryResults == null) {
                 super.process(request); // should result in error
             }

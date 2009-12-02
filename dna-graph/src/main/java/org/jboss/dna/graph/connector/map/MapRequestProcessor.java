@@ -47,6 +47,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -59,7 +60,6 @@ import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.QueryRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.Request;
@@ -497,14 +497,14 @@ public class MapRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.QueryRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.AccessQueryRequest)
      */
     @Override
-    public void process( QueryRequest request ) {
+    public void process( AccessQueryRequest request ) {
         MapWorkspace workspace = getWorkspace(request, request.workspace());
         if (workspace == null) return;
         final ExecutionContext context = getExecutionContext();
-        QueryResults results = workspace.query(context, request.query());
+        QueryResults results = workspace.query(context, request);
         if (results != null) {
             request.setResults(results);
         } else {
