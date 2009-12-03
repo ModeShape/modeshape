@@ -63,6 +63,7 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.query.QueryContext;
@@ -6969,8 +6970,42 @@ public class Graph {
 
         @Override
         public String toString() {
-            return "Subgraph " + getLocation().toString();
+            return "Subgraph\n" + getToString(context); //ExecutionContext.DEFAULT_CONTEXT);//getLocation().toString();
         }
+
+        /**
+         * Get the string representation of this subgraph tree.
+         * 
+         * @param context the execution context in which the conversion is to take place
+         * @return the string representation; never null
+         */
+        public String getToString( ExecutionContext context ) {
+            StringBuilder sb = new StringBuilder();
+            getRecursiveString(context, getRoot(), sb, 0);
+            return sb.toString();
+        }
+        
+        private void getRecursiveString( ExecutionContext context,
+                                         SubgraphNode node,
+                                         StringBuilder str,
+                                         int indentLevel ) {
+            for (int i = 0; i < indentLevel; ++i) {
+                str.append("  ");
+            }
+            str.append(node.toString());
+
+            // Recursively add children at one greater tab level
+            for (Location nextLoc : node.getChildren()) {
+                SubgraphNode childNode = getNode(nextLoc);
+                // child node location may exist, but the subgraph may not have
+                // been constructed deep enough to instantiate the subnode, so 
+                // check for null
+                if( childNode != null ) {
+                    getRecursiveString(context, childNode, str, indentLevel + 1);
+                }
+            }
+        }
+
     }
 
     protected static final List<Location> NO_CHILDREN = Collections.emptyList();
@@ -7064,7 +7099,70 @@ public class Graph {
 
         @Override
         public String toString() {
-            return "Node " + getLocation().toString();
+            return getNodeString(context, location);
+        }
+
+        private String getNodeString( ExecutionContext context,
+                                             Location location) {
+            StringBuilder sb = new StringBuilder();
+            sb.append('<'); // Bracket the node
+            ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+            
+            String name = "";
+            if( location.getPath().getLastSegment() != null ) {
+                name = strings.create(location.getPath().getLastSegment());
+            } else {
+                name = strings.create(location.getPath());
+            }
+            
+            if( name.startsWith("{")) {
+                // Remove {xxxx} namespace prefix
+                int end = name.indexOf('}');
+                name = name.substring(end+1, name.length());
+            }
+            
+            // Surround name in double quotes
+            sb.append("name = ").append('\"').append(name).append('\"').append(" ");
+            boolean first = true;
+            if (getProperties()  != null) {
+                for ( Property entry : getProperties()) {
+                    
+                    if( first ) {
+                        first = false;
+                    } else sb.append(" ");
+                    sb.append(getPropertyString(entry));
+                }
+            }
+            sb.append(">\n");
+            
+            return sb.toString();
+        }
+        
+        private String getPropertyString(Property property) {
+            // Surround property value in double quotes so final property looks like:
+            //   color = "blue" (single valued property)
+            //   colors = ["blue", "red", "green"] (multi-valued property)
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append(property.getName().getLocalName());
+            sb.append(" = ");
+            if (property.isEmpty()) {
+                sb.append("null");
+            } else if( property.isSingle() ) {
+                String valueStr = getContext().getValueFactories().getStringFactory().create(property.getValues().next());
+                sb.append('\"').append(valueStr).append('\"');
+            } else {
+                sb.append('[');
+                boolean first = true;
+                for (Object value : property.getValuesAsArray()) {
+                    if (first) first = false;
+                    else sb.append(",");
+                    String valueStr = getContext().getValueFactories().getStringFactory().create(value);
+                    sb.append('\"').append(valueStr).append('\"');
+                }
+                if (property.isMultiple()) sb.append(']');
+            }
+            return sb.toString();
         }
     }
 

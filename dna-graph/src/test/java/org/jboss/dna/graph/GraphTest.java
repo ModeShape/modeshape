@@ -877,6 +877,46 @@ public class GraphTest {
         assertThat(node3.getChildren().isEmpty(), is(true));
         assertThat(node3.getProperties().isEmpty(), is(true));
     }
+    
+    @Test
+    public void shouldConstructValidSubgraphToString() {
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
+        Location child11 = Location.create(createPath(child1.getPath(), "h"));
+        Location child12 = Location.create(createPath(child1.getPath(), "i"));
+        Location child13 = Location.create(createPath(child1.getPath(), "j"));
+        setChildrenToReadOn(child1, child11, child12, child13);
+        Location child121 = Location.create(createPath(child12.getPath(), "m"));
+        Location child122 = Location.create(createPath(child12.getPath(), "n"));
+        Location child123 = Location.create(createPath(child12.getPath(), "o"));
+        setChildrenToReadOn(child12, child121, child122, child123);
+
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(child1, validIdProperty1);
+        setPropertiesToReadOn(child2, validIdProperty2);
+        setPropertiesToReadOn(child11, validIdProperty1);
+        setPropertiesToReadOn(child12, validIdProperty2);
+        setPropertiesToReadOn(child121, validIdProperty1);
+        setPropertiesToReadOn(child122, validIdProperty2);
+        
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at(validPath);
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getMaximumDepth(), is(2));
+        
+        String expectedToStringValue = 
+            "Subgraph\n"
+                + "<name = \"c\" id2 = \"2\" id1 = \"1\">\n"
+                + "  <name = \"x\" id1 = \"1\">\n"
+                + "  <name = \"y\" id2 = \"2\">\n"
+                + "  <name = \"z\" >\n";
+        
+        // Get nodes by relative path ...
+        Node root = subgraph.getNode("./");
+        assertThat(root.getChildren(), hasItems(child1, child2, child3));
+        assertThat(subgraph.toString(), is(expectedToStringValue));
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Batched requests
