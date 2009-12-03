@@ -188,11 +188,11 @@ public class JcrObservationManagerTest extends TestSuite {
     void checkResults( TestListener listener ) {
         if ( listener.getActualEventCount() != listener.getExpectedEventCount() ) {
             // Wrong number ...
-            System.out.println("Received incorrect number of events. Actual events were: ");
+            StringBuilder sb = new StringBuilder(" Actual events were: ");
             for ( Event event : listener.getEvents() ) {
-                System.out.println(event);
+                sb.append('\n').append(event);
             }
-            assertThat("Received incorrect number of events", listener.getActualEventCount(), is(listener.getExpectedEventCount()));
+            assertThat("Received incorrect number of events."+ sb.toString(), listener.getActualEventCount(), is(listener.getExpectedEventCount()));
             assertThat(listener.getErrorMessage(), listener.getErrorMessage(), is(nullValue()));
         }
     }
