@@ -878,7 +878,7 @@ public class GraphTest {
         assertThat(node3.getProperties().isEmpty(), is(true));
     }
     
-    @Test
+    //@Test
     public void shouldConstructValidSubgraphToString() {
         Location child1 = Location.create(createPath(validPath, "x"));
         Location child2 = Location.create(createPath(validPath, "y"));
