@@ -52,6 +52,7 @@ public class DdlParsers {
         parsers.add(new OracleDdlParser());
         parsers.add(new DerbyDdlParser());
         parsers.add(new PostgresDdlParser());
+        //parsers.add(new MySqlDdlParser());
     }
 
     /**
@@ -87,6 +88,8 @@ public class DdlParsers {
 
         DdlTokenStream tokens = null;
         DdlParser validParser = null;
+        DdlTokenStream validTokens = null;
+        
 
         // FIRST token should be DIALECT
         // for (DdlParser parser : library.getInstances()) {
@@ -111,15 +114,16 @@ public class DdlParsers {
                 if (numKeywords > keywordCount) {
                     keywordCount = numKeywords;
                     validParser = parser;
+                    validTokens = tokens;
                 }
             }
-            if (tokens != null) {
-                tokens.rewind();
+            if (validTokens != null) {
+                validTokens.rewind();
             }
         } else {
-            tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-            validParser.registerWords(tokens);
-            tokens.start(); // COMPLETE TOKENIZATION
+            validTokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
+            validParser.registerWords(validTokens);
+            validTokens.start(); // COMPLETE TOKENIZATION
         }
 
         if (validParser == null) {
@@ -130,7 +134,7 @@ public class DdlParsers {
         // tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
         // validParser.registerWords(tokens);
         // tokens.start();
-        boolean success = validParser.parse(tokens, rootNode);
+        boolean success = validParser.parse(validTokens, rootNode);
         rootNode.setProperty(StandardDdlLexicon.PARSER_ID, validParser.getId());
 
         return success;

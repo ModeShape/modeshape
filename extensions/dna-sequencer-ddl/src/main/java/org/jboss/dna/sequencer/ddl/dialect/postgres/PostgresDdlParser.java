@@ -389,7 +389,7 @@ public class PostgresDdlParser extends StandardDdlParser
 
         } else if (tokens.canConsume("DROP")) { // DROP CONSTRAINT & DROP COLUMN
             if (tokens.canConsume("CONSTRAINT")) {
-                String constraintName = tokens.consume(); // constraint name
+                String constraintName = parseName(tokens); // constraint name
 
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
 
@@ -1389,7 +1389,7 @@ public class PostgresDdlParser extends StandardDdlParser
         boolean isReplace = tokens.canConsume(STMT_CREATE_OR_REPLACE_RULE);
         tokens.canConsume(STMT_CREATE_RULE);
 
-        String name = tokens.consume();
+        String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_RULE_STATEMENT);
         if (isReplace) {
@@ -1413,7 +1413,7 @@ public class PostgresDdlParser extends StandardDdlParser
 
         tokens.canConsume(STMT_CREATE_FUNCTION);
 
-        String name = tokens.consume();
+        String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
 

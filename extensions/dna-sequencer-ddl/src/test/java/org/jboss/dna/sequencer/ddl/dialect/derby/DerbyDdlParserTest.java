@@ -69,6 +69,15 @@ public class DerbyDdlParserTest extends DdlParserTestHelper{
     	assertThat(true, is(success));
     }
     
+    // DROP PROCEDURE some_procedure_name;
+    @Test
+    public void shouldParseDropProcedure() {
+        printTest("shouldParseDropProcedure()");
+        String content = "DROP PROCEDURE some_procedure_name";
+
+        boolean success = parser.parse(content, rootNode);
+        assertThat(true, is(success));
+    }
 	
 	
 	@Test

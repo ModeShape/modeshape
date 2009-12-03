@@ -423,10 +423,10 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
 
             // RENAME DATABASE db_name TO new_db_name;
             tokens.consume(STMT_RENAME_DATABASE);
-            String oldName = tokens.consume();
+            String oldName = parseName(tokens);
             tokens.consume("TO");
             AstNode node = nodeFactory().node(oldName, parentNode, TYPE_RENAME_DATABASE_STATEMENT);
-            String newName = tokens.consume();
+            String newName = parseName(tokens);
             node.setProperty(NEW_NAME, newName);
 
             markEndOfStatement(tokens, node);
@@ -436,10 +436,10 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
 
             // RENAME SCHEMA schema_name TO new_schema_name;
             tokens.consume(STMT_RENAME_SCHEMA);
-            String oldName = tokens.consume();
+            String oldName = parseName(tokens);
             tokens.consume("TO");
             AstNode node = nodeFactory().node(oldName, parentNode, TYPE_RENAME_SCHEMA_STATEMENT);
-            String newName = tokens.consume();
+            String newName = parseName(tokens);
             node.setProperty(NEW_NAME, newName);
 
             markEndOfStatement(tokens, node);

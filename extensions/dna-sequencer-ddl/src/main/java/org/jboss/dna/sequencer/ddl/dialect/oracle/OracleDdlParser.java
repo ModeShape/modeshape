@@ -23,6 +23,9 @@
  */
 package org.jboss.dna.sequencer.ddl.dialect.oracle;
 
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DROP_OPTION_TYPE;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
@@ -594,7 +597,7 @@ public class OracleDdlParser extends StandardDdlParser
             tokens.consume(DROP);
 
             if (tokens.canConsume("CONSTRAINT")) {
-                String constraintName = tokens.consume(); // constraint name
+                String constraintName = parseName(tokens); // constraint name
 
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
 
@@ -758,6 +761,99 @@ public class OracleDdlParser extends StandardDdlParser
         }
 
         return super.parseAlterStatement(tokens, parentNode);
+    }
+    
+    
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.ddl.StandardDdlParser#parseCreateViewStatement(org.jboss.dna.sequencer.ddl.DdlTokenStream, org.jboss.dna.sequencer.ddl.node.AstNode)
+     */
+    @Override
+    protected AstNode parseCreateViewStatement( DdlTokenStream tokens,
+                                                AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        //CREATE [OR REPLACE]
+        //        [[NO] FORCE] VIEW [schema.] view
+        //         [ ( { alias [ inline_constraint... ]
+        //             | out_of_line_constraint
+        //             }
+        //               [, { alias [ inline_constraint...]
+        //                  | out_of_line_constraint
+        //                  }
+        //               ]
+        //           )
+        //         | object_view_clause
+        //         | XMLType_view_clause
+        //         ]
+        //         AS subquery [ subquery_restriction_clause ] ;
+
+
+        // NOTE: the query expression along with the CHECK OPTION clause require no SQL statement terminator.
+        // So the CHECK OPTION clause will NOT
+
+        String stmtType = "CREATE";
+        tokens.consume("CREATE");
+        if (tokens.canConsume("OR", "REPLACE")) {
+            stmtType = stmtType + SPACE + "OR REPLACE";
+        } else if( tokens.canConsume("NO", "FORCE")) {
+            stmtType = stmtType + SPACE + "NO FORCE";
+        } else if( tokens.canConsume("FORCE")) {
+            stmtType = stmtType + SPACE + "FORCE";
+        }
+        
+        tokens.consume("VIEW");
+        stmtType = stmtType + SPACE + "VIEW";
+
+        String name = parseName(tokens);
+
+        AstNode createViewNode = nodeFactory().node(name, parentNode, TYPE_CREATE_VIEW_STATEMENT);
+
+        // CONSUME COLUMNS
+        parseColumnNameList(tokens, createViewNode, TYPE_COLUMN_REFERENCE);
+
+        // (object_view_clause)
+        //
+        //    OF [ schema. ] type_name
+        //    { WITH OBJECT IDENTIFIER
+        //      { DEFAULT | ( attribute [, attribute ]... ) }
+        //    | UNDER [ schema. ] superview
+        //    }
+        //    ( { out_of_line_constraint
+        //      | attribute { inline_constraint }...
+        //      }  [, { out_of_line_constraint
+        //            | attribute { inline_constraint }...
+        //            }
+        //         ]...
+        //    )
+
+        // (XMLType_view_clause)
+        //
+        //    OF XMLTYPE [ XMLSchema_spec ]
+        //                 WITH OBJECT IDENTIFIER
+        //                   { DEFAULT | ( expr [, expr ]...) }
+
+        // Basically, if next token matches "OF", then parse until token matches "AS"
+        
+        if( tokens.matches("OF") ) {
+            do {
+                tokens.consume();
+            } while( !tokens.matches("AS"));
+        }
+        
+        tokens.consume("AS");
+        
+        String queryExpression = parseUntilTerminator(tokens);
+
+        createViewNode.setProperty(CREATE_VIEW_QUERY_EXPRESSION, queryExpression);
+
+        markEndOfStatement(tokens, createViewNode);
+
+        return createViewNode;
     }
 
     /**

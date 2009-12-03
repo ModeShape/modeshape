@@ -98,7 +98,7 @@ public class AstNode implements Iterable<AstNode> {
         if (this.parent == null) return snsIndex;
         // Go through all the children ...
         for (AstNode sibling : this.parent.getChildren()) {
-            if (sibling == this) continue;
+            if (sibling == this) break;
             if (sibling.getName().equals(this.name)) ++snsIndex;
         }
         return snsIndex;

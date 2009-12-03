@@ -131,6 +131,12 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         tokens = getTokens(content);
         result = parser.parseName(tokens);
         assertEquals(targetName, result);
+        
+        content = "\"_RETURN\"";
+        targetName = "_RETURN";
+        tokens = getTokens(content);
+        result = parser.parseName(tokens);
+        assertEquals(targetName, result);
     }
 
     @Test
@@ -674,7 +680,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         String content = getFileContent(DDL_FILE_PATH + "createTables.ddl");
         boolean success = parser.parse(content, rootNode);
 
-        assertThat(rootNode.getChildCount(), is(22));
+        assertThat(rootNode.getChildCount(), is(20));
         assertThat(success, is(true));
         List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
 
@@ -810,5 +816,22 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertThat(schemaNodes.get(0).getName().getString(), is("GLOBALFORCEMGMT"));
 
     }
+    
+    @Test
+    public void shouldParseStatementsWithDoubleQuotes() {
+        printTest("shouldParseUnterminatedOracleFile()");
+        String content = "ALTER JAVA CLASS \"Agent\""
+    + "RESOLVER ((\"/home/java.101/bin/*\" pm)(* public)) RESOLVE;"
+    + "CREATE SERVER foo FOREIGN DATA WRAPPER \"default\";"
+    + "CREATE RULE \"_RETURN\" AS ON SELECT TO t1 DO INSTEAD SELECT * FROM t2;";
 
+        // parser.setTestMode(true);
+
+        boolean success = parser.parse(content, rootNode);
+
+        assertThat(success, is(true));
+
+        assertThat(rootNode.getChildCount(), is(3));
+
+    }
 }

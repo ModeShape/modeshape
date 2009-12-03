@@ -37,7 +37,13 @@ import org.jboss.dna.sequencer.ddl.StandardDdlLexicon;
 public interface PostgresDdlConstants extends DdlConstants {
 	public static final String[] CUSTOM_KEYWORDS = {
 		"SHOW", "LISTEN", "UNLISTEN", "REINDEX", "MOVE", "ABORT", "ANALYZE", "TRUNCATE", "REASSIGN", "RELEASE",
-		"RESET", "REVOKE", "ROLLBACK", "FETCH", "EXPLAIN", "DISCARD", "COPY", "CLUSTER", "NOTIFY", "LOAD", "COMMENT", "LOCK"
+		"RESET", "REVOKE", "ROLLBACK", "FETCH", "EXPLAIN", "DISCARD", "COPY", "CLUSTER", "NOTIFY", "LOAD", "COMMENT", "LOCK",
+		"SERVER", "SEARCH", "PARSER", "DICTIONARY", "WRAPPER", "PROCEDURAL", "CONVERSION", "AGGREGATE", "TEMPLATE", 
+		"MAPPING", "TRUSTED", "TRIGGER", "VACUUM", "FAMILTY",
+		"BIGSERIAL", "BOX", "BOOLEAN", "BOX", "BYTEA", "CIDR", "CIRCLE", "FLOAT4", "FLOAT8", "INET", "INT2", "INT4", "INT8",
+        "LINE", "LSEG", "MACADDR", "MONEY", "PATH", "POINT", "POLYGON",
+        "SERIAL", "SERIAL4", "SERIAL8", "TEXT", "TIMESTAMPZ", "TSQUERY",
+        "TSVECTOR", "TXID_SNAPSHOT", "UUID", "XML"
 	};
 
 	interface PostgresStatementStartPhrases {
@@ -290,37 +296,37 @@ public interface PostgresDdlConstants extends DdlConstants {
 		//      interval hour to minute
 	
 	interface PostgresDataTypes {
-		static final String[] DTYPE_BIGSERIAL = {"BIGSERIAL"}; //
-		static final String[] DTYPE_BOX = {"BOX"}; // 
-		static final String[] DTYPE_BYTEA = {"BYTEA"}; //
-		static final String[] DTYPE_CIDR = {"CIDR"}; // 
-		static final String[] DTYPE_CIRCLE = {"CIRCLE"}; // 
-		static final String[] DTYPE_INET = {"INET"}; // 
-		static final String[] DTYPE_LINE = {"LINE"}; // 
-		static final String[] DTYPE_LSEG = {"LSEG"}; // 
-		static final String[] DTYPE_MACADDR = {"MACADDR"}; // 
-		static final String[] DTYPE_MONEY = {"MONEY"}; // 
-		static final String[] DTYPE_PATH = {"PATH"}; // 
-		static final String[] DTYPE_POINT = {"POINT"}; // 
-		static final String[] DTYPE_POLYGON = {"POLYGON"}; // 
-		static final String[] DTYPE_SERIAL = {"SERIAL"}; // 
-		static final String[] DTYPE_TEXT = {"TEXT"}; // 
-		static final String[] DTYPE_TSQUERY = {"TSQUERY"}; // 
-		static final String[] DTYPE_TSVECTOR = {"TSVECTOR"}; // 
-		static final String[] DTYPE_TXID_SNAPSHOT = {"TXID_SNAPSHOT"}; // 
-		static final String[] DTYPE_UUID = {"UUID"}; // 
-		static final String[] DTYPE_XML = {"XML"}; // 
-		static final String[] DTYPE_BOOLEAN = {"BOOLEAN"}; // 
-		static final String[] DTYPE_BOOL = {"BOOL"}; // 
-		static final String[] DTYPE_FLOAT4 = {"FLOAT4"}; // 
-		static final String[] DTYPE_FLOAT8 = {"FLOAT8"}; // 
-		static final String[] DTYPE_INT2 = {"INT2"}; // 
-		static final String[] DTYPE_INT4 = {"INT4"}; // 
-		static final String[] DTYPE_INT8 = {"INT8"}; // 
-		static final String[] DTYPE_SERIAL4 = {"SERIAL4"}; //
-		static final String[] DTYPE_SERIAL8 = {"SERIAL8"}; // 
-		static final String[] DTYPE_TIMESTAMPZ = {"TIMESTAMPZ"}; // 
-		static final String[] DTYPE_VARBIT = {"VARBIT"}; // 
+		static final String[] DTYPE_BIGSERIAL = {"BIGSERIAL"};
+		static final String[] DTYPE_BOX = {"BOX"};
+		static final String[] DTYPE_BYTEA = {"BYTEA"};
+		static final String[] DTYPE_CIDR = {"CIDR"}; 
+		static final String[] DTYPE_CIRCLE = {"CIRCLE"}; 
+		static final String[] DTYPE_INET = {"INET"}; 
+		static final String[] DTYPE_LINE = {"LINE"}; 
+		static final String[] DTYPE_LSEG = {"LSEG"}; 
+		static final String[] DTYPE_MACADDR = {"MACADDR"}; 
+		static final String[] DTYPE_MONEY = {"MONEY"}; 
+		static final String[] DTYPE_PATH = {"PATH"}; 
+		static final String[] DTYPE_POINT = {"POINT"}; 
+		static final String[] DTYPE_POLYGON = {"POLYGON"}; 
+		static final String[] DTYPE_SERIAL = {"SERIAL"}; 
+		static final String[] DTYPE_TEXT = {"TEXT"}; 
+		static final String[] DTYPE_TSQUERY = {"TSQUERY"}; 
+		static final String[] DTYPE_TSVECTOR = {"TSVECTOR"}; 
+		static final String[] DTYPE_TXID_SNAPSHOT = {"TXID_SNAPSHOT"}; 
+		static final String[] DTYPE_UUID = {"UUID"}; 
+		static final String[] DTYPE_XML = {"XML"}; 
+		static final String[] DTYPE_BOOLEAN = {"BOOLEAN"}; 
+		static final String[] DTYPE_BOOL = {"BOOL"}; 
+		static final String[] DTYPE_FLOAT4 = {"FLOAT4"}; 
+		static final String[] DTYPE_FLOAT8 = {"FLOAT8"}; 
+		static final String[] DTYPE_INT2 = {"INT2"}; 
+		static final String[] DTYPE_INT4 = {"INT4"}; 
+		static final String[] DTYPE_INT8 = {"INT8"}; 
+		static final String[] DTYPE_SERIAL4 = {"SERIAL4"};
+		static final String[] DTYPE_SERIAL8 = {"SERIAL8"}; 
+		static final String[] DTYPE_TIMESTAMPZ = {"TIMESTAMPZ"}; 
+		static final String[] DTYPE_VARBIT = {"VARBIT"}; 
 
 		
 		static final List<String[]> CUSTOM_DATATYPE_START_PHRASES = 

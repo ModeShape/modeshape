@@ -212,7 +212,7 @@ public class DdlParsersTest {
 	  	assertThat(alterNodes.size(), is(120));
 	  	List<AstNode> dropSchemaNodes = nodeFactory.getChildrenForType(rootNode, TYPE_DROP_SCHEMA_STATEMENT);
 	  	assertThat(dropSchemaNodes.size(), is(1));
-	  	List<AstNode> unknownNodes = nodeFactory.getChildrenForType(rootNode, TYPE_STATEMENT);
+	  	List<AstNode> unknownNodes = nodeFactory.getChildrenForType(rootNode, TYPE_UNKNOWN_STATEMENT);
 	  	assertThat(unknownNodes.size(), is(1));
 	  	
     }

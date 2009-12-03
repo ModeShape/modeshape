@@ -628,7 +628,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         } else if (tokens.canConsume("DROP")) {
             if (tokens.canConsume("CONSTRAINT")) {
-                String constraintName = tokens.consume(); // constraint name
+                String constraintName = parseName(tokens); // constraint name
 
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
 
@@ -1287,7 +1287,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             // EXAMPLE:
             // COLUMN_NAME DATATYPE NOT NULL DEFAULT (0) FOREIGN KEY MY_FK_NAME REFERENCES SOME_TABLE_NAME (SOME_COLUMN_NAME, ...)
 
-            String constraintName = tokens.consume();
+            String constraintName = parseName(tokens);
 
             AstNode constraintNode = nodeFactory().node(constraintName, columnNode.getParent(), mixinType);
 
@@ -1445,7 +1445,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "UNIQUE")) {
             // CONSTRAINT P_KEY_2a UNIQUE (PERMISSIONUID)
             tokens.consume(); // CONSTRAINT
-            String uc_name = tokens.consume(); // UNIQUE CONSTRAINT NAME
+            String uc_name = parseName(tokens); // UNIQUE CONSTRAINT NAME
             tokens.consume("UNIQUE"); // UNIQUE
 
             AstNode constraintNode = nodeFactory().node(uc_name, tableNode, mixinType);
@@ -1460,7 +1460,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "PRIMARY", "KEY")) {
             // CONSTRAINT U_KEY_2a PRIMARY KEY (PERMISSIONUID)
             tokens.consume("CONSTRAINT"); // CONSTRAINT
-            String pk_name = tokens.consume(); // PRIMARY KEY NAME
+            String pk_name = parseName(tokens); // PRIMARY KEY NAME
             tokens.consume("PRIMARY", "KEY"); // PRIMARY KEY
 
             AstNode constraintNode = nodeFactory().node(pk_name, tableNode, mixinType);
@@ -1476,7 +1476,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "FOREIGN", "KEY")) {
             // CONSTRAINT F_KEY_2a FOREIGN KEY (PERMISSIONUID)
             tokens.consume("CONSTRAINT"); // CONSTRAINT
-            String fk_name = tokens.consume(); // FOREIGN KEY NAME
+            String fk_name = parseName(tokens); // FOREIGN KEY NAME
             tokens.consume("FOREIGN", "KEY"); // FOREIGN KEY
 
             AstNode constraintNode = nodeFactory().node(fk_name, tableNode, mixinType);
@@ -1653,6 +1653,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // CONSUME COLUMNS
         parseColumnNameList(tokens, createViewNode, TYPE_COLUMN_REFERENCE);
 
+        tokens.consume("AS");
+        
         String queryExpression = parseUntilTerminator(tokens);
 
         createViewNode.setProperty(CREATE_VIEW_QUERY_EXPRESSION, queryExpression);
@@ -1689,9 +1691,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         if (tokens.canConsume("AUTHORIZATION")) {
             authorizationIdentifier = tokens.consume();
         } else {
-            schemaName = tokens.consume();
+            schemaName = parseName(tokens);
             if (tokens.canConsume("AUTHORIZATION")) {
-                authorizationIdentifier = tokens.consume();
+                authorizationIdentifier = parseName(tokens);
             }
         }
         // Must have one or the other or both

@@ -68,7 +68,8 @@ public class DdlSequencer implements StreamSequencer {
             rootNode = parsers.parse(IoUtil.read(stream));
 
             Path nodePath = pathFactory.create(rootNode.getPath(context));
-            destination.create(nodePath, rootNode.getProperties());
+            List<Property> properties = rootNode.getProperties();
+            destination.create(nodePath, properties);
 
             convertAstNodesToGraphNodes(rootNode);
 
@@ -88,7 +89,8 @@ public class DdlSequencer implements StreamSequencer {
 
         for (AstNode child : children) {
             Path nodePath = pathFactory.create(child.getPath(context));
-            destination.create(nodePath, child.getProperties());
+            List<Property> properties = child.getProperties();
+            destination.create(nodePath, properties);
             convertAstNodesToGraphNodes(child);
         }
     }

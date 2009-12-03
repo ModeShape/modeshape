@@ -77,12 +77,12 @@ public class DerbyDdlLexicon extends StandardDdlLexicon {
     public static final Name TYPE_RENAME_INDEX_STATEMENT 			= new BasicName(Namespace.URI, "renameIndexStatement");
     public static final Name TYPE_DECLARE_GLOBAL_TEMPORARY_TABLE_STATEMENT = new BasicName(Namespace.URI, "declareGlobalTemporaryTableStatement");
 
-    public static final Name TYPE_DROP_FUNCTION_STATEMENT 		= new BasicName(Namespace.URI, "dropFunctionStatementStatement");
-    public static final Name TYPE_DROP_INDEX_STATEMENT 			= new BasicName(Namespace.URI, "dropIndexStatementStatement");
-    public static final Name TYPE_DROP_PROCEDURE_STATEMENT 		= new BasicName(Namespace.URI, "dropProcedureStatementStatement");
-    public static final Name TYPE_DROP_ROLE_STATEMENT 			= new BasicName(Namespace.URI, "dropRoleStatementStatement");
-    public static final Name TYPE_DROP_SYNONYM_STATEMENT 			= new BasicName(Namespace.URI, "dropSynonymStatementStatement");
-    public static final Name TYPE_DROP_TRIGGER_STATEMENT 			= new BasicName(Namespace.URI, "dropTriggerStatementStatement");
+    public static final Name TYPE_DROP_FUNCTION_STATEMENT 		= new BasicName(Namespace.URI, "dropFunctionStatement");
+    public static final Name TYPE_DROP_INDEX_STATEMENT 			= new BasicName(Namespace.URI, "dropIndexStatement");
+    public static final Name TYPE_DROP_PROCEDURE_STATEMENT 		= new BasicName(Namespace.URI, "dropProcedureStatement");
+    public static final Name TYPE_DROP_ROLE_STATEMENT 			= new BasicName(Namespace.URI, "dropRoleStatement");
+    public static final Name TYPE_DROP_SYNONYM_STATEMENT 			= new BasicName(Namespace.URI, "dropSynonymStatement");
+    public static final Name TYPE_DROP_TRIGGER_STATEMENT 			= new BasicName(Namespace.URI, "dropTriggerStatement");
     
     public static final Name UNIQUE_INDEX 			= new BasicName(Namespace.URI, "unique"); //$NON-NLS-1$
     public static final Name TABLE_NAME 			= new BasicName(Namespace.URI, "tableName"); //$NON-NLS-1$
