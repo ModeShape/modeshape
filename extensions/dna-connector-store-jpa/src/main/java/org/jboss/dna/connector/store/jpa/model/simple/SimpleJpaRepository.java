@@ -90,16 +90,16 @@ import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
  */
 public class SimpleJpaRepository extends MapRepository {
 
-    private final EntityManager entityManager;
-    private final Workspaces workspaceEntities;
-    private final Namespaces namespaceEntities;
-    private final ExecutionContext context;
-    private final PathFactory pathFactory;
-    private final NameFactory nameFactory;
+    protected final EntityManager entityManager;
+    protected final Workspaces workspaceEntities;
+    protected final Namespaces namespaceEntities;
+    protected final ExecutionContext context;
+    protected final PathFactory pathFactory;
+    protected final NameFactory nameFactory;
     private final List<String> predefinedWorkspaceNames;
-    private final boolean compressData;
-    private final boolean creatingWorkspacesAllowed;
-    private final long minimumSizeOfLargeValuesInBytes;
+    protected final boolean compressData;
+    protected final boolean creatingWorkspacesAllowed;
+    protected final long minimumSizeOfLargeValuesInBytes;
 
     // private final boolean referentialIntegrityEnforced;
 
@@ -162,6 +162,9 @@ public class SimpleJpaRepository extends MapRepository {
     }
 
     /**
+     * Determine whether creating workspaces is allowed.
+     * 
+     * @return true if creating workspace is allowed, or false otherwise
      * @see org.jboss.dna.connector.store.jpa.JpaSource#isCreatingWorkspacesAllowed()
      */
     final boolean creatingWorkspacesAllowed() {
@@ -235,6 +238,7 @@ public class SimpleJpaRepository extends MapRepository {
      * {@link CompositeRequest}).
      * </p>
      */
+    @SuppressWarnings( "synthetic-access" )
     protected class Workspace extends AbstractMapWorkspace {
         private final long workspaceId;
         private final Map<Path, MapNode> nodesByPath = new HashMap<Path, MapNode>();
@@ -416,6 +420,11 @@ public class SimpleJpaRepository extends MapRepository {
 
         /**
          * This connector does not support connector-level, persistent locking of nodes.
+         * 
+         * @param node
+         * @param lockScope
+         * @param lockTimeoutInMillis
+         * @throws LockFailedException
          */
         public void lockNode( MapNode node,
                               LockScope lockScope,
@@ -425,6 +434,8 @@ public class SimpleJpaRepository extends MapRepository {
 
         /**
          * This connector does not support connector-level, persistent locking of nodes.
+         * 
+         * @param node the node to be unlocked
          */
         public void unlockNode( MapNode node ) {
             // Locking is not supported by this connector
@@ -436,6 +447,7 @@ public class SimpleJpaRepository extends MapRepository {
      * Adapter between the {@link NodeEntity persistent entity for nodes} and the {@link MapNode map repository interface for
      * nodes}.
      */
+    @SuppressWarnings( "synthetic-access" )
     @NotThreadSafe
     protected class JpaNode implements MapNode {
         private final NodeEntity entity;
