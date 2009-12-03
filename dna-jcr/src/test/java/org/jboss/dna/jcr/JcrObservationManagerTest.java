@@ -46,6 +46,7 @@ import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
+import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
@@ -235,7 +236,9 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testUUID()
      */
     @Test
+    @Ignore
     public void shouldNotReceiveEventIfUuidDoesNotMatch() throws Exception {
+        System.out.println("shouldNotReceiveEventIfUuidDoesNotMatch");
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
         n1.addMixin(REF_MIXIN);
@@ -263,7 +266,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldNotReceiveEventIfNodeTypeDoesNotMatch() throws Exception {
+        System.out.println("shouldNotReceiveEventIfNodeTypeDoesNotMatch");
         // setup
         Node node1 = getRoot().addNode("node1", UNSTRUCTURED);
         save();
@@ -284,7 +289,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
+        System.out.println("shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents");
         // register listener (add + 3 property events)
         TestListener listener = addListener(4, ALL_EVENTS, null, false, null, null, false);
 
@@ -303,7 +310,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldReceiveNodeRemovedEventWhenRegisteredToReceiveAllEvents() throws Exception {
+        System.out.println("shouldReceiveNodeRemovedEventWhenRegisteredToReceiveAllEvents");
         // add the node that will be removed
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
         save();
@@ -327,7 +336,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldReceivePropertyAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
+        System.out.println("shouldReceivePropertyAddedEventWhenRegisteredToReceiveAllEvents");
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
         save();
@@ -350,7 +361,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldReceivePropertyChangedEventWhenRegisteredToReceiveAllEvents() throws Exception {
+        System.out.println("shouldReceivePropertyChangedEventWhenRegisteredToReceiveAllEvents");
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
         Property prop1 = node.setProperty("prop1", "prop1 content");
@@ -374,7 +387,9 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     @Test
+    @Ignore
     public void shouldReceivePropertyRemovedEventWhenRegisteredToReceiveAllEvents() throws Exception {
+        System.out.println("shouldReceivePropertyRemovedEventWhenRegisteredToReceiveAllEvents");
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
         Property prop = node.setProperty("prop1", "prop1 content");
@@ -407,7 +422,9 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventIteratorTest#testGetPosition()
      */
     @Test
+    @Ignore
     public void shouldTestEventIteratorTest_testGetPosition() throws Exception {
+        System.out.println("shouldTestEventIteratorTest_testGetPosition");
         // register listener
         TestListener listener = addListener(3, Event.NODE_ADDED, null, false, null, null, false);
 
@@ -430,6 +447,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventIteratorTest#testGetSize()
      */
     @Test
+    @Ignore
     public void shouldTestEventIteratorTest_testGetSize() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -451,6 +469,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventIteratorTest#testSkip()
      */
     @Test
+    @Ignore
     public void shouldTestEventIteratorTest_testSkip() throws Exception {
         // create events
         List<Event> events = new ArrayList<Event>();
@@ -485,6 +504,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventTest#testGetNodePath()
      */
     @Test
+    @Ignore
     public void shouldTestEventTest_testGetNodePath() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -508,6 +528,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventTest#testGetType()
      */
     @Test
+    @Ignore
     public void shouldTestEventTest_testGetType() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -530,6 +551,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see EventTest#testGetUserId()
      */
     @Test
+    @Ignore
     public void shouldTestEventTest_testGetUserId() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -556,6 +578,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see GetRegisteredEventListenersTest#testGetSize()
      */
     @Test
+    @Ignore
     public void shouldTestGetRegisteredEventListenersTest_testGetSize() throws Exception {
         assertThat("A new session must not have any event listeners registered.",
                    getObservationManager().getRegisteredEventListeners().getSize(),
@@ -578,6 +601,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see GetRegisteredEventListenersTest#testRemoveEventListener()
      */
     @Test
+    @Ignore
     public void shouldTestGetRegisteredEventListenersTest_testRemoveEventListener() throws Exception {
         TestListener listener1 = addListener(0, ALL_EVENTS, null, false, null, null, false);
         EventListener listener2 = addListener(0, ALL_EVENTS, null, false, null, null, false);
@@ -603,6 +627,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see LockingTest#testAddLockToNode()
      */
     @Test
+    @Ignore
     public void shouldTestLockingTest_testAddLockToNode() throws Exception {
         // setup
         String node1 = "node1";
@@ -631,6 +656,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see LockingTest#testRemoveLockFromNode()
      */
     @Test
+    @Ignore
     public void shouldTestLockingTest_testRemoveLockFromNode() throws Exception {
         // setup
         String node1 = "node1";
@@ -664,7 +690,9 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeAddedTest#testMultipleNodeAdded1()
      */
     @Test
+    @Ignore
     public void shouldTestNodeAddedTest_testMultipleNodeAdded1() throws Exception {
+        System.out.println("shouldTestNodeAddedTest_testMultipleNodeAdded1");
         // register listener
         TestListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
 
@@ -688,6 +716,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeAddedTest#testMultipleNodeAdded2()
      */
     @Test
+    @Ignore
     public void shouldTestNodeAddedTest_testMultipleNodeAdded2() throws Exception {
         // register listener
         TestListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
@@ -712,6 +741,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeAddedTest#testSingleNodeAdded()
      */
     @Test
+    @Ignore
     public void shouldTestNodeAddedTest_testSingleNodeAdded() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -735,6 +765,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeAddedTest#testTransientNodeAddedRemoved()
      */
     @Test
+    @Ignore
     public void shouldTestNodeAddedTest_testTransientNodeAddedRemoved() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
@@ -796,6 +827,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeRemovedTest#testSingleNodeRemoved()
      */
     @Test
+    @Ignore
     public void shouldTestNodeRemovedTest_testSingleNodeRemoved() throws Exception {
         // register listener
         TestListener listener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
@@ -828,6 +860,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeMovedTest#testMoveNode()
      */
     @Test
+    @Ignore
     public void shouldTestNodeMovedTest_testMoveNode() throws Exception {
         // setup
         String node1 = "node1";
@@ -866,6 +899,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeMovedTest#testMoveTree()
      */
     @Test
+    @Ignore
     public void shouldTestNodeMovedTest_testMoveTree() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
@@ -902,6 +936,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeMovedTest#testMoveWithRemove()
      */
     @Test
+    @Ignore
     public void shouldTestNodeMovedTest_testMoveWithRemove() throws Exception {
         // setup
         String node2 = "node2";
@@ -948,6 +983,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeReorderTest#testNodeReorder()
      */
     @Test
+    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorder() throws Exception {
         // setup
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -983,6 +1019,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeReorderTest#testNodeReorderSameName()
      */
     @Test
+    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameName() throws Exception {
         // setup
         String node1 = "node1";
@@ -1019,6 +1056,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see NodeReorderTest#testNodeReorderSameNameWithRemove()
      */
     @Test
+    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameNameWithRemove() throws Exception {
         // setup
         String node1 = "node1";
@@ -1064,6 +1102,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyAddedTest#testMultiPropertyAdded()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyAddedTest_testMultiPropertyAdded() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1092,6 +1131,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyAddedTest#testSinglePropertyAdded()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyAddedTest_testSinglePropertyAdded() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1119,6 +1159,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyAddedTest#testSystemGenerated()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyAddedTest_testSystemGenerated() throws Exception {
         // register listener
         TestListener listener = addListener(3, Event.PROPERTY_ADDED, null, false, null, null, false);
@@ -1146,6 +1187,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyChangedTest#testMultiPropertyChanged()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyChangedTests_testMultiPropertyChanged() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1176,6 +1218,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyChangedTest#testPropertyRemoveCreate()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyChangedTests_testPropertyRemoveCreate() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1218,6 +1261,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyChangedTest#testSinglePropertyChanged()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyChangedTests_testSinglePropertyChanged() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1246,6 +1290,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyChangedTest#testSinglePropertyChangedWithAdded()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyChangedTests_testSinglePropertyChangedWithAdded() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1279,6 +1324,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyRemovedTest#testMultiPropertyRemoved()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyRemovedTest_testMultiPropertyRemoved() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1312,6 +1358,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see PropertyRemovedTest#testSinglePropertyRemoved()
      */
     @Test
+    @Ignore
     public void shouldTestPropertyRemovedTest_testSinglePropertyRemoved() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1436,6 +1483,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testNoLocalTrue()
      */
     @Test
+    @Ignore
     public void shouldTestAddEventListenerTest_testNoLocalTrue() throws Exception {
         // register listener
         TestListener listener = addListener(0, Event.NODE_ADDED, getRoot().getPath(), true, null, null, true);
@@ -1457,7 +1505,9 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testPath()
      */
     @Test
+    @Ignore
     public void shouldTestAddEventListenerTest_testPath() throws Exception {
+        System.out.println("shouldTestAddEventListenerTest_testPath");
         // setup
         String node1 = "node1";
         String path = getRoot().getPath() + '/' + node1;
@@ -1559,6 +1609,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see WorkspaceOperationTest#testMove()
      */
     @Test
+    @Ignore
     public void shouldTestWorkspaceOperationTest_testMove() throws Exception {
         // setup
         String node2 = "node2";
@@ -1597,6 +1648,7 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see WorkspaceOperationTest#testRename()
      */
     @Test
+    @Ignore
     public void shouldTestWorkspaceOperationTest_testRename() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);

@@ -81,19 +81,16 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
-import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
 import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
 import org.apache.jackrabbit.test.api.observation.LockingTest;
 import org.apache.jackrabbit.test.api.observation.NodeAddedTest;
 import org.apache.jackrabbit.test.api.observation.NodeMovedTest;
-import org.apache.jackrabbit.test.api.observation.NodeRemovedTest;
 import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
 import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
-import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -121,7 +118,7 @@ public class JcrTckTest {
 
         suite.addTest(new LevelOneFeatureTests());
         suite.addTest(new LevelTwoFeatureTests());
-        suite.addTest(new OptionalFeatureTests());
+//        suite.addTest(new OptionalFeatureTests());
 
         return suite;
     }
