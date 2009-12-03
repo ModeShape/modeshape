@@ -64,6 +64,34 @@
             </listitem>
         </itemizedlist>
     </para>
+    <sect1>
+        <title>Example</title>
+	    <para>Sequencing results in graph nodes basically representing the BNF structure of each DDL statement. Below is an example DDL
+	        schema definition statement containing table and view definition statements.
+	    </para>
+	    <programlisting>
+CREATE SCHEMA hollywood
+	  CREATE TABLE films (title varchar(255), release date, producerName varchar(255))
+	  CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;
+	    </programlisting>
+	    <para>The resulting graph structure, shown below contains the raw statement expression, pertinent table, column and key
+	        reference information as well as critical integer position values (line number, column number and character index) to
+	        tie the statement back to the original DDL file.
+	    </para>
+	    <programlisting>
+	<![CDATA[
+<name = "statements" primaryType = "nt:unstructured" uuid = "ee3db6e6-fa59-46db-bd3f-c555b4fa4a50" parserId = "POSTGRES">
+      <name = "hollywood" startLineNumber = "1" primaryType = "nt:unstructured" uuid = "3e084a7d-7da8-4068-9b03-b1aed9ac9c7a" startColumnNumber = "1" mixinTypes = "ns001:createSchemaStatement" expression = "CREATE SCHEMA hollywood" startCharIndex = "0">
+            <name = "films" startLineNumber = "2" primaryType = "nt:unstructured" uuid = "b622cdcb-69fa-4aa2-8510-f35c0a8ddcbe" startColumnNumber = "5" mixinTypes = "ns001:createTableStatement" expression = "CREATE TABLE films (title varchar(255), release date, producerName varchar(255))" startCharIndex = "28">
+            <name = "title" datatypeName = "VARCHAR" datatypeLength = "255" primaryType = "nt:unstructured" uuid = "d7e962bb-cd37-4df4-ab53-ab78fd72c153" mixinTypes = "ns001:columnDefinition">
+            <name = "release" datatypeName = "DATE" primaryType = "nt:unstructured" uuid = "83aa7c21-82f7-416e-8c23-5c308a1c4257" mixinTypes = "ns001:columnDefinition">
+            <name = "producerName" datatypeName = "VARCHAR" datatypeLength = "255" primaryType = "nt:unstructured" uuid = "a51ed903-4d2c-4cd9-83e2-a76884b923aa" mixinTypes = "ns001:columnDefinition">
+      <name = "winners" startLineNumber = "3" primaryType = "nt:unstructured" uuid = "9eeef501-ad7e-4e25-9891-b86485e48dc1" startColumnNumber = "5" mixinTypes = "ns001:createViewStatement" expression = "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;" queryExpression = " SELECT title, release FROM films WHERE producerName IS NOT NULL" startCharIndex = "113">
+	]]>
+	    </programlisting>
+    </sect1>
+    <para>
+    </para>
     <para>
         To use this sequencer, simply include the <code>dna-sequencer-ddl</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
