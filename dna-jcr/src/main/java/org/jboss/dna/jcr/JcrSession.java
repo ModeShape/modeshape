@@ -775,9 +775,10 @@ class JcrSession implements Session {
             return;
         }
 
+        isLive = false;
+        this.workspace().observationManager().removeAllEventListeners();
         this.workspace().lockManager().cleanLocks(this);
         this.executionContext.getSecurityContext().logout();
-        isLive = false;
     }
 
     /**

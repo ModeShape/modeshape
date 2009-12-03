@@ -2333,6 +2333,10 @@ public class Graph {
                 Map<Location, Map<Name, Property>> results = new HashMap<Location, Map<Name, Property>>();
                 for (ReadPropertyRequest request : requests) {
                     Property property = request.getProperty();
+                    
+                    // property was requested but doesn't exist
+                    if (property == null) continue;
+                    
                     Location location = request.getActualLocationOfNode();
                     Map<Name, Property> properties = results.get(location);
                     if (properties == null) {

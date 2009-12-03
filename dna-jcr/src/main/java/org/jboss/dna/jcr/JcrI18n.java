@@ -175,6 +175,11 @@ public final class JcrI18n {
     public static I18n lockTokenNotHeld;
     public static I18n lockTokenAlreadyHeld;
     public static I18n uuidRequiredForLock;
+    
+    // JcrObservationManager messages
+    public static I18n cannotCreateUuid;
+    public static I18n cannotPerformNodeTypeCheck;
+    public static I18n sessionIsNotActive;
 
     static {
         try {

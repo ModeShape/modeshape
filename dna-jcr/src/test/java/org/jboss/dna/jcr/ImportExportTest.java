@@ -37,6 +37,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.MockObservable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -83,7 +84,7 @@ public class ImportExportTest {
             }
         };
 
-        repository = new JcrRepository(context, connectionFactory, "unused");
+        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null);
 
         SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
                                                                       Collections.singleton(JcrSession.DNA_WRITE_PERMISSION));

@@ -50,6 +50,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.MockObservable;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -114,7 +115,7 @@ public class JcrRepositoryTest {
 
         // Set up the repository ...
         descriptors = new HashMap<String, String>();
-        repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
 
         // Set up the graph that goes directly to the source ...
         sourceGraph = Graph.create(source, context);
@@ -142,22 +143,27 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldAllowNullDescriptors() {
-        new JcrRepository(context, connectionFactory, sourceName, null, null);
+        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrRepository(null, connectionFactory, sourceName, descriptors, null);
+        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullConnectionFactories() throws Exception {
-        new JcrRepository(context, null, sourceName, descriptors, null);
+        new JcrRepository(context, null, sourceName, new MockObservable(), descriptors, null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullObservable() throws Exception {
+        new JcrRepository(context, connectionFactory, sourceName, null, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSourceName() throws Exception {
-        new JcrRepository(context, connectionFactory, null, descriptors, null);
+        new JcrRepository(context, connectionFactory, null, new MockObservable(), descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -182,14 +188,24 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() {
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
+    }
+    
+    @Test
+    public void shouldProvideObserver() {
+        assertThat(this.repository.getObserver(), is(notNullValue()));
+    }
+    
+    @Test
+    public void shouldProvideRepositoryObservable() {
+        assertThat(this.repository.getRepositoryObservable(), is(notNullValue()));
     }
 
     @Test
     public void shouldHaveDefaultOptionsWhenNotOverridden() {
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
         assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
                    is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
     }
@@ -198,7 +214,7 @@ public class JcrRepositoryTest {
     public void shouldProvideUserSuppliedDescriptors() {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
@@ -236,7 +252,8 @@ public class JcrRepositoryTest {
     public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
         Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_READ_PERMISSION);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, options);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
+                                                     options);
 
         session = (JcrSession)repository.login();
 
@@ -453,7 +470,7 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.LEVEL_1_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.LEVEL_2_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_LOCKING_SUPPORTED), is("true"));
-        assertThat(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED), is("false"));
+        assertThat(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("false"));

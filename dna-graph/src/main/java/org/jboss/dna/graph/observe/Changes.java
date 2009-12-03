@@ -40,6 +40,7 @@ public class Changes implements Comparable<Changes>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    protected final ObservedId id;
     protected final String processId;
     protected final String contextId;
     protected final String userName;
@@ -55,6 +56,7 @@ public class Changes implements Comparable<Changes>, Serializable {
                     List<ChangeRequest> requests ) {
         assert requests != null;
         assert !requests.isEmpty();
+        this.id = new ObservedId();
         this.userName = userName;
         this.sourceName = sourceName;
         this.timestamp = timestamp;
@@ -69,6 +71,7 @@ public class Changes implements Comparable<Changes>, Serializable {
     }
 
     protected Changes( Changes changes ) {
+        this.id = new ObservedId();
         this.userName = changes.userName;
         this.sourceName = changes.sourceName;
         this.timestamp = changes.timestamp;
@@ -81,6 +84,13 @@ public class Changes implements Comparable<Changes>, Serializable {
         assert this.changeRequests != null;
         assert this.processId != null;
         assert this.contextId != null;
+    }
+    
+    /**
+     * @return the unique ID of these changes
+     */
+    public ObservedId getId() {
+        return this.id;
     }
 
     /**

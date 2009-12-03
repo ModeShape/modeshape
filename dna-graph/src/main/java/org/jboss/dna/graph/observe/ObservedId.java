@@ -23,24 +23,39 @@
  */
 package org.jboss.dna.graph.observe;
 
+import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
+import net.jcip.annotations.Immutable;
+
 /**
- * The interface for an observer of graph changes.
+ * A unique identifier for an event or observer that can be compared with IDs created before or after this ID.
  */
-public interface Observer {
+@Immutable
+public final class ObservedId implements Serializable {
 
-    /**
-     * The ID that uniquely identifies this observer. This ID can be used to determine if {@link Changes changes} came before or
-     * after this observer was created.
-     * 
-     * @return the unique observer identifier (never <code>null</code>)
-     */
-    ObservedId getId();
+    private static final long serialVersionUID = 1L;
 
+    private static final AtomicLong idSequencer = new AtomicLong(0);
+    
+    private static long getNextId() {
+        return idSequencer.getAndIncrement();
+    }
+    
+    private final long id;
+    
     /**
-     * Method that is called for each {@link Changes set of changes} from the {@link Observable} instance(s) with which this
-     * observer is registered.
-     * 
-     * @param changes the changes that are being published
+     * Constructs a unique ID.
      */
-    void notify( Changes changes );
+    public ObservedId() {
+        this.id = getNextId();
+    }
+    
+    /**
+     * @param otherId the ID being compared to
+     * @return <code>true</code> if this ID sequentially comes before the other ID
+     */
+    public boolean isBefore(ObservedId otherId) {
+        return (this.id < otherId.id);
+    }
+
 }

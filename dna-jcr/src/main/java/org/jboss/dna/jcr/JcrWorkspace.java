@@ -38,7 +38,6 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
@@ -131,6 +130,11 @@ final class JcrWorkspace implements Workspace {
      * Reference to the JCR query manager for this workspace.
      */
     private final JcrQueryManager queryManager;
+    
+    /**
+     * Reference to the JCR observation manager for this workspace.
+     */
+    private final JcrObservationManager observationManager;
 
     private final WorkspaceLockManager lockManager;
 
@@ -166,6 +170,7 @@ final class JcrWorkspace implements Workspace {
         // This must be initialized after the session
         this.nodeTypeManager = new JcrNodeTypeManager(session, this.repository.getRepositoryTypeManager());
         this.queryManager = new JcrQueryManager(this.session);
+        this.observationManager = new JcrObservationManager(this.session, this.repository.getRepositoryObservable());
 
         // if (Boolean.valueOf(repository.getOptions().get(Option.PROJECT_NODE_TYPES))) {
         // Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(systemPath, JcrLexicon.NODE_TYPES);
@@ -197,6 +202,10 @@ final class JcrWorkspace implements Workspace {
         return this.lockManager;
     }
 
+    final JcrObservationManager observationManager() {
+        return this.observationManager;
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -252,9 +261,11 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
+     *
+     * @see javax.jcr.Workspace#getObservationManager()
      */
-    public final ObservationManager getObservationManager() throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+    public final ObservationManager getObservationManager() {
+        return this.observationManager;
     }
 
     /**

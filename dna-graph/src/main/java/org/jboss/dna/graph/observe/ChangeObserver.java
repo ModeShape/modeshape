@@ -41,8 +41,19 @@ import org.jboss.dna.common.util.Logger;
 public abstract class ChangeObserver implements Observer {
 
     private final CopyOnWriteArraySet<ChangeSourceReference> sources = new CopyOnWriteArraySet<ChangeSourceReference>();
+    private final ObservedId id;
 
     protected ChangeObserver() {
+        this.id = new ObservedId();
+    }
+    
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.graph.observe.Observer#getId()
+     */
+    public final ObservedId getId() {
+        return this.id;
     }
 
     /**

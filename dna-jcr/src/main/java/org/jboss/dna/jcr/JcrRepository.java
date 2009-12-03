@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
@@ -69,6 +72,8 @@ import org.jboss.dna.graph.connector.federation.Projection;
 import org.jboss.dna.graph.connector.federation.ProjectionParser;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.observe.Changes;
+import org.jboss.dna.graph.observe.Observable;
+import org.jboss.dna.graph.observe.ObservedId;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -238,25 +243,9 @@ public class JcrRepository implements Repository {
     private final String systemWorkspaceName;
     private final Projection systemSourceProjection;
     private final FederatedRepositorySource federatedSource;
-    private final Observer observer;
     private final NamespaceRegistry persistentRegistry;
+    private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
-
-    /**
-     * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
-     * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
-     * 
-     * @param executionContext An execution context.
-     * @param connectionFactory A repository connection factory.
-     * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
-     * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
-     *         <code>null</code>.
-     */
-    public JcrRepository( ExecutionContext executionContext,
-                          RepositoryConnectionFactory connectionFactory,
-                          String repositorySourceName ) {
-        this(executionContext, connectionFactory, repositorySourceName, null, null);
-    }
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -265,19 +254,23 @@ public class JcrRepository implements Repository {
      * @param executionContext the execution context in which this repository is to operate
      * @param connectionFactory the factory for repository connections
      * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
+     * @param repositoryObservable the repository library observable associated with this repository (never <code>null</code>)
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
      * @param options the optional {@link Option settings} for this repository; may be null
-     * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
-     *         <code>null</code>.
+     * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>, 
+     *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
     public JcrRepository( ExecutionContext executionContext,
                           RepositoryConnectionFactory connectionFactory,
                           String repositorySourceName,
+                          Observable repositoryObservable,
                           Map<String, String> descriptors,
                           Map<Option, String> options ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
+        CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
+
         Map<String, String> modifiableDescriptors;
         if (descriptors == null) {
             modifiableDescriptors = new HashMap<String, String>();
@@ -288,7 +281,7 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.LEVEL_1_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "false");
+        modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "false");
@@ -321,8 +314,9 @@ public class JcrRepository implements Repository {
             this.options = Collections.unmodifiableMap(localOptions);
         }
 
-        // Initialize the observer, which receives events from all repository sources ...
-        this.observer = new RepositoryObserver();
+        // Initialize the observer, which receives events from all repository sources
+        this.repositoryObservationManager = new RepositoryObservationManager();
+        repositoryObservable.register(this.repositoryObservationManager);
 
         // Set up the system source ...
         String systemSourceNameValue = this.options.get(Option.SYSTEM_SOURCE_NAME);
@@ -555,7 +549,16 @@ public class JcrRepository implements Repository {
      * @return the current observer, or null if there is no observer
      */
     Observer getObserver() {
-        return observer;
+        return this.repositoryObservationManager;
+    }
+
+    /**
+     * The repository observable that listeners can be registered with.
+     * 
+     * @return the repository observable (never <code>null</code>)
+     */
+    Observable getRepositoryObservable() {
+        return this.repositoryObservationManager;
     }
 
     /**
@@ -909,14 +912,62 @@ public class JcrRepository implements Repository {
         }
     }
 
-    protected class RepositoryObserver implements Observer {
+    protected class RepositoryObservationManager implements Observable, Observer {
+        
+        private final ExecutorService observerService = Executors.newSingleThreadExecutor();
+        private final CopyOnWriteArrayList<Observer> observers = new CopyOnWriteArrayList<Observer>();
+        private final ObservedId id;
+        
+        public RepositoryObservationManager() {
+            this.id = new ObservedId();
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.jboss.dna.graph.observe.Observer#getId()
+         */
+        public ObservedId getId() {
+            return this.id;
+        }
+
         /**
          * {@inheritDoc}
          * 
          * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
          */
-        public void notify( Changes changes ) {
-            // does nothing at the moment, but eventually will fire to all of the listeners on the appropriate sessions
+        public void notify( final Changes changes ) {
+            final List<Observer> listeners = observers;
+            
+            Runnable command = new Runnable() {
+                public void run() {
+                    for (Observer observer : listeners) {
+                        observer.notify(changes);
+                    }
+                }                
+            };
+
+            this.observerService.execute(command);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
+         */
+        public boolean register( Observer observer ) {
+            CheckArg.isNotNull(observer, "observer");
+            return this.observers.addIfAbsent(observer);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
+         */
+        public boolean unregister( Observer observer ) {
+            CheckArg.isNotNull(observer, "observer");
+            return this.observers.remove(observer);
         }
     }
 

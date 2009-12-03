@@ -39,6 +39,7 @@ import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -537,5 +538,50 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      */
     public PropertyDefinitionTemplate createPropertyDefinitionTemplate() throws RepositoryException {
         return new JcrPropertyDefinitionTemplate(context());
+    }
+
+    /**
+     * Determine whether the primary type or mixins are directly or indirectly derived from a node type with one of the supplied
+     * names.
+     * 
+     * @param primaryTypeName the primary type being checked (never <code>null</code>)
+     * @param mixinNames the mixins being checked (may be <code>null</code>)
+     * @param superTypeNames the names of the node types the primary type and mixins are tested against (never <code>null</code>)
+     * @return <code>true</code> if the primary type or one of the mixins are derived from one of the type names
+     * @throws RepositoryException if there is an exception obtaining node types
+     * @throws IllegalArgumentException if <code>primaryTypeProperty</code> is <code>null</code>
+     */
+    public boolean isDerivedFrom( String primaryTypeName,
+                                  String[] mixinNames,
+                                  String[] superTypeNames ) throws RepositoryException {
+        CheckArg.isNotNull(primaryTypeName, "primaryTypeName");
+        CheckArg.isNotNull(superTypeNames, "superTypeNames");
+
+        NameFactory nameFactory = context().getValueFactories().getNameFactory();
+        Name[] typeNames = nameFactory.create(superTypeNames);
+
+        // first check primary type
+        JcrNodeType primaryType = getNodeType(primaryTypeName);
+
+        for (Name typeName : typeNames) {
+            if (primaryType.isNodeType(typeName)) {
+                return true;
+            }
+        }
+
+        // now check mixins
+        if (mixinNames != null) {
+            for (String mixin : mixinNames) {
+                JcrNodeType mixinType = getNodeType(mixin);
+
+                for (Name typeName : typeNames) {
+                    if (mixinType.isNodeType(typeName)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

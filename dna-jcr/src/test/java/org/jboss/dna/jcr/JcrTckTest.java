@@ -81,6 +81,19 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
+import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
+import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
+import org.apache.jackrabbit.test.api.observation.EventTest;
+import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
+import org.apache.jackrabbit.test.api.observation.LockingTest;
+import org.apache.jackrabbit.test.api.observation.NodeAddedTest;
+import org.apache.jackrabbit.test.api.observation.NodeMovedTest;
+import org.apache.jackrabbit.test.api.observation.NodeRemovedTest;
+import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
+import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
+import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
+import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
+import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -272,10 +285,32 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
             // See https://jira.jboss.org/jira/browse/DNA-285
 
-            // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
+            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and uncomment observation.TestAll
+//            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
-            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+//            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+        }
+    }
+    
+    private static class ObservationTests extends TestSuite {
+        protected ObservationTests() {
+            super("JCR Observation Tests");
+            
+            // these are the tests included in observation.TestAll.suite()
+            addTestSuite(EventIteratorTest.class);
+            addTestSuite(EventTest.class);
+            addTestSuite(GetRegisteredEventListenersTest.class);
+            addTestSuite(LockingTest.class);
+            addTestSuite(NodeAddedTest.class);
+//            addTestSuite(NodeRemovedTest.class);
+            addTestSuite(NodeMovedTest.class);
+            addTestSuite(NodeReorderTest.class);
+            addTestSuite(PropertyAddedTest.class);
+            addTestSuite(PropertyChangedTest.class);
+            addTestSuite(PropertyRemovedTest.class);
+//            addTestSuite(AddEventListenerTest.class);
+//            addTestSuite(WorkspaceOperationTest.class);
         }
     }
 }

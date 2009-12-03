@@ -29,7 +29,6 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.jboss.dna.graph.JcrLexicon;
@@ -133,9 +132,9 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
         assertThat(workspace.getNodeTypeManager(), is(notNullValue()));
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowGetObservationManager() throws Exception {
-        workspace.getObservationManager();
+    @Test
+    public void shouldGetObservationManager() throws Exception {
+        assertThat(workspace.getObservationManager(), is(notNullValue()));
     }
 
     @Test

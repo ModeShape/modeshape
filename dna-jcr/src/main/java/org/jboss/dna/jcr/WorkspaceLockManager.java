@@ -189,12 +189,12 @@ class WorkspaceLockManager {
             ExecutionContext context = session.getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
+            // Remove the lock node under the /jcr:system branch ...
             Graph.Batch batch = repository.createSystemGraph(context).batch();
-
             batch.delete(pathFactory.create(locksPath, pathFactory.createSegment(lock.getUuid().toString())));
-            batch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
             batch.execute();
 
+            // Unlock the node in the repository graph ...
             unlockNodeInRepository(session, lock);
 
             workspaceLocksByNodeUuid.remove(lock.nodeUuid);
@@ -208,7 +208,6 @@ class WorkspaceLockManager {
                 throw new IllegalStateException(pnfe);
             }
             workspaceLocksByNodeUuid.remove(lock.nodeUuid);
-
         }
     }
 

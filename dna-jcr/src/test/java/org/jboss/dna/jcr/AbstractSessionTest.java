@@ -41,6 +41,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.observe.MockObservable;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -148,6 +149,7 @@ public abstract class AbstractSessionTest {
                 return graph;
             }
         });
+        stub(this.repository.getRepositoryObservable()).toReturn(new MockObservable());
 
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
         workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);

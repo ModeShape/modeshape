@@ -24,23 +24,26 @@
 package org.jboss.dna.graph.observe;
 
 /**
- * The interface for an observer of graph changes.
+ * An implementation of {@link Observable} that does nothing.
  */
-public interface Observer {
+public class MockObservable implements Observable {
 
     /**
-     * The ID that uniquely identifies this observer. This ID can be used to determine if {@link Changes changes} came before or
-     * after this observer was created.
-     * 
-     * @return the unique observer identifier (never <code>null</code>)
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
-    ObservedId getId();
+    public boolean register( Observer observer ) {
+        return true;
+    }
 
     /**
-     * Method that is called for each {@link Changes set of changes} from the {@link Observable} instance(s) with which this
-     * observer is registered.
-     * 
-     * @param changes the changes that are being published
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
      */
-    void notify( Changes changes );
+    public boolean unregister( Observer observer ) {
+        return true;
+    }
+
 }

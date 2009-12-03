@@ -163,7 +163,8 @@ public class JcrEngine extends DnaEngine {
         String sourceName = context.getValueFactories().getStringFactory().create(property.getFirstValue());
 
         // Create the repository ...
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, options);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
+                                                     getRepositoryService().getRepositoryLibrary(), descriptors, options);
 
         // Register all the the node types ...
         Node nodeTypesNode = subgraph.getNode(JcrLexicon.NODE_TYPES);

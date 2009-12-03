@@ -41,14 +41,22 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CloneBranchRequest;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
+import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DeleteChildrenRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.LockBranchRequest;
+import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.RemovePropertyRequest;
+import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 
 /**
  * A specialized {@link Observer} that figures out the net changes made during a single {@link Changes set of changes}. For
@@ -70,6 +78,48 @@ public abstract class NetChangeObserver extends ChangeObserver {
 
     protected NetChangeObserver() {
     }
+    
+    /**
+     * @param workspace the workspace of the location (never <code>null</code>)
+     * @param location the location whose details are being deleted (never <code>null</code>)
+     * @param workspaceLocationMap the map where the details are stored (never <code>null</code>)
+     */
+    private void deleteLocationDetails( String workspace,
+                                        Location location,
+                                        Map<String, Map<Location, NetChangeDetails>> workspaceLocationMap ) {
+        Map<Location, NetChangeDetails> detailsByLocation = workspaceLocationMap.get(workspace);
+        assert (detailsByLocation != null);
+        detailsByLocation.remove(location);
+    }
+
+    /**
+     * @param workspace the workspace of the location (never <code>null</code>)
+     * @param location the location whose details are being requested (never <code>null</code>)
+     * @param workspaceLocationMap the map where the details are stored (never <code>null</code>)
+     * @return the found or created details (never <code>null</code>)
+     */
+    private NetChangeDetails findDetailsByLocation( String workspace,
+                                                    Location location,
+                                                    Map<String, Map<Location, NetChangeDetails>> workspaceLocationMap ) {
+        Map<Location, NetChangeDetails> detailsByLocation = workspaceLocationMap.get(workspace);
+        NetChangeDetails details = null;
+
+        if (detailsByLocation == null) {
+            detailsByLocation = new TreeMap<Location, NetChangeDetails>();
+            workspaceLocationMap.put(workspace, detailsByLocation);
+            details = new NetChangeDetails();
+            detailsByLocation.put(location, details);
+        } else {
+            details = detailsByLocation.get(location);
+
+            if (details == null) {
+                details = new NetChangeDetails();
+                detailsByLocation.put(location, details);
+            }
+        }
+
+        return details;
+    }
 
     /**
      * {@inheritDoc}
@@ -82,23 +132,11 @@ public abstract class NetChangeObserver extends ChangeObserver {
         // Process each of the events, extracting the node path and property details for each ...
         for (ChangeRequest change : changes.getChangeRequests()) {
             Location location = change.changedLocation();
-            String workspace = change.changedWorkspace();
+            assert (location.getPath() != null);
 
-            // Find the NetChangeDetails for this node ...
-            Map<Location, NetChangeDetails> detailsByLocation = detailsByLocationByWorkspace.get(workspace);
-            NetChangeDetails details = null;
-            if (detailsByLocation == null) {
-                detailsByLocation = new TreeMap<Location, NetChangeDetails>();
-                detailsByLocationByWorkspace.put(workspace, detailsByLocation);
-                details = new NetChangeDetails();
-                detailsByLocation.put(location, details);
-            } else {
-                details = detailsByLocation.get(location);
-                if (details == null) {
-                    details = new NetChangeDetails();
-                    detailsByLocation.put(location, details);
-                }
-            }
+            // Find or create the NetChangeDetails for this node ...
+            String workspace = change.changedWorkspace();
+            NetChangeDetails details = findDetailsByLocation(workspace, location, detailsByLocationByWorkspace);
 
             // Process the specific kind of change ...
             if (change instanceof CreateNodeRequest) {
@@ -110,35 +148,98 @@ public abstract class NetChangeObserver extends ChangeObserver {
             } else if (change instanceof UpdatePropertiesRequest) {
                 UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
                 for (Map.Entry<Name, Property> entry : update.properties().entrySet()) {
+                    Name propName = entry.getKey();
                     Property property = entry.getValue();
+
                     if (property != null) {
-                        details.changeProperty(property);
+                        if (update.isNewProperty(propName)) {
+                            details.addProperty(property);
+                        } else {
+                            details.changeProperty(property);
+                        }
                     } else {
-                        details.removeProperty(entry.getKey());
+                        details.removeProperty(propName);
                     }
                 }
             } else if (change instanceof SetPropertyRequest) {
                 SetPropertyRequest set = (SetPropertyRequest)change;
-                details.changeProperty(set.property());
+                
+                if (set.isNewProperty()) {
+                    details.addProperty(set.property());
+                } else {
+                    details.changeProperty(set.property());
+                }
             } else if (change instanceof RemovePropertyRequest) {
                 RemovePropertyRequest remove = (RemovePropertyRequest)change;
                 details.removeProperty(remove.propertyName());
             } else if (change instanceof DeleteBranchRequest) {
-                details.addEventType(ChangeType.NODE_REMOVED);
+                // if the node was previously added than a remove results in a net no change
+                if (details.getEventTypes().contains(ChangeType.NODE_ADDED)) {
+                    deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
+                } else {
+                    details.addEventType(ChangeType.NODE_REMOVED);
+                }
             } else if (change instanceof DeleteChildrenRequest) {
                 DeleteChildrenRequest delete = (DeleteChildrenRequest)change;
                 for (Location deletedChild : delete.getActualChildrenDeleted()) {
-                    NetChangeDetails childDetails = detailsByLocation.get(location);
-                    if (childDetails == null) {
-                        childDetails = new NetChangeDetails();
-                        detailsByLocation.put(deletedChild, childDetails);
+                    NetChangeDetails childDetails = findDetailsByLocation(workspace, deletedChild, detailsByLocationByWorkspace);
+                    // if a child node was previously added than a remove results in a net no change
+                    if (childDetails.getEventTypes().contains(ChangeType.NODE_ADDED)) {
+                        deleteLocationDetails(workspace, deletedChild, detailsByLocationByWorkspace);
+                    } else {
+                        childDetails.addEventType(ChangeType.NODE_REMOVED);
                     }
-                    childDetails.addEventType(ChangeType.NODE_REMOVED);
                 }
             } else if (change instanceof LockBranchRequest) {
                 details.setLockAction(LockAction.LOCKED);
             } else if (change instanceof UnlockBranchRequest) {
                 details.setLockAction(LockAction.UNLOCKED);
+            } else if (change instanceof CopyBranchRequest) {
+                details.addEventType(ChangeType.NODE_ADDED);
+            } else if (change instanceof MoveBranchRequest) {
+                // the old location is a removed node event and if it is the same location as the original location it is a reorder
+                Location original = ((MoveBranchRequest)change).getActualLocationBefore();
+                NetChangeDetails originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
+                originalDetails.addEventType(ChangeType.NODE_REMOVED);
+
+                // the new location is a new node event
+                details.addEventType(ChangeType.NODE_ADDED);
+            } else if (change instanceof CloneBranchRequest) {
+                CloneBranchRequest cloneRequest = (CloneBranchRequest)change;
+                
+                // create event details for any nodes that were removed
+                for (Location removed : cloneRequest.getRemovedNodes()) {
+                    NetChangeDetails removedDetails = findDetailsByLocation(workspace, removed, detailsByLocationByWorkspace);
+                    removedDetails.addEventType(ChangeType.NODE_REMOVED);
+                }
+                
+                // create event details for new node
+                details.addEventType(ChangeType.NODE_ADDED);
+            } else if (change instanceof RenameNodeRequest) {
+                // the old location is a removed node event
+                Location original = ((RenameNodeRequest)change).getActualLocationBefore();
+                NetChangeDetails originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
+                originalDetails.addEventType(ChangeType.NODE_REMOVED);
+
+                // the new location is a new node event
+                details.addEventType(ChangeType.NODE_ADDED);
+            } else if (change instanceof UpdateValuesRequest) {
+                // TODO need to know if this is a new property
+                UpdateValuesRequest updateValuesRequest = (UpdateValuesRequest)change;
+                
+                if (!updateValuesRequest.addedValues().isEmpty() || !updateValuesRequest.removedValues().isEmpty()) {
+                    details.addEventType(ChangeType.PROPERTY_CHANGED);
+                    // TODO need to set property like details.changeProperty(property);
+                } else if (details.getEventTypes().isEmpty()) {
+                    // details was just created for this request and now it is not needed
+                    deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
+                }
+            } else if (change instanceof CreateWorkspaceRequest) {
+                details.addEventType(ChangeType.NODE_ADDED);
+            } else if (change instanceof DestroyWorkspaceRequest) {
+                details.addEventType(ChangeType.NODE_REMOVED);
+            } else if (change instanceof CloneWorkspaceRequest) {
+                details.addEventType(ChangeType.NODE_ADDED);
             }
         }
 
@@ -150,8 +251,8 @@ public abstract class NetChangeObserver extends ChangeObserver {
             for (Map.Entry<Location, NetChangeDetails> entry : byWorkspaceEntry.getValue().entrySet()) {
                 Location location = entry.getKey();
                 NetChangeDetails details = entry.getValue();
-                netChanges.add(new NetChange(workspaceName, location, details.getEventTypes(), details.getModifiedProperties(),
-                                             details.getRemovedProperties()));
+                netChanges.add(new NetChange(workspaceName, location, details.getEventTypes(), details.getAddedProperties(),
+                                             details.getModifiedProperties(), details.getRemovedProperties()));
             }
         }
         // Now notify of all of the changes ...
@@ -216,6 +317,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
         private final String workspaceName;
         private final Location location;
         private final EnumSet<ChangeType> eventTypes;
+        private final Set<Property> addedProperties;
         private final Set<Property> modifiedProperties;
         private final Set<Name> removedProperties;
         private final int hc;
@@ -223,6 +325,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
         public NetChange( String workspaceName,
                           Location location,
                           EnumSet<ChangeType> eventTypes,
+                          Set<Property> addedProperties,
                           Set<Property> modifiedProperties,
                           Set<Name> removedProperties ) {
             assert workspaceName != null;
@@ -231,10 +334,19 @@ public abstract class NetChangeObserver extends ChangeObserver {
             this.location = location;
             this.hc = HashCode.compute(this.workspaceName, this.location);
             this.eventTypes = eventTypes;
+            if (addedProperties == null) addedProperties = Collections.emptySet();
             if (modifiedProperties == null) modifiedProperties = Collections.emptySet();
             if (removedProperties == null) removedProperties = Collections.emptySet();
+            this.addedProperties = Collections.unmodifiableSet(addedProperties);
             this.modifiedProperties = Collections.unmodifiableSet(modifiedProperties);
             this.removedProperties = Collections.unmodifiableSet(removedProperties);
+        }
+
+        /**
+         * @return the node location
+         */
+        public Location getLocation() {
+            return this.location;
         }
 
         /**
@@ -249,6 +361,13 @@ public abstract class NetChangeObserver extends ChangeObserver {
          */
         public String getRepositoryWorkspaceName() {
             return this.workspaceName;
+        }
+
+        /**
+         * @return the added properties
+         */
+        public Set<Property> getAddedProperties() {
+            return this.addedProperties;
         }
 
         /**
@@ -363,6 +482,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
     private static class NetChangeDetails {
 
         private final Set<Property> modifiedProperties = new HashSet<Property>();
+        private final Set<Property> addedProperties = new HashSet<Property>();
         private final Set<Name> removedProperties = new HashSet<Name>();
         private EnumSet<ChangeType> eventTypes = EnumSet.noneOf(ChangeType.class);
 
@@ -390,18 +510,55 @@ public abstract class NetChangeObserver extends ChangeObserver {
         }
 
         public void addProperty( Property property ) {
-            this.modifiedProperties.add(property);
+            this.addedProperties.add(property);
             this.eventTypes.add(ChangeType.PROPERTY_ADDED);
         }
 
         public void changeProperty( Property property ) {
-            this.modifiedProperties.add(property);
-            this.eventTypes.add(ChangeType.PROPERTY_CHANGED);
+            // if property was previously added then changed just keep the added
+            if (!this.addedProperties.contains(property)) {
+                this.modifiedProperties.add(property);
+                this.eventTypes.add(ChangeType.PROPERTY_CHANGED);
+            }
         }
 
         public void removeProperty( Name propertyName ) {
-            this.removedProperties.add(propertyName);
-            this.eventTypes.add(ChangeType.PROPERTY_REMOVED);
+            // if property was previously added a remove results in a net no change
+            boolean handled = false;
+
+            for (Property property : this.addedProperties) {
+                if (property.getName().equals(propertyName)) {
+                    handled = true;
+                    this.addedProperties.remove(property);
+                    
+                    // get rid of event type if no longer applicable
+                    if (this.addedProperties.isEmpty()) {
+                        this.eventTypes.remove(ChangeType.PROPERTY_ADDED);
+                    }
+
+                    break;
+                }
+            }
+
+            if (!handled) {
+                // if property was previously changed and now is being removed the change is no longer needed
+                for (Property property : this.modifiedProperties) {
+                    if (property.getName().equals(propertyName)) {
+                        this.modifiedProperties.remove(property);
+                        
+                        // get rid of event type if no longer applicable
+                        if (this.modifiedProperties.isEmpty()) {
+                            this.eventTypes.remove(ChangeType.PROPERTY_CHANGED);
+                        }
+
+                        break;
+                    }
+                }
+
+                // now add to removed collection
+                this.removedProperties.add(propertyName);
+                this.eventTypes.add(ChangeType.PROPERTY_REMOVED);
+            }
         }
 
         /**
@@ -412,7 +569,14 @@ public abstract class NetChangeObserver extends ChangeObserver {
         }
 
         /**
-         * @return addedProperties
+         * @return the added properties
+         */
+        public Set<Property> getAddedProperties() {
+            return this.addedProperties;
+        }
+
+        /**
+         * @return modified properties
          */
         public Set<Property> getModifiedProperties() {
             return this.modifiedProperties;
