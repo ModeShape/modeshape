@@ -56,7 +56,7 @@ public class CndNodeTypeRegistrationTest {
         context = new ExecutionContext();
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        repoTypeManager = new RepositoryNodeTypeManager(context);
+        repoTypeManager = new RepositoryNodeTypeManager(context, true);
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
                 "/org/jboss/dna/jcr/dna_builtins.cnd"}));

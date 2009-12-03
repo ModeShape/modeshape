@@ -96,6 +96,7 @@ public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
     public Set<Namespace> getNamespaces() {
         Set<Namespace> delegateNamespaces = this.delegate.getNamespaces();
         Set<Namespace> localNamespaces = super.getNamespaces();
+        if (localNamespaces.isEmpty()) return delegateNamespaces;
 
         // Load the local namespaces first ...
         Set<Namespace> namespaces = new HashSet<Namespace>(localNamespaces);
@@ -112,6 +113,15 @@ public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
             namespaces.add(ns);
         }
         return Collections.unmodifiableSet(namespaces);
+    }
+
+    /**
+     * Obtain the set of namespaces that are overridden within this {@link LocalNamespaceRegistry} instance.
+     * 
+     * @return the set of overridden namespace mappings; never null but possibly empty
+     */
+    public Set<Namespace> getLocalNamespaces() {
+        return super.getNamespaces();
     }
 
     /**

@@ -44,6 +44,7 @@ public class ValueTypeSystem implements TypeSystem {
     protected final ValueFactory<String> stringValueFactory;
     private final Map<PropertyType, TypeFactory<?>> typeFactoriesByPropertyType;
     private final Map<String, TypeFactory<?>> typeFactoriesByName;
+    private final Map<String, PropertyType> propertyTypeByName;
     private final TypeFactory<String> stringFactory;
     private final TypeFactory<Boolean> booleanFactory;
     private final TypeFactory<Long> longFactory;
@@ -138,6 +139,11 @@ public class ValueTypeSystem implements TypeSystem {
             }
         });
         this.typeFactoriesByPropertyType = Collections.unmodifiableMap(factories);
+        Map<String, PropertyType> propertyTypeByName = new HashMap<String, PropertyType>();
+        for (Map.Entry<PropertyType, TypeFactory<?>> entry : this.typeFactoriesByPropertyType.entrySet()) {
+            propertyTypeByName.put(entry.getValue().getTypeName(), entry.getKey());
+        }
+        this.propertyTypeByName = Collections.unmodifiableMap(propertyTypeByName);
         Map<String, TypeFactory<?>> byName = new HashMap<String, TypeFactory<?>>();
         for (TypeFactory<?> factory : factories.values()) {
             byName.put(factory.getTypeName(), factory);
@@ -257,6 +263,43 @@ public class ValueTypeSystem implements TypeSystem {
      */
     public Set<String> getTypeNames() {
         return typeFactoriesByName.keySet();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.model.TypeSystem#getCompatibleType(java.lang.String, java.lang.String)
+     */
+    public String getCompatibleType( String type1,
+                                     String type2 ) {
+        if (type1 == null) {
+            return type2 != null ? type2 : getDefaultType();
+        }
+        if (type2 == null) return type1;
+        if (type1.equals(type2)) return type1;
+
+        // neither is null ...
+        PropertyType ptype1 = propertyTypeByName.get(type1);
+        PropertyType ptype2 = propertyTypeByName.get(type2);
+        assert ptype1 != null;
+        assert ptype2 != null;
+        if (ptype1 == PropertyType.STRING) return type1;
+        if (ptype2 == PropertyType.STRING) return type2;
+        // Dates are compatible with longs ...
+        if (ptype1 == PropertyType.LONG && ptype2 == PropertyType.DATE) return type1;
+        if (ptype1 == PropertyType.DATE && ptype2 == PropertyType.LONG) return type2;
+        // Booleans and longs are compatible ...
+        if (ptype1 == PropertyType.LONG && ptype2 == PropertyType.BOOLEAN) return type1;
+        if (ptype1 == PropertyType.BOOLEAN && ptype2 == PropertyType.LONG) return type2;
+        // Doubles and longs ...
+        if (ptype1 == PropertyType.DOUBLE && ptype2 == PropertyType.LONG) return type1;
+        if (ptype1 == PropertyType.LONG && ptype2 == PropertyType.DOUBLE) return type2;
+        // Paths and names ...
+        if (ptype1 == PropertyType.PATH && ptype2 == PropertyType.NAME) return type1;
+        if (ptype1 == PropertyType.NAME && ptype2 == PropertyType.PATH) return type2;
+
+        // Otherwise, it's just the default type (string) ...
+        return getDefaultType();
     }
 
     protected class Factory<T> implements TypeFactory<T> {

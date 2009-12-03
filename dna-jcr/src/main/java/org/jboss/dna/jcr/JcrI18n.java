@@ -130,6 +130,8 @@ public final class JcrI18n {
     // Query-related messages
     public static I18n notStoredQuery;
     public static I18n invalidQueryLanguage;
+    public static I18n queryCannotBeParsedUsingLanguage;
+    public static I18n queryInLanguageIsNotValid;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;
@@ -166,7 +168,7 @@ public final class JcrI18n {
     public static I18n cannotAddMixin;
     public static I18n invalidMixinTypeForNode;
     public static I18n notOrderable;
-    
+
     // Lock messages
     public static I18n cannotRemoveLockToken;
     public static I18n alreadyLocked;

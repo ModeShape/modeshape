@@ -493,11 +493,25 @@ class JcrNodeType implements NodeType {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return this.name.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
+        if (obj instanceof JcrNodeType) {
+            JcrNodeType that = (JcrNodeType)obj;
+            return this.name.equals(that.name);
+        }
         if (obj instanceof NodeType) {
             NodeType that = (NodeType)obj;
             return this.getName().equals(that.getName());

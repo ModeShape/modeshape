@@ -85,7 +85,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * DNA implementation of a {@link Workspace JCR Workspace}.
  */
 @NotThreadSafe
-final class JcrWorkspace implements Workspace {
+class JcrWorkspace implements Workspace {
 
     /**
      * The name of this workspace. This name is used as the name of the source when
@@ -158,8 +158,8 @@ final class JcrWorkspace implements Workspace {
 
         // Create an execution context for this session, which should use the local namespace registry ...
         NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
-        NamespaceRegistry local = new LocalNamespaceRegistry(globalRegistry);
-        this.context = context.with(local);
+        LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalRegistry);
+        this.context = context.with(localRegistry);
 
         // Now create a graph for the session ...
         this.graph = this.repository.createWorkspaceGraph(this.name, this.context);

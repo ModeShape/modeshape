@@ -122,6 +122,16 @@ public interface TypeSystem {
     String asString( Object value );
 
     /**
+     * Get the type that is compatible with both of the supplied types.
+     * 
+     * @param type1 the first type; may be null
+     * @param type2 the second type; may be null
+     * @return the compatible type; never null
+     */
+    String getCompatibleType( String type1,
+                              String type2 );
+
+    /**
      * Factory interface for creating values from strings.
      * 
      * @param <T> the type of value object

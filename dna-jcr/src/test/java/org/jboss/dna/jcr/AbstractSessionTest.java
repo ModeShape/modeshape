@@ -45,7 +45,9 @@ import org.jboss.dna.graph.observe.MockObservable;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.query.parse.QueryParsers;
 import org.jboss.dna.jcr.nodetype.NodeTypeTemplate;
+import org.jboss.dna.jcr.xpath.XPathQueryParser;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 import org.mockito.invocation.InvocationOnMock;
@@ -70,6 +72,7 @@ public abstract class AbstractSessionTest {
     protected Map<JcrRepository.Option, String> options;
     protected NamespaceRegistry registry;
     protected WorkspaceLockManager workspaceLockManager;
+    protected QueryParsers parsers;
     @Mock
     protected JcrRepository repository;
 
@@ -120,7 +123,7 @@ public abstract class AbstractSessionTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context);
+        repoTypeManager = new RepositoryNodeTypeManager(context, true);
 
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
@@ -162,6 +165,10 @@ public abstract class AbstractSessionTest {
 
         initializeOptions();
         stub(repository.getOptions()).toReturn(options);
+
+        // Set up the parsers for the repository (we only need the XPath parsers at the moment) ...
+        parsers = new QueryParsers(new XPathQueryParser());
+        stub(repository.queryParsers()).toReturn(parsers);
 
         // Set up the session attributes ...
         // Set up the session attributes ...

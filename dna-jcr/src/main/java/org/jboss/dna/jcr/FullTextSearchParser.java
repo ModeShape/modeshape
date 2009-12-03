@@ -21,24 +21,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.jcr.xpath;
+package org.jboss.dna.jcr;
 
-import javax.jcr.query.Query;
-import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
 import org.jboss.dna.graph.query.parse.QueryParser;
-import org.jboss.dna.jcr.xpath.XPath.Component;
 
 /**
- * A {@link QueryParser} implementation that accepts XPath expressions and converts them to a {@link QueryCommand DNA Abstract
- * Query Model} representation.
+ * A {@link QueryParser} implementation that is stored in the {@link JcrRepository}'s list of {@link JcrRepository#queryParsers()
+ * query parsers} so that the name is there, but it should never be used.
+ * 
+ * @see JcrRepository#queryParsers()
+ * @see JcrQueryManager#createQuery(String, String)
  */
-public class XPathQueryParser implements QueryParser {
+class FullTextSearchParser implements QueryParser {
 
-    static final boolean COLLAPSE_INNER_COMPONENTS = true;
-    private static final String LANGUAGE = Query.XPATH;
+    public static final String LANGUAGE = "Search";
 
     /**
      * {@inheritDoc}
@@ -52,40 +51,11 @@ public class XPathQueryParser implements QueryParser {
     /**
      * {@inheritDoc}
      * 
-     * @see java.lang.Object#toString()
-     */
-    @Override
-    public String toString() {
-        return LANGUAGE;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof QueryParser) {
-            QueryParser that = (QueryParser)obj;
-            return this.getLanguage().equals(that.getLanguage());
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.dna.graph.query.parse.QueryParser#parseQuery(java.lang.String, org.jboss.dna.graph.query.model.TypeSystem)
      */
     public QueryCommand parseQuery( String query,
-                                    TypeSystem typeSystem ) throws InvalidQueryException, ParsingException {
-        Component xpath = new XPathParser(typeSystem).parseXPath(query);
-        System.out.println(query);
-        System.out.println(" --> " + xpath);
-        // Convert the result into a QueryCommand ...
-        QueryCommand command = new XPathToQueryTranslator(typeSystem, query).createQuery(xpath);
-        return command;
+                                    TypeSystem typeSystem ) throws InvalidQueryException {
+        assert false; // This method should never be called;
+        throw new UnsupportedOperationException();
     }
 }

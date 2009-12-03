@@ -82,7 +82,10 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
+import org.jboss.dna.graph.query.parse.QueryParsers;
+import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.jcr.xpath.XPathQueryParser;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -159,7 +162,18 @@ public class JcrRepository implements Repository {
          * A comma-delimited list of default roles provided for anonymous access. A null or empty value for this option means that
          * anonymous access is disabled.
          */
-        ANONYMOUS_USER_ROLES;
+        ANONYMOUS_USER_ROLES,
+
+        /**
+         * The query system represents node types as tables that can be queried, but there are two ways to define the columns for
+         * each of those tables. One approach is that each table only has columns representing the (single-valued) property
+         * definitions explicitly defined by the node type. The other approach also adds columns for each of the (single-valued)
+         * property definitions inherited by the node type from all of the {@link javax.jcr.nodetype.NodeType#getSupertypes()}.
+         * <p>
+         * The default value is 'true'.
+         * </p>
+         */
+        TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -213,6 +227,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#READ_DEPTH} option is {@value} .
          */
         public static final String ANONYMOUS_USER_ROLES = null;
+
+        /**
+         * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
+         */
+        public static final String TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES = Boolean.TRUE.toString();
     }
 
     /**
@@ -227,6 +246,8 @@ public class JcrRepository implements Repository {
         defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
         defaults.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
         defaults.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
+        defaults.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
+                     DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -246,6 +267,8 @@ public class JcrRepository implements Repository {
     private final NamespaceRegistry persistentRegistry;
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
+    private final QueryParsers queryParsers = new QueryParsers(new SqlQueryParser(), new XPathQueryParser(),
+                                                               new FullTextSearchParser());
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -399,7 +422,8 @@ public class JcrRepository implements Repository {
 
         // Set up the repository type manager ...
         try {
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext);
+            boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, includeInheritedProperties);
             this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
                 "/org/jboss/dna/jcr/jsr_170_builtins.cnd", "/org/jboss/dna/jcr/dna_builtins.cnd"}));
         } catch (RepositoryException re) {
@@ -500,6 +524,10 @@ public class JcrRepository implements Repository {
             result.useWorkspace(systemWorkspaceName);
         }
         return result;
+    }
+
+    QueryParsers queryParsers() {
+        return queryParsers;
     }
 
     /**

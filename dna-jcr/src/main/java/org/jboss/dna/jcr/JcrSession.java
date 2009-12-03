@@ -196,6 +196,11 @@ class JcrSession implements Session {
         return this.executionContext.getNamespaceRegistry();
     }
 
+    void signalNamespaceChanges( boolean global ) {
+        nodeTypeManager().signalNamespaceChanges();
+        if (global) repository.getRepositoryTypeManager().signalNamespaceChanges();
+    }
+
     JcrWorkspace workspace() {
         return this.workspace;
     }

@@ -44,6 +44,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.jboss.dna.jcr.nodetype.NodeDefinitionTemplate;
 import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
@@ -64,6 +65,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     private final JcrSession session;
     private final RepositoryNodeTypeManager repositoryTypeManager;
+    private Schemata schemata;
 
     JcrNodeTypeManager( JcrSession session,
                         RepositoryNodeTypeManager repositoryTypeManager ) {
@@ -73,6 +75,18 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     private final ExecutionContext context() {
         return session.getExecutionContext();
+    }
+
+    Schemata schemata() {
+        if (schemata == null) {
+            schemata = repositoryTypeManager.getRepositorySchemata().getSchemataForSession(session);
+            assert schemata != null;
+        }
+        return schemata;
+    }
+
+    void signalNamespaceChanges() {
+        this.schemata = null;
     }
 
     /**
@@ -405,7 +419,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-        return this.repositoryTypeManager.registerNodeType(template, allowUpdate);
+        try {
+            return this.repositoryTypeManager.registerNodeType(template, allowUpdate);
+        } finally {
+            schemata = null;
+        }
     }
 
     /**
@@ -437,8 +455,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-
-        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
+        try {
+            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
+        } finally {
+            schemata = null;
+        }
     }
 
     /**
@@ -469,7 +490,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
 
-        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(source));
+        try {
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(source));
+        } finally {
+            schemata = null;
+        }
     }
 
     /**
@@ -502,6 +527,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             names.add(nameFactory.create(name));
         }
         repositoryTypeManager.unregisterNodeType(names);
+        schemata = null;
     }
 
     /**

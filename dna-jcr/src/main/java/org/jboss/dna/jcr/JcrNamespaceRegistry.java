@@ -210,6 +210,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         CheckArg.isNotNull(prefix, "prefix");
         CheckArg.isNotNull(uri, "uri");
 
+        boolean global = false;
         switch (behavior) {
             case JSR170_SESSION:
                 // ----------------------------------------------------------
@@ -275,6 +276,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
                 // --------------------------------------------------
                 // JSR-170 & JSR-283 Workspace namespace registry ...
                 // --------------------------------------------------
+                global = true;
 
                 try {
                     session.checkPermission((Path)null, JcrSession.DNA_REGISTER_NAMESPACE_PERMISSION);
@@ -312,6 +314,9 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         if (!XmlCharacters.isValidName(prefix)) {
             throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
         }
+
+        // Signal the local node type manager ...
+        session.signalNamespaceChanges(global);
 
         // Now we're sure the prefix and URI are valid and okay for a custom mapping ...
         try {
@@ -352,6 +357,9 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         if (STANDARD_BUILT_IN_URIS.contains(uri)) {
             throw new NamespaceException(JcrI18n.unableToUnregisterReservedNamespaceUri.text(prefix, uri));
         }
+
+        // Signal the local node type manager ...
+        session.workspace().nodeTypeManager().signalNamespaceChanges();
 
         // Now we're sure the prefix is valid and is actually used in a mapping ...
         try {

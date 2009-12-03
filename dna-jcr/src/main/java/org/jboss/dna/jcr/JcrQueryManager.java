@@ -23,20 +23,36 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.text.ParsingException;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.parse.QueryParser;
+import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
  * Place-holder implementation of {@link QueryManager} interface.
@@ -57,30 +73,49 @@ class JcrQueryManager implements QueryManager {
      */
     public Query createQuery( String statement,
                               String language ) throws InvalidQueryException {
-        return this.createQuery(statement, language, null);
+        CheckArg.isNotNull(statement, "statement");
+        CheckArg.isNotNull(language, "language");
+        return createQuery(statement, language, null);
     }
 
     /**
-     * Creates a new query by specifying the query statement itself, the language in which the query is stated, and, optionally,
-     * the node from which the query was loaded. If the query statement is syntactically invalid, given the language specified, an
-     * {@code InvalidQueryException} is thrown. The language must be a string from among those returned by {@code
-     * QueryManager#getSupportedQueryLanguages()}; if it is not, then an {@code InvalidQueryException} is thrown.
+     * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
+     * {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be a
+     * string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
      * 
-     * @param statement
-     * @param language
-     * @param storedNode
-     * @return A {@code Query} object
-     * @throws InvalidQueryException if statement is invalid or language is unsupported.
-     * @see javax.jcr.query.QueryManager#createQuery(java.lang.String, java.lang.String)
+     * @param expression the original query expression as supplied by the client; may not be null
+     * @param language the language obtained from the {@link QueryParser}; may not be null
+     * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
+     * @return query the JCR query object; never null
+     * @throws InvalidQueryException if expression is invalid or language is unsupported
      */
-    private Query createQuery( String statement,
-                               String language,
-                               AbstractJcrNode storedNode ) throws InvalidQueryException {
-        if (Query.XPATH.equals(language)) {
-            return new XPathQuery(this.session, statement, storedNode);
+    public Query createQuery( String expression,
+                              String language,
+                              Path storedAtPath ) throws InvalidQueryException {
+        // Look for a parser for the specified language ...
+        QueryParser parser = session.repository().queryParsers().getParserFor(language);
+        if (parser == null) {
+            Set<String> languages = session.repository().queryParsers().getLanguages();
+            throw new InvalidQueryException(JcrI18n.invalidQueryLanguage.text(language, languages));
         }
-        throw new InvalidQueryException(JcrI18n.invalidQueryLanguage.text(language, Arrays.asList(getSupportedQueryLanguages())));
-
+        if (parser.getLanguage().equals(FullTextSearchParser.LANGUAGE)) {
+            // This is a full-text search ...
+            return new JcrSearch(this.session, expression, parser.getLanguage(), storedAtPath);
+        }
+        TypeSystem typeSystem = session.executionContext.getValueFactories().getTypeSystem();
+        try {
+            // Parsing must be done now ...
+            QueryCommand command = parser.parseQuery(expression, typeSystem);
+            return new JcrQuery(this.session, expression, parser.getLanguage(), command, storedAtPath);
+        } catch (ParsingException e) {
+            // The query is not well-formed and cannot be parsed ...
+            String reason = e.getMessage();
+            throw new InvalidQueryException(JcrI18n.queryCannotBeParsedUsingLanguage.text(language, expression, reason));
+        } catch (org.jboss.dna.graph.query.parse.InvalidQueryException e) {
+            // The query was parsed, but there is an error in the query
+            String reason = e.getMessage();
+            throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(language, expression, reason));
+        }
     }
 
     /**
@@ -89,19 +124,20 @@ class JcrQueryManager implements QueryManager {
      * @see javax.jcr.query.QueryManager#getQuery(javax.jcr.Node)
      */
     public Query getQuery( Node node ) throws InvalidQueryException, RepositoryException {
-        assert node instanceof AbstractJcrNode;
+        AbstractJcrNode jcrNode = CheckArg.getInstanceOf(node, AbstractJcrNode.class, "node");
 
-        JcrNodeType nodeType = (JcrNodeType)node.getPrimaryNodeType();
+        // Check the type of the node ...
+        JcrNodeType nodeType = jcrNode.getPrimaryNodeType();
         if (!nodeType.getInternalName().equals(JcrNtLexicon.QUERY)) {
-            throw new InvalidQueryException(JcrI18n.notStoredQuery.text());
+            NamespaceRegistry registry = session.getExecutionContext().getNamespaceRegistry();
+            throw new InvalidQueryException(JcrI18n.notStoredQuery.text(jcrNode.path().getString(registry)));
         }
 
         // These are both mandatory properties for nodes of nt:query
-        NamespaceRegistry registry = session.getExecutionContext().getNamespaceRegistry();
-        String statement = node.getProperty(JcrLexicon.STATEMENT.getString(registry)).getString();
-        String language = node.getProperty(JcrLexicon.LANGUAGE.getString(registry)).getString();
+        String statement = jcrNode.getProperty(JcrLexicon.STATEMENT).getString();
+        String language = jcrNode.getProperty(JcrLexicon.LANGUAGE).getString();
 
-        return createQuery(statement, language, (AbstractJcrNode)node);
+        return createQuery(statement, language, jcrNode.path());
     }
 
     /**
@@ -114,37 +150,39 @@ class JcrQueryManager implements QueryManager {
     }
 
     @NotThreadSafe
-    protected abstract class AbstractJcrQuery implements Query {
-        private final JcrSession session;
-        private final String language;
-        private final String statement;
-        private Path storedPath;
+    protected static abstract class AbstractQuery implements Query {
+        protected final JcrSession session;
+        protected final String language;
+        protected final String statement;
+        private Path storedAtPath;
 
-        protected AbstractJcrQuery( JcrSession session,
-                                    String statement,
-                                    String language,
-                                    AbstractJcrNode storedNode ) {
+        /**
+         * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated,
+         * the {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be
+         * a string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
+         * 
+         * @param session the session that was used to create this query and that will be used to execute this query; may not be
+         *        null
+         * @param statement the original statement as supplied by the client; may not be null
+         * @param language the language obtained from the {@link QueryParser}; may not be null
+         * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
+         */
+        protected AbstractQuery( JcrSession session,
+                                 String statement,
+                                 String language,
+                                 Path storedAtPath ) {
             assert session != null;
             assert statement != null;
             assert language != null;
-
             this.session = session;
             this.language = language;
             this.statement = statement;
-
-            try {
-                this.storedPath = storedNode != null ? storedNode.path() : null;
-            } catch (RepositoryException re) {
-                throw new IllegalStateException(re);
-            }
+            this.storedAtPath = storedAtPath;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Query#execute()
-         */
-        public abstract QueryResult execute();
+        protected final JcrSession session() {
+            return this.session;
+        }
 
         /**
          * {@inheritDoc}
@@ -170,10 +208,10 @@ class JcrQueryManager implements QueryManager {
          * @see javax.jcr.query.Query#getStoredQueryPath()
          */
         public String getStoredQueryPath() throws ItemNotFoundException {
-            if (storedPath == null) {
+            if (storedAtPath == null) {
                 throw new ItemNotFoundException(JcrI18n.notStoredQuery.text());
             }
-            return storedPath.getString(session.getExecutionContext().getNamespaceRegistry());
+            return storedAtPath.getString(session.getExecutionContext().getNamespaceRegistry());
         }
 
         /**
@@ -181,51 +219,391 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see javax.jcr.query.Query#storeAsNode(java.lang.String)
          */
-        public Node storeAsNode( java.lang.String absPath )
-            throws PathNotFoundException, ConstraintViolationException, RepositoryException {
+        public Node storeAsNode( String absPath ) throws PathNotFoundException, ConstraintViolationException, RepositoryException {
             NamespaceRegistry namespaces = this.session.namespaces();
-            
+
             Path path;
             try {
                 path = session.getExecutionContext().getValueFactories().getPathFactory().create(absPath);
-            }
-            catch (IllegalArgumentException iae) {
+            } catch (IllegalArgumentException iae) {
                 throw new RepositoryException(JcrI18n.invalidPathParameter.text("absPath", absPath));
             }
             Path parentPath = path.getParent();
 
             Node parentNode = session.getNode(parentPath);
             Node queryNode = parentNode.addNode(path.relativeTo(parentPath).getString(namespaces),
-                               JcrNtLexicon.QUERY.getString(namespaces));
-            
+                                                JcrNtLexicon.QUERY.getString(namespaces));
+
             queryNode.setProperty(JcrLexicon.LANGUAGE.getString(namespaces), this.language);
             queryNode.setProperty(JcrLexicon.STATEMENT.getString(namespaces), this.statement);
-            
-            this.storedPath = path;
-            
+
+            this.storedAtPath = path;
+
             return queryNode;
         }
-
     }
 
+    /**
+     * Implementation of {@link Query} that represents a {@link QueryCommand} query.
+     */
     @NotThreadSafe
-    protected class XPathQuery extends AbstractJcrQuery {
+    protected static class JcrQuery extends AbstractQuery {
+        private final QueryCommand query;
 
-        XPathQuery( JcrSession session,
-                    String statement,
-                    AbstractJcrNode storedNode ) {
-            super(session, statement, Query.XPATH, storedNode);
+        /**
+         * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated,
+         * the {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be
+         * a string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
+         * 
+         * @param session the session that was used to create this query and that will be used to execute this query; may not be
+         *        null
+         * @param statement the original statement as supplied by the client; may not be null
+         * @param language the language obtained from the {@link QueryParser}; may not be null
+         * @param query the parsed query representation; may not be null
+         * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
+         */
+        protected JcrQuery( JcrSession session,
+                            String statement,
+                            String language,
+                            QueryCommand query,
+                            Path storedAtPath ) {
+            super(session, statement, language, storedAtPath);
+            assert query != null;
+            this.query = query;
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.jcr.JcrQueryManager.AbstractJcrQuery#execute()
+         * @see javax.jcr.query.Query#execute()
          */
-        @Override
         public QueryResult execute() {
+            // Submit immediately to the workspace graph ...
+            Schemata schemata = session.workspace().nodeTypeManager().schemata();
+            QueryResults result = session.workspace().graph().query(query, schemata)
+            // .using(variables)
+                                         // .using(hints)
+                                         .execute();
+            return new JcrQueryResult(session, result);
+        }
+
+    }
+
+    @NotThreadSafe
+    protected static class JcrSearch extends AbstractQuery {
+
+        /**
+         * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated,
+         * the {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be
+         * a string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
+         * 
+         * @param session the session that was used to create this query and that will be used to execute this query; may not be
+         *        null
+         * @param statement the original statement as supplied by the client; may not be null
+         * @param language the language obtained from the {@link QueryParser}; may not be null
+         * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
+         */
+        protected JcrSearch( JcrSession session,
+                             String statement,
+                             String language,
+                             Path storedAtPath ) {
+            super(session, statement, language, storedAtPath);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Query#execute()
+         */
+        public QueryResult execute() {
+            // Submit immediately to the workspace graph ...
+            QueryResults result = session.workspace().graph().search(statement);
+            return new JcrQueryResult(session, result);
+        }
+    }
+
+    /**
+     * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although
+     * the results of a query never change, the objects returned by the iterators may vary if the session information changes.
+     */
+    @NotThreadSafe
+    protected static class JcrQueryResult implements QueryResult {
+        private final JcrSession session;
+        private final QueryResults results;
+
+        protected JcrQueryResult( JcrSession session,
+                                  QueryResults graphResults ) {
+            this.session = session;
+            this.results = graphResults;
+            assert this.session != null;
+            assert this.results != null;
+        }
+
+        protected QueryResults results() {
+            return results;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.QueryResult#getColumnNames()
+         */
+        public String[] getColumnNames() /*throws RepositoryException*/{
+            List<String> names = results.getColumns().getColumnNames();
+            return names.toArray(new String[names.size()]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.QueryResult#getNodes()
+         */
+        public NodeIterator getNodes() throws RepositoryException {
+            // Find all of the nodes in the results. We have to do this pre-emptively, since this
+            // is the only method to throw RepositoryException ...
+            final int numRows = results.getRowCount();
+            if (numRows == 0) return new JcrEmptyNodeIterator();
+
+            final List<AbstractJcrNode> nodes = new ArrayList<AbstractJcrNode>(numRows);
+            final String selectorName = results.getColumns().getSelectorNames().get(0);
+            final int locationIndex = results.getColumns().getLocationIndex(selectorName);
+            for (Object[] tuple : results.getTuples()) {
+                Location location = (Location)tuple[locationIndex];
+                nodes.add(session.getNode(location.getPath()));
+            }
+            return new QueryResultNodeIterator(nodes);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.QueryResult#getRows()
+         */
+        public RowIterator getRows() /*throws RepositoryException*/{
+            // We can actually delay the loading of the nodes until the rows are accessed ...
+            final int numRows = results.getRowCount();
+            final List<Object[]> tuples = results.getTuples();
+            return new QueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+        }
+    }
+
+    /**
+     * The {@link NodeIterator} implementation returned by the {@link JcrQueryResult}.
+     * 
+     * @see JcrQueryResult#getNodes()
+     */
+    @NotThreadSafe
+    protected static class QueryResultNodeIterator implements NodeIterator {
+        private final Iterator<? extends Node> nodes;
+        private final int size;
+        private long position = 0L;
+
+        protected QueryResultNodeIterator( List<? extends Node> nodes ) {
+            this.nodes = nodes.iterator();
+            this.size = nodes.size();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.NodeIterator#nextNode()
+         */
+        public Node nextNode() {
+            Node node = nodes.next();
+            ++position;
+            return node;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getPosition()
+         */
+        public long getPosition() {
+            return position;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getSize()
+         */
+        public long getSize() {
+            return size;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#skip(long)
+         */
+        public void skip( long skipNum ) {
+            for (long i = 0L; i != skipNum; ++i)
+                nextNode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
+         */
+        public boolean hasNext() {
+            return nodes.hasNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
+         */
+        public Object next() {
+            return nextNode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
+         */
+        public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
+    /**
+     * The {@link RowIterator} implementation returned by the {@link JcrQueryResult}.
+     * 
+     * @see JcrQueryResult#getRows()
+     */
+    @NotThreadSafe
+    protected static class QueryResultRowIterator implements RowIterator {
+        protected final List<String> propertyNames;
+        private final Iterator<Object[]> tuples;
+        protected final int locationIndex;
+        protected final JcrSession session;
+        private long position = 0L;
+        private final long numRows;
+
+        protected QueryResultRowIterator( JcrSession session,
+                                          Columns columns,
+                                          Iterator<Object[]> tuples,
+                                          long numRows ) {
+            this.tuples = tuples;
+            this.propertyNames = columns.getColumnNames();
+            String selectorName = columns.getSelectorNames().get(0);
+            this.locationIndex = columns.getLocationIndex(selectorName);
+            this.session = session;
+            this.numRows = numRows;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.RowIterator#nextRow()
+         */
+        public Row nextRow() {
+            final Object[] tuple = tuples.next();
+            ++position;
+            return new Row() {
+                private Node node = null;
+                private Value[] values = null;
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see javax.jcr.query.Row#getValue(java.lang.String)
+                 */
+                public Value getValue( String propertyName ) throws ItemNotFoundException, RepositoryException {
+                    return node().getProperty(propertyName).getValue();
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see javax.jcr.query.Row#getValues()
+                 */
+                public Value[] getValues() throws RepositoryException {
+                    if (values == null) {
+                        int i = 0;
+                        for (String propertyName : propertyNames) {
+                            values[i++] = node().getProperty(propertyName).getValue();
+                        }
+                    }
+                    return values;
+                }
+
+                /**
+                 * Load the node. The properties are <i>always</i> fetched from the session to ensure that any modifications to
+                 * the nodes within session are always used.
+                 * 
+                 * @return the node
+                 * @throws RepositoryException if the node could not be found
+                 */
+                protected final Node node() throws RepositoryException {
+                    if (node == null) {
+                        Location location = (Location)tuple[locationIndex];
+                        node = session.getNode(location.getPath());
+                    }
+                    return node;
+                }
+            };
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getPosition()
+         */
+        public long getPosition() {
+            return position;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getSize()
+         */
+        public long getSize() {
+            return numRows;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#skip(long)
+         */
+        public void skip( long skipNum ) {
+            for (long i = 0L; i != skipNum; ++i) {
+                tuples.next();
+            }
+            position += skipNum;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
+         */
+        public boolean hasNext() {
+            return tuples.hasNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
+         */
+        public Object next() {
+            return nextRow();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
+         */
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

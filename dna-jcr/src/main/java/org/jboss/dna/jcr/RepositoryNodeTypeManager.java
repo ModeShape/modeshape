@@ -112,9 +112,12 @@ class RepositoryNodeTypeManager {
     private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions;
     @GuardedBy( "nodeTypeManagerLock" )
     private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions;
+    @GuardedBy( "nodeTypeManagerLock" )
+    private NodeTypeSchemata schemata;
     private final PropertyFactory propertyFactory;
     private final PathFactory pathFactory;
     private final ReadWriteLock nodeTypeManagerLock = new ReentrantReadWriteLock();
+    private final boolean includeColumnsForInheritedProperties;
 
     /**
      * List of ways to filter the returned property definitions
@@ -138,8 +141,10 @@ class RepositoryNodeTypeManager {
         ANY
     }
 
-    RepositoryNodeTypeManager( ExecutionContext context ) {
+    RepositoryNodeTypeManager( ExecutionContext context,
+                               boolean includeColumnsForInheritedProperties ) {
         this.context = context;
+        this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
 
@@ -221,6 +226,29 @@ class RepositoryNodeTypeManager {
         } finally {
             nodeTypeManagerLock.readLock().unlock();
         }
+    }
+
+    NodeTypeSchemata getRepositorySchemata() {
+        try {
+            nodeTypeManagerLock.writeLock().lock();
+            if (schemata == null) {
+                schemata = new NodeTypeSchemata(context, nodeTypes, propertyDefinitions.values(),
+                                                includeColumnsForInheritedProperties);
+            }
+            return schemata;
+        } finally {
+            nodeTypeManagerLock.writeLock().unlock();
+        }
+    }
+
+    void signalNamespaceChanges() {
+        try {
+            nodeTypeManagerLock.writeLock().lock();
+            schemata = null;
+        } finally {
+            nodeTypeManagerLock.writeLock().unlock();
+        }
+        this.schemata = null;
     }
 
     JcrNodeType getNodeType( Name nodeTypeName ) {
@@ -1178,6 +1206,7 @@ class RepositoryNodeTypeManager {
              */
             // TODO: replace this with a query after queries work
             this.nodeTypes.keySet().removeAll(nodeTypeNames);
+            this.schemata = null;
 
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
@@ -1537,6 +1566,9 @@ class RepositoryNodeTypeManager {
 
                 // projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
             }
+
+            // Throw away the schemata, since the node types have changed ...
+            this.schemata = null;
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
         }
@@ -1596,6 +1628,8 @@ class RepositoryNodeTypeManager {
         boolean multiple = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.MULTIPLE)));
         boolean autoCreated = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.AUTO_CREATED)));
         boolean isProtected = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.PROTECTED)));
+        Boolean ftsObj = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.IS_FULL_TEXT_SEARCHABLE)));
+        boolean fullTextSearchable = ftsObj != null ? ftsObj.booleanValue() : false;
 
         Value[] defaultValues;
         Property defaultValuesProperty = properties.get(JcrLexicon.DEFAULT_VALUES);
@@ -1624,7 +1658,7 @@ class RepositoryNodeTypeManager {
         }
 
         return new JcrPropertyDefinition(this.context, null, propertyName, onParentVersionBehavior, autoCreated, mandatory,
-                                         isProtected, defaultValues, requiredType, valueConstraints, multiple);
+                                         isProtected, defaultValues, requiredType, valueConstraints, multiple, fullTextSearchable);
     }
 
     private JcrNodeDefinition childNodeDefinitionFrom( Subgraph nodeTypeGraph,
@@ -1888,13 +1922,15 @@ class RepositoryNodeTypeManager {
         for (JcrNodeDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
+                                                                                                                    .getName(),
                                                                                                             "child node"));
             }
 
             if (ancestor.isMandatory() && !node.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
+                                                                                                                        .getName(),
                                                                                                                 "child node"));
 
             }
@@ -1959,15 +1995,16 @@ class RepositoryNodeTypeManager {
 
         Value[] defaultValues = prop.getDefaultValues();
         if (prop.isAutoCreated() && !prop.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
-            throw new InvalidNodeTypeDefinitionException(
-                                                         JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
-                                                                                                      prop.getDeclaringNodeType().getName()));
+            throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
+                                                                                                      prop.getDeclaringNodeType()
+                                                                                                          .getName()));
         }
 
         if (!prop.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
             throw new InvalidNodeTypeDefinitionException(
                                                          JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(prop.getName(),
-                                                                                                                   prop.getDeclaringNodeType().getName()));
+                                                                                                                   prop.getDeclaringNodeType()
+                                                                                                                       .getName()));
         }
 
         Name propName = context.getValueFactories().getNameFactory().create(prop.getName());
@@ -1981,13 +2018,15 @@ class RepositoryNodeTypeManager {
         for (JcrPropertyDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
+                                                                                                                    .getName(),
                                                                                                             "property"));
             }
 
             if (ancestor.isMandatory() && !prop.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
+                                                                                                                        .getName(),
                                                                                                                 "property"));
 
             }
@@ -1998,14 +2037,16 @@ class RepositoryNodeTypeManager {
                 && !Arrays.equals(ancestor.getValueConstraints(), prop.getValueConstraints())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.constraintsChangedInSubtype.text(propName,
-                                                                                                      ancestor.getDeclaringNodeType().getName()));
+                                                                                                      ancestor.getDeclaringNodeType()
+                                                                                                              .getName()));
             }
 
             if (!isAlwaysSafeConversion(prop.getRequiredType(), ancestor.getRequiredType())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.cannotRedefineProperty.text(propName,
                                                                                                  PropertyType.nameFromValue(prop.getRequiredType()),
-                                                                                                 ancestor.getDeclaringNodeType().getName(),
+                                                                                                 ancestor.getDeclaringNodeType()
+                                                                                                         .getName(),
                                                                                                  PropertyType.nameFromValue(ancestor.getRequiredType())));
 
             }

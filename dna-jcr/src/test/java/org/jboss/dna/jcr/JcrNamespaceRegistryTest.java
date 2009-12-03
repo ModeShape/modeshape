@@ -49,7 +49,6 @@ public class JcrNamespaceRegistryTest {
         MockitoAnnotations.initMocks(this);
         executionContext = new ExecutionContext();
         registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry(), session);
-
     }
 
     protected void assertThatNamespaceIsRegistered( String prefix,

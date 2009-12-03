@@ -65,6 +65,7 @@ public class XPathToQueryTranslatorTest {
 
     @Test
     public void shouldTranslateFromXPathOfAnyNode() {
+        assertThat(xpath("/jcr:root"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
         assertThat(xpath("//element(*)"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
         assertThat(xpath("/jcr:root//element(*)"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
         assertThat(xpath("//*"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));

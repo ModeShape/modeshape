@@ -131,6 +131,9 @@ public class XPathToQueryTranslator {
             // Result will be NameTest("jcr","root") or DescendantOrSelf ...
             if (first instanceof DescendantOrSelf) {
                 // do nothing ...
+            } else if (first instanceof NameTest && steps.size() == 1 && ((NameTest)first).matches("jcr", "root")) {
+                // We can actually remove this first step, since relative paths are relative to the root ...
+                steps = steps.subList(1, steps.size());
             } else if (first instanceof NameTest && steps.size() > 1 && ((NameTest)first).matches("jcr", "root")) {
                 // We can actually remove this first step, since relative paths are relative to the root ...
                 steps = steps.subList(1, steps.size());
@@ -214,7 +217,7 @@ public class XPathToQueryTranslator {
                 path.add(step);
             }
         }
-        if (!path.isEmpty()) {
+        if (steps.isEmpty() || !path.isEmpty()) {
             translateSource(tableName, path, where);
         }
         where.end();

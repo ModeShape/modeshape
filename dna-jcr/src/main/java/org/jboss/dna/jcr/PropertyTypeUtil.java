@@ -49,36 +49,7 @@ class PropertyTypeUtil {
         if (value == null) return PropertyType.UNDEFINED;
 
         // Get the DNA property type for this ...
-        switch (org.jboss.dna.graph.property.PropertyType.discoverType(value)) {
-            case STRING:
-                return PropertyType.STRING;
-            case NAME:
-                return PropertyType.NAME;
-            case LONG:
-                return PropertyType.LONG;
-            case UUID:
-                return PropertyType.STRING; // JCR treats UUID properties as strings
-            case URI:
-                return PropertyType.STRING;
-            case PATH:
-                return PropertyType.PATH;
-            case BOOLEAN:
-                return PropertyType.BOOLEAN;
-            case DATE:
-                return PropertyType.DATE;
-            case DECIMAL:
-                return PropertyType.STRING; // better than losing information
-            case DOUBLE:
-                return PropertyType.DOUBLE;
-            case BINARY:
-                return PropertyType.BINARY;
-            case OBJECT:
-                return PropertyType.UNDEFINED;
-            case REFERENCE:
-                return PropertyType.REFERENCE;
-        }
-        assert false;
-        return PropertyType.UNDEFINED;
+        return jcrPropertyTypeFor(org.jboss.dna.graph.property.PropertyType.discoverType(value));
     }
 
     /**
@@ -111,6 +82,46 @@ class PropertyTypeUtil {
         }
         assert false;
         return org.jboss.dna.graph.property.PropertyType.STRING;
+    }
+
+    /**
+     * Compute the DNA {@link org.jboss.dna.graph.property.PropertyType} for the given JCR {@link PropertyType} value.
+     * 
+     * @param dnaPropertyType the DNA property type; never null
+     * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
+     */
+    static final int jcrPropertyTypeFor( org.jboss.dna.graph.property.PropertyType dnaPropertyType ) {
+        // Make sure the value is the correct type ...
+        switch (dnaPropertyType) {
+            case STRING:
+                return PropertyType.STRING;
+            case NAME:
+                return PropertyType.NAME;
+            case LONG:
+                return PropertyType.LONG;
+            case UUID:
+                return PropertyType.STRING; // JCR treats UUID properties as strings
+            case URI:
+                return PropertyType.STRING;
+            case PATH:
+                return PropertyType.PATH;
+            case BOOLEAN:
+                return PropertyType.BOOLEAN;
+            case DATE:
+                return PropertyType.DATE;
+            case DECIMAL:
+                return PropertyType.STRING; // better than losing information
+            case DOUBLE:
+                return PropertyType.DOUBLE;
+            case BINARY:
+                return PropertyType.BINARY;
+            case OBJECT:
+                return PropertyType.UNDEFINED;
+            case REFERENCE:
+                return PropertyType.REFERENCE;
+        }
+        assert false;
+        return PropertyType.UNDEFINED;
     }
 
 }

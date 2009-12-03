@@ -250,6 +250,8 @@ public class JcrConfigurationTest {
         options.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
         options.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
         options.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
+        options.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
+                    DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
         assertThat(repository.getOptions(), is(options));
     }
 

@@ -55,7 +55,7 @@ class JcrItemDefinition implements ItemDefinition {
         super();
         this.context = context;
         this.declaringNodeType = declaringNodeType;
-        this.name = name != null ? name : context.getValueFactories().getNameFactory().create(JcrNodeType.RESIDUAL_ITEM_NAME) ;
+        this.name = name != null ? name : context.getValueFactories().getNameFactory().create(JcrNodeType.RESIDUAL_ITEM_NAME);
         this.onParentVersion = onParentVersion;
         this.autoCreated = autoCreated;
         this.mandatory = mandatory;
@@ -64,6 +64,16 @@ class JcrItemDefinition implements ItemDefinition {
 
     final Name getInternalName() {
         return name;
+    }
+
+    /**
+     * Determine whether this is a residual item. Section 6.7.15 in the JSR 1.0 specification defines a residual item as one
+     * having a name equal to "*".
+     * 
+     * @return true if this item is residual, or false otherwise
+     */
+    public boolean isResidual() {
+        return name.getLocalName().equals("*");
     }
 
     /**

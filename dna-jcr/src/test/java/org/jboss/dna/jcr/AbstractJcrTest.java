@@ -70,7 +70,7 @@ public abstract class AbstractJcrTest {
 
         // Create the node type manager ...
         context.getNamespaceRegistry().register(Vehicles.Lexicon.Namespace.PREFIX, Vehicles.Lexicon.Namespace.URI);
-        rntm = new RepositoryNodeTypeManager(context);
+        rntm = new RepositoryNodeTypeManager(context, true);
         try {
             rntm.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
                 "/org/jboss/dna/jcr/dna_builtins.cnd"}));

@@ -66,7 +66,7 @@ public class WorkspaceLockManagerTest {
         validLocation = Location.create(validUuid);
 
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context);
+        repoTypeManager = new RepositoryNodeTypeManager(context, true);
 
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);

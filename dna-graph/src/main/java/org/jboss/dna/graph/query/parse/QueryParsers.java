@@ -74,7 +74,7 @@ public class QueryParsers {
      */
     public void addLanguage( QueryParser languageParser ) {
         CheckArg.isNotNull(languageParser, "languageParser");
-        this.parsers.put(languageParser.getLanguage().toLowerCase(), languageParser);
+        this.parsers.put(languageParser.getLanguage().trim().toLowerCase(), languageParser);
     }
 
     /**
@@ -153,11 +153,24 @@ public class QueryParsers {
     }
 
     /**
+     * Get the parser for the supplied language.
+     * 
+     * @param language the language in which the query is expressed; must case-insensitively match one of the supported
+     *        {@link #getLanguages() languages}
+     * @return the query parser, or null if the supplied language is not supported
+     * @throws IllegalArgumentException if the language is null
+     */
+    public QueryParser getParserFor( String language ) {
+        CheckArg.isNotNull(language, "language");
+        return parsers.get(language.trim().toLowerCase());
+    }
+
+    /**
      * Execute the supplied query by planning, optimizing, and then processing it.
      * 
      * @param typeSystem the type system that should be used
-     * @param language the language in which the query is expressed; must be one of the supported {@link #getLanguages()
-     *        languages}
+     * @param language the language in which the query is expressed; must case-insensitively match one of the supported
+     *        {@link #getLanguages() languages}
      * @param query the query that is to be executed
      * @return the parsed query command; never null
      * @throws IllegalArgumentException if the language, context or query references are null, or if the language is not known
@@ -170,7 +183,7 @@ public class QueryParsers {
         CheckArg.isNotNull(language, "language");
         CheckArg.isNotNull(typeSystem, "typeSystem");
         CheckArg.isNotNull(query, "query");
-        QueryParser parser = parsers.get(language.toLowerCase());
+        QueryParser parser = parsers.get(language.trim().toLowerCase());
         if (parser == null) {
             throw new IllegalArgumentException(GraphI18n.unknownQueryLanguage.text(language));
         }
