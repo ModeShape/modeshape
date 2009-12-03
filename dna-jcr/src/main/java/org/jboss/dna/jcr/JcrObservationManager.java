@@ -420,6 +420,35 @@ final class JcrObservationManager implements ObservationManager {
         public String getUserID() {
             return this.userId;
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            switch (this.type) {
+                case Event.NODE_ADDED:
+                    sb.append("Node added");
+                    break;
+                case Event.NODE_REMOVED:
+                    sb.append("Node removed");
+                    break;
+                case Event.PROPERTY_ADDED:
+                    sb.append("Property added");
+                    break;
+                case Event.PROPERTY_CHANGED:
+                    sb.append("Property changed");
+                    break;
+                case Event.PROPERTY_REMOVED:
+                    sb.append("Property removed");
+                    break;
+            }
+            sb.append(" at ").append(path).append(" by ").append(userId);
+            return sb.toString();
+        }
     }
 
     /**
