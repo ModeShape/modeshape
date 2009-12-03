@@ -213,8 +213,8 @@ public class DdlSequencerTest {
         
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
@@ -301,8 +301,8 @@ public class DdlSequencerTest {
 
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
@@ -385,8 +385,8 @@ public class DdlSequencerTest {
 
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
@@ -426,8 +426,8 @@ public class DdlSequencerTest {
 
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
@@ -500,8 +500,8 @@ public class DdlSequencerTest {
 
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
@@ -580,8 +580,8 @@ public class DdlSequencerTest {
 
         Subgraph subgraph = graph.getSubgraphOfDepth(10).at("/");
         assertThat(subgraph, is(notNullValue()));
-        String value = subgraph.toString();
-        System.out.println(value);
+        //String value = subgraph.toString();
+        //System.out.println(value);
         
         SubgraphNode rootNode = subgraph.getNode(".");
         assertThat(rootNode.getChildren().size(), is(1));
