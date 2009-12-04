@@ -118,7 +118,7 @@ public class JcrTckTest {
 
         suite.addTest(new LevelOneFeatureTests());
         suite.addTest(new LevelTwoFeatureTests());
-//        suite.addTest(new OptionalFeatureTests());
+        suite.addTest(new OptionalFeatureTests());
 
         return suite;
     }
@@ -282,32 +282,33 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
             // See https://jira.jboss.org/jira/browse/DNA-285
 
-            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and uncomment observation.TestAll
-//            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
+            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and uncomment
+            // observation.TestAll
+            // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
-//            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+            // addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
         }
     }
-    
+
     private static class ObservationTests extends TestSuite {
         protected ObservationTests() {
             super("JCR Observation Tests");
-            
+
             // these are the tests included in observation.TestAll.suite()
             addTestSuite(EventIteratorTest.class);
             addTestSuite(EventTest.class);
             addTestSuite(GetRegisteredEventListenersTest.class);
             addTestSuite(LockingTest.class);
             addTestSuite(NodeAddedTest.class);
-//            addTestSuite(NodeRemovedTest.class);
+            // addTestSuite(NodeRemovedTest.class);
             addTestSuite(NodeMovedTest.class);
             addTestSuite(NodeReorderTest.class);
             addTestSuite(PropertyAddedTest.class);
             addTestSuite(PropertyChangedTest.class);
             addTestSuite(PropertyRemovedTest.class);
-//            addTestSuite(AddEventListenerTest.class);
-//            addTestSuite(WorkspaceOperationTest.class);
+            // addTestSuite(AddEventListenerTest.class);
+            // addTestSuite(WorkspaceOperationTest.class);
         }
     }
 }
