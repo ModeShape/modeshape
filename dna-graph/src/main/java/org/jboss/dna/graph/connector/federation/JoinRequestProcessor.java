@@ -49,6 +49,7 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueComparators;
 import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CacheableRequest;
+import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -102,7 +103,8 @@ class JoinRequestProcessor extends RequestProcessor {
         // this.repository = repository;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
-        this.mirrorProcessor = new JoinMirrorRequestProcessor(repository.getSourceName(), context, observer, now,
+        // The mirror processor should never send anything to an observer, since all requests go to this processor's observer
+        this.mirrorProcessor = new JoinMirrorRequestProcessor(repository.getSourceName(), context, null, now,
                                                               repository.getDefaultCachePolicy());
     }
 
@@ -184,6 +186,10 @@ class JoinRequestProcessor extends RequestProcessor {
             }
             mirrorProcessor.setFederatedRequest(forked);
             mirrorProcessor.process(original);
+            // If this is a change request, record it on this processor so it goes to the observer ...
+            if (original instanceof ChangeRequest && !original.hasError() && !original.isCancelled()) {
+                recordChange((ChangeRequest)original);
+            }
         } else {
             this.federatedRequest = forked;
             process(original);

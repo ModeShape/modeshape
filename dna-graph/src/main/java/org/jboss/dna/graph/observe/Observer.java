@@ -29,14 +29,6 @@ package org.jboss.dna.graph.observe;
 public interface Observer {
 
     /**
-     * The ID that uniquely identifies this observer. This ID can be used to determine if {@link Changes changes} came before or
-     * after this observer was created.
-     * 
-     * @return the unique observer identifier (never <code>null</code>)
-     */
-    ObservedId getId();
-
-    /**
      * Method that is called for each {@link Changes set of changes} from the {@link Observable} instance(s) with which this
      * observer is registered.
      * 

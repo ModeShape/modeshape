@@ -168,8 +168,10 @@ public class JcrObservationManagerTest extends TestSuite {
         final String SOURCE = "store";
 
         this.config = new JcrConfiguration();
-        this.config.repositorySource("store").usingClass(InMemoryRepositorySource.class).setRetryLimit(100).setProperty("defaultWorkspaceName",
-                                                                                                                        WORKSPACE);
+        this.config.repositorySource("store")
+                   .usingClass(InMemoryRepositorySource.class)
+                   .setRetryLimit(100)
+                   .setProperty("defaultWorkspaceName", WORKSPACE);
         this.config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         this.config.save();
 
@@ -187,13 +189,15 @@ public class JcrObservationManagerTest extends TestSuite {
     }
 
     void checkResults( TestListener listener ) {
-        if ( listener.getActualEventCount() != listener.getExpectedEventCount() ) {
+        if (listener.getActualEventCount() != listener.getExpectedEventCount()) {
             // Wrong number ...
             StringBuilder sb = new StringBuilder(" Actual events were: ");
-            for ( Event event : listener.getEvents() ) {
+            for (Event event : listener.getEvents()) {
                 sb.append('\n').append(event);
             }
-            assertThat("Received incorrect number of events."+ sb.toString(), listener.getActualEventCount(), is(listener.getExpectedEventCount()));
+            assertThat("Received incorrect number of events." + sb.toString(),
+                       listener.getActualEventCount(),
+                       is(listener.getExpectedEventCount()));
             assertThat(listener.getErrorMessage(), listener.getErrorMessage(), is(nullValue()));
         }
     }
@@ -293,10 +297,12 @@ public class JcrObservationManagerTest extends TestSuite {
     public void shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         System.out.println("shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents");
         // register listener (add + 3 property events)
+        Node root = getRoot();
+        save();
         TestListener listener = addListener(4, ALL_EVENTS, null, false, null, null, false);
 
         // add node
-        Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
+        Node addedNode = root.addNode("node1", UNSTRUCTURED);
         save();
 
         // event handling
@@ -591,9 +597,8 @@ public class JcrObservationManagerTest extends TestSuite {
 
         // make sure same listener isn't added again
         getObservationManager().addEventListener(listener, ALL_EVENTS, null, false, null, null, false);
-        assertThat("The same listener should not be added more than once.",
-                   getObservationManager().getRegisteredEventListeners().getSize(),
-                   is(2L));
+        assertThat("The same listener should not be added more than once.", getObservationManager().getRegisteredEventListeners()
+                                                                                                   .getSize(), is(2L));
     }
 
     /**
@@ -1174,8 +1179,8 @@ public class JcrObservationManagerTest extends TestSuite {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for jrc:primaryType property was not found.",
-                   containsPath(listener, node.getProperty("jcr:primaryType").getPath()));
+        assertTrue("Path for jrc:primaryType property was not found.", containsPath(listener, node.getProperty("jcr:primaryType")
+                                                                                                  .getPath()));
     }
 
     // ===========================================================================================================================

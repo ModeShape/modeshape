@@ -78,7 +78,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
 
     protected NetChangeObserver() {
     }
-    
+
     /**
      * @param workspace the workspace of the location (never <code>null</code>)
      * @param location the location whose details are being deleted (never <code>null</code>)
@@ -163,7 +163,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 }
             } else if (change instanceof SetPropertyRequest) {
                 SetPropertyRequest set = (SetPropertyRequest)change;
-                
+
                 if (set.isNewProperty()) {
                     details.addProperty(set.property());
                 } else {
@@ -197,7 +197,8 @@ public abstract class NetChangeObserver extends ChangeObserver {
             } else if (change instanceof CopyBranchRequest) {
                 details.addEventType(ChangeType.NODE_ADDED);
             } else if (change instanceof MoveBranchRequest) {
-                // the old location is a removed node event and if it is the same location as the original location it is a reorder
+                // the old location is a removed node event and if it is the same location as the original location it is a
+                // reorder
                 Location original = ((MoveBranchRequest)change).getActualLocationBefore();
                 NetChangeDetails originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
                 originalDetails.addEventType(ChangeType.NODE_REMOVED);
@@ -206,13 +207,13 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 details.addEventType(ChangeType.NODE_ADDED);
             } else if (change instanceof CloneBranchRequest) {
                 CloneBranchRequest cloneRequest = (CloneBranchRequest)change;
-                
+
                 // create event details for any nodes that were removed
                 for (Location removed : cloneRequest.getRemovedNodes()) {
                     NetChangeDetails removedDetails = findDetailsByLocation(workspace, removed, detailsByLocationByWorkspace);
                     removedDetails.addEventType(ChangeType.NODE_REMOVED);
                 }
-                
+
                 // create event details for new node
                 details.addEventType(ChangeType.NODE_ADDED);
             } else if (change instanceof RenameNodeRequest) {
@@ -226,7 +227,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
             } else if (change instanceof UpdateValuesRequest) {
                 // TODO need to know if this is a new property
                 UpdateValuesRequest updateValuesRequest = (UpdateValuesRequest)change;
-                
+
                 if (!updateValuesRequest.addedValues().isEmpty() || !updateValuesRequest.removedValues().isEmpty()) {
                     details.addEventType(ChangeType.PROPERTY_CHANGED);
                     // TODO need to set property like details.changeProperty(property);
@@ -319,6 +320,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
         private final EnumSet<ChangeType> eventTypes;
         private final Set<Property> addedProperties;
         private final Set<Property> modifiedProperties;
+        private final Set<Property> addedOrModifiedProperties;
         private final Set<Name> removedProperties;
         private final int hc;
 
@@ -334,12 +336,29 @@ public abstract class NetChangeObserver extends ChangeObserver {
             this.location = location;
             this.hc = HashCode.compute(this.workspaceName, this.location);
             this.eventTypes = eventTypes;
-            if (addedProperties == null) addedProperties = Collections.emptySet();
-            if (modifiedProperties == null) modifiedProperties = Collections.emptySet();
+            Set<Property> addedOrModified = null;
+            if (addedProperties == null) {
+                addedProperties = Collections.emptySet();
+                addedOrModified = modifiedProperties; // may be null
+            } else {
+                addedOrModified = addedProperties;
+            }
+            if (modifiedProperties == null) {
+                if (addedOrModified == null) addedOrModified = Collections.emptySet();
+                modifiedProperties = Collections.emptySet();
+            } else {
+                if (addedOrModified == null) {
+                    addedOrModified = modifiedProperties;
+                } else {
+                    addedOrModified = new HashSet<Property>(modifiedProperties);
+                    addedOrModified.addAll(addedProperties);
+                }
+            }
             if (removedProperties == null) removedProperties = Collections.emptySet();
             this.addedProperties = Collections.unmodifiableSet(addedProperties);
             this.modifiedProperties = Collections.unmodifiableSet(modifiedProperties);
             this.removedProperties = Collections.unmodifiableSet(removedProperties);
+            this.addedOrModifiedProperties = Collections.unmodifiableSet(addedOrModified);
         }
 
         /**
@@ -375,6 +394,15 @@ public abstract class NetChangeObserver extends ChangeObserver {
          */
         public Set<Property> getModifiedProperties() {
             return this.modifiedProperties;
+        }
+
+        /**
+         * Get the combination of {@link #getAddedProperties() added} and {@link #getModifiedProperties() modified} properties.
+         * 
+         * @return the immutable set of properties that were added or modified; never null but possibly empty
+         */
+        public Set<Property> getAddedOrModifiedProperties() {
+            return this.addedOrModifiedProperties;
         }
 
         /**
@@ -530,7 +558,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 if (property.getName().equals(propertyName)) {
                     handled = true;
                     this.addedProperties.remove(property);
-                    
+
                     // get rid of event type if no longer applicable
                     if (this.addedProperties.isEmpty()) {
                         this.eventTypes.remove(ChangeType.PROPERTY_ADDED);
@@ -545,7 +573,7 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 for (Property property : this.modifiedProperties) {
                     if (property.getName().equals(propertyName)) {
                         this.modifiedProperties.remove(property);
-                        
+
                         // get rid of event type if no longer applicable
                         if (this.modifiedProperties.isEmpty()) {
                             this.eventTypes.remove(ChangeType.PROPERTY_CHANGED);

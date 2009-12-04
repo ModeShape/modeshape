@@ -417,7 +417,7 @@ public class SequencingService implements AdministeredService {
                     for (Sequencer sequencer : allSequencers) {
                         final SequencerConfig config = sequencer.getConfiguration();
                         for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
-                            for (Property property : change.getModifiedProperties()) {
+                            for (Property property : change.getAddedOrModifiedProperties()) {
                                 Name propertyName = property.getName();
                                 String propertyNameStr = context.getValueFactories().getStringFactory().create(propertyName);
                                 String path = nodePathStr + "/@" + propertyNameStr;

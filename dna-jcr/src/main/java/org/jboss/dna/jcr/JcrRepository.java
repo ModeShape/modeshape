@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,7 +74,6 @@ import org.jboss.dna.graph.connector.federation.ProjectionParser;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observable;
-import org.jboss.dna.graph.observe.ObservedId;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -280,7 +280,7 @@ public class JcrRepository implements Repository {
      * @param repositoryObservable the repository library observable associated with this repository (never <code>null</code>)
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
      * @param options the optional {@link Option settings} for this repository; may be null
-     * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>, 
+     * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
     public JcrRepository( ExecutionContext executionContext,
@@ -557,6 +557,19 @@ public class JcrRepository implements Repository {
         return sourceName;
     }
 
+    String getSystemSourceName() {
+        return systemSourceName;
+    }
+
+    /**
+     * Get the name of the source that we want to observe.
+     * 
+     * @return the name of the source that should be observed; never null
+     */
+    String getObservableSourceName() {
+        return WORKSPACES_SHARE_SYSTEM_BRANCH ? federatedSource.getName() : sourceName;
+    }
+
     /**
      * @return executionContext
      */
@@ -796,16 +809,6 @@ public class JcrRepository implements Repository {
         return lockManager;
     }
 
-    /**
-     * Returns the name of this repository
-     * 
-     * @return the name of this repository
-     * @see #sourceName
-     */
-    String getName() {
-        return this.sourceName;
-    }
-
     protected class FederatedRepositoryContext implements RepositoryContext {
         private final RepositoryConnectionFactory connectionFactory;
 
@@ -941,22 +944,11 @@ public class JcrRepository implements Repository {
     }
 
     protected class RepositoryObservationManager implements Observable, Observer {
-        
+
         private final ExecutorService observerService = Executors.newSingleThreadExecutor();
         private final CopyOnWriteArrayList<Observer> observers = new CopyOnWriteArrayList<Observer>();
-        private final ObservedId id;
-        
-        public RepositoryObservationManager() {
-            this.id = new ObservedId();
-        }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @see org.jboss.dna.graph.observe.Observer#getId()
-         */
-        public ObservedId getId() {
-            return this.id;
+        protected RepositoryObservationManager() {
         }
 
         /**
@@ -965,22 +957,35 @@ public class JcrRepository implements Repository {
          * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
          */
         public void notify( final Changes changes ) {
-            final List<Observer> listeners = observers;
-            
-            Runnable command = new Runnable() {
+            // We only care about events that come from the federated source ...
+            if (!changes.getSourceName().equals(getObservableSourceName())) return;
+
+            // We're still in the thread where the connector published its changes,
+            // so we need to create a runnable that will send these changes to all
+            // of the observers <i>at this moment</i>. Because 'observers' is
+            // a CopyOnWriteArrayList, we can't old onto the list (because the list's content
+            // might change). Instead, hold onto the Iterator over the listeners,
+            // and that will be a snapshot of the listeners <i>at this moment</i>
+            if (observers.isEmpty()) return;
+            final Iterator<Observer> observerIterator = observers.iterator();
+
+            Runnable sender = new Runnable() {
                 public void run() {
-                    for (Observer observer : listeners) {
+                    while (observerIterator.hasNext()) {
+                        Observer observer = observerIterator.next();
+                        assert observer != null;
                         observer.notify(changes);
                     }
-                }                
+                }
             };
 
-            this.observerService.execute(command);
+            // Now let the executor service run this in another thread ...
+            this.observerService.execute(sender);
         }
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
          */
         public boolean register( Observer observer ) {
@@ -990,7 +995,7 @@ public class JcrRepository implements Repository {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
          */
         public boolean unregister( Observer observer ) {
@@ -998,5 +1003,4 @@ public class JcrRepository implements Repository {
             return this.observers.remove(observer);
         }
     }
-
 }

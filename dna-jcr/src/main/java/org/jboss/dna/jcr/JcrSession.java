@@ -335,8 +335,8 @@ class JcrSession implements Session {
                            String workspaceName ) {
         SecurityContext context = getExecutionContext().getSecurityContext();
 
-        return context.hasRole(roleName) || context.hasRole(roleName + "." + this.repository.getName())
-               || context.hasRole(roleName + "." + this.repository.getName() + "." + workspaceName);
+        return context.hasRole(roleName) || context.hasRole(roleName + "." + this.repository.getRepositorySourceName())
+               || context.hasRole(roleName + "." + this.repository.getRepositorySourceName() + "." + workspaceName);
     }
 
     /**

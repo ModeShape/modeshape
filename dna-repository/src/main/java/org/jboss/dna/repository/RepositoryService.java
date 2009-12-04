@@ -43,7 +43,6 @@ import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.NetChangeObserver;
-import org.jboss.dna.graph.observe.ObservedId;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -113,7 +112,6 @@ public class RepositoryService implements AdministeredService, Observer {
         }
     }
 
-    private final ObservedId id;
     private final ExecutionContext context;
     private final RepositoryLibrary sources;
     private final String configurationSourceName;
@@ -150,7 +148,6 @@ public class RepositoryService implements AdministeredService, Observer {
         if (problems == null) problems = new SimpleProblems();
         Path sourcesPath = pathFactory.create(pathToConfigurationRoot, DnaLexicon.SOURCES);
 
-        this.id = new ObservedId();
         this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context);
         this.sources.addSource(configurationSource);
         this.pathToConfigurationRoot = pathToConfigurationRoot;
@@ -159,15 +156,6 @@ public class RepositoryService implements AdministeredService, Observer {
         this.context = context;
         this.problems = problems;
         this.configurationChangeObserver = new ConfigurationChangeObserver();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @see org.jboss.dna.graph.observe.Observer#getId()
-     */
-    public ObservedId getId() {
-        return this.id;
     }
 
     /**

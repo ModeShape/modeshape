@@ -140,7 +140,7 @@ public class SetPropertyRequest extends ChangeRequest {
      * @throws IllegalStateException if the request is frozen
      */
     public void setNewProperty( boolean created ) {
-        this.actualCreation = true;
+        this.actualCreation = created;
     }
 
     /**

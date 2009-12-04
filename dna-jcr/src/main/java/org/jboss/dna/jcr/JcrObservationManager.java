@@ -539,7 +539,6 @@ final class JcrObservationManager implements ObservationManager {
                 // don't accept unless IDs are different
                 return !getSessionId().equals(changes.getContextId());
             }
-
             return true;
         }
 
@@ -661,12 +660,6 @@ final class JcrObservationManager implements ObservationManager {
          */
         @Override
         public void notify( Changes changes ) {
-
-            // don't process if changes occurred before this listener was registered
-            if (changes.getId().isBefore(getId())) {
-                return;
-            }
-
             // check source first
             if (!acceptBasedOnEventSource(changes)) {
                 return;

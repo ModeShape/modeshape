@@ -32,20 +32,8 @@ import net.jcip.annotations.ThreadSafe;
 @ThreadSafe
 public class ObservationBus implements Observable, Observer {
     private final ChangeObservers observers = new ChangeObservers();
-    
-    private final ObservedId id;
 
     public ObservationBus() {
-        this.id = new ObservedId();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @see org.jboss.dna.graph.observe.Observer#getId()
-     */
-    public ObservedId getId() {
-        return this.id;
     }
 
     /**
