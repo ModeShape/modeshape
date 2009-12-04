@@ -1683,24 +1683,27 @@ public class JcrObservationManagerTest extends TestSuite {
             // iterator position must be set initially zero
             if (position == 0) {
                 while (itr.hasNext()) {
-                    this.latch.countDown();
-                    Event event = itr.nextEvent();
+                    try {
+                        Event event = itr.nextEvent();
+                        // check iterator position
+                        if (++position != itr.getPosition()) {
+                            this.errorMessage = "EventIterator position was " + itr.getPosition() + " and should be " + position;
+                            break;
+                        }
 
-                    // check iterator position
-                    if (++position != itr.getPosition()) {
-                        this.errorMessage = "EventIterator position was " + itr.getPosition() + " and should be " + position;
-                        break;
-                    }
+                        this.events.add(event);
+                        ++this.eventsProcessed;
 
-                    this.events.add(event);
-                    ++this.eventsProcessed;
+                        // check event type
+                        int eventType = event.getType();
 
-                    // check event type
-                    int eventType = event.getType();
-
-                    if ((this.eventTypes & eventType) == 0) {
-                        this.errorMessage = "Received a wrong event type of " + eventType;
-                        break;
+                        if ((this.eventTypes & eventType) == 0) {
+                            this.errorMessage = "Received a wrong event type of " + eventType;
+                            break;
+                        }
+                    } finally {
+                        // This has to be done LAST, otherwise waitForEvents() will return before the above stuff is done
+                        this.latch.countDown();
                     }
                 }
             } else {
