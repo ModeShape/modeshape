@@ -229,7 +229,8 @@ public class SetPropertyRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
+        Object[] values = property().getValuesAsArray();
         return "set property " + property().getName() + " on " + on() + " in the \"" + workspaceName + "\" workspace to "
-               + Arrays.asList(property().getValuesAsArray()).toString();
+               + (values == null ? "null" : Arrays.asList(values).toString());
     }
 }

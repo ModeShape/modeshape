@@ -327,4 +327,17 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         return false;
     }
 
+    @Override
+    public String toString() {
+        StringBuffer buff = new StringBuffer();
+        buff.append("[CompositeRequest (" + size() + ")");
+
+        for (Request r : this.getRequests()) {
+            buff.append("\n\t").append(r);
+        }
+
+        buff.append("]");
+        return buff.toString();
+    }
+
 }
