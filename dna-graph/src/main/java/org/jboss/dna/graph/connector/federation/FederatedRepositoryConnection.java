@@ -224,6 +224,11 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                 abort = true;
                 throw e;
             } finally {
+                if (!awaitAllSubtasks) {
+                    // We need to guarantee that the fork processor is closed and released all its resources before we close
+                    // ...
+                    fork.await();
+                }
                 join.close();
             }
             if (request instanceof CompositeRequest) {
