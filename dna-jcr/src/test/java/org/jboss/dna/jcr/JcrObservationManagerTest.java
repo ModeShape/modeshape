@@ -70,9 +70,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * 
+ * The {@link JcrObservationManager} test class.
  */
-public class JcrObservationManagerTest extends TestSuite {
+public final class JcrObservationManagerTest extends TestSuite {
 
     // ===========================================================================================================================
     // Constants
@@ -114,9 +114,7 @@ public class JcrObservationManagerTest extends TestSuite {
     // Fields
     // ===========================================================================================================================
 
-    private JcrConfiguration config;
     private JcrEngine engine;
-    private Repository repository;
     private Session session;
     private Node testRootNode;
 
@@ -152,7 +150,6 @@ public class JcrObservationManagerTest extends TestSuite {
             this.session = null;
 
             try {
-                this.repository = null;
                 this.engine.shutdown();
             } finally {
                 this.engine = null;
@@ -166,22 +163,20 @@ public class JcrObservationManagerTest extends TestSuite {
         final String REPOSITORY = "r1";
         final String SOURCE = "store";
 
-        this.config = new JcrConfiguration();
-        this.config.repositorySource("store")
-                   .usingClass(InMemoryRepositorySource.class)
-                   .setRetryLimit(100)
-                   .setProperty("defaultWorkspaceName", WORKSPACE);
-        this.config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
-        this.config.save();
+        JcrConfiguration config = new JcrConfiguration();
+        config.repositorySource("store").usingClass(InMemoryRepositorySource.class).setRetryLimit(100).setProperty("defaultWorkspaceName",
+                                                                                                                   WORKSPACE);
+        config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+        config.save();
 
         // Create and start the engine ...
-        this.engine = this.config.build();
+        this.engine = config.build();
         this.engine.start();
 
         // Create repository and session
-        this.repository = this.engine.getRepository(REPOSITORY);
+        Repository repository = this.engine.getRepository(REPOSITORY);
         Credentials credentials = new SimpleCredentials(USER_ID, USER_ID.toCharArray());
-        this.session = this.repository.login(credentials, WORKSPACE);
+        this.session = repository.login(credentials, WORKSPACE);
 
         this.testRootNode = this.session.getRootNode().addNode("testroot", UNSTRUCTURED);
         save();
@@ -574,8 +569,9 @@ public class JcrObservationManagerTest extends TestSuite {
 
         // make sure same listener isn't added again
         getObservationManager().addEventListener(listener, ALL_EVENTS, null, false, null, null, false);
-        assertThat("The same listener should not be added more than once.", getObservationManager().getRegisteredEventListeners()
-                                                                                                   .getSize(), is(2L));
+        assertThat("The same listener should not be added more than once.",
+                   getObservationManager().getRegisteredEventListeners().getSize(),
+                   is(2L));
     }
 
     /**
@@ -1138,8 +1134,8 @@ public class JcrObservationManagerTest extends TestSuite {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for jrc:primaryType property was not found.", containsPath(listener, node.getProperty("jcr:primaryType")
-                                                                                                  .getPath()));
+        assertTrue("Path for jrc:primaryType property was not found.",
+                   containsPath(listener, node.getProperty("jcr:primaryType").getPath()));
     }
 
     // ===========================================================================================================================
@@ -1350,7 +1346,6 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testIsDeepFalseNodeAdded()
      */
     @Test
-    @Ignore
     public void shouldTestAddEventListenerTest_testIsDeepFalseNodeAdded() throws Exception {
         // setup
         String node1 = "node1";
@@ -1378,7 +1373,6 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testIsDeepFalsePropertyAdded()
      */
     @Test
-    @Ignore
     public void shouldTestAddEventListenerTest_testIsDeepFalsePropertyAdded() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1409,7 +1403,6 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testNodeType()
      */
     @Test
-    @Ignore
     public void shouldTestAddEventListenerTest_testNodeType() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1418,7 +1411,13 @@ public class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, getRoot().getPath(), true, null, new String[] {REF_MIXIN}, false);
+        TestListener listener = addListener(1,
+                                            Event.NODE_ADDED,
+                                            getRoot().getPath(),
+                                            true,
+                                            null,
+                                            new String[] {LOCK_MIXIN},
+                                            false);
 
         // trigger events
         String node3 = "node3";
@@ -1490,7 +1489,6 @@ public class JcrObservationManagerTest extends TestSuite {
      * @see AddEventListenerTest#testUUID()
      */
     @Test
-    @Ignore
     public void shouldTestAddEventListenerTest_testUUID() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);

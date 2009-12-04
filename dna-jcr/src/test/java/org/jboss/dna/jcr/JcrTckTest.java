@@ -81,6 +81,7 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
+import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
 import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
@@ -307,7 +308,7 @@ public class JcrTckTest {
             addTestSuite(PropertyAddedTest.class);
             addTestSuite(PropertyChangedTest.class);
             addTestSuite(PropertyRemovedTest.class);
-            // addTestSuite(AddEventListenerTest.class);
+            addTestSuite(AddEventListenerTest.class);
             // addTestSuite(WorkspaceOperationTest.class);
         }
     }

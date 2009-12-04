@@ -563,7 +563,7 @@ final class JcrObservationManager implements ObservationManager {
                         mixinNames = stringFactory.create(propMap.get(MIXIN_TYPES).getValuesAsArray());
                     }
 
-                    return getNodeTypeManager().isDerivedFrom(primaryTypeName, mixinNames, this.nodeTypeNames);
+                    return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames, primaryTypeName, mixinNames);
                 } catch (RepositoryException e) {
                     accept = false;
                     Logger.getLogger(getClass()).error(e,
@@ -584,12 +584,19 @@ final class JcrObservationManager implements ObservationManager {
         private boolean acceptBasedOnPath( NetChange change ) {
             if ((this.absPath != null) && (this.absPath.length() != 0)) {
                 Path matchPath = getValueFactories().getPathFactory().create(this.absPath);
-
-                if (this.isDeep) {
-                    return matchPath.isAtOrAbove(change.getPath().getParent());
+                Path changePath = null;
+                
+                if (change.includes(ChangeType.NODE_ADDED, ChangeType.NODE_REMOVED)) {
+                    changePath = change.getPath().getParent();
+                } else {
+                    changePath = change.getPath();
                 }
 
-                return matchPath.equals(change.getPath().getParent());
+                if (this.isDeep) {
+                    return matchPath.isAtOrAbove(changePath);
+                }
+
+                return matchPath.equals(changePath);
             }
 
             return true;

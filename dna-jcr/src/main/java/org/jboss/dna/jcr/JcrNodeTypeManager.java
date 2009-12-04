@@ -567,30 +567,30 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
-     * Determine whether the primary type or mixins are directly or indirectly derived from a node type with one of the supplied
-     * names.
+     * Determine if any of the test type names are equal to or have been derived from the primary type or any of the mixins.
      * 
-     * @param primaryTypeName the primary type being checked (never <code>null</code>)
-     * @param mixinNames the mixins being checked (may be <code>null</code>)
-     * @param superTypeNames the names of the node types the primary type and mixins are tested against (never <code>null</code>)
-     * @return <code>true</code> if the primary type or one of the mixins are derived from one of the type names
+     * @param testTypeNames the names of the types or mixins being tested against (never <code>null</code>)
+     * @param primaryTypeName the primary type name (never <code>null</code>)
+     * @param mixinNames the mixin names (may be <code>null</code>)
+     * @return <code>true</code> if at least one test type name is equal to or derived from the primary type or one of the mixins
      * @throws RepositoryException if there is an exception obtaining node types
-     * @throws IllegalArgumentException if <code>primaryTypeProperty</code> is <code>null</code>
+     * @throws IllegalArgumentException if <code>testTypeNames</code> is <code>null</code> or empty or if
+     *         <code>primaryTypeName</code> is <code>null</code> or zero length
      */
-    public boolean isDerivedFrom( String primaryTypeName,
-                                  String[] mixinNames,
-                                  String[] superTypeNames ) throws RepositoryException {
-        CheckArg.isNotNull(primaryTypeName, "primaryTypeName");
-        CheckArg.isNotNull(superTypeNames, "superTypeNames");
+    public boolean isDerivedFrom( String[] testTypeNames,
+                                  String primaryTypeName,
+                                  String[] mixinNames ) throws RepositoryException {
+        CheckArg.isNotEmpty(testTypeNames, "testTypeNames");
+        CheckArg.isNotEmpty(primaryTypeName, "primaryTypeName");
 
         NameFactory nameFactory = context().getValueFactories().getNameFactory();
-        Name[] typeNames = nameFactory.create(superTypeNames);
+        Name[] typeNames = nameFactory.create(testTypeNames);
 
         // first check primary type
-        JcrNodeType primaryType = getNodeType(primaryTypeName);
-
         for (Name typeName : typeNames) {
-            if (primaryType.isNodeType(typeName)) {
+            JcrNodeType nodeType = getNodeType(typeName);
+
+            if ((nodeType != null) && nodeType.isNodeType(primaryTypeName)) {
                 return true;
             }
         }
@@ -598,10 +598,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         // now check mixins
         if (mixinNames != null) {
             for (String mixin : mixinNames) {
-                JcrNodeType mixinType = getNodeType(mixin);
-
                 for (Name typeName : typeNames) {
-                    if (mixinType.isNodeType(typeName)) {
+                    JcrNodeType nodeType = getNodeType(typeName);
+
+                    if ((nodeType != null) && nodeType.isNodeType(mixin)) {
                         return true;
                     }
                 }
