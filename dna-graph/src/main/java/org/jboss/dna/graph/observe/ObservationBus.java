@@ -42,6 +42,7 @@ public class ObservationBus implements Observable, Observer {
      * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
     public boolean register( Observer observer ) {
+        if (observer == null) return false;
         return observers.register(observer);
     }
 

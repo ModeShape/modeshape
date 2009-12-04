@@ -989,7 +989,7 @@ public class JcrRepository implements Repository {
          * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
          */
         public boolean register( Observer observer ) {
-            CheckArg.isNotNull(observer, "observer");
+            if (observer == null) return false;
             return this.observers.addIfAbsent(observer);
         }
 

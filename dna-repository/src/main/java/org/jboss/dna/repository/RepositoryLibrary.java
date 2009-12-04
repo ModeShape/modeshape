@@ -171,6 +171,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
     public boolean register( Observer observer ) {
+        if (observer == null) return false;
         return observationBus.register(observer);
     }
 

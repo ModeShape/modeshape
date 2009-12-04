@@ -34,7 +34,7 @@ public class MockObservable implements Observable {
      * @see org.jboss.dna.graph.observe.Observable#register(org.jboss.dna.graph.observe.Observer)
      */
     public boolean register( Observer observer ) {
-        return true;
+        return ((observer == null) ? false : true);
     }
 
     /**
