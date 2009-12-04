@@ -1063,7 +1063,7 @@ class JoinRequestProcessor extends RequestProcessor {
             VerifyNodeExistsRequest readFromSource = (VerifyNodeExistsRequest)projectedRequest.getRequest();
             if (readFromSource.hasError()) {
                 request.setError(readFromSource.getError());
-                continue;
+                return;
             }
             request.setError(null);
             if (readFromSource.isCancelled()) {
