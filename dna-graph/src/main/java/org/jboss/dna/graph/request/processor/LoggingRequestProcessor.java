@@ -92,7 +92,7 @@ public class LoggingRequestProcessor extends RequestProcessor {
     public void process( VerifyWorkspaceRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        // logger.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -452,7 +452,7 @@ public class LoggingRequestProcessor extends RequestProcessor {
     public void close() {
         logger.log(level, GraphI18n.closingRequestProcessor);
         delegate.close();
-        logger.log(level, GraphI18n.closingRequestProcessor);
+        logger.log(level, GraphI18n.closedRequestProcessor);
     }
 
 }

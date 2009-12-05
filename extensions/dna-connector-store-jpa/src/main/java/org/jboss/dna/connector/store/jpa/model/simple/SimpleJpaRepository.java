@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,10 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.Reference;
+import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
@@ -101,8 +105,6 @@ public class SimpleJpaRepository extends MapRepository {
     protected final boolean creatingWorkspacesAllowed;
     protected final long minimumSizeOfLargeValuesInBytes;
 
-    // private final boolean referentialIntegrityEnforced;
-
     public SimpleJpaRepository( String sourceName,
                                 UUID rootNodeUuid,
                                 String defaultWorkspaceName,
@@ -111,7 +113,6 @@ public class SimpleJpaRepository extends MapRepository {
                                 ExecutionContext context,
                                 boolean compressData,
                                 boolean creatingWorkspacesAllowed,
-                                boolean referentialIntegrityEnforced,
                                 long minimumSizeOfLargeValuesInBytes ) {
         super(sourceName, rootNodeUuid, defaultWorkspaceName);
 
@@ -122,7 +123,6 @@ public class SimpleJpaRepository extends MapRepository {
         this.predefinedWorkspaceNames = Arrays.asList(predefinedWorkspaceNames);
         this.compressData = compressData;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
-        // this.referentialIntegrityEnforced = referentialIntegrityEnforced;
         this.minimumSizeOfLargeValuesInBytes = minimumSizeOfLargeValuesInBytes;
 
         this.entityManager = entityManager;
@@ -137,7 +137,6 @@ public class SimpleJpaRepository extends MapRepository {
                                 ExecutionContext context,
                                 boolean compressData,
                                 boolean creatingWorkspacesAllowed,
-                                boolean referentialIntegrityEnforced,
                                 long minimumSizeOfLargeValuesInBytes ) {
         super(sourceName, rootNodeUuid);
 
@@ -148,7 +147,6 @@ public class SimpleJpaRepository extends MapRepository {
         this.predefinedWorkspaceNames = Collections.emptyList();
         this.compressData = compressData;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
-        // this.referentialIntegrityEnforced = referentialIntegrityEnforced;
         this.minimumSizeOfLargeValuesInBytes = minimumSizeOfLargeValuesInBytes;
 
         this.entityManager = entityManager;
@@ -259,6 +257,76 @@ public class SimpleJpaRepository extends MapRepository {
             initialize();
         }
 
+        /**
+         * This should copy the subgraph given by the original node and place the new copy under the supplied new parent. Note
+         * that internal references between nodes within the original subgraph must be reflected as internal nodes within the new
+         * subgraph.
+         * 
+         * @param context the context; may not be null
+         * @param original the node to be copied; may not be null
+         * @param newWorkspace the workspace containing the new parent node; may not be null
+         * @param newParent the parent where the copy is to be placed; may not be null
+         * @param desiredName the desired name for the node; if null, the name will be obtained from the original node
+         * @param recursive true if the copy should be recursive
+         * @return the new node, which is the top of the new subgraph
+         */
+        @Override
+        public MapNode copyNode( ExecutionContext context,
+                                 MapNode original,
+                                 MapWorkspace newWorkspace,
+                                 MapNode newParent,
+                                 Name desiredName,
+                                 boolean recursive ) {
+
+            Map<UUID, UUID> oldToNewUuids = new HashMap<UUID, UUID>();
+            MapNode copyRoot = copyNode(context, original, newWorkspace, newParent, desiredName, true, oldToNewUuids);
+
+            // Now, adjust any references in the new subgraph to objects in the original subgraph
+            // (because they were internal references, and need to be internal to the new subgraph)
+            PropertyFactory propertyFactory = context.getPropertyFactory();
+            UuidFactory uuidFactory = context.getValueFactories().getUuidFactory();
+            ValueFactory<Reference> referenceFactory = context.getValueFactories().getReferenceFactory();
+            boolean refChanged = false;
+            for (Map.Entry<UUID, UUID> oldToNew : oldToNewUuids.entrySet()) {
+                MapNode oldNode = this.getNode(oldToNew.getKey());
+                MapNode newNode = newWorkspace.getNode(oldToNew.getValue());
+                assert oldNode != null;
+                assert newNode != null;
+                // Iterate over the properties of the new ...
+                for (Map.Entry<Name, Property> entry : newNode.getProperties().entrySet()) {
+                    Property property = entry.getValue();
+                    // Now see if any of the property values are references ...
+                    List<Object> newValues = new ArrayList<Object>();
+                    boolean foundReference = false;
+                    for (Iterator<?> iter = property.getValues(); iter.hasNext();) {
+                        Object value = iter.next();
+                        PropertyType type = PropertyType.discoverType(value);
+                        if (type == PropertyType.REFERENCE) {
+                            UUID oldReferencedUuid = uuidFactory.create(value);
+                            UUID newReferencedUuid = oldToNewUuids.get(oldReferencedUuid);
+                            if (newReferencedUuid != null) {
+                                newValues.add(referenceFactory.create(newReferencedUuid));
+                                foundReference = true;
+                                refChanged = true;
+                            }
+                        } else {
+                            newValues.add(value);
+                        }
+                    }
+                    // If we found at least one reference, we have to build a new Property object ...
+                    if (foundReference) {
+                        Property newProperty = propertyFactory.create(property.getName(), newValues);
+                        entry.setValue(newProperty);
+                    }
+                }
+
+                if (refChanged) {
+                    ((JpaNode)newNode).serializeProperties();
+                }
+            }
+            return copyRoot;
+        }
+
         /*
          * (non-Javadoc)
          * @see org.jboss.dna.graph.connector.map.AbstractMapWorkspace#correctSameNameSiblingIndexes(org.jboss.dna.graph.ExecutionContext, org.jboss.dna.graph.connector.map.MapNode, org.jboss.dna.graph.property.Name)
@@ -303,6 +371,7 @@ public class SimpleJpaRepository extends MapRepository {
 
             NodeEntity nodeEntity = ((JpaNode)node).entity;
             nodeEntity.setWorkspaceId(this.workspaceId);
+            nodeEntity.setReferentialIntegrityEnforced(false);
 
             entityManager.persist(nodeEntity);
         }
@@ -320,7 +389,7 @@ public class SimpleJpaRepository extends MapRepository {
          */
         @Override
         protected void removeUuidReference( MapNode node ) {
-            SubgraphQuery branch = SubgraphQuery.create(context, entityManager, workspaceId, node.getUuid(), null, 0);
+            SubgraphQuery branch = SubgraphQuery.create(entityManager, workspaceId, node.getUuid(), 0);
             branch.deleteSubgraph(true);
             branch.close();
         }
@@ -398,12 +467,9 @@ public class SimpleJpaRepository extends MapRepository {
                 assert subgraphRootUuid != null;
             }
 
-            Path subgraphRootPath = null; // Don't need the path for this
-            SubgraphQuery subgraph = SubgraphQuery.create(context,
-                                                          entityManager,
+            SubgraphQuery subgraph = SubgraphQuery.create(entityManager,
                                                           workspaceId,
                                                           subgraphRootUuid,
-                                                          subgraphRootPath,
                                                           maximumDepth);
 
             List<NodeEntity> entities = subgraph.getNodes(true, true);

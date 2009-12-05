@@ -27,10 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.Query;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * Represents a temporary working area for a query that efficiently retrieves the nodes in a subgraph. This class uses the
@@ -47,19 +44,15 @@ public class SubgraphQuery {
     /**
      * Create a query that returns a subgraph at and below the node with the supplied path and the supplied UUID.
      * 
-     * @param context the execution context; may not be null
      * @param entities the entity manager; may not be null
      * @param workspaceId the ID of the workspace; may not be null
      * @param subgraphRootUuid the UUID (in string form) of the root node in the subgraph
-     * @param subgraphRootPath the path of the root node in the subgraph
      * @param maxDepth the maximum depth of the subgraph, or 0 if there is no maximum depth
      * @return the object representing the subgraph
      */
-    public static SubgraphQuery create( ExecutionContext context,
-                                        EntityManager entities,
+    public static SubgraphQuery create( EntityManager entities,
                                         Long workspaceId,
                                         UUID subgraphRootUuid,
-                                        Path subgraphRootPath,
                                         int maxDepth ) {
         assert entities != null;
         assert subgraphRootUuid != null;
@@ -106,33 +99,26 @@ public class SubgraphQuery {
             throw t;
         }
 
-        return new SubgraphQuery(context, entities, workspaceId, query, subgraphRootPath, maxDepth);
+        return new SubgraphQuery(entities, workspaceId, query, maxDepth);
     }
 
-    // private final ExecutionContext context;
     private final EntityManager manager;
     private final Long workspaceId;
     private SubgraphQueryEntity query;
     private final int maxDepth;
-    private final Path subgraphRootPath;
 
-    protected SubgraphQuery( ExecutionContext context,
-                             EntityManager manager,
+    protected SubgraphQuery( EntityManager manager,
                              Long workspaceId,
                              SubgraphQueryEntity query,
-                             Path subgraphRootPath,
                              int maxDepth ) {
         assert manager != null;
         assert query != null;
-        assert context != null;
-        // assert subgraphRootPath != null;
         assert workspaceId != null;
-        // this.context = context;
+
         this.manager = manager;
         this.workspaceId = workspaceId;
         this.query = query;
         this.maxDepth = maxDepth;
-        this.subgraphRootPath = subgraphRootPath;
     }
 
     /**
@@ -147,35 +133,6 @@ public class SubgraphQuery {
      */
     public EntityManager getEntityManager() {
         return manager;
-    }
-
-    /**
-     * @return subgraphRootPath
-     */
-    public Path getSubgraphRootPath() {
-        return subgraphRootPath;
-    }
-
-    /**
-     * @return query
-     */
-    public SubgraphQueryEntity getSubgraphQueryEntity() {
-        if (query == null) throw new IllegalStateException();
-        return query;
-    }
-
-    public int getNodeCount( boolean includeRoot ) {
-        if (query == null) throw new IllegalStateException();
-        // Now query for all the nodes and put into a list ...
-        Query search = manager.createNamedQuery("SubgraphNodeEntity.getCount");
-        search.setParameter("queryId", query.getId());
-
-        // Now process the nodes below the subgraph's root ...
-        try {
-            return ((Long)search.getSingleResult()).intValue() - (includeRoot ? 0 : 1);
-        } catch (NoResultException e) {
-            return 0;
-        }
     }
 
     /**
@@ -219,101 +176,7 @@ public class SubgraphQuery {
     }
 
     /**
-     * Get the {@link Location} for each of the nodes in the subgraph. This must be called before the query is {@link #close()
-     * closed}.
-     * <p>
-     * This method calls {@link #getNodes(boolean,boolean)}. Therefore, calling {@link #getNodes(boolean,boolean)} and this method
-     * for the same subgraph is not efficient; consider just calling {@link #getNodes(boolean,boolean)} alone.
-     * </p>
-     * 
-     * @param includeRoot true if the properties for the subgraph's root node are to be included, or false otherwise
-     * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
-     *        maximum depth, or false if only nodes up to the maximum depth are to be included
-     * @return the list of {@link Location locations}, one for each of the nodes in the subgraph, in breadth-first order
-     */
-    // public List<Location> getNodeLocations( boolean includeRoot,
-    // boolean includeChildrenOfMaxDepthNodes ) {
-    // if (query == null) throw new IllegalStateException();
-    // // Set up a map of the paths to the nodes, keyed by UUIDs. This saves us from having to build
-    // // the paths every time ...
-    // Map<String, Path> pathByUuid = new HashMap<String, Path>();
-    // LinkedList<Location> locations = new LinkedList<Location>();
-    // String subgraphRootUuid = query.getRootUuid();
-    // pathByUuid.put(subgraphRootUuid, subgraphRootPath);
-    // UUID uuid = UUID.fromString(subgraphRootUuid);
-    // if (includeRoot) {
-    // locations.add(Location.create(subgraphRootPath, uuid));
-    // }
-    //
-    // // Now iterate over the child nodes in the subgraph (we've already included the root) ...
-    // final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-    // final NameFactory nameFactory = context.getValueFactories().getNameFactory();
-    // for (ChildEntity entity : getNodes(false, includeChildrenOfMaxDepthNodes)) {
-    // String parentUuid = entity.getParentUuidString();
-    // Path parentPath = pathByUuid.get(parentUuid);
-    // assert parentPath != null;
-    // String nsUri = entity.getChildNamespace().getUri();
-    // String localName = entity.getChildName();
-    // int sns = entity.getSameNameSiblingIndex();
-    // Name childName = nameFactory.create(nsUri, localName);
-    // Path childPath = pathFactory.create(parentPath, childName, sns);
-    // String childUuid = entity.getId().getChildUuidString();
-    // pathByUuid.put(childUuid, childPath);
-    // uuid = UUID.fromString(childUuid);
-    // locations.add(Location.create(childPath, uuid));
-    //
-    // }
-    // return locations;
-    // }
-
-    /**
-     * Get the list of references that are owned by nodes within the subgraph and that point to other nodes <i>in this same
-     * subgraph</i>. This set of references is important in copying a subgraph, since all intra-subgraph references in the
-     * original subgraph must also be intra-subgraph references in the copy.
-     * 
-     * @return the list of references completely contained by this subgraphs
-     */
-    @SuppressWarnings( "unchecked" )
-    public List<ReferenceEntity> getInternalReferences() {
-        Query references = manager.createNamedQuery("SubgraphNodeEntity.getInternalReferences");
-        references.setParameter("queryId", query.getId());
-        references.setParameter("workspaceId", workspaceId);
-        return references.getResultList();
-    }
-
-    /**
-     * Get the list of references that are owned by nodes within the subgraph and that point to nodes <i>not in this same
-     * subgraph</i>. This set of references is important in copying a subgraph.
-     * 
-     * @return the list of references that are owned by the subgraph but that point to nodes outside of the subgraph
-     */
-    @SuppressWarnings( "unchecked" )
-    public List<ReferenceEntity> getOutwardReferences() {
-        Query references = manager.createNamedQuery("SubgraphNodeEntity.getOutwardReferences");
-        references.setParameter("queryId", query.getId());
-        references.setParameter("workspaceId", workspaceId);
-        return references.getResultList();
-    }
-
-    /**
-     * Get the list of references that are owned by nodes <i>outside</i> of the subgraph that point to nodes <i>in this
-     * subgraph</i>. This set of references is important in deleting nodes, since such references prevent the deletion of the
-     * subgraph.
-     * 
-     * @return the list of references that are no longer valid
-     */
-    @SuppressWarnings( "unchecked" )
-    public List<ReferenceEntity> getInwardReferences() {
-        // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
-        Query references = manager.createNamedQuery("SubgraphNodeEntity.getInwardReferences");
-        references.setParameter("queryId", query.getId());
-        references.setParameter("workspaceId", workspaceId);
-        return references.getResultList();
-    }
-
-    /**
-     * Delete the nodes in the subgraph. This method first does not check for referential integrity (see
-     * {@link #getInwardReferences()}).
+     * Delete the nodes in the subgraph.
      * 
      * @param includeRoot true if the root node should also be deleted
      */
@@ -352,13 +215,6 @@ public class SubgraphQuery {
         delete.setParameter("depth", includeRoot ? 0 : 1);
         delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
-
-        // Delete references ...
-        // delete = manager.createNamedQuery("SubgraphNodeEntity.deleteReferences");
-        // delete.setParameter("queryId", query.getId());
-        // delete.setParameter("depth", includeRoot ? 0 : 1);
-        // delete.setParameter("workspaceId", workspaceId);
-        // delete.executeUpdate();
 
         // Delete unused large values ...
         LargeValueEntity.deleteUnused(manager);

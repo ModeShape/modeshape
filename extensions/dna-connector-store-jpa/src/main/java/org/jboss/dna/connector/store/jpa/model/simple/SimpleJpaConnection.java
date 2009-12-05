@@ -56,8 +56,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
         this.repository = new SimpleJpaRepository(source.getName(), source.getRootUuid(), source.getDefaultWorkspaceName(),
                                                   source.getPredefinedWorkspaceNames(), entityManager,
                                                   source.getRepositoryContext().getExecutionContext(), source.isCompressData(),
-                                                  source.isCreatingWorkspacesAllowed(), source.isReferentialIntegrityEnforced(),
-                                                  source.getLargeValueSizeInBytes());
+                                                  source.isCreatingWorkspacesAllowed(), source.getLargeValueSizeInBytes());
     }
 
     public boolean ping( long time,
@@ -114,7 +113,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
         if (logger.isTraceEnabled()) {
             assert sw != null;
             sw.stop();
-            logger.trace("MapRepositoryConnection.execute(...) took " + sw.getTotalDuration());
+            logger.trace(this.getClass().getSimpleName() + ".execute(...) took " + sw.getTotalDuration());
         }
     }
 }

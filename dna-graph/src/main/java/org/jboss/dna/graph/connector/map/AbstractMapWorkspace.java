@@ -446,7 +446,48 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
                              MapNode newParent,
                              Name desiredName,
                              boolean recursive ) {
-        return copyNode(context, original, newWorkspace, newParent, desiredName, true, new HashMap<UUID, UUID>());
+
+        Map<UUID, UUID> oldToNewUuids = new HashMap<UUID, UUID>();
+        MapNode copyRoot = copyNode(context, original, newWorkspace, newParent, desiredName, true, oldToNewUuids);
+
+        // Now, adjust any references in the new subgraph to objects in the original subgraph
+        // (because they were internal references, and need to be internal to the new subgraph)
+        PropertyFactory propertyFactory = context.getPropertyFactory();
+        UuidFactory uuidFactory = context.getValueFactories().getUuidFactory();
+        ValueFactory<Reference> referenceFactory = context.getValueFactories().getReferenceFactory();
+        for (Map.Entry<UUID, UUID> oldToNew : oldToNewUuids.entrySet()) {
+            MapNode oldNode = this.getNode(oldToNew.getKey());
+            MapNode newNode = newWorkspace.getNode(oldToNew.getValue());
+            assert oldNode != null;
+            assert newNode != null;
+            // Iterate over the properties of the new ...
+            for (Map.Entry<Name, Property> entry : newNode.getProperties().entrySet()) {
+                Property property = entry.getValue();
+                // Now see if any of the property values are references ...
+                List<Object> newValues = new ArrayList<Object>();
+                boolean foundReference = false;
+                for (Iterator<?> iter = property.getValues(); iter.hasNext();) {
+                    Object value = iter.next();
+                    PropertyType type = PropertyType.discoverType(value);
+                    if (type == PropertyType.REFERENCE) {
+                        UUID oldReferencedUuid = uuidFactory.create(value);
+                        UUID newReferencedUuid = oldToNewUuids.get(oldReferencedUuid);
+                        if (newReferencedUuid != null) {
+                            newValues.add(referenceFactory.create(newReferencedUuid));
+                            foundReference = true;
+                        }
+                    } else {
+                        newValues.add(value);
+                    }
+                }
+                // If we found at least one reference, we have to build a new Property object ...
+                if (foundReference) {
+                    Property newProperty = propertyFactory.create(property.getName(), newValues);
+                    entry.setValue(newProperty);
+                }
+            }
+        }
+        return copyRoot;
     }
 
     /**
@@ -491,47 +532,6 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             // Loop over each child and call this method ...
             for (MapNode child : original.getChildren()) {
                 copyNode(context, child, newWorkspace, copy, null, true, oldToNewUuids);
-            }
-        }
-
-        if (!reuseUuids) {
-            assert oldToNewUuids != null;
-            // Now, adjust any references in the new subgraph to objects in the original subgraph
-            // (because they were internal references, and need to be internal to the new subgraph)
-            PropertyFactory propertyFactory = context.getPropertyFactory();
-            UuidFactory uuidFactory = context.getValueFactories().getUuidFactory();
-            ValueFactory<Reference> referenceFactory = context.getValueFactories().getReferenceFactory();
-            for (Map.Entry<UUID, UUID> oldToNew : oldToNewUuids.entrySet()) {
-                MapNode oldNode = this.getNode(oldToNew.getKey());
-                MapNode newNode = newWorkspace.getNode(oldToNew.getValue());
-                assert oldNode != null;
-                assert newNode != null;
-                // Iterate over the properties of the new ...
-                for (Map.Entry<Name, Property> entry : newNode.getProperties().entrySet()) {
-                    Property property = entry.getValue();
-                    // Now see if any of the property values are references ...
-                    List<Object> newValues = new ArrayList<Object>();
-                    boolean foundReference = false;
-                    for (Iterator<?> iter = property.getValues(); iter.hasNext();) {
-                        Object value = iter.next();
-                        PropertyType type = PropertyType.discoverType(value);
-                        if (type == PropertyType.REFERENCE) {
-                            UUID oldReferencedUuid = uuidFactory.create(value);
-                            UUID newReferencedUuid = oldToNewUuids.get(oldReferencedUuid);
-                            if (newReferencedUuid != null) {
-                                newValues.add(referenceFactory.create(newReferencedUuid));
-                                foundReference = true;
-                            }
-                        } else {
-                            newValues.add(value);
-                        }
-                    }
-                    // If we found at least one reference, we have to build a new Property object ...
-                    if (foundReference) {
-                        Property newProperty = propertyFactory.create(property.getName(), newValues);
-                        entry.setValue(newProperty);
-                    }
-                }
             }
         }
 
