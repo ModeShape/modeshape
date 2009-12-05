@@ -56,9 +56,9 @@
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
-					<entry>supportsUpdates</entry>
+					<entry>supportsUpdates (Basic Model Only)</entry>
 					<entry>Determines whether the content in the database is can be updated ("true"), or if the content may only be read ("false").
-						The default value is "true".</entry>
+						The default value is "true".  This property is ignored by the Simple Model (q.v., the model property below)</entry>
 				</row>
 				<row>
 					<entry>rootNodeUuid</entry>
@@ -104,7 +104,7 @@
 				<row>
 					<entry>driverClassloaderName</entry>
 					<entry>
-						The name of the <link linkend="class_loader_factory">class loader or classpath</link> that should be used to load the JDBC driver class.
+						The name of the <!-- link linkend="class_loader_factory" -->class loader or classpath<!--  /link --> that should be used to load the JDBC driver class.
 						This is not required if the DataSource is found in JNDI.
 					</entry>
 				</row>
@@ -173,11 +173,12 @@
 					</entry>
 				</row>
 				<row>
-					<entry>referentialIntegrityEnforced</entry>
+					<entry>referentialIntegrityEnforced (Basic Model Only)</entry>
 					<entry>
 						An advanced boolean property that dictates whether the database's referential integrity should be enabled, or false if this checking
 						is not to be used.  While referential integrity does help to ensure the consistency of the records, it does add work to update
-						operations and can impact performance.  
+						operations and can impact performance.  The Simple Model (q.v., the "model" property below) ignores this property and does not support
+						this feature.
 						The default value is "true".
 					</entry>
 				</row>
@@ -202,8 +203,13 @@
 				<row>
 					<entry>model</entry>
 					<entry>
-						An advanced property that dictates the type of storage schema that is used.  Currently, the only supported value is "Basic",
-						which is also the default.
+						An advanced property that dictates the type of storage schema that is used.  Currently, the only supported values are "Basic" and "Simple".  
+						The Basic model supports a read-only mode (q.v., the "supportsUpdates" property) and database-level
+						enforcement of referential integrity (q.v., the "referentialIntegrityEnforced" property above), but does not fully support all JCR functions.
+						As a result, the Simple model is now the default model, but DNA repositories that were created under the Basic model will continue to use
+						the "Basic" model regardless of the value of this property.  Repositories can be converted from the Basic model to the Simple model by exporting
+						them to an XML file as a system view through the JCR interface and then importing them into a new repository created with the model property set
+						to "Simple".
 					</entry>
 				</row>
 				<row>
@@ -278,11 +284,11 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 	<para>
 	Running this executable will create two files in the output directory (or the current directory if no output directory
 	was specified): create.dna-jpa-connector.ddl and drop.dna-jpa-connector.ddl.  The former contains the DDL to create or replace the tables,
-	foreign keys, indices, and sequences needed by the JPA connector and the latter containts the DDL to drop any tables, foreign keys, indices, and 
+	foreign keys, indices, and sequences needed by the JPA connector and the latter contains the DDL to drop any tables, foreign keys, indices, and 
 	sequences needed by the JPA connector.
 	</para>
 
-	<sect2>
+	<sect1>
 		<title>Basic Model</title>
 		<para>
 			This database schema model stores node properties as opaque records and children as transparent records. 
@@ -291,6 +297,11 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 		<para>
 			The set of tables used in this model includes:
 			<itemizedlist>
+				<listitem>
+					<para>
+						Workspaces - the set of workspaces and their names.
+					</para>
+				</listitem>
 				<listitem>
 					<para>
 						Namespaces - the set of namespace URIs used in paths, property names, and property values.
@@ -326,13 +337,6 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 	 					Subgraph - a working area for efficiently computing the space of a subgraph; see below
 					</para>
 				</listitem>
-				<!--listitem>
-					<para>
-				 		Change log - a record of the changes that have been made to the repository. This is used to distribute change events across
-				 		multiple distributed processes, and to allow a recently-connected client to identify the set of changes that have been made
-				 		since a particular time or date. Changes are serialized into a binary, compressed format.
-					</para>
-				</listitem-->
 				<listitem>
 					<para>
 				 		Options - the parameters for this store's configuration (common to all models)
@@ -350,7 +354,7 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 		 nodes. When finished, the mechanism deletes the records in the working area associated with the subgraph query.
 		</para>
 		<para>
-		 This subgraph query mechanism is extremely efficient, performing one join/insert statement <i>per level of the subgraph</i>,
+		 This subgraph query mechanism is extremely efficient, performing one join/insert statement <emphasis>per level of the subgraph</emphasis>,
 		 and is completely independent of the number of nodes in the subgraph. For example, consider a subgraph of node A, where A has
 		 10 children, and each child contains 10 children, and each grandchild contains 10 children. This subgraph has a total of 1111
 		 nodes (1 root + 10 children + 10*10 grandchildren + 10*10*10 great-grandchildren). Finding the nodes in this subgraph would
@@ -367,6 +371,64 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 		 requests requires knowledge of the subgraph, and in fact all but the &ReadBranchRequest; need to know the complete
 		 subgraph.
 		</para>
-	</sect2>
+	</sect1>
+	<sect1>
+		<title>Simple Model</title>
+		<para>
+			This database schema model stores node properties as opaque records in the same row as transparent values like the node's namespace, local name, 
+			and same-name-sibling index. Large property values are stored separately.  It is a small evolution of the design from the Basic model.
+		</para>
+		<para>
+			The set of tables used in this model includes:
+			<itemizedlist>
+				<listitem>
+					<para>
+						Workspaces - the set of workspaces and their names.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Namespaces - the set of namespace URIs used in paths, property names, and property values.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Nodes - the nodes in the repository, where each node and its properties are represented by a single record. This approach makes it
+		 				possible to efficiently work with nodes containing large numbers of children, where adding and removing child nodes is largely
+		 				independent of the number of children. Since the primary consumer of DNA graph information is the JCR layer, and the JCR layer always
+		 				retrieves the nodes' properties for retrieved nodes, the properties have been moved in-row with the nodes.  Properties are still store
+		 				in an opaque, serialized (and optionally compressed) form. 
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Large values - property values larger than a certain size will be broken out into this table, where they are tracked by
+						their SHA-1 has and shared by all properties that have that same value. The values are stored in a binary (and optionally
+						compressed) form.  This is equivalent to the Basic model's approach for storing large values.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+	 					Subgraph - a working area for efficiently computing the space of a subgraph; see below
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+				 		Options - the parameters for this store's configuration (common to all models)
+					</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+		<para>
+		 Just like the Basic model, this model contains two tables that are used in an efficient mechanism to find all of the nodes in the subgraph below
+		 a certain node. The subgraph tables work so similarly in the Simple model that the description from the Basic model still applies.
+		</para>
+		<para>
+		 In the Simple model, subgraph queries are used to efficiently process a number of different requests, including &ReadBranchRequest;
+		 and &DeleteBranchRequest;. Processing each of these kinds of
+		 requests requires knowledge of the subgraph, and in fact all but the &ReadBranchRequest; need to know the complete
+		 subgraph.
+		</para>
+	</sect1>
 </chapter>
 

@@ -370,7 +370,7 @@ public class DnaTckTest extends AbstractJCRTest {
      * 
      * @throws Exception if an error occurs
      */
-    public void failsFromDna466TestShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
+    public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
         session = helper.getSuperuserSession("otherWorkspace");
         assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
 
@@ -432,5 +432,4 @@ public class DnaTckTest extends AbstractJCRTest {
         }
 
     }
-
 }

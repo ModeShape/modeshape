@@ -60,6 +60,7 @@
 <!ENTITY BigDecimal								    "<ulink url='&Java;java/math/BigDecimal.html'><classname>BigDecimal</classname></ulink>">
 <!ENTITY Calendar								    	"<ulink url='&Java;java/util/Calendar.html'><classname>Calendar</classname></ulink>">
 <!ENTITY Date											    "<ulink url='&Java;java/util/Date.html'><classname>Date</classname></ulink>">
+<!ENTITY EntityManagerFactory						      		"<ulink url='&Java;javax/persistence/EntityManagerFactory.html'><classname>EntityManagerFactory</classname></ulink>">
 
 
 <!-- Types in JCR API -->
@@ -139,6 +140,8 @@
 <!ENTITY RemovePropertyRequest			  "<ulink url='&API;graph/request/RemovePropertyRequest.html'><classname>RemovePropertyRequest</classname></ulink>">
 <!ENTITY CreateNodeRequest					  "<ulink url='&API;graph/request/CreateNodeRequest.html'><classname>CreateNodeRequest</classname></ulink>">
 <!ENTITY CopyBranchRequest					  "<ulink url='&API;graph/request/CopyBranchRequest.html'><classname>CopyBranchRequest</classname></ulink>">
+<!ENTITY ReadBranchRequest					  "<ulink url='&API;graph/request/ReadBranchRequest.html'><classname>ReadBranchRequest</classname></ulink>">
+<!ENTITY MoveBranchRequest					  "<ulink url='&API;graph/request/MoveBranchRequest.html'><classname>MoveBranchRequest</classname></ulink>">
 <!ENTITY DeleteBranchRequest					"<ulink url='&API;graph/request/DeleteBranchRequest.html'><classname>DeleteBranchRequest</classname></ulink>">
 <!ENTITY InvalidRequestException	   	"<ulink url='&API;graph/request/InvalidRequestException.html'><classname>InvalidRequestException</classname></ulink>">
 <!ENTITY InvalidWorkspaceException		"<ulink url='&API;graph/request/InvalidWorkspaceException.html'><classname>InvalidWorkspaceException</classname></ulink>">

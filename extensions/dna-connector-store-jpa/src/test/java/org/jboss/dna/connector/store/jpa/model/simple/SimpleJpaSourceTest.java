@@ -49,7 +49,7 @@ public class SimpleJpaSourceTest {
         source.setDriverClassName("org.hsqldb.jdbcDriver");
         source.setUsername("sa");
         source.setPassword("");
-        source.setUrl("jdbc:hsqldb:.");
+        source.setUrl("jdbc:hsqldb:mem:.");
         source.setShowSql(true);
         source.setAutoGenerateSchema("create");
 

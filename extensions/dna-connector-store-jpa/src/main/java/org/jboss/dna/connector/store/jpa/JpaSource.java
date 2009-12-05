@@ -79,7 +79,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         private static final Model[] ALL_ARRAY = new Model[] {BASIC, SIMPLE};
         private static final List<Model> MODIFIABLE_MODELS = new ArrayList<Model>(Arrays.asList(ALL_ARRAY));
         public static final Collection<Model> ALL = Collections.unmodifiableCollection(MODIFIABLE_MODELS);
-        public static final Model DEFAULT = BASIC;
+        public static final Model DEFAULT = SIMPLE;
 
         public static boolean addModel( Model model ) {
             CheckArg.isNotNull(model, "modelName");

@@ -24,14 +24,10 @@
 package org.jboss.dna.connector.store.jpa.model.simple;
 
 import org.jboss.dna.connector.store.jpa.JpaSource;
-import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.connector.store.jpa.TestEnvironment;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.WritableConnectorTest;
-import org.jboss.dna.graph.observe.Observer;
 
 public class SimpleJpaConnectorWritableTest extends WritableConnectorTest {
 
@@ -43,40 +39,11 @@ public class SimpleJpaConnectorWritableTest extends WritableConnectorTest {
     @Override
     protected RepositorySource setUpSource() {
         // Set the connection properties using the environment defined in the POM files ...
-        JpaSource source = new JpaSource();
-
+        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
         source.setModel(JpaSource.Models.SIMPLE.getName());
-        source.setName("SimpleJpaSource");
-        source.setDialect("org.hibernate.dialect.HSQLDialect");
-        source.setDriverClassName("org.hsqldb.jdbcDriver");
-        source.setUsername("sa");
-        source.setPassword("");
-        source.setUrl("jdbc:hsqldb:mem:test");
-        source.setShowSql(false);
-        source.setAutoGenerateSchema("create");
-        source.setReferentialIntegrityEnforced(false);
 
-        source.initialize(new RepositoryContext() {
-
-            private final ExecutionContext context = new ExecutionContext();
-
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            public Observer getObserver() {
-                return null;
-            }
-
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return null;
-            }
-
-        });
+        // Override the inherited properties ...
+        source.setCompressData(true);
 
         return source;
     }
