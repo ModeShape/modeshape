@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -1399,8 +1400,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new LockException(JcrI18n.notLocked.text(this.location));
         }
 
-        if (!cache.session().lockTokens().contains(lock.getLockToken())) {
-            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
+        if (!session().lockTokens().contains(lock.getLockToken())) {
+            try {
+                // See if the user has the permission to break someone else's lock
+                session().checkPermission(cache.workspaceName(), null, JcrSession.DNA_UNLOCK_ANY_PERMISSION);
+            } catch (AccessControlException iae) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
+            }
         }
 
         session().workspace().lockManager().unlock(session(), lock);
@@ -1651,8 +1657,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
-                                                                                                  .getNamespaceRegistry()),
+                throw new ItemNotFoundException(
+                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 

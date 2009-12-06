@@ -432,4 +432,26 @@ public class DnaTckTest extends AbstractJCRTest {
         }
 
     }
+
+    public void testAdminUserCanBreakOthersLocks() throws Exception {
+        String lockNodeName = "lockTestNode";
+        session = helper.getReadWriteSession();
+        Node root = session.getRootNode();
+        Node lockNode = root.addNode(lockNodeName);
+        lockNode.addMixin("mix:lockable");
+        session.save();
+
+        lockNode.lock(false, false);
+        assertThat(lockNode.isLocked(), is(true));
+
+        Session superuser = helper.getSuperuserSession();
+        root = superuser.getRootNode();
+        lockNode = root.getNode(lockNodeName);
+
+        assertThat(lockNode.isLocked(), is(true));
+        lockNode.unlock();
+        assertThat(lockNode.isLocked(), is(false));
+        superuser.logout();
+
+    }
 }

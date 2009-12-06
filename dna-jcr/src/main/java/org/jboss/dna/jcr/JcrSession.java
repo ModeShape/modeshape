@@ -92,6 +92,7 @@ class JcrSession implements Session {
 
     public static final String DNA_REGISTER_NAMESPACE_PERMISSION = "register_namespace";
     public static final String DNA_REGISTER_TYPE_PERMISSION = "register_type";
+    public static final String DNA_UNLOCK_ANY_PERMISSION = "unlock_any";
 
     public static final String JCR_ADD_NODE_PERMISSION = "add_node";
     public static final String JCR_SET_PROPERTY_PERMISSION = "set_property";
@@ -389,7 +390,8 @@ class JcrSession implements Session {
             if (JCR_READ_PERMISSION.equals(action)) {
                 hasPermission &= hasRole(DNA_READ_PERMISSION, workspaceName) || hasRole(DNA_WRITE_PERMISSION, workspaceName)
                                  || hasRole(DNA_ADMIN_PERMISSION, workspaceName);
-            } else if (DNA_REGISTER_NAMESPACE_PERMISSION.equals(action) || DNA_REGISTER_TYPE_PERMISSION.equals(action)) {
+            } else if (DNA_REGISTER_NAMESPACE_PERMISSION.equals(action) || DNA_REGISTER_TYPE_PERMISSION.equals(action)
+                       || DNA_UNLOCK_ANY_PERMISSION.equals(action)) {
                 hasPermission &= hasRole(DNA_ADMIN_PERMISSION, workspaceName);
             } else {
                 hasPermission &= hasRole(DNA_ADMIN_PERMISSION, workspaceName) || hasRole(DNA_WRITE_PERMISSION, workspaceName);
