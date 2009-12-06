@@ -68,6 +68,7 @@ public class JpaSourceTest {
 
     @Test
     public void shouldHaveNoDefaultModelUponConstruction() {
+        JpaSource source = new JpaSource();
         assertThat(source.getModel(), is(nullValue()));
     }
 
