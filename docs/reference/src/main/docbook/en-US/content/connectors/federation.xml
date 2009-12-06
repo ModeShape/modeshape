@@ -318,7 +318,7 @@
 		<sect1>
 			<title>Processing flow</title>
 			<para>
-		  This connctor executes &Requests; against the federated repository by
+		  This connector executes &Request;s against the federated repository by
 		  projecting them into requests against the underlying sources that are being federated.
 			</para>
 		  <para>
