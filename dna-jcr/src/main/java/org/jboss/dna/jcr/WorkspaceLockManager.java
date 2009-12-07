@@ -16,6 +16,8 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.LockFailedException;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -31,6 +33,7 @@ import org.jboss.dna.jcr.SessionCache.NodeEditor;
 @ThreadSafe
 class WorkspaceLockManager {
 
+    private final ExecutionContext context;
     private final Path locksPath;
     private final JcrRepository repository;
     private final String workspaceName;
@@ -40,6 +43,7 @@ class WorkspaceLockManager {
                           JcrRepository repository,
                           String workspaceName,
                           Path locksPath ) {
+        this.context = context;
         this.repository = repository;
         this.workspaceName = workspaceName;
         this.locksPath = locksPath;
@@ -79,7 +83,7 @@ class WorkspaceLockManager {
         }
 
         ExecutionContext sessionContext = session.getExecutionContext();
-        String lockOwner = sessionContext.getSecurityContext().getUserName();
+        String lockOwner = session.getUserID();
         DnaLock lock = createLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
 
         Graph.Batch batch = repository.createSystemGraph(sessionContext).batch();
@@ -89,11 +93,17 @@ class WorkspaceLockManager {
         Property lockOwnerProp = propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner);
         Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
 
+        DateTimeFactory dateFactory = sessionContext.getValueFactories().getDateFactory();
+        DateTime expirationDate = dateFactory.create();
+        expirationDate = expirationDate.plusMillis(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
+
         batch.create(pathFactory.create(locksPath, pathFactory.createSegment(lockUuid.toString())),
                      propFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.LOCK),
                      propFactory.create(DnaLexicon.WORKSPACE, workspaceName),
                      propFactory.create(DnaLexicon.LOCKED_UUID, nodeUuid.toString()),
                      propFactory.create(DnaLexicon.IS_SESSION_SCOPED, isSessionScoped),
+                     propFactory.create(DnaLexicon.LOCKING_SESSION, session.sessionId()),
+                     propFactory.create(DnaLexicon.EXPIRATION_DATE, expirationDate),
                      // This gets set after the lock succeeds and the lock token gets added to the session
                      propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, false),
                      lockOwnerProp,
@@ -114,6 +124,10 @@ class WorkspaceLockManager {
         workspaceLocksByNodeUuid.put(nodeUuid, lock);
 
         return lock;
+    }
+
+    DnaLock createLock( org.jboss.dna.graph.Node lockNode ) {
+        return new DnaLock(lockNode);
     }
 
     /* Factory method added to facilitate mocked testing */
@@ -171,7 +185,7 @@ class WorkspaceLockManager {
             workspaceBatch.execute();
         } catch (LockFailedException lfe) {
             // Attempt to lock node at the repo level failed - cancel lock
-            unlock(session, lock);
+            unlock(session.getExecutionContext(), lock);
             throw new RepositoryException(lfe);
         }
 
@@ -180,22 +194,21 @@ class WorkspaceLockManager {
     /**
      * Removes the provided lock, effectively unlocking the node to which the lock is associated.
      * 
-     * @param session the session in which the node is being unlocked
+     * @param sessionExecutionContext the execution context of the session in which the node is being unlocked
      * @param lock the lock to be removed
      */
-    void unlock( JcrSession session,
+    void unlock( ExecutionContext sessionExecutionContext,
                  DnaLock lock ) {
         try {
-            ExecutionContext context = session.getExecutionContext();
-            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            PathFactory pathFactory = sessionExecutionContext.getValueFactories().getPathFactory();
 
             // Remove the lock node under the /jcr:system branch ...
-            Graph.Batch batch = repository.createSystemGraph(context).batch();
+            Graph.Batch batch = repository.createSystemGraph(sessionExecutionContext).batch();
             batch.delete(pathFactory.create(locksPath, pathFactory.createSegment(lock.getUuid().toString())));
             batch.execute();
 
             // Unlock the node in the repository graph ...
-            unlockNodeInRepository(session, lock);
+            unlockNodeInRepository(sessionExecutionContext, lock);
 
             workspaceLocksByNodeUuid.remove(lock.nodeUuid);
         } catch (PathNotFoundException pnfe) {
@@ -220,12 +233,12 @@ class WorkspaceLockManager {
      * /jcr:system/dna:locks} subgraph.
      * </p>
      * 
-     * @param session the session in which the node is being unlocked
+     * @param sessionExecutionContext the execution context of the session in which the node is being unlocked
      * @param lock
      */
-    void unlockNodeInRepository( JcrSession session,
+    void unlockNodeInRepository( ExecutionContext sessionExecutionContext,
                                  DnaLock lock ) {
-        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName, session.getExecutionContext()).batch();
+        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName, sessionExecutionContext).batch();
 
         workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
         workspaceBatch.unlock(lock.nodeUuid);
@@ -249,9 +262,8 @@ class WorkspaceLockManager {
         ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph(context)
-                                                      .getNodeAt(pathFactory.create(locksPath,
-                                                                                    pathFactory.createSegment(lockToken)));
+        org.jboss.dna.graph.Node lockNode = repository.createSystemGraph(context).getNodeAt(pathFactory.create(locksPath,
+                                                                                                               pathFactory.createSegment(lockToken)));
 
         return booleanFactory.create(lockNode.getProperty(DnaLexicon.IS_HELD_BY_SESSION).getFirstValue());
 
@@ -275,9 +287,8 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repository.createSystemGraph(context)
-                  .set(propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, value))
-                  .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
+        repository.createSystemGraph(context).set(propFactory.create(DnaLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
+                                                                                                                                  pathFactory.createSegment(lockToken)));
     }
 
     /**
@@ -340,11 +351,12 @@ class WorkspaceLockManager {
      * @param session the session on behalf of which the lock operation is being performed
      */
     void cleanLocks( JcrSession session ) {
+        ExecutionContext context = session.getExecutionContext();
         Collection<String> lockTokens = session.lockTokens();
         for (String lockToken : lockTokens) {
             DnaLock lock = lockFor(lockToken);
             if (lock != null && lock.isSessionScoped()) {
-                unlock(session, lock);
+                unlock(context, lock);
             }
         }
     }
@@ -360,6 +372,32 @@ class WorkspaceLockManager {
         private final String lockOwner;
         private final boolean deep;
         private final boolean sessionScoped;
+
+        DnaLock( org.jboss.dna.graph.Node lockNode ) {
+            ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+            ValueFactory<UUID> uuidFactory = context.getValueFactories().getUuidFactory();
+            ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
+
+            assert lockNode.getLocation().getPath() != null;
+
+            String lockUuidAsString = lockNode.getLocation().getPath().getLastSegment().getName().getLocalName();
+            Property lockOwnerProperty = lockNode.getProperty(JcrLexicon.LOCK_OWNER);
+            Property nodeUuidProperty = lockNode.getProperty(DnaLexicon.LOCKED_UUID);
+            Property lockIsDeepProperty = lockNode.getProperty(JcrLexicon.LOCK_IS_DEEP);
+            Property isSessionScopedProperty = lockNode.getProperty(DnaLexicon.IS_SESSION_SCOPED);
+
+            assert lockUuidAsString != null;
+            assert lockOwnerProperty != null;
+            assert nodeUuidProperty != null;
+            assert lockIsDeepProperty != null;
+            assert isSessionScopedProperty != null;
+
+            this.lockOwner = stringFactory.create(lockOwnerProperty.getFirstValue());
+            this.lockUuid = UUID.fromString(lockUuidAsString);
+            this.nodeUuid = uuidFactory.create(nodeUuidProperty.getFirstValue());
+            this.deep = booleanFactory.create(lockIsDeepProperty.getFirstValue());
+            this.sessionScoped = booleanFactory.create(isSessionScopedProperty.getFirstValue());
+        }
 
         DnaLock( String lockOwner,
                  UUID lockUuid,

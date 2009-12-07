@@ -33,10 +33,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -61,6 +63,8 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -75,12 +79,16 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observable;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.query.parse.QueryParsers;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
@@ -111,6 +119,8 @@ import org.jboss.dna.jcr.xpath.XPathQueryParser;
 @ThreadSafe
 public class JcrRepository implements Repository {
 
+    private static final Logger log = Logger.getLogger(JcrRepository.class);
+
     /**
      * A flag that controls whether the repository uses a shared repository (or workspace) for the "/jcr:system" content in all of
      * the workspaces. In production, this needs to be "true" for proper JCR functionality, but in some debugging cases it can be
@@ -120,6 +130,13 @@ public class JcrRepository implements Repository {
      * </p>
      */
     static final boolean WORKSPACES_SHARE_SYSTEM_BRANCH = true;
+
+    /**
+     * The user name for anonymous sessions
+     * 
+     * @see Option#ANONYMOUS_USER_ROLES
+     */
+    static final String ANONYMOUS_USER_NAME = "<anonymous>";
 
     /**
      * The available options for the {@code JcrRepository}.
@@ -269,6 +286,9 @@ public class JcrRepository implements Repository {
     private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers = new QueryParsers(new SqlQueryParser(), new XPathQueryParser(),
                                                                new FullTextSearchParser());
+
+    // package-scoped to facilitate testing
+    final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -471,7 +491,7 @@ public class JcrRepository implements Repository {
                 anonymousUserContext = new SecurityContext() {
 
                     public String getUserName() {
-                        return null;
+                        return ANONYMOUS_USER_NAME;
                     }
 
                     public boolean hasRole( String roleName ) {
@@ -788,6 +808,11 @@ public class JcrRepository implements Repository {
         } catch (AccessControlException ace) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
         }
+
+        synchronized (this.activeSessions) {
+            activeSessions.put(session, null);
+        }
+
         return session;
     }
 
@@ -807,6 +832,101 @@ public class JcrRepository implements Repository {
 
         if (newLockManager != null) return newLockManager;
         return lockManager;
+    }
+
+    /**
+     * Marks the given session as inactive (by removing it from the {@link #activeSessions active sessions map}.
+     * 
+     * @param session the session to be marked as inactive
+     */
+    void sessionLoggedOut( JcrSession session ) {
+        synchronized (this.activeSessions) {
+            this.activeSessions.remove(session);
+        }
+    }
+
+    /**
+     * Returns the set of active sessions in this repository
+     * 
+     * @return the set of active sessions in this repository
+     */
+    Set<JcrSession> activeSessions() {
+        Set<JcrSession> activeSessions;
+        synchronized (this.activeSessions) {
+            activeSessions = new HashSet<JcrSession>(this.activeSessions.keySet());
+        }
+        // There can and will be elements in this set that are no longer live but haven't yet been gc'ed.
+        // Filter those out
+        for (Iterator<JcrSession> iter = activeSessions.iterator(); iter.hasNext();) {
+            JcrSession session = iter.next();
+            if (session != null && !session.isLive()) {
+                iter.remove();
+            }
+        }
+
+        return activeSessions;
+    }
+
+    /**
+     * Iterates through the list of session-scoped locks in this repository, deleting any session-scoped locks that were created
+     * by a session that is no longer active.
+     */
+    void cleanUpLocks() {
+        if (log.isTraceEnabled()) {
+            log.trace(JcrI18n.cleaningUpLocks.text());
+        }
+
+        Set<JcrSession> activeSessions = activeSessions();
+        Set<String> activeSessionIds = new HashSet<String>(activeSessions.size());
+
+        for (JcrSession activeSession : activeSessions) {
+            activeSessionIds.add(activeSession.sessionId());
+        }
+
+        Graph systemGraph = createSystemGraph(executionContext);
+        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
+        ValueFactory<Boolean> booleanFactory = executionContext.getValueFactories().getBooleanFactory();
+        ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+
+        DateTimeFactory dateFactory = executionContext.getValueFactories().getDateFactory();
+        DateTime now = dateFactory.create();
+        DateTime newExpirationDate = now.plusMillis(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
+
+        Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
+
+        Subgraph locksGraph = null;
+        try {
+            locksGraph = systemGraph.getSubgraphOfDepth(2).at(locksPath);
+        } catch (PathNotFoundException pnfe) {
+            // It's possible for this to run before the dna:locks child node gets added to the /jcr:system node.
+            return;
+        }
+
+        for (Location lockLocation : locksGraph.getRoot().getChildren()) {
+            Node lockNode = locksGraph.getNode(lockLocation);
+
+            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(DnaLexicon.IS_SESSION_SCOPED).getFirstValue());
+
+            if (!isSessionScoped) continue;
+            String lockingSession = stringFactory.create(lockNode.getProperty(DnaLexicon.LOCKING_SESSION).getFirstValue());
+
+            // Extend locks held by active sessions
+            if (activeSessionIds.contains(lockingSession)) {
+                systemGraph.set(DnaLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
+            } else {
+                DateTime expirationDate = dateFactory.create(lockNode.getProperty(DnaLexicon.EXPIRATION_DATE).getFirstValue());
+                // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
+                if (expirationDate.isBefore(now)) {
+                    String workspaceName = stringFactory.create(lockNode.getProperty(DnaLexicon.WORKSPACE).getFirstValue());
+                    WorkspaceLockManager lockManager = lockManagers.get(workspaceName);
+                    lockManager.unlock(executionContext, lockManager.createLock(lockNode));
+                }
+            }
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace(JcrI18n.cleanedUpLocks.text());
+        }
     }
 
     protected class FederatedRepositoryContext implements RepositoryContext {

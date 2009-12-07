@@ -66,6 +66,9 @@ public final class JcrI18n {
     public static I18n unableToRemapUriUsingPrefixUsedInNamespaceRegistry;
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
+    public static I18n errorCleaningUpLocks;
+    public static I18n cleaningUpLocks;
+    public static I18n cleanedUpLocks;
     public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;
     public static I18n invalidNamePattern;

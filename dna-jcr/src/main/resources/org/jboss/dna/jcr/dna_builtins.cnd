@@ -46,6 +46,8 @@
 [dna:lock] > nt:base
 - dna:lockedUuid (string) protected ignore
 - jcr:lockOwner (string) protected ignore
+- dna:lockingSession (string) protected ignore
+- dna:expirationDate (date) protected ignore
 - dna:sessionScope (boolean) protected ignore
 - jcr:isDeep (boolean) protected ignore
 - dna:isHeldBySession (boolean) protected ignore

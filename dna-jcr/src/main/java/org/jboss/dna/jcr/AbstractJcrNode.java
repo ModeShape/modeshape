@@ -1409,7 +1409,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             }
         }
 
-        session().workspace().lockManager().unlock(session(), lock);
+        session().workspace().lockManager().unlock(session().getExecutionContext(), lock);
         session().removeLockToken(lock.getLockToken());
     }
 

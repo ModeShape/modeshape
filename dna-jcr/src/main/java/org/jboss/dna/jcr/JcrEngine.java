@@ -23,17 +23,23 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -57,14 +63,83 @@ import org.jboss.dna.repository.DnaEngine;
 @ThreadSafe
 public class JcrEngine extends DnaEngine {
 
+    final static int LOCK_SWEEP_INTERVAL_IN_MILLIS = 30000;
+    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = LOCK_SWEEP_INTERVAL_IN_MILLIS * 2;
+
+    private final Logger log = Logger.getLogger(DnaEngine.class);
+
     private final Map<String, JcrRepository> repositories;
     private final Lock repositoriesLock;
+
+    /**
+     * Provides the ability to schedule lock clean-up
+     */
+    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(2);
 
     JcrEngine( ExecutionContext context,
                DnaConfiguration.ConfigurationDefinition configuration ) {
         super(context, configuration);
         this.repositories = new HashMap<String, JcrRepository>();
         this.repositoriesLock = new ReentrantLock();
+    }
+
+    /**
+     * Clean up session-scoped locks created by session that are no longer active by iterating over the {@link JcrRepository
+     * repositories} and calling their {@link JcrRepository#cleanUpLocks() clean-up method}.
+     * <p>
+     * It should not be possible for a session to be terminated without cleaning up its locks, but this method will help clean-up
+     * dangling locks should a session terminate abnormally.
+     * </p>
+     */
+    void cleanUpLocks() {
+        Collection<JcrRepository> repos;
+
+        try {
+            // Make a copy of the repositories to minimize the time that the lock needs to be held
+            repositoriesLock.lock();
+            repos = new ArrayList<JcrRepository>(repositories.values());
+        } finally {
+            repositoriesLock.unlock();
+        }
+
+        for (JcrRepository repository : repos) {
+            try {
+                repository.cleanUpLocks();
+            } catch (Throwable t) {
+                log.error(t, JcrI18n.errorCleaningUpLocks, repository.getRepositorySourceName());
+            }
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        scheduler.shutdown();
+
+        super.shutdown();
+    }
+
+    @Override
+    public boolean awaitTermination( long timeout,
+                                     TimeUnit unit ) throws InterruptedException {
+        if (!scheduler.awaitTermination(timeout, unit)) return false;
+
+        return super.awaitTermination(timeout, unit);
+    }
+
+    @Override
+    public void start() {
+        super.start();
+
+        final JcrEngine engine = this;
+        Runnable cleanUpTask = new Runnable() {
+
+            @Override
+            public void run() {
+                engine.cleanUpLocks();
+            }
+
+        };
+        scheduler.scheduleAtFixedRate(cleanUpTask, 0, LOCK_SWEEP_INTERVAL_IN_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     /**

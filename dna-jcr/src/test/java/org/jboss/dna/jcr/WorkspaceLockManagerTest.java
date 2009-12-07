@@ -151,9 +151,7 @@ public class WorkspaceLockManagerTest {
     @Test
     public void shouldCreateLockRequestWhenUnlockingNode() {
         DnaLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
-        JcrSession session = mock(JcrSession.class);
-        stub(session.getExecutionContext()).toReturn(context);
-        workspaceLockManager.unlockNodeInRepository(session, lock);
+        workspaceLockManager.unlockNodeInRepository(context, lock);
 
         assertNextRequestIsUnlock(validLocation);
     }

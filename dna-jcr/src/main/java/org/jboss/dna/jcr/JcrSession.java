@@ -785,6 +785,7 @@ class JcrSession implements Session {
         isLive = false;
         this.workspace().observationManager().removeAllEventListeners();
         this.workspace().lockManager().cleanLocks(this);
+        this.repository.sessionLoggedOut(this);
         this.executionContext.getSecurityContext().logout();
     }
 

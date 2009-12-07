@@ -26,7 +26,6 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -51,10 +50,12 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.observe.MockObservable;
+import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -192,12 +193,12 @@ public class JcrRepositoryTest {
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
-    
+
     @Test
     public void shouldProvideObserver() {
         assertThat(this.repository.getObserver(), is(notNullValue()));
     }
-    
+
     @Test
     public void shouldProvideRepositoryObservable() {
         assertThat(this.repository.getRepositoryObservable(), is(notNullValue()));
@@ -205,7 +206,8 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldHaveDefaultOptionsWhenNotOverridden() {
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
+                                                     null);
         assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
                    is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
     }
@@ -258,7 +260,7 @@ public class JcrRepositoryTest {
         session = (JcrSession)repository.login();
 
         assertThat(session, is(notNullValue()));
-        assertThat(session.getUserID(), is(nullValue()));
+        assertThat(session.getUserID(), is(JcrRepository.ANONYMOUS_USER_NAME));
 
     }
 
@@ -483,4 +485,76 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("1.0"));
     }
+
+    @Ignore( "GC behavior is non-deterministic from the application's POV - this test _will_ occasionally fail" )
+    @Test
+    public void shouldAllowManySessionLoginsAndLogouts() throws Exception {
+        // Use a different repository that supports anonymous logins to make this test cleaner
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_ADMIN_PERMISSION);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
+                                                     options);
+
+        Session session;
+
+        for (int i = 0; i < 10000; i++) {
+            session = repository.login();
+            session.logout();
+        }
+
+        session = repository.login();
+        session = null;
+
+        // Give the gc a chance to run
+        System.gc();
+        Thread.sleep(100);
+
+        assertThat(repository.activeSessions().size(), is(0));
+    }
+
+    @Ignore( "This test normally sleeps for 30 seconds" )
+    @Test
+    public void shouldCleanUpLocksFromDeadSessions() throws Exception {
+        // Use a different repository that supports anonymous logins to make this test cleaner
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_ADMIN_PERMISSION);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
+                                                     options);
+
+        String lockedNodeName = "lockedNode";
+        JcrSession locker = (JcrSession)repository.login();
+
+        // Create a node to lock
+        javax.jcr.Node lockedNode = locker.getRootNode().addNode(lockedNodeName);
+        lockedNode.addMixin("mix:lockable");
+        locker.save();
+
+        // Create a session-scoped lock (not deep)
+        lockedNode.lock(false, true);
+        assertThat(lockedNode.isLocked(), is(true));
+
+        Session reader = repository.login();
+        javax.jcr.Node readerNode = (javax.jcr.Node)reader.getItem("/" + lockedNodeName);
+        assertThat(readerNode.isLocked(), is(true));
+
+        // No locks should have changed yet.
+        repository.cleanUpLocks();
+        assertThat(lockedNode.isLocked(), is(true));
+        assertThat(readerNode.isLocked(), is(true));
+
+        /*       
+         * Simulate the GC cleaning up the session and it being purged from the activeSessions() map.
+         * This can't really be tested in a consistent way due to a lack of specificity around when
+         * the garbage collector runs. The @Ignored test above does cause a GC sweep on by computer and
+         * confirms that the code works in principle. A different chicken dance may be required to
+         * fully test this on a different computer.
+         */
+        repository.activeSessions.remove(locker);
+        Thread.sleep(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
+
+        // The locker thread should be inactive and the lock cleaned up
+        repository.cleanUpLocks();
+        assertThat(readerNode.isLocked(), is(false));
+    }
+
 }
