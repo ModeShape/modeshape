@@ -80,10 +80,10 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 
-public class JpaRepositoryTckTest {
+public class BasicJpaRepositoryTckTest {
 
     public static Test suite() {
-        TestSuite suite = AbstractRepositoryTckTest.readOnlyRepositorySuite("jpa");
+        TestSuite suite = AbstractRepositoryTckTest.readOnlyRepositorySuite("basic-jpa");
         suite.addTest(new LevelTwoFeatureTests());
         // suite.addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
 

@@ -239,7 +239,8 @@
         <filtering>true</filtering>
         <directory>src/test/resources</directory>
         <includes>
-          <include>tck/jpa/configRepository.xml</include>
+          <include>tck/basic-jpa/configRepository.xml</include>
+          <include>tck/simple-jpa/configRepository.xml</include>
         </includes>
       </testResource>
     </testResources>

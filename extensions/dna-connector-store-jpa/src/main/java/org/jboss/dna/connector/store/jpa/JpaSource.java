@@ -450,6 +450,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      */
     public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        if (predefinedWorkspaceNames != null && predefinedWorkspaceNames.length == 1) {
+            predefinedWorkspaceNames = predefinedWorkspaceNames[0].split("\\s*,\\s*");
+        }
         this.predefinedWorkspaces = predefinedWorkspaceNames != null ? predefinedWorkspaceNames : new String[] {};
     }
 

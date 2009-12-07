@@ -35,16 +35,21 @@
         The 'JCR' repository is a JBoss Cache source with a single default workspace (though others could be created, too).
         -->
         <dna:source jcr:name="Store" dna:classname="org.jboss.dna.connector.store.jpa.JpaSource"
-        	dna:dialect="org.hibernate.dialect.HSQLDialect"
         	dna:model="Simple"
-        	dna:driverClassName="org.hsqldb.jdbcDriver"
-        	dna:username="sa"
-        	dna:password=""
-        	dna:url="jdbc:hsqldb:mem:."
-        	dna:predefinedWorkspaceNames="otherWorkspace"
-        	dna:showSql="false"
-            dna:autoGenerateSchema="create"
-            dna:maximumConnectionsInPool="5"
+        	dna:dialect="${jpaSource.dialect}"
+        	dna:driverClassName="${jpaSource.driverClassName}"
+        	dna:username="${jpaSource.username}"
+        	dna:password="${jpaSource.password}"
+        	dna:url="${jpaSource.url}"
+        	dna:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
+        	dna:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
+        	dna:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
+        	dna:retryLimit="${jpaSource.retryLimit}"
+        	dna:compressData="${jpaSource.compressData}"
+        	dna:predefinedWorkspaceNames="default, otherWorkspace"
+        	dna:showSql="${jpaSource.showSql}"
+            dna:autoGenerateSchema="${jpaSource.autoGenerateSchema}"
+            dna:creatingWorkspacesAllowed="true"
         	dna:defaultWorkspaceName="default"/>    
     </dna:sources>
     <!-- 
