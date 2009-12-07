@@ -133,7 +133,6 @@ public class JcrEngine extends DnaEngine {
         final JcrEngine engine = this;
         Runnable cleanUpTask = new Runnable() {
 
-            @Override
             public void run() {
                 engine.cleanUpLocks();
             }
