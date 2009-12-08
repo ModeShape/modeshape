@@ -129,7 +129,18 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        TestListener listener = new TestListener(eventsExpected, eventTypes);
+        return addListener(eventsExpected, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+    }
+
+    TestListener addListener( int eventsExpected,
+                              int numIterators,
+                              int eventTypes,
+                              String absPath,
+                              boolean isDeep,
+                              String[] uuids,
+                              String[] nodeTypeNames,
+                              boolean noLocal ) throws Exception {
+        TestListener listener = new TestListener(eventsExpected, numIterators, eventTypes);
         this.session.getWorkspace().getObservationManager().addEventListener(listener,
                                                                              eventTypes,
                                                                              absPath,
@@ -913,7 +924,7 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         // register listeners
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
+        TestListener removeNodeListener = addListener(2, 2, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String oldPath = n2.getPath();
@@ -1645,13 +1656,12 @@ public final class JcrObservationManagerTest extends TestSuite {
         private final CountDownLatch latch;
 
         public TestListener( int expectedEvents,
+                             int numIterators,
                              int eventTypes ) {
             this.eventTypes = eventTypes;
             this.expectedEvents = expectedEvents;
             this.events = new ArrayList<Event>();
-
-            // if no events are expected set it to 1 and let the timeout stop the test
-            this.latch = new CountDownLatch((this.expectedEvents == 0) ? 1 : this.expectedEvents);
+            this.latch = new CountDownLatch(numIterators);
         }
 
         public int getActualEventCount() {
@@ -1676,21 +1686,30 @@ public final class JcrObservationManagerTest extends TestSuite {
          * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
          */
         public void onEvent( EventIterator itr ) {
-            long position = itr.getPosition();
+            // this is called each time a "transaction" is committed. Most times this means after a session.save. But there are
+            // other times, like a workspace.move and a node.lock
+            try {
+                long position = itr.getPosition();
 
-            // iterator position must be set initially zero
-            if (position == 0) {
-                while (itr.hasNext()) {
-                    try {
+                // iterator position must be set initially zero
+                if (position == 0) {
+                    while (itr.hasNext()) {
                         Event event = itr.nextEvent();
+
                         // check iterator position
                         if (++position != itr.getPosition()) {
                             this.errorMessage = "EventIterator position was " + itr.getPosition() + " and should be " + position;
                             break;
                         }
 
+                        // add event to collection and increment total
                         this.events.add(event);
                         ++this.eventsProcessed;
+
+                        // check to make sure we haven't received too many events
+                        if (this.eventsProcessed > this.expectedEvents) {
+                            break;
+                        }
 
                         // check event type
                         int eventType = event.getType();
@@ -1699,18 +1718,18 @@ public final class JcrObservationManagerTest extends TestSuite {
                             this.errorMessage = "Received a wrong event type of " + eventType;
                             break;
                         }
-                    } finally {
-                        // This has to be done LAST, otherwise waitForEvents() will return before the above stuff is done
-                        this.latch.countDown();
                     }
+                } else {
+                    this.errorMessage = "EventIterator position was not initially set to zero";
                 }
-            } else {
-                this.errorMessage = "EventIterator position was not initially set to zero";
+            } finally {
+                // This has to be done LAST, otherwise waitForEvents() will return before the above stuff is done
+                this.latch.countDown();
             }
         }
 
         public void waitForEvents() throws Exception {
-            this.latch.await(5, TimeUnit.SECONDS);
+            this.latch.await(2000, TimeUnit.MILLISECONDS);
         }
     }
 
