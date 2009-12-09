@@ -657,11 +657,15 @@ public abstract class RequestBuilder {
      * 
      * @param workspaceName the name of the workspace containing the node
      * @param fullTextSearchExpression the full-text search expression
+     * @param maxResults the maximum number of results that are to be returned; always positive
+     * @param offset the number of initial results to skip, or 0 if the first results are to be returned
      * @return the request; never null
      * @throws IllegalArgumentException if any of the parameters are null or if the expression is empty
      */
     public FullTextSearchRequest search( String workspaceName,
-                                         String fullTextSearchExpression ) {
-        return process(new FullTextSearchRequest(fullTextSearchExpression, workspaceName));
+                                         String fullTextSearchExpression,
+                                         int maxResults,
+                                         int offset ) {
+        return process(new FullTextSearchRequest(fullTextSearchExpression, workspaceName, maxResults, offset));
     }
 }

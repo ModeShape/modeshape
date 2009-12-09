@@ -372,4 +372,20 @@ public class MoveBranchRequest extends ChangeRequest {
         return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into "
                + (into() == null ? "before " + before() : "into " + into());
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public MoveBranchRequest clone() {
+        MoveBranchRequest request = new MoveBranchRequest(actualOldLocation != null ? actualOldLocation : from, into, before,
+                                                          workspaceName, desiredNameForNode, conflictBehavior);
+        request.setActualLocations(actualOldLocation, actualNewLocation);
+        return request;
+    }
 }

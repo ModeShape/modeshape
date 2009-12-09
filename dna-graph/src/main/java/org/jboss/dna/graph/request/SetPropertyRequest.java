@@ -233,4 +233,20 @@ public class SetPropertyRequest extends ChangeRequest {
         return "set property " + property().getName() + " on " + on() + " in the \"" + workspaceName + "\" workspace to "
                + (values == null ? "null" : Arrays.asList(values).toString());
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public SetPropertyRequest clone() {
+        SetPropertyRequest request = new SetPropertyRequest(actualLocation != null ? actualLocation : on, workspaceName, property);
+        request.setActualLocationOfNode(actualLocation);
+        request.setNewProperty(actualCreation);
+        return request;
+    }
 }

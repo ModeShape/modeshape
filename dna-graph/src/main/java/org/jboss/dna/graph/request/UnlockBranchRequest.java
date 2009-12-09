@@ -192,4 +192,18 @@ public class UnlockBranchRequest extends ChangeRequest {
         return "unlock branch at " + at() + " in the \"" + workspaceName + "\" workspace";
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public UnlockBranchRequest clone() {
+        UnlockBranchRequest request = new UnlockBranchRequest(actualLocation != null ? actualLocation : at, workspaceName);
+        request.setActualLocation(actualLocation);
+        return request;
+    }
 }

@@ -24,15 +24,12 @@
 package org.jboss.dna.graph.query;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
-import org.jboss.dna.graph.query.model.FullTextSearch;
 import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
@@ -118,7 +115,7 @@ public class QueryEngine implements Queryable {
             }
         }
         // There were problems somewhere ...
-        return new org.jboss.dna.graph.query.process.QueryResults(context, query, resultColumns, stats);
+        return new org.jboss.dna.graph.query.process.QueryResults(resultColumns, stats, context.getProblems());
     }
 
     protected QueryResultColumns determineQueryResultColumns( PlanNode optimizedPlan ) {
@@ -127,20 +124,15 @@ public class QueryEngine implements Queryable {
         if (project != null) {
             List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
             // Determine whether to include the full-text search scores in the results ...
-            final AtomicBoolean includeFullTextSearchScores = new AtomicBoolean(false);
+            boolean includeFullTextSearchScores = false;
             for (PlanNode select : optimizedPlan.findAllAtOrBelow(Type.SELECT)) {
                 Constraint constraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-                if (constraint != null) {
-                    Visitors.visitAll(constraint, new Visitors.AbstractVisitor() {
-                        @Override
-                        public void visit( FullTextSearch obj ) {
-                            includeFullTextSearchScores.set(true);
-                        }
-                    });
+                if (QueryResultColumns.includeFullTextScores(constraint)) {
+                    includeFullTextSearchScores = true;
+                    break;
                 }
-                if (includeFullTextSearchScores.get()) break;
             }
-            return new QueryResultColumns(columns, includeFullTextSearchScores.get());
+            return new QueryResultColumns(columns, includeFullTextSearchScores);
         }
         return QueryResultColumns.empty();
     }

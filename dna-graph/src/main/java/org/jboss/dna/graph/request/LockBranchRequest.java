@@ -229,4 +229,19 @@ public class LockBranchRequest extends ChangeRequest {
                + " in the \"" + workspaceName + "\" workspace";
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public LockBranchRequest clone() {
+        LockBranchRequest request = new LockBranchRequest(actualLocation != null ? actualLocation : at, workspaceName, isDeep,
+                                                          lockTimeoutInMillis);
+        request.setActualLocation(actualLocation);
+        return request;
+    }
 }

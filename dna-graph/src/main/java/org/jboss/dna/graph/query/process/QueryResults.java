@@ -27,12 +27,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.collection.ImmutableProblems;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.query.QueryContext;
-import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
 
 /**
@@ -40,10 +41,11 @@ import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
  */
 @Immutable
 public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
+    private static final Problems NO_PROBLEMS = new ImmutableProblems(new SimpleProblems());
+
     private static final long serialVersionUID = 1L;
 
-    private final QueryContext context;
-    private final QueryCommand command;
+    private final Problems problems;
     private final Columns columns;
     private final List<Object[]> tuples;
     private final Statistics statistics;
@@ -51,50 +53,58 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     /**
      * Create a results object for the supplied context, command, and result columns and with the supplied tuples.
      * 
-     * @param context the context in which the query was executed
-     * @param command the query command
      * @param columns the definition of the query result columns
      * @param statistics the statistics for this query; may not be null
      * @param tuples the tuples
+     * @param problems the problems; may be null if there are no problems
      */
-    public QueryResults( QueryContext context,
-                         QueryCommand command,
-                         Columns columns,
+    public QueryResults( Columns columns,
                          Statistics statistics,
-                         List<Object[]> tuples ) {
-        assert context != null;
-        assert command != null;
+                         List<Object[]> tuples,
+                         Problems problems ) {
         assert columns != null;
         assert statistics != null;
-        this.context = context;
-        this.command = command;
+        this.problems = problems != null ? problems : NO_PROBLEMS;
         this.columns = columns;
         this.tuples = tuples;
         this.statistics = statistics;
     }
 
     /**
-     * Create an empty {@link QueryResults} object for the supplied context, command, and result columns.
+     * Create a results object for the supplied context, command, and result columns and with the supplied tuples.
      * 
-     * @param context the context in which the query was executed
-     * @param command the query command
      * @param columns the definition of the query result columns
      * @param statistics the statistics for this query; may not be null
+     * @param tuples the tuples
      */
-    public QueryResults( QueryContext context,
-                         QueryCommand command,
-                         Columns columns,
-                         Statistics statistics ) {
-        this(context, command, columns, statistics, Collections.<Object[]>emptyList());
+    public QueryResults( Columns columns,
+                         Statistics statistics,
+                         List<Object[]> tuples ) {
+        this(columns, statistics, tuples, NO_PROBLEMS);
     }
 
     /**
-     * {@inheritDoc}
+     * Create an empty {@link QueryResults} object for the supplied context, command, and result columns.
      * 
-     * @see org.jboss.dna.graph.query.QueryResults#getCommand()
+     * @param columns the definition of the query result columns
+     * @param statistics the statistics for this query; may not be null
+     * @param problems the problems; may be null if there are no problems
      */
-    public QueryCommand getCommand() {
-        return command;
+    public QueryResults( Columns columns,
+                         Statistics statistics,
+                         Problems problems ) {
+        this(columns, statistics, Collections.<Object[]>emptyList(), problems);
+    }
+
+    /**
+     * Create an empty {@link QueryResults} object for the supplied context, command, and result columns.
+     * 
+     * @param columns the definition of the query result columns
+     * @param statistics the statistics for this query; may not be null
+     */
+    public QueryResults( Columns columns,
+                         Statistics statistics ) {
+        this(columns, statistics, Collections.<Object[]>emptyList(), null);
     }
 
     /**
@@ -139,7 +149,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      * @see org.jboss.dna.graph.query.QueryResults#getProblems()
      */
     public Problems getProblems() {
-        return context.getProblems();
+        return problems;
     }
 
     /**
@@ -176,54 +186,66 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      */
     @Override
     public String toString() {
-        return toString(Integer.MAX_VALUE);
+        return toString(null, Integer.MAX_VALUE);
     }
 
     /**
      * Get a string representation of this result object, with a maximum number of tuples to include.
      * 
+     * @param typeSystem the type system that can be used to convert the values to a string; may be null if
+     *        {@link Object#toString()} should be used
      * @param maxTuples the maximum number of tuples to print, or {@link Integer#MAX_VALUE} if all the tuples are to be printed
      * @return the string representation; never null
      */
-    public String toString( int maxTuples ) {
+    public String toString( TypeSystem typeSystem,
+                            int maxTuples ) {
         StringBuilder sb = new StringBuilder();
-        toString(sb, maxTuples);
+        toString(typeSystem, sb, maxTuples);
         return sb.toString();
     }
 
     /**
      * Get a string representation of this result object.
      * 
+     * @param typeSystem the type system that can be used to convert the values to a string; may be null if
+     *        {@link Object#toString()} should be used
      * @param sb the string builder to which the results should be written; may not be null
      */
-    public void toString( StringBuilder sb ) {
-        toString(sb, Integer.MAX_VALUE);
+    public void toString( TypeSystem typeSystem,
+                          StringBuilder sb ) {
+        toString(typeSystem, sb, Integer.MAX_VALUE);
     }
 
     /**
      * Get a string representation of this result object, with a maximum number of tuples to include.
      * 
+     * @param typeSystem the type system that can be used to convert the values to a string; may be null if
+     *        {@link Object#toString()} should be used
      * @param sb the string builder to which the results should be written; may not be null
      * @param maxTuples the maximum number of tuples to print, or {@link Integer#MAX_VALUE} if all the tuples are to be printed
      */
-    public void toString( StringBuilder sb,
+    public void toString( TypeSystem typeSystem,
+                          StringBuilder sb,
                           int maxTuples ) {
-        int[] columnWidths = determineColumnWidths(Integer.MAX_VALUE, true);
+        int[] columnWidths = determineColumnWidths(typeSystem, Integer.MAX_VALUE, true);
         printDelimiterLine(sb, columnWidths, true);
         printHeader(sb, columnWidths);
         printDelimiterLine(sb, columnWidths, true);
-        printLines(sb, columnWidths, maxTuples);
+        printLines(typeSystem, sb, columnWidths, maxTuples);
         printDelimiterLine(sb, columnWidths, false);
     }
 
     /**
      * Determine the width of each column.
      * 
+     * @param typeSystem the type system that can be used to convert the values to a string; may be null if
+     *        {@link Object#toString()} should be used
      * @param maxWidth the maximum width; must be positive
      * @param useData true if the data should be used to compute the length, or false if just the column names should be used
      * @return the array of widths for each column, excluding any decorating characters; never null
      */
-    protected int[] determineColumnWidths( int maxWidth,
+    protected int[] determineColumnWidths( TypeSystem typeSystem,
+                                           int maxWidth,
                                            boolean useData ) {
         assert maxWidth > 0;
         int tupleLength = columns.getTupleSize();
@@ -245,7 +267,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         if (useData) {
             for (Object[] tuple : getTuples()) {
                 for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-                    String valueStr = stringOf(tuple[i]);
+                    String valueStr = stringOf(typeSystem, tuple[i]);
                     if (valueStr == null) continue;
                     columnWidths[j] = Math.max(Math.min(maxWidth, valueStr.length()), columnWidths[j]);
                 }
@@ -254,9 +276,11 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         return columnWidths;
     }
 
-    protected String stringOf( Object value ) {
+    protected String stringOf( TypeSystem typeSystem,
+                               Object value ) {
         if (value == null) return null;
-        TypeFactory<?> typeFactory = context.getTypeSystem().getTypeFactory(value);
+        if (typeSystem == null) return value.toString();
+        TypeFactory<?> typeFactory = typeSystem.getTypeFactory(value);
         return typeFactory.asReadableString(value);
     }
 
@@ -276,7 +300,8 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         sb.append('\n');
     }
 
-    protected void printLines( StringBuilder sb,
+    protected void printLines( TypeSystem typeSystem,
+                               StringBuilder sb,
                                int[] columnWidths,
                                int maxRowsToPrint ) {
         int rowNumber = 1;
@@ -285,13 +310,13 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         if (maxRowsToPrint > tuples.size()) {
             // Print all tuples ...
             for (Object[] tuple : getTuples()) {
-                printTuple(sb, columnWidths, rowNumber, tupleLength, tuple);
+                printTuple(typeSystem, sb, columnWidths, rowNumber, tupleLength, tuple);
                 ++rowNumber;
             }
         } else {
             // Print max number of rows ...
             for (Object[] tuple : getTuples()) {
-                printTuple(sb, columnWidths, rowNumber, tupleLength, tuple);
+                printTuple(typeSystem, sb, columnWidths, rowNumber, tupleLength, tuple);
                 if (rowNumber >= maxRowsToPrint) break;
                 ++rowNumber;
             }
@@ -299,14 +324,8 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
 
     }
 
-    /**
-     * @param sb
-     * @param columnWidths
-     * @param rowNumber
-     * @param tupleLength
-     * @param tuple
-     */
-    private final void printTuple( StringBuilder sb,
+    private final void printTuple( TypeSystem typeSystem,
+                                   StringBuilder sb,
                                    int[] columnWidths,
                                    int rowNumber,
                                    int tupleLength,
@@ -315,7 +334,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
         sb.append("| ").append(StringUtil.justifyLeft(Integer.toString(rowNumber), columnWidths[0], ' ')).append(' ');
         // Print the remaining columns ...
         for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-            String valueStr = stringOf(tuple[i]);
+            String valueStr = stringOf(typeSystem, tuple[i]);
             valueStr = StringUtil.justifyLeft(valueStr, columnWidths[j], ' ');
             sb.append('|').append(' ').append(valueStr).append(' ');
         }

@@ -32,20 +32,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.Column;
+import org.jboss.dna.graph.query.model.Constraint;
+import org.jboss.dna.graph.query.model.FullTextSearch;
+import org.jboss.dna.graph.query.model.Visitors;
 
 /**
  * Defines the columns associated with the results of a query. This definition allows the values to be accessed
  */
 @Immutable
-public final class QueryResultColumns implements Columns {
+public class QueryResultColumns implements Columns {
     private static final long serialVersionUID = 1L;
 
-    private static final QueryResultColumns EMPTY = new QueryResultColumns(Collections.<Column>emptyList(), false);
+    protected static final List<Column> NO_COLUMNS = Collections.<Column>emptyList();
+    protected static final QueryResultColumns EMPTY = new QueryResultColumns(false, null);
+
+    protected static final String DEFAULT_SELECTOR_NAME = "Results";
 
     /**
      * Get an empty results column definition.
@@ -78,12 +86,24 @@ public final class QueryResultColumns implements Columns {
      */
     public QueryResultColumns( List<Column> columns,
                                boolean includeFullTextSearchScores ) {
-        assert columns != null;
-        this.columns = Collections.unmodifiableList(columns);
+        this(includeFullTextSearchScores, columns);
+        CheckArg.isNotEmpty(columns, "columns");
+    }
+
+    /**
+     * Create a new definition for the query results given the supplied columns.
+     * 
+     * @param includeFullTextSearchScores true if room should be made in the tuples for the full-text search scores for each
+     *        {@link Location}, or false otherwise
+     * @param columns the columns that define the results; should never be modified directly
+     */
+    protected QueryResultColumns( boolean includeFullTextSearchScores,
+                                  List<Column> columns ) {
+        this.columns = columns != null ? Collections.<Column>unmodifiableList(columns) : NO_COLUMNS;
         this.columnsByName = new HashMap<String, Column>();
         this.columnIndexByColumnName = new HashMap<String, Integer>();
         Set<String> selectors = new HashSet<String>();
-        final int columnCount = columns.size();
+        final int columnCount = this.columns.size();
         Integer selectorIndex = new Integer(columnCount - 1);
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
@@ -117,6 +137,11 @@ public final class QueryResultColumns implements Columns {
             }
             byPropertyName.put(column.getPropertyName(), new Integer(i));
         }
+        if (columns != null && selectorNames.isEmpty()) {
+            String selectorName = DEFAULT_SELECTOR_NAME;
+            selectorNames.add(selectorName);
+            locationIndexBySelectorName.put(selectorName, 0);
+        }
         this.selectorNames = Collections.unmodifiableList(selectorNames);
         this.columnNames = Collections.unmodifiableList(names);
         if (includeFullTextSearchScores) {
@@ -130,6 +155,26 @@ public final class QueryResultColumns implements Columns {
             this.fullTextSearchScoreIndexBySelectorName = null;
             this.tupleSize = columnNames.size() + selectorNames.size();
         }
+    }
+
+    public static boolean includeFullTextScores( Iterable<Constraint> constraints ) {
+        for (Constraint constraint : constraints) {
+            if (includeFullTextScores(constraint)) return true;
+        }
+        return false;
+    }
+
+    public static boolean includeFullTextScores( Constraint constraint ) {
+        final AtomicBoolean includeFullTextScores = new AtomicBoolean(false);
+        if (constraint != null) {
+            Visitors.visitAll(constraint, new Visitors.AbstractVisitor() {
+                @Override
+                public void visit( FullTextSearch obj ) {
+                    includeFullTextScores.set(true);
+                }
+            });
+        }
+        return includeFullTextScores.get();
     }
 
     /**
@@ -186,6 +231,11 @@ public final class QueryResultColumns implements Columns {
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
             byPropertyName.put(column.getPropertyName(), columnIndex);
+        }
+        if (selectorNames.isEmpty()) {
+            String selectorName = DEFAULT_SELECTOR_NAME;
+            selectorNames.add(selectorName);
+            locationIndexBySelectorName.put(selectorName, 0);
         }
         this.columnNames = Collections.unmodifiableList(names);
         if (wrappedAround.fullTextSearchScoreIndexBySelectorName != null) {
@@ -289,6 +339,7 @@ public final class QueryResultColumns implements Columns {
      * @see org.jboss.dna.graph.query.QueryResults.Columns#getLocationIndexForColumn(int)
      */
     public int getLocationIndexForColumn( int columnIndex ) {
+        if (locationIndexByColumnIndex.isEmpty()) return 0;
         Integer result = locationIndexByColumnIndex.get(new Integer(columnIndex));
         if (result == null) {
             throw new IndexOutOfBoundsException(GraphI18n.columnDoesNotExistInQuery.text(columnIndex));
@@ -302,6 +353,7 @@ public final class QueryResultColumns implements Columns {
      * @see org.jboss.dna.graph.query.QueryResults.Columns#getLocationIndexForColumn(java.lang.String)
      */
     public int getLocationIndexForColumn( String columnName ) {
+        if (locationIndexByColumnName.isEmpty()) return 0;
         Integer result = locationIndexByColumnName.get(columnName);
         if (result == null) {
             throw new NoSuchElementException(GraphI18n.columnDoesNotExistInQuery.text(columnName));

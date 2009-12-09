@@ -60,6 +60,8 @@ import org.jboss.dna.graph.query.validate.Schemata;
 @Immutable
 class JcrQueryManager implements QueryManager {
 
+    public static final int MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES = Integer.MAX_VALUE;
+
     private final JcrSession session;
 
     JcrQueryManager( JcrSession session ) {
@@ -317,7 +319,7 @@ class JcrQueryManager implements QueryManager {
          */
         public QueryResult execute() {
             // Submit immediately to the workspace graph ...
-            QueryResults result = session.workspace().graph().search(statement);
+            QueryResults result = session.workspace().graph().search(statement, MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES, 0);
             return new JcrQueryResult(session, result);
         }
     }

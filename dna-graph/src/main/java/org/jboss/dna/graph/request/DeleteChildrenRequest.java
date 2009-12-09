@@ -256,4 +256,17 @@ public class DeleteChildrenRequest extends ChangeRequest {
     public String toString() {
         return "delete nodes below " + at() + " in the \"" + workspaceName + "\" workspace";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public DeleteChildrenRequest clone() {
+        return new DeleteChildrenRequest(at, workspaceName);
+    }
 }

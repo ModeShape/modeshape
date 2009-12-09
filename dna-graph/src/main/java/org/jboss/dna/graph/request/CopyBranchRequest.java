@@ -343,4 +343,21 @@ public class CopyBranchRequest extends ChangeRequest {
         return "copy branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " in the \""
                + intoWorkspace + "\" workspace";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public CopyBranchRequest clone() {
+        CopyBranchRequest result = new CopyBranchRequest(actualFromLocation != null ? actualFromLocation : from, fromWorkspace,
+                                                         actualIntoLocation != null ? actualIntoLocation : into, intoWorkspace,
+                                                         desiredNameForCopy, nodeConflictBehavior);
+        result.setActualLocations(actualFromLocation, actualIntoLocation);
+        return result;
+    }
 }

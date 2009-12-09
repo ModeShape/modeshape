@@ -328,4 +328,22 @@ public class CloneBranchRequest extends ChangeRequest {
         return "clone branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " in the \""
                + intoWorkspace + "\" workspace as child " + desiredSegment();
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public CloneBranchRequest clone() {
+        CloneBranchRequest result = new CloneBranchRequest(actualFromLocation != null ? actualFromLocation : from, fromWorkspace,
+                                                           actualIntoLocation != null ? actualIntoLocation : into, intoWorkspace,
+                                                           desiredName, desiredSegment, removeExisting);
+        result.setRemovedNodes(removedExistingNodes);
+        result.setActualLocations(actualFromLocation, actualIntoLocation);
+        return result;
+    }
 }

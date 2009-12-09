@@ -23,169 +23,165 @@
  */
 package org.jboss.dna.graph.search;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.query.QueryContext;
-import org.jboss.dna.graph.query.QueryResults;
-import org.jboss.dna.graph.query.model.QueryCommand;
-import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
-import org.jboss.dna.graph.search.SearchProvider.Session;
 
 /**
  * A component that acts as a search engine for the content within a single {@link RepositorySource}. This engine manages a set of
  * indexes and provides search functionality for each of the workspaces within the source, and provides various methods to
  * (re)index the content contained with source's workspaces and keep the indexes up-to-date via changes.
+ * 
+ * @param <WorkspaceType> the workspace type
+ * @param <ProcessorType> the processor type
  */
 @ThreadSafe
-public class SearchEngine {
+public abstract class SearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor<WorkspaceType>> {
 
-    /**
-     * The default maximum number of changes that can be made to an index before the indexes are automatically optimized is * * *
-     * * {@value}
-     */
-    public static final int DEFAULT_MAX_CHANGES_BEFORE_AUTOMATIC_OPTIMIZATION = 0;
+    public static final boolean DEFAULT_VERIFY_WORKSPACE_IN_SOURCE = true;
 
-    protected final ExecutionContext context;
-    private final String sourceName;
+    private final boolean verifyWorkspaceInSource;
     private final RepositoryConnectionFactory connectionFactory;
-    protected final SearchProvider indexLayout;
-    private final int maxChangesBeforeAutomaticOptimization;
-    @GuardedBy( "workspacesLock" )
-    private final Map<String, Workspace> workspacesByName = new HashMap<String, Workspace>();
-    private final ReadWriteLock workspacesLock = new ReentrantReadWriteLock();
+    private final String sourceName;
+    private volatile Workspaces<WorkspaceType> workspaces;
 
     /**
-     * Create a search engine instance given the supplied {@link ExecutionContext execution context}, name of the
-     * {@link RepositorySource}, the {@link RepositoryConnectionFactory factory for RepositorySource connections}, and the
-     * {@link SearchProvider search provider}.
+     * Create a new provider instance that can be used to manage the indexes for the workspaces in a single source.
      * 
-     * @param context the execution context for indexing and optimization operations
-     * @param sourceName the name of the {@link RepositorySource}
-     * @param connectionFactory the connection factory
-     * @param indexLayout the specification of the Lucene index layout
-     * @param maxChangesBeforeAutomaticOptimization the number of changes that can be made to the index before the indexes are
-     *        automatically optimized; may be 0 or a negative number if no automatic optimization should be done
-     * @throws IllegalArgumentException if any of the parameters (other than indexing strategy) are null
+     * @param sourceName the name of the source that can be searched; never null
+     * @param connectionFactory the connection factory; may be null if the engine can operate without connecting to the source
      */
-    public SearchEngine( ExecutionContext context,
-                         String sourceName,
-                         RepositoryConnectionFactory connectionFactory,
-                         SearchProvider indexLayout,
-                         int maxChangesBeforeAutomaticOptimization ) {
-        CheckArg.isNotNull(context, "context");
+    protected SearchEngine( String sourceName,
+                            RepositoryConnectionFactory connectionFactory ) {
+        this(sourceName, connectionFactory, DEFAULT_VERIFY_WORKSPACE_IN_SOURCE);
+    }
+
+    /**
+     * Create a new provider instance that can be used to manage the indexes for the workspaces in a single source.
+     * 
+     * @param sourceName the name of the source that can be searched; never null
+     * @param connectionFactory the connection factory; may be null if the engine can operate without connecting to the source
+     * @param verifyWorkspaceInSource true if the workspaces are to be verified by checking the original source
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    protected SearchEngine( String sourceName,
+                            RepositoryConnectionFactory connectionFactory,
+                            boolean verifyWorkspaceInSource ) {
         CheckArg.isNotNull(sourceName, "sourceName");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         this.sourceName = sourceName;
         this.connectionFactory = connectionFactory;
-        this.indexLayout = indexLayout;
-        this.context = context;
-        this.maxChangesBeforeAutomaticOptimization = maxChangesBeforeAutomaticOptimization < 0 ? 0 : maxChangesBeforeAutomaticOptimization;
+        this.verifyWorkspaceInSource = verifyWorkspaceInSource;
+        this.workspaces = new SearchWorkspaces(connectionFactory);
     }
 
     /**
-     * Create a search engine instance given the supplied {@link ExecutionContext execution context}, name of the
-     * {@link RepositorySource}, the {@link RepositoryConnectionFactory factory for RepositorySource connections}, and the
-     * {@link SearchProvider search provider} that defines where each workspace's indexes should be placed.
+     * Get the name of the source that can be searched with an engine that uses this provider.
      * 
-     * @param context the execution context for indexing and optimization operations
-     * @param sourceName the name of the {@link RepositorySource}
-     * @param connectionFactory the connection factory
-     * @param indexLayout the specification of the Lucene index layout
-     * @throws IllegalArgumentException if any of the parameters (other than indexing strategy) are null
-     */
-    public SearchEngine( ExecutionContext context,
-                         String sourceName,
-                         RepositoryConnectionFactory connectionFactory,
-                         SearchProvider indexLayout ) {
-        this(context, sourceName, connectionFactory, indexLayout, DEFAULT_MAX_CHANGES_BEFORE_AUTOMATIC_OPTIMIZATION);
-    }
-
-    /**
-     * Get the name of the RepositorySource that this engine is to use.
-     * 
-     * @return the source name; never null
+     * @return the name of the source that is to be searchable; never null
      */
     public String getSourceName() {
         return sourceName;
     }
 
     /**
-     * Get the context in which all indexing operations execute.
+     * Determine whether the workspaces should be verified with the original source before creating indexes for them.
      * 
-     * @return the execution context; never null
+     * @return true if verification should be performed, or false otherwise
      */
-    public ExecutionContext getContext() {
-        return context;
+    public boolean isVerifyWorkspaceInSource() {
+        return verifyWorkspaceInSource;
     }
 
     /**
-     * @return maxChangesBeforeAutomaticOptimization
-     */
-    public int getMaxChangesBeforeAutomaticOptimization() {
-        return maxChangesBeforeAutomaticOptimization;
-    }
-
-    /**
-     * Utility to create a Graph for the source.
+     * Obtain a graph to the source for which this engine exists.
      * 
-     * @return the graph instance; never null
+     * @param context the context in which the graph operations should be performed; never null
+     * @return the graph; never null
+     * @throws RepositorySourceException if a connection to the source cannot be established
      */
-    final Graph graph() {
+    protected Graph graph( ExecutionContext context ) {
+        assert context != null;
         return Graph.create(sourceName, connectionFactory, context);
     }
 
     /**
-     * Utility to obtain the root path.
+     * Create the index(es) required for the named workspace.
      * 
-     * @return the root path; never null
+     * @param context the context in which the operation is to be performed; may not be null
+     * @param workspaceName the name of the workspace; may not be null
+     * @return the workspace; never null
+     * @throws SearchEngineException if there is a problem creating the workspace.
      */
-    final Path rootPath() {
-        return context.getValueFactories().getPathFactory().createRootPath();
+    protected abstract WorkspaceType createWorkspace( ExecutionContext context,
+                                                      String workspaceName ) throws SearchEngineException;
+
+    /**
+     * Create the {@link SearchEngineProcessor} implementation that can be used to operate against the
+     * {@link SearchEngineWorkspace} instances.
+     * <p>
+     * Note that the resulting processor must be {@link SearchEngineProcessor#close() closed} by the caller when completed.
+     * </p>
+     * 
+     * @param context the context in which the processor is to be used; never null
+     * @param workspaces the set of existing search workspaces; never null
+     * @param observer the observer of any events created by the processor; may be null
+     * @param readOnly true if the processor will only be reading or searching, or false if the processor will be used to update
+     *        the workspaces
+     * @return the processor; may not be null
+     */
+    protected abstract ProcessorType createProcessor( ExecutionContext context,
+                                                      Workspaces<WorkspaceType> workspaces,
+                                                      Observer observer,
+                                                      boolean readOnly );
+
+    /**
+     * Create the {@link SearchEngineProcessor} implementation that can be used to operate against the
+     * {@link SearchEngineWorkspace} instances.
+     * <p>
+     * Note that the resulting processor must be {@link SearchEngineProcessor#close() closed} by the caller when completed.
+     * </p>
+     * 
+     * @param context the context in which the processor is to be used; never null
+     * @param observer the observer of any events created by the processor; may be null
+     * @param readOnly true if the processor will only be reading or searching, or false if the processor will be used to update
+     *        the workspaces
+     * @return the processor; may not be null
+     */
+    public ProcessorType createProcessor( ExecutionContext context,
+                                          Observer observer,
+                                          boolean readOnly ) {
+        return createProcessor(context, workspaces, observer, readOnly);
     }
 
     /**
-     * Utility to obtain a readable string representation of the supplied path.
-     * 
-     * @param path the path
-     * @return the readable string representation; may be null if path is null
-     */
-    final String readable( Path path ) {
-        return context.getValueFactories().getStringFactory().create(path);
-    }
-
-    /**
-     * Index all of the content at or below the supplied path in the named workspace within the {@link #getSourceName() source}.
-     * If the starting point is the root node, then this method will drop the existing index(es) and rebuild from the content in
-     * the workspace and source.
+     * Utility method to index all of the content at or below the supplied path in the named workspace within the
+     * {@link #getSourceName() source}. If the starting point is the root node, then this method will drop the existing index(es)
+     * and rebuild from the content in the workspace and source.
      * <p>
      * This method operates synchronously and returns when the requested indexing is completed.
      * </p>
      * 
+     * @param context the context in which the operation is to be performed; may not be null
      * @param workspaceName the name of the workspace
      * @param startingPoint the location that represents the content to be indexed; must have a path
      * @param depthPerRead the depth of each subgraph read operation
@@ -194,20 +190,19 @@ public class SearchEngine {
      * @throws SearchEngineException if there is a problem updating the indexes
      * @throws InvalidWorkspaceException if the workspace does not exist
      */
-    public void index( String workspaceName,
+    public void index( ExecutionContext context,
+                       String workspaceName,
                        Location startingPoint,
                        int depthPerRead ) throws RepositorySourceException, SearchEngineException {
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(startingPoint, "startingPoint");
         assert startingPoint.hasPath();
-
-        Workspace workspace = getWorkspace(workspaceName);
-        if (startingPoint.getPath().isRoot()) {
-            // More efficient to just start over with a new index ...
-            workspace.execute(true, addContent(startingPoint, depthPerRead));
-        } else {
-            // Have to first remove the content below the starting point, then add it again ...
-            workspace.execute(false, removeContent(startingPoint), addContent(startingPoint, depthPerRead));
+        workspaces.getWorkspace(context, workspaceName, true);
+        ProcessorType processor = createProcessor(context, workspaces, null, false);
+        try {
+            processor.crawl(workspaceName, startingPoint, depthPerRead);
+        } finally {
+            processor.close();
         }
     }
 
@@ -219,6 +214,7 @@ public class SearchEngine {
      * This method operates synchronously and returns when the requested indexing is completed.
      * </p>
      * 
+     * @param context the context in which the operation is to be performed; may not be null
      * @param workspaceName the name of the workspace
      * @param startingPoint the path that represents the content to be indexed
      * @param depthPerRead the depth of each subgraph read operation
@@ -227,18 +223,20 @@ public class SearchEngine {
      * @throws SearchEngineException if there is a problem updating the indexes
      * @throws InvalidWorkspaceException if the workspace does not exist
      */
-    public void index( String workspaceName,
+    public void index( ExecutionContext context,
+                       String workspaceName,
                        Path startingPoint,
                        int depthPerRead ) throws RepositorySourceException, SearchEngineException {
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(startingPoint, "startingPoint");
-        index(workspaceName, Location.create(startingPoint), depthPerRead);
+        index(context, workspaceName, Location.create(startingPoint), depthPerRead);
     }
 
     /**
      * Index all of the content in the named workspace within the {@link #getSourceName() source}. This method operates
      * synchronously and returns when the requested indexing is completed.
      * 
+     * @param context the context in which the operation is to be performed; may not be null
      * @param workspaceName the name of the workspace
      * @param depthPerRead the depth of each subgraph read operation
      * @throws IllegalArgumentException if the workspace name is null
@@ -246,65 +244,76 @@ public class SearchEngine {
      * @throws SearchEngineException if there is a problem updating the indexes
      * @throws InvalidWorkspaceException if the workspace does not exist
      */
-    public void index( String workspaceName,
+    public void index( ExecutionContext context,
+                       String workspaceName,
                        int depthPerRead ) throws RepositorySourceException, SearchEngineException {
         CheckArg.isNotNull(workspaceName, "workspaceName");
-        index(workspaceName, rootPath(), depthPerRead);
+        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
+        index(context, workspaceName, Location.create(rootPath), depthPerRead);
     }
 
     /**
      * Index (or re-index) all of the content in all of the workspaces within the source. This method operates synchronously and
      * returns when the requested indexing is completed.
      * 
+     * @param context the context in which the operation is to be performed; may not be null
      * @param depthPerRead the depth of each subgraph read operation
      * @throws RepositorySourceException if there is a problem accessing the content
      * @throws SearchEngineException if there is a problem updating the indexes
      */
-    public void index( int depthPerRead ) throws RepositorySourceException, SearchEngineException {
-        Path rootPath = rootPath();
-        for (String workspaceName : graph().getWorkspaces()) {
-            index(workspaceName, rootPath, depthPerRead);
+    public void index( ExecutionContext context,
+                       int depthPerRead ) throws RepositorySourceException, SearchEngineException {
+        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
+        Location rootLocation = Location.create(rootPath);
+        for (String workspaceName : graph(context).getWorkspaces()) {
+            index(context, workspaceName, rootLocation, depthPerRead);
         }
     }
 
     /**
      * Update the indexes with the supplied set of changes to the content.
      * 
+     * @param context the execution context for which this session is to be established; may not be null
      * @param changes the set of changes to the content
+     * @return the actual changes that were made and which record any problems or errors; never null
      * @throws IllegalArgumentException if the path is null
      * @throws RepositorySourceException if there is a problem accessing the content
      * @throws SearchEngineException if there is a problem updating the indexes
      */
-    public void index( final Iterable<ChangeRequest> changes ) throws SearchEngineException {
-        // First break up all the changes into different collections, one collection per workspace ...
-        Map<String, Collection<ChangeRequest>> changesByWorkspace = new HashMap<String, Collection<ChangeRequest>>();
-        for (ChangeRequest request : changes) {
-            String workspaceName = request.changedWorkspace();
-            Collection<ChangeRequest> changesForWorkspace = changesByWorkspace.get(workspaceName);
-            if (changesForWorkspace == null) {
-                changesForWorkspace = new LinkedList<ChangeRequest>();
-                changesByWorkspace.put(workspaceName, changesForWorkspace);
+    public List<ChangeRequest> index( ExecutionContext context,
+                                      final Iterable<ChangeRequest> changes ) throws SearchEngineException {
+        List<ChangeRequest> requests = new LinkedList<ChangeRequest>();
+        ProcessorType processor = createProcessor(context, workspaces, null, false);
+        try {
+            boolean submit = true;
+            for (ChangeRequest request : changes) {
+                ChangeRequest clone = request.clone();
+                if (submit) {
+                    processor.process(clone);
+                    if (clone.hasError()) submit = false;
+                }
+                requests.add(clone);
             }
-            changesForWorkspace.add(request);
+        } finally {
+            processor.close();
         }
-        // Now update the indexes for each workspace (serially). This minimizes the time that each workspace
-        // locks its indexes for writing.
-        for (Map.Entry<String, Collection<ChangeRequest>> entry : changesByWorkspace.entrySet()) {
-            String workspaceName = entry.getKey();
-            Collection<ChangeRequest> changesForWorkspace = entry.getValue();
-            getWorkspace(workspaceName).execute(false, updateContent(changesForWorkspace));
-        }
+        return requests;
     }
 
     /**
      * Invoke the engine's garbage collection on all indexes used by all workspaces in the source. This method reclaims space and
      * optimizes the index. This should be done on a periodic basis after changes are made to the engine's indexes.
      * 
+     * @param context the context in which the operation is to be performed; may not be null
+     * @return true if an optimization was performed, or false if there was no need
      * @throws SearchEngineException if there is a problem during optimization
      */
-    public void optimize() throws SearchEngineException {
-        for (String workspaceName : graph().getWorkspaces()) {
-            getWorkspace(workspaceName).execute(false, optimizeContent());
+    public boolean optimize( ExecutionContext context ) throws SearchEngineException {
+        ProcessorType processor = createProcessor(context, workspaces, null, true);
+        try {
+            return processor.optimize();
+        } finally {
+            processor.close();
         }
     }
 
@@ -313,495 +322,175 @@ public class SearchEngine {
      * and optimizes the index. This should be done on a periodic basis after changes are made to the engine's indexes.
      * 
      * @param workspaceName the name of the workspace
+     * @param context the context in which the operation is to be performed; may not be null
+     * @return true if an optimization was performed, or false if there was no need
      * @throws IllegalArgumentException if the workspace name is null
      * @throws SearchEngineException if there is a problem during optimization
      * @throws InvalidWorkspaceException if the workspace does not exist
      */
-    public void optimize( String workspaceName ) throws SearchEngineException {
+    public boolean optimize( ExecutionContext context,
+                             String workspaceName ) throws SearchEngineException {
         CheckArg.isNotNull(workspaceName, "workspaceName");
-        getWorkspace(workspaceName).execute(false, optimizeContent());
-    }
-
-    /**
-     * Perform a full-text search of the content in the named workspace, given the maximum number of results and the offset
-     * defining the first result the caller is interested in.
-     * 
-     * @param context the execution context in which the search is to take place; may not be null
-     * @param workspaceName the name of the workspace
-     * @param fullTextSearch the full-text search to be performed; may not be null
-     * @param maxResults the maximum number of results that are to be returned; always positive
-     * @param offset the number of initial results to skip, or 0 if the first results are to be returned
-     * @return the activity that will perform the work
-     * @throws IllegalArgumentException if the execution context or workspace name are null
-     * @throws SearchEngineException if there is a problem during optimization
-     * @throws InvalidWorkspaceException if the workspace does not exist
-     */
-    public List<Location> fullTextSearch( ExecutionContext context,
-                                          String workspaceName,
-                                          String fullTextSearch,
-                                          int maxResults,
-                                          int offset ) {
-        CheckArg.isNotNull(context, "context");
-        CheckArg.isNotNull(workspaceName, "workspaceName");
-        Search searchActivity = searchContent(context, fullTextSearch, maxResults, offset);
-        getWorkspace(workspaceName).execute(false, searchActivity);
-        return searchActivity.getResults();
-    }
-
-    /**
-     * Perform a query of the content in the named workspace, given the Abstract Query Model representation of the query.
-     * 
-     * @param context the execution context in which the search is to take place; may not be null
-     * @param workspaceName the name of the workspace
-     * @param query the query that is to be executed, in the form of the Abstract Query Model
-     * @param schemata the definition of the tables and views that can be used in the query; may not be null
-     * @return the query results; never null
-     * @throws IllegalArgumentException if the context, query, or schemata references are null
-     */
-    public QueryResults query( ExecutionContext context,
-                               String workspaceName,
-                               QueryCommand query,
-                               Schemata schemata ) {
-        CheckArg.isNotNull(context, "context");
-        CheckArg.isNotNull(workspaceName, "workspaceName");
-        CheckArg.isNotNull(query, "query");
-        CheckArg.isNotNull(schemata, "schemata");
-        QueryContext queryContext = new QueryContext(schemata, context.getValueFactories().getTypeSystem());
-        Query queryActivity = queryContent(queryContext, query);
-        getWorkspace(workspaceName).execute(false, queryActivity);
-        return queryActivity.getResults();
-    }
-
-    /**
-     * Remove the supplied index from the search engine. This is typically done when the workspace has been deleted from the
-     * source, or when
-     * 
-     * @param workspaceName the name of the workspace
-     * @throws IllegalArgumentException if the workspace name is null
-     * @throws SearchEngineException if there is a problem removing the workspace
-     */
-    public void removeWorkspace( String workspaceName ) throws SearchEngineException {
-        CheckArg.isNotNull(workspaceName, "workspaceName");
+        ProcessorType processor = createProcessor(context, workspaces, null, true);
         try {
-            workspacesLock.writeLock().lock();
-            // Check whether another thread got in and created the engine while we waited ...
-            Workspace workspace = workspacesByName.remove(workspaceName);
-            if (workspace != null) {
-                indexLayout.destroyIndexes(context, getSourceName(), workspaceName);
-            }
-        } catch (IOException e) {
-            String message = GraphI18n.errorWhileRemovingIndexesForWorkspace.text(sourceName, workspaceName, e.getMessage());
-            throw new SearchEngineException(message, e);
+            return processor.optimize(workspaceName);
         } finally {
-            workspacesLock.writeLock().unlock();
+            processor.close();
         }
     }
 
-    /**
-     * Remove from the search engine all workspace-related indexes, thereby cleaning up any resources used by this search engine.
-     * 
-     * @throws SearchEngineException if there is a problem removing any of the workspace
-     */
-    public void removeWorkspaces() throws SearchEngineException {
-        try {
-            workspacesLock.writeLock().lock();
-            for (String workspaceName : new HashSet<String>(workspacesByName.keySet())) {
-                removeWorkspace(workspaceName);
-            }
-        } finally {
-            workspacesLock.writeLock().unlock();
-        }
+    public interface Workspaces<WorkspaceType extends SearchEngineWorkspace> {
+        /**
+         * Get the connection factory for repository sources.
+         * 
+         * @return the connection factory; never null
+         */
+        RepositoryConnectionFactory getRepositoryConnectionFactory();
+
+        /**
+         * Get the search engine for the workspace with the supplied name.
+         * 
+         * @param context the execution context; never null
+         * @param workspaceName the name of the workspace; never null
+         * @param createIfMissing true if the workspace should be created if missing, or false otherwise
+         * @return the workspace's search engine
+         * @throws InvalidWorkspaceException if the workspace does not exist
+         */
+        WorkspaceType getWorkspace( ExecutionContext context,
+                                    String workspaceName,
+                                    boolean createIfMissing );
+
+        /**
+         * Get the existing workspaces.
+         * 
+         * @return the workspaces
+         */
+        Collection<WorkspaceType> getWorkspaces();
+
+        /**
+         * Remove the supplied workspace from the search engine. This is typically done when the workspace is being deleted. Note
+         * that the resulting Workspace needs to then be cleaned up by the caller.
+         * 
+         * @param workspaceName the name of the workspace
+         * @return the workspace that was removed, or null if there was workspace with the supplied name
+         */
+        WorkspaceType removeWorkspace( String workspaceName );
+
+        /**
+         * Remove from the search engine all workspace-related indexes, thereby cleaning up any resources used by this search
+         * engine.
+         * 
+         * @return the mutable map containing the {@link SearchEngineWorkspace} objects keyed by their name; never null but
+         *         possibly empty
+         */
+        Map<String, WorkspaceType> removeAllWorkspaces();
     }
 
-    /**
-     * Get the search engine for the workspace with the supplied name.
-     * 
-     * @param workspaceName the name of the workspace
-     * @return the workspace's search engine
-     * @throws InvalidWorkspaceException if the workspace does not exist
-     */
-    protected Workspace getWorkspace( String workspaceName ) {
-        Workspace workspace = null;
-        try {
-            workspacesLock.readLock().lock();
-            workspace = workspacesByName.get(workspaceName);
-        } finally {
-            workspacesLock.readLock().unlock();
+    protected class SearchWorkspaces implements Workspaces<WorkspaceType> {
+        private final ReadWriteLock workspacesLock = new ReentrantReadWriteLock();
+        @GuardedBy( "workspacesLock" )
+        private final Map<String, WorkspaceType> workspacesByName = new HashMap<String, WorkspaceType>();
+        private final RepositoryConnectionFactory connectionFactory;
+
+        protected SearchWorkspaces( RepositoryConnectionFactory connectionFactory ) {
+            this.connectionFactory = connectionFactory;
         }
 
-        if (workspace == null) {
-            // Verify the workspace does exist ...
-            if (!graph().getWorkspaces().contains(workspaceName)) {
-                String msg = GraphI18n.workspaceDoesNotExistInRepository.text(workspaceName, getSourceName());
-                throw new InvalidWorkspaceException(msg);
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.search.SearchEngine.Workspaces#getRepositoryConnectionFactory()
+         */
+        public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+            return connectionFactory;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.search.SearchEngine.Workspaces#getWorkspace(org.jboss.dna.graph.ExecutionContext,
+         *      java.lang.String, boolean)
+         */
+        public WorkspaceType getWorkspace( ExecutionContext context,
+                                           String workspaceName,
+                                           boolean createIfMissing ) {
+            assert context != null;
+            assert workspaceName != null;
+            WorkspaceType workspace = null;
+            try {
+                workspacesLock.readLock().lock();
+                workspace = workspacesByName.get(workspaceName);
+            } finally {
+                workspacesLock.readLock().unlock();
             }
+
+            if (workspace == null) {
+                // Verify the workspace does exist ...
+                if (isVerifyWorkspaceInSource() && connectionFactory != null
+                    && !graph(context).getWorkspaces().contains(workspaceName)) {
+                    String msg = GraphI18n.workspaceDoesNotExistInRepository.text(workspaceName, getSourceName());
+                    throw new InvalidWorkspaceException(msg);
+                }
+                try {
+                    workspacesLock.writeLock().lock();
+                    // Check whether another thread got in and created the engine while we waited ...
+                    workspace = workspacesByName.get(workspaceName);
+                    if (workspace == null) {
+                        // Create the engine and register it ...
+                        workspace = createWorkspace(context, workspaceName);
+                        workspacesByName.put(workspaceName, workspace);
+                    }
+                } finally {
+                    workspacesLock.writeLock().unlock();
+                }
+            }
+            return workspace;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.search.SearchEngine.Workspaces#getWorkspaces()
+         */
+        public Collection<WorkspaceType> getWorkspaces() {
+            try {
+                workspacesLock.writeLock().lock();
+                return new ArrayList<WorkspaceType>(workspacesByName.values());
+            } finally {
+                workspacesByName.clear();
+                workspacesLock.writeLock().unlock();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.search.SearchEngine.Workspaces#removeWorkspace(java.lang.String)
+         */
+        public WorkspaceType removeWorkspace( String workspaceName ) {
+            CheckArg.isNotNull(workspaceName, "workspaceName");
             try {
                 workspacesLock.writeLock().lock();
                 // Check whether another thread got in and created the engine while we waited ...
-                workspace = workspacesByName.get(workspaceName);
-                if (workspace == null) {
-                    // Create the engine and register it ...
-                    workspace = new Workspace(workspaceName);
-                    workspacesByName.put(workspaceName, workspace);
-                }
+                return workspacesByName.remove(workspaceName);
             } finally {
                 workspacesLock.writeLock().unlock();
             }
         }
-        return workspace;
-    }
-
-    protected class Workspace {
-        private final String sourceName;
-        private final String workspaceName;
-        protected final AtomicInteger modifiedNodesSinceLastOptimize = new AtomicInteger(0);
-
-        protected Workspace( String workspaceName ) {
-            this.workspaceName = workspaceName;
-            this.sourceName = getSourceName();
-        }
 
         /**
-         * Get the workspace name.
+         * {@inheritDoc}
          * 
-         * @return the workspace name; never null
+         * @see org.jboss.dna.graph.search.SearchEngine.Workspaces#removeAllWorkspaces()
          */
-        public String getWorkspaceName() {
-            return workspaceName;
-        }
-
-        /**
-         * Execute the supplied activities against the indexes.
-         * 
-         * @param overwrite true if the existing indexes should be overwritten, or false if they should be used
-         * @param activities the activities to execute
-         * @throws SearchEngineException if there is a problem performing the activities
-         */
-        protected final void execute( boolean overwrite,
-                                      Activity... activities ) throws SearchEngineException {
-            // Determine if the activities are readonly ...
-            boolean readOnly = true;
-            for (Activity activity : activities) {
-                if (!(activity instanceof ReadOnlyActivity)) {
-                    readOnly = false;
-                    break;
-                }
-            }
-
-            // Create a session ...
-            Session session = indexLayout.createSession(context, sourceName, workspaceName, overwrite, readOnly);
-            assert session != null;
-
-            // Execute the various activities ...
-            Throwable error = null;
+        public Map<String, WorkspaceType> removeAllWorkspaces() {
             try {
-                int numChanges = 0;
-                for (Activity activity : activities) {
-                    try {
-                        numChanges += activity.execute(session);
-                    } catch (RuntimeException e) {
-                        error = e;
-                        throw e;
-                    }
-                }
-                if (numChanges > 0) {
-                    numChanges = this.modifiedNodesSinceLastOptimize.addAndGet(numChanges);
-                    // Determine if there have been enough changes made to run the optimizer ...
-                    int maxChanges = getMaxChangesBeforeAutomaticOptimization();
-                    if (maxChanges > 0 && numChanges >= maxChanges) {
-                        Activity optimizer = optimizeContent();
-                        try {
-                            optimizer.execute(session);
-                        } catch (RuntimeException e) {
-                            error = e;
-                            throw e;
-                        }
-                    }
-                }
+                workspacesLock.writeLock().lock();
+                return new HashMap<String, WorkspaceType>(workspacesByName);
             } finally {
-                try {
-                    if (error == null) {
-                        session.commit();
-                    } else {
-                        session.rollback();
-                    }
-                } catch (RuntimeException e2) {
-                    // We don't want to lose the existing error, if there is one ...
-                    if (error == null) {
-                        I18n msg = GraphI18n.errorWhileCommittingIndexChanges;
-                        throw new SearchEngineException(msg.text(workspaceName, sourceName, e2.getMessage()), e2);
-                    }
-                }
+                workspacesByName.clear();
+                workspacesLock.writeLock().unlock();
             }
         }
     }
-
-    /**
-     * Create an activity that will optimize the indexes.
-     * 
-     * @return the activity that will perform the work
-     */
-    protected Activity optimizeContent() {
-        return new Activity() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
-             */
-            public int execute( Session session ) {
-                session.optimize();
-                return 0; // no lines changed
-            }
-
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                return GraphI18n.errorWhileOptimizingIndexes.text(sourceName, workspaceName, error.getMessage());
-            }
-        };
-    }
-
-    /**
-     * Create an activity that will read from the source the content at the supplied location and add the content to the search
-     * index.
-     * 
-     * @param location the location of the content to read; may not be null
-     * @param depthPerRead the depth of each read operation; always positive
-     * @return the activity that will perform the work
-     */
-    protected Activity addContent( final Location location,
-                                   final int depthPerRead ) {
-        return new Activity() {
-            public int execute( Session session ) {
-
-                // Create a queue that we'll use to walk the content ...
-                LinkedList<Location> locationsToRead = new LinkedList<Location>();
-                locationsToRead.add(location);
-                int count = 0;
-
-                // Now read and index the content ...
-                Graph graph = graph();
-                graph.useWorkspace(session.getWorkspaceName());
-                while (!locationsToRead.isEmpty()) {
-                    Location location = locationsToRead.poll();
-                    if (location == null) continue;
-                    Subgraph subgraph = graph.getSubgraphOfDepth(depthPerRead).at(location);
-                    // Index all of the nodes within this subgraph ...
-                    for (SubgraphNode node : subgraph) {
-                        // Index the node ...
-                        session.index(node);
-                        ++count;
-
-                        // Process the children ...
-                        for (Location child : node.getChildren()) {
-                            if (!subgraph.includes(child)) {
-                                // Record this location as needing to be read ...
-                                locationsToRead.add(child);
-                            }
-                        }
-                    }
-                }
-                return count;
-            }
-
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                String path = readable(location.getPath());
-                return GraphI18n.errorWhileIndexingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
-            }
-        };
-    }
-
-    /**
-     * Create an activity that will remove from the indexes all documents that represent content at or below the specified
-     * location.
-     * 
-     * @param location the location of the content to removed; may not be null
-     * @return the activity that will perform the work
-     */
-    protected Activity removeContent( final Location location ) {
-        return new Activity() {
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
-             */
-            public int execute( Session session ) {
-                // Delete the content at/below the path ...
-                return session.deleteBelow(location.getPath());
-            }
-
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                String path = readable(location.getPath());
-                return GraphI18n.errorWhileRemovingContentAtPath.text(path, workspaceName, sourceName, error.getMessage());
-            }
-        };
-    }
-
-    /**
-     * Create an activity that will update the indexes with changes that were already made to the content.
-     * 
-     * @param changes the changes that have been made to the content; may not be null
-     * @return the activity that will perform the work
-     */
-    protected Activity updateContent( final Iterable<ChangeRequest> changes ) {
-        return new Activity() {
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
-             */
-            public int execute( Session session ) {
-                return session.apply(changes);
-            }
-
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                return GraphI18n.errorWhileUpdatingContent.text(workspaceName, sourceName, error.getMessage());
-            }
-        };
-    }
-
-    /**
-     * Create an activity that will perform a full-text search given the supplied query.
-     * 
-     * @param context the context in which the search is to be performed; may not be null
-     * @param fullTextSearch the full-text search to be performed; may not be null
-     * @param maxResults the maximum number of results that are to be returned; always positive
-     * @param offset the number of initial results to skip, or 0 if the first results are to be returned
-     * @return the activity that will perform the work; never null
-     */
-    protected Search searchContent( final ExecutionContext context,
-                                    final String fullTextSearch,
-                                    final int maxResults,
-                                    final int offset ) {
-        final List<Location> results = new ArrayList<Location>(maxResults);
-        return new Search() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#execute(org.jboss.dna.graph.search.SearchProvider.Session)
-             */
-            public int execute( Session session ) {
-                session.search(context, fullTextSearch, maxResults, offset, results);
-                return 0;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
-             *      java.lang.String)
-             */
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                return GraphI18n.errorWhilePerformingSearch.text(fullTextSearch, workspaceName, sourceName, error.getMessage());
-            }
-
-            public List<Location> getResults() {
-                return results;
-            }
-        };
-    }
-
-    /**
-     * Create an activity that will perform a query against the index.
-     * 
-     * @param context the context in which the search is to be performed; may not be null
-     * @param query the query to be performed; may not be null
-     * @return the activity that will perform the query; never null
-     */
-    protected Query queryContent( final QueryContext context,
-                                  final QueryCommand query ) {
-        return new Query() {
-            private QueryResults results = null;
-
-            public int execute( Session session ) throws SearchException {
-                results = session.query(context, query);
-                return 0;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.jboss.dna.graph.search.SearchEngine.Activity#messageFor(java.lang.Throwable, java.lang.String,
-             *      java.lang.String)
-             */
-            public String messageFor( Throwable error,
-                                      String sourceName,
-                                      String workspaceName ) {
-                return GraphI18n.errorWhilePerformingQuery.text(query, workspaceName, sourceName, error.getMessage());
-            }
-
-            public QueryResults getResults() {
-                return results;
-            }
-        };
-    }
-
-    /**
-     * Interface for activities that will be executed against a workspace. These activities don't have to commit or roll back the
-     * writer, nor do they have to translate the exceptions, since this is done by the
-     * {@link Workspace#execute(boolean, Activity...)} method.
-     */
-    protected interface Activity {
-
-        /**
-         * Perform the activity by using the index writer.
-         * 
-         * @param indexSession the index session that should be used by the activity; never null
-         * @return the number of changes that were made by this activity
-         */
-        int execute( Session indexSession );
-
-        /**
-         * Translate an exception obtained during {@link #execute(Session) execution} into a single message.
-         * 
-         * @param t the exception
-         * @param sourceName the name of the source
-         * @param workspaceName the name of the workspace
-         * @return the error message
-         */
-        String messageFor( Throwable t,
-                           String sourceName,
-                           String workspaceName );
-    }
-
-    /**
-     * A read-only activity.
-     */
-    protected interface ReadOnlyActivity extends Activity {
-    }
-
-    /**
-     * A search activity.
-     */
-    protected interface Search extends ReadOnlyActivity {
-        /**
-         * Get the results of the search.
-         * 
-         * @return the list of {@link Location} objects for each node satisfying the results; never null
-         */
-        List<Location> getResults();
-    }
-
-    /**
-     * A query activity.
-     */
-    protected interface Query extends ReadOnlyActivity {
-        /**
-         * Get the results of the query.
-         * 
-         * @return the results of a query; never null
-         */
-        QueryResults getResults();
-    }
-
 }

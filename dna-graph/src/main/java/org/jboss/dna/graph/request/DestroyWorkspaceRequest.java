@@ -153,4 +153,17 @@ public final class DestroyWorkspaceRequest extends ChangeRequest {
                             Path path ) {
         return workspaceName().equals(workspace);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public DestroyWorkspaceRequest clone() {
+        return new DestroyWorkspaceRequest(workspaceName);
+    }
 }

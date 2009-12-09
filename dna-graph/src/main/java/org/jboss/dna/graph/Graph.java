@@ -2334,10 +2334,10 @@ public class Graph {
                 Map<Location, Map<Name, Property>> results = new HashMap<Location, Map<Name, Property>>();
                 for (ReadPropertyRequest request : requests) {
                     Property property = request.getProperty();
-                    
+
                     // property was requested but doesn't exist
                     if (property == null) continue;
-                    
+
                     Location location = request.getActualLocationOfNode();
                     Map<Name, Property> properties = results.get(location);
                     if (properties == null) {
@@ -2482,12 +2482,18 @@ public class Graph {
      * Search the current workspace using the supplied full-text search expression.
      * 
      * @param fullTextSearchExpression the full-text search expression
+     * @param maxResults the maximum number of results that are to be returned; always positive
+     * @param offset the number of initial results to skip, or 0 if the first results are to be returned
      * @return the results of the search; never null
      * @throws IllegalArgumentException if the expression is null
      */
-    public QueryResults search( final String fullTextSearchExpression ) {
-        FullTextSearchRequest request = requests.search(getCurrentWorkspaceName(), fullTextSearchExpression);
-        return request.getResults();
+    public QueryResults search( final String fullTextSearchExpression,
+                                int maxResults,
+                                int offset ) {
+        FullTextSearchRequest request = requests.search(getCurrentWorkspaceName(), fullTextSearchExpression, maxResults, offset);
+        QueryResults results = new org.jboss.dna.graph.query.process.QueryResults(request.getResultColumns(),
+                                                                                  request.getStatistics(), request.getTuples());
+        return results;
     }
 
     /**
@@ -2634,7 +2640,7 @@ public class Graph {
             super(context, columns, accessNode);
             this.graphSourceName = graphSourceName;
             accessRequest = new AccessQueryRequest(workspaceName, sourceName, getColumns(), andedConstraints, limit,
-                                                   context.getVariables());
+                                                   context.getSchemata(), context.getVariables());
             ((GraphQueryContext)context).getBatch().requestQueue.submit(accessRequest);
         }
 
@@ -2663,7 +2669,7 @@ public class Graph {
                                                     graphSourceName);
                 return emptyTuples();
             }
-            return accessRequest.getResults().getTuples();
+            return accessRequest.getTuples();
         }
 
     }
@@ -6970,7 +6976,7 @@ public class Graph {
 
         @Override
         public String toString() {
-            return "Subgraph\n" + getToString(context); //ExecutionContext.DEFAULT_CONTEXT);//getLocation().toString();
+            return "Subgraph\n" + getToString(context); // ExecutionContext.DEFAULT_CONTEXT);//getLocation().toString();
         }
 
         /**
@@ -6984,7 +6990,7 @@ public class Graph {
             getRecursiveString(context, getRoot(), sb, 0);
             return sb.toString();
         }
-        
+
         private void getRecursiveString( ExecutionContext context,
                                          SubgraphNode node,
                                          StringBuilder str,
@@ -6998,9 +7004,9 @@ public class Graph {
             for (Location nextLoc : node.getChildren()) {
                 SubgraphNode childNode = getNode(nextLoc);
                 // child node location may exist, but the subgraph may not have
-                // been constructed deep enough to instantiate the subnode, so 
+                // been constructed deep enough to instantiate the subnode, so
                 // check for null
-                if( childNode != null ) {
+                if (childNode != null) {
                     getRecursiveString(context, childNode, str, indentLevel + 1);
                 }
             }
@@ -7103,52 +7109,52 @@ public class Graph {
         }
 
         private String getNodeString( ExecutionContext context,
-                                             Location location) {
+                                      Location location ) {
             StringBuilder sb = new StringBuilder();
             sb.append('<'); // Bracket the node
             ValueFactory<String> strings = context.getValueFactories().getStringFactory();
-            
+
             String name = "";
-            if( location.getPath().getLastSegment() != null ) {
+            if (location.getPath().getLastSegment() != null) {
                 name = strings.create(location.getPath().getLastSegment());
             } else {
                 name = strings.create(location.getPath());
             }
-            
-            if( name.startsWith("{")) {
+
+            if (name.startsWith("{")) {
                 // Remove {xxxx} namespace prefix
                 int end = name.indexOf('}');
-                name = name.substring(end+1, name.length());
+                name = name.substring(end + 1, name.length());
             }
-            
+
             // Surround name in double quotes
             sb.append("name = ").append('\"').append(name).append('\"').append(" ");
             boolean first = true;
-            if (getProperties()  != null) {
-                for ( Property entry : getProperties()) {
-                    
-                    if( first ) {
+            if (getProperties() != null) {
+                for (Property entry : getProperties()) {
+
+                    if (first) {
                         first = false;
                     } else sb.append(" ");
                     sb.append(getPropertyString(entry));
                 }
             }
             sb.append(">\n");
-            
+
             return sb.toString();
         }
-        
-        private String getPropertyString(Property property) {
+
+        private String getPropertyString( Property property ) {
             // Surround property value in double quotes so final property looks like:
-            //   color = "blue" (single valued property)
-            //   colors = ["blue", "red", "green"] (multi-valued property)
-            
+            // color = "blue" (single valued property)
+            // colors = ["blue", "red", "green"] (multi-valued property)
+
             StringBuilder sb = new StringBuilder();
             sb.append(property.getName().getLocalName());
             sb.append(" = ");
             if (property.isEmpty()) {
                 sb.append("null");
-            } else if( property.isSingle() ) {
+            } else if (property.isSingle()) {
                 String valueStr = getContext().getValueFactories().getStringFactory().create(property.getValues().next());
                 sb.append('\"').append(valueStr).append('\"');
             } else {

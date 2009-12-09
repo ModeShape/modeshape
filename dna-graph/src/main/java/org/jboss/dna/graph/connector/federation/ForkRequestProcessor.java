@@ -25,21 +25,14 @@ package org.jboss.dna.graph.connector.federation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
@@ -58,6 +51,7 @@ import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
+import org.jboss.dna.graph.request.CompositeRequestChannel;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
@@ -109,372 +103,10 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 @NotThreadSafe
 class ForkRequestProcessor extends RequestProcessor {
-
-    /**
-     * A psuedo Request that is used by {@link Channel} to insert into a request queue so that the queue's iterator knows when
-     * there are no more requests to process.
-     */
-    protected static class LastRequest extends Request {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public boolean isReadOnly() {
-            return false;
-        }
-    }
-
-    /**
-     * Represents the channel for a specific source into which this processor submits the requests for that source. To use, create
-     * a Channel, {@link Channel#start(ExecutorService, ExecutionContext, RepositoryConnectionFactory) start it}, and then
-     * {@link Channel#add(Request) add} requests (optionally with a {@link Channel#add(Request, CountDownLatch) latch} or via a
-     * {@link Channel#addAndAwait(Request) add and await}). Finally, call {@link Channel#done()} when there are no more requests.
-     * <p>
-     * When the channel is {@link Channel#start(ExecutorService, ExecutionContext, RepositoryConnectionFactory) started}, it
-     * creates a {@link Callable} and submits it to the supplied {@link ExecutorService}. (The resulting {@link Future} is then
-     * captured so that the channel can be {@link Channel#cancel(boolean) cancelled}.) The Callable obtains a
-     * {@link RepositoryConnection connection} to the channel's source, and then has the connection process a single
-     * {@link CompositeRequest} that fronts the queue of Request instances added to this channel. Because a blocking queue is
-     * used, the CompositeRequest's {@link CompositeRequest#iterator() iterator} blocks (on {@link Iterator#hasNext()}) until the
-     * next request is available. When {@link Channel#done()} is called, the iterator stops blocking and completes.
-     * </p>
-     */
-    protected static class Channel {
-        protected final String sourceName;
-        /** The list of all requests that are or have been processed as part of this channel */
-        protected final LinkedList<Request> allRequests = new LinkedList<Request>();
-        /** The queue of requests that remain unprocessed */
-        private final BlockingQueue<Request> queue = new LinkedBlockingQueue<Request>();
-        /** The CompositeRequest that is submitted to the underlying processor */
-        protected final CompositeRequest composite;
-        /** The Future that is submitted to the ExecutorService to do the processing */
-        protected Future<String> future;
-        /** Flag that defines whether the channel has processed all requests */
-        protected final AtomicBoolean done = new AtomicBoolean(false);
-        protected Throwable compositeError = null;
-
-        /**
-         * Create a new channel that operates against the supplied source.
-         * 
-         * @param sourceName the name of the repository source used to execute this channel's {@link #allRequests() requests}; may
-         *        not be null or empty
-         */
-        protected Channel( final String sourceName ) {
-            assert sourceName != null;
-            this.sourceName = sourceName;
-            this.composite = new CompositeRequest(false) {
-                private static final long serialVersionUID = 1L;
-                private final LinkedList<Request> allRequests = Channel.this.allRequests;
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.CompositeRequest#iterator()
-                 */
-                @Override
-                public Iterator<Request> iterator() {
-                    return createIterator();
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.CompositeRequest#getRequests()
-                 */
-                @Override
-                public List<Request> getRequests() {
-                    return allRequests;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.CompositeRequest#size()
-                 */
-                @Override
-                public int size() {
-                    return done.get() ? allRequests.size() : CompositeRequest.UNKNOWN_NUMBER_OF_REQUESTS;
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.Request#cancel()
-                 */
-                @Override
-                public void cancel() {
-                    done.set(true);
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.Request#setError(java.lang.Throwable)
-                 */
-                @Override
-                public void setError( Throwable error ) {
-                    compositeError = error;
-                    super.setError(error);
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.jboss.dna.graph.request.Request#hasError()
-                 */
-                @Override
-                public boolean hasError() {
-                    return compositeError != null || super.hasError();
-                }
-            };
-        }
-
-        /**
-         * Utility method to create an iterator over the requests in this channel. This really should be called once
-         * 
-         * @return the iterator over the channels
-         */
-        protected Iterator<Request> createIterator() {
-            final BlockingQueue<Request> queue = this.queue;
-            return new Iterator<Request>() {
-                private Request next;
-
-                public boolean hasNext() {
-                    // If next still has a request, then 'hasNext()' has been called multiple times in a row
-                    if (next != null) return true;
-
-                    // Now, block for a next item (this blocks) ...
-                    try {
-                        next = queue.take();
-                    } catch (InterruptedException e) {
-                        // This happens when the federated connector has been told to shutdown now, and it shuts down
-                        // its executor (the worker pool) immediately by interrupting each in-use thread.
-                        // In this case, we should consider there to be more more requests ...
-                        try {
-                            return false;
-                        } finally {
-                            // reset the interrupted status ...
-                            Thread.interrupted();
-                        }
-                    }
-                    if (next instanceof LastRequest) {
-                        return false;
-                    }
-                    return next != null;
-                }
-
-                public Request next() {
-                    if (next == null) {
-                        // Must have been called without first calling 'hasNext()' ...
-                        try {
-                            next = queue.take();
-                        } catch (InterruptedException e) {
-                            // This happens when the federated connector has been told to shutdown now, and it shuts down
-                            // its executor (the worker pool) immediately by interrupting each in-use thread.
-                            // In this case, we should consider there to be more more requests (again, this case
-                            // is when 'next()' has been called without calling 'hasNext()') ...
-                            try {
-                                throw new NoSuchElementException();
-                            } finally {
-                                // reset the interrupted status ...
-                                Thread.interrupted();
-                            }
-                        }
-                    }
-                    if (next == null) {
-                        throw new NoSuchElementException();
-                    }
-                    Request result = next;
-                    next = null;
-                    return result;
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-
-        /**
-         * Begins processing any requests that have been {@link #add(Request) added} to this channel. Processing is done by
-         * submitting the channel to the supplied executor.
-         * 
-         * @param executor the executor that is to do the work; may not be null
-         * @param context the execution context in which the work is to be performed; may not be null
-         * @param connectionFactory the connection factory that should be used to create connections; may not be null
-         * @throws IllegalStateException if this channel has already been started
-         */
-        protected void start( final ExecutorService executor,
-                              final ExecutionContext context,
-                              final RepositoryConnectionFactory connectionFactory ) {
-            assert executor != null;
-            assert context != null;
-            assert connectionFactory != null;
-            if (this.future != null) {
-                throw new IllegalStateException();
-            }
-            this.future = executor.submit(new Callable<String>() {
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see java.util.concurrent.Callable#call()
-                 */
-                public String call() throws Exception {
-                    final RepositoryConnection connection = connectionFactory.createConnection(sourceName);
-                    assert connection != null;
-                    try {
-                        connection.execute(context, composite);
-                    } finally {
-                        connection.close();
-                    }
-                    return sourceName;
-                }
-            });
-        }
-
-        /**
-         * Add the request to this channel for asynchronous processing. This method is called by the
-         * {@link ForkRequestProcessor#submit(Request, String)} method.
-         * 
-         * @param request the request to be submitted; may not be null
-         * @throws IllegalStateException if this channel has already been marked as {@link #done()}
-         */
-        protected void add( Request request ) {
-            if (done.get()) {
-                throw new IllegalStateException(GraphI18n.unableToAddRequestToChannelThatIsDone.text(sourceName, request));
-            }
-            assert request != null;
-            this.allRequests.add(request);
-            this.queue.add(request);
-        }
-
-        /**
-         * Add the request to this channel for asynchronous processing, and supply a {@link CountDownLatch count-down latch} that
-         * should be {@link CountDownLatch#countDown() decremented} when this request is completed.
-         * 
-         * @param request the request to be submitted; may not be null
-         * @param latch the count-down latch that should be decremented when <code>request</code> has been completed; may not be
-         *        null
-         * @return the same latch that was supplied, for method chaining purposes; never null
-         * @throws IllegalStateException if this channel has already been marked as {@link #done()}
-         */
-        protected CountDownLatch add( Request request,
-                                      CountDownLatch latch ) {
-            if (done.get()) {
-                throw new IllegalStateException(GraphI18n.unableToAddRequestToChannelThatIsDone.text(sourceName, request));
-            }
-            assert request != null;
-            assert latch != null;
-            // Submit the request for processing ...
-            this.allRequests.add(request);
-            request.setLatchForFreezing(latch);
-            this.queue.add(request);
-            return latch;
-        }
-
-        /**
-         * Add the request to this channel for asynchronous processing, and supply a {@link CountDownLatch count-down latch} that
-         * should be {@link CountDownLatch#countDown() decremented} when this request is completed. This method is called by the
-         * {@link ForkRequestProcessor#submitAndAwait(Request, String)} method.
-         * 
-         * @param request the request to be submitted; may not be null
-         * @throws InterruptedException if the current thread is interrupted while waiting
-         */
-        protected void addAndAwait( Request request ) throws InterruptedException {
-            // Add the request with a latch, then block until the request has completed ...
-            add(request, new CountDownLatch(1)).await();
-        }
-
-        /**
-         * Mark this source as having no more requests to process.
-         */
-        protected void done() {
-            this.done.set(true);
-            this.queue.add(new LastRequest());
-        }
-
-        /**
-         * Return whether this channel has been {@link #done() marked as done}.
-         * 
-         * @return true if the channel was marked as done, or false otherwise
-         */
-        protected boolean isDone() {
-            return done.get();
-        }
-
-        /**
-         * Cancel this forked channel, stopping work as soon as possible. If the channel has not yet been started, this method
-         * 
-         * @param mayInterruptIfRunning true if the channel is still being worked on, and the thread on which its being worked on
-         *        may be interrupted, or false if the channel should be allowed to finish if it is already in work.
-         */
-        public void cancel( boolean mayInterruptIfRunning ) {
-            if (this.future == null || this.future.isDone() || this.future.isCancelled()) return;
-
-            // Mark the composite as cancelled first, so that the next composed request will be marked as
-            // cancelled.
-            this.composite.cancel();
-
-            // Now mark the channel as being done ...
-            done();
-
-            // Now, mark the channel as being cancelled (do allow interrupting the worker thread) ...
-            this.future.cancel(mayInterruptIfRunning);
-        }
-
-        /**
-         * Return whether this channel has been {@link #start(ExecutorService, ExecutionContext, RepositoryConnectionFactory)
-         * started}.
-         * 
-         * @return true if this channel was started, or false otherwise
-         */
-        public boolean isStarted() {
-            return this.future != null;
-        }
-
-        /**
-         * Return whether this channel has completed all of its work.
-         * 
-         * @return true if the channel was started and is complete, or false otherwise
-         */
-        public boolean isComplete() {
-            return this.future != null && this.future.isDone();
-        }
-
-        /**
-         * Await until this channel has completed.
-         * 
-         * @throws CancellationException if the channel was cancelled
-         * @throws ExecutionException if the channel execution threw an exception
-         * @throws InterruptedException if the current thread is interrupted while waiting
-         */
-        protected void await() throws ExecutionException, InterruptedException, CancellationException {
-            this.future.get();
-        }
-
-        /**
-         * Get all the requests that were submitted to this queue. The resulting list is the actual list that is appended when
-         * requests are added, and may change until the channel is marked as {@link #done() done}.
-         * 
-         * @return all of the requests that were submitted to this channel; never null
-         */
-        protected List<Request> allRequests() {
-            return allRequests;
-        }
-
-        /**
-         * Get the name of the source that this channel uses.
-         * 
-         * @return the source name; never null
-         */
-        protected String sourceName() {
-            return sourceName;
-        }
-    }
-
     private final FederatedRepository repository;
     private final ExecutorService executor;
     private final RepositoryConnectionFactory connectionFactory;
-    private final Map<String, Channel> channelBySourceName = new HashMap<String, Channel>();
+    private final Map<String, CompositeRequestChannel> channelBySourceName = new HashMap<String, CompositeRequestChannel>();
     private final Queue<FederatedRequest> federatedRequestQueue;
 
     /**
@@ -512,9 +144,9 @@ class ForkRequestProcessor extends RequestProcessor {
     protected void submit( Request request,
                            String sourceName ) {
         assert request != null;
-        Channel channel = channelBySourceName.get(sourceName);
+        CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new Channel(sourceName);
+            channel = new CompositeRequestChannel(sourceName);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
@@ -536,9 +168,9 @@ class ForkRequestProcessor extends RequestProcessor {
     protected void submitAndAwait( Request request,
                                    String sourceName ) throws InterruptedException {
         assert request != null;
-        Channel channel = channelBySourceName.get(sourceName);
+        CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new Channel(sourceName);
+            channel = new CompositeRequestChannel(sourceName);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
@@ -565,9 +197,9 @@ class ForkRequestProcessor extends RequestProcessor {
                            String sourceName,
                            CountDownLatch latch ) {
         assert request != null;
-        Channel channel = channelBySourceName.get(sourceName);
+        CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new Channel(sourceName);
+            channel = new CompositeRequestChannel(sourceName);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
@@ -582,7 +214,7 @@ class ForkRequestProcessor extends RequestProcessor {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public void await() throws ExecutionException, InterruptedException, CancellationException {
-        for (Channel channel : channelBySourceName.values()) {
+        for (CompositeRequestChannel channel : channelBySourceName.values()) {
             channel.await();
         }
     }
@@ -1736,13 +1368,13 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void close() {
         super.close();
-        for (Channel channel : channelBySourceName.values()) {
-            channel.done();
+        for (CompositeRequestChannel channel : channelBySourceName.values()) {
+            channel.close();
         }
     }
 
     protected void cancel( boolean mayInterruptIfRunning ) {
-        for (Channel channel : channelBySourceName.values()) {
+        for (CompositeRequestChannel channel : channelBySourceName.values()) {
             channel.cancel(mayInterruptIfRunning);
         }
     }

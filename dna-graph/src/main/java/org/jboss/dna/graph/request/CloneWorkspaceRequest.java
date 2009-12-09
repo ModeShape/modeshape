@@ -260,4 +260,23 @@ public final class CloneWorkspaceRequest extends ChangeRequest {
                             Path path ) {
         return actualWorkspaceName != null && actualWorkspaceName.equals(workspace);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public CloneWorkspaceRequest clone() {
+        CloneWorkspaceRequest request = new CloneWorkspaceRequest(
+                                                                  nameOfWorkspaceToBeCloned,
+                                                                  actualWorkspaceName != null ? actualWorkspaceName : desiredNameOfTargetWorkspace,
+                                                                  createConflictBehavior, cloneConflictBehavior);
+        request.setActualRootLocation(actualLocationOfRoot);
+        request.setActualWorkspaceName(actualWorkspaceName);
+        return request;
+    }
 }

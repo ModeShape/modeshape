@@ -44,6 +44,7 @@ import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.UpperCase;
 import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.query.validate.Schemata.Column;
 import org.jboss.dna.graph.query.validate.Schemata.Table;
 
@@ -138,12 +139,14 @@ public abstract class ProcessingComponent {
     /**
      * Create a {@link DynamicOperation} instance that is able to evaluate the supplied {@link DynamicOperand}.
      * 
-     * @param context the context in which the query is being evaluated; may not be null
+     * @param typeSystem the type system; may not be null
+     * @param schemata the schemata; may not be null
      * @param columns the definition of the result columns and the tuples; may not be null
      * @param operand the dynamic operand that is to be evaluated by the returned object; may not be null
      * @return the dynamic operand operation; never null
      */
-    protected DynamicOperation createDynamicOperation( QueryContext context,
+    protected DynamicOperation createDynamicOperation( final TypeSystem typeSystem,
+                                                       Schemata schemata,
                                                        Columns columns,
                                                        DynamicOperand operand ) {
         assert operand != null;
@@ -155,7 +158,7 @@ public abstract class ProcessingComponent {
             String selectorName = propValue.getSelectorName().getName();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = context.getSchemata().getTable(propValue.getSelectorName());
+            Table table = schemata.getTable(propValue.getSelectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             return new DynamicOperation() {
@@ -168,7 +171,6 @@ public abstract class ProcessingComponent {
                 }
             };
         }
-        final TypeSystem typeSystem = context.getTypeSystem();
         final TypeFactory<String> stringFactory = typeSystem.getStringFactory();
         if (operand instanceof Length) {
             Length length = (Length)operand;
@@ -194,7 +196,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof LowerCase) {
             LowerCase lowerCase = (LowerCase)operand;
-            final DynamicOperation delegate = createDynamicOperation(context, columns, lowerCase.getOperand());
+            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, lowerCase.getOperand());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -208,7 +210,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof UpperCase) {
             UpperCase upperCase = (UpperCase)operand;
-            final DynamicOperation delegate = createDynamicOperation(context, columns, upperCase.getOperand());
+            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, upperCase.getOperand());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();

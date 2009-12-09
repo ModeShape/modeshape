@@ -100,7 +100,7 @@ public abstract class QueryProcessor implements Processor {
             statistics = statistics.withExecutionTime(System.nanoTime() - nanos);
         }
         assert tuples != null;
-        return new org.jboss.dna.graph.query.process.QueryResults(context, command, columns, statistics, tuples);
+        return new org.jboss.dna.graph.query.process.QueryResults(columns, statistics, tuples, context.getProblems());
     }
 
     /**

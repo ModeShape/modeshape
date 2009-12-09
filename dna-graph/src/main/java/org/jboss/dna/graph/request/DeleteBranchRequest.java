@@ -191,4 +191,19 @@ public class DeleteBranchRequest extends ChangeRequest {
     public String toString() {
         return "delete branch " + at() + " in the \"" + workspaceName + "\" workspace";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public DeleteBranchRequest clone() {
+        DeleteBranchRequest request = new DeleteBranchRequest(actualLocation != null ? actualLocation : at, workspaceName);
+        request.setActualLocationOfNode(actualLocation);
+        return request;
+    }
 }

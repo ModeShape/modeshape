@@ -106,7 +106,10 @@ public class SortValuesComponent extends DelegatingComponent {
                                                          Ordering ordering ) {
         assert context != null;
         assert ordering != null;
-        final DynamicOperation operation = createDynamicOperation(context, columns, ordering.getOperand());
+        final DynamicOperation operation = createDynamicOperation(context.getTypeSystem(),
+                                                                  context.getSchemata(),
+                                                                  columns,
+                                                                  ordering.getOperand());
         final TypeSystem typeSystem = context.getTypeSystem();
         final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(operation.getExpectedType());
         assert typeFactory != null;

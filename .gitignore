@@ -43,6 +43,7 @@
 
 /utils/dna-jpa-ddl-gen/target/
 
+/extensions/dna-search-lucene/target
 /extensions/dna-classloader-maven/target
 /extensions/dna-common-jdbc/target
 /extensions/dna-connector-federation/target

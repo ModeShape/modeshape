@@ -504,7 +504,7 @@ public class MapRequestProcessor extends RequestProcessor {
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.query(context, request);
         if (results != null) {
-            request.setResults(results);
+            request.setResults(results.getTuples(), results.getStatistics());
         } else {
             super.processUnknownRequest(request);
         }
@@ -522,7 +522,7 @@ public class MapRequestProcessor extends RequestProcessor {
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.search(context, request.expression());
         if (results != null) {
-            request.setResults(results);
+            request.setResults(results.getColumns(), results.getTuples(), results.getStatistics());
         } else {
             super.processUnknownRequest(request);
         }

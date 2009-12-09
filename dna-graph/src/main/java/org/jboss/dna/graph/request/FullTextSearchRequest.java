@@ -23,7 +23,10 @@
  */
 package org.jboss.dna.graph.request;
 
+import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.QueryResults.Statistics;
 
 /**
  * A {@link Request} to perform a full-text search on a graph.
@@ -34,20 +37,31 @@ public class FullTextSearchRequest extends SearchRequest {
 
     private final String expression;
     private final String workspaceName;
+    private final int maxResults;
+    private final int offset;
 
     /**
      * Create a new request to execute the supplied query against the name workspace.
      * 
      * @param fullTextSearch the full-text search to be performed; may not be null
      * @param workspace the name of the workspace to be queried
-     * @throws IllegalArgumentException if the query or workspace name is null
+     * @param maxResults the maximum number of results that are to be returned; always positive
+     * @param offset the number of initial results to skip, or 0 if the first results are to be returned
+     * @throws IllegalArgumentException if the query or workspace name is null, if the maxResults is not positive, or if the
+     *         offset is negative
      */
     public FullTextSearchRequest( String fullTextSearch,
-                                  String workspace ) {
+                                  String workspace,
+                                  int maxResults,
+                                  int offset ) {
         CheckArg.isNotEmpty(fullTextSearch, "fullTextSearch");
         CheckArg.isNotNull(workspace, "workspace");
+        CheckArg.isPositive(maxResults, "maxResults");
+        CheckArg.isNonNegative(offset, "offset");
         this.expression = fullTextSearch;
         this.workspaceName = workspace;
+        this.maxResults = maxResults;
+        this.offset = offset;
     }
 
     /**
@@ -69,6 +83,25 @@ public class FullTextSearchRequest extends SearchRequest {
     }
 
     /**
+     * Get the maximum number of results that should be returned.
+     * 
+     * @return the maximum number of results that are to be returned; always positive
+     */
+    public int maxResults() {
+        return maxResults;
+    }
+
+    /**
+     * Get the number of initial search results that should be excluded from the {@link #getTuples() tuples} included on this
+     * request.
+     * 
+     * @return the number of initial results to skip, or 0 if the first results are to be returned
+     */
+    public int offset() {
+        return offset;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#hashCode()
@@ -76,6 +109,28 @@ public class FullTextSearchRequest extends SearchRequest {
     @Override
     public int hashCode() {
         return expression.hashCode();
+    }
+
+    /**
+     * Get the specification of the columns for the {@link #getTuples() results}.
+     * 
+     * @return the column specifications; never null
+     */
+    public Columns getResultColumns() {
+        return super.columns();
+    }
+
+    /**
+     * Set the results for this request.
+     * 
+     * @param resultColumns the definition of the result columns
+     * @param tuples the result values
+     * @param statistics the statistics, or null if there are none
+     */
+    public void setResults( Columns resultColumns,
+                            List<Object[]> tuples,
+                            Statistics statistics ) {
+        super.doSetResults(resultColumns, tuples, statistics);
     }
 
     /**
@@ -90,6 +145,8 @@ public class FullTextSearchRequest extends SearchRequest {
             FullTextSearchRequest that = (FullTextSearchRequest)obj;
             if (!this.expression().equals(that.expression())) return false;
             if (!this.workspace().equals(that.workspace())) return false;
+            if (this.offset() != that.offset()) return false;
+            if (this.maxResults() != that.maxResults()) return false;
             return true;
         }
         return false;

@@ -243,4 +243,20 @@ public class RenameNodeRequest extends ChangeRequest {
         return "rename node at " + at() + " in the \"" + workspaceName + "\" workspace to " + toName();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public RenameNodeRequest clone() {
+        RenameNodeRequest request = new RenameNodeRequest(actualOldLocation != null ? actualOldLocation : at, workspaceName,
+                                                          newName);
+        request.setActualLocations(actualOldLocation, actualNewLocation);
+        return request;
+    }
+
 }

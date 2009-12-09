@@ -23,7 +23,9 @@
  */
 package org.jboss.dna.graph.request;
 
-import org.jboss.dna.graph.query.QueryResults;
+import java.util.List;
+import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.QueryResults.Statistics;
 
 /**
  * A {@link Request} to search or query a graph.
@@ -32,7 +34,9 @@ public abstract class SearchRequest extends Request {
 
     private static final long serialVersionUID = 1L;
 
-    private QueryResults results;
+    private Columns columns;
+    private List<Object[]> tuples;
+    private Statistics statistics;
 
     /**
      * {@inheritDoc}
@@ -47,10 +51,25 @@ public abstract class SearchRequest extends Request {
     /**
      * Set the results for this request.
      * 
-     * @param results the results
+     * @param resultColumns the definition of the result columns
+     * @param tuples the result values
+     * @param statistics the statistics, or null if there are none
      */
-    public void setResults( QueryResults results ) {
-        this.results = results;
+    protected void doSetResults( Columns resultColumns,
+                                 List<Object[]> tuples,
+                                 Statistics statistics ) {
+        this.columns = resultColumns;
+        this.tuples = tuples;
+        this.statistics = statistics;
+    }
+
+    /**
+     * Get the specification of the columns for the results.
+     * 
+     * @return the column specifications; never null
+     */
+    protected Columns columns() {
+        return columns;
     }
 
     /**
@@ -58,8 +77,17 @@ public abstract class SearchRequest extends Request {
      * 
      * @return the results of the query, or null if this request has not been processed
      */
-    public QueryResults getResults() {
-        return results;
+    public List<Object[]> getTuples() {
+        return tuples;
+    }
+
+    /**
+     * Get the statistics that describe the time metrics for this query.
+     * 
+     * @return the statistics; may be null if there are no statistics
+     */
+    public Statistics getStatistics() {
+        return statistics;
     }
 
     /**
@@ -70,7 +98,8 @@ public abstract class SearchRequest extends Request {
     @Override
     public void cancel() {
         super.cancel();
-        this.results = null;
+        this.tuples = null;
+        this.statistics = null;
     }
 
 }

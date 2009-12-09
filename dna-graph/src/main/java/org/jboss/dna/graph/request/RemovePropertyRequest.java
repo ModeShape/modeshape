@@ -208,4 +208,20 @@ public class RemovePropertyRequest extends ChangeRequest {
     public String toString() {
         return "remove property " + propertyName() + " from " + from() + " in the \"" + workspaceName + "\" workspace";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public RemovePropertyRequest clone() {
+        RemovePropertyRequest request = new RemovePropertyRequest(actualLocation != null ? actualLocation : from, workspaceName,
+                                                                  propertyName);
+        request.setActualLocationOfNode(actualLocation);
+        return request;
+    }
 }

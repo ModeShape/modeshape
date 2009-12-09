@@ -29,7 +29,7 @@ import org.jboss.dna.graph.property.Property;
 public class UpdateValuesRequest extends ChangeRequest {
 
     private static final long serialVersionUID = 1L;
-    
+
     private final String workspaceName;
     private final Location on;
     private final Name propertyName;
@@ -39,19 +39,18 @@ public class UpdateValuesRequest extends ChangeRequest {
     private Location actualLocation;
     private List<Object> actualAddedValues;
     private List<Object> actualRemovedValues;
-    
-        
+
     public UpdateValuesRequest( String workspaceName,
                                 Location on,
                                 Name propertyName,
                                 List<Object> addedValues,
                                 List<Object> removedValues ) {
         super();
-        
+
         assert workspaceName != null;
         assert on != null;
         assert propertyName != null;
-        
+
         this.workspaceName = workspaceName;
         this.on = on;
         this.propertyName = propertyName;
@@ -85,7 +84,7 @@ public class UpdateValuesRequest extends ChangeRequest {
     public String inWorkspace() {
         return workspaceName;
     }
-    
+
     /**
      * Get the list of values to be added.
      * 
@@ -94,7 +93,7 @@ public class UpdateValuesRequest extends ChangeRequest {
     public List<Object> addedValues() {
         return addedValues;
     }
-    
+
     /**
      * Get the list of values to be removed.
      * 
@@ -103,7 +102,7 @@ public class UpdateValuesRequest extends ChangeRequest {
     public List<Object> removedValues() {
         return removedValues;
     }
-    
+
     @Override
     public Location changedLocation() {
         return on;
@@ -125,7 +124,9 @@ public class UpdateValuesRequest extends ChangeRequest {
         return addedValues.isEmpty() && removedValues.isEmpty();
     }
 
-    public void setActualLocation(Location actual, List<Object> actualAddedValues, List<Object> actualRemovedValues) {
+    public void setActualLocation( Location actual,
+                                   List<Object> actualAddedValues,
+                                   List<Object> actualRemovedValues ) {
         checkNotFrozen();
         if (!on.equals(actual)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, on));
@@ -141,11 +142,11 @@ public class UpdateValuesRequest extends ChangeRequest {
         assert actualAddedValues.size() <= addedValues.size();
         assert actualRemovedValues != null;
         assert actualRemovedValues.size() <= actualRemovedValues.size();
-        
+
         this.actualAddedValues = actualAddedValues;
         this.actualRemovedValues = actualRemovedValues;
     }
-    
+
     /**
      * Get the actual location of the node that was updated.
      * 
@@ -172,5 +173,21 @@ public class UpdateValuesRequest extends ChangeRequest {
      */
     public List<Object> getActualRemovedValues() {
         return actualRemovedValues;
-    }    
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public UpdateValuesRequest clone() {
+        UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, actualLocation != null ? actualLocation : on,
+                                                              propertyName, addedValues, removedValues);
+        request.setActualLocation(actualLocation, actualAddedValues, actualRemovedValues);
+        return request;
+    }
 }

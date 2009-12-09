@@ -29,11 +29,13 @@ import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.Limit;
 import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.Visitors;
+import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
  * A {@link Request} to issue an access query a graph, where an access query is a low-level atomic query that is part of a large,
@@ -49,8 +51,8 @@ public class AccessQueryRequest extends SearchRequest {
     private final SelectorName tableName;
     private final List<Constraint> andedConstraints;
     private final Limit limit;
-    private final Columns resultColumns;
     private final Map<String, Object> variables;
+    private final Schemata schemata;
     private final int hc;
 
     /**
@@ -61,6 +63,7 @@ public class AccessQueryRequest extends SearchRequest {
      * @param resultColumns the specification of the expected columns in the result tuples
      * @param andedConstraints the list of AND-ed constraints; may be empty or null if there are no constraints
      * @param limit the limit on the results; may be null if there is no limit
+     * @param schemata the schemata that defines the table and columns being queried; may not be null
      * @param variables the variables that are available to be substituted upon execution; may be null if there are no variables
      * @throws IllegalArgumentException if the query or workspace name is null
      */
@@ -69,16 +72,18 @@ public class AccessQueryRequest extends SearchRequest {
                                Columns resultColumns,
                                List<Constraint> andedConstraints,
                                Limit limit,
+                               Schemata schemata,
                                Map<String, Object> variables ) {
         CheckArg.isNotNull(workspace, "workspace");
         CheckArg.isNotNull(tableName, "tableName");
         CheckArg.isNotNull(resultColumns, "resultColumns");
         this.workspaceName = workspace;
         this.tableName = tableName;
-        this.resultColumns = resultColumns;
         this.andedConstraints = andedConstraints != null ? andedConstraints : Collections.<Constraint>emptyList();
         this.variables = variables != null ? variables : EMPTY_VARIABLES;
         this.limit = limit != null ? limit : Limit.NONE;
+        this.schemata = schemata;
+        this.doSetResults(resultColumns, null, null);
         this.hc = HashCode.compute(workspaceName, tableName, resultColumns);
     }
 
@@ -101,16 +106,16 @@ public class AccessQueryRequest extends SearchRequest {
     }
 
     /**
-     * Get the specification of the columns for the {@link #getResults() results}.
+     * Get the specification of the columns for the {@link #getTuples() results}.
      * 
      * @return the column specifications; never null
      */
     public Columns resultColumns() {
-        return resultColumns;
+        return super.columns();
     }
 
     /**
-     * Get the immutable list of constraints that are AND-ed together in this query. Every tuple in the {@link #getResults()
+     * Get the immutable list of constraints that are AND-ed together in this query. Every {@link #getTuples() tuple in the
      * results} must satisfy <i>all</i> of these constraints.
      * 
      * @return the AND-ed constraints; never null but possibly empty if there are no constraints
@@ -129,6 +134,15 @@ public class AccessQueryRequest extends SearchRequest {
     }
 
     /**
+     * Get the schemata that defines the table structure and columns definitions available to this query.
+     * 
+     * @return the schemata; never null
+     */
+    public Schemata schemata() {
+        return schemata;
+    }
+
+    /**
      * Get the limit of the result tuples, which can specify a {@link Limit#getRowLimit() maximum number of rows} as well as an
      * {@link Limit#getOffset() initial offset} for the first row.
      * 
@@ -136,6 +150,17 @@ public class AccessQueryRequest extends SearchRequest {
      */
     public Limit limit() {
         return limit;
+    }
+
+    /**
+     * Set the results for this request.
+     * 
+     * @param tuples the result values
+     * @param statistics the statistics, or null if there are none
+     */
+    public void setResults( List<Object[]> tuples,
+                            Statistics statistics ) {
+        super.doSetResults(columns(), tuples, statistics);
     }
 
     /**

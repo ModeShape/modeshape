@@ -58,6 +58,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Constraint;
 import org.jboss.dna.graph.query.model.Limit;
@@ -123,7 +124,9 @@ public class GraphTest {
     private String sourceName;
     private MockRepositoryConnection connection;
     private LinkedList<Request> executedRequests;
-    private QueryResults nextQueryResults;
+    private Columns nextColumns;
+    private List<Object[]> nextTuples;
+    private Statistics nextStatistics;
     private int numberOfExecutions;
     /** Populate this with the properties (by location) that are to be read */
     private Map<Location, Collection<Property>> properties;
@@ -155,7 +158,9 @@ public class GraphTest {
         properties = new HashMap<Location, Collection<Property>>();
         children = new HashMap<Location, List<Location>>();
 
-        nextQueryResults = null;
+        nextColumns = null;
+        nextTuples = null;
+        nextStatistics = null;
     }
 
     static class IsAnyRequest extends ArgumentMatcher<Request> {
@@ -877,8 +882,8 @@ public class GraphTest {
         assertThat(node3.getChildren().isEmpty(), is(true));
         assertThat(node3.getProperties().isEmpty(), is(true));
     }
-    
-    //@Test
+
+    // @Test
     public void shouldConstructValidSubgraphToString() {
         Location child1 = Location.create(createPath(validPath, "x"));
         Location child2 = Location.create(createPath(validPath, "y"));
@@ -900,18 +905,15 @@ public class GraphTest {
         setPropertiesToReadOn(child12, validIdProperty2);
         setPropertiesToReadOn(child121, validIdProperty1);
         setPropertiesToReadOn(child122, validIdProperty2);
-        
+
         Subgraph subgraph = graph.getSubgraphOfDepth(2).at(validPath);
         assertThat(subgraph, is(notNullValue()));
         assertThat(subgraph.getMaximumDepth(), is(2));
-        
-        String expectedToStringValue = 
-            "Subgraph\n"
-                + "<name = \"c\" id2 = \"2\" id1 = \"1\">\n"
-                + "  <name = \"x\" id1 = \"1\">\n"
-                + "  <name = \"y\" id2 = \"2\">\n"
-                + "  <name = \"z\" >\n";
-        
+
+        String expectedToStringValue = "Subgraph\n" + "<name = \"c\" id2 = \"2\" id1 = \"1\">\n"
+                                       + "  <name = \"x\" id1 = \"1\">\n" + "  <name = \"y\" id2 = \"2\">\n"
+                                       + "  <name = \"z\" >\n";
+
         // Get nodes by relative path ...
         Node root = subgraph.getNode("./");
         assertThat(root.getChildren(), hasItems(child1, child2, child3));
@@ -1247,52 +1249,68 @@ public class GraphTest {
     @Test
     public void shouldPerformSearchWhenConnectorSupportsQueries() {
         // Set the expected results that will be returned from the connector ...
-        QueryResults expected = mock(QueryResults.class);
-        nextQueryResults = expected;
+        Columns columns = mock(Columns.class);
+        List<Object[]> tuples = Collections.emptyList();
+        Statistics stats = mock(Statistics.class);
+        nextColumns = columns;
+        nextTuples = tuples;
+        nextStatistics = stats;
 
         // Execute the seach, and verify the results were consumed by the processor ...
         String fullTextSearchExpression = "term1 term2";
-        QueryResults results = graph.search(fullTextSearchExpression);
-        assertThat(nextQueryResults, is(nullValue()));
+        QueryResults results = graph.search(fullTextSearchExpression, 10, 0);
+        assertThat(nextColumns, is(nullValue()));
+        assertThat(nextTuples, is(nullValue()));
+        assertThat(nextStatistics, is(nullValue()));
 
         // The actual results should be what the processor returned ...
-        assertThat(results, is(sameInstance(expected)));
+        assertThat(results.getColumns(), is(sameInstance(columns)));
+        assertThat(results.getTuples(), is(sameInstance(tuples)));
+        assertThat(results.getStatistics(), is(sameInstance(stats)));
     }
 
     @Test( expected = InvalidRequestException.class )
     public void shouldFailToPerformSearchWhenConnectorDoesNotSupportsQueries() {
         // Set the expected results that will be returned from the connector ...
-        nextQueryResults = null;
+        nextColumns = null;
+        nextTuples = null;
+        nextStatistics = null;
+
         // Execute the seach, and verify the results were consumed by the processor ...
         String fullTextSearchExpression = "term1 term2";
-        graph.search(fullTextSearchExpression);
+        graph.search(fullTextSearchExpression, 10, 0);
     }
 
     @Test
     public void shouldPerformQueryWhenConnectorSupportsQueries() {
         // Set the expected results that will be returned from the connector ...
-        QueryResults expected = mock(QueryResults.class);
         List<Object[]> tuples = Collections.singletonList(new Object[] {"v1", "v2", "v3"});
-        stub(expected.getTuples()).toReturn(tuples);
-        nextQueryResults = expected;
+        Statistics statistics = mock(Statistics.class);
+        nextTuples = tuples;
+        nextStatistics = statistics;
 
         // Execute the query, and verify the results were consumed by the processor ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
         Schemata schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
         QueryCommand query = new SqlQueryParser().parseQuery("SELECT * FROM t1", typeSystem);
         QueryResults results = graph.query(query, schemata).execute();
-        assertThat(nextQueryResults, is(nullValue()));
+        assertThat(nextColumns, is(nullValue()));
+        assertThat(nextTuples, is(nullValue()));
+        assertThat(nextStatistics, is(nullValue()));
 
         // The actual results should be what the processor returned ...
-        List<Object[]> actualTuples = results.getTuples();
-        assertThat(actualTuples, is(tuples));
+        assertThat(results.getColumns(), is(notNullValue()));
+        assertThat(results.getTuples(), is(tuples));
+        assertThat(results.getStatistics(), is(notNullValue()));
         assertNextRequestAccessQuery(graph.getCurrentWorkspaceName(), "t1", columns("t1", "c1", "c2", "c3"), Limit.NONE);
     }
 
     @Test( expected = InvalidRequestException.class )
     public void shouldFailToPerformQueryWhenConnectorDoesNotSupportsQueries() {
         // Set the expected results that will be returned from the connector ...
-        nextQueryResults = null;
+        nextColumns = null;
+        nextTuples = null;
+        nextStatistics = null;
 
         // Execute the query, and verify the results were consumed by the processor ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
@@ -1501,11 +1519,13 @@ public class GraphTest {
          */
         @Override
         public void process( AccessQueryRequest request ) {
-            if (nextQueryResults == null) {
+            if (nextTuples == null) {
                 super.process(request); // should result in error
             }
-            request.setResults(nextQueryResults);
-            nextQueryResults = null;
+            request.setResults(nextTuples, nextStatistics);
+            nextColumns = null;
+            nextTuples = null;
+            nextStatistics = null;
         }
 
         /**
@@ -1515,11 +1535,13 @@ public class GraphTest {
          */
         @Override
         public void process( FullTextSearchRequest request ) {
-            if (nextQueryResults == null) {
+            if (nextTuples == null) {
                 super.process(request); // should result in error
             }
-            request.setResults(nextQueryResults);
-            nextQueryResults = null;
+            request.setResults(nextColumns, nextTuples, nextStatistics);
+            nextColumns = null;
+            nextTuples = null;
+            nextStatistics = null;
         }
 
         private Location actualLocationOf( Location location ) {

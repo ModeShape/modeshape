@@ -29,7 +29,7 @@ import org.jboss.dna.graph.property.Path;
 /**
  * A Request to make changes in a graph.
  */
-public abstract class ChangeRequest extends Request {
+public abstract class ChangeRequest extends Request implements Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -60,4 +60,15 @@ public abstract class ChangeRequest extends Request {
      * @return the name of the workspace changed by this request
      */
     public abstract String changedWorkspace();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public abstract ChangeRequest clone();
 }

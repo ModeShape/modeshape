@@ -60,6 +60,7 @@ public class UpdatePropertiesRequest extends ChangeRequest {
     private final Location on;
     private final String workspaceName;
     private final Map<Name, Property> properties;
+    private final boolean removeOtherProperties;
     private Set<Name> createdPropertyNames;
     private Location actualLocation;
 
@@ -74,12 +75,29 @@ public class UpdatePropertiesRequest extends ChangeRequest {
     public UpdatePropertiesRequest( Location on,
                                     String workspaceName,
                                     Map<Name, Property> properties ) {
+        this(on, workspaceName, properties, false);
+    }
+
+    /**
+     * Create a request to update the properties on the node at the supplied location.
+     * 
+     * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
+     * @param properties the map of properties (keyed by their name), which is reused without copying
+     * @param removeOtherProperties if any properties not being updated should be removed
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
+     */
+    public UpdatePropertiesRequest( Location on,
+                                    String workspaceName,
+                                    Map<Name, Property> properties,
+                                    boolean removeOtherProperties ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotEmpty(properties, "properties");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
         this.on = on;
         this.properties = Collections.unmodifiableMap(properties);
+        this.removeOtherProperties = removeOtherProperties;
     }
 
     /**
@@ -118,6 +136,16 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      */
     public Map<Name, Property> properties() {
         return properties;
+    }
+
+    /**
+     * Return whether any properties not being updated should be removed.
+     * 
+     * @return true if the node's existing properties not updated with this request should be removed, or false if this request
+     *         should leave other properties unchanged
+     */
+    public boolean removeOtherProperties() {
+        return removeOtherProperties;
     }
 
     /**
@@ -346,7 +374,28 @@ public class UpdatePropertiesRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
+        if (removeOtherProperties) {
+            return "update (and remove other) properties on " + on() + " in the \"" + workspaceName + "\" workspace to "
+                   + properties();
+        }
         return "update properties on " + on() + " in the \"" + workspaceName + "\" workspace to " + properties();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public UpdatePropertiesRequest clone() {
+        UpdatePropertiesRequest request = new UpdatePropertiesRequest(actualLocation != null ? actualLocation : on,
+                                                                      workspaceName, properties, removeOtherProperties);
+        request.setActualLocationOfNode(actualLocation);
+        request.setNewProperties(createdPropertyNames);
+        return request;
     }
 
 }

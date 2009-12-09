@@ -388,4 +388,18 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
                + properties();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#clone()
+     */
+    @Override
+    public CreateNodeRequest clone() {
+        CreateNodeRequest request = new CreateNodeRequest(under, workspaceName, childName, conflictBehavior, properties);
+        request.setActualLocationOfNode(actualLocation);
+        return request;
+    }
 }

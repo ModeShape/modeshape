@@ -33,20 +33,12 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.query.model.Column;
-import org.jboss.dna.graph.query.model.QueryCommand;
 
 /**
  * The resulting output of a query.
  */
 @Immutable
 public interface QueryResults extends Serializable {
-
-    /**
-     * Get the original query command.
-     * 
-     * @return the query; never null
-     */
-    public QueryCommand getCommand();
 
     /**
      * Get the description of the columns contained in these results. These columns can be used to discover the indexes of the
@@ -369,18 +361,18 @@ public interface QueryResults extends Serializable {
         private final long resultFormulationNanos;
         private final long executionNanos;
 
-        private Statistics() {
+        public Statistics() {
             this(0L, 0L, 0L, 0L);
         }
 
-        protected Statistics( long planningNanos ) {
+        public Statistics( long planningNanos ) {
             this(planningNanos, 0L, 0L, 0L);
         }
 
-        protected Statistics( long planningNanos,
-                              long optimizationNanos,
-                              long resultFormulationNanos,
-                              long executionNanos ) {
+        public Statistics( long planningNanos,
+                           long optimizationNanos,
+                           long resultFormulationNanos,
+                           long executionNanos ) {
             this.planningNanos = planningNanos;
             this.optimizationNanos = optimizationNanos;
             this.resultFormulationNanos = resultFormulationNanos;

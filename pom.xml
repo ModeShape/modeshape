@@ -119,8 +119,8 @@
 	<modules>
 		<module>dna-common</module>
 		<module>dna-graph</module>
+		<module>extensions/dna-search-lucene</module>
 		<module>dna-repository</module>
-		<module>dna-search</module>
 		<module>dna-cnd</module>
 		<module>dna-jcr</module>
 		<module>extensions/dna-classloader-maven</module>

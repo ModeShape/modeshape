@@ -339,5 +339,4 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         buff.append("]");
         return buff.toString();
     }
-
 }

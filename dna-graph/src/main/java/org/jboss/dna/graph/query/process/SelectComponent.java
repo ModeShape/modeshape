@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.And;
 import org.jboss.dna.graph.query.model.BindVariableName;
@@ -48,6 +47,7 @@ import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.StaticOperand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
+import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
  */
@@ -102,7 +102,9 @@ public class SelectComponent extends DelegatingComponent {
         super(delegate);
         this.constraint = constraint;
         this.variables = variables != null ? variables : Collections.<String, Object>emptyMap();
-        this.checker = createChecker(delegate.getContext(), delegate.getColumns(), this.constraint, this.variables, analyzer);
+        TypeSystem types = delegate.getContext().getTypeSystem();
+        Schemata schemata = delegate.getContext().getSchemata();
+        this.checker = createChecker(types, schemata, delegate.getColumns(), this.constraint, this.variables, analyzer);
     }
 
     /**
@@ -128,7 +130,7 @@ public class SelectComponent extends DelegatingComponent {
     /**
      * Interface used to determine whether a tuple satisfies all of the constraints applied to the SELECT node.
      */
-    protected static interface ConstraintChecker {
+    public static interface ConstraintChecker {
         /**
          * Return true if the tuple satisfies all of the constraints.
          * 
@@ -221,7 +223,8 @@ public class SelectComponent extends DelegatingComponent {
      * Create the constraint evaluator that is used by the {@link SelectComponent} to evaluate the supplied {@link Constraint
      * criteria}. For the most correct behavior, specify an {@link Analyzer} implementation.
      * 
-     * @param context the context in which the query is being evaluated; may not be null
+     * @param types the type system; may not be null
+     * @param schemata the schemata; may not be null
      * @param columns the definition of the result columns and the tuples; may not be null
      * @param constraint the criteria that this {@link SelectComponent} is to evaluate
      * @param variables the variables that are to be substituted for the various {@link BindVariableName} {@link StaticOperand
@@ -232,15 +235,16 @@ public class SelectComponent extends DelegatingComponent {
      * @return the constraint evaluator; never null
      */
     @SuppressWarnings( "unchecked" )
-    protected ConstraintChecker createChecker( QueryContext context,
+    protected ConstraintChecker createChecker( final TypeSystem types,
+                                               Schemata schemata,
                                                Columns columns,
                                                Constraint constraint,
                                                Map<String, Object> variables,
                                                final Analyzer analyzer ) {
         if (constraint instanceof Or) {
             Or orConstraint = (Or)constraint;
-            final ConstraintChecker left = createChecker(context, columns, orConstraint.getLeft(), variables, analyzer);
-            final ConstraintChecker right = createChecker(context, columns, orConstraint.getRight(), variables, analyzer);
+            final ConstraintChecker left = createChecker(types, schemata, columns, orConstraint.getLeft(), variables, analyzer);
+            final ConstraintChecker right = createChecker(types, schemata, columns, orConstraint.getRight(), variables, analyzer);
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     return left.satisfiesConstraints(tuple) || right.satisfiesConstraints(tuple);
@@ -249,7 +253,12 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof Not) {
             Not notConstraint = (Not)constraint;
-            final ConstraintChecker original = createChecker(context, columns, notConstraint.getConstraint(), variables, analyzer);
+            final ConstraintChecker original = createChecker(types,
+                                                             schemata,
+                                                             columns,
+                                                             notConstraint.getConstraint(),
+                                                             variables,
+                                                             analyzer);
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     return !original.satisfiesConstraints(tuple);
@@ -258,8 +267,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof And) {
             And andConstraint = (And)constraint;
-            final ConstraintChecker left = createChecker(context, columns, andConstraint.getLeft(), variables, analyzer);
-            final ConstraintChecker right = createChecker(context, columns, andConstraint.getRight(), variables, analyzer);
+            final ConstraintChecker left = createChecker(types, schemata, columns, andConstraint.getLeft(), variables, analyzer);
+            final ConstraintChecker right = createChecker(types, schemata, columns, andConstraint.getRight(), variables, analyzer);
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     return left.satisfiesConstraints(tuple) && right.satisfiesConstraints(tuple);
@@ -387,7 +396,7 @@ public class SelectComponent extends DelegatingComponent {
             Comparison comparison = (Comparison)constraint;
 
             // Create the correct dynamic operation ...
-            final DynamicOperation dynamicOperation = createDynamicOperation(context, columns, comparison.getOperand1());
+            final DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, comparison.getOperand1());
             final String expectedType = dynamicOperation.getExpectedType();
 
             // Determine the literal value ...
@@ -402,13 +411,12 @@ public class SelectComponent extends DelegatingComponent {
                 literalValue = literal.getValue();
             }
             // Create the correct comparator ...
-            final TypeSystem typeSystem = context.getTypeSystem();
-            final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
+            final TypeFactory<?> typeFactory = types.getTypeFactory(expectedType);
             assert typeFactory != null;
             final Comparator<Object> comparator = (Comparator<Object>)typeFactory.getComparator();
             assert comparator != null;
             // Create the correct operation ...
-            final TypeFactory<?> literalFactory = typeSystem.getTypeFactory(expectedType);
+            final TypeFactory<?> literalFactory = types.getTypeFactory(expectedType);
             final Object rhs = literalFactory.create(literalValue);
             switch (comparison.getOperator()) {
                 case EQUAL_TO:
@@ -449,12 +457,12 @@ public class SelectComponent extends DelegatingComponent {
                     };
                 case LIKE:
                     // Convert the LIKE expression to a regular expression
-                    final Pattern pattern = createRegexFromLikeExpression(typeSystem.asString(rhs));
+                    final Pattern pattern = createRegexFromLikeExpression(types.asString(rhs));
                     return new ConstraintChecker() {
                         public boolean satisfiesConstraints( Object[] tuples ) {
                             Object tupleValue = dynamicOperation.evaluate(tuples);
                             if (tupleValue == null) return false;
-                            String value = typeSystem.asString(tupleValue);
+                            String value = types.asString(tupleValue);
                             return pattern.matcher(value).matches();
                         }
                     };
