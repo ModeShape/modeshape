@@ -8,10 +8,10 @@
     <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>dna-search-provider</artifactId>
+  <artifactId>dna-search-lucene</artifactId>
   <packaging>jar</packaging>
-  <name>JBoss DNA Search Provider for Lucene</name>
-  <description>JBoss DNA Search Provider that uses Lucene.</description>
+  <name>JBoss DNA Search Engine for Lucene</name>
+  <description>JBoss DNA Search Engine that uses Lucene.</description>
   <url>http://labs.jboss.org/dna</url>
   <!--
     Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
