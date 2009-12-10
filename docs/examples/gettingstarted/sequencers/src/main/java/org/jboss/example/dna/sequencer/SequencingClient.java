@@ -46,6 +46,7 @@ import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
+import org.jboss.dna.jcr.JcrTools;
 import org.jboss.dna.jcr.SecurityContextCredentials;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
@@ -197,7 +198,7 @@ public class SequencingClient {
             Node node = tools.findOrCreateNode(session, nodePath, "nt:folder", "nt:file");
 
             // Upload the file to that node ...
-            Node contentNode = tools.findOrCreateChild(session, node, "jcr:content", "nt:resource");
+            Node contentNode = tools.findOrCreateChild( node, "jcr:content", "nt:resource");
             contentNode.setProperty("jcr:mimeType", mimeType);
             contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
             contentNode.setProperty("jcr:data", url.openStream());
@@ -208,7 +209,7 @@ public class SequencingClient {
             session.logout();
         }
     }
-
+    
     /**
      * Perform a search of the repository for all image metadata automatically created by the image sequencer.
      * 
@@ -221,7 +222,7 @@ public class SequencingClient {
         try {
             // Find the node ...
             Node root = session.getRootNode();
-
+            
             if (root.hasNode("images") || root.hasNode("mp3s")) {
                 Node mediasNode;
                 if (root.hasNode("images")) {

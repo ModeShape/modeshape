@@ -105,7 +105,8 @@ public class ImageMetadataSequencer implements StreamSequencer {
         if (metadata != null) {
             NameFactory nameFactory = context.getValueFactories().getNameFactory();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            Path metadataNode = pathFactory.create(METADATA_NODE);
+            String metadataNodePath = METADATA_NODE;
+            Path metadataNode = pathFactory.create(metadataNodePath);
 
             // Place the image metadata into the output map ...
             output.setProperty(metadataNode, nameFactory.create(IMAGE_PRIMARY_TYPE), "image:metadata");

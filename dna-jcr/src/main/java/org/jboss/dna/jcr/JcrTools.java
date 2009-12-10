@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.example.dna.sequencer;
+package org.jboss.dna.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,24 +38,44 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
- * Utility methods for working with JCR.
+ * Utility methods for working with JCR nodes and properties.
  */
 public class JcrTools {
 
+    /**
+     * Create a map of properties for a given node's nodes 
+     * 
+     * @param propertyContainer the node and its children that may contain problems. may be null
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
+     * @return the map of loaded properties
+     * @throws IllegalArgumentException if the problems argument is null
+     */
     public Map<String, Object> loadProperties( Node propertyContainer,
                                                Problems problems ) {
+        CheckArg.isNotNull(problems, "problems");
         return loadProperties(propertyContainer, null, problems);
     }
 
+    /**
+     * Create a map of properties for a given node's nodes
+     * 
+     * @param propertyContainer the node and its children that may contain problems. may be null
+     * @param properties the existing properties map to append to. may be null
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
+     * @return the map of loaded properties
+     * @throws IllegalArgumentException if the problems argument is null
+     */
     public Map<String, Object> loadProperties( Node propertyContainer,
                                                Map<String, Object> properties,
                                                Problems problems ) {
+        CheckArg.isNotNull(problems, "problems");
         if (properties == null) properties = new HashMap<String, Object>();
         if (propertyContainer != null) {
             try {
@@ -76,7 +96,16 @@ public class JcrTools {
         return properties;
     }
 
+    /**
+     * Removes problems attached to a given node
+     * 
+     * @param parent the parent node
+     * @return true if problems existed and are removed else return false.
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if the parent argument is null
+     */
     public boolean removeProblems( Node parent ) throws RepositoryException {
+        CheckArg.isNotNull(parent, "parent");
         Node problemsNode = null;
         if (parent.hasNode("dna:problems")) {
             problemsNode = parent.getNode("dna:problems");
@@ -86,8 +115,19 @@ public class JcrTools {
         return false;
     }
 
+    /**
+     * Add problems to a specified node.
+     * 
+     * @param parent the parent node
+     * @param problems the list of problems to add to node
+     * @return true if problems were added else return false.
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if the parent or problems argument is null
+     */
     public boolean storeProblems( Node parent,
                                   Problems problems ) throws RepositoryException {
+        CheckArg.isNotNull(parent, "parent");
+        CheckArg.isNotNull(problems, "problems");
         Node problemsNode = null;
         if (parent.hasNode("dna:problems")) {
             problemsNode = parent.getNode("dna:problems");
@@ -134,7 +174,16 @@ public class JcrTools {
         return true;
     }
 
+    /**
+     * Remove all children from the specified node
+     * 
+     * @param node
+     * @return the number of children removed.
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if the node argument is null
+     */
     public int removeAllChildren( Node node ) throws RepositoryException {
+        CheckArg.isNotNull(node, "node");
         int childrenRemoved = 0;
         NodeIterator iter = node.getNodes();
         while (iter.hasNext()) {
@@ -145,6 +194,16 @@ public class JcrTools {
         return childrenRemoved;
     }
 
+    /**
+     * Get the string property value for a given node and property name.
+     * 
+     * @param node the node containing the property. may not be null
+     * @param propertyName the name of the property attached to the node. may not be null
+     * @param required true if property is required to exist for the given node.
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null 
+     * @return the property string
+     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
+     */
     public String getPropertyAsString( Node node,
                                        String propertyName,
                                        boolean required,
@@ -152,11 +211,25 @@ public class JcrTools {
         return getPropertyAsString(node, propertyName, required, null);
     }
 
+    /**
+     * Get the string property value for a given node and property name.
+     * 
+     * @param node the node containing the property. may not be null
+     * @param propertyName the name of the property attached to the node. may not be null
+     * @param required true if property is required to exist for the given node.
+     * @param defaultValue the default property. may be null
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null 
+     * @return the property string
+     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
+     */
     public String getPropertyAsString( Node node,
                                        String propertyName,
                                        boolean required,
                                        String defaultValue,
                                        Problems problems ) {
+        CheckArg.isNotNull(node, "node");
+        CheckArg.isNotNull(propertyName, "propertyName");
+        CheckArg.isNotNull(problems, "problems");
         try {
             Property property = node.getProperty(propertyName);
             return property.getString();
@@ -187,10 +260,23 @@ public class JcrTools {
         return null;
     }
 
+    /**
+     * Get the property value for specified node and property name on <code>Object</code> format.
+     * 
+     * @param node the node containing the property. may not be null
+     * @param propertyName the name of the property attached to the node. may not be null
+     * @param required true if property is required to exist for the given node.
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
+     * @return the property value
+     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
+     */
     public Object getPropertyValue( Node node,
                                     String propertyName,
                                     boolean required,
                                     Problems problems ) {
+        CheckArg.isNotNull(node, "node");
+        CheckArg.isNotNull(propertyName, "propertyName");
+        CheckArg.isNotNull(problems, "problems");
         try {
             Property property = node.getProperty(propertyName);
             switch (property.getType()) {
@@ -238,11 +324,25 @@ public class JcrTools {
         return null;
     }
 
+    /**
+     * Get the property value for a specified node and property name in string array format.
+     * 
+     * @param node the node containing the property. may not be null
+     * @param propertyName the name of the property attached to the node. may not be null
+     * @param required true if property is required to exist for the given node.
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
+     * @param defaultValues
+     * @return the array of string properties
+     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
+     */
     public String[] getPropertyAsStringArray( Node node,
                                               String propertyName,
                                               boolean required,
                                               Problems problems,
                                               String... defaultValues ) {
+        CheckArg.isNotNull(node, "node");
+        CheckArg.isNotNull(propertyName, "propertyName");
+        CheckArg.isNotNull(problems, "problems");
         String[] result = defaultValues;
         try {
             Property property = node.getProperty(propertyName);
@@ -282,10 +382,23 @@ public class JcrTools {
         return result;
     }
 
+    /**
+     * Get the node under a specified node at a location defined by the specified relative path.
+     * 
+     * @param node a parent node from which to obtain a node relative to. may not be null
+     * @param relativePath the path of the desired node. may not be null
+     * @param required true if node is required to exist under the given node.
+     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
+     * @return the node located relative the the input node
+     * @throws IllegalArgumentException if the node, relativePath or problems argument is null
+     */
     public Node getNode( Node node,
                          String relativePath,
                          boolean required,
                          Problems problems ) {
+        CheckArg.isNotNull(node, "node");
+        CheckArg.isNotNull(relativePath, "relativePath");
+        CheckArg.isNotNull(problems, "problems");
         Node result = null;
         try {
             result = node.getNode(relativePath);
@@ -300,6 +413,12 @@ public class JcrTools {
         return result;
     }
 
+    /**
+     * Get the readable string form for a specified node.
+     * 
+     * @param node the node to obtain the readable string form. may be null
+     * @return the readable string form for a specified node. 
+     */
     public String getReadable( Node node ) {
         if (node == null) return "";
         try {
@@ -309,30 +428,73 @@ public class JcrTools {
         }
     }
 
+    /**
+     * Get or create a node at the specified path. 
+     * 
+     * @param session the JCR session. may not be null
+     * @param path the path of the desired node to be found or created. may not be null
+     * @return the existing or newly created node
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if either the session or path argument is null
+     */
     public Node findOrCreateNode( Session session,
                                   String path ) throws RepositoryException {
         return findOrCreateNode(session, path, null, null);
     }
 
+    /**
+     * Get or create a node at the specified path and node type.
+     * 
+     * @param session the JCR session. may not be null
+     * @param path the path of the desired node to be found or created. may not be null
+     * @param nodeType the node type. may be null
+     * @return the existing or newly created node
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if either the session or path argument is null
+     */
     public Node findOrCreateNode( Session session,
                                   String path,
                                   String nodeType ) throws RepositoryException {
         return findOrCreateNode(session, path, nodeType, nodeType);
     }
 
+    /**
+     * Get or create a node at the specified path. 
+     * 
+     * @param session the JCR session. may not be null
+     * @param path the path of the desired node to be found or created. may not be null
+     * @param defaultNodeType the default node type. may be null
+     * @param finalNodeType the optional final node type. may be null
+     * @return the existing or newly created node
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if either the session or path argument is null
+     */
     public Node findOrCreateNode( Session session,
                                   String path,
                                   String defaultNodeType,
                                   String finalNodeType ) throws RepositoryException {
+        CheckArg.isNotNull(session, "session");
         Node root = session.getRootNode();
-        return findOrCreateNode(session, root, path, defaultNodeType, finalNodeType);
+        return findOrCreateNode(root, path, defaultNodeType, finalNodeType);
     }
 
-    public Node findOrCreateNode( Session session,
-                                  Node parentNode,
+    /**
+     * Get or create a node at the specified path. 
+     * 
+     * @param parentNode the parent node. may not be null
+     * @param path the path of the desired child node. may not be null
+     * @param defaultNodeType the default node type. may be null
+     * @param finalNodeType the optional final node type. may be null
+     * @return the existing or newly created node
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if either the parentNode or path argument is null
+     */
+    public Node findOrCreateNode( Node parentNode,
                                   String path,
                                   String defaultNodeType,
                                   String finalNodeType ) throws RepositoryException {
+        CheckArg.isNotNull(parentNode, "parentNode");
+        CheckArg.isNotNull(path, "path");
         // Remove leading and trailing slashes ...
         String relPath = path.replaceAll("^/+", "").replaceAll("/+$", "");
 
@@ -368,17 +530,33 @@ public class JcrTools {
         return node;
     }
 
-    public Node findOrCreateChild( Session session,
-                                   Node parent,
+    /**
+     * Get or create a node with the specified node under the specified parent node. 
+     * 
+     * @param parent the parent node. may not be null
+     * @param name the name of the child node. may not be null
+     * @return the existing or newly created child node
+     * @throws RepositoryException
+     * @throws IllegalArgumentException if either the parent or name argument is null
+     */
+    public Node findOrCreateChild( Node parent,
                                    String name ) throws RepositoryException {
-        return findOrCreateChild(session, parent, name, null);
+        return findOrCreateChild( parent, name, null);
     }
 
-    public Node findOrCreateChild( Session session,
-                                   Node parent,
+    /**
+     * Get or create a node with the specified node and node type under the specified parent node.
+     * 
+     * @param parent the parent node. may not be null
+     * @param name the name of the child node. may not be null
+     * @param nodeType the node type. may be null
+     * @return the existing or newly created child node
+     * @throws RepositoryException
+     */
+    public Node findOrCreateChild( Node parent,
                                    String name,
                                    String nodeType ) throws RepositoryException {
-        return findOrCreateNode(session, parent, name, nodeType, nodeType);
+        return findOrCreateNode( parent, name, nodeType, nodeType);
     }
 
 }
