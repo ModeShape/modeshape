@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.util.List;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.IoUtil;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.io.Destination;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -56,22 +55,31 @@ public class DdlSequencer implements StreamSequencer {
                           SequencerOutput output,
                           StreamSequencerContext context ) {
 
-        // Create the destination that forwards to the sequencer output ...
-        this.destination = new OutputDestination(output, context);
-        this.pathFactory = context.getValueFactories().getPathFactory();
+        // Create path factory
 
+        this.pathFactory = context.getValueFactories().getPathFactory();
+        
         DdlParsers parsers = new DdlParsers();
 
         AstNode rootNode = null;
 
         try {
+            // Perform the parsing
             rootNode = parsers.parse(IoUtil.read(stream));
+            
+            
+            // The AstNode objects getPath() method returns a ChildPath object which is built with a parent path. If the parent
+            // path is NULL, as in the case of the parsed DDL, the parent path is set to the default ("/") which already has a parent.
+            // So we need to set the root node with relative path. This creates a BasicPath path which can be directly re-parented.
+            //Path nodePath = pathFactory.createRelativePath(StandardDdlLexicon.STATEMENTS_CONTAINER);
+            
+            Path nodePath = rootNode.getPath(context);
 
-            Path nodePath = pathFactory.create(rootNode.getPath(context));
-            List<Property> properties = rootNode.getProperties();
-            destination.create(nodePath, properties);
+            for (Property property : rootNode.getProperties()) {
+                output.setProperty(nodePath, property.getName(), property.getValuesAsArray());
+            }
 
-            convertAstNodesToGraphNodes(rootNode);
+            convertAstNodesToGraphNodes(rootNode, nodePath, output, context);
 
         } catch (ParsingException e) {
             context.getProblems().addError(e, DdlSequencerI18n.errorParsingDdlContent, e.getLocalizedMessage());
@@ -81,86 +89,18 @@ public class DdlSequencer implements StreamSequencer {
 
     }
 
-    protected void convertAstNodesToGraphNodes( AstNode parentNode ) {
-        // Walk the tree and remove any missing missing terminator nodes
-        ExecutionContext context = destination.getExecutionContext();
+    protected void convertAstNodesToGraphNodes( AstNode parentNode, Path parentPath, SequencerOutput output, StreamSequencerContext context ) {
+        // Walk the nodes and set all properties, recursively
 
         List<AstNode> children = parentNode.getChildren();
 
         for (AstNode child : children) {
-            Path nodePath = pathFactory.create(child.getPath(context));
-            List<Property> properties = child.getProperties();
-            destination.create(nodePath, properties);
-            convertAstNodesToGraphNodes(child);
-        }
-    }
+            Path nodePath = child.getPath(context); //pathFactory.create(parentPath, child.getName());
 
-    protected class OutputDestination implements Destination {
-        private final SequencerOutput output;
-        private final StreamSequencerContext context;
-
-        protected OutputDestination( SequencerOutput output,
-                                     StreamSequencerContext context ) {
-            this.output = output;
-            this.context = context;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.io.Destination#getExecutionContext()
-         */
-        public ExecutionContext getExecutionContext() {
-            return context;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.io.Destination#create(org.jboss.dna.graph.property.Path, java.util.List)
-         */
-        public void create( Path path,
-                            List<Property> properties ) {
-            for (Property property : properties) {
-                output.setProperty(path, property.getName(), property.getValuesAsArray());
+            for (Property property : child.getProperties()) {
+                output.setProperty(nodePath, property.getName(), property.getValuesAsArray());
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.io.Destination#create(org.jboss.dna.graph.property.Path,
-         *      org.jboss.dna.graph.property.Property, org.jboss.dna.graph.property.Property[])
-         */
-        public void create( Path path,
-                            Property firstProperty,
-                            Property... additionalProperties ) {
-            output.setProperty(path, firstProperty.getName(), firstProperty.getValuesAsArray());
-            for (Property property : additionalProperties) {
-                output.setProperty(path, property.getName(), property.getValuesAsArray());
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.io.Destination#setProperties(org.jboss.dna.graph.property.Path,
-         *      org.jboss.dna.graph.property.Property[])
-         */
-        public void setProperties( Path path,
-                                   Property... properties ) {
-            for (Property property : properties) {
-                output.setProperty(path, property.getName(), property.getValuesAsArray());
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.io.Destination#submit()
-         */
-        public void submit() {
-            // nothing to call on the sequencer output ...
+            convertAstNodesToGraphNodes(child, nodePath, output, context);
         }
     }
 
