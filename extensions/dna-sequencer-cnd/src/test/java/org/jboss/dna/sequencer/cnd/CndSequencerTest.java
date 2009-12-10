@@ -47,6 +47,7 @@ public class CndSequencerTest {
     private URL cndImages;
     private URL cndMp3;
     private URL cndBuiltIns;
+    private URL standardDdl;
     private StreamSequencerContext context;
 
     @Before
@@ -61,6 +62,7 @@ public class CndSequencerTest {
         cndImages = this.getClass().getClassLoader().getResource("images.cnd");
         cndMp3 = this.getClass().getClassLoader().getResource("mp3.cnd");
         cndBuiltIns = this.getClass().getClassLoader().getResource("builtin_nodetypes.cnd");
+        standardDdl = this.getClass().getClassLoader().getResource("StandardDdl.cnd");
     }
 
     @After
@@ -118,6 +120,15 @@ public class CndSequencerTest {
     @Test
     public void shouldGenerateNodeTypesForCndFileWithMp3NodeTypes() throws IOException {
         URL url = this.cndMp3;
+        assertThat(url, is(notNullValue()));
+        content = url.openStream();
+        assertThat(content, is(notNullValue()));
+        sequencer.sequence(content, output, context);
+    }
+    
+    @Test
+    public void shouldGenerateNodeTypesForCndFileWithDdlTypes() throws IOException {
+        URL url = this.standardDdl;
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
