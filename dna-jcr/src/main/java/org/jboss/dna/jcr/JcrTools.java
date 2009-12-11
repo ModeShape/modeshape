@@ -23,156 +23,17 @@
  */
 package org.jboss.dna.jcr;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
-import org.jboss.dna.common.collection.Problem;
-import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.IoUtil;
-import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.repository.RepositoryI18n;
 
 /**
- * Utility methods for working with JCR nodes and properties.
+ * Utility methods for working with JCR nodes.
  */
 public class JcrTools {
-
-    /**
-     * Create a map of properties for a given node's nodes 
-     * 
-     * @param propertyContainer the node and its children that may contain problems. may be null
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
-     * @return the map of loaded properties
-     * @throws IllegalArgumentException if the problems argument is null
-     */
-    public Map<String, Object> loadProperties( Node propertyContainer,
-                                               Problems problems ) {
-        CheckArg.isNotNull(problems, "problems");
-        return loadProperties(propertyContainer, null, problems);
-    }
-
-    /**
-     * Create a map of properties for a given node's nodes
-     * 
-     * @param propertyContainer the node and its children that may contain problems. may be null
-     * @param properties the existing properties map to append to. may be null
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
-     * @return the map of loaded properties
-     * @throws IllegalArgumentException if the problems argument is null
-     */
-    public Map<String, Object> loadProperties( Node propertyContainer,
-                                               Map<String, Object> properties,
-                                               Problems problems ) {
-        CheckArg.isNotNull(problems, "problems");
-        if (properties == null) properties = new HashMap<String, Object>();
-        if (propertyContainer != null) {
-            try {
-                NodeIterator iter = propertyContainer.getNodes();
-                while (iter.hasNext()) {
-                    Node propertyNode = iter.nextNode();
-                    if (propertyNode != null && propertyNode.getPrimaryNodeType().isNodeType("dna:property")) {
-                        String propertyName = propertyNode.getName();
-                        Object propertyValue = getPropertyValue(propertyNode, "dna:propertyValue", true, problems);
-                        properties.put(propertyName, propertyValue);
-                    }
-                }
-            } catch (RepositoryException e) {
-                problems.addError(e, RepositoryI18n.errorReadingPropertiesFromContainerNode, getReadable(propertyContainer));
-            }
-        }
-
-        return properties;
-    }
-
-    /**
-     * Removes problems attached to a given node
-     * 
-     * @param parent the parent node
-     * @return true if problems existed and are removed else return false.
-     * @throws RepositoryException
-     * @throws IllegalArgumentException if the parent argument is null
-     */
-    public boolean removeProblems( Node parent ) throws RepositoryException {
-        CheckArg.isNotNull(parent, "parent");
-        Node problemsNode = null;
-        if (parent.hasNode("dna:problems")) {
-            problemsNode = parent.getNode("dna:problems");
-            problemsNode.remove();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Add problems to a specified node.
-     * 
-     * @param parent the parent node
-     * @param problems the list of problems to add to node
-     * @return true if problems were added else return false.
-     * @throws RepositoryException
-     * @throws IllegalArgumentException if the parent or problems argument is null
-     */
-    public boolean storeProblems( Node parent,
-                                  Problems problems ) throws RepositoryException {
-        CheckArg.isNotNull(parent, "parent");
-        CheckArg.isNotNull(problems, "problems");
-        Node problemsNode = null;
-        if (parent.hasNode("dna:problems")) {
-            problemsNode = parent.getNode("dna:problems");
-            // Delete all problems ...
-            removeAllChildren(problemsNode);
-        }
-        if (problems.isEmpty()) {
-            return false;
-        }
-        if (problemsNode == null) {
-            problemsNode = parent.addNode("dna:problems"); // primary type dictated by child definition
-        }
-
-        // Add a child for each problem ...
-        for (Problem problem : problems) {
-            Node problemNode = problemsNode.addNode("problem", "dna:problem");
-            // - dna:status (string) mandatory copy
-            // < 'ERROR', 'WARNING', 'INFO'
-            // - dna:message (string) mandatory copy
-            // - dna:code (string) copy
-            // - dna:type (string) copy
-            // - dna:resource (string) copy
-            // - dna:location (string) copy
-            // - dna:trace (string) copy
-            problemNode.setProperty("dna:status", problem.getStatus().name());
-            problemNode.setProperty("dna:message", problem.getMessageString());
-            if (problem.getCode() != Problem.DEFAULT_CODE) {
-                problemNode.setProperty("dna:code", Integer.toString(problem.getCode()));
-            }
-            String resource = problem.getResource();
-            if (resource != null) {
-                problemNode.setProperty("dna:resource", resource);
-            }
-            String location = problem.getLocation();
-            if (location != null) {
-                problemNode.setProperty("dna:location", location);
-            }
-            Throwable t = problem.getThrowable();
-            if (t != null) {
-                String trace = StringUtil.getStackTrace(t);
-                problemNode.setProperty("dna:trace", trace);
-            }
-        }
-        return true;
-    }
 
     /**
      * Remove all children from the specified node
@@ -195,221 +56,30 @@ public class JcrTools {
     }
 
     /**
-     * Get the string property value for a given node and property name.
-     * 
-     * @param node the node containing the property. may not be null
-     * @param propertyName the name of the property attached to the node. may not be null
-     * @param required true if property is required to exist for the given node.
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null 
-     * @return the property string
-     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
-     */
-    public String getPropertyAsString( Node node,
-                                       String propertyName,
-                                       boolean required,
-                                       Problems problems ) {
-        return getPropertyAsString(node, propertyName, required, null);
-    }
-
-    /**
-     * Get the string property value for a given node and property name.
-     * 
-     * @param node the node containing the property. may not be null
-     * @param propertyName the name of the property attached to the node. may not be null
-     * @param required true if property is required to exist for the given node.
-     * @param defaultValue the default property. may be null
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null 
-     * @return the property string
-     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
-     */
-    public String getPropertyAsString( Node node,
-                                       String propertyName,
-                                       boolean required,
-                                       String defaultValue,
-                                       Problems problems ) {
-        CheckArg.isNotNull(node, "node");
-        CheckArg.isNotNull(propertyName, "propertyName");
-        CheckArg.isNotNull(problems, "problems");
-        try {
-            Property property = node.getProperty(propertyName);
-            return property.getString();
-        } catch (ValueFormatException e) {
-            if (required) {
-                problems.addError(e,
-                                  RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringValue,
-                                  propertyName,
-                                  getReadable(node));
-            } else {
-                problems.addError(e,
-                                  RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringValue,
-                                  propertyName,
-                                  getReadable(node));
-            }
-        } catch (PathNotFoundException e) {
-            if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
-            }
-            if (!required) return defaultValue;
-        } catch (RepositoryException err) {
-            if (required) {
-                problems.addError(err, RepositoryI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
-            } else {
-                problems.addError(err, RepositoryI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get the property value for specified node and property name on <code>Object</code> format.
-     * 
-     * @param node the node containing the property. may not be null
-     * @param propertyName the name of the property attached to the node. may not be null
-     * @param required true if property is required to exist for the given node.
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
-     * @return the property value
-     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
-     */
-    public Object getPropertyValue( Node node,
-                                    String propertyName,
-                                    boolean required,
-                                    Problems problems ) {
-        CheckArg.isNotNull(node, "node");
-        CheckArg.isNotNull(propertyName, "propertyName");
-        CheckArg.isNotNull(problems, "problems");
-        try {
-            Property property = node.getProperty(propertyName);
-            switch (property.getType()) {
-                case PropertyType.BINARY: {
-                    InputStream stream = property.getStream();
-                    try {
-                        stream = property.getStream();
-                        return IoUtil.readBytes(stream);
-                    } finally {
-                        if (stream != null) {
-                            try {
-                                stream.close();
-                            } catch (IOException e) {
-                                // Log ...
-                                Logger.getLogger(this.getClass())
-                                      .error(e,
-                                             RepositoryI18n.errorClosingBinaryStreamForPropertyFromNode,
-                                             propertyName,
-                                             node.getPath());
-                            }
-                        }
-                    }
-                }
-                default: {
-                    return property.getString();
-                }
-            }
-        } catch (IOException e) {
-            if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyOnNodeCouldNotBeRead, propertyName, getReadable(node));
-            } else {
-                problems.addError(e, RepositoryI18n.optionalPropertyOnNodeCouldNotBeRead, propertyName, getReadable(node));
-            }
-        } catch (PathNotFoundException e) {
-            if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
-            }
-        } catch (RepositoryException err) {
-            if (required) {
-                problems.addError(err, RepositoryI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
-            } else {
-                problems.addError(err, RepositoryI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get the property value for a specified node and property name in string array format.
-     * 
-     * @param node the node containing the property. may not be null
-     * @param propertyName the name of the property attached to the node. may not be null
-     * @param required true if property is required to exist for the given node.
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
-     * @param defaultValues
-     * @return the array of string properties
-     * @throws IllegalArgumentException if the node, propertyName or problems argument is null
-     */
-    public String[] getPropertyAsStringArray( Node node,
-                                              String propertyName,
-                                              boolean required,
-                                              Problems problems,
-                                              String... defaultValues ) {
-        CheckArg.isNotNull(node, "node");
-        CheckArg.isNotNull(propertyName, "propertyName");
-        CheckArg.isNotNull(problems, "problems");
-        String[] result = defaultValues;
-        try {
-            Property property = node.getProperty(propertyName);
-            if (property.getDefinition().isMultiple()) {
-                Value[] values = property.getValues();
-                result = new String[values.length];
-                int i = 0;
-                for (Value value : values) {
-                    result[i++] = value.getString();
-                }
-            } else {
-                result = new String[] {property.getString()};
-            }
-        } catch (ValueFormatException e) {
-            if (required) {
-                problems.addError(e,
-                                  RepositoryI18n.requiredPropertyOnNodeWasExpectedToBeStringArrayValue,
-                                  propertyName,
-                                  getReadable(node));
-            } else {
-                problems.addError(e,
-                                  RepositoryI18n.optionalPropertyOnNodeWasExpectedToBeStringArrayValue,
-                                  propertyName,
-                                  getReadable(node));
-            }
-        } catch (PathNotFoundException e) {
-            if (required) {
-                problems.addError(e, RepositoryI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
-            }
-        } catch (RepositoryException err) {
-            if (required) {
-                problems.addError(err, RepositoryI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
-            } else {
-                problems.addError(err, RepositoryI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Get the node under a specified node at a location defined by the specified relative path.
+     * Get the node under a specified node at a location defined by the specified relative path. If node is required, then a problem
+     * is created and added to the Problems list.
      * 
      * @param node a parent node from which to obtain a node relative to. may not be null
      * @param relativePath the path of the desired node. may not be null
      * @param required true if node is required to exist under the given node.
-     * @param problems the list of problems to add to if problems encountered loading properties. may not be null
      * @return the node located relative the the input node
+     * @throws RepositoryException 
      * @throws IllegalArgumentException if the node, relativePath or problems argument is null
      */
     public Node getNode( Node node,
                          String relativePath,
-                         boolean required,
-                         Problems problems ) {
+                         boolean required) throws RepositoryException {
         CheckArg.isNotNull(node, "node");
         CheckArg.isNotNull(relativePath, "relativePath");
-        CheckArg.isNotNull(problems, "problems");
         Node result = null;
         try {
             result = node.getNode(relativePath);
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e,
-                                            RepositoryI18n.requiredNodeDoesNotExistRelativeToNode,
-                                            relativePath,
-                                            getReadable(node));
-        } catch (RepositoryException err) {
-            problems.addError(err, RepositoryI18n.errorGettingNodeRelativeToNode, relativePath, getReadable(node));
+            if (required) {
+                throw e;
+            }
         }
+        
         return result;
     }
 
