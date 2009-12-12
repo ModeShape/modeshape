@@ -183,8 +183,8 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.search.SearchEngine#createProcessor(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.search.SearchEngine.Workspaces, org.jboss.dna.graph.observe.Observer,boolean)
+     * @see org.jboss.dna.graph.search.AbstractSearchEngine#createProcessor(ExecutionContext,
+     *      org.jboss.dna.graph.search.AbstractSearchEngine.Workspaces, Observer, boolean)
      */
     @Override
     protected LuceneSearchProcessor createProcessor( ExecutionContext context,
@@ -197,11 +197,12 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.search.SearchEngine#createWorkspace(org.jboss.dna.graph.ExecutionContext, java.lang.String)
+     * @see org.jboss.dna.graph.search.AbstractSearchEngine#createWorkspace(org.jboss.dna.graph.ExecutionContext,
+     *      java.lang.String)
      */
     @Override
     protected LuceneSearchWorkspace createWorkspace( ExecutionContext context,
                                                      String workspaceName ) throws SearchEngineException {
-        return new LuceneSearchWorkspace(workspaceName, configuration, rules, analyzer, false);
+        return new LuceneSearchWorkspace(workspaceName, configuration, rules, analyzer);
     }
 }

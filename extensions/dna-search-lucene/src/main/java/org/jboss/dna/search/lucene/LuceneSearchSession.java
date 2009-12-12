@@ -137,6 +137,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     private IndexReader contentReader;
     private IndexWriter contentWriter;
     private IndexSearcher contentSearcher;
+    private int numChanges;
 
     protected LuceneSearchSession( LuceneSearchWorkspace workspace,
                                    LuceneSearchProcessor processor ) {
@@ -166,14 +167,30 @@ public class LuceneSearchSession implements WorkspaceSession {
 
     protected IndexReader getPathsReader() throws IOException {
         if (pathsReader == null) {
-            pathsReader = IndexReader.open(pathsIndexDirectory, processor.readOnly);
+            try {
+                pathsReader = IndexReader.open(pathsIndexDirectory, processor.readOnly);
+            } catch (IOException e) {
+                // try creating the workspace ...
+                IndexWriter writer = new IndexWriter(pathsIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
+                writer.close();
+                // And try reading again ...
+                pathsReader = IndexReader.open(pathsIndexDirectory, processor.readOnly);
+            }
         }
         return pathsReader;
     }
 
     protected IndexReader getContentReader() throws IOException {
         if (contentReader == null) {
-            contentReader = IndexReader.open(contentIndexDirectory, processor.readOnly);
+            try {
+                contentReader = IndexReader.open(contentIndexDirectory, processor.readOnly);
+            } catch (IOException e) {
+                // try creating the workspace ...
+                IndexWriter writer = new IndexWriter(contentIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
+                writer.close();
+                // And try reading again ...
+                contentReader = IndexReader.open(contentIndexDirectory, processor.readOnly);
+            }
         }
         return contentReader;
     }
@@ -214,10 +231,22 @@ public class LuceneSearchSession implements WorkspaceSession {
         return pathsWriter != null || contentWriter != null;
     }
 
-    public boolean optimize() throws IOException {
-        getContentWriter().optimize();
-        getPathsWriter().optimize();
-        return true;
+    protected final void recordChange() {
+        ++numChanges;
+    }
+
+    protected final void recordChanges( int numberOfChanges ) {
+        assert numberOfChanges >= 0;
+        numChanges += numberOfChanges;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getChangeCount()
+     */
+    public final int getChangeCount() {
+        return numChanges;
     }
 
     /**
@@ -226,6 +255,10 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @see org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#commit()
      */
     public void commit() {
+        // Is optimization required ...
+        final boolean optimize = workspace.isOptimizationRequired(numChanges);
+        numChanges = 0;
+
         IOException ioError = null;
         RuntimeException runtimeError = null;
         if (pathsReader != null) {
@@ -251,42 +284,42 @@ public class LuceneSearchSession implements WorkspaceSession {
             }
         }
         if (pathsWriter != null) {
-            // try {
-            // pathsWriter.commit();
-            // } catch (IOException e) {
-            // if (ioError == null) ioError = e;
-            // } catch (RuntimeException e) {
-            // if (runtimeError == null) runtimeError = e;
-            // } finally {
             try {
-                pathsWriter.close();
+                if (optimize) pathsWriter.optimize();
             } catch (IOException e) {
                 if (ioError == null) ioError = e;
             } catch (RuntimeException e) {
                 if (runtimeError == null) runtimeError = e;
             } finally {
-                pathsWriter = null;
+                try {
+                    pathsWriter.close();
+                } catch (IOException e) {
+                    if (ioError == null) ioError = e;
+                } catch (RuntimeException e) {
+                    if (runtimeError == null) runtimeError = e;
+                } finally {
+                    pathsWriter = null;
+                }
             }
-            // }
         }
         if (contentWriter != null) {
-            // try {
-            // contentWriter.commit();
-            // } catch (IOException e) {
-            // if (ioError == null) ioError = e;
-            // } catch (RuntimeException e) {
-            // if (runtimeError == null) runtimeError = e;
-            // } finally {
             try {
-                contentWriter.close();
+                if (optimize) contentWriter.optimize();
             } catch (IOException e) {
                 if (ioError == null) ioError = e;
             } catch (RuntimeException e) {
                 if (runtimeError == null) runtimeError = e;
             } finally {
-                contentWriter = null;
+                try {
+                    contentWriter.close();
+                } catch (IOException e) {
+                    if (ioError == null) ioError = e;
+                } catch (RuntimeException e) {
+                    if (runtimeError == null) runtimeError = e;
+                } finally {
+                    contentWriter = null;
+                }
             }
-            // }
         }
         if (ioError != null) {
             String msg = LuceneI18n.errorWhileCommittingIndexChanges.text(workspace.getWorkspaceName(),
@@ -303,6 +336,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @see org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#rollback()
      */
     public void rollback() {
+        numChanges = 0;
         IOException ioError = null;
         RuntimeException runtimeError = null;
         if (pathsReader != null) {

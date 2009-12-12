@@ -39,6 +39,10 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-search-lucene</artifactId>
+    </dependency>
     <!-- 
     Testing (note the scope)
     -->

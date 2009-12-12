@@ -45,7 +45,6 @@ import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
-import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -61,17 +60,18 @@ import org.junit.Test;
  */
 public abstract class ReadableConnectorTest extends AbstractConnectorTest {
 
-    /**
-     * Method that is executed after each test. This method does nothing, since the repository is set up once for all of the tests
-     * and then shutdown after all tests have completed.
-     * 
-     * @throws Exception
-     */
-    @Override
-    @After
-    public void afterEach() throws Exception {
-        // Don't shut down the repository
-    }
+    // /**
+    // * Method that is executed after each test. This method does nothing, since the repository is set up once for all of the
+    // tests
+    // * and then shutdown after all tests have completed.
+    // *
+    // * @throws Exception
+    // */
+    // @Override
+    // @After
+    // public void afterEach() throws Exception {
+    // // Don't shut down the repository
+    // }
 
     @Test
     public void shouldAlwaysBeAbleToReadRootNode() {

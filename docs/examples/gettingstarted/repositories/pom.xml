@@ -107,7 +107,7 @@
           <descriptors>
             <descriptor>src/main/assembly/basic.xml</descriptor>
           </descriptors>
-          <finalName>${pom.artifactId}</finalName>
+          <finalName>${project.artifactId}</finalName>
         </configuration>
         <executions>
           <execution>

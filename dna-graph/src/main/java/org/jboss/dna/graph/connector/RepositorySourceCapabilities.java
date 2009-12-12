@@ -92,6 +92,12 @@ public class RepositorySourceCapabilities {
              DEFAULT_SUPPORT_SEARCHES);
     }
 
+    public RepositorySourceCapabilities( RepositorySourceCapabilities capabilities ) {
+        this(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(), capabilities.supportsEvents(),
+             capabilities.supportsCreatingWorkspaces(), capabilities.supportsReferences(), capabilities.supportsLocks(),
+             capabilities.supportsQueries(), capabilities.supportsSearches());
+    }
+
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
         this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES,

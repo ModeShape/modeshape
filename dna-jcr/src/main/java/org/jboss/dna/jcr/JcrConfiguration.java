@@ -175,6 +175,9 @@ public class JcrConfiguration extends DnaConfiguration {
 
         /**
          * Specify that the CND file located at the supplied path should be loaded into the repository.
+         * <p>
+         * This method may be called multiple times, once per CND file.
+         * </p>
          * 
          * @param pathToCndFile the path to the CND file
          * @return this object for chained method invocation
@@ -195,6 +198,9 @@ public class JcrConfiguration extends DnaConfiguration {
 
         /**
          * Specify that the CND file is to be loaded into the repository.
+         * <p>
+         * This method may be called multiple times, once per CND file.
+         * </p>
          * 
          * @param urlOfCndFile the URL of the CND file
          * @return this object for chained method invocation
@@ -205,6 +211,9 @@ public class JcrConfiguration extends DnaConfiguration {
 
         /**
          * Specify that the CND file is to be loaded into the repository.
+         * <p>
+         * This method may be called multiple times, once per CND file.
+         * </p>
          * 
          * @param cndContent the stream containing the CND content
          * @return this object for chained method invocation

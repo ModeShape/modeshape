@@ -99,6 +99,7 @@ import org.jboss.dna.graph.query.process.SelectComponent;
 import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.search.AbstractSearchEngine;
 import org.jboss.dna.graph.search.SearchEngine;
 import org.jboss.dna.graph.search.SearchEngineProcessor;
 import org.jboss.dna.graph.search.SearchEngineWorkspace;
@@ -112,7 +113,7 @@ import org.jboss.dna.graph.search.SearchEngineWorkspace;
  * @param <ProcessorType> type type of processor
  */
 public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor<WorkspaceType>>
-    extends SearchEngine<WorkspaceType, ProcessorType> {
+    extends AbstractSearchEngine<WorkspaceType, ProcessorType> {
 
     /**
      * Create a {@link SearchEngine} instance that uses Lucene.
@@ -147,8 +148,6 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         protected final NameFactory nameFactory;
         protected final TypeSystem typeSystem;
         protected final PropertyFactory propertyFactory;
-
-        private int changeCount;
 
         protected AbstractLuceneProcessor( String sourceName,
                                            ExecutionContext context,
@@ -285,44 +284,15 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         protected abstract String fullTextFieldName( String propertyName );
 
         /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.search.SearchEngineProcessor#optimize()
-         */
-        @Override
-        public boolean optimize() {
-            boolean result = false;
-            try {
-                for (WorkspaceSession context : getSessions()) {
-                    if (context.optimize()) result = true;
-                }
-            } catch (IOException e) {
-                throw new LuceneException(e);
-            }
-            return result;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.search.SearchEngineProcessor#optimize(java.lang.String)
-         */
-        @Override
-        public boolean optimize( String workspaceName ) {
-            try {
-                return getSessionFor(null, workspaceName).optimize();
-            } catch (IOException e) {
-                throw new LuceneException(e);
-            }
-        }
-
-        /**
          * Return whether this session made changes to the indexed state.
          * 
          * @return true if change were made, or false otherwise
          */
         public boolean hasChanges() {
-            return changeCount > 0;
+            for (SessionType session : getSessions()) {
+                if (session.getChangeCount() > 0) return true;
+            }
+            return false;
         }
 
         public String pathAsString( Path path ) {
@@ -763,7 +733,12 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
          */
         void commit();
 
-        boolean optimize() throws IOException;
+        /**
+         * Get the number of changes that have been made to the workspace using this session.
+         * 
+         * @return the number of changes; never negative
+         */
+        int getChangeCount();
 
         IndexSearcher getContentSearcher() throws IOException;
 

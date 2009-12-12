@@ -23,6 +23,9 @@
  */
 package org.jboss.dna.search.lucene;
 
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import net.jcip.annotations.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -36,6 +39,8 @@ import org.jboss.dna.graph.search.SearchEngineWorkspace;
  */
 @Immutable
 public class LuceneSearchWorkspace implements SearchEngineWorkspace {
+
+    protected static final int CHANGES_BEFORE_OPTIMIZATION = 100;
 
     protected static final String PATHS_INDEX_NAME = "paths";
     protected static final String CONTENT_INDEX_NAME = "content";
@@ -71,25 +76,28 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
     }
 
     private final String workspaceName;
+    private final String workspaceDirectoryName;
     protected final IndexRules rules;
     private final LuceneConfiguration configuration;
     protected final Directory pathDirectory;
     protected final Directory contentDirectory;
     protected final Analyzer analyzer;
+    private final Lock changesLock = new ReentrantLock();
+    private int changes = 0;
 
     protected LuceneSearchWorkspace( String workspaceName,
                                      LuceneConfiguration configuration,
                                      IndexRules rules,
-                                     Analyzer analyzer,
-                                     boolean overwrite ) {
+                                     Analyzer analyzer ) {
         assert workspaceName != null;
         assert configuration != null;
         this.workspaceName = workspaceName;
+        this.workspaceDirectoryName = workspaceName.trim().length() != 0 ? workspaceName : UUID.randomUUID().toString();
         this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(Version.LUCENE_30);
         this.rules = rules != null ? rules : LuceneSearchEngine.DEFAULT_RULES;
         this.configuration = configuration;
-        this.pathDirectory = this.configuration.getDirectory(workspaceName, PATHS_INDEX_NAME);
-        this.contentDirectory = this.configuration.getDirectory(workspaceName, CONTENT_INDEX_NAME);
+        this.pathDirectory = this.configuration.getDirectory(workspaceDirectoryName, PATHS_INDEX_NAME);
+        this.contentDirectory = this.configuration.getDirectory(workspaceDirectoryName, CONTENT_INDEX_NAME);
     }
 
     /**
@@ -107,8 +115,8 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      * @see org.jboss.dna.graph.search.SearchEngineWorkspace#destroy(org.jboss.dna.graph.ExecutionContext)
      */
     public void destroy( ExecutionContext context ) {
-        configuration.destroyDirectory(workspaceName, PATHS_INDEX_NAME);
-        configuration.destroyDirectory(workspaceName, CONTENT_INDEX_NAME);
+        configuration.destroyDirectory(workspaceDirectoryName, PATHS_INDEX_NAME);
+        configuration.destroyDirectory(workspaceDirectoryName, CONTENT_INDEX_NAME);
     }
 
     /**
@@ -116,5 +124,26 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      */
     public IndexRules getRules() {
         return rules;
+    }
+
+    /**
+     * Give the number of changes that have been made in a session, determine whether optimization is required on the workspace
+     * indexes.
+     * 
+     * @param changesInSession the number of changes made within a session using this workspace
+     * @return true if the workspace indexes should be optimized, or false otherwise
+     */
+    protected boolean isOptimizationRequired( int changesInSession ) {
+        if (changesInSession == 0) return false;
+        assert changesInSession > 0;
+        try {
+            changesLock.lock();
+            changes += changesInSession;
+            if (changes < CHANGES_BEFORE_OPTIMIZATION) return false;
+            changes = 0;
+            return true;
+        } finally {
+            changesLock.unlock();
+        }
     }
 }

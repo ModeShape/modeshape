@@ -80,15 +80,15 @@ import org.junit.Before;
  */
 public abstract class AbstractConnectorTest {
 
-    protected static ExecutionContext context;
-    protected static RepositorySource source;
-    protected static Graph graph;
-    protected static RepositorySource configSource;
-    private static RepositoryConnectionFactory connectionFactory;
-    private static List<RepositoryConnection> openConnections;
-    private static boolean running;
-    private static Location rootLocation;
-    private static UUID rootUuid;
+    protected ExecutionContext context;
+    protected RepositorySource source;
+    protected Graph graph;
+    protected RepositorySource configSource;
+    private RepositoryConnectionFactory connectionFactory;
+    private List<RepositoryConnection> openConnections;
+    private boolean running;
+    private Location rootLocation;
+    private UUID rootUuid;
 
     public void startRepository() throws Exception {
         if (!running) {
@@ -153,7 +153,7 @@ public abstract class AbstractConnectorTest {
         }
     }
 
-    public static void shutdownRepository() {
+    public void shutdownRepository() throws Exception {
         if (running) {
             try {
                 // Shut down the connections to the source ...
@@ -199,6 +199,7 @@ public abstract class AbstractConnectorTest {
     @After
     public void afterEach() throws Exception {
         shutdownRepository();
+        cleanUpSourceResources();
     }
 
     /**
@@ -209,7 +210,7 @@ public abstract class AbstractConnectorTest {
      */
     @AfterClass
     public static void afterAll() throws Exception {
-        shutdownRepository();
+        // shutdownRepository();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -244,6 +245,14 @@ public abstract class AbstractConnectorTest {
      * @throws Exception if there is a problem setting up the source
      */
     protected abstract RepositorySource setUpSource() throws Exception;
+
+    /**
+     * After the source has been closed, clean up any resources that may have been created by the source.
+     * 
+     * @throws Exception if there is a problem setting up the source
+     */
+    protected void cleanUpSourceResources() throws Exception {
+    }
 
     /**
      * Initialize the content of the {@link RepositorySource} set up for each of the unit tests. This method is called shortly

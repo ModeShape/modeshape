@@ -47,7 +47,10 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-cnd</artifactId>
-      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-search-lucene</artifactId>
     </dependency>
     <!-- 
     Testing (note the scope)

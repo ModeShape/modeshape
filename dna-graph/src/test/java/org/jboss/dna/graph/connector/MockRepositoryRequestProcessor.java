@@ -23,9 +23,13 @@
  */
 package org.jboss.dna.graph.connector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.query.QueryResults.Statistics;
+import org.jboss.dna.graph.query.process.FullTextSearchResultColumns;
 import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.CloneBranchRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
@@ -335,6 +339,9 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     @Override
     public void process( AccessQueryRequest request ) {
         record(request);
+        List<Object[]> tuples = new ArrayList<Object[]>();
+        Statistics stats = new Statistics();
+        request.setResults(tuples, stats);
     }
 
     /**
@@ -345,6 +352,9 @@ public class MockRepositoryRequestProcessor extends RequestProcessor {
     @Override
     public void process( FullTextSearchRequest request ) {
         record(request);
+        List<Object[]> tuples = new ArrayList<Object[]>();
+        Statistics stats = new Statistics();
+        request.setResults(new FullTextSearchResultColumns(), tuples, stats);
     }
 
     /**

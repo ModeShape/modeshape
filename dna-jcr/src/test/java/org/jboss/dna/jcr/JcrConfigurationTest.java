@@ -252,6 +252,9 @@ public class JcrConfigurationTest {
         options.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
         options.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
                     DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
+        options.put(Option.SEARCHABLE, DefaultOption.SEARCHABLE);
+        options.put(Option.SEARCH_INDEX_DIRECTORY, DefaultOption.SEARCH_INDEX_DIRECTORY);
+        options.put(Option.UPDATE_INDEXES_SYNCHRONOUSLY, DefaultOption.UPDATE_INDEXES_SYNCHRONOUSLY);
         assertThat(repository.getOptions(), is(options));
     }
 

@@ -51,12 +51,12 @@
             <format>
               <formatName>html_single</formatName>
               <stylesheetResource>classpath:/xslt/org/jboss/xhtml-single.xsl</stylesheetResource>
-              <finalName>${pom.artifactId}.html</finalName>
+              <finalName>${project.artifactId}.html</finalName>
             </format>
             <format>
               <formatName>pdf</formatName>
               <stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
-              <finalName>${pom.artifactId}.pdf</finalName>
+              <finalName>${project.artifactId}.pdf</finalName>
             </format>
           </formats>
           <options>

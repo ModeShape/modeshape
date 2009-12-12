@@ -116,6 +116,11 @@ public final class JcrI18n {
     public static I18n systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
     public static I18n systemSourceNameOptionValueIsNotFormattedCorrectly;
 
+    public static I18n searchIndexDirectoryOptionSpecifiesFileNotDirectory;
+    public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
+    public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeWrittenTo;
+    public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
+
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
     public static I18n tooDeep;
@@ -180,7 +185,7 @@ public final class JcrI18n {
     public static I18n lockTokenNotHeld;
     public static I18n lockTokenAlreadyHeld;
     public static I18n uuidRequiredForLock;
-    
+
     // JcrObservationManager messages
     public static I18n cannotCreateUuid;
     public static I18n cannotPerformNodeTypeCheck;

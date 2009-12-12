@@ -68,7 +68,7 @@ import org.jboss.dna.graph.request.UnlockBranchRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.search.SearchEngineProcessor;
-import org.jboss.dna.graph.search.SearchEngine.Workspaces;
+import org.jboss.dna.graph.search.AbstractSearchEngine.Workspaces;
 import org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
 import org.jboss.dna.search.lucene.LuceneSearchWorkspace.PathIndex;
 
@@ -153,10 +153,10 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        LuceneSearchSession session = getSessionFor(request, request.workspaceName(), false);
+        LuceneSearchSession session = getSessionFor(request, request.workspaceName(), true);
         if (session == null) return;
+        request.setActualWorkspaceName(session.getWorkspaceName());
         try {
-            request.setActualWorkspaceName(session.getWorkspaceName());
             request.setActualRootLocation(session.getLocationFor(pathFactory.createRootPath()));
         } catch (IOException e) {
             request.setError(e);
@@ -209,6 +209,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
 
             // Now set the content ...
             session.setOrReplaceProperties(idStr, request.properties());
+            session.recordChange();
         } catch (IOException e) {
             request.setError(e);
         }
@@ -269,6 +270,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
             // We make a big assumption here: the UpdatePropertiesRequest created by the SearchEngineProcessor have the
             // actual locations set ...
             session.setOrReplaceProperties(idStr, request.properties().values());
+            session.recordChange();
         } catch (IOException e) {
             request.setError(e);
         }
@@ -288,16 +290,20 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         assert !readOnly;
         try {
             Query query = null;
+            int numChanges = 0;
             if (path.isRoot()) {
                 query = new MatchAllDocsQuery();
+                numChanges = LuceneSearchWorkspace.CHANGES_BEFORE_OPTIMIZATION + 100;
             } else {
                 // Create a query to find all the nodes at or below the specified path ...
                 Set<String> ids = session.getIdsForDescendantsOf(path, true);
                 query = session.findAllNodesWithIds(ids);
+                numChanges = ids.size();
             }
             // Now delete the documents from each index using this query, which we can reuse ...
             session.getPathsWriter().deleteDocuments(query);
             session.getContentWriter().deleteDocuments(query);
+            session.recordChanges(numChanges);
         } catch (FileNotFoundException e) {
             // There are no index files yet, so nothing to delete ...
         } catch (IOException e) {
@@ -318,6 +324,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
             LuceneSearchSession session = getSessionFor(request, workspace.getWorkspaceName());
             request.setActualRootLocation(session.getLocationFor(pathFactory.createRootPath()));
             workspace.destroy(getExecutionContext());
+            session.recordChanges(LuceneSearchWorkspace.CHANGES_BEFORE_OPTIMIZATION + 100);
         } catch (IOException e) {
             request.setError(e);
         }

@@ -45,7 +45,7 @@ import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.search.SearchEngineWorkspace;
-import org.jboss.dna.graph.search.SearchEngine.Workspaces;
+import org.jboss.dna.graph.search.AbstractSearchEngine.Workspaces;
 import org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
 import org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession;
 import org.junit.Before;
