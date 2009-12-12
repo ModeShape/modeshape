@@ -55,8 +55,6 @@ import org.junit.Test;
  * Since these tests only use methods that never modify repository content, the repository is set up only once (before the first
  * test) and is shut down after all tests have completed.
  * </p>
- * 
- * @author Randall Hauch
  */
 public abstract class ReadableConnectorTest extends AbstractConnectorTest {
 

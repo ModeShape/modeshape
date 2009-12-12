@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
@@ -75,8 +77,6 @@ import org.junit.Before;
  * should be used with caution, but this can be achieved by overriding {@link #afterEach()} to do nothing. The repository source
  * will be set up during the first test, and will not be shut down until {@link #afterAll() all tests have been run}.
  * </p>
- * 
- * @author Randall Hauch
  */
 public abstract class AbstractConnectorTest {
 
@@ -89,6 +89,8 @@ public abstract class AbstractConnectorTest {
     private boolean running;
     private Location rootLocation;
     private UUID rootUuid;
+    protected Observer observer;
+    protected LinkedList<Changes> allChanges;
 
     public void startRepository() throws Exception {
         if (!running) {
@@ -99,6 +101,19 @@ public abstract class AbstractConnectorTest {
 
             // Set up the configuration source ...
             configSource = setUpConfigurationSource();
+
+            // Set up the Observer and the list into which all Changes will be placed ...
+            allChanges = new LinkedList<Changes>();
+            observer = new Observer() {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.observe.Observer#notify(org.jboss.dna.graph.observe.Changes)
+                 */
+                public void notify( Changes changes ) {
+                    AbstractConnectorTest.this.allChanges.add(changes);
+                }
+            };
 
             // Set up the source ...
             source = setUpSource();
@@ -130,7 +145,7 @@ public abstract class AbstractConnectorTest {
                 }
 
                 public Observer getObserver() {
-                    return null; // no observers here
+                    return observer;
                 }
 
                 public Subgraph getConfiguration( int depth ) {

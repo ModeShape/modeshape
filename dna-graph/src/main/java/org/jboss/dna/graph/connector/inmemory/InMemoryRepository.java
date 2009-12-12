@@ -23,12 +23,17 @@
  */
 package org.jboss.dna.graph.connector.inmemory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.LockFailedException;
@@ -39,6 +44,8 @@ import org.jboss.dna.graph.connector.map.MapRepository;
 import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
 /**
@@ -76,20 +83,83 @@ public class InMemoryRepository extends MapRepository {
      */
     @Override
     public MapRepositoryTransaction startTransaction( boolean readonly ) {
-        return new LockBasedTransaction(readonly ? lock.readLock() : lock.writeLock());
+        return new LockBasedTransaction(readonly ? lock.readLock() : lock.writeLock()) {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.map.LockBasedTransaction#commit()
+             */
+            @Override
+            public void commit() {
+                // Get rid of the state of each workspace ...
+                releaseBackups();
+                // Then let the superclass do its thing (like releasing the lock) ...
+                super.commit();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.map.LockBasedTransaction#rollback()
+             */
+            @Override
+            public void rollback() {
+                // Restore the state of each workspace ...
+                restoreBackups();
+                // Then let the superclass do its thing (like releasing the lock) ...
+                super.rollback();
+            }
+        };
     }
 
     protected ReadWriteLock getLock() {
         return lock;
     }
 
-    protected class Workspace extends AbstractMapWorkspace {
+    @GuardedBy( "lock" )
+    protected void restoreBackups() {
+        for (String name : getWorkspaceNames()) {
+            Workspace workspace = (Workspace)getWorkspace(name);
+            workspace.restoreBackups();
+        }
+    }
+
+    @GuardedBy( "lock" )
+    protected void releaseBackups() {
+        for (String name : getWorkspaceNames()) {
+            Workspace workspace = (Workspace)getWorkspace(name);
+            workspace.releaseBackups();
+        }
+    }
+
+    protected class Workspace extends AbstractMapWorkspace implements InMemoryNode.ChangeListener {
         private final Map<UUID, MapNode> nodesByUuid = new HashMap<UUID, MapNode>();
+        /**
+         * The record of the node state before changes were made. This is used by the
+         * {@link InMemoryRepository#startTransaction(boolean) transactions} to restore the state upon a
+         * {@link MapRepositoryTransaction#rollback() rollback}.
+         * <p>
+         * This will be created the first time a node is changed, and is then used (and cleared) when #rollbackChanges() rolling
+         * back changes}.
+         * </p>
+         */
+        private Map<UUID, InMemoryNodeState> stateBeforeChanges;
 
         public Workspace( MapRepository repository,
                           String name ) {
             super(repository, name);
             initialize();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.map.AbstractMapWorkspace#createMapNode(java.util.UUID)
+         */
+        @Override
+        protected MapNode createMapNode( UUID uuid ) {
+            assert uuid != null;
+            return new InMemoryNode(this, uuid);
         }
 
         @Override
@@ -162,6 +232,107 @@ public class InMemoryRepository extends MapRepository {
          */
         final int size() {
             return nodesByUuid.size();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connector.inmemory.InMemoryNode.ChangeListener#prepareForChange(org.jboss.dna.graph.connector.inmemory.InMemoryNode)
+         */
+        public void prepareForChange( InMemoryNode node ) {
+            assert node != null;
+            UUID uuid = node.getUuid();
+            if (!nodesByUuid.containsKey(uuid)) return;
+            if (stateBeforeChanges == null) {
+                stateBeforeChanges = new HashMap<UUID, InMemoryNodeState>();
+                stateBeforeChanges.put(uuid, new InMemoryNodeState(node));
+            } else {
+                assert stateBeforeChanges != null;
+                if (!stateBeforeChanges.containsKey(uuid)) {
+                    stateBeforeChanges.put(uuid, new InMemoryNodeState(node));
+                }
+            }
+        }
+
+        protected void restoreBackups() {
+            if (this.stateBeforeChanges != null) {
+                for (Map.Entry<UUID, InMemoryNodeState> originalState : stateBeforeChanges.entrySet()) {
+                    UUID uuid = originalState.getKey();
+                    InMemoryNodeState state = originalState.getValue();
+                    InMemoryNode node = (InMemoryNode)nodesByUuid.get(uuid);
+                    if (node == null) {
+                        // It must have been deleted ...
+                        node = state.getOriginalNode();
+                    }
+                    node.restoreFrom(state);
+                }
+                stateBeforeChanges = null;
+            }
+        }
+
+        protected void releaseBackups() {
+            this.stateBeforeChanges = null;
+        }
+    }
+
+    @Immutable
+    protected static final class InMemoryNodeState {
+        private Path.Segment name;
+        private final Set<Property> properties;
+        private final List<MapNode> children;
+        private final Set<Name> uniqueChildNames;
+        private final InMemoryNode node;
+        private final MapNode parent;
+
+        protected InMemoryNodeState( InMemoryNode node ) {
+            this.parent = node.getParent();
+            this.node = node;
+            this.name = node.getName();
+            this.properties = new HashSet<Property>(node.getProperties().values());
+            this.children = new ArrayList<MapNode>(node.getChildren());
+            this.uniqueChildNames = new HashSet<Name>(node.getUniqueChildNames());
+        }
+
+        /**
+         * @return name
+         */
+        public Path.Segment getName() {
+            return name;
+        }
+
+        /**
+         * @return children
+         */
+        public List<MapNode> getChildren() {
+            return children;
+        }
+
+        /**
+         * @return properties
+         */
+        public Set<Property> getProperties() {
+            return properties;
+        }
+
+        /**
+         * @return uniqueChildNames
+         */
+        public Set<Name> getUniqueChildNames() {
+            return uniqueChildNames;
+        }
+
+        /**
+         * @return node
+         */
+        public InMemoryNode getOriginalNode() {
+            return node;
+        }
+
+        /**
+         * @return parent
+         */
+        public MapNode getParent() {
+            return parent;
         }
     }
 }

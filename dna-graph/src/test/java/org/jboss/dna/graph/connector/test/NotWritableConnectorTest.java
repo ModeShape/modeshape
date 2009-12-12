@@ -42,8 +42,6 @@ import org.junit.Test;
  * Since these tests attempt to modify repository content, the repository is set up for each test, given each test a pristine
  * repository (as {@link #initializeContent(Graph) initialized} by the concrete test case class).
  * </p>
- * 
- * @author Randall Hauch
  */
 public abstract class NotWritableConnectorTest extends AbstractConnectorTest {
 
