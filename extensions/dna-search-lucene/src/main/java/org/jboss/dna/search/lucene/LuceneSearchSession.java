@@ -98,13 +98,27 @@ import org.jboss.dna.search.lucene.query.NotQuery;
 public class LuceneSearchSession implements WorkspaceSession {
 
     /**
-     * Obtain an immutable {@link FieldSelector} instance that accesses the UUID field.
+     * An immutable {@link FieldSelector} instance that accesses the UUID field.
      */
-    protected static final FieldSelector UUID_FIELD_SELECTOR = new FieldSelector() {
+    protected static final FieldSelector DOC_ID_FIELD_SELECTOR = new FieldSelector() {
         private static final long serialVersionUID = 1L;
 
         public FieldSelectorResult accept( String fieldName ) {
-            return PathIndex.ID.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+            return ContentIndex.ID.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+        }
+    };
+
+    /**
+     * An immutable {@link FieldSelector} instance that accesses the UUID field.
+     */
+    protected static final FieldSelector LOCATION_FIELDS_SELECTOR = new FieldSelector() {
+        private static final long serialVersionUID = 1L;
+
+        public FieldSelectorResult accept( String fieldName ) {
+            if (PathIndex.PATH.equals(fieldName) || PathIndex.LOCATION_ID_PROPERTIES.equals(fieldName)) {
+                return FieldSelectorResult.LOAD;
+            }
+            return FieldSelectorResult.NO_LOAD;
         }
     };
 
@@ -383,9 +397,9 @@ public class LuceneSearchSession implements WorkspaceSession {
                 ScoreDoc result = scoreDocs[i];
                 int docId = result.doc;
                 // Find the UUID of the node (this UUID might be artificial, so we have to find the path) ...
-                Document doc = contentReader.document(docId, UUID_FIELD_SELECTOR);
+                Document doc = contentReader.document(docId, DOC_ID_FIELD_SELECTOR);
                 String id = doc.get(ContentIndex.ID);
-                Document pathDoc = getPathDocument(id, pathReader, pathSearcher);
+                Document pathDoc = getPathDocument(id, pathReader, pathSearcher, LOCATION_FIELDS_SELECTOR);
                 Location location = readLocation(pathDoc);
                 if (location == null) {
                     // No path record found ...
@@ -516,14 +530,15 @@ public class LuceneSearchSession implements WorkspaceSession {
 
     protected Document getPathDocument( String id,
                                         IndexReader pathReader,
-                                        IndexSearcher pathSearcher ) throws IOException {
+                                        IndexSearcher pathSearcher,
+                                        FieldSelector selector ) throws IOException {
         // Find the path for this node (is there a better way to do this than one search per ID?) ...
         TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.ID, id)), 1);
         if (pathDocs.scoreDocs.length < 1) {
             // No path record found ...
             return null;
         }
-        return pathReader.document(pathDocs.scoreDocs[0].doc);
+        return pathReader.document(pathDocs.scoreDocs[0].doc, selector);
     }
 
     /**
