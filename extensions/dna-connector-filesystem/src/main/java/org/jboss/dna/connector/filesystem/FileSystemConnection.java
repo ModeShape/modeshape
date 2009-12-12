@@ -33,6 +33,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
@@ -128,15 +129,60 @@ public class FileSystemConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspaceName, availableWorkspaces,
-                                                               creatingWorkspacesAllowed, rootNodeUuid, workspaceRootPath,
-                                                               maxPathLength, context, filenameFilter, updatesAllowed,
-                                                               customPropertiesFactory);
+        FileSystemTransaction txn = startTransaction(request.isReadOnly());
+        RequestProcessor processor = new FileSystemRequestProcessor(sourceName, defaultWorkspaceName, availableWorkspaces,
+                                                                    creatingWorkspacesAllowed, rootNodeUuid, workspaceRootPath,
+                                                                    maxPathLength, context, filenameFilter, updatesAllowed,
+                                                                    customPropertiesFactory, txn);
+        boolean commit = true;
         try {
-            proc.process(request);
+            // Obtain the lock and execute the commands ...
+            processor.process(request);
+            if (request.hasError() && !request.isReadOnly()) {
+                // The changes failed, so we need to rollback so we have 'all-or-nothing' behavior
+                commit = false;
+            }
+        } catch (Throwable error) {
+            commit = false;
         } finally {
-            proc.close();
+            try {
+                processor.close();
+            } finally {
+                // Now commit or rollback ...
+                try {
+                    if (commit) {
+                        txn.commit();
+                    } else {
+                        // Need to rollback the changes made to the repository ...
+                        txn.rollback();
+                    }
+                } catch (Throwable commitOrRollbackError) {
+                    if (commit && !request.hasError() && !request.isFrozen()) {
+                        // Record the error on the request ...
+                        request.setError(commitOrRollbackError);
+                    }
+                    commit = false; // couldn't do it
+                }
+                if (commit) {
+                    // Now that we've closed our transaction, we can notify the observer of the committed changes ...
+                    processor.notifyObserverOfChanges();
+                }
+            }
         }
+    }
+
+    /**
+     * Begin a transaction, hinting whether the transaction will be used only to read the content. If this is called, then the
+     * transaction must be either {@link MapRepositoryTransaction#commit() committed} or
+     * {@link MapRepositoryTransaction#rollback() rolled back}.
+     * 
+     * @param readonly true if the transaction will not modify any content, or false if changes are to be made
+     * @return the transaction; never null
+     * @see MapRepositoryTransaction#commit()
+     * @see MapRepositoryTransaction#rollback()
+     */
+    protected FileSystemTransaction startTransaction( boolean readonly ) {
+        return new FileSystemTransaction();
     }
 
     /**

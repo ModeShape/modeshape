@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.persistence.EntityTransaction;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.JpaSource;
 import org.jboss.dna.graph.ExecutionContext;
@@ -41,10 +40,8 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
 
     @Override
     public void close() {
-        EntityTransaction tx = repository.entityManager().getTransaction(); 
-        if (tx != null) {
-            tx.commit();
-        }
+        // There's nothing we need to clean up here (since commit/rollback is handled by SimpleJpaRepository's
+        // commitChanges() or rollbackChanges() methods ...
         super.close();
     }
 

@@ -1,14 +1,18 @@
 package org.jboss.dna.connector.jbosscache;
 
 import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
+import org.jboss.dna.graph.connector.map.LockBasedTransaction;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
 
@@ -17,6 +21,7 @@ import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
  */
 public class JBossCacheRepository extends MapRepository {
 
+    protected final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Cache<UUID, MapNode> cache;
 
     public JBossCacheRepository( String sourceName,
@@ -47,6 +52,40 @@ public class JBossCacheRepository extends MapRepository {
         assert cache != null;
         Node<UUID, MapNode> newWorkspaceNode = cache.getRoot().addChild(Fqn.fromElements(name));
         return new Workspace(this, name, newWorkspaceNode);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.map.MapRepository#startTransaction(boolean)
+     */
+    @Override
+    public MapRepositoryTransaction startTransaction( boolean readonly ) {
+        return new LockBasedTransaction(readonly ? lock.readLock() : lock.writeLock()) {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.map.LockBasedTransaction#commit()
+             */
+            @Override
+            public void commit() {
+                super.commit();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.map.LockBasedTransaction#rollback()
+             */
+            @Override
+            public void rollback() {
+                super.rollback();
+            }
+        };
+    }
+
+    protected ReadWriteLock getLock() {
+        return lock;
     }
 
     protected class Workspace extends AbstractMapWorkspace {

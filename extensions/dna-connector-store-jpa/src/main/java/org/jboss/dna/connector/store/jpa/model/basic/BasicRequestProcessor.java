@@ -46,7 +46,6 @@ import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import net.jcip.annotations.Immutable;
@@ -2377,6 +2376,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @throws ReferentialIntegrityException if the integrity of the references has been compromised
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#close()
      */
     @Override
@@ -2384,9 +2384,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Verify that the references are valid so far ...
         verifyReferences();
 
-        // Now commit the transaction ...
-        EntityTransaction txn = entities.getTransaction();
-        if (txn != null) txn.commit();
+        // Close any resources used by the superclass ...
         super.close();
     }
 
@@ -2414,8 +2412,10 @@ public class BasicRequestProcessor extends RequestProcessor {
      * <li>Remove all references that have a "from" node that is under the versions branch.</li>
      * <li>Verify that all remaining references have a valid and existing "to" node</li>
      * </ol>
+     * 
+     * @throws ReferentialIntegrityException if the integrity of the references has been compromised
      */
-    protected void verifyReferences() {
+    protected void verifyReferences() throws ReferentialIntegrityException {
         if (!enforceReferentialIntegrity) return;
         if (!workspaceIdsWithChangedReferences.isEmpty()) {
 

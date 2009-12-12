@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import net.jcip.annotations.Immutable;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
@@ -84,17 +85,15 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
  * A component that is used to process and execute {@link Request}s. This class is intended to be subclassed and methods
  * overwritten to define the behavior for executing the different kinds of requests. Abstract methods must be overridden, but
  * non-abstract methods all have meaningful default implementations.
- * 
- * @author Randall Hauch
  */
-@Immutable
+@NotThreadSafe
 public abstract class RequestProcessor {
 
     private final ExecutionContext context;
     private final String sourceName;
     private final DateTime nowInUtc;
     private final CachePolicy defaultCachePolicy;
-    private final List<ChangeRequest> changes;
+    private List<ChangeRequest> changes;
     private final Observer observer;
 
     protected RequestProcessor( String sourceName,
@@ -128,7 +127,7 @@ public abstract class RequestProcessor {
     /**
      * Record the supplied change request for publishing through the event mechanism.
      * 
-     * @param request the completed change request; may not be null
+     * @param request the completed change request; may not be null, and may not be cancelled or have an error
      */
     protected void recordChange( ChangeRequest request ) {
         assert request != null;
@@ -160,7 +159,7 @@ public abstract class RequestProcessor {
      * 
      * @return the current time in UTC; never null
      */
-    protected final DateTime getNowInUtc() {
+    public final DateTime getNowInUtc() {
         return this.nowInUtc;
     }
 
@@ -294,7 +293,10 @@ public abstract class RequestProcessor {
 
     /**
      * Process a request that is composed of multiple other (non-composite) requests. If any of the embedded requests
-     * {@link Request#hasError() has an error} after it is processed, the submitted request will be marked with an error.
+     * {@link Request#hasError() has an error} after it is processed, each of the embedded requests will be marked with the error
+     * <i>and</i> the submitted composite request will be marked with an error. If one of the embedded requests attempts to
+     * {@link Request#isReadOnly() make a change} and results in an error, then the processing of all remaining embedded requests
+     * is aborted and the composite request will be marked with only this error from the change request.
      * <p>
      * This method does nothing if the request is null.
      * </p>
@@ -304,6 +306,7 @@ public abstract class RequestProcessor {
     public void process( CompositeRequest request ) {
         if (request == null) return;
         boolean hasErrors = false;
+        boolean readonly = request.isReadOnly();
         // Iterate over the requests in this composite, but only iterate once so that
         for (Request embedded : request) {
             assert embedded != null;
@@ -311,6 +314,14 @@ public abstract class RequestProcessor {
             process(embedded);
             if (!hasErrors && embedded.hasError()) {
                 hasErrors = true;
+                if (!readonly && !embedded.isReadOnly()) {
+                    // The request is trying to make changes, and this embedded was a change that resulted in an error.
+                    // Therefore, the whole execution needs to stop and we should set this one error message
+                    // on the composite request ...
+                    assert embedded.getError() != null;
+                    request.setError(embedded.getError());
+                    return;
+                }
             }
         }
         if (hasErrors) {
@@ -847,21 +858,6 @@ public abstract class RequestProcessor {
     }
 
     /**
-     * Close this processor, allowing it to clean up any open resources.
-     */
-    public void close() {
-        // Publish any changes ...
-        if (observer != null && !this.changes.isEmpty()) {
-            String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
-            if (userName == null) userName = "";
-            String contextId = context.getId();
-            String processId = null;
-            Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes);
-            observer.notify(changes);
-        }
-    }
-
-    /**
      * Process a request to lock a node or branch within a workspace
      * <p>
      * The default implementation of this method does nothing, as most connectors will not support locking. Any implementation of
@@ -946,6 +942,51 @@ public abstract class RequestProcessor {
     }
 
     /**
+     * Close this processor, allowing it to clean up any open resources.
+     */
+    public void close() {
+        // do nothing by default
+    }
+
+    /**
+     * Obtain the list of {@link ChangeRequest}s that were successfully processed by this processor.
+     * <p>
+     * Note that this list is modified during processing and thus should only be accessed by the caller when this processor has
+     * been {@link #close() closed}.
+     * </p>
+     * <p>
+     * Also, if this processor encounters errors while processing {@link Request#isReadOnly() change requests}, the processor does
+     * not throw out any of the changes. Thus it is up to the caller to decide whether any of the changes are to be kept.
+     * </p>
+     * 
+     * @return the list of successful changes; never null but possibly empty.
+     */
+    public List<ChangeRequest> getChanges() {
+        return changes;
+    }
+
+    /**
+     * Take any of the changes that have been accumulated by this processor and notify the observer. This should only be called
+     * after {@link #close()} has been called.
+     */
+    public void notifyObserverOfChanges() {
+        if (observer == null) {
+            if (changes != null) changes.clear();
+            return;
+        }
+        if (this.changes.isEmpty()) return;
+        // then publish any changes ...
+        String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
+        if (userName == null) userName = "";
+        String contextId = context.getId();
+        String processId = null;
+        Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes);
+        observer.notify(changes);
+        // Null the list, since this should have been closed
+        this.changes = null;
+    }
+
+    /**
      * A class that represents a location at a known depth
      * 
      * @author Randall Hauch
@@ -956,7 +997,7 @@ public abstract class RequestProcessor {
         protected final int depth;
 
         public LocationWithDepth( Location location,
-                                     int depth ) {
+                                  int depth ) {
             this.location = location;
             this.depth = depth;
         }

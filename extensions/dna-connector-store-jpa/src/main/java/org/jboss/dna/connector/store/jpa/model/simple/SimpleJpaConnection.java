@@ -34,6 +34,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
@@ -104,11 +105,39 @@ public class SimpleJpaConnection implements RepositoryConnection {
         Observer observer = this.source.getRepositoryContext().getObserver();
         RequestProcessor processor = new SimpleRequestProcessor(context, this.repository, observer);
 
+        boolean commit = true;
+        MapRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());
         try {
             // Obtain the lock and execute the commands ...
             processor.process(request);
+            if (request.hasError() && !request.isReadOnly()) {
+                // The changes failed, so we need to rollback so we have 'all-or-nothing' behavior
+                commit = false;
+            }
         } finally {
-            processor.close();
+            try {
+                processor.close();
+            } finally {
+                // Now commit or rollback ...
+                try {
+                    if (commit) {
+                        txn.commit();
+                    } else {
+                        // Need to rollback the changes made to the repository ...
+                        txn.rollback();
+                    }
+                } catch (Throwable commitOrRollbackError) {
+                    if (commit && !request.hasError()) {
+                        // Record the error on the request ...
+                        request.setError(commitOrRollbackError);
+                    }
+                    commit = false; // couldn't do it
+                }
+                if (commit) {
+                    // Now that we've closed our transaction, notify the observer of the committed changes ...
+                    processor.notifyObserverOfChanges();
+                }
+            }
         }
         if (logger.isTraceEnabled()) {
             assert sw != null;

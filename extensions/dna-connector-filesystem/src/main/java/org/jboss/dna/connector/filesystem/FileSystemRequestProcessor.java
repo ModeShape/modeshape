@@ -99,6 +99,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     private final MimeTypeDetector mimeTypeDetector;
     private final UUID rootNodeUuid;
     private final CustomPropertiesFactory customPropertiesFactory;
+    private final FileSystemTransaction txn;
 
     /**
      * @param sourceName
@@ -116,6 +117,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
      * @param updatesAllowed true if this connector supports updating the file system, or false if the connector is readonly
      * @param customPropertiesFactory the factory that should be used to create custom properties for "nt:folder", "nt:file", and
      *        "nt:resource" nodes
+     * @param txn the file system transaction that is used to record the changes and perform any rollback
      */
     protected FileSystemRequestProcessor( String sourceName,
                                           String defaultWorkspaceName,
@@ -127,7 +129,8 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                                           ExecutionContext context,
                                           FilenameFilter filenameFilter,
                                           boolean updatesAllowed,
-                                          CustomPropertiesFactory customPropertiesFactory ) {
+                                          CustomPropertiesFactory customPropertiesFactory,
+                                          FileSystemTransaction txn ) {
         super(sourceName, context, null);
         assert defaultWorkspaceName != null;
         assert availableWorkspaces != null;
@@ -143,6 +146,8 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         this.updatesAllowed = updatesAllowed;
         this.mimeTypeDetector = context.getMimeTypeDetector();
         this.customPropertiesFactory = customPropertiesFactory;
+        this.txn = txn;
+        assert this.txn != null;
 
         if (workspaceRootPath != null) {
             this.workspaceRootPath = new File(workspaceRootPath);

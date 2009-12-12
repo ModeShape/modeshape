@@ -163,6 +163,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
         if (stopwatch != null) stopwatch.start();
 
         boolean abort = false;
+        RequestProcessor processorWithEvents = null;
         try {
             // ----------------------------------------------------------------------------------------------------
             // Step 1: Fork the submitted requests into source-specific requests...
@@ -230,12 +231,17 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                     fork.await();
                 }
                 join.close();
+                processorWithEvents = join;
             }
             if (request instanceof CompositeRequest) {
                 // The composite request will not have any errors set, since the fork/join approach puts the
                 // contained requests into a separate CompositeRequest object for processing.
                 // So, look at the requests for any errors
                 ((CompositeRequest)request).checkForErrors();
+            }
+            if (request.hasError() && !request.isReadOnly()) {
+                // There are changes and there is at least one failure ...
+                abort = true;
             }
         } catch (InterruptedException e) {
             abort = true;
@@ -254,6 +260,10 @@ class FederatedRepositoryConnection implements RepositoryConnection {
             if (stopwatch != null) stopwatch.stop();
             if (abort) {
                 // Rollback the transaction (if there is one) ...
+            } else {
+                // fire off any notifications to the observer ...
+                assert processorWithEvents != null;
+                processorWithEvents.notifyObserverOfChanges();
             }
         }
     }

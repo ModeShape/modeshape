@@ -26,7 +26,10 @@ package org.jboss.dna.connector.store.jpa.model.basic;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.common.statistic.Stopwatch;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.store.jpa.EntityManagers;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.graph.ExecutionContext;
@@ -133,14 +136,59 @@ class BasicJpaConnection implements RepositoryConnection {
             throw new RepositorySourceException(JpaConnectorI18n.connectionIsNoLongerOpen.text(name));
         }
 
-        RequestProcessor proc = new BasicRequestProcessor(name, context, observer, entityManager, rootNodeUuid,
-                                                          nameOfDefaultWorkspace, predefinedWorkspaceNames,
-                                                          largeValueMinimumSizeInBytes, creatingWorkspacesAllowed, compressData,
-                                                          enforceReferentialIntegrity);
+        Logger logger = context.getLogger(getClass());
+        Stopwatch sw = null;
+        if (logger.isTraceEnabled()) {
+            sw = new Stopwatch();
+            sw.start();
+        }
+        // Do any commands update/write?
+        RequestProcessor processor = new BasicRequestProcessor(name, context, observer, entityManager, rootNodeUuid,
+                                                               nameOfDefaultWorkspace, predefinedWorkspaceNames,
+                                                               largeValueMinimumSizeInBytes, creatingWorkspacesAllowed,
+                                                               compressData, enforceReferentialIntegrity);
+
+        boolean commit = true;
         try {
-            proc.process(request);
+            // Obtain the lock and execute the commands ...
+            processor.process(request);
+            if (request.hasError() && !request.isReadOnly()) {
+                // The changes failed, so we need to rollback so we have 'all-or-nothing' behavior
+                commit = false;
+            }
         } finally {
-            proc.close();
+            try {
+                processor.close();
+            } finally {
+                // Now commit or rollback ...
+                try {
+                    EntityTransaction txn = entityManager.getTransaction();
+                    if (txn != null) {
+                        if (commit) {
+                            // Now commit the transaction ...
+                            txn.commit();
+                        } else {
+                            // Need to rollback the changes made to the repository ...
+                            txn.rollback();
+                        }
+                    }
+                } catch (Throwable commitOrRollbackError) {
+                    if (commit && !request.hasError()) {
+                        // Record the error on the request ...
+                        request.setError(commitOrRollbackError);
+                    }
+                    commit = false; // couldn't do it
+                }
+                if (commit) {
+                    // Now that we're not in a transaction anymore, notify the observer of the committed changes ...
+                    processor.notifyObserverOfChanges();
+                }
+            }
+        }
+        if (logger.isTraceEnabled()) {
+            assert sw != null;
+            sw.stop();
+            logger.trace(this.getClass().getSimpleName() + ".execute(...) took " + sw.getTotalDuration());
         }
     }
 

@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.connector.map;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.Logger;
@@ -107,16 +106,40 @@ public class MapRepositoryConnection implements RepositoryConnection {
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
         RequestProcessor processor = new MapRequestProcessor(context, this.repository, observer);
 
-        Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
-        lock.lock();
+        boolean commit = true;
+        MapRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());
         try {
             // Obtain the lock and execute the commands ...
             processor.process(request);
+            if (request.hasError() && !request.isReadOnly()) {
+                // The changes failed, so we need to rollback so we have 'all-or-nothing' behavior
+                commit = false;
+            }
+        } catch (Throwable error) {
+            commit = false;
         } finally {
             try {
                 processor.close();
             } finally {
-                lock.unlock();
+                // Now commit or rollback ...
+                try {
+                    if (commit) {
+                        txn.commit();
+                    } else {
+                        // Need to rollback the changes made to the repository ...
+                        txn.rollback();
+                    }
+                } catch (Throwable commitOrRollbackError) {
+                    if (commit && !request.hasError() && !request.isFrozen()) {
+                        // Record the error on the request ...
+                        request.setError(commitOrRollbackError);
+                    }
+                    commit = false; // couldn't do it
+                }
+                if (commit) {
+                    // Now that we've closed our transaction, we can notify the observer of the committed changes ...
+                    processor.notifyObserverOfChanges();
+                }
             }
         }
         if (logger.isTraceEnabled()) {

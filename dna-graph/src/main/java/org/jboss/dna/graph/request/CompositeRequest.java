@@ -216,7 +216,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      */
     protected CompositeRequest( boolean readOnly ) {
         this.requests = Collections.emptyList();
-        this.readOnly = false;
+        this.readOnly = readOnly;
     }
 
     /**

@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import net.jcip.annotations.NotThreadSafe;
@@ -63,6 +64,7 @@ import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
@@ -155,10 +157,6 @@ public class SimpleJpaRepository extends MapRepository {
         super.initialize();
     }
 
-    final EntityManager entityManager() {
-        return entityManager;
-    }
-
     /**
      * Determine whether creating workspaces is allowed.
      * 
@@ -227,6 +225,17 @@ public class SimpleJpaRepository extends MapRepository {
         workspaceNames.addAll(predefinedWorkspaceNames);
 
         return workspaceNames;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.map.MapRepository#startTransaction(boolean)
+     */
+    @Override
+    public MapRepositoryTransaction startTransaction( boolean readonly ) {
+        EntityTransaction txn = entityManager.getTransaction();
+        return new SimpleJpaTransaction(txn);
     }
 
     /**
@@ -467,10 +476,7 @@ public class SimpleJpaRepository extends MapRepository {
                 assert subgraphRootUuid != null;
             }
 
-            SubgraphQuery subgraph = SubgraphQuery.create(entityManager,
-                                                          workspaceId,
-                                                          subgraphRootUuid,
-                                                          maximumDepth);
+            SubgraphQuery subgraph = SubgraphQuery.create(entityManager, workspaceId, subgraphRootUuid, maximumDepth);
 
             List<NodeEntity> entities = subgraph.getNodes(true, true);
             List<MapNode> nodes = new ArrayList<MapNode>(entities.size());

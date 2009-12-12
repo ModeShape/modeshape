@@ -26,13 +26,17 @@ package org.jboss.dna.graph.connector.inmemory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.LockFailedException;
 import org.jboss.dna.graph.connector.map.AbstractMapWorkspace;
+import org.jboss.dna.graph.connector.map.LockBasedTransaction;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRepository;
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 import org.jboss.dna.graph.connector.map.MapWorkspace;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
@@ -42,6 +46,8 @@ import org.jboss.dna.graph.request.LockBranchRequest.LockScope;
  */
 @NotThreadSafe
 public class InMemoryRepository extends MapRepository {
+
+    protected final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public InMemoryRepository( String sourceName,
                                UUID rootNodeUuid ) {
@@ -63,13 +69,26 @@ public class InMemoryRepository extends MapRepository {
         return new Workspace(this, name);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connector.map.MapRepository#startTransaction(boolean)
+     */
+    @Override
+    public MapRepositoryTransaction startTransaction( boolean readonly ) {
+        return new LockBasedTransaction(readonly ? lock.readLock() : lock.writeLock());
+    }
+
+    protected ReadWriteLock getLock() {
+        return lock;
+    }
+
     protected class Workspace extends AbstractMapWorkspace {
         private final Map<UUID, MapNode> nodesByUuid = new HashMap<UUID, MapNode>();
 
         public Workspace( MapRepository repository,
                           String name ) {
             super(repository, name);
-
             initialize();
         }
 

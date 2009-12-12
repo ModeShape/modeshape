@@ -27,8 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
@@ -43,7 +41,6 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  */
 public abstract class MapRepository {
 
-    protected final ReadWriteLock lock = new ReentrantReadWriteLock();
     protected final UUID rootNodeUuid;
     private final String sourceName;
     private final String defaultWorkspaceName;
@@ -122,15 +119,6 @@ public abstract class MapRepository {
      */
     public String getSourceName() {
         return sourceName;
-    }
-
-    /**
-     * Returns the lock that must be used to ensure consistent access to the repository
-     * 
-     * @return lock the lock that must be used to ensure consistent access to the repository
-     */
-    public ReadWriteLock getLock() {
-        return lock;
     }
 
     /**
@@ -270,4 +258,16 @@ public abstract class MapRepository {
     public boolean destroyWorkspace( String name ) {
         return workspaces.remove(name) != null;
     }
+
+    /**
+     * Begin a transaction, hinting whether the transaction will be used only to read the content. If this is called, then the
+     * transaction must be either {@link MapRepositoryTransaction#commit() committed} or
+     * {@link MapRepositoryTransaction#rollback() rolled back}.
+     * 
+     * @param readonly true if the transaction will not modify any content, or false if changes are to be made
+     * @return the transaction; never null
+     * @see MapRepositoryTransaction#commit()
+     * @see MapRepositoryTransaction#rollback()
+     */
+    public abstract MapRepositoryTransaction startTransaction( boolean readonly );
 }

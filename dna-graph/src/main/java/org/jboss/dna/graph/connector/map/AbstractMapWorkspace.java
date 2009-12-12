@@ -69,12 +69,19 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     }
 
     protected void initialize() {
-
         // Create the root node ...
         MapNode root = createMapNode(repository.getRootNodeUuid());
         assert root != null;
         addNodeToMap(root);
+    }
 
+    /**
+     * Get the repository that owns this workspace.
+     * 
+     * @return the repository; never null
+     */
+    protected MapRepository getRepository() {
+        return repository;
     }
 
     /**
@@ -723,5 +730,4 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
     public String toString() {
         return repository.getSourceName() + "/" + this.getName();
     }
-
 }
