@@ -30,17 +30,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +45,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.connector.MockRepositoryRequestProcessor;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
@@ -63,17 +58,13 @@ import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
-import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.Request;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.xml.sax.SAXException;
 
 public class SearchableRepositorySourceTest {
@@ -81,7 +72,7 @@ public class SearchableRepositorySourceTest {
     private ExecutionContext context;
     private SearchableRepositorySource searchable;
     private RepositorySource wrapped;
-    private RequestProcessor searchProcessor;
+    private SearchEngineProcessor searchProcessor;
     private LinkedList<Request> searchRequests;
     private ExecutorService executor;
     private TypeSystem typeSystem;
@@ -90,7 +81,6 @@ public class SearchableRepositorySourceTest {
     @Mock
     private SearchEngine searchEngine;
 
-    @SuppressWarnings( "unchecked" )
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
@@ -106,28 +96,11 @@ public class SearchableRepositorySourceTest {
 
         // Create the request processor that will be called for the search engine
         searchRequests = new LinkedList<Request>();
-        searchProcessor = new MockRepositoryRequestProcessor("source1", context, searchRequests);
+        searchProcessor = new MockSearchEngineProcessor("source1", context, searchRequests);
 
         // Stub the search engine methods ...
         stub(searchEngine.createProcessor(context, null, true)).toReturn(searchProcessor);
         stub(searchEngine.createProcessor(context, null, false)).toReturn(searchProcessor);
-        stub(searchEngine.index(eq(context), (Iterable<ChangeRequest>)anyObject())).toAnswer(new Answer<List<ChangeRequest>>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.mockito.stubbing.Answer#answer(org.mockito.invocation.InvocationOnMock)
-             */
-            public List<ChangeRequest> answer( InvocationOnMock invocation ) throws Throwable {
-                // Copy the supplied changes into
-                // the returned list ...
-                List<ChangeRequest> result = new ArrayList<ChangeRequest>();
-                Iterable<ChangeRequest> changes = (Iterable<ChangeRequest>)invocation.getArguments()[1];
-                for (ChangeRequest change : changes) {
-                    result.add(change.clone());
-                }
-                return result;
-            }
-        });
     }
 
     @After
@@ -314,7 +287,7 @@ public class SearchableRepositorySourceTest {
     }
 
     @Test
-    public void shouldSendAllRequestsToWrappedSynchronousSourceWhenRequestsAreNotSearchOrQueryRequests() throws Exception {
+    public void shouldSendAllRequestsToSynchronousWrappedSourceWhenRequestsAreNotSearchOrQueryRequests() throws Exception {
         assertThatSourceIsNotSearchable(wrapped);
         loadContentInto(wrapped, "aircraft.xml");
         searchable = newSynchronousSearchable();
@@ -327,7 +300,7 @@ public class SearchableRepositorySourceTest {
     }
 
     @Test
-    public void shouldSendAllRequestsToWrappedAsynchronousSourceWhenRequestsAreNotSearchOrQueryRequests() throws Exception {
+    public void shouldSendAllRequestsToAsynchronousWrappedSourceWhenRequestsAreNotSearchOrQueryRequests() throws Exception {
         assertThatSourceIsNotSearchable(wrapped);
         loadContentInto(wrapped, "aircraft.xml");
         searchable = newAsynchronousSearchable();

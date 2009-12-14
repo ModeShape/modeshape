@@ -26,8 +26,6 @@ package org.jboss.dna.graph.search;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -41,9 +39,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.observe.Observer;
-import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * A component that acts as a search engine for the content within a single {@link RepositorySource}. This engine manages a set of
@@ -54,7 +50,7 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  * @param <ProcessorType> the processor type
  */
 @ThreadSafe
-public abstract class AbstractSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor<WorkspaceType>>
+public abstract class AbstractSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor>
     implements SearchEngine {
 
     public static final boolean DEFAULT_VERIFY_WORKSPACE_IN_SOURCE = true;
@@ -92,6 +88,13 @@ public abstract class AbstractSearchEngine<WorkspaceType extends SearchEngineWor
         this.connectionFactory = connectionFactory;
         this.verifyWorkspaceInSource = verifyWorkspaceInSource;
         this.workspaces = new SearchWorkspaces(connectionFactory);
+    }
+
+    /**
+     * @return connectionFactory
+     */
+    protected RepositoryConnectionFactory getConnectionFactory() {
+        return connectionFactory;
     }
 
     /**
@@ -160,35 +163,10 @@ public abstract class AbstractSearchEngine<WorkspaceType extends SearchEngineWor
      * @see org.jboss.dna.graph.search.SearchEngine#createProcessor(org.jboss.dna.graph.ExecutionContext,
      *      org.jboss.dna.graph.observe.Observer, boolean)
      */
-    public RequestProcessor createProcessor( ExecutionContext context,
-                                             Observer observer,
-                                             boolean readOnly ) {
+    public SearchEngineProcessor createProcessor( ExecutionContext context,
+                                                  Observer observer,
+                                                  boolean readOnly ) {
         return createProcessor(context, workspaces, observer, readOnly);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.search.SearchEngine#index(org.jboss.dna.graph.ExecutionContext, java.lang.Iterable)
-     */
-    public List<ChangeRequest> index( ExecutionContext context,
-                                      final Iterable<ChangeRequest> changes ) throws SearchEngineException {
-        List<ChangeRequest> requests = new LinkedList<ChangeRequest>();
-        ProcessorType processor = createProcessor(context, workspaces, null, false);
-        try {
-            boolean submit = true;
-            for (ChangeRequest request : changes) {
-                ChangeRequest clone = request.clone();
-                if (submit) {
-                    processor.process(clone);
-                    if (clone.hasError()) submit = false;
-                }
-                requests.add(clone);
-            }
-        } finally {
-            processor.close();
-        }
-        return requests;
     }
 
     public interface Workspaces<WorkspaceType extends SearchEngineWorkspace> {

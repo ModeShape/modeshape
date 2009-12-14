@@ -112,7 +112,7 @@ import org.jboss.dna.graph.search.SearchEngineWorkspace;
  * @param <WorkspaceType> the type of workspace
  * @param <ProcessorType> type type of processor
  */
-public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor<WorkspaceType>>
+public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor>
     extends AbstractSearchEngine<WorkspaceType, ProcessorType> {
 
     /**
@@ -137,7 +137,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
      * @param <WorkspaceType> the type of workspace
      */
     protected static abstract class AbstractLuceneProcessor<WorkspaceType extends SearchEngineWorkspace, SessionType extends WorkspaceSession>
-        extends SearchEngineProcessor<WorkspaceType> {
+        extends SearchEngineProcessor {
         private final Map<String, SessionType> workspaceSessions = new HashMap<String, SessionType>();
         protected final boolean readOnly;
         protected final ValueFactories valueFactories;
@@ -148,6 +148,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         protected final NameFactory nameFactory;
         protected final TypeSystem typeSystem;
         protected final PropertyFactory propertyFactory;
+        protected final Workspaces<WorkspaceType> workspaces;
 
         protected AbstractLuceneProcessor( String sourceName,
                                            ExecutionContext context,
@@ -155,7 +156,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                                            Observer observer,
                                            DateTime now,
                                            boolean readOnly ) {
-            super(sourceName, context, workspaces, observer, now);
+            super(sourceName, context, observer, now);
+            this.workspaces = workspaces;
             this.readOnly = readOnly;
             this.valueFactories = context.getValueFactories();
             this.stringFactory = valueFactories.getStringFactory();
@@ -167,6 +169,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             this.propertyFactory = context.getPropertyFactory();
             assert this.stringFactory != null;
             assert this.dateFactory != null;
+            assert this.workspaces != null;
         }
 
         protected abstract SessionType createSessionFor( WorkspaceType workspace );

@@ -40,7 +40,10 @@ import org.jboss.dna.graph.search.SearchEngineWorkspace;
 @Immutable
 public class LuceneSearchWorkspace implements SearchEngineWorkspace {
 
-    protected static final int CHANGES_BEFORE_OPTIMIZATION = 100;
+    /**
+     * Apparently Lucene indexes must always be optimized prior to committing, so this value is set to '1'.
+     */
+    protected static final int CHANGES_BEFORE_OPTIMIZATION = 1;
 
     protected static final String PATHS_INDEX_NAME = "paths";
     protected static final String CONTENT_INDEX_NAME = "content";
@@ -139,7 +142,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         try {
             changesLock.lock();
             changes += changesInSession;
-            if (changes < CHANGES_BEFORE_OPTIMIZATION) return false;
+            if (changes <= CHANGES_BEFORE_OPTIMIZATION) return false;
             changes = 0;
             return true;
         } finally {

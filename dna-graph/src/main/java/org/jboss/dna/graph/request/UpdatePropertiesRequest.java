@@ -276,6 +276,16 @@ public class UpdatePropertiesRequest extends ChangeRequest {
     }
 
     /**
+     * Determine whether this request only added the properties.
+     * 
+     * @return true if the properties being updated were all new properties, or false otherwise
+     */
+    public boolean isAllNewProperties() {
+        if (createdPropertyNames != null && createdPropertyNames.containsAll(properties.values())) return true;
+        return false;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.request.Request#freeze()

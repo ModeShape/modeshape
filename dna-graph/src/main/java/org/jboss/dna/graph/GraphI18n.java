@@ -165,6 +165,8 @@ public final class GraphI18n {
     /* Search */
     public static I18n interruptedWhileClosingChannel;
     public static I18n errorWhilePerformingQuery;
+    public static I18n errorShuttingDownExecutorServiceInSearchEngineIndexer;
+    public static I18n searchEngineIndexerForSourceHasAlreadyBeenClosed;
 
     static {
         try {

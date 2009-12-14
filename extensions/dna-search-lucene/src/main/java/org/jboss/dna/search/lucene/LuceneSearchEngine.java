@@ -26,6 +26,12 @@ package org.jboss.dna.search.lucene;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import net.jcip.annotations.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
@@ -36,11 +42,25 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.JodaDateTime;
+import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.RemovePropertyRequest;
+import org.jboss.dna.graph.request.SetPropertyRequest;
+import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.UpdateValuesRequest;
 import org.jboss.dna.graph.search.SearchEngine;
 import org.jboss.dna.graph.search.SearchEngineException;
+import org.jboss.dna.graph.search.SearchEngineIndexer;
 
 /**
  * A {@link SearchEngine} implementation that relies upon two separate indexes to manage the node properties and the node
@@ -204,5 +224,350 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     protected LuceneSearchWorkspace createWorkspace( ExecutionContext context,
                                                      String workspaceName ) throws SearchEngineException {
         return new LuceneSearchWorkspace(workspaceName, configuration, rules, analyzer);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.search.SearchEngine#index(org.jboss.dna.graph.ExecutionContext, java.lang.Iterable)
+     */
+    public void index( ExecutionContext context,
+                       final Iterable<ChangeRequest> changes ) throws SearchEngineException {
+        // Process the changes to determine what work needs to be done ...
+        WorkForWorkspaces allWork = new WorkForWorkspaces(context);
+        for (ChangeRequest change : changes) {
+            WorkspaceWork work = allWork.forWorkspace(change.changedWorkspace());
+            assert work != null;
+            if (!work.add(change)) break;
+        }
+
+        // Now do the work ...
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, this, getConnectionFactory());
+        try {
+            for (WorkspaceWork workspaceWork : allWork) {
+                if (workspaceWork.indexAllContent) {
+                    indexer.index(workspaceWork.workspaceName);
+                } else if (workspaceWork.deleteWorkspace) {
+                    indexer.process(new DestroyWorkspaceRequest(workspaceWork.workspaceName));
+                } else {
+                    for (WorkRequest request : workspaceWork) {
+                        if (request instanceof CrawlSubgraph) {
+                            CrawlSubgraph crawlRequest = (CrawlSubgraph)request;
+                            Location location = crawlRequest.location;
+                            indexer.index(workspaceWork.workspaceName, location, crawlRequest.depth);
+                        } else if (request instanceof ForwardRequest) {
+                            ForwardRequest forwardRequest = (ForwardRequest)request;
+                            indexer.process(forwardRequest.changeRequest);
+                        }
+                    }
+                }
+            }
+        } finally {
+            indexer.close();
+        }
+    }
+
+    protected static class WorkForWorkspaces implements Iterable<WorkspaceWork> {
+        private Map<String, WorkspaceWork> byWorkspaceName = new HashMap<String, WorkspaceWork>();
+        private final ExecutionContext context;
+
+        protected WorkForWorkspaces( ExecutionContext context ) {
+            this.context = context;
+        }
+
+        protected WorkspaceWork forWorkspace( String workspaceName ) {
+            WorkspaceWork work = byWorkspaceName.get(workspaceName);
+            if (work == null) {
+                work = new WorkspaceWork(context, workspaceName);
+                byWorkspaceName.put(workspaceName, work);
+            }
+            return work;
+        }
+
+        public Iterator<WorkspaceWork> iterator() {
+            return byWorkspaceName.values().iterator();
+        }
+    }
+
+    protected static class WorkspaceWork implements Iterable<WorkRequest> {
+        private final ExecutionContext context;
+        protected final String workspaceName;
+        protected final Map<Path, WorkRequest> requestByPath = new HashMap<Path, WorkRequest>();
+        protected boolean indexAllContent;
+        protected boolean deleteWorkspace;
+
+        protected WorkspaceWork( ExecutionContext context,
+                                 String workspaceName ) {
+            this.context = context;
+            this.workspaceName = workspaceName;
+        }
+
+        public Iterator<WorkRequest> iterator() {
+            return requestByPath.values().iterator();
+        }
+
+        protected boolean add( ChangeRequest change ) {
+            assert !indexAllContent;
+            assert !deleteWorkspace;
+            if (change instanceof CloneWorkspaceRequest || change instanceof CreateWorkspaceRequest) {
+                requestByPath.clear();
+                indexAllContent = true;
+                return false;
+            }
+            if (change instanceof DestroyWorkspaceRequest) {
+                requestByPath.clear();
+                deleteWorkspace = true;
+                return false;
+            }
+            Location changedLocation = change.changedLocation();
+            assert changedLocation.hasPath();
+            if (isCoveredByExistingCrawl(changedLocation.getPath())) {
+                // There's no point in adding the request if it's already covered by a crawl ...
+                return true;
+            }
+
+            if (change instanceof UpdatePropertiesRequest) {
+                // Try merging this onto any existing work ...
+                if (mergeWithExistingWork(changedLocation, change)) return true;
+
+                // See if this request removed all existing properties ...
+                UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
+                if (update.removeOtherProperties()) {
+                    // This request specified all of the properties, so we can just forward it on ...
+                    forward(changedLocation, update);
+                    return true;
+                }
+                // This changed an existing property, and we don't know what that value is ...
+                crawl(update.changedLocation(), 1);
+                return true;
+            }
+            if (change instanceof SetPropertyRequest) {
+                // Try merging this onto any existing work ...
+                if (mergeWithExistingWork(changedLocation, change)) return true;
+
+                // We can't ADD to a document in the index, so we have to scan it all ..
+                crawl(changedLocation, 1);
+                return true;
+            }
+            if (change instanceof UpdateValuesRequest) {
+                // Try merging this onto any existing work ...
+                if (mergeWithExistingWork(changedLocation, change)) return true;
+
+                // We can't ADD to a document in the index, so we have to scan it all ..
+                crawl(changedLocation, 1);
+                return true;
+            }
+            if (change instanceof CreateNodeRequest) {
+                forward(changedLocation, change);
+                return true;
+            }
+            // Otherwise just index the whole friggin' workspace ...
+            requestByPath.clear();
+            indexAllContent = true;
+            return false;
+        }
+
+        private boolean mergeWithExistingWork( Location location,
+                                               ChangeRequest change ) {
+            Path path = location.getPath();
+            WorkRequest existing = requestByPath.get(path);
+            if (existing instanceof CrawlSubgraph) {
+                // There's no point in adding the request, but return that it's merged ...
+                return true;
+            }
+            if (existing instanceof ForwardRequest) {
+                ChangeRequest existingRequest = ((ForwardRequest)existing).changeRequest;
+                // Try to merge the requests ...
+                ChangeRequest merged = merge(context, existingRequest, change);
+                if (merged != null) {
+                    forward(location, merged);
+                    return true;
+                }
+            }
+            // Couldn't merge this with any existing work ...
+            return false;
+        }
+
+        private void forward( Location location,
+                              ChangeRequest request ) {
+            requestByPath.put(location.getPath(), new ForwardRequest(request));
+        }
+
+        private boolean isCoveredByExistingCrawl( Path path ) {
+            // Walk up the location, and look for crawling work for a higher node ...
+            while (!path.isRoot()) {
+                path = path.getParent();
+                WorkRequest existing = requestByPath.get(path);
+                if (existing == null) continue;
+                if (existing instanceof CrawlSubgraph) {
+                    CrawlSubgraph crawl = (CrawlSubgraph)existing;
+                    if (crawl.depth != 1) {
+                        // There's no point in adding the request, but return that it's merged ...
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void crawl( Location location,
+                            int depth ) {
+            Path path = location.getPath();
+            // Remove all work below this point ...
+            Iterator<Map.Entry<Path, WorkRequest>> iter = requestByPath.entrySet().iterator();
+            while (iter.hasNext()) {
+                if (iter.next().getKey().isDecendantOf(path)) iter.remove();
+            }
+            requestByPath.put(path, new CrawlSubgraph(location, depth));
+        }
+    }
+
+    protected static ChangeRequest merge( ExecutionContext context,
+                                          ChangeRequest original,
+                                          ChangeRequest change ) {
+        assert !original.hasError();
+        assert !change.hasError();
+        if (original instanceof CreateNodeRequest) {
+            CreateNodeRequest create = (CreateNodeRequest)original;
+            if (change instanceof SetPropertyRequest) {
+                SetPropertyRequest set = (SetPropertyRequest)change;
+                Name newPropertyName = set.property().getName();
+                List<Property> newProperties = new LinkedList<Property>();
+                for (Property property : create.properties()) {
+                    if (property.getName().equals(newPropertyName)) continue;
+                    newProperties.add(property);
+                }
+                newProperties.add(set.property());
+                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                                     create.conflictBehavior(), newProperties);
+                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                return newRequest;
+            }
+            if (change instanceof UpdatePropertiesRequest) {
+                UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
+                Map<Name, Property> newProperties = new HashMap<Name, Property>();
+                for (Property property : create.properties()) {
+                    newProperties.put(property.getName(), property);
+                }
+                newProperties.putAll(update.properties());
+                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                                     create.conflictBehavior(), newProperties.values());
+                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                return newRequest;
+            }
+            if (change instanceof RemovePropertyRequest) {
+                RemovePropertyRequest remove = (RemovePropertyRequest)change;
+                Map<Name, Property> newProperties = new HashMap<Name, Property>();
+                for (Property property : create.properties()) {
+                    newProperties.put(property.getName(), property);
+                }
+                newProperties.remove(remove.propertyName());
+                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                                     create.conflictBehavior(), newProperties.values());
+                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                return newRequest;
+            }
+            if (change instanceof UpdateValuesRequest) {
+                UpdateValuesRequest update = (UpdateValuesRequest)change;
+                Map<Name, Property> newProperties = new HashMap<Name, Property>();
+                for (Property property : create.properties()) {
+                    newProperties.put(property.getName(), property);
+                }
+                Property updated = newProperties.get(update.property());
+                if (updated != null) {
+                    // Changing an existing property ...
+                    List<Object> newValues = new LinkedList<Object>();
+                    for (Object existingValue : updated) {
+                        newValues.add(existingValue);
+                    }
+                    newValues.removeAll(update.removedValues());
+                    newValues.addAll(update.addedValues());
+                    updated = context.getPropertyFactory().create(update.property(), newValues);
+                } else {
+                    // The property doesn't exist ...
+                    updated = context.getPropertyFactory().create(update.property(), update.addedValues());
+                }
+                newProperties.put(updated.getName(), updated);
+                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                                     create.conflictBehavior(), newProperties.values());
+                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                return newRequest;
+            }
+        }
+        if (original instanceof UpdatePropertiesRequest) {
+            UpdatePropertiesRequest update = (UpdatePropertiesRequest)original;
+            if (change instanceof SetPropertyRequest) {
+                SetPropertyRequest set = (SetPropertyRequest)change;
+                Property newProperty = set.property();
+                Name newPropertyName = newProperty.getName();
+                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
+                newProperties.put(newPropertyName, newProperty);
+                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
+                                                                                 update.inWorkspace(), newProperties,
+                                                                                 update.removeOtherProperties());
+                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                return newRequest;
+            }
+            if (change instanceof RemovePropertyRequest) {
+                RemovePropertyRequest remove = (RemovePropertyRequest)change;
+                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
+                newProperties.remove(remove.propertyName());
+                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
+                                                                                 update.inWorkspace(), newProperties,
+                                                                                 update.removeOtherProperties());
+                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                return newRequest;
+            }
+            if (change instanceof UpdateValuesRequest) {
+                UpdateValuesRequest updateValues = (UpdateValuesRequest)change;
+                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
+                Property updated = newProperties.get(updateValues.property());
+                if (updated != null) {
+                    // Changing an existing property ...
+                    List<Object> newValues = new LinkedList<Object>();
+                    for (Object existingValue : updated) {
+                        newValues.add(existingValue);
+                    }
+                    newValues.removeAll(updateValues.removedValues());
+                    newValues.addAll(updateValues.addedValues());
+                    updated = context.getPropertyFactory().create(updateValues.property(), newValues);
+                } else {
+                    // The property doesn't exist ...
+                    updated = context.getPropertyFactory().create(updateValues.property(), updateValues.addedValues());
+                }
+                newProperties.put(updated.getName(), updated);
+                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
+                                                                                 update.inWorkspace(), newProperties,
+                                                                                 update.removeOtherProperties());
+                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                return newRequest;
+            }
+        }
+        return null;
+    }
+
+    @Immutable
+    protected static abstract class WorkRequest {
+    }
+
+    @Immutable
+    protected static class CrawlSubgraph extends WorkRequest {
+        protected final Location location;
+        protected final int depth;
+
+        protected CrawlSubgraph( Location location,
+                                 int depth ) {
+            this.location = location;
+            this.depth = depth;
+        }
+    }
+
+    @Immutable
+    protected static class ForwardRequest extends WorkRequest {
+        protected final ChangeRequest changeRequest;
+
+        protected ForwardRequest( ChangeRequest changeRequest ) {
+            this.changeRequest = changeRequest;
+        }
     }
 }

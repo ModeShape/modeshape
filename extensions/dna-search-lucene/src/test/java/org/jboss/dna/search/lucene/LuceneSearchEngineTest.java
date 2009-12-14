@@ -61,9 +61,11 @@ import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.AccessQueryRequest;
 import org.jboss.dna.graph.request.FullTextSearchRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.jboss.dna.graph.search.SearchEngine;
 import org.jboss.dna.graph.search.SearchEngineIndexer;
+import org.jboss.dna.graph.search.SearchEngineProcessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -82,7 +84,6 @@ public class LuceneSearchEngineTest {
     private Schemata schemata;
     private SqlQueryParser sql;
     private Map<String, Object> variables;
-    private SearchEngineIndexer indexer;
 
     /** Controls whether the results from each test should be printed to System.out */
     private boolean print = false;
@@ -128,7 +129,15 @@ public class LuceneSearchEngineTest {
         engine = new LuceneSearchEngine(sourceName, connectionFactory, true, luceneConfig, rules, analyzer);
         loadContent();
 
-        indexer = new SearchEngineIndexer(engine, connectionFactory);
+        // Load the workspaces into the engine ...
+        SearchEngineProcessor processor = engine.createProcessor(context, null, false);
+        try {
+            for (String workspaceName : content.getWorkspaces()) {
+                processor.process(new VerifyWorkspaceRequest(workspaceName));
+            }
+        } finally {
+            processor.close();
+        }
 
         // Create the schemata for the workspaces ...
         schemata = ImmutableSchemata.createBuilder(typeSystem)
@@ -231,27 +240,34 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldIndexAllContentInRepositorySource() throws Exception {
-        indexer.index(context, 3);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.indexAllWorkspaces().close();
     }
 
     @Test
     public void shouldIndexAllContentInWorkspace() throws Exception {
-        indexer.index(context, workspaceName1, 3);
-        indexer.index(context, workspaceName2, 5);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1);
+        indexer.index(workspaceName2);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexAllContentInWorkspaceBelowPath() throws Exception {
-        indexer.index(context, workspaceName1, path("/Cars/Hybrid"), 3);
-        indexer.index(context, workspaceName2, path("/Aircraft/Commercial"), 5);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/Cars/Hybrid"), 3);
+        indexer.index(workspaceName2, path("/Aircraft/Commercial"), 5);
+        indexer.close();
     }
 
     @Test
     public void shouldReIndexAllContentInWorkspaceBelowPath() throws Exception {
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
         for (int i = 0; i != 0; i++) {
-            indexer.index(context, workspaceName1, path("/Cars/Hybrid"), 3);
-            indexer.index(context, workspaceName2, path("/Aircraft/Commercial"), 5);
+            indexer.index(workspaceName1, path("/Cars/Hybrid"), 3);
+            indexer.index(workspaceName2, path("/Aircraft/Commercial"), 5);
         }
+        indexer.close();
     }
 
     @Test
@@ -262,48 +278,71 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfOne() {
-        indexer.index(context, workspaceName1, path("/"), 1);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/"), 1);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTwo() {
-        indexer.index(context, workspaceName1, path("/"), 2);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/"), 2);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfThree() {
-        indexer.index(context, workspaceName1, path("/"), 3);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/"), 3);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfFour() {
-        indexer.index(context, workspaceName1, path("/"), 4);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/"), 4);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTen() {
-        indexer.index(context, workspaceName1, path("/"), 10);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/"), 10);
+        indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtNonRootNode() {
-        indexer.index(context, workspaceName1, path("/Cars"), 10);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/Cars"), 10);
+        indexer.close();
     }
 
     @Test
     public void shouldReIndexRepositoryContentStartingAtNonRootNode() {
-        indexer.index(context, workspaceName1, path("/Cars"), 10);
-        indexer.index(context, workspaceName1, path("/Cars"), 10);
-        indexer.index(context, workspaceName1, path("/Cars"), 10);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        indexer.index(workspaceName1, path("/Cars"), 10);
+        indexer.index(workspaceName1, path("/Cars"), 10);
+        indexer.index(workspaceName1, path("/Cars"), 10);
+        indexer.close();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text search
     // ----------------------------------------------------------------------------------------------------------------
 
+    protected void indexWorkspace( String workspaceName ) {
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        try {
+            indexer.index(workspaceName, path("/"));
+        } finally {
+            indexer.close();
+        }
+    }
+
     @Test
     public void shouldFindNodesByFullTextSearch() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         QueryResults results = search(workspaceName1, "Toyota Prius", 10, 0);
         assertThat(results, is(notNullValue()));
         assertRowCount(results, 2);
@@ -315,7 +354,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesByFullTextSearchWithOffset() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         QueryResults results = search(workspaceName1, "toyota prius", 1, 0);
         assertThat(results, is(notNullValue()));
         assertRowCount(results, 1);
@@ -335,7 +374,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQuery() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 18);
@@ -343,7 +382,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithEqualityComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE maker = 'Toyota'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -351,7 +390,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithGreaterThanComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker, mpgHighway, mpgCity FROM __ALLNODES__ WHERE mpgHighway > 20";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 6);
@@ -359,7 +398,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithLowercaseEqualityComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) = 'toyota'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -367,7 +406,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithUppercaseEqualityComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE UPPER(maker) = 'TOYOTA'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -375,7 +414,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithLikeComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE 'Toyo%'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -383,7 +422,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithLikeComparisonCriteriaWithLeadingWildcard() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE maker LIKE '%yota'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -391,7 +430,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithLowercaseLikeComparisonCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE LOWER(maker) LIKE 'toyo%'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 2);
@@ -399,7 +438,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'martin')";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 1);
@@ -407,7 +446,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithDepthCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE DEPTH() > 2";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 12);
@@ -415,7 +454,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithLocalNameCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE LOCALNAME() LIKE 'Toyota%' OR LOCALNAME() LIKE 'Land %'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 4);
@@ -424,7 +463,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithNameCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE NAME() LIKE 'Toyota%[1]' OR NAME() LIKE 'Land %'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 4);
@@ -433,7 +472,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithNameCriteriaThatMatchesNoNodes() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE NAME() LIKE 'Toyota%[2]'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 0);
@@ -442,7 +481,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithPathCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE PATH() LIKE '/Cars[%]/Hy%/Toyota%' OR PATH() LIKE '/Cars[1]/Utility[1]/%'";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 6);
@@ -451,7 +490,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldFindNodesBySimpleQueryWithDescendantCriteria() {
-        indexer.index(context, workspaceName1, path("/"), 100);
+        indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE ISDESCENDANTNODE('/Cars/Hybrid')";
         QueryResults results = query(workspaceName1, query);
         assertRowCount(results, 3);

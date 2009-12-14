@@ -559,7 +559,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
-        getContentWriter().addDocument(doc);
+        getContentWriter().updateDocument(new Term(ContentIndex.ID, idString), doc);
     }
 
     protected Document getPathDocument( String id,
@@ -839,17 +839,23 @@ public class LuceneSearchSession implements WorkspaceSession {
                 long date = factories.getLongFactory().create(value);
                 switch (operator) {
                     case EQUAL_TO:
+                        if (date < longRule.getMinimum() || date > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, date, date, true, true);
                     case NOT_EQUAL_TO:
+                        if (date < longRule.getMinimum() || date > longRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newLongRange(field, date, date, true, true);
                         return new NotQuery(query);
                     case GREATER_THAN:
+                        if (date > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, date, longRule.getMaximum(), false, true);
                     case GREATER_THAN_OR_EQUAL_TO:
+                        if (date > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, date, longRule.getMaximum(), true, true);
                     case LESS_THAN:
+                        if (date < longRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), date, true, false);
                     case LESS_THAN_OR_EQUAL_TO:
+                        if (date < longRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), date, true, true);
                     case LIKE:
                         // This is not allowed ...
@@ -862,17 +868,23 @@ public class LuceneSearchSession implements WorkspaceSession {
                 long longValue = factories.getLongFactory().create(value);
                 switch (operator) {
                     case EQUAL_TO:
+                        if (longValue < longRule.getMinimum() || longValue > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
                     case NOT_EQUAL_TO:
+                        if (longValue < longRule.getMinimum() || longValue > longRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
                         return new NotQuery(query);
                     case GREATER_THAN:
+                        if (longValue > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longRule.getMaximum(), false, true);
                     case GREATER_THAN_OR_EQUAL_TO:
+                        if (longValue > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longRule.getMaximum(), true, true);
                     case LESS_THAN:
+                        if (longValue < longRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), longValue, true, false);
                     case LESS_THAN_OR_EQUAL_TO:
+                        if (longValue < longRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longRule.getMinimum(), longValue, true, true);
                     case LIKE:
                         // This is not allowed ...
@@ -885,17 +897,23 @@ public class LuceneSearchSession implements WorkspaceSession {
                 int intValue = factories.getLongFactory().create(value).intValue();
                 switch (operator) {
                     case EQUAL_TO:
+                        if (intValue < intRule.getMinimum() || intValue > intRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
                     case NOT_EQUAL_TO:
+                        if (intValue < intRule.getMinimum() || intValue > intRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
                         return new NotQuery(query);
                     case GREATER_THAN:
+                        if (intValue > intRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intValue, intRule.getMaximum(), false, true);
                     case GREATER_THAN_OR_EQUAL_TO:
+                        if (intValue > intRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intValue, intRule.getMaximum(), true, true);
                     case LESS_THAN:
+                        if (intValue < intRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intRule.getMinimum(), intValue, true, false);
                     case LESS_THAN_OR_EQUAL_TO:
+                        if (intValue < intRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intRule.getMinimum(), intValue, true, true);
                     case LIKE:
                         // This is not allowed ...
@@ -908,17 +926,23 @@ public class LuceneSearchSession implements WorkspaceSession {
                 double doubleValue = factories.getDoubleFactory().create(value);
                 switch (operator) {
                     case EQUAL_TO:
+                        if (doubleValue < dRule.getMinimum() || doubleValue > dRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
                     case NOT_EQUAL_TO:
+                        if (doubleValue < dRule.getMinimum() || doubleValue > dRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
                         return new NotQuery(query);
                     case GREATER_THAN:
+                        if (doubleValue > dRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, dRule.getMaximum(), false, true);
                     case GREATER_THAN_OR_EQUAL_TO:
+                        if (doubleValue > dRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, dRule.getMaximum(), true, true);
                     case LESS_THAN:
+                        if (doubleValue < dRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, dRule.getMinimum(), doubleValue, true, false);
                     case LESS_THAN_OR_EQUAL_TO:
+                        if (doubleValue < dRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, dRule.getMinimum(), doubleValue, true, true);
                     case LIKE:
                         // This is not allowed ...
@@ -931,17 +955,23 @@ public class LuceneSearchSession implements WorkspaceSession {
                 float floatValue = factories.getDoubleFactory().create(value).floatValue();
                 switch (operator) {
                     case EQUAL_TO:
+                        if (floatValue < fRule.getMinimum() || floatValue > fRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, floatValue, floatValue, true, true);
                     case NOT_EQUAL_TO:
+                        if (floatValue < fRule.getMinimum() || floatValue > fRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newFloatRange(field, floatValue, floatValue, true, true);
                         return new NotQuery(query);
                     case GREATER_THAN:
+                        if (floatValue > fRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, floatValue, fRule.getMaximum(), false, true);
                     case GREATER_THAN_OR_EQUAL_TO:
+                        if (floatValue > fRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, floatValue, fRule.getMaximum(), true, true);
                     case LESS_THAN:
+                        if (floatValue < fRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, fRule.getMinimum(), floatValue, true, false);
                     case LESS_THAN_OR_EQUAL_TO:
+                        if (floatValue < fRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, fRule.getMinimum(), floatValue, true, true);
                     case LIKE:
                         // This is not allowed ...

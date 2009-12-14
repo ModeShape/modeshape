@@ -27,33 +27,29 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
-import org.jboss.dna.graph.search.AbstractSearchEngine.Workspaces;
 
 /**
  * The processor that is created by the provider whenever a logical set of activities needs to be performed.
- * 
- * @param <WorkspaceType> the type of workspace
  */
-public abstract class SearchEngineProcessor<WorkspaceType extends SearchEngineWorkspace> extends RequestProcessor {
+public abstract class SearchEngineProcessor extends RequestProcessor {
 
     protected boolean rollback = false;
-    protected final Workspaces<WorkspaceType> workspaces;
 
     /**
      * @param sourceName
      * @param context
-     * @param workspaces
      * @param observer
      * @param now
      */
     protected SearchEngineProcessor( String sourceName,
                                      ExecutionContext context,
-                                     Workspaces<WorkspaceType> workspaces,
                                      Observer observer,
                                      DateTime now ) {
         super(sourceName, context, observer, now);
-        this.workspaces = workspaces;
-        assert this.workspaces != null;
+    }
+
+    public void markForRollback() {
+        rollback = true;
     }
 
     /**

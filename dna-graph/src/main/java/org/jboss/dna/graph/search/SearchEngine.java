@@ -23,14 +23,12 @@
  */
 package org.jboss.dna.graph.search;
 
-import java.util.List;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.ChangeRequest;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * A component that acts as a search engine for the content within a single {@link RepositorySource}. This engine manages a set of
@@ -60,20 +58,19 @@ public interface SearchEngine {
      *        the workspaces
      * @return the processor; may not be null
      */
-    RequestProcessor createProcessor( ExecutionContext context,
-                                      Observer observer,
-                                      boolean readOnly );
+    SearchEngineProcessor createProcessor( ExecutionContext context,
+                                           Observer observer,
+                                           boolean readOnly );
 
     /**
      * Update the indexes with the supplied set of changes to the content.
      * 
      * @param context the execution context for which this session is to be established; may not be null
      * @param changes the set of changes to the content
-     * @return the actual changes that were made and which record any problems or errors; never null
      * @throws IllegalArgumentException if the path is null
      * @throws RepositorySourceException if there is a problem accessing the content
      * @throws SearchEngineException if there is a problem updating the indexes
      */
-    List<ChangeRequest> index( ExecutionContext context,
-                               final Iterable<ChangeRequest> changes ) throws SearchEngineException;
+    void index( ExecutionContext context,
+                final Iterable<ChangeRequest> changes ) throws SearchEngineException;
 }
