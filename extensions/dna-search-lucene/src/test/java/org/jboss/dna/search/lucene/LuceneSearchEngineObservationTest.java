@@ -322,7 +322,7 @@ public class LuceneSearchEngineObservationTest {
         indexer.close();
         sw.stop();
         Duration zeroth = sw.getTotalDuration();
-        System.out.println("Time to prime search engine:           " + zeroth);
+        System.out.println("Time to prime search engine:                 " + zeroth);
 
         // First load the content into the unsearched source ...
         sw.reset();
@@ -348,14 +348,19 @@ public class LuceneSearchEngineObservationTest {
         Duration third = sw.getTotalDuration();
 
         int percentOfLoading = (int)(((second.floatValue() / first.floatValue())) * 100.0f);
-        System.out.println("Time to load content without indexing: " + first);
-        System.out.println("Time to load content and index:        " + second + "  (" + percentOfLoading
+        System.out.println("Time to load content without indexing:       " + first);
+        System.out.println("Time to load content and updating indexes:   " + second + "  (" + percentOfLoading
                            + "% of loading w/o indexing)");
         Duration loadingDiff = second.subtract(first);
-        System.out.println("Time to update indexes during loadint: " + loadingDiff);
-        percentOfLoading = (int)(((third.floatValue() / first.floatValue())) * 100.0f);
-        System.out.println("Time to re-index all content:          " + third + "  (" + percentOfLoading
-                           + "% of loading w/o indexing)");
+        System.out.println("Time to update indexes during loading:       " + loadingDiff);
+        int percentChange = (int)((((third.floatValue() - loadingDiff.floatValue()) / loadingDiff.floatValue())) * 100.0f);
+        if (percentChange >= 0) {
+            System.out.println("Time to re-index all content:                " + third + "  (" + percentChange
+                               + "% more than indexing time during loading)");
+        } else {
+            System.out.println("Time to re-index all content:                " + third + "  (" + percentChange
+                               + "% less than indexing time during loading)");
+        }
 
         // Make sure we're finding the results ...
         // print = true;
@@ -415,7 +420,6 @@ public class LuceneSearchEngineObservationTest {
         location1 = (Location)(results.getTuples().get(0)[0]);
         assertThat(location1.getPath(), is(path("/Cars/Hybrid/Toyota Highlander")));
 
-        print = true;
         query = "SELECT model, maker FROM __ALLNODES__ WHERE PATH() LIKE '/Cars[%]/Hy%/Toyota%' OR PATH() LIKE '/Cars[1]/Utility[1]/%'";
         results = query(workspaceName1, query);
         assertRowCount(results, 5);

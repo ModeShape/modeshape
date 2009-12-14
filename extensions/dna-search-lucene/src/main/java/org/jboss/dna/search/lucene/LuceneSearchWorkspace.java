@@ -142,9 +142,11 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         try {
             changesLock.lock();
             changes += changesInSession;
-            if (changes <= CHANGES_BEFORE_OPTIMIZATION) return false;
-            changes = 0;
-            return true;
+            if (changes >= CHANGES_BEFORE_OPTIMIZATION) {
+                changes = 0;
+                return true;
+            }
+            return false;
         } finally {
             changesLock.unlock();
         }
