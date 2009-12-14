@@ -34,8 +34,7 @@ import java.util.Map;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
-import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.text.UrlEncoder;
+import org.jboss.dna.common.text.FilenameEncoder;
 import org.jboss.dna.common.util.FileUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -157,7 +156,7 @@ public class LuceneConfigurationsTest {
     @Test
     public void shouldEncodeDirectoryNames() {
         // Set up an encoder and make sure that the names for the index and workspace can't be used as file system names ...
-        TextEncoder encoder = new UrlEncoder();
+        FilenameEncoder encoder = new FilenameEncoder();
         index = "some/special::/\nindex(name)";
         workspace = "some/special::/\nworkspace(name)/illegalInWindows:\\/?%*|\"'<>.txt";
         assertThat(index, is(not(encoder.encode(index))));

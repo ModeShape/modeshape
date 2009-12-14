@@ -79,7 +79,11 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
     public String encode( String text ) {
         if (text == null) return null;
         if (text.length() == 0) return text;
-        final BitSet safeChars = isSlashEncoded() ? RFC2396_UNRESERVED_CHARACTERS : RFC2396_UNRESERVED_WITH_SLASH_CHARACTERS;
+        return encode(text, isSlashEncoded() ? RFC2396_UNRESERVED_CHARACTERS : RFC2396_UNRESERVED_WITH_SLASH_CHARACTERS);
+    }
+
+    protected String encode( String text,
+                             BitSet safeChars ) {
         final StringBuilder result = new StringBuilder();
         final CharacterIterator iter = new StringCharacterIterator(text);
         for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {

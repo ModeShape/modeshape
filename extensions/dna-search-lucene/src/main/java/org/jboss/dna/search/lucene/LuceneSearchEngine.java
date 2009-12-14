@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.util.Version;
+import org.jboss.dna.common.text.FilenameEncoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.CheckArg;
@@ -95,7 +96,11 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         DEFAULT_RULES = builder.build();
     }
 
-    protected static final TextEncoder DEFAULT_ENCODER = new UrlEncoder();
+    /**
+     * The default encoder is the FileNameEncoder, which is based upon the {@link UrlEncoder} except that it also encodes the '*'
+     * character, which is required for Windows.
+     */
+    protected static final TextEncoder DEFAULT_ENCODER = new FilenameEncoder();
 
     /** A thread-local DateFormat instance that is thread-safe, since a new instance is created for each thread. */
     protected ThreadLocal<DateFormat> dateFormatter = new ThreadLocal<DateFormat>() {
@@ -147,8 +152,8 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      * new LuceneSearchEngine(sourceName, connectionFactory, verifyWorkspaceInSource, config, rules, analyzer);
      * </pre>
      * 
-     * where the {@link UrlEncoder} is used to ensure that workspace names and index names can be turned into file system
-     * directory names.
+     * where the {@link #DEFAULT_ENCODER default encoder} is used to ensure that workspace names and index names can be turned
+     * into file system directory names.
      * </p>
      * 
      * @param sourceName the name of the source that this engine will search over
