@@ -28,7 +28,7 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<car='http://jboss.org/dna/examples/cars/1.0'>
+<car='http://www.jboss.org/dna/examples/cars/1.0'>
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
