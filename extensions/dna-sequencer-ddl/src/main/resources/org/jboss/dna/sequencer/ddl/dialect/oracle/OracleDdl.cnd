@@ -28,43 +28,44 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<ddl='http://jboss.org/dna/ddl/1.0'>
-<oracleddl='http://jboss.org/dna/ddl/oracle/1.0'>
+<ddl='http://www.jboss.org/dna/ddl/1.0'>
+<oracleddl='http://www.jboss.org/dna/ddl/oracle/1.0'>
 
 // =============================================================================
 // OPERANDS
 // =============================================================================
-[oracleddl:clusterOperand]      < ddl:operand abstract
-[oracleddl:contextOperand]      < ddl:operand abstract
-[oracleddl:controlfileOperand]  < ddl:operand abstract
-[oracleddl:databaseOperand]     < ddl:operand abstract
-[oracleddl:dimensionOperand]    < ddl:operand abstract
-[oracleddl:directoryOperand]    < ddl:operand abstract
-[oracleddl:diskgroupOperand]    < ddl:operand abstract
-[oracleddl:functionOperand]     < ddl:operand abstract
-[oracleddl:indexOperand]        < ddl:operand abstract
-[oracleddl:indextypeOperand]    < ddl:operand abstract
-[oracleddl:javaOperand]         < ddl:operand abstract
-[oracleddl:libraryOperand]      < ddl:operand abstract
-[oracleddl:materializedOperand] < ddl:operand abstract
-[oracleddl:operatorOperand]     < ddl:operand abstract
-[oracleddl:outlineOperand]      < ddl:operand abstract
-[oracleddl:packageOperand]      < ddl:operand abstract
-[oracleddl:pfileOperand]        < ddl:operand abstract
-[oracleddl:procedureOperand]    < ddl:operand abstract
-[oracleddl:profileOperand]      < ddl:operand abstract
-[oracleddl:resourceOperand]     < ddl:operand abstract
-[oracleddl:roleOperand]         < ddl:operand abstract
-[oracleddl:rollbackOperand]     < ddl:operand abstract
-[oracleddl:sequenceOperand]     < ddl:operand abstract
-[oracleddl:sessionOperand]      < ddl:operand abstract
-[oracleddl:spfileOperand]       < ddl:operand abstract
-[oracleddl:systemOperand]       < ddl:operand abstract
-[oracleddl:synonymOperand]      < ddl:operand abstract
-[oracleddl:tablespaceOperand]   < ddl:operand abstract
-[oracleddl:triggerOperand]      < ddl:operand abstract
-[oracleddl:typeOperand]         < ddl:operand abstract
-[oracleddl:userOperand]         < ddl:operand abstract
+[oracleddl:clusterOperand]      > ddl:operand abstract
+[oracleddl:commentOperand]      > ddl:operand abstract
+[oracleddl:contextOperand]      > ddl:operand abstract
+[oracleddl:controlfileOperand]  > ddl:operand abstract
+[oracleddl:databaseOperand]     > ddl:operand abstract
+[oracleddl:dimensionOperand]    > ddl:operand abstract
+[oracleddl:directoryOperand]    > ddl:operand abstract
+[oracleddl:diskgroupOperand]    > ddl:operand abstract
+[oracleddl:functionOperand]     > ddl:operand abstract
+[oracleddl:indexOperand]        > ddl:operand abstract
+[oracleddl:indextypeOperand]    > ddl:operand abstract
+[oracleddl:javaOperand]         > ddl:operand abstract
+[oracleddl:libraryOperand]      > ddl:operand abstract
+[oracleddl:materializedOperand] > ddl:operand abstract
+[oracleddl:operatorOperand]     > ddl:operand abstract
+[oracleddl:outlineOperand]      > ddl:operand abstract
+[oracleddl:packageOperand]      > ddl:operand abstract
+[oracleddl:pfileOperand]        > ddl:operand abstract
+[oracleddl:procedureOperand]    > ddl:operand abstract
+[oracleddl:profileOperand]      > ddl:operand abstract
+[oracleddl:resourceOperand]     > ddl:operand abstract
+[oracleddl:roleOperand]         > ddl:operand abstract
+[oracleddl:rollbackOperand]     > ddl:operand abstract
+[oracleddl:sequenceOperand]     > ddl:operand abstract
+[oracleddl:sessionOperand]      > ddl:operand abstract
+[oracleddl:spfileOperand]       > ddl:operand abstract
+[oracleddl:systemOperand]       > ddl:operand abstract
+[oracleddl:synonymOperand]      > ddl:operand abstract
+[oracleddl:tablespaceOperand]   > ddl:operand abstract
+[oracleddl:triggerOperand]      > ddl:operand abstract
+[oracleddl:typeOperand]         > ddl:operand abstract
+[oracleddl:userOperand]         > ddl:operand abstract
 
 // =============================================================================
 // COLUMN
@@ -101,8 +102,8 @@
 [oracleddl:alterUserStatement]          > ddl:alterable, ddl:statement, oracleddl:userOperand mixin
 [oracleddl:alterViewStatement]          > ddl:alterable, ddl:statement,       ddl:viewOperand mixin
 
-[oraclesddl:alterTableStatement] > ddl:alterTableStatement mixin
-  - oraclesddl:newTableName (STRING)
+[oracleddl:alterTableStatement] > ddl:alterTableStatement mixin
+  - oracleddl:newTableName (STRING)
   + oracleddl:renameColumn (ddl:renamable) = ddl:renamable multiple
   + oracleddl:renameConstraint (ddl:renamable) = ddl:renamable multiple
 
@@ -180,9 +181,9 @@
 [oracleddl:associateStatisticsStatement]     > ddl:statement mixin
 [oracleddl:auditStatement]           > ddl:statement mixin
 [oracleddl:commitStatement]          > ddl:statement mixin
-[oracleddl:commentOnStatement]       > ddl:statement mixin
+[oracleddl:commentOnStatement]       > ddl:statement, oracleddl:commentOperand mixin
   - oracleddl:targetObjectType (STRING) mandatory
-  - oracleddl:targetObjectName (STRING) mandatory
+  - oracleddl:targetObjectName (STRING)
   - oracleddl:comment (STRING) mandatory
 [oracleddl:disassociateStatisticsStatement]     > ddl:statement mixin
 [oracleddl:explainPlanStatement]     > ddl:statement mixin
@@ -195,7 +196,7 @@
 [oracleddl:renameStatement]          > ddl:statement mixin
 [oracleddl:revokeStatement]          > ddl:statement mixin
 [oracleddl:rollbackStatement]        > ddl:statement mixin
-[oracleddl:setConstraintsStatement]  > ddl:statement, ddl:settable, mixin
-[oracleddl:setRoleStatement]         > ddl:statement, ddl:settable, mixin
-[oracleddl:setTransactionStatement]  > ddl:statement, ddl:settable, mixin
+[oracleddl:setConstraintsStatement]  > ddl:statement, ddl:settable mixin
+[oracleddl:setRoleStatement]         > ddl:statement, ddl:settable mixin
+[oracleddl:setTransactionStatement]  > ddl:statement, ddl:settable mixin
 [oracleddl:truncateStatement]        > ddl:statement mixin

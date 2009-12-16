@@ -28,18 +28,18 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<ddl='http://jboss.org/dna/ddl/1.0'>
-<derbyddl='http://jboss.org/dna/ddl/derby/1.0'>
+<ddl='http://www.jboss.org/dna/ddl/1.0'>
+<derbyddl='http://www.jboss.org/dna/ddl/derby/1.0'>
 
 // =============================================================================
 // OPERANDS
 // =============================================================================
-[derbyddl:functionOperand]  < ddl:operand abstract
-[derbyddl:indexOperand]     < ddl:operand abstract
-[derbyddl:procedureOperand] < ddl:operand abstract
-[derbyddl:roleOperand]      < ddl:operand abstract
-[derbyddl:synonymOperand]   < ddl:operand abstract
-[derbyddl:triggerOperand]   < ddl:operand abstract
+[derbyddl:functionOperand]  > ddl:operand abstract
+[derbyddl:indexOperand]     > ddl:operand abstract
+[derbyddl:procedureOperand] > ddl:operand abstract
+[derbyddl:roleOperand]      > ddl:operand abstract
+[derbyddl:synonymOperand]   > ddl:operand abstract
+[derbyddl:triggerOperand]   > ddl:operand abstract
 
 // =============================================================================
 // COLUMN

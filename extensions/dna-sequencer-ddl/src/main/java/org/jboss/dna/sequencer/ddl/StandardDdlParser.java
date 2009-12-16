@@ -142,8 +142,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @param tokens the token stream containing the tokenized DDL content. may not be null
      */
     public void registerWords( DdlTokenStream tokens ) {
+        CheckArg.isNotNull(tokens, "tokens");
+        
         this.tokens = tokens;
-
+        
         registerKeyWords(SQL_92_RESERVED_WORDS);
 
         registerStatementStartPhrase(SQL_92_ALL_PHRASES);
@@ -220,8 +222,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     public boolean parse( String ddl,
                           AstNode rootNode ) throws ParsingException {
-        assert ddl != null;
-        assert rootNode != null;
+        CheckArg.isNotNull(ddl, "ddl");
+        CheckArg.isNotNull(rootNode, "rootNode");
 
         tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
 
@@ -244,8 +246,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     public boolean parse( DdlTokenStream tokens,
                           AstNode rootNode ) throws ParsingException {
-        assert tokens != null;
-        assert rootNode != null;
+        CheckArg.isNotNull(tokens, "tokens");
+        CheckArg.isNotNull(rootNode, "rootNode");
 
         testPrint("\n== >> StandardDdlParser.parse() PARSING STARTED: ");
 
@@ -1758,10 +1760,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                                                String name,
                                                AstNode parentNode,
                                                Name mixinType ) {
-        assert tokens != null;
-        assert name != null;
-        assert parentNode != null;
-        assert mixinType != null;
+        CheckArg.isNotNull(tokens, "tokens");
+        CheckArg.isNotNull(name, "name");
+        CheckArg.isNotNull(parentNode, "parentNode");
+        CheckArg.isNotNull(mixinType, "mixinType");
 
         AstNode node = nodeFactory().node(name, parentNode, mixinType);
 
@@ -1783,10 +1785,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                                       String[] stmt_start_phrase,
                                       AstNode parentNode,
                                       Name mixinType ) {
-        assert tokens != null;
-        assert stmt_start_phrase != null;
-        assert parentNode != null;
-        assert mixinType != null;
+        CheckArg.isNotNull(tokens, "tokens");
+        CheckArg.isNotNull(stmt_start_phrase, "stmt_start_phrase");
+        CheckArg.isNotNull(parentNode, "parentNode");
+        CheckArg.isNotNull(mixinType, "mixinType");
 
         markStartOfStatement(tokens);
         tokens.consume(stmt_start_phrase);

@@ -180,11 +180,11 @@ public class DdlParsersTest {
     @Test
     public void shouldParseUntypedPostgresFile() {
     	printTest("shouldParseUntypedPostgresFile()");
-      	String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/postgres/postgres_test_statements_2.ddl");
+      	String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/postgres/postgres_test_statements_1.ddl");
 
         parsers.parse(content, rootNode);
 
-        assertEquals("POSTGRES", rootNode.getProperty(StandardDdlLexicon.PARSER_ID).getFirstValue());
+        assertThat("POSTGRES", is((String)rootNode.getProperty(StandardDdlLexicon.PARSER_ID).getFirstValue()));
     }
     
     @Test

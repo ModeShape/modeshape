@@ -28,34 +28,35 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<ddl='http://jboss.org/dna/ddl/1.0'>
-<postgresddl='http://jboss.org/dna/ddl/postgres/1.0'>
+<ddl='http://www.jboss.org/dna/ddl/1.0'>
+<postgresddl='http://www.jboss.org/dna/ddl/postgres/1.0'>
 
 // =============================================================================
 // OPERANDS
 // =============================================================================
-[postgresddl:aggregateOperand]      < ddl:operand abstract
-[postgresddl:caseOperand]           < ddl:operand abstract
-[postgresddl:contraintTriggerOperand] < ddl:operand abstract
-[postgresddl:conversionOperand]     < ddl:operand abstract
-[postgresddl:databaseOperand]       < ddl:operand abstract
-[postgresddl:foreignDataOperand]    < ddl:operand abstract
-[postgresddl:groupOperand]          < ddl:operand abstract
-[postgresddl:functionOperand]       < ddl:operand abstract
-[postgresddl:indexOperand]          < ddl:operand abstract
-[postgresddl:languageOperand]       < ddl:operand abstract
-[postgresddl:operatorOperand]       < ddl:operand abstract
-[postgresddl:ownedByOperand]        < ddl:operand abstract
-[postgresddl:roleOperand]           < ddl:operand abstract
-[postgresddl:ruleOperand]           < ddl:operand abstract
-[postgresddl:sequenceOperand]       < ddl:operand abstract
-[postgresddl:serverOperand]         < ddl:operand abstract
-[postgresddl:tablespaceOperand]     < ddl:operand abstract
-[postgresddl:textSearchOperand]     < ddl:operand abstract
-[postgresddl:triggerOperand]        < ddl:operand abstract
-[postgresddl:typeOperand]           < ddl:operand abstract
-[postgresddl:userOperand]           < ddl:operand abstract
-[postgresddl:userMappingOperand]    < ddl:operand abstract
+[postgresddl:aggregateOperand]      > ddl:operand abstract
+[postgresddl:castOperand]           > ddl:operand abstract
+[postgresddl:commentOperand]      > ddl:operand abstract
+[postgresddl:constraintTriggerOperand] > ddl:operand abstract
+[postgresddl:conversionOperand]     > ddl:operand abstract
+[postgresddl:databaseOperand]       > ddl:operand abstract
+[postgresddl:foreignDataOperand]    > ddl:operand abstract
+[postgresddl:groupOperand]          > ddl:operand abstract
+[postgresddl:functionOperand]       > ddl:operand abstractmandatory
+[postgresddl:indexOperand]          > ddl:operand abstract
+[postgresddl:languageOperand]       > ddl:operand abstract
+[postgresddl:operatorOperand]       > ddl:operand abstract
+[postgresddl:ownedByOperand]        > ddl:operand abstract
+[postgresddl:roleOperand]           > ddl:operand abstract
+[postgresddl:ruleOperand]           > ddl:operand abstract
+[postgresddl:sequenceOperand]       > ddl:operand abstract
+[postgresddl:serverOperand]         > ddl:operand abstract
+[postgresddl:tablespaceOperand]     > ddl:operand abstract
+[postgresddl:textSearchOperand]     > ddl:operand abstract
+[postgresddl:triggerOperand]        > ddl:operand abstract
+[postgresddl:typeOperand]           > ddl:operand abstract
+[postgresddl:userOperand]           > ddl:operand abstract
+[postgresddl:userMappingOperand]    > ddl:operand abstract
 
 
 // =============================================================================
@@ -71,7 +72,7 @@
 [postgresddl:alterLanguageStatement]            > ddl:alterable, ddl:statement, postgresddl:languageOperand mixin
 [postgresddl:alterOperatorStatement]            > ddl:alterable, ddl:statement, postgresddl:operatorOperand mixin
 [postgresddl:alterRoleStatement]                > ddl:alterable, ddl:statement, postgresddl:roleOperand mixin
-[postgresddl:alterSchemaStatement]              > ddl:alterable, ddl:statement, ddl:schemaOperand mixin
+[postgresddl:alterSchemaStatement]              > ddl:alterable, ddl:statement,         ddl:schemaOperand mixin
 [postgresddl:alterSequenceStatement]            > ddl:alterable, ddl:statement, postgresddl:sequenceOperand mixin
 [postgresddl:alterServerStatement]              > ddl:alterable, ddl:statement, postgresddl:serverOperand mixin
 [postgresddl:alterTablespaceStatement]          > ddl:alterable, ddl:statement, postgresddl:tablespaceOperand mixin
@@ -80,7 +81,7 @@
 [postgresddl:alterTypeStatement]                > ddl:alterable, ddl:statement, postgresddl:typeOperand mixin
 [postgresddl:alterUserStatement]                > ddl:alterable, ddl:statement, postgresddl:userOperand mixin
 [postgresddl:alterUserMappingStatement]         > ddl:alterable, ddl:statement, postgresddl:userMappingOperand mixin
-[postgresddl:alterViewStatement]                > ddl:alterable, ddl:statement, postgresddl:viewOperand mixin
+[postgresddl:alterViewStatement]                > ddl:alterable, ddl:statement,         ddl:viewOperand mixin
 
 [postgresddl:alterTableStatement] > ddl:alterTableStatement mixin
   - postgresddl:newTableName (STRING)
@@ -148,7 +149,10 @@
 [postgresddl:abortStatement]            > ddl:statement mixin
 [postgresddl:analyzeStatement]          > ddl:statement mixin
 [postgresddl:clusterStatement]          > ddl:statement mixin
-[postgresddl:commentOnStatement]        > ddl:statement mixin
+[postgresddl:commentOnStatement]        > ddl:statement, postgresddl:commentOperand mixin
+  - postgresddl:targetObjectType (STRING) mandatory
+  - postgresddl:targetObjectName (STRING)
+  - postgresddl:comment (STRING) mandatory
 [postgresddl:copyStatement]             > ddl:statement mixin
 [postgresddl:deallocateStatement]       > ddl:statement mixin
 [postgresddl:declareStatement]          > ddl:statement mixin

@@ -62,19 +62,19 @@ GRANT admins TO joe;
 --    [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 
 INSERT INTO films VALUES
-    (’UA502’, ’Bananas’, 105, ’1971-07-13’, ’Comedy’, ’82 minutes’);
+    ('UA502', 'Bananas', 105, '1971-07-13', 'Comedy', '82 minutes');
 
 INSERT INTO films (code, title, did, date_prod, kind)
-    VALUES (’T_601’, ’Yojimbo’, 106, ’1961-06-16’, ’Drama’);
+    VALUES ('T_601', 'Yojimbo', 106, '1961-06-16', 'Drama');
 -- 20 STATEMENTS *******************************************************
-INSERT INTO distributors (did, dname) VALUES (DEFAULT, ’XYZ Widgets’)
+INSERT INTO distributors (did, dname) VALUES (DEFAULT, 'XYZ Widgets')
    RETURNING did;
 
 -- LISTEN name
 
 LISTEN virtual;
 
-LOAD ’filename’;
+LOAD 'filename';
 
 --LOCK [ TABLE ] [ ONLY ] name [, ...] [ IN lockmode MODE ] [ NOWAIT ]
 --    where lockmode is one of:

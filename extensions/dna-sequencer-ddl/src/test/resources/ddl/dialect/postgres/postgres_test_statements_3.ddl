@@ -5,7 +5,7 @@
 --CREATE TYPE name AS
 --    ( attribute_name data_type [, ... ] )
 --CREATE TYPE name AS ENUM
---    ( ’label’ [, ... ] )
+--    ( 'label' [, ... ] )
 --CREATE TYPE name (
 --    INPUT = input_function,
 --    OUTPUT = output_function
@@ -29,7 +29,7 @@
 
 CREATE TYPE compfoo AS (f1 int, f2 text);
 
-CREATE TYPE bug_status AS ENUM (’new’, ’open’, ’closed’);
+CREATE TYPE bug_status AS ENUM ('new', 'open', 'closed');
 
 CREATE TYPE box;
 
@@ -60,8 +60,8 @@ CREATE TYPE bigobj (
 --    | INHERIT | NOINHERIT
 --    | LOGIN | NOLOGIN
 --    | CONNECTION LIMIT connlimit
---    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD ’password ’
---    | VALID UNTIL ’timestamp’
+--    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--    | VALID UNTIL 'timestamp'
 --    | IN ROLE rolename [, ...]
 --    | IN GROUP rolename [, ...]
 --    | ROLE rolename [, ...]
@@ -71,21 +71,21 @@ CREATE TYPE bigobj (
 
 --CREATE USER MAPPING FOR { username | USER | CURRENT_USER | PUBLIC }
 --    SERVER servername
---    [ OPTIONS ( option ’value’ [ , ... ] ) ]
+--    [ OPTIONS ( option 'value' [ , ... ] ) ]
 
-CREATE USER MAPPING FOR bob SERVER foo OPTIONS (user ’bob’, password ’secret’);
+CREATE USER MAPPING FOR bob SERVER foo OPTIONS (user 'bob', password 'secret');
 
 --CREATE [ OR REPLACE ] [ TEMP | TEMPORARY ] VIEW name [ ( column_name [, ...] ) ]
 --    AS query
 
-CREATE VIEW vista AS SELECT ’Hello World’;
+CREATE VIEW vista AS SELECT 'Hello World';
 
-CREATE VIEW vista AS SELECT text ’Hello World’ AS hello;
+CREATE VIEW vista AS SELECT text 'Hello World' AS hello;
 
 CREATE VIEW comedies AS
     SELECT *
     FROM films
-    WHERE kind = ’Comedy’;
+    WHERE kind = 'Comedy';
 -- 10 STATEMENTS *******************************************************
 --DEALLOCATE [ PREPARE ] { name | ALL }
 

@@ -71,10 +71,10 @@ ALTER DOMAIN zipcode SET SCHEMA customers;
 
 --ALTER FOREIGN DATA WRAPPER name
 --    [ VALIDATOR valfunction | NO VALIDATOR ]
---    [ OPTIONS ( [ ADD | SET | DROP ] option [’value’] [, ... ]) ]
+--    [ OPTIONS ( [ ADD | SET | DROP ] option ['value'] [, ... ]) ]
 --ALTER FOREIGN DATA WRAPPER name OWNER TO new_owner
 
-ALTER FOREIGN DATA WRAPPER dbi OPTIONS (ADD foo ’1’, DROP ’bar’);
+ALTER FOREIGN DATA WRAPPER dbi OPTIONS (ADD foo '1', DROP 'bar');
 
 ALTER FOREIGN DATA WRAPPER dbi VALIDATOR bob.myvalidator;
 
@@ -211,8 +211,8 @@ ALTER OPERATOR FAMILY integer_ops USING btree DROP
 --	    | INHERIT | NOINHERIT
 --	    | LOGIN | NOLOGIN
 --	    | CONNECTION LIMIT connlimit
---	    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD ’password ’
---	    | VALID UNTIL ’timestamp’
+--	    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--	    | VALID UNTIL 'timestamp'
 --
 --ALTER ROLE name RENAME TO newname
 --ALTER ROLE name      SET configuration_parameter { TO | = } { value | DEFAULT }
@@ -220,13 +220,13 @@ ALTER OPERATOR FAMILY integer_ops USING btree DROP
 --ALTER ROLE name      RESET configuration_parameter
 --ALTER ROLE name      RESET ALL
 
-ALTER ROLE davide WITH PASSWORD ’hu8jmn3’;
+ALTER ROLE davide WITH PASSWORD 'hu8jmn3';
 
 ALTER ROLE davide WITH PASSWORD NULL;
 
-ALTER ROLE chris VALID UNTIL ’May 4 12:00:00 2015 +1’;
+ALTER ROLE chris VALID UNTIL 'May 4 12:00:00 2015 +1';
 
-ALTER ROLE fred VALID UNTIL ’infinity’;
+ALTER ROLE fred VALID UNTIL 'infinity';
 
 ALTER ROLE miriam CREATEROLE CREATEDB;
 -- 40 STATEMENTS *******************************************************
@@ -250,13 +250,13 @@ ALTER SCHEMA name OWNER TO newowner;
 
 ALTER SEQUENCE serial RESTART WITH 105;
 
---ALTER SERVER servername [ VERSION ’newversion’ ]
---    [ OPTIONS ( [ ADD | SET | DROP ] option [’value’] [, ... ] ) ]
+--ALTER SERVER servername [ VERSION 'newversion' ]
+--    [ OPTIONS ( [ ADD | SET | DROP ] option ['value'] [, ... ] ) ]
 --ALTER SERVER servername OWNER TO new_owner
 
-ALTER SERVER foo OPTIONS (host ’foo’, dbname ’foodb’);
+ALTER SERVER foo OPTIONS (host 'foo', dbname 'foodb');
 
-ALTER SERVER foo VERSION ’8.4’ OPTIONS (SET host ’baz’);
+ALTER SERVER foo VERSION '8.4' OPTIONS (SET host 'baz');
 
 --ALTER TABLE [ ONLY ] name [ * ]
 --    action [, ... ]
@@ -309,13 +309,13 @@ ALTER TABLE distributors
 ALTER TABLE foo
     ALTER COLUMN foo_timestamp SET DATA TYPE timestamp with time zone
     USING
-        timestamp with time zone ’epoch’ + foo_timestamp * interval ’1 second’;
+        timestamp with time zone 'epoch' + foo_timestamp * interval '1 second';
 -- 50 STATEMENTS *******************************************************
 ALTER TABLE foo
     ALTER COLUMN foo_timestamp DROP DEFAULT,
     ALTER COLUMN foo_timestamp TYPE timestamp with time zone
     USING
-        timestamp with time zone ’epoch’ + foo_timestamp *GO interval ’1 second’,
+        timestamp with time zone 'epoch' + foo_timestamp *GO interval '1 second',
     ALTER COLUMN foo_timestamp SET DEFAULT now();
 
 ALTER TABLE distributors RENAME COLUMN address TO city;
@@ -407,8 +407,8 @@ ALTER TYPE email SET SCHEMA customers;
 --    | INHERIT | NOINHERIT
 --    | LOGIN | NOLOGIN
 --    | CONNECTION LIMIT connlimit
---    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD ’password ’
---    | VALID UNTIL ’timestamp’
+--    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--    | VALID UNTIL 'timestamp'
 --ALTER USER name RENAME TO newname
 --ALTER USER name      SET configuration_parameter { TO | = } { value | DEFAULT }
 --ALTER USER name      SET configuration_parameter FROM CURRENT
@@ -417,9 +417,9 @@ ALTER TYPE email SET SCHEMA customers;
 
 --ALTER USER MAPPING FOR { username | USER | CURRENT_USER | PUBLIC }
 --    SERVER servername
---    OPTIONS ( [ ADD | SET | DROP ] option [’value’] [, ... ] )
+--    OPTIONS ( [ ADD | SET | DROP ] option ['value'] [, ... ] )
 
-ALTER USER MAPPING FOR bob SERVER foo OPTIONS (user ’bob’, password ’public’);
+ALTER USER MAPPING FOR bob SERVER foo OPTIONS (user 'bob', password 'public');
 
 --ALTER VIEW name     ALTER [ COLUMN ] column SET DEFAULT expression
 --ALTER VIEW name     ALTER [ COLUMN ] column DROP DEFAULT

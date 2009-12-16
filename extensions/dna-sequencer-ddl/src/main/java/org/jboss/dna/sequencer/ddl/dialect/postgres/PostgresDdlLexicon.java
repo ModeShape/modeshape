@@ -136,4 +136,9 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final Name TYPE_RENAME_COLUMN 					= new BasicName(Namespace.URI, "renameColumn");
     
     public static final Name SCHEMA_NAME 							= new BasicName(Namespace.URI, "schemaName");
+    
+    // PROPERTY NAMES
+    public static final Name TARGET_OBJECT_TYPE = new BasicName(Namespace.URI, "targetObjectType"); //$NON-NLS-1$
+    public static final Name TARGET_OBJECT_NAME = new BasicName(Namespace.URI, "targetObjectName"); //$NON-NLS-1$
+    public static final Name COMMENT = new BasicName(Namespace.URI, "comment"); //$NON-NLS-1$
 }

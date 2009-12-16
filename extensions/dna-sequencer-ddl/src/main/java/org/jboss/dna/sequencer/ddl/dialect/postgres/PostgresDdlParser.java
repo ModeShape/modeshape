@@ -125,7 +125,6 @@ import org.jboss.dna.sequencer.ddl.StandardDdlParser;
 import org.jboss.dna.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.jboss.dna.sequencer.ddl.datatype.DataType;
 import org.jboss.dna.sequencer.ddl.datatype.DataTypeParser;
-import org.jboss.dna.sequencer.ddl.dialect.oracle.OracleDdlLexicon;
 import org.jboss.dna.sequencer.ddl.node.AstNode;
 
 /**
@@ -1165,8 +1164,6 @@ public class PostgresDdlParser extends StandardDdlParser
 
         markStartOfStatement(tokens);
 
-        AstNode commentNode = nodeFactory().node("commentOn", parentNode, TYPE_COMMENT_ON_STATEMENT);
-
         /*
         --  TABLE object_name |
         --  COLUMN table_name.column_name |
@@ -1318,15 +1315,21 @@ public class PostgresDdlParser extends StandardDdlParser
             tokens.consume("NULL");
             commentString = "NULL";
         } else {
-            commentString = parseUntilTerminator(tokens);
+            commentString = parseUntilTerminator(tokens).trim();
         }
 
-        commentNode.setProperty(OracleDdlLexicon.COMMENT, commentString);
-        commentNode.setProperty(OracleDdlLexicon.TARGET_OBJECT_TYPE, objectType);
+        AstNode commentNode = null;
+        
+
         if (objectName != null) {
-            commentNode.setProperty(OracleDdlLexicon.TARGET_OBJECT_NAME, objectName);
+            commentNode = nodeFactory().node(objectName, parentNode, TYPE_COMMENT_ON_STATEMENT);
+        } else {
+            commentNode = nodeFactory().node("commentOn", parentNode, TYPE_COMMENT_ON_STATEMENT);
+            commentNode.setProperty(PostgresDdlLexicon.TARGET_OBJECT_NAME, objectName);
         }
-
+        commentNode.setProperty(PostgresDdlLexicon.COMMENT, commentString);
+        commentNode.setProperty(PostgresDdlLexicon.TARGET_OBJECT_TYPE, objectType);
+        
         markEndOfStatement(tokens, commentNode);
 
         return commentNode;

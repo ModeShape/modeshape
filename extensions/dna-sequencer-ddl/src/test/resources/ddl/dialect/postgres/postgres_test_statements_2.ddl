@@ -31,39 +31,39 @@
 --  TRIGGER trigger_name ON table_name |
 --  TYPE object_name |
 --  VIEW object_name
---} IS ’text’
+--} IS 'text'
 
-COMMENT ON TABLE mytable IS ’This is my table.’;
+COMMENT ON TABLE mytable IS 'This is my table.';
 COMMENT ON TABLE mytable IS NULL;
-COMMENT ON AGGREGATE my_aggregate (double precision) IS ’Computes sample variance’;
-COMMENT ON CAST (text AS int4) IS ’Allow casts from text to int4’;
-COMMENT ON COLUMN my_table.my_column IS ’Employee ID number’;
-COMMENT ON CONVERSION my_conv IS ’Conversion to UTF8’;
-COMMENT ON DATABASE my_database IS ’Development Database’;
-COMMENT ON DOMAIN my_domain IS ’Email Address Domain’;
-COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
-COMMENT ON INDEX my_index IS ’Enforces uniqueness on employee ID’;
+COMMENT ON AGGREGATE my_aggregate (double precision) IS 'Computes sample variance';
+COMMENT ON CAST (text AS int4) IS 'Allow casts from text to int4';
+COMMENT ON COLUMN my_table.my_column IS 'Employee ID number';
+COMMENT ON CONVERSION my_conv IS 'Conversion to UTF8';
+COMMENT ON DATABASE my_database IS 'Development Database';
+COMMENT ON DOMAIN my_domain IS 'Email Address Domain';
+COMMENT ON FUNCTION my_function (timestamp) IS 'Returns Roman Numeral';
+COMMENT ON INDEX my_index IS 'Enforces uniqueness on employee ID';
 -- 10 STATEMENTS *******************************************************
-COMMENT ON LANGUAGE plpython IS ’Python support for stored procedures’;
-COMMENT ON LARGE OBJECT 346344 IS ’Planning document’;
-COMMENT ON OPERATOR ^ (text, text) IS ’Performs intersection of two texts’;
-COMMENT ON OPERATOR - (NONE, text) IS ’This is a prefix operator on text’;
-COMMENT ON OPERATOR CLASS int4ops USING btree IS ’4 byte integer operators for btrees’;
-COMMENT ON OPERATOR FAMILY integer_ops USING btree IS ’all integer operators for btrees’;
-COMMENT ON ROLE my_role IS ’Administration group for finance tables’;
-COMMENT ON RULE my_rule ON my_table IS ’Logs updates of employee records’;
-COMMENT ON SCHEMA my_schema IS ’Departmental data’;
-COMMENT ON SEQUENCE my_sequence IS ’Used to generate primary keys’;
+COMMENT ON LANGUAGE plpython IS 'Python support for stored procedures';
+COMMENT ON LARGE OBJECT 346344 IS 'Planning document';
+COMMENT ON OPERATOR ^ (text, text) IS 'Performs intersection of two texts';
+COMMENT ON OPERATOR - (NONE, text) IS 'This is a prefix operator on text';
+COMMENT ON OPERATOR CLASS int4ops USING btree IS '4 byte integer operators for btrees';
+COMMENT ON OPERATOR FAMILY integer_ops USING btree IS 'all integer operators for btrees';
+COMMENT ON ROLE my_role IS 'Administration group for finance tables';
+COMMENT ON RULE my_rule ON my_table IS 'Logs updates of employee records';
+COMMENT ON SCHEMA my_schema IS 'Departmental data';
+COMMENT ON SEQUENCE my_sequence IS 'Used to generate primary keys';
 -- 20 STATEMENTS *******************************************************
-COMMENT ON TABLE my_schema.my_table IS ’Employee Information’;
-COMMENT ON TABLESPACE my_tablespace IS ’Tablespace for indexes’;
-COMMENT ON TEXT SEARCH CONFIGURATION my_config IS ’Special word filtering’;
-COMMENT ON TEXT SEARCH DICTIONARY swedish IS ’Snowball stemmer for swedish language’;
-COMMENT ON TEXT SEARCH PARSER my_parser IS ’Splits text into words’;
-COMMENT ON TEXT SEARCH TEMPLATE snowball IS ’Snowball stemmer’;
-COMMENT ON TRIGGER my_trigger ON my_table IS ’Used for RI’;
-COMMENT ON TYPE complex IS ’Complex number data type’;
-COMMENT ON VIEW my_view IS ’View of departmental costs’;
+COMMENT ON TABLE my_schema.my_table IS 'Employee Information';
+COMMENT ON TABLESPACE my_tablespace IS 'Tablespace for indexes';
+COMMENT ON TEXT SEARCH CONFIGURATION my_config IS 'Special word filtering';
+COMMENT ON TEXT SEARCH DICTIONARY swedish IS 'Snowball stemmer for swedish language';
+COMMENT ON TEXT SEARCH PARSER my_parser IS 'Splits text into words';
+COMMENT ON TEXT SEARCH TEMPLATE snowball IS 'Snowball stemmer';
+COMMENT ON TRIGGER my_trigger ON my_table IS 'Used for RI';
+COMMENT ON TYPE complex IS 'Complex number data type';
+COMMENT ON VIEW my_view IS 'View of departmental costs';
 --COMMIT [ WORK | TRANSACTION ]
 
 COMMIT WORK;
@@ -74,36 +74,36 @@ COMMIT;
 
 --COMMIT PREPARED transaction_id;
 
-COMMIT PREPARED ’foobar’;
+COMMIT PREPARED 'foobar';
 
 --COPY tablename [ ( column [, ...] ) ]
---    FROM { ’filename’ | STDIN }
+--    FROM { 'filename' | STDIN }
 --    [ [ WITH ]
 --           [ BINARY ]
 --           [ OIDS ]
---           [ DELIMITER [ AS ] ’delimiter ’ ]
---           [ NULL [ AS ] ’null string ’ ]
+--           [ DELIMITER [ AS ] 'delimiter ' ]
+--           [ NULL [ AS ] 'null string ' ]
 --           [ CSV [ HEADER ]
---                 [ QUOTE [ AS ] ’quote’ ]
---                 [ ESCAPE [ AS ] ’escape’ ]
+--                 [ QUOTE [ AS ] 'quote' ]
+--                 [ ESCAPE [ AS ] 'escape' ]
 --                 [ FORCE NOT NULL column [, ...] ]
 --COPY { tablename [ ( column [, ...] ) ] | ( query ) }
---    TO { ’filename’ | STDOUT }
+--    TO { 'filename' | STDOUT }
 --    [ [ WITH ]
 --           [ BINARY ]
 --           [ OIDS ]
---           [ DELIMITER [ AS ] ’delimiter ’ ]
---           [ NULL [ AS ] ’null string ’ ]
+--           [ DELIMITER [ AS ] 'delimiter ' ]
+--           [ NULL [ AS ] 'null string ' ]
 --           [ CSV [ HEADER ]
---                 [ QUOTE [ AS ] ’quote’ ]
---                 [ ESCAPE [ AS ] ’escape’ ]
+--                 [ QUOTE [ AS ] 'quote' ]
+--                 [ ESCAPE [ AS ] 'escape' ]
 --                 [ FORCE QUOTE column [, ...] ]
 
 COPY country TO STDOUT WITH DELIMITER '|';
 
 COPY country FROM '/usr1/proj/bray/sql/country_data';
 
-COPY (SELECT * FROM country WHERE country_name LIKE ’A%’) TO ’/usr1/proj/bray/sql/a_list_co’;
+COPY (SELECT * FROM country WHERE country_name LIKE 'A%') TO '/usr1/proj/bray/sql/a_list_co';
 
 --CREATE AGGREGATE name ( input_data_type [ , ... ] ) (
 --    SFUNC = sfunc,
@@ -146,7 +146,7 @@ CREATE CAST (bigint AS int4) WITH FUNCTION int4(bigint) AS ASSIGNMENT;
 --CREATE [ DEFAULT ] CONVERSION name
 --    FOR source_encoding TO dest_encoding FROM funcname
 
-CREATE CONVERSION myconv FOR ’UTF8’ TO ’LATIN1’ FROM myfunc;
+CREATE CONVERSION myconv FOR 'UTF8' TO 'LATIN1' FROM myfunc;
 
 --CREATE DATABASE name
 --    [ [ WITH ] [ OWNER [=] dbowner ]
@@ -161,7 +161,7 @@ CREATE DATABASE lusiadas;
 
 CREATE DATABASE sales OWNER salesapp TABLESPACE salesspace;
 -- 40 STATEMENTS *******************************************************
-CREATE DATABASE music ENCODING ’LATIN1’ TEMPLATE template0;
+CREATE DATABASE music ENCODING 'LATIN1' TEMPLATE template0;
 
 
 --CREATE DOMAIN name [ AS ] data_type
@@ -173,20 +173,20 @@ CREATE DATABASE music ENCODING ’LATIN1’ TEMPLATE template0;
 
 CREATE DOMAIN us_postal_code AS TEXT
 	CHECK(
-	   VALUE ~ ’^\\d{5}$’
-	OR VALUE ~ ’^\\d{5}-\\d{4}$’
+	   VALUE ~ '^\\d{5}$'
+	OR VALUE ~ '^\\d{5}-\\d{4}$'
 	);
 
 --CREATE FOREIGN DATA WRAPPER name
 --    [ VALIDATOR valfunction | NO VALIDATOR ]
---    [ OPTIONS ( option ’value’ [, ... ] ) ]
+--    [ OPTIONS ( option 'value' [, ... ] ) ]
 
 CREATE FOREIGN DATA WRAPPER dummy;
 
 CREATE FOREIGN DATA WRAPPER postgresql VALIDATOR postgresql_fdw_validator;
 
 CREATE FOREIGN DATA WRAPPER mywrapper
-    OPTIONS (debug ’true’);
+    OPTIONS (debug 'true');
 
 --CREATE [ OR REPLACE ] FUNCTION
 --    name ( [ [ argmode ] [ argname ] argtype [ { DEFAULT | = } defexpr ] [, ...] ] )
@@ -200,13 +200,13 @@ CREATE FOREIGN DATA WRAPPER mywrapper
 --    | COST execution_cost
 --    | ROWS result_rows
 --    | SET configuration_parameter { TO value | = value | FROM CURRENT }
---    | AS ’definition’
---    | AS ’obj_file’, ’link_symbol’
+--    | AS 'definition'
+--    | AS 'obj_file', 'link_symbol'
 --  } ...
 --    [ WITH ( attribute [, ...] ) ]
 
 CREATE FUNCTION add(integer, integer) RETURNS integer
-    AS ’select $1 + $2;’
+    AS 'select $1 + $2;'
     LANGUAGE SQL
     IMMUTABLE
     RETURNS NULL ON NULL INPUT;
@@ -217,15 +217,15 @@ CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$
         END;
 
 CREATE FUNCTION dup(in int, out f1 int, out f2 text)
-    AS $$ SELECT $1, CAST($1 AS text) || ’ is text’ $$
+    AS $$ SELECT $1, CAST($1 AS text) || ' is text' $$
     LANGUAGE SQL;
 
 CREATE FUNCTION dup(int) RETURNS dup_result
-    AS $$ SELECT $1, CAST($1 AS text) || ’ is text’ $$
+    AS $$ SELECT $1, CAST($1 AS text) || ' is text' $$
     LANGUAGE SQL;
 
 CREATE FUNCTION dup(int) RETURNS TABLE(f1 int, f2 text)
-    AS $$ SELECT $1, CAST($1 AS text) || ’ is text’ $$
+    AS $$ SELECT $1, CAST($1 AS text) || ' is text' $$
     LANGUAGE SQL;
 -- 50 STATEMENTS *******************************************************
 --CREATE GROUP name [ [ WITH ] option [ ... ] ]
@@ -236,8 +236,8 @@ CREATE FUNCTION dup(int) RETURNS TABLE(f1 int, f2 text)
 --    | CREATEUSER | NOCREATEUSER
 --    | INHERIT | NOINHERIT
 --    | LOGIN | NOLOGIN
---    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD ’password ’
---    | VALID UNTIL ’timestamp’
+--    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--    | VALID UNTIL 'timestamp'
 --    | IN ROLE rolename [, ...]
 --    | IN GROUP rolename [, ...]
 --    | ROLE rolename [, ...]
@@ -333,8 +333,8 @@ CREATE OPERATOR FAMILY name USING index_method;
 --    | INHERIT | NOINHERIT
 --    | LOGIN | NOLOGIN
 --    | CONNECTION LIMIT connlimit
---    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD ’password ’
---    | VALID UNTIL ’timestamp’
+--    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--    | VALID UNTIL 'timestamp'
 --    | IN ROLE rolename [, ...]
 --    | IN GROUP rolename [, ...]
 --    | ROLE rolename [, ...]
@@ -344,9 +344,9 @@ CREATE OPERATOR FAMILY name USING index_method;
 
 CREATE ROLE jonathan LOGIN;
 
-CREATE USER davide WITH PASSWORD ’jw8s0F4’;
+CREATE USER davide WITH PASSWORD 'jw8s0F4';
 
-CREATE ROLE miriam WITH LOGIN PASSWORD ’jw8s0F4’ VALID UNTIL ’2005-01-01’;
+CREATE ROLE miriam WITH LOGIN PASSWORD 'jw8s0F4' VALID UNTIL '2005-01-01';
 
 CREATE ROLE admin WITH CREATEDB CREATEROLE;
 
@@ -385,13 +385,13 @@ CREATE SCHEMA hollywood
 
 CREATE SEQUENCE serial START 101;
 
---CREATE SERVER servername [ TYPE ’servertype’ ] [ VERSION ’serverversion’ ]
+--CREATE SERVER servername [ TYPE 'servertype' ] [ VERSION 'serverversion' ]
 --    FOREIGN DATA WRAPPER fdwname
---    [ OPTIONS ( option ’value’ [, ... ] ) ]
+--    [ OPTIONS ( option 'value' [, ... ] ) ]
 
 CREATE SERVER foo FOREIGN DATA WRAPPER "default";
 
-CREATE SERVER myserver FOREIGN DATA WRAPPER pgsql OPTIONS (host ’foo’, dbname ’foodb’, port);
+CREATE SERVER myserver FOREIGN DATA WRAPPER pgsql OPTIONS (host 'foo', dbname 'foodb', port);
        
 --CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } ] TABLE table_name 
 --  ( [
@@ -436,7 +436,7 @@ CREATE TABLE films (
 );
 
 CREATE TABLE distributors (
-     did    integer PRIMARY KEY DEFAULT nextval(’serial’),
+     did    integer PRIMARY KEY DEFAULT nextval('serial'),
      name   varchar(40) NOT NULL CHECK (name <> ”)
      
 );
@@ -487,8 +487,8 @@ CREATE TABLE films (
 );
 
 CREATE TABLE distributors (
-    name      varchar(40) DEFAULT ’Luso Films’,
-    did       integer DEFAULT nextval(’distributors_serial’),
+    name      varchar(40) DEFAULT 'Luso Films',
+    did       integer DEFAULT nextval('distributors_serial'),
     modtime   timestamp DEFAULT current_timestamp
 );
 
@@ -530,19 +530,19 @@ CREATE TABLE cinemas (
 --          [ WITH [ NO ] DATA ]
 
 CREATE TABLE films_recent AS
-  SELECT * FROM films WHERE date_prod >= ’2002-01-01’;
+  SELECT * FROM films WHERE date_prod >= '2002-01-01';
 
 CREATE TABLE films2 AS
   TABLE films;
 
 CREATE TEMP TABLE films_recent WITH (OIDS) ON COMMIT DROP AS
-  EXECUTE recentfilms(’2002-01-01’);
+  EXECUTE recentfilms('2002-01-01');
 
---CREATE TABLESPACE tablespacename [ OWNER username ] LOCATION ’directory ’
+--CREATE TABLESPACE tablespacename [ OWNER username ] LOCATION 'directory '
 
-CREATE TABLESPACE dbspace LOCATION ’/data/dbs’;
+CREATE TABLESPACE dbspace LOCATION '/data/dbs';
 
-CREATE TABLESPACE indexspace OWNER genevieve LOCATION ’/data/indexes’;
+CREATE TABLESPACE indexspace OWNER genevieve LOCATION '/data/indexes';
 
 --CREATE TEXT SEARCH CONFIGURATION name (
 --    PARSER = parser_name |

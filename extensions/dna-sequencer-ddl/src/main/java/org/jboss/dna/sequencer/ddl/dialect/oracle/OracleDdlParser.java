@@ -41,6 +41,7 @@ import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TY
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.dna.common.text.ParsingException;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.sequencer.ddl.DdlParserProblem;
 import org.jboss.dna.sequencer.ddl.DdlSequencerI18n;
@@ -296,7 +297,7 @@ public class OracleDdlParser extends StandardDdlParser
             || tokens.matches(STMT_CREATE_BITMAP_INDEX)) {
             return parseCreateIndex(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_CLUSTER)) {
-            return parseStatement(tokens, STMT_CREATE_CLUSTER, parentNode, TYPE_CREATE_CLUSTER_STATEMENT);
+            return parseCreateClusterStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_CONTEXT)) {
             return parseStatement(tokens, STMT_CREATE_CONTEXT, parentNode, TYPE_CREATE_CONTEXT_STATEMENT);
         } else if (tokens.matches(STMT_CREATE_CONTROLFILE)) {
@@ -306,7 +307,7 @@ public class OracleDdlParser extends StandardDdlParser
         } else if (tokens.matches(STMT_CREATE_PUBLIC_DATABASE)) {
             return parseStatement(tokens, STMT_CREATE_PUBLIC_DATABASE, parentNode, TYPE_CREATE_DATABASE_STATEMENT);
         } else if (tokens.matches(STMT_CREATE_DIMENSION)) {
-            return parseStatement(tokens, STMT_CREATE_DIMENSION, parentNode, TYPE_CREATE_DIMENSION_STATEMENT);
+            return parseCreateDimensionStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_DIRECTORY)) {
             return parseStatement(tokens, STMT_CREATE_DIRECTORY, parentNode, TYPE_CREATE_DIRECTORY_STATEMENT);
         } else if (tokens.matches(STMT_CREATE_OR_REPLACE_DIRECTORY)) {
@@ -386,12 +387,40 @@ public class OracleDdlParser extends StandardDdlParser
 
         return super.parseCreateStatement(tokens, parentNode);
     }
+    
+    private AstNode parseCreateClusterStatement( DdlTokenStream tokens, AstNode parentNode ) throws ParsingException {
+        markStartOfStatement(tokens);
+        tokens.consume(STMT_CREATE_CLUSTER);
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CLUSTER_STATEMENT);
+        
+        parseUntilTerminator(tokens);
+        
+        markEndOfStatement(tokens, node);
+
+        return node;
+    }
+    
+    private AstNode parseCreateDimensionStatement( DdlTokenStream tokens, AstNode parentNode ) throws ParsingException {
+        markStartOfStatement(tokens);
+        tokens.consume(STMT_CREATE_DIMENSION);
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DIMENSION_STATEMENT);
+        
+        parseUntilTerminator(tokens);
+        
+        markEndOfStatement(tokens, node);
+
+        return node;
+    }
 
     @Override
     protected AstNode parseGrantStatement( DdlTokenStream tokens,
                                            AstNode parentNode ) throws ParsingException {
-        assert tokens != null;
-        assert parentNode != null;
+        CheckArg.isNotNull(tokens, "tokens");
+        CheckArg.isNotNull(parentNode, "parentNode");
 
         // return super.parseGrantStatement(tokens, parentNode);
         AstNode node = null;
@@ -913,8 +942,6 @@ public class OracleDdlParser extends StandardDdlParser
 
         markStartOfStatement(tokens);
 
-        AstNode commentNode = nodeFactory().node("commentOn", parentNode, TYPE_COMMENT_ON_STATEMENT);
-
         // COMMENT ON COLUMN CS_EXT_FILES.FILE_UID IS
         // 'UNIQUE INTERNAL IDENTIFIER, NOT EXPOSED'
         // %
@@ -944,12 +971,12 @@ public class OracleDdlParser extends StandardDdlParser
             tokens.consume("NULL");
             commentString = "NULL";
         } else {
-            commentString = parseUntilTerminator(tokens);
+            commentString = parseUntilTerminator(tokens).trim();
         }
 
+        AstNode commentNode = nodeFactory().node(objName, parentNode, TYPE_COMMENT_ON_STATEMENT);
         commentNode.setProperty(OracleDdlLexicon.COMMENT, commentString);
         commentNode.setProperty(OracleDdlLexicon.TARGET_OBJECT_TYPE, obj);
-        commentNode.setProperty(OracleDdlLexicon.TARGET_OBJECT_NAME, objName);
 
         markEndOfStatement(tokens, commentNode);
 
