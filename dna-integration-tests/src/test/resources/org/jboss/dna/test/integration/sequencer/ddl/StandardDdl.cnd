@@ -28,7 +28,7 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<ddl='http://jboss.org/dna/ddl/1.0'>
+<ddl='http://www.jboss.org/dna/ddl/1.0'>
 
 
 //------------------------------------------------------------------------------
@@ -43,52 +43,108 @@
 // STATEMENT
 // =============================================================================
 [ddl:statement] mixin abstract
-  - ddl:expression (STRING) mandatory                       // The string fragment encompassing the statement expression.
-  - ddl:originalExpression (STRING) mandatory               // The string fragment encompassing the original statement expression.
-  - ddl:startLineNumber (LONG) < '(0,]' mandatory           // The starting line number for the statement
-  - ddl:startColumnNumber (LONG) < '(0,]' mandatory         // The starting column number for the statement
-  - ddl:startCharIndex (LONG) < '(0,]' mandatory            // The starting content character index for the statement
-  - ddl:length (LONG) < '(0,]' mandatory                    // The string length
+  - ddl:expression (string) mandatory                       // The string fragment encompassing the statement expression.
+  - ddl:originalExpression (string) mandatory               // The string fragment encompassing the original statement expression.
+  - ddl:startLineNumber (long) mandatory                    // The starting line number for the statement
+  - ddl:startColumnNumber (long) mandatory                  // The starting column number for the statement
+  - ddl:startCharIndex (long) mandatory                     // The starting content character index for the statement
+  - ddl:length (long) mandatory                             // The string length
   + ddl:problem (ddl:ddlProblem) = ddl:ddlProblem multiple  // Problems encountered during parsing.
 
 // =============================================================================
 // CREATE, ALTER, DROP, INSERT, SET, GRANT, REVOKE
 // =============================================================================
-[ddl:creatable] < ddl:operation abstract
-[ddl:alterable] < ddl:operation abstract
-[ddl:droppable] < ddl:operation abstract
+[ddl:creatable] > ddl:operation abstract
+[ddl:alterable] > ddl:operation abstract
+[ddl:droppable] > ddl:operation abstract
   - ddl:dropBehavior (STRING)
-  + * (ddl:statementOption) = ddl:statementOption multiple
-[ddl:insertable] < ddl:operation abstract
-[ddl:settable] < ddl:operation abstract
-[ddl:grantable] < ddl:operation abstract
-[ddl:revokable] < ddl:operation abstract
-[ddl:renamable] < ddl:operation, ddl:operand abstract
+  + ddl:dropOption (ddl:statementOption) = ddl:statementOption multiple
+[ddl:insertable] > ddl:operation abstract
+[ddl:settable]  > ddl:operation abstract
+[ddl:grantable] > ddl:operation abstract
+[ddl:revokable] > ddl:operation abstract
+[ddl:renamable] > ddl:operation, ddl:operand abstract
   - ddl:newName (STRING)
-
-
 
 // =============================================================================
 // OPERANDS:  SCHEMA, TABLE, DOMAIN, VIEW, ASSERTION, CHARACTER SET, COLLATION, TRANSLATION
 // =============================================================================
-[ddl:schemaOperand]             < ddl:operand abstract
-[ddl:tableOperand]              < ddl:operand abstract
-[ddl:domainOperand]             < ddl:operand abstract
-[ddl:viewOperand]               < ddl:operand abstract
-[ddl:assertionOperand]          < ddl:operand abstract
-[ddl:characterSetOperand]       < ddl:operand abstract
-[ddl:collationOperand]          < ddl:operand abstract
-[ddl:translationOperand]        < ddl:operand abstract
-[ddl:columnOperand]             < ddl:operand abstract
-[ddl:tableConstraintOperand]    < ddl:operand abstract
-[ddl:referenceOperand]          < ddl:operand abstract
+[ddl:schemaOperand]             > ddl:operand abstract
+[ddl:tableOperand]              > ddl:operand abstract
+[ddl:domainOperand]             > ddl:operand abstract
+[ddl:viewOperand]               > ddl:operand abstract
+[ddl:assertionOperand]          > ddl:operand abstract
+[ddl:characterSetOperand]       > ddl:operand abstract
+[ddl:collationOperand]          > ddl:operand abstract
+[ddl:translationOperand]        > ddl:operand abstract
+[ddl:columnOperand]             > ddl:operand abstract
+[ddl:tableConstraintOperand]    > ddl:operand abstract
+[ddl:referenceOperand]          > ddl:operand abstract
+
+// =============================================================================
+// COLUMN
+// =============================================================================
+[ddl:columnDefinition] > ddl:creatable, ddl:columnOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - ddl:nullable (STRING)
+  - ddl:defaultOption (STRING) 
+      < 'LITERAL', 'DATETIME', 'USER', 'CURRENT_USER', 'SESSION_USER', 'SYSTEM_USER', 'NULL'
+  - ddl:defaultValue (STRING)
+  - ddl:defaultPrecision (LONG)
+  - ddl:collationName (STRING)
+  + ddl:dropBehavior (ddl:simpleProperty) = ddl:simpleProperty
+  + ddl:columnAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+
+// =============================================================================
+// TABLE CONSTRAINT
+// =============================================================================
+[ddl:tableConstraintDefinition] > ddl:creatable, ddl:tableConstraintOperand mixin
+  - ddl:constraintType (STRING) mandatory
+      < 'UNIQUE', 'PRIMARY KEY', 'FOREIGN KEY', 'CHECK'
+  - ddl:deferrable (STRING)
+      < 'DEFERRABLE', 'NOT DEFERRABLE'
+  - ddl:checkSearchCondition (STRING)
+      < 'INITIALLY DEFERRED', 'INITIALLY IMMEDIATE'
+  + * (ddl:columnReference) = ddl:columnReference multiple
+  + * (ddl:tableReference) = ddl:tableReference
+  + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple
+  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  
+// =============================================================================
+// REFERENCE
+// =============================================================================
+[ddl:columnReference]       > ddl:referenceOperand mixin
+[ddl:tableReference]        > ddl:referenceOperand mixin
+[ddl:fkColumnReference]     > ddl:referenceOperand mixin
+
+// =============================================================================
+// SIMPLE STRING PROPERTY
+// =============================================================================
+[ddl:simpleProperty] mixin
+  - ddl:propValue (STRING) mandatory
+
+// =============================================================================
+// STATEMENT OPTION
+// =============================================================================
+[ddl:statementOption] mixin
+  - ddl:value (STRING) mandatory
+  
+// =============================================================================
+// DDL PROBLEM
+// =============================================================================
+[ddl:ddlProblem] mixin
+  - ddl:problemLevel (LONG) mandatory
+  - ddl:message (STRING) mandatory
 
 // =============================================================================
 // CREATE SCHEMA
 // =============================================================================
-[ddl:schemaDefinition] > ddl:statement, ddl:creatable, ddl:schemaStatement  mixin
+[ddl:schemaDefinition] > ddl:statement, ddl:creatable, ddl:schemaOperand  mixin
   - ddl:defaultCharacterSetName (STRING)
-  + * (ddl:ddlStatement) = ddl:ddlStatement (multiple)
+  + * (ddl:statement) = ddl:statement multiple
 
 // =============================================================================
 // CREATE TABLE
@@ -162,7 +218,7 @@
 // =============================================================================
 // ALTER TABLE
 // =============================================================================
-[ddl:alterTableStatement] > ddl:statement, ddl:alterStatement, ddl:tableOperand mixin
+[ddl:alterTableStatement] > ddl:statement, ddl:alterable, ddl:tableOperand mixin
   + * (ddl:addColumnDefinition)             = ddl:addColumnDefinition multiple
   + * (ddl:dropColumnDefinition)            = ddl:dropColumnDefinition multiple
   + * (ddl:alterColumnDefinition)           = ddl:alterColumnDefinition multiple
@@ -173,26 +229,26 @@
 // =============================================================================
 // ALTER DOMAIN
 // =============================================================================
-[ddl:alterDomainStatement] > ddl:statement, ddl:alterStatement, ddl:domainOperand mixin
+[ddl:alterDomainStatement] > ddl:statement, ddl:alterable, ddl:domainOperand mixin
   - ddl:alterDomainAction (STRING)                  // TODO: THIS IS COMPLEX, NEED TO BREAK DOWN
 
 // =============================================================================
 // DROP STATEMENTS
 // =============================================================================
-[ddl:dropSchemaStatement]           > ddl:droppable, ddl:schemaOperand mixin
-[ddl:dropTableStatement]            > ddl:droppable, ddl:tableOperand mixin
-[ddl:dropViewStatement]             > ddl:droppable, ddl:viewOperand mixin
-[ddl:dropDomainStatement]           > ddl:droppable, ddl:domainOperand mixin
-[ddl:dropCharacterSetStatement]     > ddl:droppable, ddl:characterSetOperand mixin
-[ddl:dropCollationStatement]        > ddl:droppable, ddl:collationOperand mixin
-[ddl:dropTranslationStatement]      > ddl:droppable, ddl:translationOperand mixin
-[ddl:dropAssertionStatement]        > ddl:droppable, ddl:assertionOperand mixin
+[ddl:dropSchemaStatement]           > ddl:statement, ddl:droppable, ddl:schemaOperand mixin
+[ddl:dropTableStatement]            > ddl:statement, ddl:droppable, ddl:tableOperand mixin
+[ddl:dropViewStatement]             > ddl:statement, ddl:droppable, ddl:viewOperand mixin
+[ddl:dropDomainStatement]           > ddl:statement, ddl:droppable, ddl:domainOperand mixin
+[ddl:dropCharacterSetStatement]     > ddl:statement, ddl:droppable, ddl:characterSetOperand mixin
+[ddl:dropCollationStatement]        > ddl:statement, ddl:droppable, ddl:collationOperand mixin
+[ddl:dropTranslationStatement]      > ddl:statement, ddl:droppable, ddl:translationOperand mixin
+[ddl:dropAssertionStatement]        > ddl:statement, ddl:droppable, ddl:assertionOperand mixin
 
-[ddl:alterColumnDefinition]         > ddl:columnDefinition, ddl:alterable, mixin
-[ddl:addColumnDefinition]           > ddl:columnDefinition, ddl:creatable, mixin
-[ddl:dropColumnDefinition]          > ddl:columnDefinition, ddl:droppable, mixin
-[ddl:addTableConstraintDefinition]  > ddl:tableConstraintDefinition, ddl:creatable, mixin
-[ddl:dropTableConstraintDefinition] > ddl:tableConstraintDefinition, ddl:droppable, mixin
+[ddl:alterColumnDefinition]         > ddl:columnDefinition, ddl:alterable mixin
+[ddl:addColumnDefinition]           > ddl:columnDefinition, ddl:creatable mixin
+[ddl:dropColumnDefinition]          > ddl:columnDefinition, ddl:droppable mixin
+[ddl:addTableConstraintDefinition]  > ddl:tableConstraintDefinition, ddl:creatable mixin
+[ddl:dropTableConstraintDefinition] > ddl:tableConstraintDefinition, ddl:droppable mixin
 
 // =============================================================================
 // MISC STATEMENTS
@@ -206,61 +262,5 @@
 [ddl:grantStatement] > ddl:statement, ddl:grantable mixin
    // TODO: THIS IS COMPLEX, NEED TO BREAK DOWN
 
-// =============================================================================
-// COLUMN
-// =============================================================================
-[ddl:columnDefinition] > ddl:creatable ddl:columnOperand mixin
-  - ddl:datatypeName (STRING) mandatory
-  - ddl:datatypeLength (LONG)
-  - ddl:datatypePrecision (LONG)
-  - ddl:datatypeScale (LONG)
-  - ddl:nullable (STRING)
-  - ddl:defaultOption (STRING) 
-      < 'LITERAL', 'DATETIME', 'USER', 'CURRENT_USER', 'SESSION_USER', 'SYSTEM_USER', 'NULL'
-  - ddl:defaultValue (STRING)
-  - ddl:defaultPrecision (LONG)
-  - ddl:collationName (STRING)
-  - ddl:dropBehavior (ddl:simpleProperty) = ddl:simpleProperty multiple
-  + ddl:columnAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
 
-// =============================================================================
-// TABLE CONSTRAINT
-// =============================================================================
-[ddl:tableConstraintDefinition] > ddl:creatable ddl:tableConstraintOperand mixin
-  - ddl:constraintType (STRING) mandatory
-      < 'UNIQUE', 'PRIMARY KEY', 'FOREIGN KEY', 'CHECK'
-  - ddl:deferrable (STRING)
-      < 'DEFERRABLE', 'NOT DEFERRABLE'
-  - ddl:checkSearchCondition (STRING)
-      < 'INITIALLY DEFERRED', 'INITIALLY IMMEDIATE'
-  + * (ddl:columnReference) = ddl:columnReference multiple
-  - (ddl:tableReference) = ddl:tableReference
-  + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple
-  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
-  
-// =============================================================================
-// REFERENCE
-// =============================================================================
-[ddl:columnReference] > ddl:referenceOperand mixin
-[ddl:tableReference] > ddl:referenceOperand mixin
-[ddl:fkColumnReference] > ddl:referenceOperand mixin
-
-// =============================================================================
-// SIMPLE STRING PROPERTY
-// =============================================================================
-[ddl:simpleProperty] mixin
-  - ddl:propValue (STRING) mandatory
-  
-// =============================================================================
-// DDL PROBLEM
-// =============================================================================
-[ddl:ddlProblem] mixin
-  - ddl:problemLevel (LONG) mandatory
-  - ddl:message (STRING) mandatory
-
-// =============================================================================
-// STATEMENT OPTION
-// =============================================================================
-[ddl:statementOption] mixin
-  - ddl:value (STRING) mandatory
 

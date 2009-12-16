@@ -23,8 +23,8 @@
  */
 package org.jboss.dna.test.integration.sequencer.ddl;
 
-import static org.junit.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.IOException;
@@ -39,6 +39,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeType;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
@@ -46,6 +47,10 @@ import org.jboss.dna.jcr.JcrEngine;
 import org.jboss.dna.jcr.JcrTools;
 import org.jboss.dna.jcr.SecurityContextCredentials;
 import org.jboss.dna.repository.sequencer.SequencingService;
+import org.jboss.dna.sequencer.ddl.StandardDdlLexicon;
+import org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon;
+import org.jboss.dna.sequencer.ddl.dialect.oracle.OracleDdlLexicon;
+import org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,8 +61,8 @@ import org.junit.Test;
 public class DdlSequencerIntegrationTest {
     private JcrEngine engine;
     private Session session;
-    private URL cndUrl;
     private JcrTools tools;
+    private static final String cndDdlFolder = "org/jboss/dna/test/integration/sequencer/ddl/";
     
     @Before
     public void beforeEach() throws Exception {
@@ -71,8 +76,6 @@ public class DdlSequencerIntegrationTest {
         String workspaceName = "default";
         String repositorySource = "ddlRepositorySource";
         
-        cndUrl = this.getClass().getClassLoader().getResource("org/jboss/dna/test/integration/sequencer/ddl/StandardDdl.cnd");
-        
         JcrConfiguration config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
         config.repositorySource(repositorySource)
@@ -80,7 +83,16 @@ public class DdlSequencerIntegrationTest {
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).addNodeTypes(cndUrl).setSource(repositorySource);
+        config.repository(repositoryName)
+            .addNodeTypes(getUrl(cndDdlFolder + "StandardDdl.cnd"))
+            .addNodeTypes(getUrl(cndDdlFolder + "DerbyDdl.cnd"))
+            .addNodeTypes(getUrl(cndDdlFolder + "OracleDdl.cnd"))
+            .addNodeTypes(getUrl(cndDdlFolder + "PostgresDdl.cnd"))
+            .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
+            .registerNamespace(DerbyDdlLexicon.Namespace.PREFIX, DerbyDdlLexicon.Namespace.URI)
+            .registerNamespace(OracleDdlLexicon.Namespace.PREFIX, OracleDdlLexicon.Namespace.URI)
+            .registerNamespace(PostgresDdlLexicon.Namespace.PREFIX, PostgresDdlLexicon.Namespace.URI)
+            .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")
             .usingClass("org.jboss.dna.sequencer.ddl.DdlSequencer")
@@ -95,6 +107,10 @@ public class DdlSequencerIntegrationTest {
         this.session = this.engine.getRepository(repositoryName)
                                   .login(new SecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
+    }
+
+    private URL getUrl(String urlStr) {
+        return this.getClass().getClassLoader().getResource(urlStr);
     }
 
     @After
@@ -155,7 +171,7 @@ public class DdlSequencerIntegrationTest {
     @Test
     public void shouldSequenceCreateSchemaDdlFile() throws Exception {
         System.out.println("STARTED:  shouldSequenceCreateSchemaDdlFile(create_schema.ddl)");
-        URL url = this.getClass().getClassLoader().getResource("org/jboss/dna/test/integration/sequencer/ddl/create_schema.ddl");
+        URL url = getUrl(cndDdlFolder + "create_schema.ddl");
         uploadFile(url);
         
         waitUntilSequencedNodesIs(1);
@@ -166,15 +182,15 @@ public class DdlSequencerIntegrationTest {
         if (root.hasNode("ddls") ) {
             if (root.hasNode("ddls")) {
                 Node ddlsNode = root.getNode("ddls");
-                System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+                //System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
                 for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
                     Node ddlNode = iter.nextNode();
                     
-                    printNodeProperties(ddlNode);
+                    //printNodeProperties(ddlNode);
                     
-                    verifyNode(ddlNode, "hollywood", "ns001:startLineNumber");
-                    verifyNode(ddlNode, "winners", "ns001:expression");
-                    verifyNode(ddlNode, "title", "ns001:datatypeLength");
+                    verifyNode(ddlNode, "hollywood", "ddl:startLineNumber");
+                    verifyNode(ddlNode, "winners", "ddl:expression");
+                    verifyNode(ddlNode, "title", "ddl:datatypeLength");
                 }
             }
         }
@@ -185,7 +201,7 @@ public class DdlSequencerIntegrationTest {
     @Test
     public void shouldSequenceDerbyDdlFile() throws Exception {
         System.out.println("STARTED:  shouldSequenceDerbyDdlFile(derby_test_statements.ddl)");
-        URL url = this.getClass().getClassLoader().getResource("org/jboss/dna/test/integration/sequencer/ddl/derby_test_statements.ddl");
+        URL url = getUrl(cndDdlFolder + "derby_test_statements.ddl");
         uploadFile(url);
         
         waitUntilSequencedNodesIs(1);
@@ -203,17 +219,99 @@ public class DdlSequencerIntegrationTest {
                     long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
                     assertEquals(numStatements, 64);
                     
-                    printNodeProperties(ddlNode);
+                    //printNodeProperties(ddlNode);
                     
-                    verifyNode(ddlNode, "HOTELAVAILABILITY", "ns001:startLineNumber");
-                    verifyNode(ddlNode, "SAMP.DEPARTMENT", "ns001:expression");
-                    verifyNode(ddlNode, "HOTEL_ID", "ns001:datatypeName");
-                    verifyNode(ddlNode, "CITIES", "ns001:startLineNumber");
+                    verifyNode(ddlNode, "HOTELAVAILABILITY", "ddl:startLineNumber");
+                    verifyNode(ddlNode, "SAMP.DEPARTMENT", "ddl:expression");
+                    verifyNode(ddlNode, "HOTEL_ID", "ddl:datatypeName");
+                    verifyNode(ddlNode, "CITIES", "ddl:startLineNumber");
                 }
             }
         }
         
         System.out.println("FINISHED:  shouldSequenceDerbyDdlFile(derby_test_statements.ddl)");
+    }
+    
+    @Test
+    public void shouldSequenceOracleDdlFile() throws Exception {
+        System.out.println("STARTED:  shouldSequenceOracleDdlFile(oracle_test_statements.ddl)");
+        URL url = getUrl(cndDdlFolder + "oracle_test_statements.ddl");
+        uploadFile(url);
+        
+        waitUntilSequencedNodesIs(1);
+        
+        // Find the node ...
+        Node root = session.getRootNode();
+
+        if (root.hasNode("ddls") ) {
+            if (root.hasNode("ddls")) {
+                Node ddlsNode = root.getNode("ddls");
+                //System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                    Node ddlNode = iter.nextNode();
+                    
+                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                    assertEquals(numStatements, 50);
+                    
+                    //printNodeProperties(ddlNode);
+                    
+                    verifyNode(ddlNode, "address", "ddl:startLineNumber");
+                    verifyNode(ddlNode, "cust_orders", "ddl:expression");
+                    verifyMixin(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
+                    verifyNodeType(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
+                    verifyNodeType(ddlNode, "cust_orders", "ddl:creatable");
+                    verifyNode(ddlNode, "cust_orders", "ddl:startCharIndex", 1698);
+                    verifyNode(ddlNode, "customers_dim", "ddl:startColumnNumber");
+                }
+            }
+        }
+        
+        System.out.println("FINISHED:  shouldSequenceOracleDdlFile(oracle_test_statements.ddl)");
+    }
+    
+    @Test
+    public void shouldSequencePostgresDdlFile() throws Exception {
+        System.out.println("STARTED:  shouldSequencePostgresDdlFile(postgres_test_statements.ddl)");
+        URL url = getUrl(cndDdlFolder + "postgres_test_statements.ddl");
+        uploadFile(url);
+        
+        waitUntilSequencedNodesIs(1);
+        
+        // Find the node ...
+        Node root = session.getRootNode();
+
+        if (root.hasNode("ddls") ) {
+            if (root.hasNode("ddls")) {
+                Node ddlsNode = root.getNode("ddls");
+                //System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                    Node ddlNode = iter.nextNode();
+                    
+                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                    assertEquals(numStatements, 101);
+                    
+                    //printNodeProperties(ddlNode);
+                    
+                    verifyNodeType(ddlNode, "increment", "postgresddl:createFunctionStatement");
+                    verifyNode(ddlNode, "increment", "ddl:expression");
+                    verifyNodeType(ddlNode, "increment", "ddl:creatable");
+                    verifyNodeType(ddlNode, "increment", "postgresddl:functionOperand");
+                    verifyNode(ddlNode, "increment", "ddl:startLineNumber", 214);
+                    verifyNode(ddlNode, "increment", "ddl:startCharIndex", 7604);
+                    
+                    
+                    //COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
+                    verifyNodeType(ddlNode, "my_function", "postgresddl:commentOnStatement");
+                    verifyNode(ddlNode, "my_function", "ddl:expression");
+                    verifyNodeType(ddlNode, "my_function", "postgresddl:commentOperand");
+                    verifyNode(ddlNode, "my_function", "ddl:startLineNumber", 44);
+                    verifyNode(ddlNode, "my_function", "ddl:startCharIndex", 1573);
+                    verifyNode(ddlNode, "my_function", "postgresddl:comment", "'Returns Roman Numeral'");
+                }
+            }
+        }
+        
+        System.out.println("FINISHED:  shouldSequencePostgresDdlFile(postgres_test_statements.ddl)");
     }
     
     protected class MyCustomSecurityContext implements SecurityContext {
@@ -245,12 +343,12 @@ public class DdlSequencerIntegrationTest {
         }
     }
     
-    private void printNodeProperties(Node node) throws Exception {
+    public void printNodeProperties(Node node) throws Exception {
         printProperties(node);
         for (NodeIterator iter = node.getNodes(); iter.hasNext();) { 
             printNodeProperties(iter.nextNode());
         }
-        
+         
     }
     
     private void verifyNode(Node topNode, String name, String propName) throws Exception {
@@ -260,6 +358,101 @@ public class DdlSequencerIntegrationTest {
             assertThat( node.hasProperty(propName), is(true));
         } else {
             fail("NODE: " + name + " not found");
+        }
+        
+    }
+    
+    private void verifyNode(Node topNode, String name, String propName, String expectedValue) throws Exception {
+        Node node = findNode(topNode, name);
+        
+        if( node != null ) {
+            assertThat( node.hasProperty(propName), is(true));
+            verifySingleValueProperty(node, propName, expectedValue);
+            
+        } else {
+            fail("NODE: " + name + " not found");
+        }
+        
+    }
+    
+    private void verifyNode(Node topNode, String name, String propName, int expectedValue) throws Exception {
+        Node node = findNode(topNode, name);
+        
+        if( node != null ) {
+            assertThat( node.hasProperty(propName), is(true));
+            verifySingleValueProperty(node, propName, expectedValue);
+            
+        } else {
+            fail("NODE: " + name + " not found");
+        }
+        
+    }
+    
+    protected Value value( String value ) throws Exception {
+        return session.getValueFactory().createValue(value);
+    }
+    
+    private void verifySingleValueProperty(Node node, String propNameStr, String expectedValue) throws Exception {
+        Value expValue = value(expectedValue);
+        Property prop = node.getProperty(propNameStr);
+        if( prop.getDefinition().isMultiple()) {
+            boolean hasValue = false;
+            
+            Object[] values = prop.getValues();
+            for( Object val : values) {
+                if(val.equals(expValue)) {
+                    hasValue = true;
+                }
+            }
+            
+            assertThat(hasValue, is(true));
+        } else {
+            Object actualValue = prop.getValue();
+            assertThat(expValue, is(actualValue));
+        }
+        
+    }
+    
+   
+    private void verifySingleValueProperty(Node node, String propNameStr, int expectedValue) throws Exception {
+        Property prop = node.getProperty(propNameStr);
+        Value expValue = session.getValueFactory().createValue(expectedValue);
+        Object actualValue = prop.getValue();
+        assertThat(expValue, is(actualValue));
+        
+    }
+    
+    private void verifyMixin(Node topNode, String nodeName, String nodeType) throws Exception {
+        Node node = findNode(topNode, nodeName);
+        
+        if( node != null ) {
+            verifyMixin(node, nodeType);
+            
+        } else {
+            fail("NODE: " + nodeName + " not found");
+        }
+    }
+    
+    private void verifyMixin(Node node, String nodeType) throws Exception {
+        boolean foundMixin = false;
+        for( NodeType mixin : node.getMixinNodeTypes() ) {
+            String mixinName = mixin.getName();
+            if( mixinName.equals(nodeType) ) {
+                foundMixin = true;
+                break;
+            }
+        }
+        
+        assertThat(foundMixin, is(true));
+    }
+    
+    private void verifyNodeType(Node topNode, String nodeName, String nodeTypeName) throws Exception {
+        Node node = findNode(topNode, nodeName);
+        
+        if( node != null ) {
+            assertThat(node.isNodeType(nodeTypeName), is(true));
+        } else {
+            fail("NODE: " + nodeName + " not found");
         }
         
     }
@@ -285,7 +478,7 @@ public class DdlSequencerIntegrationTest {
     private void printProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
         
         System.out.println("\n >>>  NODE PATH: " + node.getPath() );
-        System.out.println("\n           NAME: " + node.getName() );
+        System.out.println("           NAME: " + node.getName() + "\n" );
 
         // Create a Properties object containing the properties for this node; ignore any children ...
         //Properties props = new Properties();
