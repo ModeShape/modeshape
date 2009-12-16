@@ -26,7 +26,7 @@
   -->
 <Aircraft xmlns:jcr="http://www.jcp.org/jcr/1.0" 
           xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
-          xmlns:air="http://jboss.org/dna/examples/aircraft/1.0" jcr:primaryType="nt:unstructured">
+          xmlns:air="http://www.jboss.org/dna/examples/aircraft/1.0" jcr:primaryType="nt:unstructured">
     <Business jcr:primaryType="nt:unstructured">
         <air:Aircraft jcr:name="Gulfstream V" maker="Gulfstream" model="G-V" introduced="1995" range="5800nm" cruiseSpeed="488kt" crew="2" emptyWeight="46200lb" url="http://en.wikipedia.org/wiki/Gulfstream_V"/>
         <air:Aircraft jcr:name="Learjet 45" maker="Learjet" model="LJ45" introduced="1995" numberBuilt="264+" crew="2" emptyWeight="13695lb" range="2120nm" cruiseSpeed="457kt" url="http://en.wikipedia.org/wiki/Learjet_45"/>

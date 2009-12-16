@@ -26,7 +26,7 @@
   -->
 <Cars xmlns:jcr="http://www.jcp.org/jcr/1.0"
       xmlns:nt="http://www.jcp.org/jcr/nt/1.0" 
-      xmlns:car="http://jboss.org/dna/examples/cars/1.0" jcr:primaryType="nt:unstructured">
+      xmlns:car="http://www.jboss.org/dna/examples/cars/1.0" jcr:primaryType="nt:unstructured">
     <Hybrid jcr:primaryType="nt:unstructured">
         <car:Car jcr:name="Toyota Prius" maker="Toyota" model="Prius" year="2008" msrp="$21,500" userRating="4.2" valueRating="5" mpgCity="48" mpgHighway="45"/>
         <car:Car jcr:name="Toyota Highlander" maker="Toyota" model="Highlander" year="2008" msrp="$34,200" userRating="4" valueRating="5" mpgCity="27" mpgHighway="25"/>
