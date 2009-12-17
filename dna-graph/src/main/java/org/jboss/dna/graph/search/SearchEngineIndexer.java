@@ -34,6 +34,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.NamedThreadFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
@@ -71,7 +72,7 @@ public class SearchEngineIndexer {
     private final String sourceName;
     private final SearchEngine searchEngine;
     private final int maxDepthPerRead = DEFAULT_MAX_DEPTH_PER_READ;
-    private final ExecutorService service = Executors.newSingleThreadExecutor();
+    private final ExecutorService service;
     private final CompositeRequestChannel channel;
     private final SearchEngineProcessor processor;
     private boolean closed = false;
@@ -91,8 +92,8 @@ public class SearchEngineIndexer {
      * @throws IllegalArgumentException if the search engine or connection factory references are null
      */
     public SearchEngineIndexer( ExecutionContext context,
-                                 SearchEngine searchEngine,
-                                 RepositoryConnectionFactory connectionFactory ) {
+                                SearchEngine searchEngine,
+                                RepositoryConnectionFactory connectionFactory ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(searchEngine, "searchEngine");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
@@ -101,6 +102,7 @@ public class SearchEngineIndexer {
         this.sourceName = searchEngine.getSourceName();
         this.connectionFactory = connectionFactory;
         this.channel = new CompositeRequestChannel(this.sourceName);
+        this.service = Executors.newSingleThreadExecutor(new NamedThreadFactory("search-" + sourceName));
         // Start the channel and search engine processor right away (this is why this object must be closed)
         this.channel.start(service, this.context, this.connectionFactory);
         this.processor = this.searchEngine.createProcessor(this.context, null, false);
@@ -172,7 +174,7 @@ public class SearchEngineIndexer {
      * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public SearchEngineIndexer index( String workspaceName,
-                                       Path path ) {
+                                      Path path ) {
         checkNotClosed();
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(path, "path");
@@ -192,8 +194,8 @@ public class SearchEngineIndexer {
      * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public SearchEngineIndexer index( String workspaceName,
-                                       Path path,
-                                       int depth ) {
+                                      Path path,
+                                      int depth ) {
         checkNotClosed();
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(path, "path");
@@ -216,7 +218,7 @@ public class SearchEngineIndexer {
      * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public SearchEngineIndexer index( String workspaceName,
-                                       Location location ) {
+                                      Location location ) {
         checkNotClosed();
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(location, "location");
@@ -236,8 +238,8 @@ public class SearchEngineIndexer {
      * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public SearchEngineIndexer index( String workspaceName,
-                                       Location location,
-                                       int depth ) {
+                                      Location location,
+                                      int depth ) {
         checkNotClosed();
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(location, "location");

@@ -114,7 +114,19 @@ public class DnaConfiguration {
         source.setDefaultWorkspaceName(DEFAULT_WORKSPACE_NAME);
 
         // The file was imported successfully, so now create the content information ...
-        configurationContent = new ConfigurationDefinition(source, null, null, context, null);
+        configurationContent = new ConfigurationDefinition("dna", source, null, null, context, null);
+    }
+
+    /**
+     * Set the name of this configuration.
+     * 
+     * @param name the configuration name; may be null if the default name should be used
+     * @return this configuration
+     */
+    public DnaConfiguration withName( String name ) {
+        if (name != null) name = "dna";
+        configurationContent = configurationContent.with(name);
+        return this;
     }
 
     /**
@@ -260,7 +272,8 @@ public class DnaConfiguration {
         graph.importXmlFrom(configurationFileInputStream).skippingRootElement(true).into(pathToParent);
 
         // The file was imported successfully, so now create the content information ...
-        configurationContent = new ConfigurationDefinition(source, null, pathToParent, context, null);
+        configurationContent = new ConfigurationDefinition(configurationContent.getName(), source, null, pathToParent, context,
+                                                           null);
         return this;
     }
 
@@ -332,7 +345,8 @@ public class DnaConfiguration {
         assert parent != null;
 
         // Now create the content information ...
-        configurationContent = new ConfigurationDefinition(source, workspaceName, path, context, null);
+        configurationContent = new ConfigurationDefinition(configurationContent.getName(), source, workspaceName, path, context,
+                                                           null);
         return this;
     }
 
@@ -1301,6 +1315,7 @@ public class DnaConfiguration {
      */
     @Immutable
     public static class ConfigurationDefinition {
+        private final String name;
         private final ClassLoaderFactory classLoaderFactory;
         private final RepositorySource source;
         private final Path path;
@@ -1308,16 +1323,28 @@ public class DnaConfiguration {
         private final ExecutionContext context;
         private Graph graph;
 
-        protected ConfigurationDefinition( RepositorySource source,
+        protected ConfigurationDefinition( String configurationName,
+                                           RepositorySource source,
                                            String workspace,
                                            Path path,
                                            ExecutionContext context,
                                            ClassLoaderFactory classLoaderFactory ) {
+            assert configurationName != null;
+            this.name = configurationName;
             this.source = source;
             this.path = path != null ? path : RootPath.INSTANCE;
             this.workspace = workspace;
             this.context = context;
             this.classLoaderFactory = classLoaderFactory != null ? classLoaderFactory : new StandardClassLoaderFactory();
+        }
+
+        /**
+         * Get the name of this configuration.
+         * 
+         * @return the configuration's name; never null
+         */
+        public String getName() {
+            return name;
         }
 
         /**
@@ -1362,13 +1389,24 @@ public class DnaConfiguration {
         }
 
         /**
+         * Return a copy of this configuration that uses the supplied name instead of this object's {@link #getPath() path}.
+         * 
+         * @param name the desired name for the new configuration; if null, then the name of this configuration is used
+         * @return the new configuration
+         */
+        public ConfigurationDefinition with( String name ) {
+            if (name == null) name = this.name;
+            return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
+        }
+
+        /**
          * Return a copy of this configuration that uses the supplied path instead of this object's {@link #getPath() path}.
          * 
          * @param path the desired path for the new configuration; if null, then "/" is used
          * @return the new configuration
          */
         public ConfigurationDefinition with( Path path ) {
-            return new ConfigurationDefinition(source, workspace, path, context, classLoaderFactory);
+            return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
         }
 
         /**
@@ -1379,7 +1417,7 @@ public class DnaConfiguration {
          * @return the new configuration
          */
         public ConfigurationDefinition withWorkspace( String workspace ) {
-            return new ConfigurationDefinition(source, workspace, path, context, classLoaderFactory);
+            return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
         }
 
         /**
@@ -1390,7 +1428,7 @@ public class DnaConfiguration {
          * @return the new configuration
          */
         public ConfigurationDefinition with( ClassLoaderFactory classLoaderFactory ) {
-            return new ConfigurationDefinition(source, workspace, path, context, classLoaderFactory);
+            return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
         }
 
         /**

@@ -35,6 +35,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.NamedThreadFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.basic.RootPath;
@@ -100,7 +101,8 @@ public class RepositorySourceLoadHarness {
         // Create an Executor Service, using a thread factory that makes the first 'n' thread all wait for each other ...
         ExecutorService clientPool = null;
         if (clients.size() == 1) {
-            clientPool = Executors.newSingleThreadExecutor();
+            ThreadFactory threadFactory = new NamedThreadFactory("load");
+            clientPool = Executors.newSingleThreadExecutor(threadFactory);
         } else {
             final ThreadFactory threadFactory = new TestThreadFactory(clients.size());
             clientPool = Executors.newFixedThreadPool(clients.size(), threadFactory);

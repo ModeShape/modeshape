@@ -114,8 +114,18 @@ public class JcrEngine extends DnaEngine {
     @Override
     public void shutdown() {
         scheduler.shutdown();
-
         super.shutdown();
+
+        try {
+            this.repositoriesLock.lock();
+            // Shut down all of the repositories ...
+            for (JcrRepository repository : repositories.values()) {
+                repository.close();
+            }
+            this.repositories.clear();
+        } finally {
+            this.repositoriesLock.unlock();
+        }
     }
 
     @Override

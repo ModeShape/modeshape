@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problem;
@@ -36,6 +37,7 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.NamedThreadFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -119,7 +121,8 @@ public class DnaEngine {
         configurationChangeBus.register(repositoryService);
 
         // Create the sequencing service ...
-        executorService = new ScheduledThreadPoolExecutor(10); // Use a magic number for now
+        ThreadFactory threadPoolFactory = new NamedThreadFactory(configuration.getName());
+        executorService = Executors.newScheduledThreadPool(10, threadPoolFactory);
         sequencingService = new SequencingService();
         sequencingService.setExecutionContext(context);
         sequencingService.setExecutorService(executorService);
@@ -292,17 +295,12 @@ public class DnaEngine {
      * @see #start()
      */
     public void shutdown() {
+        // Then terminate the executor service, which may be running background jobs that are not yet completed
+        // and which will prevent new jobs being submitted (to the sequencing service) ...
+        executorService.shutdown();
+
         // First, shutdown the sequencing service, which will prevent any additional jobs from going through ...
         sequencingService.getAdministrator().shutdown();
-
-        // Then terminate the executor service, which may be running background jobs that are not yet completed ...
-        try {
-            executorService.awaitTermination(10 * 60, TimeUnit.SECONDS); // No TimeUnit.MINUTES in JDK 5
-        } catch (InterruptedException ie) {
-            // Reset the thread's status and continue this method ...
-            Thread.interrupted();
-        }
-        executorService.shutdown();
 
         // Finally shut down the repository source, which closes all connections ...
         repositoryService.getAdministrator().shutdown();

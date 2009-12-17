@@ -43,6 +43,7 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.NamedThreadFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Node;
@@ -327,7 +328,7 @@ public class SequencingService implements AdministeredService {
      * @return the executor service
      */
     protected ExecutorService createDefaultExecutorService() {
-        return Executors.newSingleThreadExecutor();
+        return Executors.newSingleThreadExecutor(new NamedThreadFactory("sequencing"));
     }
 
     protected void startService() {

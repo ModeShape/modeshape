@@ -43,6 +43,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.common.util.NamedThreadFactory;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
@@ -197,8 +198,13 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     public void close() {
         synchronized (this) {
-            // Release the configuration ...
-            this.configuration = null;
+            if (this.configuration != null) {
+                // Release the configuration ...
+                if (this.configuration.getExecutor() != null) {
+                    this.configuration.getExecutor().shutdown();
+                }
+                this.configuration = null;
+            }
         }
     }
 
@@ -390,7 +396,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             }
 
             // Create the ExecutorService ...
-            ExecutorService executor = Executors.newCachedThreadPool();
+            ExecutorService executor = Executors.newCachedThreadPool(new NamedThreadFactory(name));
 
             return new FederatedRepository(name, connectionFactory, workspaces, defaultCachePolicy, executor);
         } catch (RepositorySourceException t) {
@@ -444,7 +450,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             }
         } else {
             connectionFactory = context.getRepositoryConnectionFactory();
-            executor = Executors.newCachedThreadPool();
+            executor = Executors.newCachedThreadPool(new NamedThreadFactory(name));
         }
 
         // Add the new workspace ...

@@ -963,6 +963,12 @@ public class JcrRepository implements Repository {
         return session;
     }
 
+    void close() {
+        if (this.federatedSource != null) {
+            this.federatedSource.close();
+        }
+    }
+
     /**
      * Returns the lock manager for the named workspace (if one already exists) or creates a new lock manager and returns it. This
      * method is thread-safe.
