@@ -728,6 +728,13 @@
 					</systemProperties>
 				</configuration>
 			</plugin>
+			
+			<!-- DNA-600 Bug - version 2.7 has a bug -->
+			<plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-eclipse-plugin</artifactId>
+		      <version>2.6</version>
+		    </plugin>
 			<!-- 
            Build a test-jar for each project, so that src/test/* resources and classes can be used
            in other projects.  Also customize how the jar files are assembled.
