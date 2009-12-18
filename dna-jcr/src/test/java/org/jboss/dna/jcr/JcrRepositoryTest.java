@@ -116,7 +116,7 @@ public class JcrRepositoryTest {
 
         // Set up the repository ...
         descriptors = new HashMap<String, String>();
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
 
         // Set up the graph that goes directly to the source ...
         sourceGraph = Graph.create(source, context);
@@ -143,28 +143,28 @@ public class JcrRepositoryTest {
     }
 
     @Test
-    public void shouldAllowNullDescriptors() {
-        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null);
+    public void shouldAllowNullDescriptors() throws Exception {
+        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), descriptors, null);
+        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullConnectionFactories() throws Exception {
-        new JcrRepository(context, null, sourceName, new MockObservable(), descriptors, null);
+        new JcrRepository(context, null, sourceName, new MockObservable(), null, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullObservable() throws Exception {
-        new JcrRepository(context, connectionFactory, sourceName, null, null, null);
+        new JcrRepository(context, connectionFactory, sourceName, null, null, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSourceName() throws Exception {
-        new JcrRepository(context, connectionFactory, null, new MockObservable(), descriptors, null);
+        new JcrRepository(context, connectionFactory, null, new MockObservable(), null, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -188,8 +188,9 @@ public class JcrRepositoryTest {
     }
 
     @Test
-    public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() {
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
+    public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() throws Exception {
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                  descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
@@ -205,18 +206,19 @@ public class JcrRepositoryTest {
     }
 
     @Test
-    public void shouldHaveDefaultOptionsWhenNotOverridden() {
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
-                                                     null);
+    public void shouldHaveDefaultOptionsWhenNotOverridden() throws Exception {
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                     descriptors, null);
         assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
                    is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
     }
 
     @Test
-    public void shouldProvideUserSuppliedDescriptors() {
+    public void shouldProvideUserSuppliedDescriptors() throws Exception {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors, null);
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                  descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
@@ -254,8 +256,8 @@ public class JcrRepositoryTest {
     public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
         Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_READ_PERMISSION);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
-                                                     options);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                     descriptors, options);
 
         session = (JcrSession)repository.login();
 
@@ -492,8 +494,8 @@ public class JcrRepositoryTest {
         // Use a different repository that supports anonymous logins to make this test cleaner
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_ADMIN_PERMISSION);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
-                                                     options);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                     descriptors, options);
 
         Session session;
 
@@ -518,8 +520,8 @@ public class JcrRepositoryTest {
         // Use a different repository that supports anonymous logins to make this test cleaner
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.DNA_ADMIN_PERMISSION);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), descriptors,
-                                                     options);
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
+                                                     descriptors, options);
 
         String lockedNodeName = "lockedNode";
         JcrSession locker = (JcrSession)repository.login();

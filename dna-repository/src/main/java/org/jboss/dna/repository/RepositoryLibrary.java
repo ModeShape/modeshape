@@ -253,11 +253,11 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Returns true if this federated repository is in the process of terminating after {@link ServiceAdministrator#shutdown()}
-     * has been called on the {@link #getAdministrator() administrator}, but the federated repository has connections that have
-     * not yet normally been {@link RepositoryConnection#close() closed}. This method may be useful for debugging. A return of
-     * <tt>true</tt> reported a sufficient period after shutdown may indicate that connection users have ignored or suppressed
-     * interruption, causing this repository not to properly terminate.
+     * Returns true if this library is in the process of terminating after {@link ServiceAdministrator#shutdown()} has been called
+     * on the {@link #getAdministrator() administrator}, but the library has connections that have not yet normally been
+     * {@link RepositoryConnection#close() closed}. This method may be useful for debugging. A return of <tt>true</tt> reported a
+     * sufficient period after shutdown may indicate that connection users have ignored or suppressed interruption, causing this
+     * repository not to properly terminate.
      * 
      * @return true if terminating but not yet terminated, or false otherwise
      * @see #isTerminated()
@@ -275,7 +275,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Return true if this federated repository has completed its termination and no longer has any open connections.
+     * Return true if this library has completed its termination and no longer has any open connections.
      * 
      * @return true if terminated, or false otherwise
      * @see #isTerminating()
@@ -356,7 +356,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Add the supplied federated source. This method returns false if the source is null.
+     * Add the supplied source. This method returns false if the source is null.
      * 
      * @param source the source to add
      * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
@@ -367,7 +367,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Add the supplied federated source. This method returns false if the source is null.
+     * Add the supplied source. This method returns false if the source is null.
      * <p>
      * If a source with the same name already exists, it will be replaced only if <code>replaceIfExisting</code> is true. If this
      * is the case, then the existing source will be removed from the connection pool, and that pool will be
@@ -463,9 +463,9 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Remove from this federated repository the supplied source (or a source with the same name as that supplied). This call
-     * shuts down the connections in the source in an orderly fashion, allowing those connection currently in use to be used and
-     * closed normally, but preventing further connections from being used.
+     * Remove from this library the supplied source (or a source with the same name as that supplied). This call shuts down the
+     * connections in the source in an orderly fashion, allowing those connection currently in use to be used and closed normally,
+     * but preventing further connections from being used.
      * <p>
      * This method can safely be called while the federation repository is in use.
      * </p>
@@ -485,8 +485,8 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
-     * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
+     * Remove from this library the source with the supplied name. This call shuts down the connections in the source in an
+     * orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
      * connections from being used. However, this method never waits until the connections are all closed, and is equivalent to
      * calling <code>removeSource(name,0,TimeUnit.SECONDS)</code>.
      * 
@@ -511,8 +511,8 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     }
 
     /**
-     * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
-     * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
+     * Remove from this library the source with the supplied name. This call shuts down the connections in the source in an
+     * orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
      * connections from being used.
      * 
      * @param name the name of the source to be removed

@@ -93,6 +93,8 @@ public final class GraphI18n {
     public static I18n nodeAlreadyExistsWithUuid;
     public static I18n couldNotAcquireLock;
 
+    public static I18n errorNotifyingObserver;
+
     /* In-Memory Connector */
     public static I18n inMemoryNodeDoesNotExist;
     public static I18n errorSerializingInMemoryCachePolicyInSource;

@@ -88,8 +88,12 @@ public abstract class QueryProcessor implements Processor {
 
             if (component != null) {
                 // Now execute the component ...
-                preExecute(context);
-                tuples = component.execute();
+                try {
+                    preExecute(context);
+                    tuples = component.execute();
+                } finally {
+                    postExecute(context);
+                }
             } else {
                 // There must have been an error ...
                 assert context.getProblems().hasErrors();
@@ -110,6 +114,16 @@ public abstract class QueryProcessor implements Processor {
      * @param context the context in which the query is being executed; may not be null
      */
     protected void preExecute( QueryContext context ) {
+        // do nothing ...
+    }
+
+    /**
+     * A method that can be overridden when a hook is required immediately after the top-level {@link ProcessingComponent} is
+     * executed and all processing has been completed, even if there was an error. By default, this method does nothing.
+     * 
+     * @param context the context in which the query is being executed; may not be null
+     */
+    protected void postExecute( QueryContext context ) {
         // do nothing ...
     }
 

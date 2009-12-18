@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -52,6 +53,7 @@ import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.QueryParser;
+import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.validate.Schemata;
 
 /**
@@ -148,7 +150,9 @@ class JcrQueryManager implements QueryManager {
      * @see javax.jcr.query.QueryManager#getSupportedQueryLanguages()
      */
     public String[] getSupportedQueryLanguages() {
-        return new String[] {Query.XPATH};
+        // Make a defensive copy ...
+        Set<String> languages = session.repository().queryParsers().getLanguages();
+        return languages.toArray(new String[languages.size()]);
     }
 
     @NotThreadSafe
@@ -251,6 +255,8 @@ class JcrQueryManager implements QueryManager {
     @NotThreadSafe
     protected static class JcrQuery extends AbstractQuery {
         private final QueryCommand query;
+        private final PlanHints hints;
+        private final Map<String, Object> variables;
 
         /**
          * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated,
@@ -272,6 +278,8 @@ class JcrQueryManager implements QueryManager {
             super(session, statement, language, storedAtPath);
             assert query != null;
             this.query = query;
+            this.hints = null;
+            this.variables = null;
         }
 
         /**
@@ -279,13 +287,14 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see javax.jcr.query.Query#execute()
          */
-        public QueryResult execute() {
+        public QueryResult execute() throws RepositoryException {
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
-            QueryResults result = session.workspace().graph().query(query, schemata)
-            // .using(variables)
-                                         // .using(hints)
-                                         .execute();
+            QueryResults result = session.repository().queryManager().query(session.workspace(),
+                                                                            query,
+                                                                            schemata,
+                                                                            hints,
+                                                                            variables);
             return new JcrQueryResult(session, result);
         }
 
@@ -317,9 +326,12 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see javax.jcr.query.Query#execute()
          */
-        public QueryResult execute() {
+        public QueryResult execute() throws RepositoryException {
             // Submit immediately to the workspace graph ...
-            QueryResults result = session.workspace().graph().search(statement, MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES, 0);
+            QueryResults result = session.repository().queryManager().search(session.workspace(),
+                                                                             statement,
+                                                                             MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES,
+                                                                             0);
             return new JcrQueryResult(session, result);
         }
     }

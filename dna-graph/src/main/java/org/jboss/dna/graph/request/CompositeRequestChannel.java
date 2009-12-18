@@ -287,8 +287,9 @@ public class CompositeRequestChannel {
      * Mark this source as having no more requests to process.
      */
     public void close() {
-        this.closed.set(true);
-        this.queue.add(new LastRequest());
+        if (this.closed.compareAndSet(false, true)) {
+            this.queue.add(new LastRequest());
+        }
     }
 
     /**

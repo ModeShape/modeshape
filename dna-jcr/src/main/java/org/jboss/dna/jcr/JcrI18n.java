@@ -120,6 +120,7 @@ public final class JcrI18n {
     public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
     public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeWrittenTo;
     public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
+    public static I18n errorUpdatingQueryIndexes;
 
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
@@ -140,6 +141,7 @@ public final class JcrI18n {
     public static I18n invalidQueryLanguage;
     public static I18n queryCannotBeParsedUsingLanguage;
     public static I18n queryInLanguageIsNotValid;
+    public static I18n queryIsDisabledInRepository;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;

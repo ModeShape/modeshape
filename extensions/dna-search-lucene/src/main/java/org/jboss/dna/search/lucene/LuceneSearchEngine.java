@@ -262,7 +262,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                             indexer.index(workspaceWork.workspaceName, location, crawlRequest.depth);
                         } else if (request instanceof ForwardRequest) {
                             ForwardRequest forwardRequest = (ForwardRequest)request;
-                            indexer.process(forwardRequest.changeRequest);
+                            indexer.process(forwardRequest.changeRequest.clone());
                         }
                     }
                 }
@@ -291,6 +291,20 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
         public Iterator<WorkspaceWork> iterator() {
             return byWorkspaceName.values().iterator();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (WorkspaceWork work : byWorkspaceName.values()) {
+                sb.append(work.toString()).append('\n');
+            }
+            return sb.toString();
         }
     }
 
@@ -425,6 +439,25 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
             }
             requestByPath.put(path, new CrawlSubgraph(location, depth));
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("  Workspace: ").append(workspaceName).append('\n');
+            for (Map.Entry<Path, WorkRequest> entry : requestByPath.entrySet()) {
+                sb.append("    ")
+                  .append(entry.getKey().getString(context.getNamespaceRegistry()))
+                  .append("->")
+                  .append(entry.getValue().toString(context))
+                  .append('\n');
+            }
+            return sb.toString();
+        }
     }
 
     protected static ChangeRequest merge( ExecutionContext context,
@@ -553,6 +586,17 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
     @Immutable
     protected static abstract class WorkRequest {
+        public abstract String toString( ExecutionContext context );
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return toString(new ExecutionContext());
+        }
     }
 
     @Immutable
@@ -565,6 +609,11 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
             this.location = location;
             this.depth = depth;
         }
+
+        @Override
+        public String toString( ExecutionContext context ) {
+            return "Crawl " + location.getPath().getString(context.getNamespaceRegistry());
+        }
     }
 
     @Immutable
@@ -573,6 +622,11 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
         protected ForwardRequest( ChangeRequest changeRequest ) {
             this.changeRequest = changeRequest;
+        }
+
+        @Override
+        public String toString( ExecutionContext context ) {
+            return "Forward " + changeRequest;
         }
     }
 }

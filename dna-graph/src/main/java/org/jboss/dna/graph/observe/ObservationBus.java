@@ -24,6 +24,8 @@
 package org.jboss.dna.graph.observe;
 
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.GraphI18n;
 
 /**
  * A simple {@link Observer} that is itself {@link Observable}. This class essentially multiplexes the events from a single
@@ -32,6 +34,7 @@ import net.jcip.annotations.ThreadSafe;
 @ThreadSafe
 public class ObservationBus implements Observable, Observer {
     private final ChangeObservers observers = new ChangeObservers();
+    private final Logger logger = Logger.getLogger(getClass());
 
     public ObservationBus() {
     }
@@ -63,7 +66,11 @@ public class ObservationBus implements Observable, Observer {
     public void notify( Changes changes ) {
         if (changes != null) {
             // Broadcast the changes to the registered observers ...
-            observers.broadcast(changes);
+            try {
+                observers.broadcast(changes);
+            } catch (RuntimeException t) {
+                logger.error(t, GraphI18n.errorNotifyingObserver, t.getLocalizedMessage());
+            }
         }
     }
 

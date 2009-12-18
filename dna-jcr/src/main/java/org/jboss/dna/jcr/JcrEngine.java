@@ -47,6 +47,7 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
@@ -148,7 +149,10 @@ public class JcrEngine extends DnaEngine {
             }
 
         };
-        scheduler.scheduleAtFixedRate(cleanUpTask, 0, LOCK_SWEEP_INTERVAL_IN_MILLIS, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(cleanUpTask,
+                                      LOCK_SWEEP_INTERVAL_IN_MILLIS,
+                                      LOCK_SWEEP_INTERVAL_IN_MILLIS,
+                                      TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -246,9 +250,13 @@ public class JcrEngine extends DnaEngine {
         }
         String sourceName = context.getValueFactories().getStringFactory().create(property.getFirstValue());
 
+        // Find the capabilities ...
+        RepositorySource source = getRepositorySource(sourceName);
+        RepositorySourceCapabilities capabilities = source != null ? source.getCapabilities() : null;
         // Create the repository ...
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
-                                                     getRepositoryService().getRepositoryLibrary(), descriptors, options);
+                                                     getRepositoryService().getRepositoryLibrary(), capabilities, descriptors,
+                                                     options);
 
         // Register all the the node types ...
         Node nodeTypesNode = subgraph.getNode(JcrLexicon.NODE_TYPES);

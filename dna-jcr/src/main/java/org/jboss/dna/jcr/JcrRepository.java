@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.jcr;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
@@ -51,17 +50,15 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.query.Query;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
-import org.apache.lucene.analysis.Analyzer;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.Inflector;
-import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
@@ -98,12 +95,7 @@ import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.query.parse.QueryParsers;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
-import org.jboss.dna.graph.search.SearchableRepositorySource;
 import org.jboss.dna.jcr.xpath.XPathQueryParser;
-import org.jboss.dna.search.lucene.IndexRules;
-import org.jboss.dna.search.lucene.LuceneConfiguration;
-import org.jboss.dna.search.lucene.LuceneConfigurations;
-import org.jboss.dna.search.lucene.LuceneSearchEngine;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -136,7 +128,8 @@ public class JcrRepository implements Repository {
      * the workspaces. In production, this needs to be "true" for proper JCR functionality, but in some debugging cases it can be
      * set to false to simplify the architecture by removing the federated connector layer.
      * <p>
-     * This should be changed to 'false' only in advanced situations, and never for production.
+     * This should be changed to 'false' only in advanced situations, and never for production. Note that this also disables query
+     * execution.
      * </p>
      */
     static final boolean WORKSPACES_SHARE_SYSTEM_BRANCH = true;
@@ -203,15 +196,15 @@ public class JcrRepository implements Repository {
         TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
 
         /**
-         * A boolean flag that specifies whether this repository is expected to provide search and query functionality. If client
-         * applications will never perform searches or queries, then maintaining the indexes for these features is an unncessary
-         * overhead, and can be disabled. Note that this is merely a hint, and that searches and queries might still work when
-         * this is set to 'false'.
+         * A boolean flag that specifies whether this repository is expected to execute searches and queries. If client
+         * applications will never perform searches or queries, then maintaining the query indexes is an unncessary overhead, and
+         * can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to
+         * 'false'.
          * <p>
-         * The default is 'true', meaning that the repository <i>is expected</i> to be searched and queried.
+         * The default is 'true', meaning that clients can execute searches and queries.
          * </p>
          */
-        SEARCHABLE,
+        QUERY_EXECUTION_ENABLED,
 
         /**
          * The system may maintain a set of indexes that improve the performance of searching and querying the content. These size
@@ -221,20 +214,21 @@ public class JcrRepository implements Repository {
          * <p>
          * If specified, the value must be a valid path to a writable directory on the file system. If the path specifies a
          * non-existant location, the repository may attempt to create the missing directories. The path may be absolute or
-         * relative to the location where this VM was started.
+         * relative to the location where this VM was started. If the specified location is not a readable and writable directory
+         * (or cannot be created as such), then this will generate an exception when the repository is created.
          * </p>
          * <p>
          * The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will
          * be stored within memory.
          * </p>
          */
-        SEARCH_INDEX_DIRECTORY,
+        QUERY_INDEX_DIRECTORY,
 
         /**
          * A boolean flag that specifies whether updates to the indexes (if used) should be made synchronously, meaning that a
-         * call to {@link Session#save()} will not return until the search indexes have been updated. The benefit of synchronous
-         * updates is that a search or query performed immediately after a <code>save()</code> will operate upon content that was
-         * just changed.
+         * call to {@link Session#save()} will not return until the search indexes have been completely updated. The benefit of
+         * synchronous updates is that a search or query performed immediately after a <code>save()</code> will operate upon
+         * content that was just changed. The downside is that the <code>save()</code> operation will take longer.
          * <p>
          * With asynchronous updates, however, the only work done during a <code>save()</code> invocation is that required to
          * persist the changes in the underlying repository source, while changes to the search indexes are made in a different
@@ -245,7 +239,7 @@ public class JcrRepository implements Repository {
          * The default is value 'false', meaning the updates are performed <i>asynchronously</i>.
          * </p>
          */
-        UPDATE_INDEXES_SYNCHRONOUSLY;
+        QUERY_INDEXES_UPDATED_SYNCHRONOUSLY;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -306,19 +300,19 @@ public class JcrRepository implements Repository {
         public static final String TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES = Boolean.TRUE.toString();
 
         /**
-         * The default value for the {@link Option#SEARCHABLE} option is {@value} .
+         * The default value for the {@link Option#QUERY_EXECUTION_ENABLED} option is {@value} .
          */
-        public static final String SEARCHABLE = Boolean.TRUE.toString();
+        public static final String QUERY_EXECUTION_ENABLED = Boolean.TRUE.toString();
 
         /**
-         * The default value for the {@link Option#UPDATE_INDEXES_SYNCHRONOUSLY} option is {@value} .
+         * The default value for the {@link Option#QUERY_INDEXES_UPDATED_SYNCHRONOUSLY} option is {@value} .
          */
-        public static final String UPDATE_INDEXES_SYNCHRONOUSLY = Boolean.FALSE.toString();
+        public static final String QUERY_INDEXES_UPDATED_SYNCHRONOUSLY = Boolean.FALSE.toString();
 
         /**
-         * The default value for the {@link Option#SEARCH_INDEX_DIRECTORY} option is {@value} .
+         * The default value for the {@link Option#QUERY_INDEX_DIRECTORY} option is {@value} .
          */
-        public static final String SEARCH_INDEX_DIRECTORY = null;
+        public static final String QUERY_INDEX_DIRECTORY = null;
 
     }
 
@@ -336,9 +330,9 @@ public class JcrRepository implements Repository {
         defaults.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
         defaults.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
                      DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
-        defaults.put(Option.SEARCHABLE, DefaultOption.SEARCHABLE);
-        defaults.put(Option.UPDATE_INDEXES_SYNCHRONOUSLY, DefaultOption.UPDATE_INDEXES_SYNCHRONOUSLY);
-        defaults.put(Option.SEARCH_INDEX_DIRECTORY, DefaultOption.SEARCH_INDEX_DIRECTORY);
+        defaults.put(Option.QUERY_EXECUTION_ENABLED, DefaultOption.QUERY_EXECUTION_ENABLED);
+        defaults.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
+        defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -358,8 +352,9 @@ public class JcrRepository implements Repository {
     private final NamespaceRegistry persistentRegistry;
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
-    private final QueryParsers queryParsers = new QueryParsers(new SqlQueryParser(), new XPathQueryParser(),
-                                                               new FullTextSearchParser());
+    private final QueryParsers queryParsers;
+    // Until the federated connector supports queries, we have to use a search engine ...
+    private final RepositoryQueryManager queryManager;
 
     // package-scoped to facilitate testing
     final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
@@ -372,8 +367,11 @@ public class JcrRepository implements Repository {
      * @param connectionFactory the factory for repository connections
      * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
      * @param repositoryObservable the repository library observable associated with this repository (never <code>null</code>)
+     * @param repositorySourceCapabilities the capabilities of the repository source; may be null if the capabilities are not
+     *        known
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
      * @param options the optional {@link Option settings} for this repository; may be null
+     * @throws RepositoryException if there is a problem setting up this repository
      * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
@@ -381,8 +379,9 @@ public class JcrRepository implements Repository {
                           RepositoryConnectionFactory connectionFactory,
                           String repositorySourceName,
                           Observable repositoryObservable,
+                          RepositorySourceCapabilities repositorySourceCapabilities,
                           Map<String, String> descriptors,
-                          Map<Option, String> options ) {
+                          Map<Option, String> options ) throws RepositoryException {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -482,19 +481,24 @@ public class JcrRepository implements Repository {
             InMemoryRepositorySource transientSystemSource = new InMemoryRepositorySource();
             transientSystemSource.setName(systemSourceName);
             transientSystemSource.setDefaultWorkspaceName(systemWorkspaceName);
-            connectionFactoryWithSystem = new ConnectionFactoryWithSystem(connectionFactory, transientSystemSource);
+            connectionFactoryWithSystem = new DelegatingConnectionFactory(connectionFactory, transientSystemSource);
         }
+
+        // Set up the query parsers, which we have to have even though queries might be disabled ...
+        this.queryParsers = new QueryParsers(new SqlQueryParser(), new XPathQueryParser(), new FullTextSearchParser());
+        assert this.queryParsers.getParserFor(Query.XPATH) != null;
+
         this.systemWorkspaceName = systemWorkspaceName;
         this.systemSourceName = systemSourceName;
         this.connectionFactory = connectionFactoryWithSystem;
         assert this.systemSourceName != null;
         assert this.connectionFactory != null;
+        this.sourceName = repositorySourceName;
 
         // Set up the "/jcr:system" branch ...
         Graph systemGraph = Graph.create(this.systemSourceName, this.connectionFactory, executionContext);
         systemGraph.useWorkspace(systemWorkspaceName);
         initializeSystemContent(systemGraph);
-        this.sourceName = repositorySourceName;
 
         // Create the namespace registry and corresponding execution context.
         // Note that this persistent registry has direct access to the system workspace.
@@ -553,6 +557,37 @@ public class JcrRepository implements Repository {
         this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
 
+        // If the repository is to support searching ...
+        if (Boolean.valueOf(this.options.get(Option.QUERY_EXECUTION_ENABLED)) && WORKSPACES_SHARE_SYSTEM_BRANCH) {
+            // Determine whether the federated source and original source support queries and searches ...
+            RepositorySourceCapabilities fedCapabilities = federatedSource != null ? federatedSource.getCapabilities() : null;
+            final boolean canQuerySource = repositorySourceCapabilities != null
+                                           && repositorySourceCapabilities.supportsSearches()
+                                           && repositorySourceCapabilities.supportsQueries();
+            final boolean canQueryFederated = fedCapabilities != null && fedCapabilities.supportsSearches()
+                                              && fedCapabilities.supportsQueries();
+
+            // We can query the federated source if it supports queries and searches
+            // AND the original source supports queries and searches ...
+            if (canQuerySource && canQueryFederated) {
+                this.queryManager = new RepositoryQueryManager();
+            } else {
+                // Otherwise create a repository query manager that maintains its own search engine ...
+                String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
+                boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
+                // At this point in time, we cannot query the federated connector ...
+                String sourceToQuery = this.sourceName;
+                // But we need to observe the federated source (if there is one) ...
+                final String sourceToObserve = federatedSource != null ? federatedSource.getName() : this.sourceName;
+                // We actually want to use the federated source to crawl and watch for changes ...
+                this.queryManager = new RepositoryQueryManager.SelfContained(executionContext, sourceToQuery, sourceToObserve,
+                                                                             connectionFactoryWithSystem, repositoryObservable,
+                                                                             indexDirectory, updateIndexesSynchronously);
+            }
+        } else {
+            this.queryManager = new RepositoryQueryManager.Disabled();
+        }
+
         /*
          * Set up the anonymous role, if appropriate
          */
@@ -580,79 +615,6 @@ public class JcrRepository implements Repository {
         }
 
         this.anonymousUserContext = anonymousUserContext;
-    }
-
-    protected RepositorySource makeSearchable( final RepositorySource source ) throws RepositoryException {
-        if (Boolean.valueOf(this.options.get(Option.SEARCHABLE))) {
-            // We need to make sure we can search/query the source. See whether the source natively supports it ...
-            // Check whether the repository source supports search and query ...
-            RepositorySourceCapabilities capabilities = source.getCapabilities();
-            if (!capabilities.supportsSearches() || !capabilities.supportsQueries()) {
-                // Where should the indexes be stored ...
-                String indexDirectory = this.options.get(Option.SEARCH_INDEX_DIRECTORY);
-
-                // Define the configuration ...
-                TextEncoder encoder = new UrlEncoder();
-                LuceneConfiguration configuration = null;
-                if (indexDirectory != null) {
-                    File indexDir = new File(indexDirectory);
-                    if (indexDir.exists()) {
-                        // The location does exist ...
-                        if (!indexDir.isDirectory()) {
-                            // The path is not a directory ...
-                            I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesFileNotDirectory;
-                            throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                        }
-                        if (!indexDir.canWrite()) {
-                            // But we cannot write to it ...
-                            I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeWrittenTo;
-                            throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                        }
-                        if (!indexDir.canRead()) {
-                            // But we cannot write to it ...
-                            I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
-                            throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                        }
-                        // The directory is usable
-                    } else {
-                        // The location doesn't exist,so try to make it ...
-                        if (!indexDir.mkdirs()) {
-                            I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
-                            throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                        }
-                        // We successfully create the dirctory (or directories)
-                    }
-                    configuration = LuceneConfigurations.using(indexDir, encoder, encoder);
-                } else {
-                    // Use in-memory as a fall-back ...
-                    configuration = LuceneConfigurations.inMemory();
-                }
-                assert configuration != null;
-
-                // Set up the indexing rules ...
-                IndexRules indexRules = null;
-
-                // Create a connection factory that allows us to make connections back to the wrapped source ...
-                RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-                     */
-                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                        assert source.getName().equals(sourceName);
-                        return source.getConnection();
-                    }
-                };
-
-                // Wrap this with a searchable wrapper ...
-                Analyzer analyzer = null;
-                LuceneSearchEngine searchEngine = new LuceneSearchEngine(source.getName(), connectionFactory, true,
-                                                                         configuration, indexRules, analyzer);
-                return new SearchableRepositorySource(source, searchEngine);
-            }
-        }
-        return source;
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {
@@ -695,6 +657,15 @@ public class JcrRepository implements Repository {
 
     QueryParsers queryParsers() {
         return queryParsers;
+    }
+
+    /**
+     * Get the query manager for this repository.
+     * 
+     * @return the query manager; never null
+     */
+    RepositoryQueryManager queryManager() {
+        return queryManager;
     }
 
     /**
@@ -1126,15 +1097,15 @@ public class JcrRepository implements Repository {
         }
     }
 
-    protected class ConnectionFactoryWithSystem implements RepositoryConnectionFactory {
+    protected class DelegatingConnectionFactory implements RepositoryConnectionFactory {
         private final RepositoryConnectionFactory delegate;
-        private final RepositorySource system;
+        private final RepositorySource source;
 
-        protected ConnectionFactoryWithSystem( RepositoryConnectionFactory delegate,
+        protected DelegatingConnectionFactory( RepositoryConnectionFactory delegate,
                                                RepositorySource source ) {
             assert delegate != null;
             this.delegate = delegate;
-            this.system = source;
+            this.source = source;
         }
 
         /**
@@ -1143,8 +1114,8 @@ public class JcrRepository implements Repository {
          * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
          */
         public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-            if (this.system.getName().equals(sourceName)) {
-                return this.system.getConnection();
+            if (this.source.getName().equals(sourceName)) {
+                return this.source.getConnection();
             }
             return delegate.createConnection(sourceName);
         }
