@@ -51,6 +51,7 @@ public class ValueTypeSystem implements TypeSystem {
     private final TypeFactory<Double> doubleFactory;
     private final TypeFactory<?> dateFactory;
     private final TypeFactory<?> pathFactory;
+    private final TypeFactory<?> binaryFactory;
 
     /**
      * Create a type system using the supplied value factories.
@@ -102,19 +103,7 @@ public class ValueTypeSystem implements TypeSystem {
             }
         };
         this.pathFactory = new Factory<Path>(valueFactories.getPathFactory());
-        factories.put(PropertyType.STRING, this.stringFactory);
-        factories.put(PropertyType.BOOLEAN, this.booleanFactory);
-        factories.put(PropertyType.DATE, this.dateFactory);
-        factories.put(PropertyType.DECIMAL, new Factory<BigDecimal>(valueFactories.getDecimalFactory()));
-        factories.put(PropertyType.DOUBLE, this.doubleFactory);
-        factories.put(PropertyType.LONG, this.longFactory);
-        factories.put(PropertyType.NAME, new Factory<Name>(valueFactories.getNameFactory()));
-        factories.put(PropertyType.OBJECT, new Factory<Object>(valueFactories.getObjectFactory()));
-        factories.put(PropertyType.PATH, this.pathFactory);
-        factories.put(PropertyType.REFERENCE, new Factory<Reference>(valueFactories.getReferenceFactory()));
-        factories.put(PropertyType.URI, new Factory<URI>(valueFactories.getUriFactory()));
-        factories.put(PropertyType.UUID, new Factory<UUID>(valueFactories.getUuidFactory()));
-        factories.put(PropertyType.BINARY, new Factory<Binary>(valueFactories.getBinaryFactory()) {
+        this.binaryFactory = new Factory<Binary>(valueFactories.getBinaryFactory()) {
             /**
              * {@inheritDoc}
              * 
@@ -137,7 +126,20 @@ public class ValueTypeSystem implements TypeSystem {
                 Binary binary = this.valueFactory.create(value);
                 return binary != null ? binary.getSize() : 0;
             }
-        });
+        };
+        factories.put(PropertyType.STRING, this.stringFactory);
+        factories.put(PropertyType.BOOLEAN, this.booleanFactory);
+        factories.put(PropertyType.DATE, this.dateFactory);
+        factories.put(PropertyType.DECIMAL, new Factory<BigDecimal>(valueFactories.getDecimalFactory()));
+        factories.put(PropertyType.DOUBLE, this.doubleFactory);
+        factories.put(PropertyType.LONG, this.longFactory);
+        factories.put(PropertyType.NAME, new Factory<Name>(valueFactories.getNameFactory()));
+        factories.put(PropertyType.OBJECT, new Factory<Object>(valueFactories.getObjectFactory()));
+        factories.put(PropertyType.PATH, this.pathFactory);
+        factories.put(PropertyType.REFERENCE, new Factory<Reference>(valueFactories.getReferenceFactory()));
+        factories.put(PropertyType.URI, new Factory<URI>(valueFactories.getUriFactory()));
+        factories.put(PropertyType.UUID, new Factory<UUID>(valueFactories.getUuidFactory()));
+        factories.put(PropertyType.BINARY, this.binaryFactory);
         this.typeFactoriesByPropertyType = Collections.unmodifiableMap(factories);
         Map<String, PropertyType> propertyTypeByName = new HashMap<String, PropertyType>();
         for (Map.Entry<PropertyType, TypeFactory<?>> entry : this.typeFactoriesByPropertyType.entrySet()) {
@@ -231,6 +233,15 @@ public class ValueTypeSystem implements TypeSystem {
      */
     public TypeFactory<?> getPathFactory() {
         return pathFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.model.TypeSystem#getBinaryFactory()
+     */
+    public TypeFactory<?> getBinaryFactory() {
+        return binaryFactory;
     }
 
     /**

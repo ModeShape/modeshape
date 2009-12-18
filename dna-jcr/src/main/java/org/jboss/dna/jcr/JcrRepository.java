@@ -307,7 +307,7 @@ public class JcrRepository implements Repository {
         /**
          * The default value for the {@link Option#QUERY_INDEXES_UPDATED_SYNCHRONOUSLY} option is {@value} .
          */
-        public static final String QUERY_INDEXES_UPDATED_SYNCHRONOUSLY = Boolean.FALSE.toString();
+        public static final String QUERY_INDEXES_UPDATED_SYNCHRONOUSLY = Boolean.TRUE.toString();
 
         /**
          * The default value for the {@link Option#QUERY_INDEX_DIRECTORY} option is {@value} .
@@ -575,13 +575,8 @@ public class JcrRepository implements Repository {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
-                // At this point in time, we cannot query the federated connector ...
-                String sourceToQuery = this.sourceName;
-                // But we need to observe the federated source (if there is one) ...
-                final String sourceToObserve = federatedSource != null ? federatedSource.getName() : this.sourceName;
-                // We actually want to use the federated source to crawl and watch for changes ...
-                this.queryManager = new RepositoryQueryManager.SelfContained(executionContext, sourceToQuery, sourceToObserve,
-                                                                             connectionFactoryWithSystem, repositoryObservable,
+                this.queryManager = new RepositoryQueryManager.SelfContained(executionContext, this.sourceName,
+                                                                             connectionFactory, repositoryObservable,
                                                                              indexDirectory, updateIndexesSynchronously);
             }
         } else {

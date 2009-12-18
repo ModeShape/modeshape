@@ -141,7 +141,6 @@ class RepositoryQueryManager {
 
         SelfContained( ExecutionContext context,
                        String nameOfSourceToBeSearchable,
-                       final String observableSource,
                        RepositoryConnectionFactory connectionFactory,
                        Observable observable,
                        String indexDirectory,
@@ -190,15 +189,17 @@ class RepositoryQueryManager {
 
             // Set up the search engine ...
             org.apache.lucene.analysis.Analyzer analyzer = null;
-            searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, true, configuration, indexRules,
-                                                  analyzer);
+            boolean verifyWorkspaces = false;
+            searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces, configuration,
+                                                  indexRules, analyzer);
 
             // Set up an original source observer to keep the index up to date ...
             if (updateIndexesSynchronously) {
                 this.service = null;
                 this.searchObserver = new Observer() {
+                    @SuppressWarnings( "synthetic-access" )
                     public void notify( Changes changes ) {
-                        if (changes.getSourceName().equals(observableSource)) {
+                        if (changes.getSourceName().equals(sourceName)) {
                             process(changes);
                         }
                     }
@@ -209,7 +210,7 @@ class RepositoryQueryManager {
                 this.searchObserver = new Observer() {
                     @SuppressWarnings( "synthetic-access" )
                     public void notify( final Changes changes ) {
-                        if (changes.getSourceName().equals(observableSource)) {
+                        if (changes.getSourceName().equals(sourceName)) {
                             service.submit(new Runnable() {
                                 public void run() {
                                     process(changes);
@@ -249,7 +250,6 @@ class RepositoryQueryManager {
 
         protected void process( Changes changes ) {
             try {
-                Logger.getLogger(getClass()).warn(JcrI18n.errorUpdatingQueryIndexes, "JUST KIDDING");
                 searchEngine.index(context, changes.getChangeRequests());
             } catch (RuntimeException e) {
                 Logger.getLogger(getClass()).error(e, JcrI18n.errorUpdatingQueryIndexes, e.getLocalizedMessage());

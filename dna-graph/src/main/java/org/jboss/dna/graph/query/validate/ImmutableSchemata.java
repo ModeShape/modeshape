@@ -308,7 +308,9 @@ public class ImmutableSchemata implements Schemata {
                     QueryContext queryContext = new QueryContext(schemata, typeSystem);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
-                    if (queryContext.getProblems().hasErrors()) continue;
+                    if (queryContext.getProblems().hasErrors()) {
+                        continue;
+                    }
 
                     // Get the columns from the top-level PROJECT ...
                     PlanNode project = plan.findAtOrBelow(Type.PROJECT);

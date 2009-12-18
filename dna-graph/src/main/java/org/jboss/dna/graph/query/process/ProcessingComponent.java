@@ -161,13 +161,14 @@ public abstract class ProcessingComponent {
             Table table = schemata.getTable(propValue.getSelectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
+            final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return expectedType;
                 }
 
                 public Object evaluate( Object[] tuple ) {
-                    return tuple[index];
+                    return typeFactory.create(tuple[index]);
                 }
             };
         }
@@ -183,9 +184,10 @@ public abstract class ProcessingComponent {
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
+            final TypeFactory<Long> longFactory = typeSystem.getLongFactory();
             return new DynamicOperation() {
                 public String getExpectedType() {
-                    return typeSystem.getLongFactory().getTypeName(); // length is always LONG
+                    return longFactory.getTypeName(); // length is always LONG
                 }
 
                 public Object evaluate( Object[] tuple ) {
@@ -293,11 +295,12 @@ public abstract class ProcessingComponent {
             FullTextSearchScore score = (FullTextSearchScore)operand;
             String selectorName = score.getSelectorName().getName();
             final int index = columns.getFullTextSearchScoreIndexFor(selectorName);
+            final TypeFactory<Double> doubleFactory = typeSystem.getDoubleFactory();
             if (index < 0) {
                 // No full-text search score for this selector, so return 0.0d;
                 return new DynamicOperation() {
                     public String getExpectedType() {
-                        return typeSystem.getDoubleFactory().getTypeName();
+                        return doubleFactory.getTypeName();
                     }
 
                     public Object evaluate( Object[] tuple ) {
@@ -307,7 +310,7 @@ public abstract class ProcessingComponent {
             }
             return new DynamicOperation() {
                 public String getExpectedType() {
-                    return typeSystem.getDoubleFactory().getTypeName();
+                    return doubleFactory.getTypeName();
                 }
 
                 public Object evaluate( Object[] tuple ) {

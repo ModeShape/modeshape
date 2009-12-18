@@ -33,6 +33,8 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -44,6 +46,8 @@ import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.validate.ImmutableSchemata;
 import org.jboss.dna.graph.query.validate.Schemata;
+import org.jboss.dna.search.lucene.IndexRules;
+import org.jboss.dna.search.lucene.LuceneSearchEngine;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -62,6 +66,7 @@ class NodeTypeSchemata implements Schemata {
     private final Iterable<JcrPropertyDefinition> propertyDefinitions;
     private final Map<Name, JcrNodeType> nodeTypesByName;
     private final Multimap<JcrNodeType, JcrNodeType> subtypesByName = LinkedHashMultimap.create();
+    private final IndexRules indexRules;
 
     NodeTypeSchemata( ExecutionContext context,
                       Map<Name, JcrNodeType> nodeTypes,
@@ -70,6 +75,11 @@ class NodeTypeSchemata implements Schemata {
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyDefinitions = propertyDefinitions;
         this.nodeTypesByName = nodeTypes;
+
+        // Register all the namespace prefixes by URIs ...
+        for (Namespace namespace : context.getNamespaceRegistry().getNamespaces()) {
+            this.prefixesByUris.put(namespace.getNamespaceUri(), namespace.getPrefix());
+        }
 
         // Identify the subtypes for each node type, and do this before we build any views ...
         for (JcrNodeType nodeType : nodeTypesByName.values()) {
@@ -92,7 +102,8 @@ class NodeTypeSchemata implements Schemata {
         }
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
-        addAllNodesTable(builder, context);
+        IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
+        addAllNodesTable(builder, indexRulesBuilder, context);
 
         // Define a view for each node type ...
         for (JcrNodeType nodeType : nodeTypesByName.values()) {
@@ -100,19 +111,24 @@ class NodeTypeSchemata implements Schemata {
         }
 
         schemata = builder.build();
+        indexRules = indexRulesBuilder.build();
+    }
+
+    /**
+     * Get the index rules ...
+     * 
+     * @return indexRules
+     */
+    public IndexRules getIndexRules() {
+        return indexRules;
     }
 
     protected JcrNodeType getNodeType( Name nodeTypeName ) {
         return nodeTypesByName.get(nodeTypeName);
     }
 
-    private void recordName( NamespaceRegistry registry,
-                             Name name ) {
-        String uri = name.getNamespaceUri();
-        prefixesByUris.put(uri, registry.getPrefixForNamespaceUri(uri, false));
-    }
-
     protected final void addAllNodesTable( ImmutableSchemata.Builder builder,
+                                           IndexRules.Builder indexRuleBuilder,
                                            ExecutionContext context ) {
         NamespaceRegistry registry = context.getNamespaceRegistry();
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
@@ -123,9 +139,8 @@ class NodeTypeSchemata implements Schemata {
         Set<String> fullTextSearchableNames = new HashSet<String>();
         for (JcrPropertyDefinition defn : propertyDefinitions) {
             if (defn.isResidual()) continue;
-            if (defn.isMultiple()) continue;
+            // if (defn.isMultiple()) continue;
             Name name = defn.getInternalName();
-            recordName(registry, name);
             String columnName = name.getString(registry);
             if (first) {
                 builder.addTable(tableName, columnName);
@@ -145,7 +160,51 @@ class NodeTypeSchemata implements Schemata {
             if (fullTextSearchable) fullTextSearchableNames.add(columnName);
             // Add (or overwrite) the column ...
             builder.addColumn(tableName, columnName, type, fullTextSearchable);
+
+            // And build an indexing rule for this type ...
+            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem);
         }
+    }
+
+    /**
+     * Add an index rule for the given property definition and the type in the {@link TypeSystem}.
+     * 
+     * @param builder the index rule builder; never null
+     * @param defn the property definition; never null
+     * @param type the TypeSystem type, which may be a more general type than dictated by the definition, since multiple
+     *        definitions with the same name require the index rule to use the common base type; never null
+     * @param typeSystem the type system; never null
+     */
+    protected final void addIndexRule( IndexRules.Builder builder,
+                                       JcrPropertyDefinition defn,
+                                       String type,
+                                       TypeSystem typeSystem ) {
+        Store store = Store.YES;
+        Index index = defn.isFullTextSearchable() ? Index.ANALYZED : Index.NO;
+        if (typeSystem.getStringFactory().getTypeName().equals(type)) {
+            builder.stringField(defn.getInternalName(), store, index);
+        } else if (typeSystem.getDateTimeFactory().getTypeName().equals(type)) {
+            Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
+            Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
+            builder.dateField(defn.getInternalName(), store, index, minimum, maximum);
+        } else if (typeSystem.getLongFactory().getTypeName().equals(type)) {
+            Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
+            Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
+            builder.longField(defn.getInternalName(), store, index, minimum, maximum);
+        } else if (typeSystem.getDoubleFactory().getTypeName().equals(type)) {
+            Double minimum = typeSystem.getDoubleFactory().create(defn.getMinimumValue());
+            Double maximum = typeSystem.getDoubleFactory().create(defn.getMaximumValue());
+            builder.doubleField(defn.getInternalName(), store, index, minimum, maximum);
+        } else if (typeSystem.getBooleanFactory().getTypeName().equals(type)) {
+            builder.booleanField(defn.getInternalName(), store, index);
+        } else if (typeSystem.getBinaryFactory().getTypeName().equals(type)) {
+            store = Store.NO;
+            builder.binaryField(defn.getInternalName(), store, index);
+        } else {
+            // Everything else gets stored as a string ...
+            builder.stringField(defn.getInternalName(), store, index);
+        }
+
     }
 
     protected final void addView( ImmutableSchemata.Builder builder,
@@ -171,49 +230,68 @@ class NodeTypeSchemata implements Schemata {
             if (defn.isResidual()) continue;
             if (defn.isMultiple()) continue;
             Name name = defn.getInternalName();
-            recordName(registry, name);
             String columnName = name.getString(registry);
             if (first) first = false;
             else viewDefinition.append(',');
             viewDefinition.append('[').append(columnName).append(']');
         }
-        viewDefinition.append(" FROM ").append(AllNodes.ALL_NODES_NAME).append(" WHERE ");
+        viewDefinition.append(" FROM ").append(AllNodes.ALL_NODES_NAME);
 
-        Collection<JcrNodeType> typeAndSubtypes = subtypesByName.get(nodeType);
-        if (nodeType.isMixin()) {
-            // Build the list of mixin types ...
-            StringBuilder mixinTypes = null;
-            for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
-                if (!thisOrSupertype.isMixin()) continue;
-                if (mixinTypes == null) {
-                    mixinTypes = new StringBuilder();
-                    mixinTypes.append('[').append(JcrLexicon.MIXIN_TYPES.getString(registry)).append("] IN (");
-                } else {
-                    mixinTypes.append(',');
+        // The 'nt:base' node type will have every single object in it, so we don't need to add the type criteria ...
+        if (!JcrNtLexicon.BASE.equals(nodeType.getInternalName())) {
+            // The node type is not 'nt:base', which
+            viewDefinition.append(" WHERE ");
+
+            Collection<JcrNodeType> typeAndSubtypes = subtypesByName.get(nodeType);
+            if (nodeType.isMixin()) {
+                // Build the list of mixin types ...
+                StringBuilder mixinTypes = null;
+                int count = 0;
+                for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
+                    if (!thisOrSupertype.isMixin()) continue;
+                    if (mixinTypes == null) {
+                        mixinTypes = new StringBuilder();
+                    } else {
+                        mixinTypes.append(',');
+                    }
+                    assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
+                    String name = thisOrSupertype.getInternalName().getString(registry);
+                    mixinTypes.append('[').append(name).append(']');
+                    ++count;
                 }
-                assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
-                String name = thisOrSupertype.getInternalName().getString(registry);
-                mixinTypes.append(name);
-            }
-            assert mixinTypes != null; // should at least include itself
-            viewDefinition.append(mixinTypes);
-        } else {
-            // Build the list of node type names ...
-            StringBuilder primaryTypes = null;
-            for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
-                if (thisOrSupertype.isMixin()) continue;
-                if (primaryTypes == null) {
-                    primaryTypes = new StringBuilder();
-                    primaryTypes.append('[').append(JcrLexicon.PRIMARY_TYPE.getString(registry)).append("] IN (");
+                assert mixinTypes != null; // should at least include itself
+                assert count > 0;
+                viewDefinition.append('[').append(JcrLexicon.MIXIN_TYPES.getString(registry)).append(']');
+                if (count == 1) {
+                    viewDefinition.append('=').append(mixinTypes);
                 } else {
-                    primaryTypes.append(',');
+                    viewDefinition.append(" IN (").append(mixinTypes).append(')');
                 }
-                assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
-                String name = thisOrSupertype.getInternalName().getString(registry);
-                primaryTypes.append(name);
+            } else {
+                // Build the list of node type names ...
+                StringBuilder primaryTypes = null;
+                int count = 0;
+                for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
+                    if (thisOrSupertype.isMixin()) continue;
+                    if (primaryTypes == null) {
+                        primaryTypes = new StringBuilder();
+                    } else {
+                        primaryTypes.append(',');
+                    }
+                    assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
+                    String name = thisOrSupertype.getInternalName().getString(registry);
+                    primaryTypes.append('[').append(name).append(']');
+                    ++count;
+                }
+                assert primaryTypes != null; // should at least include itself
+                assert count > 0;
+                viewDefinition.append('[').append(JcrLexicon.PRIMARY_TYPE.getString(registry)).append(']');
+                if (count == 1) {
+                    viewDefinition.append('=').append(primaryTypes);
+                } else {
+                    viewDefinition.append(" IN (").append(primaryTypes).append(')');
+                }
             }
-            assert primaryTypes != null; // should at least include itself
-            viewDefinition.append(primaryTypes);
         }
 
         // Define the view ...
@@ -298,7 +376,7 @@ class NodeTypeSchemata implements Schemata {
             this.nameFactory = context.getValueFactories().getNameFactory();
             this.builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
             // Add the "AllNodes" table ...
-            addAllNodesTable(builder, context);
+            addAllNodesTable(builder, null, context);
             this.schemata = builder.build();
         }
 

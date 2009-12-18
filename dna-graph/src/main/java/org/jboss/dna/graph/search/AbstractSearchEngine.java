@@ -53,7 +53,7 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 public abstract class AbstractSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor>
     implements SearchEngine {
 
-    public static final boolean DEFAULT_VERIFY_WORKSPACE_IN_SOURCE = true;
+    public static final boolean DEFAULT_VERIFY_WORKSPACE_IN_SOURCE = false;
 
     private final boolean verifyWorkspaceInSource;
     private final RepositoryConnectionFactory connectionFactory;

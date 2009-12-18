@@ -241,6 +241,48 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     }
 
     /**
+     * Return the minimum value allowed by the constraints, or null if no such minimum value is defined by the definition given
+     * it's required type and constraints. A minimum value can only be found for numeric types, such as {@link PropertyType#DATE
+     * DATE}, {@link PropertyType#LONG LONG}, and {@link PropertyType#DOUBLE DOUBLE}; all other types will return null.
+     * 
+     * @return the minimum value, or null if no minimum value could be identified
+     */
+    Object getMinimumValue() {
+        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG) {
+            ConstraintChecker checker = this.checker;
+            if (checker == null || checker.getType() != requiredType) {
+                checker = createChecker(context, requiredType, valueConstraints);
+                this.checker = checker;
+            }
+            assert checker instanceof RangeConstraintChecker;
+            RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
+            return rangeChecker.getMinimum(); // may still be null
+        }
+        return null;
+    }
+
+    /**
+     * Return the maximum value allowed by the constraints, or null if no such maximum value is defined by the definition given
+     * it's required type and constraints. A maximum value can only be found for numeric types, such as {@link PropertyType#DATE
+     * DATE}, {@link PropertyType#LONG LONG}, and {@link PropertyType#DOUBLE DOUBLE}; all other types will return null.
+     * 
+     * @return the maximum value, or null if no maximum value could be identified
+     */
+    Object getMaximumValue() {
+        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG) {
+            ConstraintChecker checker = this.checker;
+            if (checker == null || checker.getType() != requiredType) {
+                checker = createChecker(context, requiredType, valueConstraints);
+                this.checker = checker;
+            }
+            assert checker instanceof RangeConstraintChecker;
+            RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
+            return rangeChecker.getMaximum(); // may still be null
+        }
+        return null;
+    }
+
+    /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
      * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
@@ -367,6 +409,10 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     private interface Range<T> {
         boolean accepts( T value );
+
+        Comparable<T> getMinimum();
+
+        Comparable<T> getMaximum();
     }
 
     /**
@@ -378,6 +424,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     private static abstract class RangeConstraintChecker<T extends Comparable<T>> implements ConstraintChecker {
         private final Range<T>[] constraints;
         private final ValueFactory<T> valueFactory;
+        private T minimumValue;
+        private T maximumValue;
 
         @SuppressWarnings( "unchecked" )
         protected RangeConstraintChecker( String[] valueConstraints,
@@ -393,6 +441,46 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         protected abstract ValueFactory<T> getValueFactory( ValueFactories valueFactories );
 
         protected abstract Comparable<T> parseValue( String s );
+
+        @SuppressWarnings( "unchecked" )
+        protected T getMinimum() {
+            if (minimumValue == null) {
+                // This is idempotent, so okay to recreate ...
+                Comparable<T> minimum = null;
+                // Go through the value constraints and see which one is the minimum value ...
+                for (Range<T> range : constraints) {
+                    T rangeMin = (T)range.getMinimum();
+                    if (rangeMin == null) continue;
+                    if (minimum == null) {
+                        minimum = rangeMin;
+                    } else {
+                        minimum = minimum.compareTo(rangeMin) > 0 ? rangeMin : minimum;
+                    }
+                }
+                minimumValue = (T)minimum;
+            }
+            return minimumValue;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        protected T getMaximum() {
+            if (maximumValue == null) {
+                // This is idempotent, so okay to recreate ...
+                Comparable<T> maximum = null;
+                // Go through the value constraints and see which one is the minimum value ...
+                for (Range<T> range : constraints) {
+                    T rangeMax = (T)range.getMaximum();
+                    if (rangeMax == null) continue;
+                    if (maximum == null) {
+                        maximum = rangeMax;
+                    } else {
+                        maximum = maximum.compareTo(rangeMax) > 0 ? rangeMax : maximum;
+                    }
+                }
+                maximumValue = (T)maximum;
+            }
+            return maximumValue;
+        }
 
         /**
          * Parses one constraint value into a {@link Range} that will accept only values which match the range described by the
@@ -424,6 +512,24 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                         return false;
                     }
                     return true;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.jcr.JcrPropertyDefinition.Range#getMaximum()
+                 */
+                public Comparable<T> getMaximum() {
+                    return lower;
+                }
+
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.jcr.JcrPropertyDefinition.Range#getMinimum()
+                 */
+                public Comparable<T> getMinimum() {
+                    return upper;
                 }
             };
         }

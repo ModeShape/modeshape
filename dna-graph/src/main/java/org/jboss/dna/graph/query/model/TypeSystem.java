@@ -93,6 +93,13 @@ public interface TypeSystem {
     TypeFactory<?> getPathFactory();
 
     /**
+     * Get the type factory for binary objects.
+     * 
+     * @return the binary factory, or null if this type system doesn't support binary objects
+     */
+    TypeFactory<?> getBinaryFactory();
+
+    /**
      * Get the name of the type that is used by default.
      * 
      * @return the default type name; never null
