@@ -24,7 +24,9 @@
 package org.jboss.dna.jcr;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +34,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -48,6 +51,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.query.QueryResults;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.model.QueryCommand;
@@ -110,7 +114,12 @@ class JcrQueryManager implements QueryManager {
         try {
             // Parsing must be done now ...
             QueryCommand command = parser.parseQuery(expression, typeSystem);
-            return new JcrQuery(this.session, expression, parser.getLanguage(), command, storedAtPath);
+            PlanHints hints = new PlanHints();
+            // If using XPath, we need to add a few hints ...
+            if (Query.XPATH.equals(language)) {
+                hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
+            }
+            return new JcrQuery(this.session, expression, parser.getLanguage(), command, hints, storedAtPath);
         } catch (ParsingException e) {
             // The query is not well-formed and cannot be parsed ...
             String reason = e.getMessage();
@@ -268,17 +277,19 @@ class JcrQueryManager implements QueryManager {
          * @param statement the original statement as supplied by the client; may not be null
          * @param language the language obtained from the {@link QueryParser}; may not be null
          * @param query the parsed query representation; may not be null
+         * @param hints any hints that are to be used; may be null if there are no hints
          * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
          */
         protected JcrQuery( JcrSession session,
                             String statement,
                             String language,
                             QueryCommand query,
+                            PlanHints hints,
                             Path storedAtPath ) {
             super(session, statement, language, storedAtPath);
             assert query != null;
             this.query = query;
-            this.hints = null;
+            this.hints = hints;
             this.variables = null;
         }
 
@@ -295,6 +306,9 @@ class JcrQueryManager implements QueryManager {
                                                                             schemata,
                                                                             hints,
                                                                             variables);
+            if (Query.XPATH.equals(language)) {
+                return new XPathQueryResult(session, result);
+            }
             return new JcrQueryResult(session, result);
         }
 
@@ -336,14 +350,17 @@ class JcrQueryManager implements QueryManager {
         }
     }
 
+    protected static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
+    protected static final String JCR_PATH_COLUMN_NAME = "jcr:path";
+
     /**
      * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although
      * the results of a query never change, the objects returned by the iterators may vary if the session information changes.
      */
     @NotThreadSafe
     protected static class JcrQueryResult implements QueryResult {
-        private final JcrSession session;
-        private final QueryResults results;
+        protected final JcrSession session;
+        protected final QueryResults results;
 
         protected JcrQueryResult( JcrSession session,
                                   QueryResults graphResults ) {
@@ -357,14 +374,18 @@ class JcrQueryManager implements QueryManager {
             return results;
         }
 
+        public List<String> getColumnNameList() {
+            return results.getColumns().getColumnNames();
+        }
+
         /**
          * {@inheritDoc}
          * 
          * @see javax.jcr.query.QueryResult#getColumnNames()
          */
         public String[] getColumnNames() /*throws RepositoryException*/{
-            List<String> names = results.getColumns().getColumnNames();
-            return names.toArray(new String[names.size()]);
+            List<String> names = getColumnNameList();
+            return names.toArray(new String[names.size()]); // make a defensive copy ...
         }
 
         /**
@@ -491,9 +512,10 @@ class JcrQueryManager implements QueryManager {
      */
     @NotThreadSafe
     protected static class QueryResultRowIterator implements RowIterator {
-        protected final List<String> propertyNames;
+        protected final List<String> columnNames;
         private final Iterator<Object[]> tuples;
         protected final int locationIndex;
+        protected final int scoreIndex;
         protected final JcrSession session;
         private long position = 0L;
         private final long numRows;
@@ -503,9 +525,10 @@ class JcrQueryManager implements QueryManager {
                                           Iterator<Object[]> tuples,
                                           long numRows ) {
             this.tuples = tuples;
-            this.propertyNames = columns.getColumnNames();
+            this.columnNames = columns.getColumnNames();
             String selectorName = columns.getSelectorNames().get(0);
             this.locationIndex = columns.getLocationIndex(selectorName);
+            this.scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
             this.session = session;
             this.numRows = numRows;
         }
@@ -518,49 +541,11 @@ class JcrQueryManager implements QueryManager {
         public Row nextRow() {
             final Object[] tuple = tuples.next();
             ++position;
-            return new Row() {
-                private Node node = null;
-                private Value[] values = null;
+            return createRow(tuple);
+        }
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see javax.jcr.query.Row#getValue(java.lang.String)
-                 */
-                public Value getValue( String propertyName ) throws ItemNotFoundException, RepositoryException {
-                    return node().getProperty(propertyName).getValue();
-                }
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see javax.jcr.query.Row#getValues()
-                 */
-                public Value[] getValues() throws RepositoryException {
-                    if (values == null) {
-                        int i = 0;
-                        for (String propertyName : propertyNames) {
-                            values[i++] = node().getProperty(propertyName).getValue();
-                        }
-                    }
-                    return values;
-                }
-
-                /**
-                 * Load the node. The properties are <i>always</i> fetched from the session to ensure that any modifications to
-                 * the nodes within session are always used.
-                 * 
-                 * @return the node
-                 * @throws RepositoryException if the node could not be found
-                 */
-                protected final Node node() throws RepositoryException {
-                    if (node == null) {
-                        Location location = (Location)tuple[locationIndex];
-                        node = session.getNode(location.getPath());
-                    }
-                    return node;
-                }
-            };
+        protected Row createRow( final Object[] tuple ) {
+            return new QueryResultRow(this, tuple);
         }
 
         /**
@@ -618,6 +603,148 @@ class JcrQueryManager implements QueryManager {
          */
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    protected static class QueryResultRow implements Row {
+        protected final QueryResultRowIterator iterator;
+        protected final Object[] tuple;
+        private Node node = null;
+        private Value[] values = null;
+
+        protected QueryResultRow( QueryResultRowIterator iterator,
+                                  Object[] tuple ) {
+            this.iterator = iterator;
+            this.tuple = tuple;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValue(java.lang.String)
+         */
+        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+            return node().getProperty(columnName).getValue();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValues()
+         */
+        public Value[] getValues() throws RepositoryException {
+            if (values == null) {
+                int i = 0;
+                values = new Value[iterator.columnNames.size()];
+                for (String columnName : iterator.columnNames) {
+                    values[i++] = getValue(columnName);
+                }
+            }
+            return values;
+        }
+
+        /**
+         * Load the node. The properties are <i>always</i> fetched from the session to ensure that any modifications to the nodes
+         * within session are always used.
+         * 
+         * @return the node
+         * @throws RepositoryException if the node could not be found
+         */
+        protected final Node node() throws RepositoryException {
+            if (node == null) {
+                Location location = (Location)tuple[iterator.locationIndex];
+                node = iterator.session.getNode(location.getPath());
+            }
+            return node;
+        }
+    }
+
+    protected static class XPathQueryResult extends JcrQueryResult {
+        private final List<String> columnNames;
+
+        protected XPathQueryResult( JcrSession session,
+                                    QueryResults graphResults ) {
+            super(session, graphResults);
+            List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
+            if (graphResults.getColumns().hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
+                columnNames.add(0, JCR_SCORE_COLUMN_NAME);
+            }
+            columnNames.add(0, JCR_PATH_COLUMN_NAME);
+            this.columnNames = Collections.unmodifiableList(columnNames);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.JcrQueryManager.JcrQueryResult#getColumnNameList()
+         */
+        @Override
+        public List<String> getColumnNameList() {
+            return columnNames;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.JcrQueryManager.JcrQueryResult#getRows()
+         */
+        @Override
+        public RowIterator getRows() {
+            final int numRows = results.getRowCount();
+            final List<Object[]> tuples = results.getTuples();
+            return new XPathQueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+        }
+    }
+
+    protected static class XPathQueryResultRowIterator extends QueryResultRowIterator {
+        private final ValueFactories factories;
+        private final SessionCache cache;
+
+        protected XPathQueryResultRowIterator( JcrSession session,
+                                               Columns columns,
+                                               Iterator<Object[]> tuples,
+                                               long numRows ) {
+            super(session, columns, tuples, numRows);
+            factories = session.executionContext.getValueFactories();
+            cache = session.cache();
+        }
+
+        @Override
+        protected Row createRow( final Object[] tuple ) {
+            return new XPathQueryResultRow(this, tuple);
+        }
+
+        protected Value jcrPath( Path path ) {
+            return new JcrValue(factories, cache, PropertyType.PATH, path);
+        }
+
+        protected Value jcrScore( Float score ) {
+            return new JcrValue(factories, cache, PropertyType.DOUBLE, score);
+        }
+    }
+
+    protected static class XPathQueryResultRow extends QueryResultRow {
+        protected XPathQueryResultRow( XPathQueryResultRowIterator iterator,
+                                       Object[] tuple ) {
+            super(iterator, tuple);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValue(java.lang.String)
+         */
+        @Override
+        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+            if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+                Location location = (Location)tuple[iterator.locationIndex];
+                return ((XPathQueryResultRowIterator)iterator).jcrPath(location.getPath());
+            }
+            if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                Float score = (Float)tuple[iterator.scoreIndex];
+                return ((XPathQueryResultRowIterator)iterator).jcrScore(score);
+            }
+            return super.getValue(columnName);
         }
     }
 }

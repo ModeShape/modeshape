@@ -33,6 +33,7 @@ import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.optimize.Optimizer;
 import org.jboss.dna.graph.query.optimize.RuleBasedOptimizer;
 import org.jboss.dna.graph.query.plan.CanonicalPlanner;
+import org.jboss.dna.graph.query.plan.PlanHints;
 import org.jboss.dna.graph.query.plan.PlanNode;
 import org.jboss.dna.graph.query.plan.Planner;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
@@ -99,7 +100,7 @@ public class QueryEngine implements Queryable {
 
             // Find the query result columns ...
             start = System.nanoTime();
-            resultColumns = determineQueryResultColumns(optimizedPlan);
+            resultColumns = determineQueryResultColumns(optimizedPlan, context.getHints());
             duration = System.nanoTime() - start;
             stats = stats.withOptimizationTime(duration);
 
@@ -118,18 +119,21 @@ public class QueryEngine implements Queryable {
         return new org.jboss.dna.graph.query.process.QueryResults(resultColumns, stats, context.getProblems());
     }
 
-    protected QueryResultColumns determineQueryResultColumns( PlanNode optimizedPlan ) {
+    protected QueryResultColumns determineQueryResultColumns( PlanNode optimizedPlan,
+                                                              PlanHints hints ) {
         // Look for which columns to include in the results; this will be defined by the highest PROJECT node ...
         PlanNode project = optimizedPlan.findAtOrBelow(Traversal.LEVEL_ORDER, Type.PROJECT);
         if (project != null) {
             List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
             // Determine whether to include the full-text search scores in the results ...
-            boolean includeFullTextSearchScores = false;
-            for (PlanNode select : optimizedPlan.findAllAtOrBelow(Type.SELECT)) {
-                Constraint constraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-                if (QueryResultColumns.includeFullTextScores(constraint)) {
-                    includeFullTextSearchScores = true;
-                    break;
+            boolean includeFullTextSearchScores = hints.hasFullTextSearch;
+            if (!includeFullTextSearchScores) {
+                for (PlanNode select : optimizedPlan.findAllAtOrBelow(Type.SELECT)) {
+                    Constraint constraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
+                    if (QueryResultColumns.includeFullTextScores(constraint)) {
+                        includeFullTextSearchScores = true;
+                        break;
+                    }
                 }
             }
             return new QueryResultColumns(columns, includeFullTextSearchScores);

@@ -180,7 +180,7 @@ public class JcrTckTest {
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetLanguageTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);
