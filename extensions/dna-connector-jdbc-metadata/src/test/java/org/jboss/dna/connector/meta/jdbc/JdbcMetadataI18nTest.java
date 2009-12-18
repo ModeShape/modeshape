@@ -21,9 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-/**
- * The classes that make up the connector that accesses schema and database metadata from JDBC databases, exposing that as content in a repository.
- */
+package org.jboss.dna.connector.meta.jdbc;
 
-package org.jboss.dna.connector.jdbc;
 
+import org.jboss.dna.common.AbstractI18nTest;
+
+public class JdbcMetadataI18nTest extends AbstractI18nTest {
+
+    public JdbcMetadataI18nTest() {
+        super(JdbcMetadataI18nTest.class);
+    }
+}

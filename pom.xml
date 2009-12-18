@@ -119,9 +119,9 @@
 	<modules>
 		<module>dna-common</module>
 		<module>dna-graph</module>
-		<module>extensions/dna-search-lucene</module>
 		<module>dna-repository</module>
 		<module>dna-cnd</module>
+		<module>extensions/dna-search-lucene</module>
 		<module>dna-jcr</module>
 		<module>extensions/dna-classloader-maven</module>
 		<module>extensions/dna-sequencer-images</module>
@@ -139,9 +139,8 @@
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
+		<module>extensions/dna-connector-jdbc-metadata</module> 
 		<module>extensions/dna-mimetype-detector-aperture</module>
-		<!--module>extensions/dna-common-jdbc</module--> 
-		<!--module>extensions/dna-connector-jdbc-metadata</module--> 
 		<module>web/dna-web-jcr-rest</module> 
 		<module>web/dna-web-jcr-rest-client</module> 
 		<module>web/dna-web-jcr-rest-war</module> 
@@ -374,6 +373,7 @@
               <groupId>hsqldb</groupId>
               <artifactId>hsqldb</artifactId>
               <version>1.8.0.2</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -400,6 +400,7 @@
               <groupId>hsqldb</groupId>
               <artifactId>hsqldb</artifactId>
               <version>1.8.0.2</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -427,6 +428,7 @@
               <groupId>org.h2database</groupId>
               <artifactId>h2database</artifactId>
               <version>1.0.20061217</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -452,6 +454,7 @@
               <groupId>postgresql</groupId>
               <artifactId>postgresql</artifactId>
               <version>8.4-701.jdbc3</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -484,6 +487,7 @@
               <groupId>mysql</groupId>
               <artifactId>mysql-connector-java</artifactId>
               <version>5.0.5</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -509,6 +513,7 @@
               <groupId>postgresql</groupId>
               <artifactId>postgresql</artifactId>
               <version>8.4-701.jdbc3</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -545,6 +550,7 @@
               <groupId>com.ibm</groupId>
               <artifactId>db2jcc_license_cu</artifactId>
               <version>3.8.47</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -571,6 +577,7 @@
               <artifactId>ojdbc14</artifactId>
               <!-- use the 10g drivers which are surprisingly largely bug free -->
               <version>10.0.2.0</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -596,6 +603,7 @@
               <groupId>com.oracle</groupId>
               <artifactId>ojdbc6</artifactId>
               <version>11.1.0.7.0</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -621,6 +629,7 @@
               <groupId>com.sybase</groupId>
               <artifactId>jconnect</artifactId>
               <version>6.0.5</version>
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>
@@ -647,6 +656,7 @@
               <artifactId>msjdbc</artifactId>
               <version>2.0.1008.2</version>
               <classifier>4</classifier><!-- Must use the JDBC-4 driver on JDK6 -->
+              <scope>test</scope>
             </dependency>
           </dependencies>
           <properties>

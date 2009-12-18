@@ -225,7 +225,7 @@ public class MapRequestProcessor extends RequestProcessor {
         if (parentNode == null) {
             Path lowestExisting = workspace.getLowestExistingPath(parent);
             request.setError(new PathNotFoundException(request.under(), lowestExisting,
-                                                       GraphI18n.inMemoryNodeDoesNotExist.text(parent)));
+ GraphI18n.nodeDoesNotExist.text(parent)));
             return;
         }
 
@@ -333,7 +333,7 @@ public class MapRequestProcessor extends RequestProcessor {
         if (newParent == null) {
             Path lowestExisting = workspace.getLowestExistingPath(newParentPath);
             request.setError(new PathNotFoundException(request.into(), lowestExisting,
-                                                       GraphI18n.inMemoryNodeDoesNotExist.text(newParentPath)));
+                                                       GraphI18n.nodeDoesNotExist.text(newParentPath)));
             return;
         }
         workspace.moveNode(getExecutionContext(), node, request.desiredName(), workspace, newParent, beforeNode);
@@ -589,12 +589,12 @@ public class MapRequestProcessor extends RequestProcessor {
                 }
                 // Missing path, and could not find by UUID ...
                 request.setError(new PathNotFoundException(location, pathFactory.createRootPath(),
-                                                           GraphI18n.inMemoryNodeDoesNotExist.text(path)));
+                                                           GraphI18n.nodeDoesNotExist.text(path)));
                 return null;
             }
             // Could not find the node given the supplied path, so find the lowest path that does exist ...
             Path lowestExisting = workspace.getLowestExistingPath(path);
-            request.setError(new PathNotFoundException(location, lowestExisting, GraphI18n.inMemoryNodeDoesNotExist.text(path)));
+            request.setError(new PathNotFoundException(location, lowestExisting, GraphI18n.nodeDoesNotExist.text(path)));
         }
         return node;
     }

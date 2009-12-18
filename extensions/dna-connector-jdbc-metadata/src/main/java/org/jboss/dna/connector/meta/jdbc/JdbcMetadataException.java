@@ -21,24 +21,29 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.jdbc;
-
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.basic.BasicName;
-
+package org.jboss.dna.connector.meta.jdbc;
 
 /**
- * The namespace and property names used within a {@link JdbcRepositorySource} to store internal information.
- * 
- * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
+ * Thrown to indicate that there was a failure while attempting to retrieve metadata
  */
-public class JdbcRepositoryLexicon {
+public class JdbcMetadataException extends Exception {
 
-    public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna/connector/jdbc";
-        public static final String PREFIX = "dnajdbc";
+    private static final long serialVersionUID = 1L;
+
+    public JdbcMetadataException() {
     }
 
-    public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
-    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
+    public JdbcMetadataException( String message ) {
+        super(message);
+    }
+
+    public JdbcMetadataException( Throwable cause ) {
+        super(cause);
+    }
+
+    public JdbcMetadataException( String message,
+                                  Throwable cause ) {
+        super(message, cause);
+    }
+
 }
