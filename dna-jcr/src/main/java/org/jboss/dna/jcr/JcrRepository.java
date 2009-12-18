@@ -431,8 +431,7 @@ public class JcrRepository implements Repository {
         }
 
         // Initialize the observer, which receives events from all repository sources
-        this.repositoryObservationManager = new RepositoryObservationManager();
-        repositoryObservable.register(this.repositoryObservationManager);
+        this.repositoryObservationManager = new RepositoryObservationManager(repositoryObservable);
 
         // Set up the system source ...
         String systemSourceNameValue = this.options.get(Option.SYSTEM_SOURCE_NAME);
@@ -933,6 +932,8 @@ public class JcrRepository implements Repository {
         if (this.federatedSource != null) {
             this.federatedSource.close();
         }
+        
+        this.repositoryObservationManager.shutdown();
     }
 
     /**
@@ -1186,8 +1187,14 @@ public class JcrRepository implements Repository {
 
         private final ExecutorService observerService = Executors.newSingleThreadExecutor();
         private final CopyOnWriteArrayList<Observer> observers = new CopyOnWriteArrayList<Observer>();
+        private final Observable repositoryObservable;
 
-        protected RepositoryObservationManager() {
+        /**
+         * @param repositoryObservable the repository library observable this observer should register with
+         */
+        protected RepositoryObservationManager(Observable repositoryObservable) {
+            this.repositoryObservable = repositoryObservable;
+            this.repositoryObservable.register(this);
         }
 
         /**
@@ -1233,12 +1240,23 @@ public class JcrRepository implements Repository {
         }
 
         /**
+         * Must be called to shutdown the service that is used to notify the observers.
+         */
+        void shutdown() {
+            synchronized (this) {
+                this.repositoryObservable.unregister(this);
+                this.observers.clear();
+                this.observerService.shutdown();
+            }
+        }
+        
+        /**
          * {@inheritDoc}
          * 
          * @see org.jboss.dna.graph.observe.Observable#unregister(org.jboss.dna.graph.observe.Observer)
          */
         public boolean unregister( Observer observer ) {
-            CheckArg.isNotNull(observer, "observer");
+            if (observer == null) return false;
             return this.observers.remove(observer);
         }
     }
