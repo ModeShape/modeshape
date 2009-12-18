@@ -55,7 +55,7 @@ public final class JsonRestClientTest {
     private static final String PSWD = "password"; //$NON-NLS-1$
     private static final String USER = "dnauser"; //$NON-NLS-1$
 
-    private static final Server SERVER = new Server("http://localhost:8080", USER, PSWD, false); //$NON-NLS-1$
+    private static final Server SERVER = new Server("http://localhost:8080", USER, PSWD); //$NON-NLS-1$
     private static final String REPOSITORY_NAME = "dna:repository"; //$NON-NLS-1$
     private static final Repository REPOSITORY1 = new Repository(REPOSITORY_NAME, SERVER);
     private static final String WORKSPACE_NAME = "default"; //$NON-NLS-1$

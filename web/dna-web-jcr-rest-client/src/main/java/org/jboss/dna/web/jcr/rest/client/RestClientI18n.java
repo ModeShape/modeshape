@@ -30,53 +30,13 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class RestClientI18n {
 
-    public static I18n errorDeletingServerRegistryFile;
-
-    public static I18n errorRestoringServerRegistry;
-
-    public static I18n errorSavingServerRegistry;
-
     public static I18n nullArgumentMsg;
 
-    public static I18n repositoryEmptyNameMsg;
-
-    public static I18n repositoryNullServerMsg;
-
     public static I18n repositoryShortDescription;
-
-    public static I18n serverEmptyUrlMsg;
-
-    public static I18n serverEmptyUserMsg;
-
-    public static I18n serverExistsMsg;
-
-    public static I18n serverInvalidUrlMsg;
-
-    public static I18n serverManagerConnectionEstablishedMsg;
-
-    public static I18n serverManagerConnectionFailedMsg;
-
-    public static I18n serverManagerRegistryAddUnexpectedError;
-
-    public static I18n serverManagerRegistryListenerError;
-
-    public static I18n serverManagerRegistryListenerErrorsOccurred;
-
-    public static I18n serverManagerRegistryRemoveUnexpectedError;
-
-    public static I18n serverManagerRegistryUpdateAddError;
-
-    public static I18n serverManagerRegistryUpdateRemoveError;
-
-    public static I18n serverManagerUnregisteredServer;
 
     public static I18n serverShortDescription;
     
     public static I18n unknownHttpRequestMethodMsg;
-
-    public static I18n workspaceEmptyNameMsg;
-
-    public static I18n workspaceNullRepositoryMsg;
 
     public static I18n workspaceShortDescription;
 

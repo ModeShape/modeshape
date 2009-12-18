@@ -49,7 +49,7 @@ public final class ServerTest {
     private static final String PSWD1 = "pwsd1"; //$NON-NLS-1$
     private static final String PSWD2 = "pwsd2"; //$NON-NLS-1$
 
-    private static Server SERVER1 = new Server(URL1, USER1, PSWD1, false);
+    private static Server SERVER1 = new Server(URL1, USER1, PSWD1);
 
     // ===========================================================================================================================
     // Tests
@@ -57,65 +57,43 @@ public final class ServerTest {
 
     @Test
     public void shouldBeEqualIfHavingSameProperies() {
-        assertThat(SERVER1, equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword(),
-                                               SERVER1.isPasswordBeingPersisted())));
+        assertThat(SERVER1, equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword())));
     }
 
     @Test
     public void shouldHashToSameValueIfEquals() {
         Set<Server> set = new HashSet<Server>();
         set.add(SERVER1);
-        set.add(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword(), SERVER1.isPasswordBeingPersisted()));
+        set.add(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword()));
         assertThat(set.size(), equalTo(1));
     }
 
     @Test( expected = RuntimeException.class )
     public void shouldNotAllowNullUrl() {
-        new Server(null, USER1, PSWD1, true);
+        new Server(null, USER1, PSWD1);
     }
 
     @Test
     public void shouldHaveSameKey() {
-        assertThat(SERVER1.hasSameKey(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword(),
-                                                 SERVER1.isPasswordBeingPersisted())), is(true));
+        assertThat(SERVER1.hasSameKey(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword())), is(true));
     }
 
     @Test
     public void shouldNotBeEqualIfPropertiesAreDifferent() {
         // different URL
-        assertThat(SERVER1, is(not(equalTo(new Server(URL2, SERVER1.getUser(), SERVER1.getPassword(),
-                                                      SERVER1.isPasswordBeingPersisted())))));
+        assertThat(SERVER1, is(not(equalTo(new Server(URL2, SERVER1.getUser(), SERVER1.getPassword())))));
 
         // different user
-        assertThat(SERVER1, is(not(equalTo(new Server(SERVER1.getUrl(), USER2, SERVER1.getPassword(),
-                                                      SERVER1.isPasswordBeingPersisted())))));
+        assertThat(SERVER1, is(not(equalTo(new Server(SERVER1.getUrl(), USER2, SERVER1.getPassword())))));
 
-        // different passord
-        assertThat(SERVER1, is(not(equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), PSWD2,
-                                                      SERVER1.isPasswordBeingPersisted())))));
-
-        // different persisted flag
-        assertThat(SERVER1, is(not(equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword(),
-                                                      !SERVER1.isPasswordBeingPersisted())))));
+        // different password
+        assertThat(SERVER1, is(not(equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), PSWD2)))));
     }
 
     @Test
     public void shouldNotHaveSameKey() {
-        assertThat(SERVER1.hasSameKey(new Server(URL2, SERVER1.getUser(), SERVER1.getPassword(),
-                                                 SERVER1.isPasswordBeingPersisted())), is(false));
-        assertThat(SERVER1.hasSameKey(new Server(SERVER1.getUrl(), USER2, SERVER1.getPassword(),
-                                                 SERVER1.isPasswordBeingPersisted())), is(false));
-    }
-
-    @Test
-    public void shouldSetPersistPasswordCorrectly() {
-        boolean persist = true;
-        Server server = new Server(URL1, USER1, PSWD1, persist);
-        assertThat(persist, is(server.isPasswordBeingPersisted()));
-
-        persist = !persist;
-        server = new Server(URL1, USER1, PSWD1, persist);
-        assertThat(persist, is(server.isPasswordBeingPersisted()));
+        assertThat(SERVER1.hasSameKey(new Server(URL2, SERVER1.getUser(), SERVER1.getPassword())), is(false));
+        assertThat(SERVER1.hasSameKey(new Server(SERVER1.getUrl(), USER2, SERVER1.getPassword())), is(false));
     }
 
 }

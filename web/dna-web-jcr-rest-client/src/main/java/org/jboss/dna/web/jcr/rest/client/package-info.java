@@ -22,12 +22,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The JBoss DNA REST Client is a lightweight, non-UI Maven project that interacts with the DNA REST server. A server 
- * registry managed by the {@link ServerManager server manager} is used to publish and unpublish files to/from DNA
- * {@link org.jboss.dna.web.jcr.rest.client.domain.Repository repository}
- * {@link org.jboss.dna.web.jcr.rest.client.domain.Workspace workspaces}. When a DNA 
- * {@link org.jboss.dna.web.jcr.rest.client.domain.Server server} is added, deleted, or updated in the registry the server manager
- * notifies all registered listeners.
+ * The JBoss DNA REST Client is a lightweight, non-UI Maven project that interacts with the DNA REST server. An {@link IRestClient}
+ * is used to publish and unpublish files to/from DNA {@link org.jboss.dna.web.jcr.rest.client.domain.Repository repository}
+ * {@link org.jboss.dna.web.jcr.rest.client.domain.Workspace workspaces}.
  */
 
 package org.jboss.dna.web.jcr.rest.client;

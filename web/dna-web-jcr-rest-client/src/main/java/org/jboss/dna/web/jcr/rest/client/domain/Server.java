@@ -27,16 +27,13 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.web.jcr.rest.client.RestClientI18n;
-import org.jboss.dna.web.jcr.rest.client.Status;
 import org.jboss.dna.web.jcr.rest.client.Utils;
-import org.jboss.dna.web.jcr.rest.client.domain.validation.RepositoryValidator;
-import org.jboss.dna.web.jcr.rest.client.domain.validation.ServerValidator;
 
 /**
  * The <code>Server</code> class is the business object for a server that is hosting one or more DNA repositories.
  */
 @Immutable
-public final class Server implements IDnaObject {
+public class Server implements IDnaObject {
 
     // ===========================================================================================================================
     // Fields
@@ -48,17 +45,12 @@ public final class Server implements IDnaObject {
     private final String password;
 
     /**
-     * Indicates if the password should be stored locally when the server is persisted.
-     */
-    private final boolean persistPassword;
-
-    /**
-     * The server URL.
+     * The server URL (never <code>null</code>).
      */
     private final String url;
 
     /**
-     * The user name to use when logging on to the server.
+     * The user name to use when logging on to the server (never <code>null</code>).
      */
     private final String user;
 
@@ -72,28 +64,17 @@ public final class Server implements IDnaObject {
      * @param url the server URL (never <code>null</code>)
      * @param user the server user (may be <code>null</code>)
      * @param password the server password (may be <code>null</code>)
-     * @param persistPassword <code>true</code> if the password should be stored
-     * @see RepositoryValidator
-     * @throws RuntimeException if any of the input parameters are invalid
+     * @throws IllegalArgumentException if the URL or user arguments are <code>null</code>
      */
     public Server( String url,
                    String user,
-                   String password,
-                   boolean persistPassword ) {
-        CheckArg.isNotNull(url, "url"); //$NON-NLS-1$
+                   String password ) {
+        CheckArg.isNotNull(url, "url");
+        CheckArg.isNotNull(user, "user");
 
-        // valid inputs
-        Status status = ServerValidator.isValid(url, user, password, persistPassword);
-
-        if (status.isError()) {
-            throw new RuntimeException(status.getMessage(), status.getException());
-        }
-
-        // valid so construct
         this.url = url;
         this.user = user;
         this.password = password;
-        this.persistPassword = persistPassword;
     }
 
     // ===========================================================================================================================
@@ -110,11 +91,9 @@ public final class Server implements IDnaObject {
         if (this == obj) return true;
         if ((obj == null) || (getClass() != obj.getClass())) return false;
 
-        // must have another server
         Server otherServer = (Server)obj;
         return Utils.equivalent(this.url, otherServer.url) && Utils.equivalent(this.user, otherServer.user)
-               && Utils.equivalent(this.password, otherServer.password)
-               && Utils.equivalent(this.persistPassword, otherServer.persistPassword);
+               && Utils.equivalent(this.password, otherServer.password);
     }
 
     /**
@@ -143,14 +122,14 @@ public final class Server implements IDnaObject {
     }
 
     /**
-     * @return the server URL
+     * @return the server URL (never <code>null</code>)
      */
     public String getUrl() {
         return this.url;
     }
 
     /**
-     * @return the server authentication user
+     * @return the server authentication user (never <code>null</code>)
      */
     public String getUser() {
         return this.user;
@@ -163,23 +142,19 @@ public final class Server implements IDnaObject {
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(this.url, this.user, this.password, this.persistPassword);
+        return HashCode.compute(this.url, this.user, this.password);
     }
 
     /**
+     * A server has the same identifying properties if their URL and user matches.
+     * 
      * @param otherServer the server whose key is being compared (never <code>null</code>)
      * @return <code>true</code> if the servers have the same key
+     * @throws IllegalArgumentException if the argument is <code>null</code>
      */
     public boolean hasSameKey( Server otherServer ) {
-        CheckArg.isNotNull(otherServer, "otherServer"); //$NON-NLS-1$
+        CheckArg.isNotNull(otherServer, "otherServer");
         return (Utils.equivalent(this.url, otherServer.url) && Utils.equivalent(this.user, otherServer.user));
-    }
-
-    /**
-     * @return persistPassword <code>true</code> if the password is being persisted
-     */
-    public boolean isPasswordBeingPersisted() {
-        return this.persistPassword;
     }
 
     /**

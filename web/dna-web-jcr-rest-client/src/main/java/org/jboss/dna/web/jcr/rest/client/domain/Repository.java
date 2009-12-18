@@ -27,14 +27,12 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.web.jcr.rest.client.RestClientI18n;
-import org.jboss.dna.web.jcr.rest.client.Status;
-import org.jboss.dna.web.jcr.rest.client.domain.validation.RepositoryValidator;
 
 /**
  * The Repository class is the business object for a DNA repository.
  */
 @Immutable
-public final class Repository implements IDnaObject {
+public class Repository implements IDnaObject {
 
     // ===========================================================================================================================
     // Fields
@@ -50,8 +48,6 @@ public final class Repository implements IDnaObject {
      */
     private final Server server;
 
-    // TODO root publishing path
-
     // ===========================================================================================================================
     // Constructors
     // ===========================================================================================================================
@@ -61,22 +57,12 @@ public final class Repository implements IDnaObject {
      * 
      * @param name the repository name (never <code>null</code>)
      * @param server the server where this repository resides (never <code>null</code>)
-     * @see RepositoryValidator
-     * @throws RuntimeException if any of the input parameters are invalid
+     * @throws IllegalArgumentException if the name or server argument is <code>null</code>
      */
     public Repository( String name,
                        Server server ) {
-        CheckArg.isNotNull(name, "name"); //$NON-NLS-1$
-        CheckArg.isNotNull(server, "server"); //$NON-NLS-1$
-
-        // validate inputs
-        Status status = RepositoryValidator.isValid(name, server);
-
-        if (status.isError()) {
-            throw new RuntimeException(status.getMessage(), status.getException());
-        }
-
-        // valid so construct
+        CheckArg.isNotNull(name, "name");
+        CheckArg.isNotNull(server, "server");
         this.name = name;
         this.server = server;
     }
@@ -95,7 +81,6 @@ public final class Repository implements IDnaObject {
         if (this == obj) return true;
         if ((obj == null) || (getClass() != obj.getClass())) return false;
 
-        // must have another server
         Repository otherRepository = (Repository)obj;
         return (this.name.equals(otherRepository.name) && this.server.equals(otherRepository.server));
     }

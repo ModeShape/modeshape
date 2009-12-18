@@ -27,14 +27,12 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.web.jcr.rest.client.RestClientI18n;
-import org.jboss.dna.web.jcr.rest.client.Status;
-import org.jboss.dna.web.jcr.rest.client.domain.validation.WorkspaceValidator;
 
 /**
  * The <code>Workspace</code> class is the business object for a DNA repository workspace.
  */
 @Immutable
-public final class Workspace implements IDnaObject {
+public class Workspace implements IDnaObject {
 
     // ===========================================================================================================================
     // Fields
@@ -59,22 +57,12 @@ public final class Workspace implements IDnaObject {
      * 
      * @param name the workspace name (never <code>null</code>)
      * @param repository the repository where this workspace resides (never <code>null</code>)
-     * @see WorkspaceValidator
-     * @throws RuntimeException if any of the input parameters are invalid
+     * @throws IllegalArgumentException if any of the arguments are <code>null</code>
      */
     public Workspace( String name,
                       Repository repository ) {
-        CheckArg.isNotNull(name, "name"); //$NON-NLS-1$
-        CheckArg.isNotNull(repository, "repository"); //$NON-NLS-1$
-
-        // validate inputs
-        Status status = WorkspaceValidator.isValid(name, repository);
-
-        if (status.isError()) {
-            throw new RuntimeException(status.getMessage(), status.getException());
-        }
-
-        // valid so construct
+        CheckArg.isNotNull(name, "name");
+        CheckArg.isNotNull(repository, "repository");
         this.name = name;
         this.repository = repository;
     }
@@ -93,7 +81,6 @@ public final class Workspace implements IDnaObject {
         if (this == obj) return true;
         if ((obj == null) || (getClass() != obj.getClass())) return false;
 
-        // must have another server
         Workspace otherWorkspace = (Workspace)obj;
         return (this.name.equals(otherWorkspace.name) && this.repository.equals(otherWorkspace.repository));
     }
