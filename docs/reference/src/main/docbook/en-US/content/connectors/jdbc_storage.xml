@@ -73,7 +73,7 @@
 				<row>
 					<entry>predefinedWorkspaceNames</entry>
 					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
-						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
 					</entry>
 				</row>
 				<row>
@@ -252,7 +252,7 @@
 		</tgroup>
 	</table>
 	<para>
-		Using the file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &JpaSource; class.
+		The JPA connector is used by creating in the &JcrConfiguration; a repository source that uses the &JpaSource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
