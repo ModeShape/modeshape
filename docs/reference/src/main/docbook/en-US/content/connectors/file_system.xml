@@ -31,9 +31,10 @@
 <chapter id="file-system-connector">
   <title>File System Connector</title>
   <para>
-		This connector exposes an area of the local file system as a <emphasis>read-only</emphasis> graph of "nt:file" and "nt:folder" nodes. 
-		The connector considers a workspace name to be the path to the directory on the file system that represents the root of that
-		workspace. Each connector can define whether it allows new workspaces can be created, but if so the names of the new workspaces
+		This connector exposes an area of the local file system as a graph of "nt:file" and "nt:folder" nodes. 
+		The connector can be configured so that the workspace name is either a path to the directory on the file system that represents the root of that
+		workspace <emphasis>or</emphasis> the name of subdirectory within a root directory (see the <code>workspaceRootPath</code> property below). Each 
+		connector can define whether it allows new workspaces can be created, but if so the names of the new workspaces
 		must represent valid paths to existing directories.
 		<note>
 			<para>
@@ -42,6 +43,9 @@
 			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
 			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will not move or delete the files outside of DNA.
 			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
+
+			Additional properties (including mixin types) can be added through the use of a &CustomPropertiesFactory;.  See the <code>customPropertiesFactory</code> 
+			property below for more details on how this works.
 			</para>
 		</note>
 	</para>
@@ -63,6 +67,11 @@
 				<row>
 					<entry>name</entry>
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>updatesAllowed</entry>
+					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
+						The default value is "false" to avoid unintentional security vulnerabilities.</entry>
 				</row>
 				<row>
 					<entry>cacheTimeToLiveInMilliseconds</entry>
@@ -111,6 +120,10 @@
 					</para>
 					</entry>
 				</row>	
+				<row>
+					<entry>customPropertiesFactory</entry>
+					<entry>Specifies the &CustomPropertiesFactory; that should be used to augment the default properties available on each node.</entry>
+				</row>
 				
 			</tbody>
 		</tgroup>
@@ -130,5 +143,11 @@ config.repositorySource("source A")
       .setProperty("rootNodeUuid", UUID.fromString("fd129c12-81a8-42ed-aa4b-820dba49e6f0")
       .setProperty("creatingWorkspaceAllowed", "false");
  ]]></programlisting>
+	<sect1>
+		<title>Custom Properties Factories</title>
+		<para>
+			The &CustomPropertiesFactory; interface provides additional flexibility in the properties returned, including support for "sidecar" files.
+		</para>
+	</sect1>
 </chapter>
 

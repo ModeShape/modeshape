@@ -197,7 +197,8 @@
 
 <!-- Types in extensions/ -->
 
-<!ENTITY FileSystemSource  						"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
+<!ENTITY FileSystemSource  				"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
+<!ENTITY CustomPropertiesFactory  		"<ulink url='&API;connector/filesystem/CustomPropertiesFactory'><classname>CustomPropertiesFactory</classname></ulink>">
 <!ENTITY JpaSource  									"<ulink url='&API;connector/source/jap/JpaSource.html'><classname>JpaSource</classname></ulink>">
 <!ENTITY SVNRepositorySource  				"<ulink url='&API;connector/svn/SVNRepositorySource.html'><classname>SVNRepositorySource</classname></ulink>">
 <!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">

@@ -194,22 +194,9 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * 
      * @return true if this source supports updates, or false if this source only supports reading content.
      */
-    public boolean getSupportsUpdates() {
+    public boolean getUpdatesAllowed() {
         return capabilities.supportsUpdates();
     }
-
-    // /**
-    // * Set whether this source supports updates.
-    // *
-    // * @param supportsUpdates true if this source supports updating content, or false if this source only supports reading
-    // * content.
-    // */
-    // public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-    // capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
-    // supportsUpdates,
-    // SUPPORTS_EVENTS,
-    // capabilities.supportsCreatingWorkspaces());
-    // }
 
     /**
      * Get the relative root directory for the workspaces. If this property is set, workspaces can be given as relative paths from
@@ -633,7 +620,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         CustomPropertiesFactory propFactory = customPropertiesFactory != null ? customPropertiesFactory : DEFAULT_PROPERTIES_FACTORY;
         return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
                                         cachePolicy, rootNodeUuid, workspaceRootPath, maxPathLength, filenameFilter,
-                                        getSupportsUpdates(), propFactory);
+                                        getUpdatesAllowed(), propFactory);
     }
 
     /**
