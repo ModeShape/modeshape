@@ -72,8 +72,9 @@
 	    <title>Using JAAS</title>
 		<para>The <code>login()</code> method allows the implementation to choose its own security context to create a session in the default workspace
 		for the repository.  The JBoss DNA JCR implementation uses the security context from the current JAAS &AccessControlContext;.  This implies
-		that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction;.  Here is one example of how this might  
-		work:
+		that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction; (AND the 
+		<code>JcrRepository.Options.ANONYMOUS_USER_ROLES</code> option does not allow access - <link linkend="jcr-guest-access">see below</link> for an example of how to configure guest user access).  
+		Here is one example of how this might work:
     <programlisting>
 Subject subject = ...;
 &Session; session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
@@ -138,7 +139,7 @@ final &LoginContext; loginContext = ...;
 		Not all applications can or want to use JAAS for their authentication system, so JBoss DNA provides a way to integrate your own custom
 		security provider.  The first step is to provide a custom implementation of &SecurityContext; that integrates with your application security, allowing
 		JBoss DNA to discover the authenticated user's name, determine whether the authenticated user has been assigned particular roles
-		(see the <ulink linkend="dna_jcr_security">JCR Security section</ulink>), and to notify your application security system that the
+		(see the <link linkend="dna_jcr_security">JCR Security section</link>), and to notify your application security system that the
 		authenticated session (for JCR) has ended.
 		</para>
 		<para>
@@ -152,7 +153,7 @@ final &LoginContext; loginContext = ...;
 		</para>
 		<para>
 		  At this time, no roles are required to connect to any workspace, but restrictions on workspace connections will likely be added to JBoss DNA in the near future.  
-		  Please see the <ulink linkend="dna_jcr_security">JCR Security section</ulink> for more details on how access is controlled.
+		  Please see the <link linkend="dna_jcr_security">JCR Security section</link> for more details on how access is controlled.
 		</para>
 	</sect2>
 		<sect2 id="jcr-sessions-servlet">
@@ -165,9 +166,28 @@ final &LoginContext; loginContext = ...;
 &SecurityContext; securityContext = new &ServletSecurityContext;(request);
 &Session; session = repository.login(new &SecurityContextCredentials;(securityContext));
 </programlisting>
-    You'll note that this is just a specialization of the <ulink linkend="jcr-sessions-custom">custom security context</ulink> approach, since
+    You'll note that this is just a specialization of the <link linkend="jcr-sessions-custom">custom security context</link> approach, since
     the &ServletSecurityContext; just implements the &SecurityContext; interface and delegates to the &HttpServletRequest;.  Feel free to use
     this class in your servlet-based applications.
+		</para>
+	</sect2>
+		<sect2 id="jcr-guest-access">
+  		<title>Guest (Anonymous) User Access</title>
+			<para>
+		By default, DNA allows guest users full administrative access.  This is done to make it easier to get started with DNA.  Of course,
+		this is clearly not an appropriate security model for a production system.  
+		</para>
+		<para>
+		To modify the roles granted to guest users, change
+		the <code>JcrRepository.Options.ANONYMOUS_USER_ROLES</code> option for your repository to have a different value, like &quot;&quot; (to disable
+		guest access entirely) or &quot;readonly&quot; (to give guests read-only access to all repositories).  The value of this option can
+		be any pattern that matches those described in the <link linkend="role-formats">table below</link>.  
+		<note>
+			<para>
+				The Using DNA chapter of the Getting Started Guide provides examples of modifying this option through programmatic configuration or
+				in an XML configuration file.
+			</para>
+		</note>
 		</para>
 	</sect2>
 	</sect1>
@@ -282,7 +302,7 @@ final &LoginContext; loginContext = ...;
 				It is also possible to grant access only to one or more repositories on a single DNA server or to one or more named workspaces within a repository.  The format for 
 				role names is defined below:
 			</para>
-				<table frame='all'>
+				<table frame='all' id="role-formats">
 		<title>Role Formats</title>
 		<tgroup cols='3' align='left' colsep='1' rowsep='1'>
 			<thead>

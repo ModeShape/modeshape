@@ -290,9 +290,9 @@ public class JcrRepository implements Repository {
         public static final String READ_DEPTH = "1";
 
         /**
-         * The default value for the {@link Option#READ_DEPTH} option is {@value} .
+         * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} .
          */
-        public static final String ANONYMOUS_USER_ROLES = null;
+        public static final String ANONYMOUS_USER_ROLES = "admin";
 
         /**
          * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .

@@ -181,6 +181,16 @@ configuration.loadFrom(file);
 	      <dna:repository jcr:name="car repository" dna:source="Cars">
 	          <dna:options jcr:primaryType="dna:options">
 	              <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+	              <!--
+	              As a convenience, DNA allows guest users full access by default.  In a production system,
+	              you would want to limit this access by uncommenting one of the options below:
+	              
+	              for no access:
+	              <anonymousUserRoles jcr:PrimaryType="dna:option" dna:value="" />
+	              
+	              for read-only acces:
+	              <anonymousUserRoles jcr:PrimaryType="dna:option" dna:value="readonly" /> 
+	              -->
 	          </dna:options>
 	      </dna:repository>
 	  </dna:repositories>
@@ -288,6 +298,14 @@ config.repository("repository A")
       .setSource("source 1")
       .registerNamespace("acme","http://www.example.com/acme")
       .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+      
+      /*
+       * As a convenience, DNA allows guest users full access by default.  In a production system,
+	   * you would want to limit this access by adding one of the lines below to modify this option:
+       * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, ""); // No access
+       * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, "readonly"); // Read-only access
+       */
+       
  ]]></programlisting>
 				<para>
 					This example defines a repository that uses the "source 1" repository source (which could be a federated source, an in-memory source,

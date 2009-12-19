@@ -85,6 +85,7 @@
 <!ENTITY UrlEncoder				       			"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>UrlEncoder</classname></ulink>">
 <!ENTITY XmlNameEncoder				       	"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>XmlNameEncoder</classname></ulink>">
 <!ENTITY XmlValueEncoder				      "<ulink url='&API;common/text/XmlValueEncoder.html'><classname>XmlValueEncoder</classname></ulink>">
+<!ENTITY Problem								      "<ulink url='&API;common/collection/Problem.html'><interface>Problem</interface></ulink>">
 <!ENTITY Problems								      "<ulink url='&API;common/collection/Problems.html'><interface>Problems</interface></ulink>">
 
 <!-- Types in dna-graph -->
