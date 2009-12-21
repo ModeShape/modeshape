@@ -24,10 +24,8 @@
 <chapter id="jdbc-metadata-connector">
 	<title>JDBC Metadata Connector</title>
 	<para>
-		This connector provides read-only access to the metadata (e.g.,
-		catalogs, schemas, table structures) of a relational database.
-		The
-		connector yields a content graph that looks like this:
+		This connector provides read-only access to the metadata (e.g., catalogs, schemas, table structures) of a relational 
+		database. The connector yields a content graph that looks like this:
 		<programlisting>
 / (root node)
     + &lt;catalog name&gt; - one node for each accessible catalog in the database.
@@ -52,7 +50,12 @@
 			to work around a known bug where that driver returns a list of users from a call to &DatabaseMetaData;.getSchemas() instead of a list of schemas.
 			</para>
 		</note>
-  </para>
+    </para>
+	<para>
+		To use this connector with the DNA JCR layer, you must import the JCR node types that this connector uses.  These are bundled
+		in the JAR for this connector at the path <code>/org/jboss/dna/connector/meta/jdbc/nodeTypes.cnd</code>.  Please see the &GettingStarted; Guide
+		for detailed examples of how to import custom JCR node types.  
+	</para>
 	<para>
 		The &JdbcMetadataSource; class provides a number of JavaBean properties that control its behavior:
 	</para>

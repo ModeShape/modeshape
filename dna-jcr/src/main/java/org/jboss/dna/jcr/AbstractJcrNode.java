@@ -460,6 +460,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             }
             if (foundMatch) {
                 matchingProperties.add(property);
+            } else {
                 foundMatch = true; // for the next iteration ..
             }
         }

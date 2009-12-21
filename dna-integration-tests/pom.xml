@@ -91,6 +91,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.dna</groupId>
+            <artifactId>dna-connector-jdbc-metadata</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
 		<!-- 
           JPA Connector Dependencies

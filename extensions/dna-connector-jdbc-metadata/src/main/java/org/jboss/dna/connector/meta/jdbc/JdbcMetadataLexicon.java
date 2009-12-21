@@ -32,7 +32,7 @@ import org.jboss.dna.graph.property.basic.BasicName;
 public class JdbcMetadataLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna/connector/meta/jdbc";
+        public static final String URI = "http://www.jboss.org/dna/connector/meta/jdbc/1.0";
         public static final String PREFIX = "metajdbc";
     }
 

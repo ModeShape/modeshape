@@ -110,7 +110,7 @@ public class JdbcMetadataRepository extends PathRepository {
             rootNodeProperties.put(propName, propFactory.create(propName, databaseMinorVersion));
 
             rootNodeProperties.put(JcrLexicon.PRIMARY_TYPE, propFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.ROOT));
-            rootNodeProperties.put(JcrLexicon.MIXIN_TYPES, propFactory.create(JcrLexicon.PRIMARY_TYPE,
+            rootNodeProperties.put(JcrLexicon.MIXIN_TYPES, propFactory.create(JcrLexicon.MIXIN_TYPES,
                                                                               JdbcMetadataLexicon.DATABASE_ROOT));
 
             rootNodeProperties = Collections.unmodifiableMap(rootNodeProperties);

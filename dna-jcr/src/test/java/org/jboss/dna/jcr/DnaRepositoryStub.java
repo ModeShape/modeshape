@@ -41,10 +41,12 @@ import org.xml.sax.SAXException;
 public class DnaRepositoryStub extends RepositoryStub {
 
     public static final String DNA_SKIP_IMPORT = "javax.jcr.tck.dnaSkipImport";
+    public static final String DNA_NODE_TYPE_PATH = "javax.jcr.tck.dnaNodeTypePath";
     
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
     private static String currentConfigurationName = "default";
+
 
     private Properties configProps;
     private String repositoryConfigurationName;
@@ -85,6 +87,12 @@ public class DnaRepositoryStub extends RepositoryStub {
 
             // Add the the node types for the source ...
             configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream("/tck/tck_test_types.cnd"));
+
+            String nodeTypePath = configProps.getProperty(DNA_NODE_TYPE_PATH);
+            if (nodeTypePath != null) {
+                configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream(nodeTypePath));
+            }
+
         } catch (SAXException se) {
             se.printStackTrace();
             throw new IllegalStateException(se);
