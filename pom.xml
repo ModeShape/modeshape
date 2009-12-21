@@ -965,6 +965,11 @@
 		      Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
 		    -->
 	    <dependency>
+         <groupId>com.google.collections</groupId>
+         <artifactId>google-collections</artifactId>
+	      <version>1.0-rc3</version>
+	    </dependency>
+	    <dependency>
 				<groupId>org.apache.jackrabbit</groupId>
 				<artifactId>jackrabbit-jcr-tests</artifactId>
 				<version>1.4</version>

@@ -48,9 +48,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.code.google-collections</groupId>
-      <artifactId>google-collect</artifactId>
-      <version>snapshot-20080530</version>
+         <groupId>com.google.collections</groupId>
+         <artifactId>google-collections</artifactId>
     </dependency>
     <!-- 
     Testing (note the scope)
