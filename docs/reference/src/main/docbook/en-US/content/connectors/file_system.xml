@@ -44,8 +44,8 @@
 			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will not move or delete the files outside of DNA.
 			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
 
-			Additional properties (including mixin types) can be added through the use of a &CustomPropertiesFactory;.  See the <code>customPropertiesFactory</code> 
-			property below for more details on how this works.
+			Additional properties (including mixin types) can be added by setting the <code>customPropertiesFactory</code> property to point to an implementation of 
+			the &CustomPropertiesFactory; interface.
 			</para>
 		</note>
 	</para>
@@ -122,7 +122,10 @@
 				</row>	
 				<row>
 					<entry>customPropertiesFactory</entry>
-					<entry>Specifies the &CustomPropertiesFactory; that should be used to augment the default properties available on each node.</entry>
+					<entry>
+						Specifies the &CustomPropertiesFactory; implementation that should be used to augment the default properties 
+						available on each node.
+					</entry>
 				</row>
 				
 			</tbody>
@@ -143,11 +146,5 @@ config.repositorySource("source A")
       .setProperty("rootNodeUuid", UUID.fromString("fd129c12-81a8-42ed-aa4b-820dba49e6f0")
       .setProperty("creatingWorkspaceAllowed", "false");
  ]]></programlisting>
-	<sect1>
-		<title>Custom Properties Factories</title>
-		<para>
-			The &CustomPropertiesFactory; interface provides additional flexibility in the properties returned, including support for "sidecar" files.
-		</para>
-	</sect1>
 </chapter>
 
