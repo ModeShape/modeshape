@@ -26,7 +26,7 @@ package org.jboss.dna.connector.meta.jdbc;
 /**
  * Thrown to indicate that there was a failure while attempting to retrieve metadata
  */
-public class JdbcMetadataException extends Exception {
+public class JdbcMetadataException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

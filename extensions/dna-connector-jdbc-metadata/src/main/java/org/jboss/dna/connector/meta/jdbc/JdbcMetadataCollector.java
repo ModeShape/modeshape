@@ -26,9 +26,13 @@ package org.jboss.dna.connector.meta.jdbc;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import net.jcip.annotations.Immutable;
 
 /**
  * Default {@link MetadataCollector} implementation that uses the {@link DatabaseMetaData built-in JDBC support} for collecting
@@ -36,7 +40,8 @@ import java.util.List;
  * 
  * @see DatabaseMetaData
  */
-class JdbcMetadataCollector implements MetadataCollector {
+@Immutable
+public class JdbcMetadataCollector implements MetadataCollector {
 
     public List<String> getCatalogNames( Connection conn ) throws JdbcMetadataException {
         List<String> catalogNames = new LinkedList<String>();
@@ -73,15 +78,20 @@ class JdbcMetadataCollector implements MetadataCollector {
             if (catalogName == null) catalogName = "";
             if (schemaName == null) schemaName = "";
             columns = dmd.getColumns(catalogName, schemaName, tableName, columnName);
+            // Get the list of names of the columns in the result set, which may or may not match what's in the spec
+            Set<String> columnNames = columnsFor(columns);
             while (columns.next()) {
                 ColumnMetadata column = new ColumnMetadata(columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"),
                                                            columns.getString("TYPE_NAME"), columns.getInt("COLUMN_SIZE"),
                                                            columns.getInt("DECIMAL_DIGITS"), columns.getInt("NUM_PREC_RADIX"),
                                                            getNullableBoolean(columns, "NULLABLE"), columns.getString("REMARKS"),
                                                            columns.getString("COLUMN_DEF"), columns.getInt("CHAR_OCTET_LENGTH"),
-                                                           columns.getInt("ORDINAL_POSITION"), columns.getString("SCOPE_CATLOG"),
-                                                           columns.getString("SCOPE_SCHEMA"), columns.getString("SCOPE_TABLE"),
-                                                           getNullableInteger(columns, "SOURCE_DATA_TYPE"));
+                                                           columns.getInt("ORDINAL_POSITION"), getStringIfPresent(columns,
+                                                                                                                  "SCOPE_CATLOG",
+                                                                                                                  columnNames),
+                                                           getStringIfPresent(columns, "SCOPE_SCHEMA", columnNames),
+                                                           getStringIfPresent(columns, "SCOPE_TABLE", columnNames),
+                                                           getIntegerIfPresent(columns, "SOURCE_DATA_TYPE", columnNames));
                 columnData.add(column);
 
             }
@@ -105,11 +115,25 @@ class JdbcMetadataCollector implements MetadataCollector {
         try {
             DatabaseMetaData dmd = conn.getMetaData();
             schemas = dmd.getSchemas();
-            while (schemas.next()) {
-                String catalogNameForSchema = schemas.getString("TABLE_CATALOG");
-                if ((catalogName == null && schemas.wasNull())
-                    || (catalogName != null && catalogName.equals(catalogNameForSchema))) {
 
+            Set<String> columns = columnsFor(schemas);
+            boolean hasCatalog = columns.contains(identifierFor(dmd, "TABLE_CATALOG"));
+
+            while (schemas.next()) {
+
+                /*
+                 * PostgreSQL's JDBC3 driver doesn't include TABLE_CATALOG 
+                 */
+                if (hasCatalog) {
+                    String catalogNameForSchema = schemas.getString("TABLE_CATALOG");
+                    String schemaName = schemas.getString("TABLE_SCHEM");
+                    if ((catalogName == null && catalogNameForSchema == null)
+                    // if (catalogNameForSchema == null
+                        || (catalogName != null && catalogName.equals(catalogNameForSchema))) {
+
+                        schemaNames.add(schemaName);
+                    }
+                } else {
                     schemaNames.add(schemas.getString("TABLE_SCHEM"));
                 }
             }
@@ -139,12 +163,16 @@ class JdbcMetadataCollector implements MetadataCollector {
             if (catalogName == null) catalogName = "";
             if (schemaName == null) schemaName = "";
             tables = dmd.getTables(catalogName, schemaName, tableName, null);
+            Set<String> columns = columnsFor(tables);
             while (tables.next()) {
                 TableMetadata table = new TableMetadata(tables.getString("TABLE_NAME"), tables.getString("TABLE_TYPE"),
-                                                        tables.getString("REMARKS"), tables.getString("TYPE_CAT"),
-                                                        tables.getString("TYPE_SCHEM"), tables.getString("TYPE_NAME"),
-                                                        tables.getString("SELF_REFERENCING_COL_NAME"),
-                                                        tables.getString("REF_GENERATION"));
+                                                        tables.getString("REMARKS"), getStringIfPresent(tables,
+                                                                                                        "TYPE_CAT",
+                                                                                                        columns),
+                                                        getStringIfPresent(tables, "TYPE_SCHEM", columns),
+                                                        getStringIfPresent(tables, "TYPE_NAME", columns),
+                                                        getStringIfPresent(tables, "SELF_REFERENCING_COL_NAME", columns),
+                                                        getStringIfPresent(tables, "REF_GENERATION", columns));
                 tableData.add(table);
 
             }
@@ -164,7 +192,7 @@ class JdbcMetadataCollector implements MetadataCollector {
                                                   String catalogName,
                                                   String schemaName,
                                                   String procedureName ) throws JdbcMetadataException {
-        List<ProcedureMetadata> tableData = new LinkedList<ProcedureMetadata>();
+        List<ProcedureMetadata> procedureData = new LinkedList<ProcedureMetadata>();
 
         ResultSet procedures = null;
         try {
@@ -178,11 +206,11 @@ class JdbcMetadataCollector implements MetadataCollector {
                 ProcedureMetadata procedure = new ProcedureMetadata(procedures.getString("PROCEDURE_NAME"),
                                                                     procedures.getString("REMARKS"),
                                                                     procedures.getShort("PROCEDURE_TYPE"));
-                tableData.add(procedure);
+                procedureData.add(procedure);
 
             }
 
-            return tableData;
+            return procedureData;
         } catch (SQLException se) {
             throw new JdbcMetadataException(se);
         } finally {
@@ -200,10 +228,48 @@ class JdbcMetadataCollector implements MetadataCollector {
         return b;
     }
 
-    private Integer getNullableInteger( ResultSet rs,
-                                        String columnName ) throws SQLException {
-        Integer i = rs.getInt(columnName);
-        if (rs.wasNull()) i = null;
+    private Set<String> columnsFor( ResultSet rs ) throws SQLException {
+        ResultSetMetaData rmd = rs.getMetaData();
+        int count = rmd.getColumnCount();
+
+        Set<String> columns = new HashSet<String>(count);
+        for (int i = 1; i <= count; i++) {
+            columns.add(rmd.getColumnName(i));
+        }
+        return columns;
+    }
+
+    private String getStringIfPresent( ResultSet rs,
+                                       String columnName,
+                                       Set<String> resultSetColumns ) throws SQLException {
+        if (!resultSetColumns.contains(columnName)) {
+            return null;
+        }
+
+        return rs.getString(columnName);
+
+    }
+
+    private Integer getIntegerIfPresent( ResultSet rs,
+                                         String columnName,
+                                         Set<String> resultSetColumns ) throws SQLException {
+        if (!resultSetColumns.contains(columnName)) {
+            return null;
+        }
+
+        int i = rs.getInt(columnName);
+        if (rs.wasNull()) return null;
         return i;
+
+    }
+
+    private String identifierFor( DatabaseMetaData dmd,
+                                  String rawIdentifier ) throws SQLException {
+        assert rawIdentifier != null;
+        if (dmd.storesLowerCaseIdentifiers()) {
+            return rawIdentifier.toLowerCase();
+        }
+
+        return rawIdentifier;
     }
 }

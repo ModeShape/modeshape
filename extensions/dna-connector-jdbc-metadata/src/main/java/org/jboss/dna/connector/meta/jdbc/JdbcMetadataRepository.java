@@ -158,6 +158,7 @@ public class JdbcMetadataRepository extends PathRepository {
 
                 try {
                     getNode(newPathToTry);
+                    lastWorkingPath = newPathToTry;
                 } catch (PathNotFoundException pnfe) {
                     return lastWorkingPath;
                 }
@@ -174,8 +175,8 @@ public class JdbcMetadataRepository extends PathRepository {
         public PathNode getNode( Path path ) {
             assert path != null;
 
-            Segment[] segments = path.getSegmentsArray();
-            switch (segments.length) {
+            List<Segment> segments = path.getSegmentsList();
+            switch (segments.size()) {
                 case 0:
                     return getRoot();
                 case 1:
@@ -183,22 +184,22 @@ public class JdbcMetadataRepository extends PathRepository {
                 case 2:
                     return schemaNodeFor(segments);
                 case 3:
-                    if (TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName())) {
+                    if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
                         return tablesNodeFor(segments);
-                    } else if (PROCEDURES_SEGMENT_NAME.equals(segments[2].getName().getLocalName())) {
+                    } else if (PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
                         return proceduresNodeFor(segments);
                     }
 
                     return null;
                 case 4:
-                    if (TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName())) {
+                    if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
                         return tableNodeFor(segments);
-                    } else if (PROCEDURES_SEGMENT_NAME.equals(segments[2].getName().getLocalName())) {
+                    } else if (PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
                         return procedureNodeFor(segments);
                     }
                     return null;
                 case 5:
-                    if (TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName())) {
+                    if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
                         return columnNodeFor(segments);
                     }
                     return null;
@@ -207,9 +208,9 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode catalogNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode catalogNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 1;
+            assert segments.size() == 1;
 
             List<Segment> schemaNames = new LinkedList<Segment>();
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
@@ -219,11 +220,11 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
-            if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
+            String catalogName = segments.get(0).getName().getLocalName();
 
             try {
                 MetadataCollector meta = source.getMetadataCollector();
+                if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
                 // Make sure that this is a valid catalog for this database
                 List<String> catalogNames = meta.getCatalogNames(conn);
@@ -232,19 +233,27 @@ public class JdbcMetadataRepository extends PathRepository {
                  * If a "real" (not default) catalog name is provided but it is not a valid
                  * catalog name for this database OR if the default catalog name is being used
                  * but this database uses real catalog names, then no catalog with that name exists.
+                 * 
+                 * This gets complicated by the fact that some DBMSes use an empty string for a catalog
+                 * which also gets mapped to the default catalog name in our system
                  */
+                boolean catalogMatchesDefaultName = catalogNames.isEmpty() || catalogNames.contains("");
+
                 if ((catalogName != null && !catalogNames.contains(catalogName))
-                    || (catalogName == null && !catalogNames.isEmpty())) {
+                    || (catalogName == null && !catalogMatchesDefaultName)) {
                     return null;
                 }
 
                 List<String> schemaNamesFromMeta = new ArrayList<String>(meta.getSchemaNames(conn, catalogName));
-                if (schemaNamesFromMeta.isEmpty()) {
-                    schemaNamesFromMeta.add(source.getDefaultSchemaName());
-                }
 
                 for (String schemaName : schemaNamesFromMeta) {
-                    schemaNames.add(pathFactory.createSegment(schemaName));
+                    if (schemaName.length() > 0) {
+                        schemaNames.add(pathFactory.createSegment(schemaName));
+                    }
+                }
+
+                if (schemaNames.isEmpty()) {
+                    schemaNames.add(pathFactory.createSegment(source.getDefaultSchemaName()));
                 }
 
                 Map<Name, Property> properties = new HashMap<Name, Property>();
@@ -259,9 +268,9 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode schemaNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode schemaNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 2;
+            assert segments.size() == 2;
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -270,10 +279,10 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
             try {
@@ -306,10 +315,10 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode tablesNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode tablesNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 3;
-            assert TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName());
+            assert segments.size() == 3;
+            assert TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName());
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -318,10 +327,10 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
             try {
@@ -358,10 +367,10 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode tableNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode tableNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 4;
-            assert TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName());
+            assert segments.size() == 4;
+            assert TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName());
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -370,13 +379,13 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
-            String tableName = segments[3].getName().getLocalName();
+            String tableName = segments.get(3).getName().getLocalName();
 
             try {
                 MetadataCollector meta = source.getMetadataCollector();
@@ -442,10 +451,10 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode proceduresNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode proceduresNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 3;
-            assert PROCEDURES_SEGMENT_NAME.equals(segments[2].getName().getLocalName());
+            assert segments.size() == 3;
+            assert PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName());
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -454,10 +463,10 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
             try {
@@ -494,10 +503,10 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode procedureNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode procedureNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 4;
-            assert PROCEDURES_SEGMENT_NAME.equals(segments[2].getName().getLocalName());
+            assert segments.size() == 4;
+            assert PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName());
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -506,13 +515,13 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
-            String procedureName = segments[3].getName().getLocalName();
+            String procedureName = segments.get(3).getName().getLocalName();
 
             try {
                 MetadataCollector meta = source.getMetadataCollector();
@@ -533,11 +542,11 @@ public class JdbcMetadataRepository extends PathRepository {
                  *     the stable order in which the procedures should be returned
                  *  2. Procedure nodes can have an SNS index > 1  
                  */
-                if (segments[3].getIndex() > procedures.size()) {
+                if (segments.get(3).getIndex() > procedures.size()) {
                     return null;
                 }
 
-                ProcedureMetadata procedure = procedures.get(segments[3].getIndex() - 1);
+                ProcedureMetadata procedure = procedures.get(segments.get(3).getIndex() - 1);
 
                 Map<Name, Property> properties = new HashMap<Name, Property>();
                 Name propName;
@@ -563,10 +572,10 @@ public class JdbcMetadataRepository extends PathRepository {
             }
         }
 
-        private PathNode columnNodeFor( Segment[] segments ) throws RepositorySourceException {
+        private PathNode columnNodeFor( List<Segment> segments ) throws RepositorySourceException {
             assert segments != null;
-            assert segments.length == 5;
-            assert TABLES_SEGMENT_NAME.equals(segments[2].getName().getLocalName());
+            assert segments.size() == 5;
+            assert TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName());
 
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -575,14 +584,14 @@ public class JdbcMetadataRepository extends PathRepository {
             Path nodePath = pathFactory.createAbsolutePath(segments);
 
             Connection conn = getConnection();
-            String catalogName = segments[0].getName().getLocalName();
+            String catalogName = segments.get(0).getName().getLocalName();
             if (catalogName.equals(source.getDefaultCatalogName())) catalogName = null;
 
-            String schemaName = segments[1].getName().getLocalName();
+            String schemaName = segments.get(1).getName().getLocalName();
             if (schemaName.equals(source.getDefaultSchemaName())) schemaName = null;
 
-            String tableName = segments[3].getName().getLocalName();
-            String columnName = segments[4].getName().getLocalName();
+            String tableName = segments.get(3).getName().getLocalName();
+            String columnName = segments.get(4).getName().getLocalName();
 
             try {
                 MetadataCollector meta = source.getMetadataCollector();
@@ -668,7 +677,9 @@ public class JdbcMetadataRepository extends PathRepository {
                 MetadataCollector meta = source.getMetadataCollector();
 
                 for (String catalogName : meta.getCatalogNames(conn)) {
-                    catalogNames.add(pathFactory.createSegment(catalogName));
+                    if (catalogName.length() > 0) {
+                        catalogNames.add(pathFactory.createSegment(catalogName));
+                    }
                 }
 
                 if (catalogNames.isEmpty()) {

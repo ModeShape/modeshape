@@ -23,19 +23,18 @@
  */
 package org.jboss.dna.connector.meta.jdbc;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Properties;
 import javax.sql.DataSource;
-import org.jboss.dna.common.util.IoUtil;
-import org.jboss.dna.connector.meta.jdbc.JdbcMetadataSource;
 
 public class TestEnvironment {
 
-    public static JdbcMetadataSource configureJdbcMetadataSource( String sourceName,
-                                                                  Object testCase ) {
+    static Properties propertiesFor( Object testCase ) {
         Properties properties = new Properties();
         ClassLoader loader = testCase instanceof Class<?> ? ((Class<?>)testCase).getClassLoader() : testCase.getClass().getClassLoader();
         try {
@@ -43,6 +42,14 @@ public class TestEnvironment {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        return properties;
+    }
+
+    public static JdbcMetadataSource configureJdbcMetadataSource( String sourceName,
+                                                                  Object testCase ) throws Exception {
+
+        Properties properties = propertiesFor(testCase);
 
         JdbcMetadataSource source = new JdbcMetadataSource();
         source.setName(sourceName);
@@ -78,6 +85,9 @@ public class TestEnvironment {
         value = properties.getProperty("jpaSource.rootNodeUuid");
         if (isValue(value)) source.setRootNodeUuid(value);
 
+        value = properties.getProperty("metadata.collectorClassName");
+        if (isValue(value)) source.setMetadataCollectorClassName(value);
+
         return source;
     }
 
@@ -96,19 +106,32 @@ public class TestEnvironment {
     }
 
     public static void executeDdl( DataSource dataSource,
-                                   String pathToDdl ) throws Exception {
+                                   String fileName,
+                                   Object testCase ) throws Exception {
         Connection conn = null;
         Statement stmt = null;
         InputStream is = null;
-
+        BufferedReader reader = null;
 
         try {
+            Properties properties = propertiesFor(testCase);
             conn = dataSource.getConnection();
-            is = TestEnvironment.class.getResourceAsStream(pathToDdl);
-            String ddl = IoUtil.read(is);
-            
             stmt = conn.createStatement();
-            stmt.execute(ddl);
+
+            is = TestEnvironment.class.getResourceAsStream("/" + properties.getProperty("database") + "/" + fileName);
+            reader = new BufferedReader(new InputStreamReader(is));
+
+            /*
+             * We have to send the DDL line-at-a-time because the MySQL driver doesn't like getting multiple DDL statements at once
+             */
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.length() > 0 && !line.startsWith("--")) {
+                    // System.out.println("Executing: " + line);
+                    stmt.execute(line);
+                }
+            }
 
         } finally {
             if (stmt != null) try {

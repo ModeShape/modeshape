@@ -177,6 +177,7 @@
 		<jpaSource.retryLimit>3</jpaSource.retryLimit>
 		<jpaSource.rootNodeUuid/>
 		<jpaSource.showSql>false</jpaSource.showSql>
+    <metadata.collectorClassName>org.jboss.dna.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 	</properties>
 
 	<profiles>
@@ -432,6 +433,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>h2</database>
             <jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:h2:mem:target/test/db/h2/dna</jpaSource.url>
@@ -491,6 +493,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>mysql5</database>
             <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/jbossdna</jpaSource.url>
@@ -517,6 +520,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>postgresql8</database>
             <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:jbossdna</jpaSource.url>
@@ -554,6 +558,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>db2v9</database>
             <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
@@ -581,6 +586,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>oracle10g</database>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</jpaSource.url>
@@ -607,6 +613,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>oracle11g</database>
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
@@ -633,6 +640,7 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>sybase15</database>
             <jpaSource.dialect>org.hibernate.dialect.SybaseDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/jbossdna</jpaSource.url>
@@ -660,6 +668,8 @@
             </dependency>
           </dependencies>
           <properties>
+		        <database>mssql2008</database>
+		        <metadata.collectorClassName>org.jboss.dna.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
             <jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</jpaSource.url>

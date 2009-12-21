@@ -1,39 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
-  ~
-  ~ See the COPYRIGHT.txt file distributed with this work for information
-  ~ regarding copyright ownership.  Some portions may be licensed
-  ~ to Red Hat, Inc. under one or more contributor license agreements.
-  ~ See the AUTHORS.txt file in the distribution for a full listing of 
-  ~ individual contributors.
-  ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
-  ~ is licensed to you under the terms of the GNU Lesser General Public License as
-  ~ published by the Free Software Foundation; either version 2.1 of
-  ~ the License, or (at your option) any later version.
-  ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
-  ~ for more details.
-  ~
-  ~ You should have received a copy of the GNU Lesser General Public License
-  ~ along with this distribution; if not, write to:
-  ~ Free Software Foundation, Inc.
-  ~ 51 Franklin Street, Fifth Floor
-  ~ Boston, MA  02110-1301  USA
-  -->
+	<!--
+		~ JBoss DNA (http://www.jboss.org/dna) ~ ~ See the COPYRIGHT.txt file
+		distributed with this work for information ~ regarding copyright
+		ownership. Some portions may be licensed ~ to Red Hat, Inc. under one
+		or more contributor license agreements. ~ See the AUTHORS.txt file in
+		the distribution for a full listing of ~ individual contributors. ~ ~
+		JBoss DNA is free software. Unless otherwise indicated, all code in
+		JBoss DNA ~ is licensed to you under the terms of the GNU Lesser
+		General Public License as ~ published by the Free Software Foundation;
+		either version 2.1 of ~ the License, or (at your option) any later
+		version. ~ ~ JBoss DNA is distributed in the hope that it will be
+		useful, ~ but WITHOUT ANY WARRANTY; without even the implied warranty
+		of MERCHANTABILITY ~ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+		Lesser General Public License ~ for more details. ~ ~ You should have
+		received a copy of the GNU Lesser General Public License ~ along with
+		this distribution; if not, write to: ~ Free Software Foundation, Inc.
+		~ 51 Franklin Street, Fifth Floor ~ Boston, MA 02110-1301 USA
+	-->
 <!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
 <chapter id="jdbc-metadata-connector">
-  <title>JDBC Metadata Connector</title>
-  <para>
-		This connector provides read-only access to the metadata (e.g., catalogs, schemas, table structures) of a relational database.
-		The connector yields a content graph that looks like this:
-<programlisting>
+	<title>JDBC Metadata Connector</title>
+	<para>
+		This connector provides read-only access to the metadata (e.g.,
+		catalogs, schemas, table structures) of a relational database.
+		The
+		connector yields a content graph that looks like this:
+		<programlisting>
 / (root node)
     + &lt;catalog name&gt; - one node for each accessible catalog in the database.
         + &lt;schema name&gt; - one node for each accessible schema in the catalog.
@@ -49,10 +44,12 @@
 		will be used instead when determining the graph name.  
 		<note>
 			<para>
-			This connector has currently been tested successfully against MySQL 5 (with the InnoDB engine), PostgreSQL 8, and HSQLDB.
+			This connector has currently been tested successfully against Oracle 10g, Oracle 11g, Microsoft SQL Server 2008 (with the Microsoft JDBC driver), 
+			IBM DB2 v9, Sybase ASE 15, MySQL 5 (with the InnoDB engine), PostgreSQL 8, and HSQLDB.
 			As JDBC driver implementations of the &DatabaseMetaData; interface tend to vary widely, other databases may or may not work
-			with the default &MetadataCollector; implementation.  We are, of course, interested in correcting any database-specific issues
-			that arise, but the <code>metadataCollectorClassName</code> property provides a mechanism to support immediate workarounds.
+			with the default &MetadataCollector; implementation.  As one example, the <code>metadataCollectorClassName</code> property
+			must be set to <code>org.jboss.dna.connector.meta.jdbc.SqlServerMetadataConnector</code> if the Microsoft JDBC driver is used.  This is
+			to work around a known bug where that driver returns a list of users from a call to &DatabaseMetaData;.getSchemas() instead of a list of schemas.
 			</para>
 		</note>
   </para>
