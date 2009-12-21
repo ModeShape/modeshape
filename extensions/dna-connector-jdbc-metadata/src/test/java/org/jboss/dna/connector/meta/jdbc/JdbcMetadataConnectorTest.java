@@ -42,7 +42,6 @@ public class JdbcMetadataConnectorTest extends ReadableConnectorTest {
      * 
      * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
-    @SuppressWarnings( "unused" )
     @Override
     protected RepositorySource setUpSource() throws Exception {
         this.source = TestEnvironment.configureJdbcMetadataSource("Test Repository", this);
