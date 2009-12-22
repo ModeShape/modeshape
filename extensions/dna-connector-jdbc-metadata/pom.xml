@@ -42,12 +42,6 @@
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-graph</artifactId>
 		</dependency>
-            <dependency>
-              <groupId>com.sybase</groupId>
-              <artifactId>jconnect</artifactId>
-              <version>6.0.5</version>
-              <scope>test</scope>
-            </dependency>
         <dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-graph</artifactId>
