@@ -28,7 +28,6 @@ public class DefaultRowFactory implements RowFactory {
     
     private int rowNumber = 1;
 
-    @Override
     public void recordRow( StreamSequencerContext context,
                         SequencerOutput output,
                         String[] columns ) {
