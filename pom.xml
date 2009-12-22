@@ -374,7 +374,6 @@
             <dependency>
               <groupId>hsqldb</groupId>
               <artifactId>hsqldb</artifactId>
-              <version>1.8.0.2</version>
               <scope>test</scope>
             </dependency>
           </dependencies>
@@ -989,6 +988,12 @@
 				<version>10.2.1.6</version>
 				<scope>test</scope>
 			</dependency>
+      <dependency>
+        <groupId>hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <version>1.8.0.2</version>
+        <scope>test</scope>
+      </dependency>
 		</dependencies>
 	</dependencyManagement>
 	<reporting>

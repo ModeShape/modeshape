@@ -44,7 +44,6 @@
     <dependency>
       <groupId>hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
-      <version>1.8.0.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
