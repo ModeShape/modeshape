@@ -96,7 +96,23 @@ public class SequencingClient {
               .setDescription("Sequences Java files to extract the AST structure of the Java source code")
               .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/java/$1");
-
+        // Set up the CSV file sequencer ...
+        config.sequencer("CSV Sequencer")
+              .usingClass("org.jboss.dna.sequencer.text.DelimitedTextSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences CSV files to extract the contents")
+              .sequencingFrom("//(*.csv[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/csv/$1");
+        // Set up the fixed width file sequencer ...
+        config.sequencer("Fixed Width Sequencer")
+              .usingClass("org.jboss.dna.sequencer.text.FixedWidthTextSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences fixed width files to extract the contents")
+              .setProperty("commentMarker", "#")
+              .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
+              .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/txt/$1");
+        
         // Now start the client and tell it which repository and workspace to use ...
         SequencingClient client = new SequencingClient(config, repositoryId, workspaceName);
         client.setUserInterface(new ConsoleInput(client));
@@ -186,7 +202,7 @@ public class SequencingClient {
         String mimeType = getMimeType(url);
 
         if (mimeType == null) {
-            System.err.println("Could not determine mime type for file.  Cancelling upload.");
+            System.err.println("Could not determine mime type for file " + url + ".  Cancelling upload.");
             return;
         }
 
@@ -266,6 +282,67 @@ public class SequencingClient {
 
                 }
             }
+            if (root.hasNode("txt")) {
+                LinkedList<Node> nodesToVisit = new LinkedList<Node>();
+
+                for (NodeIterator i = root.getNode("txt").getNodes(); i.hasNext();) {
+                    nodesToVisit.addLast(i.nextNode());
+                }
+
+                while (!nodesToVisit.isEmpty()) {
+                    Node node = nodesToVisit.remove();
+                    Properties props = new Properties();
+                    int rowCount = 0;
+                    int colCount = 0;
+
+                    for (NodeIterator rowIter = node.getNodes(); rowIter.hasNext();) {
+                        Node rowNode = rowIter.nextNode();
+
+                        rowCount++;
+                        colCount = 0;
+
+                        for (NodeIterator colIter = rowNode.getNodes(); colIter.hasNext();) {
+                            colIter.nextNode();
+                            colCount++;
+                        }
+                    }
+                    props.put("rows", String.valueOf(rowCount));
+                    props.put("columns", String.valueOf(colCount));
+
+                    infos.add(new ContentInfo(node.getPath(), node.getName(), props));
+                }
+            }
+            if (root.hasNode("csv")) {
+                LinkedList<Node> nodesToVisit = new LinkedList<Node>();
+
+                for (NodeIterator i = root.getNode("csv").getNodes(); i.hasNext();) {
+                    nodesToVisit.addLast(i.nextNode());
+                }
+
+                while (!nodesToVisit.isEmpty()) {
+                    Node node = nodesToVisit.remove();
+                    Properties props = new Properties();
+                    int rowCount = 0;
+                    int colCount = 0;
+
+                    for (NodeIterator rowIter = node.getNodes(); rowIter.hasNext();) {
+                        Node rowNode = rowIter.nextNode();
+
+                        rowCount++;
+                        colCount = 0;
+
+                        for (NodeIterator colIter = rowNode.getNodes(); colIter.hasNext();) {
+                            colIter.nextNode();
+                            colCount++;
+                        }
+                    }
+                    props.put("rows", String.valueOf(rowCount));
+                    props.put("columns", String.valueOf(colCount));
+
+                    infos.add(new ContentInfo(node.getPath(), node.getName(), props));
+                }
+            }
+
             if (root.hasNode("java")) {
                 Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
                 // Find the compilation unit node ...
@@ -466,6 +543,8 @@ public class SequencingClient {
         if (filename.endsWith(".mp3")) return "audio/mpeg";
         if (filename.endsWith(".jar")) return "application/java-archive";
         if (filename.endsWith(".java")) return "text/x-java-source";
+        if (filename.endsWith(".csv")) return "text/csv";
+        if (filename.endsWith(".txt")) return "text/plain";
         return null;
     }
 

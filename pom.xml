@@ -131,6 +131,7 @@
 		<module>extensions/dna-sequencer-cnd</module>
 		<module>extensions/dna-sequencer-java</module>
 		<module>extensions/dna-sequencer-msoffice</module>
+		<module>extensions/dna-sequencer-text</module>
 		<module>extensions/dna-sequencer-xml</module>
 		<module>extensions/dna-sequencer-zip</module>
 		<module>extensions/dna-sequencer-ddl</module>

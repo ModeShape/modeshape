@@ -30,8 +30,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Node;
@@ -72,6 +74,21 @@ public class StreamSequencerAdapter implements Sequencer {
      */
     public void setConfiguration( SequencerConfig configuration ) {
         this.configuration = configuration;
+
+        /*
+         * Try to pass the configured properties through to the stream sequencer
+         */
+        if (configuration.getProperties() != null) {
+            for (Map.Entry<String, Object> entry : configuration.getProperties().entrySet()) {
+                // Set the JavaBean-style property on the RepositorySource instance ...
+                Reflection reflection = new Reflection(streamSequencer.getClass());
+                try {
+                    reflection.invokeSetterMethodOnTarget(entry.getKey(), streamSequencer, entry.getValue());
+                } catch (Exception ignore) {
+                    // It's possible that these properties weren't intended for the stream sequencer anyway
+                }
+            }
+        }
     }
 
     /**
@@ -264,8 +281,7 @@ public class StreamSequencerAdapter implements Sequencer {
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.jboss.dna.graph.property.Property> props = new HashSet<org.jboss.dna.graph.property.Property>(
-                                                                                                              input.getPropertiesByName()
-                                                                                                                   .values());
+                                                                                                              input.getPropertiesByName().values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);

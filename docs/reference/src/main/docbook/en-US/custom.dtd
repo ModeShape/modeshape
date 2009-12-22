@@ -35,6 +35,7 @@
 
 <!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">
 <!ENTITY File  							      		"<ulink url='&Java;java/io/File.html'><classname>File</classname></ulink>">
+<!ENTITY BufferedReader					      		"<ulink url='&Java;java/io/BufferedReader.html'><classname>BufferedReader</classname></ulink>">
 <!ENTITY URL  							      		"<ulink url='&Java;java/net/URL.html'><classname>URL</classname></ulink>">
 <!ENTITY URI  							      		"<ulink url='&Java;java/net/URL.html'><classname>URI</classname></ulink>">
 <!ENTITY InputStream				      		"<ulink url='&Java;java/io/InputStream.html'><interface>InputStream</interface></ulink>">
@@ -214,4 +215,9 @@
 <!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/aperture/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
 <!ENTITY DnaJcrDeployer	  						"<ulink url='&API;web/jcr/rest/DnaJcrDeployer.html'><classname>DnaJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
+
+<!ENTITY AbstractTextSequencer		  	"<ulink url='&API;sequencer/text/AbstractTextSequencer.html'><classname>AbstractTextSequencer</classname></ulink>">
+<!ENTITY DelimitedTextSequencer		  	"<ulink url='&API;sequencer/text/DelimitedTextSequencer'><classname>DelimitedTextSequencer</classname></ulink>">
+<!ENTITY FixedWidthTextSequencer		"<ulink url='&API;sequencer/text/FixedWidthTextSequencer'><classname>FixedWidthTextSequencer</classname></ulink>">
+<!ENTITY RowFactory		  				"<ulink url='&API;sequencer/text/RowFactory'><classname>RowFactory</classname></ulink>">
 

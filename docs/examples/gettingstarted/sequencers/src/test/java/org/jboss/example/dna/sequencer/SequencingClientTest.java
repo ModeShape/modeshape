@@ -53,6 +53,8 @@ public class SequencingClientTest {
     private URL mp3Url;
     private URL jarUrl;
     private URL javaSourceUrl;
+    private URL csvUrl;
+    private URL fixedWidthFileUrl;
     private SequencingClient client;
 
     @Before
@@ -62,6 +64,9 @@ public class SequencingClientTest {
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");
         this.mp3Url = Thread.currentThread().getContextClassLoader().getResource("sample1.mp3");
         this.jarUrl = Thread.currentThread().getContextClassLoader().getResource("test.jar");
+        this.csvUrl = Thread.currentThread().getContextClassLoader().getResource("test.csv");
+        this.fixedWidthFileUrl = Thread.currentThread().getContextClassLoader().getResource("fixedWidthFile.txt");
+
         // Get the URL of source (MySource.java), that have to be sequencing
         this.javaSourceUrl = FileUtil.convertFileToURL("workspace/project1/src/org/acme/MySource.java");
 
@@ -103,7 +108,23 @@ public class SequencingClientTest {
               .setDescription("Sequences Java files to extract the AST structure of the Java source code")
               .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/java/$1");
-
+        // Set up the CSV file sequencer ...
+        config.sequencer("CSV Sequencer")
+              .usingClass("org.jboss.dna.sequencer.text.DelimitedTextSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences CSV files to extract the contents")
+              .sequencingFrom("//(*.csv[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/csv/$1");
+        // Set up the fixed width file sequencer ...
+        config.sequencer("Fixed Width Sequencer")
+              .usingClass("org.jboss.dna.sequencer.text.FixedWidthTextSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences fixed width files to extract the contents")
+              .setProperty("commentMarker", "#")
+              .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
+              .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/txt/$1");
+        
         // Now start the client and tell it which repository and workspace to use ...
         client = new SequencingClient(config, repositoryId, workspaceName);
     }
@@ -183,6 +204,32 @@ public class SequencingClientTest {
     @Test
     public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
+        client.startRepository();
+        client.uploadFile();
+
+        waitUntilSequencedNodesIs(1);
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+    }
+
+    @Test
+    public void shouldUploadAndSequenceDelimitedFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.csvUrl, "/a/b/test.csv", 1));
+        client.startRepository();
+        client.uploadFile();
+
+        waitUntilSequencedNodesIs(1);
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+    }
+
+    @Test
+    public void shouldUploadAndSequenceFixedWidthFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.fixedWidthFileUrl, "/a/b/fixedWidthFile.txt", 1));
         client.startRepository();
         client.uploadFile();
 
