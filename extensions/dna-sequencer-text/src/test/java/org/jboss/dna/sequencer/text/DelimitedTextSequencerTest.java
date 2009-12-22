@@ -242,7 +242,6 @@ public class DelimitedTextSequencerTest {
 
         int rowNum = 1;
 
-        @Override
         public void recordRow( StreamSequencerContext context,
                             SequencerOutput output,
                             String[] columns ) {
