@@ -283,11 +283,14 @@ public class DnaTckTest extends AbstractJCRTest {
 
         session.logout();
 
-        session = helper.getRepository().login(creds, "otherWorkspace");
+        // If the repo only supports one workspace, stop here
+        if ("default".equals(this.workspaceName)) return;
+        
+        session = helper.getRepository().login(creds, this.workspaceName);
         testRead(session);
         try {
             testWrite(session);
-            fail("User 'defaultuser' should not have write access to 'otherWorkspace'");
+            fail("User 'defaultuser' should not have write access to '" + this.workspaceName + "'");
         } catch (AccessDeniedException expected) {
         }
         session.logout();
@@ -334,12 +337,15 @@ public class DnaTckTest extends AbstractJCRTest {
             // Expected
         }
         
-        session = helper.getRepository().login(creds, "otherWorkspace");
+        // If the repo only supports one workspace, stop here
+        if ("default".equals(this.workspaceName)) return;
+
+        session = helper.getRepository().login(creds, this.workspaceName);
 
         String[] workspaceNames = session.getWorkspace().getAccessibleWorkspaceNames();
 
         assertThat(workspaceNames.length, is(1));
-        assertThat(workspaceNames[0], is("otherWorkspace"));
+        assertThat(workspaceNames[0], is(this.workspaceName));
         
         session.logout();
     }
