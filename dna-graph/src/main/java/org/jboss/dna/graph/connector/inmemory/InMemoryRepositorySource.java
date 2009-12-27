@@ -367,7 +367,6 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
         return CAPABILITIES;
     }
 
-    @Override
     public boolean areUpdatesAllowed() {
         return true;
     }
@@ -380,7 +379,6 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
      * @param updatesAllowed must be true
      * @throws RepositorySourceException if {@code updatesAllowed != true}.
      */
-    @Override
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         if (updatesAllowed == false) {
             throw new RepositorySourceException(GraphI18n.inMemoryConnectorMustAllowUpdates.text(this.name));
