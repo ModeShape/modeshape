@@ -251,7 +251,12 @@ public class StreamSequencerAdapter implements Sequencer {
             List<Property> properties = new LinkedList<Property>();
             // Set all of the properties on this
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                properties.add(propertyFactory.create(property.getName(), property.getValue()));
+                if (property.getValue() instanceof Object[]) {
+                    // Have to force this cast or a single-valued property gets created with a value that is an Object[]
+                    properties.add(propertyFactory.create(property.getName(), (Object[])property.getValue()));
+                } else {
+                    properties.add(propertyFactory.create(property.getName(), property.getValue()));
+                }
                 // TODO: Handle reference properties - currently passed in as Paths
             }
 
