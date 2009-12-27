@@ -138,10 +138,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_REFERENCES = true;
     /**
-     * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
+     * This source supports updates by default, but each instance may be configured to {@link #setAllowsUpdates(boolean) be
      * read-only or updateable}.
      */
-    public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
+    public static final boolean DEFAULT_ALLOWS_UPDATES = true;
     /**
      * This source does not output executed SQL by default, but this can be overridden by calling {@link #setShowSql(boolean)}.
      */
@@ -211,7 +211,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
-                                                                                                  DEFAULT_SUPPORTS_UPDATES,
+                                                                                                  DEFAULT_ALLOWS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
@@ -255,22 +255,21 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Get whether this source supports updates.
+     * Get whether this source allows updates.
      * 
-     * @return true if this source supports updates, or false if this source only supports reading content.
+     * @return true if this source allows updates, or false if this source only supports reading content.
      */
-    public boolean getSupportsUpdates() {
+    public boolean areUpdatesAllowed() {
         return capabilities.supportsUpdates();
     }
 
     /**
-     * Set whether this source supports updates.
+     * Set whether this source allows updates.
      * 
-     * @param supportsUpdates true if this source supports updating content, or false if this source only supports reading
-     *        content.
+     * @param allowsUpdates true if this source allows updating content, or false if this source only allows reading content.
      */
-    public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), supportsUpdates,
+    public synchronized void setAllowsUpdates( boolean allowsUpdates ) {
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowsUpdates,
                                                         capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
                                                         capabilities.supportsReferences());
     }

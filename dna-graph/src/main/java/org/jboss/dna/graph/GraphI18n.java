@@ -99,9 +99,11 @@ public final class GraphI18n {
     public static I18n nodeDoesNotExist;
     public static I18n errorSerializingInMemoryCachePolicyInSource;
     public static I18n inMemoryConnectorRequestsMustHavePathOrUuid;
+    public static I18n inMemoryConnectorMustAllowUpdates;
     public static I18n pathConnectorRequestsMustHavePath;
     public static I18n workspaceDoesNotExistInRepository;
     public static I18n workspaceAlreadyExistsInRepository;
+    public static I18n sourceIsReadOnly;
 
     /* Federation Connection */
     public static I18n namePropertyIsRequiredForFederatedRepositorySource;

@@ -56,9 +56,9 @@
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
-					<entry>supportsUpdates (Basic Model Only)</entry>
+					<entry>updatesAllowed</entry>
 					<entry>Determines whether the content in the database is can be updated ("true"), or if the content may only be read ("false").
-						The default value is "true".  This property is ignored by the Simple Model (q.v., the model property below)</entry>
+						The default value is "true".</entry>
 				</row>
 				<row>
 					<entry>rootNodeUuid</entry>
@@ -204,7 +204,7 @@
 					<entry>model</entry>
 					<entry>
 						An advanced property that dictates the type of storage schema that is used.  Currently, the only supported values are "Basic" and "Simple".  
-						The Basic model supports a read-only mode (q.v., the "supportsUpdates" property) and database-level
+						The Basic model supports a read-only mode (q.v., the "updatesAllowed" property) and database-level
 						enforcement of referential integrity (q.v., the "referentialIntegrityEnforced" property above), but does not fully support all JCR functions.
 						As a result, the Simple model is now the default model, but DNA repositories that were created under the Basic model will continue to use
 						the "Basic" model regardless of the value of this property.  Repositories can be converted from the Basic model to the Simple model by exporting

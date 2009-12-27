@@ -367,6 +367,27 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
         return CAPABILITIES;
     }
 
+    @Override
+    public boolean areUpdatesAllowed() {
+        return true;
+    }
+
+    /**
+     * In-memory connectors aren't shared and cannot be loaded from external sources if updates are not allowed. Therefore, in
+     * order to avoid setting up an in-memory connector that is permanently empty (presumably, not a desired outcome), all
+     * in-memory connectors must allow updates.
+     * 
+     * @param updatesAllowed must be true
+     * @throws RepositorySourceException if {@code updatesAllowed != true}.
+     */
+    @Override
+    public void setUpdatesAllowed( boolean updatesAllowed ) {
+        if (updatesAllowed == false) {
+            throw new RepositorySourceException(GraphI18n.inMemoryConnectorMustAllowUpdates.text(this.name));
+        }
+
+    }
+
     /**
      * {@inheritDoc}
      * 

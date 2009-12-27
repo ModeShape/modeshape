@@ -103,7 +103,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
         }
         // Do any commands update/write?
         Observer observer = this.source.getRepositoryContext().getObserver();
-        RequestProcessor processor = new SimpleRequestProcessor(context, this.repository, observer);
+        RequestProcessor processor = new SimpleRequestProcessor(context, this.repository, observer, source.areUpdatesAllowed());
 
         boolean commit = true;
         MapRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());

@@ -34,13 +34,32 @@ import org.jboss.dna.graph.connector.RepositorySource;
 public interface MapRepositorySource extends RepositorySource {
 
     /**
-     * Returns the {@link CachePolicy cache policy} for the repository source 
+     * Get whether this source allows updates.
+     * 
+     * @return true if this source allows updates by clients, or false if no updates are allowed
+     * @see #setUpdatesAllowed(boolean)
+     */
+    boolean areUpdatesAllowed();
+
+    /**
+     * Set whether this source allows updates to data within workspaces
+     * 
+     * @param updatesAllowed true if this source allows updates to data within workspaces clients, or false if updates are not
+     *        allowed.
+     * @see #areUpdatesAllowed()
+     */
+    void setUpdatesAllowed( boolean updatesAllowed );
+
+    /**
+     * Returns the {@link CachePolicy cache policy} for the repository source
+     * 
      * @return the {@link CachePolicy cache policy} for the repository source
      */
     CachePolicy getDefaultCachePolicy();
 
     /**
      * Returns the {@link RepositoryContext repository context} for the repository source
+     * 
      * @return the {@link RepositoryContext repository context} for the repository source
      */
     RepositoryContext getRepositoryContext();

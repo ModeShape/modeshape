@@ -104,7 +104,7 @@ public class MapRepositoryConnection implements RepositoryConnection {
         // Do any commands update/write?
         RepositoryContext repositoryContext = this.source.getRepositoryContext();
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        RequestProcessor processor = new MapRequestProcessor(context, this.repository, observer);
+        RequestProcessor processor = new MapRequestProcessor(context, this.repository, observer, source.areUpdatesAllowed());
 
         boolean commit = true;
         MapRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());

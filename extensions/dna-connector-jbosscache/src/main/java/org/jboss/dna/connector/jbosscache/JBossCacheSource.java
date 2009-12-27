@@ -97,6 +97,11 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
+    /**
+     * The initial value for whether updates are allowed is "{@value} ", unless otherwise specified.
+     */
+    public static final boolean DEFAULT_UPDATES_ALLOWED = true;
+
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
@@ -107,6 +112,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
+    protected static final String UPDATES_ALLOWED = "updatesAllowed";
 
     private volatile String name;
     private volatile UUID rootNodeUuid = UUID.randomUUID();
@@ -116,6 +122,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
     private volatile String cacheJndiName;
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
     private volatile String defaultWorkspace;
+    private volatile boolean updatesAllowed = DEFAULT_UPDATES_ALLOWED;
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
     private transient JBossCacheRepository repository;
@@ -553,6 +560,14 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
         this.jndiContext = context;
     }
 
+    public boolean areUpdatesAllowed() {
+        return this.updatesAllowed;
+    }
+
+    public void setUpdatesAllowed( boolean updatesAllowed ) {
+        this.updatesAllowed = updatesAllowed;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -586,6 +601,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(CACHE_CONFIGURATION_NAME, getCacheConfigurationName()));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
+        ref.add(new StringRefAddr(UPDATES_ALLOWED, String.valueOf(areUpdatesAllowed())));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -644,6 +660,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
             String retryLimit = (String)values.get(RETRY_LIMIT);
             String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
+            String updatesAllowed = (String)values.get(UPDATES_ALLOWED);
 
             String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -666,6 +683,7 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
+            if (updatesAllowed != null) source.setUpdatesAllowed(Boolean.valueOf(updatesAllowed));
             return source;
         }
         return null;

@@ -31,8 +31,9 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
 
     public SimpleRequestProcessor( ExecutionContext context,
                                    SimpleJpaRepository repository,
-                                   Observer observer ) {
-        super(context, repository, observer);
+                                   Observer observer,
+                                   boolean updatesAllowed ) {
+        super(context, repository, observer, updatesAllowed);
 
         this.repository = repository;
         this.pathFactory = context.getValueFactories().getPathFactory();
@@ -126,6 +127,8 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
 
     @Override
     public void process( CreateWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         if (!repository.creatingWorkspacesAllowed()) {
             String msg = JpaConnectorI18n.unableToCreateWorkspaces.text(getSourceName());
             request.setError(new InvalidRequestException(msg));
@@ -137,6 +140,8 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
 
     @Override
     public void process( CloneWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         if (!repository.creatingWorkspacesAllowed()) {
             String msg = JpaConnectorI18n.unableToCreateWorkspaces.text(getSourceName());
             request.setError(new InvalidRequestException(msg));

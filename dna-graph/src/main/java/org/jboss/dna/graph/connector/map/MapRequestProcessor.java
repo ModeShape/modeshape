@@ -57,6 +57,7 @@ import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
 import org.jboss.dna.graph.request.FullTextSearchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.LockBranchRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
@@ -75,14 +76,17 @@ public class MapRequestProcessor extends RequestProcessor {
     private final PathFactory pathFactory;
     private final PropertyFactory propertyFactory;
     private final MapRepository repository;
+    private final boolean updatesAllowed;
 
     public MapRequestProcessor( ExecutionContext context,
                                 MapRepository repository,
-                                Observer observer ) {
+                                Observer observer,
+                                boolean updatesAllowed ) {
         super(repository.getSourceName(), context, observer);
         this.repository = repository;
         pathFactory = context.getValueFactories().getPathFactory();
         propertyFactory = context.getPropertyFactory();
+        this.updatesAllowed = updatesAllowed;
     }
 
     /**
@@ -156,6 +160,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneBranchRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.fromWorkspace());
         MapWorkspace newWorkspace = getWorkspace(request, request.intoWorkspace());
         if (workspace == null || newWorkspace == null) return;
@@ -189,6 +195,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.fromWorkspace());
         MapWorkspace newWorkspace = getWorkspace(request, request.intoWorkspace());
         if (workspace == null || newWorkspace == null) return;
@@ -214,6 +222,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
         Path parent = request.under().getPath();
@@ -224,8 +234,7 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode parentNode = workspace.getNode(parent);
         if (parentNode == null) {
             Path lowestExisting = workspace.getLowestExistingPath(parent);
-            request.setError(new PathNotFoundException(request.under(), lowestExisting,
- GraphI18n.nodeDoesNotExist.text(parent)));
+            request.setError(new PathNotFoundException(request.under(), lowestExisting, GraphI18n.nodeDoesNotExist.text(parent)));
             return;
         }
 
@@ -286,6 +295,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
         MapNode node = getTargetNode(workspace, request, request.at());
@@ -303,6 +314,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         if (workspace == null) return;
 
@@ -352,6 +365,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         MapNode node = getTargetNode(workspace, request, request.on());
         if (node == null) return;
@@ -383,6 +398,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = repository.createWorkspace(getExecutionContext(),
                                                             request.desiredNameOfNewWorkspace(),
                                                             request.conflictBehavior());
@@ -405,6 +422,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         MapWorkspace workspace = repository.getWorkspace(request.workspaceName());
         if (workspace != null) {
             MapNode root = workspace.getRoot();
@@ -450,6 +469,8 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneWorkspaceRequest request ) {
+        if (!updatesAllowed(request)) return;
+
         // Find the original workspace that we're cloning ...
         final ExecutionContext context = getExecutionContext();
         String targetWorkspaceName = request.desiredNameOfTargetWorkspace();
@@ -559,6 +580,13 @@ public class MapRequestProcessor extends RequestProcessor {
             request.setError(new InvalidWorkspaceException(msg));
         }
         return workspace;
+    }
+
+    protected boolean updatesAllowed( Request request ) {
+        if (!updatesAllowed) {
+            request.setError(new InvalidRequestException(GraphI18n.sourceIsReadOnly.text(getSourceName())));
+        }
+        return !request.hasError();
     }
 
     protected MapNode getTargetNode( MapWorkspace workspace,

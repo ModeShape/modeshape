@@ -91,6 +91,11 @@
 					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
 					specified, a random UUID is generated each time that the repository is started.</entry>
 				</row>	
+				<row>
+					<entry>updatesAllowed</entry>
+					<entry>Determines whether the content in the connector is can be updated ("true"), or if the content may only be read ("false").
+						The default value is "true".</entry>
+				</row>
 			</tbody>
 		</tgroup>
 	</table>
