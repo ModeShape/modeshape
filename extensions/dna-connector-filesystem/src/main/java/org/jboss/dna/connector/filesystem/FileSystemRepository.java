@@ -192,7 +192,6 @@ public class FileSystemRepository extends WritablePathRepository {
             this.context = context;
         }
 
-        @Override
         public PathNode createNode( ExecutionContext context,
                                     PathNode parentNode,
                                     Name name,
@@ -386,7 +385,6 @@ public class FileSystemRepository extends WritablePathRepository {
             return getNode(newPath);
         }
 
-        @Override
         public boolean removeNode( ExecutionContext context,
                                    Path nodePath ) {
             File nodeFile;
@@ -419,7 +417,6 @@ public class FileSystemRepository extends WritablePathRepository {
             return true;
         }
 
-        @Override
         public PathNode removeProperties( ExecutionContext context,
                                           Path nodePath,
                                           Iterable<Name> propertyNames ) {
@@ -456,7 +453,6 @@ public class FileSystemRepository extends WritablePathRepository {
             return getNode(nodePath);
         }
 
-        @Override
         public PathNode setProperties( ExecutionContext context,
                                        Path nodePath,
                                        Iterable<Property> newProperties ) {
@@ -505,7 +501,6 @@ public class FileSystemRepository extends WritablePathRepository {
             return super.moveNode(context, node, desiredNewName, originalWorkspace, newParent, beforeNode);
         }
 
-        @Override
         public Path getLowestExistingPath( Path path ) {
             File file = workspaceRoot;
             for (Path.Segment segment : path) {
@@ -535,7 +530,6 @@ public class FileSystemRepository extends WritablePathRepository {
             return path;
         }
 
-        @Override
         public PathNode getNode( Path path ) {
             Map<Name, Property> properties = new HashMap<Name, Property>();
 

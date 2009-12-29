@@ -464,12 +464,10 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
         this.repositoryContext = context;
     }
 
-    @Override
     public RepositoryContext getRepositoryContext() {
         return this.repositoryContext;
     }
 
-    @Override
     public CachePolicy getDefaultCachePolicy() {
         return defaultCachePolicy;
     }
