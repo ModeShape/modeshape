@@ -56,27 +56,21 @@ public class FileSystemSourceTest {
         this.source.setName("Test Repository");
         this.source.initialize(new RepositoryContext() {
 
-            @Override
             public Subgraph getConfiguration( int depth ) {
                 return null;
             }
 
-            @Override
             public ExecutionContext getExecutionContext() {
                 return context;
             }
 
-            @Override
             public Observer getObserver() {
-                // TODO Auto-generated method stub
                 return null;
             }
 
-            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return new RepositoryConnectionFactory() {
 
-                    @Override
                     public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                         return source.getConnection();
                     }
