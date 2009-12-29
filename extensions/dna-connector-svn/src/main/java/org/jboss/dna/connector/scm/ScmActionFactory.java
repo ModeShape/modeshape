@@ -31,6 +31,11 @@ public interface ScmActionFactory {
                               String file,
                               byte[] content );
 
+    public ScmAction mergeFile( String rootPath,
+                                 String fileName,
+                                 byte[] oldData,
+                                 byte[] newData );
+
     public ScmAction addDirectory( String root,
                                    String path );
 
