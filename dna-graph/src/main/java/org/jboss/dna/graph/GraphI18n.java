@@ -104,6 +104,7 @@ public final class GraphI18n {
     public static I18n workspaceDoesNotExistInRepository;
     public static I18n workspaceAlreadyExistsInRepository;
     public static I18n sourceIsReadOnly;
+    public static I18n workspaceIsReadOnly;
 
     /* Federation Connection */
     public static I18n namePropertyIsRequiredForFederatedRepositorySource;

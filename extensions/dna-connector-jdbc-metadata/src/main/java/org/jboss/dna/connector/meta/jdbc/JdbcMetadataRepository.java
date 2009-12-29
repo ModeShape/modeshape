@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
@@ -260,7 +261,7 @@ public class JdbcMetadataRepository extends PathRepository {
                 properties.put(JcrLexicon.PRIMARY_TYPE, propFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED));
                 properties.put(JcrLexicon.MIXIN_TYPES, propFactory.create(JcrLexicon.MIXIN_TYPES, JdbcMetadataLexicon.CATALOG));
 
-                return new DefaultPathNode(nodePath, properties, schemaNames);
+                return new DefaultPathNode(nodePath, null, properties, schemaNames);
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetSchemaNames.text(catalogName), se);
             } finally {
@@ -307,7 +308,7 @@ public class JdbcMetadataRepository extends PathRepository {
                 Segment[] children = new Segment[] {pathFactory.createSegment(TABLES_SEGMENT_NAME),
                     pathFactory.createSegment(PROCEDURES_SEGMENT_NAME)};
 
-                return new DefaultPathNode(nodePath, properties, Arrays.asList(children));
+                return new DefaultPathNode(nodePath, null, properties, Arrays.asList(children));
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetSchemaNames.text(catalogName), se);
             } finally {
@@ -359,7 +360,7 @@ public class JdbcMetadataRepository extends PathRepository {
                     children.add(pathFactory.createSegment(table.getName()));
                 }
 
-                return new DefaultPathNode(nodePath, properties, children);
+                return new DefaultPathNode(nodePath, null, properties, children);
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetTableNames.text(catalogName, schemaName), se);
             } finally {
@@ -442,7 +443,7 @@ public class JdbcMetadataRepository extends PathRepository {
                     children.add(pathFactory.createSegment(column.getName()));
                 }
 
-                return new DefaultPathNode(nodePath, properties, children);
+                return new DefaultPathNode(nodePath, null, properties, children);
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetTable.text(catalogName, schemaName, tableName),
                                                     se);
@@ -495,7 +496,7 @@ public class JdbcMetadataRepository extends PathRepository {
                     children.add(pathFactory.createSegment(procedure.getName()));
                 }
 
-                return new DefaultPathNode(nodePath, properties, children);
+                return new DefaultPathNode(nodePath, null, properties, children);
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetProcedureNames.text(catalogName, schemaName), se);
             } finally {
@@ -562,7 +563,7 @@ public class JdbcMetadataRepository extends PathRepository {
                 propName = JdbcMetadataLexicon.PROCEDURE_RETURN_TYPE;
                 properties.put(propName, propFactory.create(propName, procedure.getType()));
 
-                return new DefaultPathNode(nodePath, properties, Collections.<Segment>emptyList());
+                return new DefaultPathNode(nodePath, null, properties, Collections.<Segment>emptyList());
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetProcedure.text(catalogName,
                                                                                                schemaName,
@@ -656,7 +657,7 @@ public class JdbcMetadataRepository extends PathRepository {
                     propName = JdbcMetadataLexicon.SOURCE_JDBC_DATA_TYPE;
                     properties.put(propName, propFactory.create(propName, column.getSourceJdbcDataType()));
                 }
-                return new DefaultPathNode(nodePath, properties, Collections.<Segment>emptyList());
+                return new DefaultPathNode(nodePath, null, properties, Collections.<Segment>emptyList());
             } catch (JdbcMetadataException se) {
                 throw new RepositorySourceException(JdbcMetadataI18n.couldNotGetColumn.text(catalogName,
                                                                                             schemaName,
@@ -755,6 +756,10 @@ public class JdbcMetadataRepository extends PathRepository {
         public Path getPath() {
             ExecutionContext context = source.getRepositoryContext().getExecutionContext();
             return context.getValueFactories().getPathFactory().createRootPath();
+        }
+
+        public UUID getUuid() {
+            return source.getRootUuid();
         }
 
         public Map<Name, Property> getProperties() {

@@ -29,8 +29,13 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,9 +50,41 @@ public class FileSystemSourceTest {
 
     @Before
     public void beforeEach() throws Exception {
+        final ExecutionContext context = new ExecutionContext();
         this.source = new FileSystemSource();
         // Set the mandatory properties ...
         this.source.setName("Test Repository");
+        this.source.initialize(new RepositoryContext() {
+
+            @Override
+            public Subgraph getConfiguration( int depth ) {
+                return null;
+            }
+
+            @Override
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            @Override
+            public Observer getObserver() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return new RepositoryConnectionFactory() {
+
+                    @Override
+                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                        return source.getConnection();
+                    }
+
+                };
+            }
+
+        });
     }
 
     @After

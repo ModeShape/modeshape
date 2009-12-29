@@ -1,17 +1,20 @@
 package org.jboss.dna.graph.connector.path;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 
+@ThreadSafe
 public abstract class PathRepository {
 
     protected final UUID rootNodeUuid;
     private final String sourceName;
     private final String defaultWorkspaceName;
-    protected final Map<String, PathWorkspace> workspaces = new HashMap<String, PathWorkspace>();
+
+    protected final ConcurrentMap<String, PathWorkspace> workspaces = new ConcurrentHashMap<String, PathWorkspace>();
 
     /**
      * Creates a {@code PathRepository} with the given repository source name, root node UUID, and a default workspace named
@@ -103,4 +106,31 @@ public abstract class PathRepository {
      */
     protected abstract void initialize();
 
+    /**
+     * Begin a transaction, hinting whether the transaction will be used only to read the content. If this is called, then the
+     * transaction must be either {@link PathRepositoryTransaction#commit() committed} or
+     * {@link PathRepositoryTransaction#rollback() rolled back}.
+     * 
+     * @param readonly true if the transaction will not modify any content, or false if changes are to be made
+     * @return the transaction; never null
+     * @see PathRepositoryTransaction#commit()
+     * @see PathRepositoryTransaction#rollback()
+     */
+    public PathRepositoryTransaction startTransaction( boolean readonly ) {
+
+        // Read-only repositories can return a default NOP implementation
+        return new PathRepositoryTransaction() {
+
+            public void commit() {
+            }
+
+            public void rollback() {
+            }
+
+        };
+    }
+
+    public boolean isWritable() {
+        return false;
+    }
 }

@@ -61,6 +61,7 @@ public final class FileSystemI18n {
     public static I18n invalidNameForResource;
     public static I18n invalidPathForResource;
     public static I18n invalidPropertyNames;
+    public static I18n couldNotReadData;
     public static I18n couldNotWriteData;
     public static I18n couldNotUpdateData;
     public static I18n missingRequiredProperty;

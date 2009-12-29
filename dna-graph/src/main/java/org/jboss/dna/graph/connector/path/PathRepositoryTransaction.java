@@ -21,10 +21,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.dna.graph.connector.path;
+
+import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
+
 /**
- * The classes that make up the connector that accesses the files and directories on a local file system and exposes them as content in a repository.
- * This connector is based on the {@link WritablePathRepository path repository framework}.
+ * A transaction returned by the {@link PathRepository#startTransaction(boolean)}.
+ * 
+ * @see MapRepositoryTransaction
  */
+public interface PathRepositoryTransaction {
 
-package org.jboss.dna.connector.filesystem;
+    /**
+     * Commit any changes that have been made to the repository. This method may throw runtime exceptions if there are failures
+     * committing the changes, but the transaction is still expected to be closed.
+     * 
+     * @see #rollback()
+     * @see PathRepository#startTransaction(boolean)
+     */
+    void commit();
 
+    /**
+     * Rollback any changes that have been made to this repository. This method may throw runtime exceptions if there are failures
+     * rolling back the changes, but the transaction is still expected to be closed.
+     * 
+     * @see #commit()
+     * @see PathRepository#startTransaction(boolean)
+     */
+    void rollback();
+
+}

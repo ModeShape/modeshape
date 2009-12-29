@@ -23,17 +23,19 @@
  */
 package org.jboss.dna.connector.filesystem;
 
+import org.jboss.dna.graph.connector.path.PathRepositoryTransaction;
+
 /**
- * A transaction returned by the {@link FileSystemConnection#startTransaction(boolean)}.
+ * A transaction returned by the {@link FileSystemRepository#startTransaction(boolean)}.
  */
-public class FileSystemTransaction {
+public class FileSystemTransaction implements PathRepositoryTransaction {
 
     /**
      * Commit any changes that have been made to the repository. This method may throw runtime exceptions if there are failures
      * committing the changes, but the transaction is still expected to be closed.
      * 
      * @see #rollback()
-     * @see FileSystemConnection#startTransaction(boolean)
+     * @see FileSystemRepository#startTransaction(boolean)
      */
     public void commit() {
     }
@@ -43,7 +45,7 @@ public class FileSystemTransaction {
      * rolling back the changes, but the transaction is still expected to be closed.
      * 
      * @see #commit()
-     * @see FileSystemConnection#startTransaction(boolean)
+     * @see FileSystemRepository#startTransaction(boolean)
      */
     public void rollback() {
     }

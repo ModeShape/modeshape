@@ -76,21 +76,49 @@ public class PathRepositoryConnection implements RepositoryConnection {
             sw = new Stopwatch();
             sw.start();
         }
+
         // Do any commands update/write?
+        PathRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());
         RepositoryContext repositoryContext = this.source.getRepositoryContext();
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        RequestProcessor processor = new PathRequestProcessor(context, this.repository, observer);
+        RequestProcessor processor = new PathRequestProcessor(context, this.repository, observer, source.areUpdatesAllowed());
 
+        boolean commit = true;
         try {
             // Obtain the lock and execute the commands ...
             processor.process(request);
+            if (request.hasError() && !request.isReadOnly()) {
+                // The changes failed, so we need to rollback so we have 'all-or-nothing' behavior
+                commit = false;
+            }
+        } catch (Throwable error) {
+            commit = false;
         } finally {
             try {
                 processor.close();
             } finally {
-                processor.notifyObserverOfChanges();
+                // Now commit or rollback ...
+                try {
+                    if (commit) {
+                        txn.commit();
+                    } else {
+                        // Need to rollback the changes made to the repository ...
+                        txn.rollback();
+                    }
+                } catch (Throwable commitOrRollbackError) {
+                    if (commit && !request.hasError() && !request.isFrozen()) {
+                        // Record the error on the request ...
+                        request.setError(commitOrRollbackError);
+                    }
+                    commit = false; // couldn't do it
+                }
+                if (commit) {
+                    // Now that we've closed our transaction, we can notify the observer of the committed changes ...
+                    processor.notifyObserverOfChanges();
+                }
             }
         }
+
         if (logger.isTraceEnabled()) {
             assert sw != null;
             sw.stop();

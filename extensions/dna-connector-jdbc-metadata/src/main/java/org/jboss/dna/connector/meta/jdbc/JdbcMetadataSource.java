@@ -752,4 +752,23 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
         return metadataCollector;
     }
 
+    public boolean areUpdatesAllowed() {
+        return false;
+    }
+
+    /**
+     * In-memory connectors aren't shared and cannot be loaded from external sources if updates are not allowed. Therefore, in
+     * order to avoid setting up an in-memory connector that is permanently empty (presumably, not a desired outcome), all
+     * in-memory connectors must allow updates.
+     * 
+     * @param updatesAllowed must be true
+     * @throws RepositorySourceException if {@code updatesAllowed != true}.
+     */
+    public void setUpdatesAllowed( boolean updatesAllowed ) {
+        if (updatesAllowed == false) {
+            throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(this.name));
+        }
+
+    }
+
 }

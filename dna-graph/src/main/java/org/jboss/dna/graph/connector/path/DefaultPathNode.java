@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
@@ -22,13 +23,16 @@ public class DefaultPathNode implements PathNode {
     private final Path path;
     private final Map<Name, Property> properties;
     private final List<Segment> childSegments;
+    private final UUID uuid;
     private Set<Name> uniqueChildNames;
 
     public DefaultPathNode( Path path,
+                            UUID uuid,
                             Map<Name, Property> properties,
                             List<Segment> childSegments ) {
         super();
         this.path = path;
+        this.uuid = uuid;
         this.properties = properties;
         this.childSegments = childSegments;
     }
@@ -39,6 +43,10 @@ public class DefaultPathNode implements PathNode {
 
     public Path getPath() {
         return this.path;
+    }
+
+    public UUID getUuid() {
+        return this.uuid;
     }
 
     public Map<Name, Property> getProperties() {
@@ -69,5 +77,6 @@ public class DefaultPathNode implements PathNode {
 
         return null;
     }
+
 
 }

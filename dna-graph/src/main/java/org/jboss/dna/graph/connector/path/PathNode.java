@@ -3,6 +3,7 @@ package org.jboss.dna.graph.connector.path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -20,6 +21,14 @@ public interface PathNode {
      * @return the full path to this node
      */
     public Path getPath();
+
+    /**
+     * Returns the UUID for this node. Only the root node in a {@link PathWorkspace} should have a UUID. All other nodes should
+     * return null from this method.
+     * 
+     * @return the UUID for this node; may be null
+     */
+    public UUID getUuid();
 
     /**
      * Returns the set of child names for this node
@@ -57,5 +66,4 @@ public interface PathNode {
      * @return a map of property names to the property for the given name
      */
     public Map<Name, Property> getProperties();
-
 }

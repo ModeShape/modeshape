@@ -16,14 +16,6 @@ public interface PathWorkspace {
     String getName();
 
     /**
-     * Returns the root node in the workspace. This returns a {@link PathNode map node} where {@code node.getParent() == null} and
-     * {@code node.getPath().isRoot() == true}.
-     * 
-     * @return the root node in the workspace
-     */
-    PathNode getRoot();
-
-    /**
      * Returns the node at the given path, if one exists of {@code null} if no {@PathNode node} exists at the given
      * path.
      * 
@@ -81,5 +73,4 @@ public interface PathWorkspace {
      */
     QueryResults search( ExecutionContext context,
                          String fullTextSearchExpression );
-
 }

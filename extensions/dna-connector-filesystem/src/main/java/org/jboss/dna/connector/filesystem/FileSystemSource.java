@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
@@ -55,7 +54,6 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -67,6 +65,8 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.path.PathRepositoryConnection;
+import org.jboss.dna.graph.connector.path.PathRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Property;
@@ -77,7 +77,7 @@ import org.jboss.dna.graph.property.Property;
  * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
  */
 @ThreadSafe
-public class FileSystemSource implements RepositorySource, ObjectFactory {
+public class FileSystemSource implements PathRepositorySource, ObjectFactory {
 
     /**
      * An immutable {@link CustomPropertiesFactory} implementation that is used by default when none is provided. Note that this
@@ -148,8 +148,9 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                                                                                                   SUPPORTS_EVENTS,
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
-    private transient CachePolicy cachePolicy;
-    private transient Map<String, File> availableWorkspaces;
+    private transient RepositoryContext repositoryContext;
+    private transient CachePolicy defaultCachePolicy;
+    private transient FileSystemRepository repository;
     private volatile CustomPropertiesFactory customPropertiesFactory;
 
     /**
@@ -235,6 +236,22 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setExclusionPattern( String exclusionPattern ) {
         this.exclusionPattern = exclusionPattern;
+    }
+
+    FilenameFilter filenameFilter() {
+        FilenameFilter filenameFilter = null;
+        final String filterPattern = exclusionPattern;
+        if (filterPattern != null) {
+            filenameFilter = new FilenameFilter() {
+                Pattern filter = Pattern.compile(filterPattern);
+
+                public boolean accept( File dir,
+                                       String name ) {
+                    return !filter.matcher(name).matches();
+                }
+            };
+        }
+        return filenameFilter;
     }
 
     /**
@@ -413,7 +430,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     public synchronized void setCacheTimeToLiveInMilliseconds( int cacheTimeToLive ) {
         if (cacheTimeToLive < 0) cacheTimeToLive = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS;
         this.cacheTimeToLiveInMilliseconds = cacheTimeToLive;
-        this.cachePolicy = cacheTimeToLiveInMilliseconds > 0 ? new FileSystemCachePolicy(cacheTimeToLiveInMilliseconds) : null;
+        this.defaultCachePolicy = cacheTimeToLiveInMilliseconds > 0 ? new FileSystemCachePolicy(cacheTimeToLiveInMilliseconds) : null;
     }
 
     /**
@@ -423,6 +440,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     public synchronized CustomPropertiesFactory getCustomPropertiesFactory() {
         return customPropertiesFactory;
+    }
+
+    CustomPropertiesFactory customPropertiesFactory() {
+        return customPropertiesFactory != null ? customPropertiesFactory : DEFAULT_PROPERTIES_FACTORY;
     }
 
     /**
@@ -440,7 +461,17 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public synchronized void initialize( RepositoryContext context ) throws RepositorySourceException {
-        // No need to do anything
+        this.repositoryContext = context;
+    }
+
+    @Override
+    public RepositoryContext getRepositoryContext() {
+        return this.repositoryContext;
+    }
+
+    @Override
+    public CachePolicy getDefaultCachePolicy() {
+        return defaultCachePolicy;
     }
 
     /**
@@ -542,18 +573,6 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         return null;
     }
 
-    private String pathFor( String workspaceName ) {
-        String path = workspaceName;
-        if (this.workspaceRootPath != null) {
-            if (this.workspaceRootPath.charAt(workspaceRootPath.length() - 1) == File.separatorChar) {
-                path = this.workspaceRootPath + workspaceName;
-            }
-            path = this.workspaceRootPath + File.separatorChar + workspaceName;
-        }
-
-        return path;
-    }
-
     /**
      * {@inheritDoc}
      * 
@@ -566,62 +585,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
 
-        if (this.availableWorkspaces == null) {
-            // Set up the predefined workspace names ...
-            this.availableWorkspaces = new ConcurrentHashMap<String, File>();
-            for (String predefined : this.predefinedWorkspaces) {
-                // Look for the file at this path ...
-                File file = new File(pathFor(predefined));
-                if (!file.exists()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, predefined, name);
-                } else if (!file.isDirectory()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, predefined, name);
-                } else if (!file.canRead()) {
-                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, predefined, name);
-                }
-
-                this.availableWorkspaces.put(predefined, file);
-            }
-        }
-
-        if (defaultWorkspaceName != null) {
-            // Look for the file at this path ...
-            File file = new File(pathFor(defaultWorkspaceName));
-            if (!file.exists()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist,
-                                                  defaultWorkspaceName,
-                                                  name);
-            } else if (!file.isDirectory()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory,
-                                                  defaultWorkspaceName,
-                                                  name);
-            } else if (!file.canRead()) {
-                Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead,
-                                                  defaultWorkspaceName,
-                                                  name);
-            }
-
-            this.availableWorkspaces.put(defaultWorkspaceName, file);
-        }
-
-        FilenameFilter filenameFilter = null;
-        if (exclusionPattern != null) {
-            final String filterPattern = exclusionPattern;
-            filenameFilter = new FilenameFilter() {
-                Pattern filter = Pattern.compile(filterPattern);
-
-                public boolean accept( File dir,
-                                       String name ) {
-                    return !filter.matcher(name).matches();
-                }
-            };
-        }
-
-        CustomPropertiesFactory propFactory = customPropertiesFactory != null ? customPropertiesFactory : DEFAULT_PROPERTIES_FACTORY;
-        return new FileSystemConnection(name, defaultWorkspaceName, availableWorkspaces, isCreatingWorkspacesAllowed(),
-                                        cachePolicy, rootNodeUuid, workspaceRootPath, maxPathLength, filenameFilter,
-                                        getUpdatesAllowed(), propFactory);
+        if (repository == null) repository = new FileSystemRepository(this);
+        return new PathRepositoryConnection(this, repository);
     }
+
 
     /**
      * {@inheritDoc}
@@ -629,7 +596,6 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#close()
      */
     public synchronized void close() {
-        this.availableWorkspaces = null;
     }
 
     protected static class StandardPropertiesFactory implements CustomPropertiesFactory {
