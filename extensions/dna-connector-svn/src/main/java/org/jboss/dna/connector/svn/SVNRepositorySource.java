@@ -62,7 +62,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * The first serialized version of this source. Version {@value} .
      */
     private static final long serialVersionUID = 1L;
-
+    
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String SVN_REPOSITORY_ROOT_URL = "repositoryRootURL";
     protected static final String SVN_USERNAME = "username";
@@ -165,7 +165,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * @param url - the url location.
      * @throws IllegalArgumentException If svn url is null or empty
      */
-    public void setRepositoryRootURL( String url ) {
+    public synchronized void setRepositoryRootURL( String url ) {
         CheckArg.isNotEmpty(url, "RepositoryRootURL");
         this.repositoryRootURL = url;
     }
@@ -177,7 +177,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * @param username
      */
-    public void setUsername( String username ) {
+    public synchronized void setUsername( String username ) {
         this.username = username;
     }
 
@@ -188,7 +188,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * @param password
      */
-    public void setPassword( String password ) {
+    public synchronized void setPassword( String password ) {
         this.password = password;
     }
 
@@ -276,6 +276,29 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
                                                         capabilities.supportsEvents(), allowWorkspaceCreation,
+                                                        capabilities.supportsReferences());
+    }
+    
+    /**
+     * Get whether this source allows updates.
+     * 
+     * @return true if this source allows updates by clients, or false if no updates are allowed
+     * @see #setUpdatesAllowed(boolean)
+     */
+    public boolean areUpdatesAllowed() {
+        return capabilities.supportsUpdates();
+    }
+    
+    /**
+     * Set whether this source allows updates to data within workspaces
+     * 
+     * @param allowUpdates true if this source allows updates to data within workspaces clients, or false if updates are not
+     *        allowed.
+     * @see #areUpdatesAllowed()
+     */
+    public synchronized void setUpdatesAllowed( boolean allowUpdates ) {
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowUpdates,
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
                                                         capabilities.supportsReferences());
     }
 

@@ -53,6 +53,16 @@ public final class SVNRepositoryConnectorI18n {
     public static I18n sameNameSiblingsAreNotAllowed;
     public static I18n onlyTheDefaultNamespaceIsAllowed;
     public static I18n unableToCreateWorkspaces;
+    public static I18n pathForRequestIsNotCorrect;
+    public static I18n pathForRequestMustStartWithAForwardSlash;
+    public static I18n nodeAlreadyExist;
+    public static I18n unsupportedPrimaryType;
+    public static I18n invalidPropertyNames;
+    public static I18n invalidNameForResource;
+    public static I18n invalidPathForResource;
+    public static I18n missingRequiredProperty;
+    public static I18n couldNotCreateFile;
+    public static I18n couldNotReadData;
 
     static {
         try {
@@ -73,4 +83,6 @@ public final class SVNRepositoryConnectorI18n {
     public static Set<String> getLocalizationProblems( Locale locale ) {
         return I18n.getLocalizationProblems(SVNRepositoryConnectorI18n.class, locale);
     }
+
+  
 }

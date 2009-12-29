@@ -23,30 +23,38 @@
  */
 package org.jboss.dna.connector.svn;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionFactory;
+import org.jboss.dna.connector.svn.mgnt.AddDirectory;
+import org.jboss.dna.connector.svn.mgnt.AddFile;
+import org.jboss.dna.connector.svn.mgnt.MergeFile;
+import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.BinaryFactory;
 import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
@@ -79,9 +87,7 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNProperty;
-import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
-import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
 
 /**
  * The {@link RequestProcessor} implementation for the file subversion repository connector. This is the class that does the bulk
@@ -92,6 +98,31 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     protected static final String BACK_SLASH = "/";
 
     private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+
+    /**
+     * Only certain properties are tolerated when writing content (dna:resource or jcr:resource) nodes. These properties are
+     * implicitly stored (primary type, data) or silently ignored (encoded, mimetype, last modified). The silently ignored
+     * properties must be accepted to stay compatible with the JCR specification.
+     */
+    private final Set<Name> ALLOWABLE_PROPERTIES_FOR_CONTENT = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                             Arrays.asList(new Name[] {
+                                                                                                                 JcrLexicon.PRIMARY_TYPE,
+                                                                                                                 JcrLexicon.DATA,
+                                                                                                                 JcrLexicon.ENCODED,
+                                                                                                                 JcrLexicon.MIMETYPE,
+                                                                                                                 JcrLexicon.LAST_MODIFIED,
+                                                                                                                 JcrLexicon.UUID,
+                                                                                                                 DnaIntLexicon.NODE_DEFINITON})));
+    /**
+     * Only certain properties are tolerated when writing files (nt:file) or folders (nt:folder) nodes. These properties are
+     * implicitly stored in the file or folder (primary type, created).
+     */
+    private final Set<Name> ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                                    Arrays.asList(new Name[] {
+                                                                                                                        JcrLexicon.PRIMARY_TYPE,
+                                                                                                                        JcrLexicon.CREATED,
+                                                                                                                        JcrLexicon.UUID,
+                                                                                                                        DnaIntLexicon.NODE_DEFINITON})));
 
     private final String defaultNamespaceUri;
     private final boolean updatesAllowed;
@@ -321,7 +352,288 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        updatesAllowed(request);
+        logger.trace(request.toString());
+        if (!updatesAllowed(request)) return;
+
+        // continue
+        Path parentPath = getPathFor(request.under(), request);
+        if (parentPath == null) return;
+
+        // svn connector does not support same name sibling
+        sameNameSiblingIsNotSupported(parentPath, request);
+
+        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
+        assert workspaceRoot != null;
+
+        SVNNodeKind parent = getSVNNodeKindFor(workspaceRoot, parentPath, request.under(), request.inWorkspace(), request);
+        if (parent == null) {
+            return;
+        }
+
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+        // New name to commit into the svn repos workspace
+        String newName = request.named().getString(registry);
+
+        // Collect all the properties of the node in a hash map
+        Map<Name, Property> properties = new HashMap<Name, Property>(request.properties().size());
+        for (Property property : request.properties()) {
+            properties.put(property.getName(), property);
+        }
+
+        Property primaryTypeProp = properties.get(JcrLexicon.PRIMARY_TYPE);
+        Name primaryType = primaryTypeProp == null ? null : nameFactory().create(primaryTypeProp.getFirstValue());
+
+        Path newPath = pathFactory().create(parentPath, request.named());
+        Location actualLocation = Location.create(newPath);
+
+        String newChildPath = null;
+
+        // File
+        if (JcrNtLexicon.FILE.equals(primaryType)) {
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            // Parent node already exist
+            boolean skipWrite = false;
+
+            if (request.under().getPath().isRoot()) {
+
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    newChildPath = newName;
+                } else {
+                    newChildPath = "/" + newName;
+                }
+            } else {
+
+                newChildPath = getPathAsString(request.under().getPath()) + "/" + newName;
+
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    newChildPath = newChildPath.substring(1);
+                }
+            }
+
+            // check if the new name already exist
+            if (SVNRepositoryUtil.exists(workspaceRoot, newChildPath)) {
+                if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
+                    I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                    throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
+                } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
+                    skipWrite = true;
+                }
+            }
+            // Don't try to write if the node conflict behavior is DO_NOT_REPLACE
+            if (!skipWrite) {
+                // create a new, empty file
+                if (newChildPath != null) {
+                    try {
+                        String rootPath = null;
+                        if (request.under().getPath().isRoot()) {
+                            rootPath = "";
+                        } else {
+                            rootPath = getPathAsString(request.under().getPath());
+                        }
+                        newFile(rootPath, newName, "".getBytes(), null, request.inWorkspace(), this.defaultWorkspace);
+                    } catch (SVNException e) {
+                        I18n msg = SVNRepositoryConnectorI18n.couldNotCreateFile;
+                        request.setError(new RepositorySourceException(getSourceName(),
+                                                                       msg.text(getPathAsString(request.under().getPath()),
+                                                                                request.inWorkspace(),
+                                                                                getSourceName(),
+                                                                                e.getMessage()), e));
+                        return;
+                    }
+                }
+            }
+        } else if (JcrNtLexicon.RESOURCE.equals(primaryType) || DnaLexicon.RESOURCE.equals(primaryType)) { // Resource
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
+            if (request.under().getPath().isRoot()) {
+                newChildPath = getPathAsString(parentPath);
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    newChildPath = getPathAsString(parentPath).substring(1);
+                }
+            } else {
+                newChildPath = getPathAsString(parentPath);
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    newChildPath = newChildPath.substring(1);
+                }
+            }
+
+            if (!JcrLexicon.CONTENT.equals(request.named())) {
+                I18n msg = SVNRepositoryConnectorI18n.invalidNameForResource;
+                String nodeName = request.named().getString(registry);
+                request.setError(new RepositorySourceException(getSourceName(),
+                                                               msg.text(getPathAsString(request.under().getPath()),
+                                                                        request.inWorkspace(),
+                                                                        getSourceName(),
+                                                                        nodeName)));
+                return;
+            }
+
+            if (parent != SVNNodeKind.FILE) {
+                I18n msg = SVNRepositoryConnectorI18n.invalidPathForResource;
+                request.setError(new RepositorySourceException(getSourceName(),
+                                                               msg.text(getPathAsString(request.under().getPath()),
+                                                                        request.inWorkspace(),
+                                                                        getSourceName())));
+                return;
+            }
+
+            boolean skipWrite = false;
+            if (parent != SVNNodeKind.NONE || parent != SVNNodeKind.UNKNOWN) {
+                if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
+                    I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                    throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
+                } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
+                    // TODO check if the file already has content
+                    skipWrite = true;
+                }
+            }
+
+            if (!skipWrite) {
+                Property dataProperty = properties.get(JcrLexicon.DATA);
+                if (dataProperty == null) {
+                    I18n msg = SVNRepositoryConnectorI18n.missingRequiredProperty;
+                    String dataPropName = JcrLexicon.DATA.getString(registry);
+                    request.setError(new RepositorySourceException(getSourceName(),
+                                                                   msg.text(getPathAsString(request.under().getPath()),
+                                                                            request.inWorkspace(),
+                                                                            getSourceName(),
+                                                                            dataPropName)));
+                    return;
+                }
+
+                BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                Binary binary = binaryFactory.create(properties.get(JcrLexicon.DATA).getFirstValue());
+                // get old data
+                ByteArrayOutputStream contents = new ByteArrayOutputStream();
+                SVNProperties svnProperties = new SVNProperties();
+                try {
+                    workspaceRoot.getFile(newChildPath, -1, svnProperties, contents);
+                    byte[] oldData = contents.toByteArray();
+                    // modify the empty old data with the new resource
+                    if (oldData != null) {
+                        String rootPath = null;
+                        String fileName = null;
+
+                        Path p = request.under().getPath();
+                        rootPath = getPathAsString(p.getAncestor(1));
+                        fileName = p.getLastSegment().getString(registry);
+
+                        if (request.under().getPath().isRoot()) {
+                            rootPath = "";
+                        }
+
+                        modifyFile(rootPath,
+                                   fileName,
+                                   oldData,
+                                   binary.getBytes(),
+                                   null,
+                                   request.inWorkspace(),
+                                   this.defaultWorkspace);
+                    }
+                } catch (SVNException e) {
+                    I18n msg = SVNRepositoryConnectorI18n.couldNotReadData;
+                    request.setError(new RepositorySourceException(getSourceName(),
+                                                                   msg.text(getPathAsString(request.under().getPath()),
+                                                                            request.inWorkspace(),
+                                                                            getSourceName(),
+                                                                            e.getMessage()), e));
+                    return;
+                }
+            }
+
+        } else if (JcrNtLexicon.FOLDER.equals(primaryType) || primaryType == null) { // Folder
+            ensureValidProperties(request.properties(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
+            try {
+                String rootDirPath = getPathAsString(request.under().getPath());
+                mkdir(rootDirPath, newName, null, request.inWorkspace(), workspaceRoot);
+            } catch (SVNException e) {
+                I18n msg = SVNRepositoryConnectorI18n.couldNotCreateFile;
+                request.setError(new RepositorySourceException(getSourceName(),
+                                                               msg.text(getPathAsString(request.under().getPath()),
+                                                                        request.inWorkspace(),
+                                                                        getSourceName(),
+                                                                        e.getMessage()), e));
+                return;
+            }
+        } else {
+            I18n msg = SVNRepositoryConnectorI18n.unsupportedPrimaryType;
+            request.setError(new RepositorySourceException(getSourceName(), msg.text(primaryType.getString(registry),
+                                                                                     getPathAsString(request.under().getPath()),
+                                                                                     request.inWorkspace(),
+                                                                                     getSourceName())));
+            return;
+        }
+
+        request.setActualLocationOfNode(actualLocation);
+    }
+
+    /**
+     * @param workspaceRoot
+     * @param path
+     * @param location
+     * @param inWorkspace
+     * @param request
+     * @return a svn node kind
+     */
+    protected SVNNodeKind getSVNNodeKindFor( SVNRepository workspaceRoot,
+                                             Path path,
+                                             Location location,
+                                             String inWorkspace,
+                                             Request request ) {
+        assert path != null;
+        assert location != null;
+        assert request != null;
+
+        SVNNodeKind rootNode = SVNRepositoryUtil.checkThePath(workspaceRoot, "", -1, getSourceName());
+
+        if (rootNode != SVNNodeKind.DIR) return null;
+
+        if (path.isRoot()) {
+            return rootNode;
+        }
+
+        // See if the path is a "jcr:content" node ...
+        if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            // We only want to use the parent path to find the actual file ...
+            path = path.getParent();
+        }
+        SVNNodeKind kind = rootNode;
+        for (Path.Segment segment : path) {
+            if (segment.getIndex() > 1) {
+                I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+            }
+        }
+
+        String currentPath = getPathAsString(path);
+        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+            if (currentPath.startsWith("/")) {
+                currentPath = currentPath.substring(1);
+            }
+        }
+        kind = SVNRepositoryUtil.checkThePath(workspaceRoot, currentPath, -1, getSourceName());
+
+        if (kind != null) {
+            if (kind == SVNNodeKind.NONE || kind == SVNNodeKind.UNKNOWN) {
+                // Unable to complete the path, so prepare the exception by determining the lowest path that exists ...
+                request.setError(new RepositorySourceException(getSourceName(), " Node kind with path " + currentPath
+                                                                                + " is missing or actually unknown"));
+                return null;
+            }
+        }
+
+        assert kind != null;
+        return kind;
+    }
+
+    private void sameNameSiblingIsNotSupported( Path path,
+                                                CreateNodeRequest request ) {
+        for (Path.Segment segment : path) {
+            // Verify the segment is valid ...
+            if (segment.getIndex() > 1) {
+                I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+            }
+        }
     }
 
     /**
@@ -681,44 +993,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
-     * Open the directories where change has to be made.
-     * 
-     * @param editor - abstract editor.
-     * @param rootPath - the pa to open.
-     * @throws SVNException when a error occur.
-     */
-    protected static void openDirectories( ISVNEditor editor,
-                                           String rootPath ) throws SVNException {
-        assert rootPath != null;
-        int pos = rootPath.indexOf('/', 0);
-        while (pos != -1) {
-            String dir = rootPath.substring(0, pos);
-            editor.openDir(dir, -1);
-            pos = rootPath.indexOf('/', pos + 1);
-        }
-        String dir = rootPath.substring(0, rootPath.length());
-        editor.openDir(dir, -1);
-    }
-
-    /**
-     * Close the directories where change was made.
-     * 
-     * @param editor - the abstract editor.
-     * @param path - the directories to open.
-     * @throws SVNException when a error occur.
-     */
-    protected static void closeDirectories( ISVNEditor editor,
-                                            String path ) throws SVNException {
-        int length = path.length() - 1;
-        int pos = path.lastIndexOf('/', length);
-        editor.closeDir();
-        while (pos != -1) {
-            editor.closeDir();
-            pos = path.lastIndexOf('/', pos - 1);
-        }
-    }
-
-    /**
      * Get the last revision.
      * 
      * @param repos
@@ -736,94 +1010,49 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
-     * Add directory in a repository
-     * 
-     * @param repository - the repository.
-     * @param root - the root path has to exist.
-     * @param child - new path to be added.
-     * @param message - information about the change action.
-     * @throws SVNException when a error occur.
-     */
-    protected void addDirEntry( SVNRepository repository,
-                                String root,
-                                String child,
-                                String message ) throws SVNException {
-        assert root.trim().length() != 0;
-        SVNNodeKind rootKind = repository.checkPath(root, -1);
-        if (rootKind == SVNNodeKind.UNKNOWN) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "path with name '{0}' is unknown in the repository",
-                                                         root);
-            throw new SVNException(err);
-        } else if (rootKind == SVNNodeKind.NONE) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "path with name '{0}' is missing in the repository",
-                                                         root);
-            throw new SVNException(err);
-        } else if (rootKind == SVNNodeKind.FILE) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "path with name '{0}' is a file, you need a directory",
-                                                         root);
-            throw new SVNException(err);
-        } else if (rootKind == SVNNodeKind.DIR) {
-            ISVNEditor editor = repository.getCommitEditor(message, null, true, null);
-            if (root.length() == 1 && root.charAt(0) == '/') {
-                addProcess(repository, editor, root, "", child);
-            } else {
-                String rootPath = root.substring(1);
-                addProcess(repository, editor, rootPath, null, child);
-            }
-        }
-    }
-
-    private void addProcess( SVNRepository repos,
-                             ISVNEditor editor,
-                             String rootPath,
-                             String editedRoot,
-                             String childSegmentName ) throws SVNException {
-        openDirectories(editor, editedRoot);
-        // test if so a directory does not exist.
-        SVNNodeKind childKind = repos.checkPath(childSegmentName, -1);
-        if (childKind == SVNNodeKind.NONE) {
-            editor.addDir(childSegmentName, null, -1);
-            closeDirectories(editor, childSegmentName);
-            if (editedRoot != null) {
-                closeDirectories(editor, editedRoot);
-            } else {
-                closeDirectories(editor, rootPath);
-            }
-
-        } else {
-            closeDirectories(editor, childSegmentName);
-            if (editedRoot != null) {
-                closeDirectories(editor, editedRoot);
-            } else {
-                closeDirectories(editor, rootPath);
-            }
-        }
-    }
-
-    /**
      * Create a directory .
      * 
-     * @param repos
-     * @param root - the root directory where the created directory will reside
-     * @param childName - the name of the created directory.
-     * @param message - comment for the creation.
+     * @param rootDirPath - the root directory where the created directory will reside
+     * @param childDirPath - the name of the created directory.
+     * @param comment - comment for the creation.
+     * @param inWorkspace
+     * @param currentRepository
      * @throws SVNException - if during the creation, there is an error.
      */
-    @SuppressWarnings( "unused" )
-    private void mkdir( SVNRepository repos,
-                        String root,
-                        String childName,
-                        String message ) throws SVNException {
-        SVNNodeKind childKind = repos.checkPath(childName, -1);
-        if (childKind == SVNNodeKind.NONE) {
-            ScmAction addNodeAction = addDirectory(root, childName);
-            SVNActionExecutor executor = new SVNActionExecutor(repos);
-            executor.execute(addNodeAction, message);
+    private void mkdir( String rootDirPath,
+                        String childDirPath,
+                        String comment,
+                        String inWorkspace,
+                        SVNRepository currentRepository ) throws SVNException {
+
+        String tempParentPath = rootDirPath;
+        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
+                tempParentPath = tempParentPath.substring(1);
+            } else if (tempParentPath.equals("/")) {
+                tempParentPath = "";
+            }
+        }
+        String checkPath = tempParentPath.length() == 0 ? childDirPath : tempParentPath + "/" + childDirPath;
+        SVNNodeKind nodeKind = null;
+        try {
+            nodeKind = currentRepository.checkPath(checkPath, -1);
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
+                                                         e.getMessage());
+            throw new SVNException(err);
+        }
+
+        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
+            ScmAction addNodeAction = addDirectory(rootDirPath, childDirPath);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "Create a new file " + childDirPath : comment;
+            executor.execute(addNodeAction, comment);
         } else {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Item with name '{0}' can't be created", childName);
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "Node with name '{0}' can't be created",
+                                                         childDirPath);
             throw new SVNException(err);
         }
     }
@@ -831,28 +1060,109 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     /**
      * Create a file.
      * 
-     * @param path
-     * @param file
+     * @param rootDirPath
+     * @param childFilePath
      * @param content
-     * @param message
+     * @param comment
+     * @param inWorkspace
+     * @param currentRepository
      * @throws SVNException
      */
-    @SuppressWarnings( "unused" )
-    private void newFile( String path,
-                          String file,
-                          byte[] content,
-                          String message ) throws SVNException {
-        SVNNodeKind childKind = defaultWorkspace.checkPath(file, -1);
-        if (childKind == SVNNodeKind.NONE) {
-            ScmAction addFileNodeAction = addFile(path, file, content);
-            SVNActionExecutor executor = new SVNActionExecutor(defaultWorkspace);
-            executor.execute(addFileNodeAction, message);
+    public void newFile( String rootDirPath,
+                         String childFilePath,
+                         byte[] content,
+                         String comment,
+                         String inWorkspace,
+                         SVNRepository currentRepository ) throws SVNException {
+
+        String tempParentPath = rootDirPath;
+        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
+                tempParentPath = tempParentPath.substring(1);
+            }
+        }
+        String checkPath = tempParentPath + "/" + childFilePath;
+        SVNNodeKind nodeKind = null;
+        try {
+            nodeKind = currentRepository.checkPath(checkPath, -1);
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
+                                                         e.getMessage());
+            throw new SVNException(err);
+        }
+
+        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
+            ScmAction addFileNodeAction = addFile(rootDirPath, childFilePath, content);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "Create a new file " + childFilePath : comment;
+            executor.execute(addFileNodeAction, comment);
         } else {
             SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
                                                          "Item with name '{0}' can't be created (already exist)",
-                                                         file);
+                                                         childFilePath);
             throw new SVNException(err);
         }
+    }
+
+    /**
+     * Modify a file
+     * 
+     * @param rootPath
+     * @param fileName
+     * @param oldData
+     * @param newData
+     * @param comment
+     * @param inWorkspace
+     * @param currentRepository
+     * @throws SVNException
+     */
+    private void modifyFile( String rootPath,
+                             String fileName,
+                             byte[] oldData,
+                             byte[] newData,
+                             String comment,
+                             String inWorkspace,
+                             SVNRepository currentRepository ) throws SVNException {
+        assert rootPath != null;
+        assert fileName != null;
+        assert oldData != null;
+        assert inWorkspace != null;
+        assert currentRepository != null;
+
+        try {
+
+            if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+                if (rootPath.equals("/")) {
+                    rootPath = "";
+                } else {
+                    rootPath = rootPath.substring(1) + "/";
+                }
+            } else {
+                if (!rootPath.equals("/")) {
+                    rootPath = rootPath + "/";
+                }
+            }
+            String path = rootPath + fileName;
+
+            SVNNodeKind nodeKind = currentRepository.checkPath(path, -1);
+            if (nodeKind == SVNNodeKind.NONE || nodeKind == SVNNodeKind.UNKNOWN) {
+                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.ENTRY_NOT_FOUND,
+                                                             "Item with name '{0}' can't be found",
+                                                             path);
+                throw new SVNException(err);
+            }
+
+            ScmAction modifyFileAction = mergeFile(rootPath, fileName, oldData, newData);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "modify the " + fileName : comment;
+            executor.execute(modifyFileAction, comment);
+
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "This error is appeared: '{0}'", e.getMessage());
+            throw new SVNException(err);
+        }
+
     }
 
     /**
@@ -874,6 +1184,18 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                               String file,
                               byte[] content ) {
         return new AddFile(path, file, content);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#mergeFile(java.lang.String, java.lang.String, byte[], byte[])
+     */
+    public ScmAction mergeFile( String rootPath,
+                                String fileName,
+                                byte[] oldData,
+                                byte[] newData ) {
+        return new MergeFile(rootPath, fileName, oldData, newData);
     }
 
     /**
@@ -906,66 +1228,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return null;
     }
 
-    /**
-     * root should be the last, previously created, parent folder. Each directory in the path will be created.
-     */
-    public static class AddDirectory implements ScmAction {
-        private String root;
-        private String path;
-
-        public AddDirectory( String root,
-                             String path ) {
-            this.root = root;
-            this.path = path;
-        }
-
-        public void applyAction( Object context ) throws SVNException {
-
-            ISVNEditor editor = (ISVNEditor)context;
-
-            openDirectories(editor, this.root);
-            String[] paths = this.path.split("/");
-            String newPath = this.root;
-            for (int i = 0, length = paths.length; i < length; i++) {
-                newPath = (newPath.length() != 0) ? newPath + "/" + paths[i] : paths[i];
-
-                editor.addDir(newPath, null, -1);
-            }
-
-            closeDirectories(editor, path);
-            closeDirectories(editor, this.root);
-        }
-    }
-
-    public static class AddFile implements ScmAction {
-        private String path;
-        private String file;
-        private byte[] content;
-
-        public AddFile( String path,
-                        String file,
-                        byte[] content ) {
-            this.path = path;
-            this.file = file;
-            this.content = content;
-        }
-
-        public void applyAction( Object context ) throws Exception {
-            ISVNEditor editor = (ISVNEditor)context;
-            openDirectories(editor, path);
-
-            editor.addFile(path + "/" + file, null, -1);
-            editor.applyTextDelta(path + "/" + file, null);
-            SVNDeltaGenerator deltaGenerator = new SVNDeltaGenerator();
-            String checksum = deltaGenerator.sendDelta(path + "/" + file, new ByteArrayInputStream(this.content), editor, true);
-            editor.closeFile(path + "/" + file, checksum);
-
-            closeDirectories(editor, path);
-
-        }
-
-    }
-
     @SuppressWarnings( "unused" )
     private byte[] getContent( Object[] objs ) {
         byte[] content = null;
@@ -995,11 +1257,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                 I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
                 throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
             }
-            // TODO
-            // if (!segment.getName().getNamespaceUri().equals(defaultNamespaceUri)) {
-            // I18n msg = SVNRepositoryConnectorI18n.onlyTheDefaultNamespaceIsAllowed;
-            // throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
-            // }
         }
     }
 
@@ -1045,5 +1302,31 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                                             SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(pathAsString));
         }
         return kind;
+    }
+
+    /**
+     * Checks that the collection of {@code properties} only contains properties with allowable names.
+     * 
+     * @param properties
+     * @param validPropertyNames
+     * @throws RepositorySourceException if {@code properties} contains a
+     * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
+     * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
+     */
+    protected void ensureValidProperties( Collection<Property> properties,
+                                          Set<Name> validPropertyNames ) {
+        List<String> invalidNames = new LinkedList<String>();
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+
+        for (Property property : properties) {
+            if (!validPropertyNames.contains(property.getName())) {
+                invalidNames.add(property.getName().getString(registry));
+            }
+        }
+
+        if (!invalidNames.isEmpty()) {
+            throw new RepositorySourceException(this.getSourceName(),
+                                                SVNRepositoryConnectorI18n.invalidPropertyNames.text(invalidNames.toString()));
+        }
     }
 }
