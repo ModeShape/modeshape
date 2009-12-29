@@ -211,10 +211,11 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				JBoss DNA does not currently support any of the optional JCR features.  Currently, the observation optional feature is planned to be complete prior
-				to the 1.0 release.  The locking optional feature <emphasis>may</emphasis> be implemented in this time frame as well.  
+				JBoss DNA does currently supports the optional JCR locking feature.  Currently, the observation optional feature is planned to be complete prior
+				to the 1.0 release.  
 				<note>
-					<para>The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
+					<para>
+						The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
 					</para>
 				</note>
 			</para>
@@ -227,9 +228,11 @@ final &LoginContext; loginContext = ...;
 				and workspace level.
 			</para>
 			<para>
-				JBoss DNA has extended the set of JCR-defined actions ("add_node", "set_property", "remove", and "read") with additional actions ("register_type" and 
-				"register_namespace") that restrict the ability to register (and unregister) types and namespaces, respectively.  Permissions to perform these actions are aggregated in roles that
-				can be assigned to users. 
+				JBoss DNA has extended the set of JCR-defined actions ("add_node", "set_property", "remove", and "read") with additional actions ("register_type",  
+				"register_namespace", and "unlock_any").  The register_type and register_namespace permissions restrict the ability to register (and unregister) types and namespaces, respectively.
+				The unlock_any permission grants the user the ability to unlock any locked node or branch (as opposed to users without that permission who can only unlock nodes or branches that they 
+				have locked themselves or for which they hold the lock token).  
+				Permissions to perform these actions are aggregated in roles that can be assigned to users. 
 			</para>
 			<para>
 				JBoss DNA currently defines three roles: <code>READONLY</code>, <code>READWRITE</code>, and <code>ADMIN</code>.  If the &Credentials; passed into 
@@ -289,6 +292,12 @@ final &LoginContext; loginContext = ...;
 					<entry></entry>
 					<entry>Allows</entry>
 				</row>
+				<row>
+					<entry>unlock_any</entry>
+					<entry></entry>
+					<entry></entry>
+					<entry>Allows</entry>
+				</row>
 			</tbody>
 		</tgroup>
 	</table>
@@ -344,11 +353,11 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Built-In Node Types</title>
 			<para>JBoss DNA supports all of the built-in node types described in the JSR-170 specification.  However, several of these node types
-			(mix:lockable, mix:versionable, nt:version, nt:versionLabels, nt:versionHistory, and nt:frozenNode) are semantically meaningless
-			as JBoss DNA does not yet support the locking or versioning optional features.
+			(mix:versionable, nt:version, nt:versionLabels, nt:versionHistory, and nt:frozenNode) are semantically meaningless
+			as JBoss DNA does not yet support the versioning optional feature.
 			</para>
 			<para>Although JBoss DNA does define some custom node types in the <code>dna</code> namespace, none of these
-			node types are intended to be used by developers integrating with JBoss DNA and may be changed or removed
+			node types except for <code>dna:resource</code> are intended to be used by developers integrating with JBoss DNA and may be changed or removed
 			at any time.
 			</para>
 		</sect2>
@@ -375,9 +384,10 @@ final &LoginContext; loginContext = ...;
 				Node types can be defined like so:
 	    <programlisting>
 &Session; session = ... ;
+&Workspace; workspace = session.getWorkspace();
 
 // Obtain the DNA-specific node type manager ...
-&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) session.getWorkspace().getNodeTypeManager();
+&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
 
 // Declare a mixin node type named "searchable" (with no namespace)
 &NodeTypeTemplate; nodeType = nodeTypeManager.createNodeTypeTemplate();
@@ -429,7 +439,8 @@ if (!nodeTypeSource.isValid()) {
 
 &Session; session = ... ;
 // Obtain the DNA-specific node type manager ...
-&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) session.getWorkspace().getNodeTypeManager();
+&Workspace; workspace = session.getWorkspace();
+&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
 nodeTypeManager.registerNodeTypes(nodeTypeSource);
 </programlisting>
     The &CndNodeTypeSource; class actually implements the &JcrNodeTypeSource; interface, so other implementations can actually be defined.

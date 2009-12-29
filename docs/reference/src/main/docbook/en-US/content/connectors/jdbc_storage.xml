@@ -29,7 +29,7 @@
 %CustomDTD;
 ]>
 <chapter id="jdbc-storage-connector">
-  <title>JDBC Storage (JPA) Connector</title>
+  <title>JPA Connector</title>
   <para>
 		This connector stores a graph of any structure or size in a relational database, using a JPA provider on top of a JDBC driver. 
 		Currently this connector relies upon some Hibernate-specific capabilities.  The schema of the database is dictated by this
@@ -62,7 +62,7 @@
 				</row>
 				<row>
 					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, defines the UUID of the root node in the in-memory repository.  If not used,
+					<entry>Optional property that, if used, defines the UUID of the root node in the repository.  If not used,
 						then a new UUID is generated.</entry>
 				</row>
 				<row>
@@ -251,24 +251,63 @@
 			</tbody>
 		</tgroup>
 	</table>
-	<para>
-		The JPA connector is used by creating in the &JcrConfiguration; a repository source that uses the &JpaSource; class.
+ 	<para>
+		One way to configure the JPA connector is to create &JcrConfiguration; instance with a repository source that uses the &JpaSource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("source A")
+config.repositorySource("JPA Store")
       .usingClass(JpaSource.class)
       .setDescription("The database store for our content")
       .setProperty("dialect", "org.hibernate.dialect.MySQLDialect")
       .setProperty("dataSourceJndiName", "java:/MyDataSource")
-      .setProperty("nameOfDefaultWorkspace", "My Default Workspace")
+      .setProperty("defaultWorkspaceName", "My Default Workspace")
       .setProperty("autoGenerateSchema", "validate");
  ]]></programlisting>
-	<para>
+  	<para>
 		Of course, setting other more advanced properties would entail calling <code>setProperty(...)</code> for each.  Since almost all
 		of the properties have acceptable default values, however, we don't need to set very many of them.
 	</para>
+ 	<para>
+		Another way to configure the JPA connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &JpaSource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    can think of these as being similar to JDBC DataSource objects, except that they expose 
+    graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'JPA Store' repository is an JPA source with a single default workspace (though 
+        others could be created, too).
+        -->
+        <dna:source jcr:name="JPA Store" 
+                    dna:classname="org.jboss.dna.graph.connector.store.jpa.JpaSource"
+                    dna:description="The database store for our content"
+                    dna:dialect="org.hibernate.dialect.MySQLDialect"
+                    dna:dataSourceJndiName="java:/MyDataSource"
+                    dna:defaultWorkspaceName="default"
+                    dna:autoGenerateSchema="validate"/>    
+    </dna:sources>
+    
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
 	<para>
 	DNA users who prefer not to give DDL privileges to the DNA database user for this connector can use the DNA JPA DDL generation 
 	tool to create the proper DDL files for their database dialect.  This tool is packaged as an executable jar in the 

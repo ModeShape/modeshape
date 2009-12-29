@@ -412,11 +412,15 @@
          'Configuration' content (which is defined by this file) will appear under '/'. -->
     <dna:projections>
       <!-- Project the 'Cars' content, starting with the '/Cars' node. -->
-      <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspaceName="workspace1">
+      <dna:projection jcr:name="Cars projection" 
+      				  dna:source="Cars" 
+      				  dna:workspaceName="workspace1">
           <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
       </dna:projection>
       <!-- Project the 'Aicraft' content, starting with the '/Aircraft' node. -->
-      <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspaceName="workspace2">
+      <dna:projection jcr:name="Aircarft projection" 
+      				  dna:source="Aircraft" 
+      				  dna:workspaceName="workspace2">
           <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
       </dna:projection>
       <!-- Project the 'System' content. Only needed when this source is accessed through JCR. -->

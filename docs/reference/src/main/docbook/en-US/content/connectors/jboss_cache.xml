@@ -116,17 +116,55 @@
 		</tgroup>
 	</table>
 	<para>
-		The JBoss Cache connector is used by creating in the &JcrConfiguration; a repository source that uses the &JBossCacheSource; class.
+		One way to configure the JBoss Cache connector is to create &JcrConfiguration; instance with a repository source that uses the &JBossCacheSource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("source A")
+config.repositorySource("Store")
       .usingClass(JBossCacheSource.class)
       .setDescription("The repository for our content")      
       .setProperty("defaultWorkspaceName", "prod")
       .setProperty("rootNodeUuid", UUID.fromString("12083e7e-2b55-4c8d-954d-627a9f5c45c2"))
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"});
+ ]]></programlisting>
+	<para>
+		Another way to configure the JBoss Cache connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &JBossCacheSource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    can think of these as being similar to JDBC DataSource objects, except that they expose 
+    graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'Store' repository is a JBoss Cache repository with a single default workspace (though 
+        others could be created, too).
+        -->
+        <dna:source jcr:name="Store" 
+                    dna:classname="org.jboss.dna.graph.connector.jbosscache.JBossCacheSource" 
+                    dna:description="The repository for our content"
+                    dna:defaultworkspaceName="prod"
+                    dna:rootNodeUuid="12083e7e-2b55-4c8d-954d-627a9f5c45c2"
+                    dna:predefinedWorkspaceNames="staging,dev"/>    
+    </dna:sources>
+    
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
  </chapter>
 

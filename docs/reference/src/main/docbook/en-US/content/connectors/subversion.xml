@@ -108,25 +108,57 @@
 			</tbody>
 		</tgroup>
 	</table>
-	<para>
-		Using the SVN connector can be used by creating in the &JcrConfiguration; a repository source that uses the &SVNRepositorySource; class.
+ 	<para>
+		One way to configure the Subversion connector is to create &JcrConfiguration; instance with a repository source that uses the &SVNRepositorySource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("SVN repository for JBoss DNA")
+config.repositorySource("SVN Store")
       .usingClass(SVNRepositorySource.class)
       .setDescription("The DNA SVN repository (anonymous access)")
       .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/dna");
       .setProperty("directoryForDefaultWorkspace", "http://anonsvn.jboss.org/repos/dna/trunk");
-      .setProperty("predefinedWorkspaceNames", new String[] {
-                        "http://anonsvn.jboss.org/repos/dna/trunk",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.1",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.2",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.3",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.4",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.5",
-                        "http://anonsvn.jboss.org/repos/dna/tags/0.6"
-                  });
+      .setProperty("predefinedWorkspaceNames", new String[] {"http://anonsvn.jboss.org/repos/dna/trunk });
  ]]></programlisting>
+	<para>
+		Another way to configure the Subversion connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &SVNRepositorySource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    can think of these as being similar to JDBC DataSource objects, except that they expose 
+    graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'SVN Store' repository is an Subversion source with one workspace (although others could 
+        be defined).
+        -->
+        <dna:source jcr:name="SVN Store" 
+                    dna:classname="org.jboss.dna.graph.connector.svn.SVNRepositorySource" 
+                    dna:description="The DNA SVN repository (anonymous access)"
+                    dna:repositoryRootUrl="http://anonsvn.jboss.org/repos/dna"
+                    dna:directoryForDefaultWorkspace="http://anonsvn.jboss.org/repos/dna/trunk"
+                    dna:predefinedWorkspaceNames="http://anonsvn.jboss.org/repos/dna/trunk"
+                    dna:defaultWorkspaceName="default"/>    
+    </dna:sources>
+    
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
+ 
 </chapter>

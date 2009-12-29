@@ -77,7 +77,7 @@
 				</row>
 				<row>
 					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, defines the UUID of the root node in the in-memory repository.  If not used,
+					<entry>Optional property that, if used, defines the UUID of the root node in the repository.  If not used,
 						then a new UUID is generated.</entry>
 				</row>
 				<row>
@@ -210,21 +210,58 @@
 			</tbody>
 		</tgroup>
 	</table>
-	<para>
-		The JDBC metadata connector is used by creating in the &JcrConfiguration; a repository source that uses the &JdbcMetadataSource; class.
+ 	<para>
+		One way to configure the JDBC metadata connector is to create &JcrConfiguration; instance with a repository source that uses the &JdbcMetadataSource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("source A")
+config.repositorySource("Meta Store")
       .usingClass(JdbcMetadataSource.class)
-      .setDescription("The database store for our content")
+      .setDescription("The database source for our content")
       .setProperty("dataSourceJndiName", "java:/MyDataSource")
-      .setProperty("nameOfDefaultWorkspace", "default")
- ]]></programlisting>
+      .setProperty("nameOfDefaultWorkspace", "default");
+]]></programlisting>
 	<para>
 		Of course, setting other more advanced properties would entail calling <code>setProperty(...)</code> for each.  Since almost all
 		of the properties have acceptable default values, however, we don't need to set very many of them.
 	</para>
-</chapter>
+	<para>
+		Another way to configure the JDBC metadata connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &JdbcMetadataSource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    can think of these as being similar to JDBC DataSource objects, except that they expose 
+    graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'Meta Store' repository is a JDBC metadata repository with a single default 
+        workspace (though others could be created, too).
+        -->
+        <dna:source jcr:name="Meta Store" 
+                    dna:classname="org.jboss.dna.graph.connector.meta.jdbc.JdbcMetadataSource" 
+                    dna:description="The database source for our content"
+                    dna:dataSourceJndiName="java:/MyDataSource"
+                    dna:defaultworkspaceName="default"/>    
+    </dna:sources>
+    
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
+ </chapter>
 

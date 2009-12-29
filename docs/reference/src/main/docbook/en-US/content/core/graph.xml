@@ -208,7 +208,8 @@ public interface &Path; extends Comparable&lt;Path>, Iterable&lt;&PathSegment;>,
 		</para>
 		<programlisting>
 @Immutable
-public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegment;>, &Serializable;, &Readable; {
+public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegment;>, &Serializable;, &Readable; 
+{
 
     /**
      * Get the name component of this segment.

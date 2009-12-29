@@ -85,14 +85,51 @@
 		</tgroup>
 	</table>
 	<para>
-		Using the in-memory connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
+		One way to configure the in-memory connector is to create &JcrConfiguration; instance with a repository source that uses the &InMemoryRepositorySource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("source A")
+config.repositorySource("IMR Store")
       .usingClass(InMemoryRepositorySource.class)
       .setDescription("The repository for our content")
       .setProperty("defaultWorkspaceName", workspaceName);
  ]]></programlisting>
+	<para>
+		Another way to configure the in-memory connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &InMemoryRepositorySource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    can think of these as being similar to JDBC DataSource objects, except that they expose 
+    graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'IMR Store' repository is an in-memory source with a single default workspace (though 
+        others could be created, too).
+        -->
+        <dna:source jcr:name="IMR Store" 
+                    dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" 
+                    dna:description="The repository for our content" 
+                    dna:defaultWorkspaceName="default"/>    
+    </dna:sources>
+    
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
+
 </chapter>

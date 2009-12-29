@@ -185,7 +185,8 @@ configuration.loadFrom(file);
 	      </dna:repository>
 	  </dna:repositories>
     <!-- 
-    Define the sources for the content. These sources are directly accessible using the DNA-specific Graph API.
+    Define the sources for the content. These sources are directly accessible using the 
+    DNA-specific Graph API.
     -->
     <dna:sources jcr:primaryType="nt:unstructured">
         <dna:source jcr:name="Cars" 

@@ -132,19 +132,62 @@
 		</tgroup>
 	</table>
 	<para>
-		The file system connector is used by creating in the &JcrConfiguration; a repository source that uses the &InMemoryRepositorySource; class.
+		One way to configure the file system connector is to create &JcrConfiguration; instance with a repository source that uses the &FileSystemSource; class.
 		For example:
 	</para>
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
-config.repositorySource("source A")
+config.repositorySource("FS Store")
       .usingClass(FileSystemSource.class)
       .setDescription("The repository for our content")
       .setProperty("workspaceRootPath", "/home/content/someApp")
       .setProperty("defaultWorkspaceName", "prod")
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"})
       .setProperty("rootNodeUuid", UUID.fromString("fd129c12-81a8-42ed-aa4b-820dba49e6f0")
+      .setProperty("updatesAllowed", "true")
       .setProperty("creatingWorkspaceAllowed", "false");
  ]]></programlisting>
-</chapter>
+	<para>
+		Another way to configure the file system connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &FileSystemSource; class.
+		For example a file named configRepository.xml can be created with these contents:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    DNA-specific Graph API. In fact, this is how the DNA JCR implementation works.  You can 
+    think of these as being similar to JDBC DataSource objects, except that they expose graph 
+    content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <dna:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'FS Store' repository is a file system source with a three predefined workspaces 
+        ("prod", "staging", and "dev").
+        -->
+        <dna:source jcr:name="FS Store" 
+        	dna:classname="org.jboss.dna.connector.filesystem.FileSystemSource"
+        	dna:description="The repository for our content"
+        	dna:workspaceRootPath="/home/content/someApp"
+        	dna:defaultWorkspaceName="prod"
+        	dna:predefinedWorkspaceNames="staging, dev"
+        	dna:rootNodeUuid="fd129c12-81a8-42ed-aa4b-820dba49e6f0"
+        	dna:creatingWorkspacesAllowed="false"
+        	dna:updatesAllowed="true"
+        	/>    
+    </dna:sources>
+
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
+ </chapter>
 
