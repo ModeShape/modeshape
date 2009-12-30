@@ -77,7 +77,7 @@ import org.jboss.dna.graph.request.Request;
 public class FileSystemRepository extends WritablePathRepository {
     private static final String DEFAULT_MIME_TYPE = "application/octet";
 
-    private final FileSystemSource source;
+    protected final FileSystemSource source;
     private File repositoryRoot;
 
     public FileSystemRepository( FileSystemSource source ) {
@@ -685,15 +685,15 @@ public class FileSystemRepository extends WritablePathRepository {
         }
 
         /**
-         * Recursively checks if any of the files in the tree rooted at {@code root} would exceed the {@link #maxPathLength
-         * maximum path length for the processor} if their paths were {@code delta} characters longer. If any files would exceed
-         * this length, a {@link RepositorySourceException} is thrown.
+         * Recursively checks if any of the files in the tree rooted at {@code root} would exceed the
+         * {@link FileSystemSource#getMaxPathLength() maximum path length for the processor} if their paths were {@code delta}
+         * characters longer. If any files would exceed this length, a {@link RepositorySourceException} is thrown.
          * 
          * @param root the root of the tree to check; may be a file or directory but may not be null
          * @param delta the change in the length of the path to check. Used to preemptively check whether moving a file or
          *        directory to a new path would violate path length rules
          * @throws RepositorySourceException if any files in the tree rooted at {@code root} would exceed this
-         *         {@link #maxPathLength the maximum path length for this processor}
+         *         {@link FileSystemSource#getMaxPathLength() the maximum path length for this processor}
          */
         protected void ensureValidPathLength( File root,
                                               int delta ) {

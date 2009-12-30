@@ -23,7 +23,7 @@
  */
 /**
  * The classes that make up the connector that accesses the files and directories on a local file system and exposes them as content in a repository.
- * This connector is based on the {@link WritablePathRepository path repository framework}.
+ * This connector is based on the {@link org.jboss.dna.graph.connector.path.WritablePathRepository path repository framework}.
  */
 
 package org.jboss.dna.connector.filesystem;

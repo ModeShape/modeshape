@@ -71,6 +71,7 @@ public class FileSystemSourceTest {
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return new RepositoryConnectionFactory() {
 
+                    @SuppressWarnings( "synthetic-access" )
                     public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                         return source.getConnection();
                     }
