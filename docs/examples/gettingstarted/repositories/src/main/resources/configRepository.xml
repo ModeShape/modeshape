@@ -45,6 +45,15 @@
             <defaultWorkspaceName>workspace2</defaultWorkspaceName>
         </dna:source>
         <!-- 
+        The 'UFO' repository is a file system source with a single default workspace.  The file system connector exposes
+        files and folders as JCR nodes.  It can save JCR nodes too, but only if they have certain primary types.
+        -->
+        <dna:source jcr:name="UFOs" dna:classname="org.jboss.dna.connector.filesystem.FileSystemSource"
+        	dna:workspaceRootPath="./src/main/resources/ufoSource"
+        	dna:defaultWorkspaceName="workspace1"
+        	dna:creatingWorkspacesAllowed="false"
+        	dna:updatesAllowed="true"/>    
+        <!-- 
         The 'Vehicles' repository is a federated source that owns none of its own content, but instead
         projects (in this case) all of the content from the 'Cars' source as if it appears
         under '/Vehicles/Cars', while all the 'Aircraft' content appears under '/Vehicles/Aircraft'.
@@ -64,9 +73,13 @@
                         <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspaceName="workspace1">
                             <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
                         </dna:projection>
-                        <!-- Project the 'Aicraft' content, starting with the '/Aircraft' node. -->
+                        <!-- Project the 'Aircraft' content, starting with the '/Aircraft' node. -->
                         <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspaceName="workspace2">
                             <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
+                        </dna:projection>
+                        <!-- Project the 'UFO' content, starting with the root node. -->
+                        <dna:projection jcr:name="UFO projection" dna:source="UFOs" dna:workspaceName="workspace1">
+                            <dna:projectionRules>/Vehicles/UFOs => /</dna:projectionRules>
                         </dna:projection>
                         <!-- Project the 'System' content. Only needed when this source is accessed through JCR. -->
                         <!-- dna:projection jcr:name="System projection" dna:source="System" dna:workspaceName="default">
@@ -147,6 +160,22 @@
             <dna:options jcr:primaryType="dna:options">
                 <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
             </dna:options>
+        </dna:repository>
+        <!-- 
+        Define a JCR repository that accesses the 'UFO' source directly.
+        This of course is optional, since we could access the same content through 'vehicles'.
+        -->
+        <dna:repository jcr:name="UFOs">
+            <!-- Specify the source that should be used for the repository -->
+            <dna:source>UFOs</dna:source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <dna:options jcr:primaryType="dna:options">
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+            </dna:options>
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
+            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
+            <namespaces jcr:primaryType="dna:namespaces" />
         </dna:repository>
         <!-- 
         Define a JCR repository that accesses the 'Vehicles' federated source directly,

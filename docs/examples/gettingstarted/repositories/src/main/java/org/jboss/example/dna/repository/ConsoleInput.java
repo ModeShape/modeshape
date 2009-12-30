@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.common.util.StringUtil;
-import com.sun.security.auth.callback.TextCallbackHandler;
+import org.jboss.dna.graph.JaasSecurityContext;
 
 /**
  * The {@link UserInterface} implementation that uses the console.
@@ -323,7 +323,7 @@ public class ConsoleInput implements UserInterface {
      * @see org.jboss.example.dna.repository.UserInterface#getCallbackHandler()
      */
     public CallbackHandler getCallbackHandler() {
-        return new TextCallbackHandler();
+        return new JaasSecurityContext.UserPasswordCallbackHandler("jsmith", "secret".toCharArray());
     }
 
 }

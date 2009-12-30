@@ -40,6 +40,7 @@ import javax.jcr.Value;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
@@ -150,6 +151,13 @@ public class RepositoryClient {
         // Now create the JCR engine ...
         engine = configuration.build();
         engine.start();
+
+        if (engine.getProblems().hasProblems()) {
+            for (Problem problem : engine.getProblems()) {
+                System.err.println(problem.getMessageString());
+            }
+            throw new RuntimeException("Could not start due to problems");
+        }
 
         // For this example, we're using a couple of in-memory repositories (including one for the configuration repository).
         // Normally, these would exist already and would simply be accessed. But in this example, we're going to

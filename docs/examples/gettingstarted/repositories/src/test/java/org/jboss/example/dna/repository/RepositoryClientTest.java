@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.graph.JaasSecurityContext;
+import org.jboss.dna.graph.property.Binary;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -92,6 +93,14 @@ public class RepositoryClientTest {
                                    Object... values ) {
         Object[] actualValues = properties.get(propertyName);
         assertThat(actualValues, is(values));
+    }
+
+    protected String string( Object rawValue ) {
+        if (rawValue instanceof Binary) {
+            return new String(((Binary)rawValue).getBytes());
+        }
+
+        return rawValue.toString();
     }
 
     protected void getNodeInfo( String source,
@@ -239,6 +248,27 @@ public class RepositoryClientTest {
     }
 
     @Test
+    public void shouldHaveContentFromUfosRepository() throws Throwable {
+        client.startRepositories();
+
+        getNodeInfo("UFOs", "/");
+        assertThat(children, hasItems("martians", "venutians", "README.txt"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+
+        getNodeInfo("UFOs", "/martians/zzyzx.txt");
+        assertThat(children, hasItems("jcr:content"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+
+        getNodeInfo("UFOs", "/martians/zzyzx.txt/jcr:content");
+        assertThat(children.size(), is(0));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+
+        assertThat(string(properties.get("jcr:data")[0]).startsWith("The Zzyzx is the fastest vehicle in the Martian fleet."),
+                   is(true));
+
+    }
+
+    @Test
     public void shouldHaveContentFromVehiclesRepository() throws Throwable {
         client.startRepositories();
 
@@ -282,6 +312,12 @@ public class RepositoryClientTest {
         assertProperty("maxSpeed", "30mph");
         assertProperty("emptyWeight", "605lb");
         assertProperty("crew", "1");
+
+        getNodeInfo("Vehicles", "/Vehicles/UFOs/martians/zzyzx.txt/jcr:content");
+        assertThat(children.size(), is(0));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(string(properties.get("jcr:data")[0]).startsWith("The Zzyzx is the fastest vehicle in the Martian fleet."),
+                   is(true));
     }
 
     @Test
@@ -296,6 +332,7 @@ public class RepositoryClientTest {
             // shouldHaveContentFromConfigurationRepository();
             shouldHaveContentFromCarsRepository();
             shouldHaveContentFromAircraftRepository();
+            shouldHaveContentFromUfosRepository();
             shouldHaveContentFromVehiclesRepository();
         }
     }

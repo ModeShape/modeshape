@@ -24,6 +24,10 @@
       <directory>src/main/resources/security/</directory>
       <outputDirectory/>
     </fileSet>
+    <fileSet>
+      <directory>src/main/resources/ufoSource</directory>
+      <outputDirectory>src/main/resources/ufoSource</outputDirectory>
+    </fileSet>
   </fileSets>
   <files>
     <file>

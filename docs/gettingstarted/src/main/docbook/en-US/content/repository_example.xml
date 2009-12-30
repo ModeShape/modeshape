@@ -38,7 +38,7 @@
 	</para>
 	<sect1 id="running_repository_example">
 		<title>Running the repository example</title>
-		<para>The repository example consists of a client application that sets up two DNA repositories (named "Cars" and "Airplanes") and 
+		<para>The repository example consists of a client application that sets up three DNA repositories (named "Cars", "Airplanes", and "UFOs") and 
 			a federated repository ("Vehicles") that dynamically federates the information from the other two repositories.
 			The client application allows you to interactively navigate each of these repositories just as you would navigate the
 			directory structure on a file system.</para>
@@ -47,10 +47,11 @@
 				<title>Repositories used in the example client</title>
 				<graphic align="center" scale="60" fileref="example-repositories.png"/>
 			</figure>
-			Most of the repositories are in-memory repositories (using the In-Memory repository connector), but the federated "Vehicles" repository
+			The "Cars" and "Airplanes" repositories are in-memory repositories (using the In-Memory repository connector) and the "UFOs" repository is
+			a file system repository (using the File System repository connector). The federated "Vehicles" repository
 			content is federated from the other repositories and cached into the "Cache" repository.  This is shown in the following figure: 
 	  	<figure id="example-federated-repository">
-				<title>Vehicles repository content is federated from the Cars, Airplanes and Configuration repositories</title>
+				<title>Vehicles repository content is federated from the Cars, Airplanes, UFOs, and Configuration repositories</title>
 				<graphic align="center" scale="60" fileref="example-federated-repository.png"/>
 			</figure>
 	  </para>
@@ -87,10 +88,12 @@
 			</table>
 			<note>
 				<para>
-					The first time you access any repository, you will be prompted to log in.  This is JAAS at work, and the example application
-					should prompt you for a username and password.  As configured in the "jaas.conf.xml" and "users.properties" files,
-					enter "jsmith" for the username and "secret" for the password.  And, yes, the password is shown in cleartext - this
-					is a simple example, after all!
+					The first time you access any repository, the application is automatically logging you in to DNA's JAAS-based security
+					system.  To make the application easier to use, it always logs in with the "jsmith" as the username and "secret" as the
+					password.  This matches what is configured in the "jaas.conf.xml" and "users.properties" files.  If you want to confirm
+					that the security feature is working, change the password in target/dna-example-repositories-basic.dir/users.properties to
+					something else and re-run the application.  After you select a repository and try to view a directory with 'ls', you
+					will get a LoginException!
 				</para>
 			</note>
 			<para>If you were to select the "Cars" repository and use some of the commands, you should see something similar to: 

@@ -34,6 +34,11 @@
       <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-connector-filesystem</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for running) 
     -->
