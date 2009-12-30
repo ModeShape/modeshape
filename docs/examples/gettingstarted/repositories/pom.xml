@@ -39,6 +39,16 @@
       <artifactId>dna-connector-filesystem</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-connector-store-jpa</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>1.8.0.2</version>
+    </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for running) 
     -->

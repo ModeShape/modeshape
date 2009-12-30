@@ -47,7 +47,8 @@
 				<title>Repositories used in the example client</title>
 				<graphic align="center" scale="60" fileref="example-repositories.png"/>
 			</figure>
-			The "Cars" and "Airplanes" repositories are in-memory repositories (using the In-Memory repository connector) and the "UFOs" repository is
+			The "Cars" repository is an in-memory repository (using the In-Memory repository connector), the "Aircraft" repository is a JPA repository
+			(although it points to an in-memory HSQL database using the JPA repository connector), and the "UFOs" repository is
 			a file system repository (using the File System repository connector). The federated "Vehicles" repository
 			content is federated from the other repositories and cached into the "Cache" repository.  This is shown in the following figure: 
 	  	<figure id="example-federated-repository">

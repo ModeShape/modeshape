@@ -326,6 +326,16 @@ public class RepositoryClientTest {
         assertThat(client.getNodeInfo("Cars", "/Cars/Sports/Non Existant Car", properties, children), is(false));
     }
 
+    @Ignore
+    @Test
+    public void shouldNotFreezeIfWrongNodeEntered() throws Throwable {
+        client.startRepositories();
+
+        Map<String, Object[]> properties = new HashMap<String, Object[]>();
+        List<String> children = new ArrayList<String>();
+        client.getNodeInfo("Vehicles", "/Vehicles/foo", properties, children);
+    }
+
     @Test
     public void shouldBeAbleToExecuteTestsRepeatedly() throws Throwable {
         for (int i = 0; i != 5; ++i) {

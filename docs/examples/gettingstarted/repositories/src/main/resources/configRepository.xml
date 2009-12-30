@@ -36,14 +36,37 @@
         -->
         <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
         <!-- 
-        The 'Aircraft' repository is also an in-memory source with a single default workspace.
+        The 'Aircraft' repository is also a JPA source (pointing to an in-memory HSQL database with a single default workspace.
         By defining a default workspace, the clients using the Graph API will by default use that workspace,
         but can easily say to use other workspaces (or create, clone, or destroy workspaces).
+        
+        If you wanted to use a JNDI datasource instead of manually specifying the database login information, you would replace this:
+        	dna:driverClassName="org.hsqldb.jdbcDriver"
+        	dna:username="sa"
+        	dna:password=""
+        	dna:url="jdbc:hsqldb:mem:target"
+        
+        With this:
+        	dna:dataSourceJndiName="your JNDI name"
         -->
-        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
-            <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
-            <defaultWorkspaceName>workspace2</defaultWorkspaceName>
-        </dna:source>
+        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.connector.store.jpa.JpaSource"
+        	dna:model="Simple"
+        	dna:dialect="org.hibernate.dialect.HSQLDialect"
+        	dna:driverClassName="org.hsqldb.jdbcDriver"
+        	dna:username="sa"
+        	dna:password=""
+        	dna:url="jdbc:hsqldb:mem:target"
+        	dna:maximumConnectionsInPool="1"
+        	dna:referentialIntegrityEnforced="true"
+        	dna:largeValueSizeInBytes="10000"
+        	dna:retryLimit="3"
+        	dna:compressData="false"
+        	dna:predefinedWorkspaceNames="workspace2"
+        	dna:showSql="false"
+            dna:autoGenerateSchema="create"
+            dna:creatingWorkspacesAllowed="true"
+        	dna:defaultWorkspaceName="workspace2" />    
+
         <!-- 
         The 'UFO' repository is a file system source with a single default workspace.  The file system connector exposes
         files and folders as JCR nodes.  It can save JCR nodes too, but only if they have certain primary types.
