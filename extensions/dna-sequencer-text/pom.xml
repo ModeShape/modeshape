@@ -9,7 +9,7 @@
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-sequencer-text</artifactId>
   <packaging>jar</packaging>
-  <name>JBoss Text File Sequencer</name>
+  <name>JBoss DNA Text File Sequencer</name>
   <description>JBoss DNA Sequencer that processes fixed width and delimited text files</description>
   <url>http://labs.jboss.org/dna</url>
   <dependencies>

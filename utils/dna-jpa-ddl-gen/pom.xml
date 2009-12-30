@@ -10,7 +10,7 @@
 	<!-- The groupId and version values are inherited from parent -->
 	<artifactId>dna-jpa-ddl-gen</artifactId>
 	<packaging>jar</packaging>
-	<name>JBoss JPA Connector DDL Generator</name>
+	<name>JBoss DNA JPA Connector DDL Generator</name>
 	<description>
 		Utility application to generate ddl for JBoss DNA JPA connector
 	</description>
