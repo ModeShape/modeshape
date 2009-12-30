@@ -142,7 +142,7 @@ public class RepositoryConnectionPool {
     /**
      * Flag specifying whether a connection should be validated before returning it from the {@link #getConnection()} method.
      */
-    private final AtomicBoolean validateConnectionBeforeUse = new AtomicBoolean(false);
+    private final AtomicBoolean validateConnectionBeforeUse = new AtomicBoolean(true);
 
     /**
      * The time in nanoseconds that ping should wait before timing out and failing.
@@ -648,7 +648,7 @@ public class RepositoryConnectionPool {
                 if (runState == TERMINATED) return true;
                 if (nanos <= 0) return false;
                 nanos = termination.awaitNanos(nanos);
-                //this.logger.trace("---> Done waiting: run state = {0}; condition = {1}, {2} open",runState,termination,poolSize)
+                // this.logger.trace("---> Done waiting: run state = {0}; condition = {1}, {2} open",runState,termination,poolSize)
                 // ;
             }
         } finally {
@@ -821,8 +821,15 @@ public class RepositoryConnectionPool {
             }
         } finally {
             if (invalidConnection != null) {
-                connection = null;
-                returnConnection(invalidConnection);
+                try {
+                    mainLock.lock();
+                    connection = null;
+                    this.poolSize--;
+                    this.inUseConnections.remove(connection);
+                    // returnConnection(invalidConnection);
+                } finally {
+                    mainLock.unlock();
+                }
             }
         }
         return connection;
