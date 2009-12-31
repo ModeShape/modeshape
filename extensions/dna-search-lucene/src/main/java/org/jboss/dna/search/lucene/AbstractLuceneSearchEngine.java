@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanQuery;
@@ -75,6 +74,7 @@ import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.FullTextSearch;
 import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.Length;
+import org.jboss.dna.graph.query.model.Limit;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.LowerCase;
 import org.jboss.dna.graph.query.model.NodeDepth;
@@ -425,6 +425,23 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 SelectComponent selector = new SelectComponent(tuplesProcessor, postProcessConstraint, request.variables());
                 tuples = selector.execute();
             }
+
+            // Limit the tuples ...
+            Limit limit = request.limit();
+            if (!limit.isUnlimited()) {
+                int firstIndex = limit.getOffset();
+                int maxRows = Math.min(tuples.size(), limit.getRowLimit());
+                if (firstIndex > 0) {
+                    if (firstIndex > tuples.size()) {
+                        tuples.clear();
+                    } else {
+                        tuples = tuples.subList(firstIndex, maxRows);
+                    }
+                } else {
+                    tuples = tuples.subList(0, maxRows);
+                }
+            }
+
             executingNanos = System.nanoTime() - executingNanos;
             Statistics stats = new Statistics(planningNanos, 0L, 0L, executingNanos);
             request.setResults(tuples, stats);
@@ -753,16 +770,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
          */
         TupleCollector createTupleCollector( Columns columns );
 
-        /**
-         * Utility method to create a query to find all of the documents representing nodes with the supplied IDs.
-         * 
-         * @param ids the IDs of the nodes that are to be found; may not be null
-         * @return the query; never null
-         * @throws IOException if there is a problem creating this query
-         */
-        Query findAllNodesWithIds( Set<String> ids ) throws IOException;
-
         Query findAllNodesBelow( Path ancestorPath ) throws IOException;
+
+        Query findAllNodesAtOrBelow( Path ancestorPath ) throws IOException;
 
         /**
          * Return a query that can be used to find all of the documents that represent nodes that are children of the node at the
@@ -845,6 +855,6 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
          * 
          * @return the tuples; never null
          */
-        public abstract LinkedList<Object[]> getTuples();
+        public abstract List<Object[]> getTuples();
     }
 }

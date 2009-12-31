@@ -29,24 +29,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.jboss.dna.common.text.SecureHashTextEncoder;
-import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.SecureHash.Algorithm;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.query.QueryResults.Columns;
 import org.jboss.dna.graph.query.QueryResults.Statistics;
 import org.jboss.dna.graph.query.process.FullTextSearchResultColumns;
@@ -69,22 +60,12 @@ import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.search.SearchEngineProcessor;
 import org.jboss.dna.graph.search.AbstractSearchEngine.Workspaces;
 import org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
-import org.jboss.dna.search.lucene.LuceneSearchWorkspace.PathIndex;
 
 /**
  * Abstract {@link SearchEngineProcessor} implementation for the {@link LuceneSearchEngine}.
  */
 @NotThreadSafe
 public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchWorkspace, LuceneSearchSession> {
-
-    protected static final TextEncoder NAMESPACE_ENCODER = new SecureHashTextEncoder(Algorithm.SHA_1, 10);
-
-    protected static ExecutionContext contextWithEncodedNamespaces( ExecutionContext context ) {
-        return context;
-        // NamespaceRegistry encodingRegistry = new EncodingNamespaceRegistry(context.getNamespaceRegistry(), NAMESPACE_ENCODER);
-        // ExecutionContext encodingContext = context.with(encodingRegistry);
-        // return encodingContext;
-    }
 
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();
 
@@ -94,7 +75,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
                                      Observer observer,
                                      DateTime now,
                                      boolean readOnly ) {
-        super(sourceName, contextWithEncodedNamespaces(context), workspaces, observer, now, readOnly);
+        super(sourceName, context, workspaces, observer, now, readOnly);
     }
 
     /**
@@ -115,15 +96,6 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
     @Override
     protected String fullTextFieldName( String propertyName ) {
         return LuceneSearchWorkspace.FULL_TEXT_PREFIX + propertyName;
-    }
-
-    protected void addIdProperties( Location location,
-                                    Document doc ) {
-        if (!location.hasIdProperties()) return;
-        for (Property idProp : location.getIdProperties()) {
-            String fieldValue = serializeProperty(idProp);
-            doc.add(new Field(PathIndex.LOCATION_ID_PROPERTIES, fieldValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        }
     }
 
     /**
@@ -157,7 +129,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         if (session == null) return;
         request.setActualWorkspaceName(session.getWorkspaceName());
         try {
-            request.setActualRootLocation(session.getLocationFor(pathFactory.createRootPath()));
+            request.setActualRootLocation(session.getLocationForRoot());
         } catch (IOException e) {
             request.setError(e);
         }
@@ -201,41 +173,11 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         }
 
         try {
-            // Create a separate document for the path, which makes it easier to handle moves since the path can
-            // be changed without changing any other content fields ...
-            Document doc = new Document();
-            String idStr = createPathDocument(location, doc);
-            session.getPathsWriter().addDocument(doc);
-
-            // Now set the content ...
-            session.setOrReplaceProperties(idStr, request.properties());
+            session.setOrReplaceProperties(location, request.properties());
             session.recordChange();
         } catch (IOException e) {
             request.setError(e);
         }
-    }
-
-    protected String createPathDocument( Location location,
-                                         Document doc ) {
-        UUID uuid = location.getUuid();
-        if (uuid == null) uuid = UUID.randomUUID();
-        Path path = location.getPath();
-        String idStr = stringFactory.create(uuid);
-        String pathStr = pathAsString(path);
-        String nameStr = path.isRoot() ? "" : stringFactory.create(path.getLastSegment().getName());
-        String localNameStr = path.isRoot() ? "" : path.getLastSegment().getName().getLocalName();
-        int sns = path.isRoot() ? 1 : path.getLastSegment().getIndex();
-
-        // Create a separate document for the path, which makes it easier to handle moves since the path can
-        // be changed without changing any other content fields ...
-        doc.add(new Field(PathIndex.PATH, pathStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(PathIndex.NODE_NAME, nameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(PathIndex.LOCAL_NAME, localNameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new NumericField(PathIndex.SNS_INDEX, Field.Store.YES, true).setIntValue(sns));
-        doc.add(new Field(PathIndex.ID, idStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new NumericField(PathIndex.DEPTH, Field.Store.YES, true).setIntValue(path.size()));
-        addIdProperties(location, doc);
-        return idStr;
     }
 
     /**
@@ -251,25 +193,11 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
 
         Location location = request.getActualLocationOfNode();
         assert location != null;
-        UUID uuid = location.getUuid();
 
         try {
-            // If we're updating the root properties, make sure there is a document in the path index ...
-            String idStr = null;
-            if (location.getPath() != null && location.getPath().isRoot()) {
-                Document doc = new Document();
-                idStr = createPathDocument(location, doc);
-                session.getPathsWriter().addDocument(doc);
-            } else if (uuid != null) {
-                idStr = stringFactory.create(uuid);
-            } else {
-                // Need to look up the id string ...
-                idStr = session.getIdFor(location.getPath());
-            }
-
             // We make a big assumption here: the UpdatePropertiesRequest created by the SearchEngineProcessor have the
             // actual locations set ...
-            session.setOrReplaceProperties(idStr, request.properties().values());
+            session.setOrReplaceProperties(location, request.properties().values());
             session.recordChange();
         } catch (IOException e) {
             request.setError(e);
@@ -289,21 +217,11 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         Path path = request.at().getPath();
         assert !readOnly;
         try {
-            Query query = null;
-            int numChanges = 0;
-            if (path.isRoot()) {
-                query = new MatchAllDocsQuery();
-                numChanges = LuceneSearchWorkspace.CHANGES_BEFORE_OPTIMIZATION + 100;
-            } else {
-                // Create a query to find all the nodes at or below the specified path ...
-                Set<String> ids = session.getIdsForDescendantsOf(path, true);
-                query = session.findAllNodesWithIds(ids);
-                numChanges = ids.size();
-            }
+            // Create a query to find all the nodes at or below the specified path (this efficiently handles the root path) ...
+            Query query = session.findAllNodesAtOrBelow(path);
             // Now delete the documents from each index using this query, which we can reuse ...
-            session.getPathsWriter().deleteDocuments(query);
             session.getContentWriter().deleteDocuments(query);
-            session.recordChanges(numChanges);
+            session.recordChanges(100);
         } catch (FileNotFoundException e) {
             // There are no index files yet, so nothing to delete ...
         } catch (IOException e) {
@@ -322,7 +240,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         if (workspace == null) return;
         try {
             LuceneSearchSession session = getSessionFor(request, workspace.getWorkspaceName());
-            request.setActualRootLocation(session.getLocationFor(pathFactory.createRootPath()));
+            request.setActualRootLocation(session.getLocationForRoot());
             workspace.destroy(getExecutionContext());
             session.recordChanges(LuceneSearchWorkspace.CHANGES_BEFORE_OPTIMIZATION + 100);
         } catch (IOException e) {

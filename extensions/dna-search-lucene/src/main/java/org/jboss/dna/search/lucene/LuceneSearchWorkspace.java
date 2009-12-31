@@ -45,8 +45,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      */
     protected static final int CHANGES_BEFORE_OPTIMIZATION = 1;
 
-    protected static final String PATHS_INDEX_NAME = "paths";
-    protected static final String CONTENT_INDEX_NAME = "content";
+    protected static final String INDEX_NAME = "content";
 
     /**
      * Given the name of a property field of the form "&lt;namespace>:&lt;local>" (where &lt;namespace> can be zero-length), this
@@ -57,24 +56,16 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
     protected static final String FULL_TEXT_PREFIX = ":ft:";
 
     /**
-     * This index stores only these fields, so we can use the most obvious names and not worry about clashes.
-     */
-    static class PathIndex {
-        public static final String PATH = "pth";
-        public static final String NODE_NAME = "nam";
-        public static final String LOCAL_NAME = "loc";
-        public static final String SNS_INDEX = "sns";
-        public static final String LOCATION_ID_PROPERTIES = "idp";
-        public static final String ID = ContentIndex.ID;
-        public static final String DEPTH = "dep";
-    }
-
-    /**
-     * This index stores these two fields <i>plus</i> all properties. Therefore, we have to worry about name clashes, which is why
+     * This index stores these fields <i>plus</i> all properties. Therefore, we have to worry about name clashes, which is why
      * these field names are prefixed with '::', which is something that does appear in property names as they are serialized.
      */
     static class ContentIndex {
-        public static final String ID = "::id";
+        public static final String PATH = "::pth";
+        public static final String NODE_NAME = "::nam";
+        public static final String LOCAL_NAME = "::loc";
+        public static final String SNS_INDEX = "::sns";
+        public static final String LOCATION_ID_PROPERTIES = "::idp";
+        public static final String DEPTH = "::dep";
         public static final String FULL_TEXT = "::fts";
     }
 
@@ -82,7 +73,6 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
     private final String workspaceDirectoryName;
     protected final IndexRules rules;
     private final LuceneConfiguration configuration;
-    protected final Directory pathDirectory;
     protected final Directory contentDirectory;
     protected final Analyzer analyzer;
     private final Lock changesLock = new ReentrantLock();
@@ -99,8 +89,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(Version.LUCENE_30);
         this.rules = rules != null ? rules : LuceneSearchEngine.DEFAULT_RULES;
         this.configuration = configuration;
-        this.pathDirectory = this.configuration.getDirectory(workspaceDirectoryName, PATHS_INDEX_NAME);
-        this.contentDirectory = this.configuration.getDirectory(workspaceDirectoryName, CONTENT_INDEX_NAME);
+        this.contentDirectory = this.configuration.getDirectory(workspaceDirectoryName, INDEX_NAME);
     }
 
     /**
@@ -118,8 +107,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      * @see org.jboss.dna.graph.search.SearchEngineWorkspace#destroy(org.jboss.dna.graph.ExecutionContext)
      */
     public void destroy( ExecutionContext context ) {
-        configuration.destroyDirectory(workspaceDirectoryName, PATHS_INDEX_NAME);
-        configuration.destroyDirectory(workspaceDirectoryName, CONTENT_INDEX_NAME);
+        configuration.destroyDirectory(workspaceDirectoryName, INDEX_NAME);
     }
 
     /**

@@ -109,9 +109,16 @@ public class JcrQueryManagerTest {
             } finally {
                 stream.close();
             }
+
+            // Prime creating a first XPath query and SQL query ...
+            session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
+            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.SQL);
         } finally {
             session.logout();
         }
+
+        // Prime creating the schemata ...
+        repository.getRepositoryTypeManager().getRepositorySchemata();
     }
 
     @AfterClass
@@ -201,7 +208,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType");
-        System.out.println(result);
+        // System.out.println(result);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -238,7 +245,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        System.out.println(result);
+        // System.out.println(result);
         assertResultsHaveColumns(result,
                                  "jcr:primaryType",
                                  "jcr:path",
@@ -262,7 +269,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        System.out.println(result);
+        // System.out.println(result);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 

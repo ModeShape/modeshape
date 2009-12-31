@@ -24,6 +24,7 @@
 package org.jboss.dna.search.lucene;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,8 +45,6 @@ import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Collector;
-import org.apache.lucene.search.FieldCache;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.NumericRangeQuery;
@@ -82,12 +81,10 @@ import org.jboss.dna.search.lucene.IndexRules.FieldType;
 import org.jboss.dna.search.lucene.IndexRules.NumericRule;
 import org.jboss.dna.search.lucene.IndexRules.Rule;
 import org.jboss.dna.search.lucene.LuceneSearchWorkspace.ContentIndex;
-import org.jboss.dna.search.lucene.LuceneSearchWorkspace.PathIndex;
 import org.jboss.dna.search.lucene.query.CompareLengthQuery;
 import org.jboss.dna.search.lucene.query.CompareNameQuery;
 import org.jboss.dna.search.lucene.query.ComparePathQuery;
 import org.jboss.dna.search.lucene.query.CompareStringQuery;
-import org.jboss.dna.search.lucene.query.IdsQuery;
 import org.jboss.dna.search.lucene.query.MatchNoneQuery;
 import org.jboss.dna.search.lucene.query.NotQuery;
 
@@ -100,22 +97,11 @@ public class LuceneSearchSession implements WorkspaceSession {
     /**
      * An immutable {@link FieldSelector} instance that accesses the UUID field.
      */
-    protected static final FieldSelector DOC_ID_FIELD_SELECTOR = new FieldSelector() {
-        private static final long serialVersionUID = 1L;
-
-        public FieldSelectorResult accept( String fieldName ) {
-            return ContentIndex.ID.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
-        }
-    };
-
-    /**
-     * An immutable {@link FieldSelector} instance that accesses the UUID field.
-     */
     protected static final FieldSelector LOCATION_FIELDS_SELECTOR = new FieldSelector() {
         private static final long serialVersionUID = 1L;
 
         public FieldSelectorResult accept( String fieldName ) {
-            if (PathIndex.PATH.equals(fieldName) || PathIndex.LOCATION_ID_PROPERTIES.equals(fieldName)) {
+            if (ContentIndex.PATH.equals(fieldName) || ContentIndex.LOCATION_ID_PROPERTIES.equals(fieldName)) {
                 return FieldSelectorResult.LOAD;
             }
             return FieldSelectorResult.NO_LOAD;
@@ -129,11 +115,7 @@ public class LuceneSearchSession implements WorkspaceSession {
 
     private final LuceneSearchWorkspace workspace;
     protected final LuceneSearchProcessor processor;
-    private final Directory pathsIndexDirectory;
     private final Directory contentIndexDirectory;
-    private IndexReader pathsReader;
-    private IndexWriter pathsWriter;
-    private IndexSearcher pathsSearcher;
     private IndexReader contentReader;
     private IndexWriter contentWriter;
     private IndexSearcher contentSearcher;
@@ -144,7 +126,6 @@ public class LuceneSearchSession implements WorkspaceSession {
         assert workspace != null;
         assert processor != null;
         this.workspace = workspace;
-        this.pathsIndexDirectory = workspace.pathDirectory;
         this.contentIndexDirectory = workspace.contentDirectory;
         this.processor = processor;
     }
@@ -165,21 +146,6 @@ public class LuceneSearchSession implements WorkspaceSession {
         return workspace;
     }
 
-    protected IndexReader getPathsReader() throws IOException {
-        if (pathsReader == null) {
-            try {
-                pathsReader = IndexReader.open(pathsIndexDirectory, processor.readOnly);
-            } catch (IOException e) {
-                // try creating the workspace ...
-                IndexWriter writer = new IndexWriter(pathsIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
-                writer.close();
-                // And try reading again ...
-                pathsReader = IndexReader.open(pathsIndexDirectory, processor.readOnly);
-            }
-        }
-        return pathsReader;
-    }
-
     protected IndexReader getContentReader() throws IOException {
         if (contentReader == null) {
             try {
@@ -195,15 +161,6 @@ public class LuceneSearchSession implements WorkspaceSession {
         return contentReader;
     }
 
-    protected IndexWriter getPathsWriter() throws IOException {
-        assert !processor.readOnly;
-        if (pathsWriter == null) {
-            // Don't overwrite, but create if missing ...
-            pathsWriter = new IndexWriter(pathsIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
-        }
-        return pathsWriter;
-    }
-
     protected IndexWriter getContentWriter() throws IOException {
         assert !processor.readOnly;
         if (contentWriter == null) {
@@ -211,13 +168,6 @@ public class LuceneSearchSession implements WorkspaceSession {
             contentWriter = new IndexWriter(contentIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
         }
         return contentWriter;
-    }
-
-    protected IndexSearcher getPathsSearcher() throws IOException {
-        if (pathsSearcher == null) {
-            pathsSearcher = new IndexSearcher(getPathsReader());
-        }
-        return pathsSearcher;
     }
 
     public IndexSearcher getContentSearcher() throws IOException {
@@ -228,7 +178,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     }
 
     public boolean hasWriters() {
-        return pathsWriter != null || contentWriter != null;
+        return contentWriter != null;
     }
 
     protected final void recordChange() {
@@ -261,45 +211,15 @@ public class LuceneSearchSession implements WorkspaceSession {
 
         IOException ioError = null;
         RuntimeException runtimeError = null;
-        if (pathsReader != null) {
+        if (contentReader != null) {
             try {
-                pathsReader.close();
+                contentReader.close();
             } catch (IOException e) {
                 ioError = e;
             } catch (RuntimeException e) {
                 runtimeError = e;
             } finally {
-                pathsReader = null;
-            }
-        }
-        if (contentReader != null) {
-            try {
-                contentReader.close();
-            } catch (IOException e) {
-                if (ioError == null) ioError = e;
-            } catch (RuntimeException e) {
-                if (runtimeError == null) runtimeError = e;
-            } finally {
                 contentReader = null;
-            }
-        }
-        if (pathsWriter != null) {
-            try {
-                if (optimize) pathsWriter.optimize();
-            } catch (IOException e) {
-                if (ioError == null) ioError = e;
-            } catch (RuntimeException e) {
-                if (runtimeError == null) runtimeError = e;
-            } finally {
-                try {
-                    pathsWriter.close();
-                } catch (IOException e) {
-                    if (ioError == null) ioError = e;
-                } catch (RuntimeException e) {
-                    if (runtimeError == null) runtimeError = e;
-                } finally {
-                    pathsWriter = null;
-                }
             }
         }
         if (contentWriter != null) {
@@ -339,45 +259,15 @@ public class LuceneSearchSession implements WorkspaceSession {
         numChanges = 0;
         IOException ioError = null;
         RuntimeException runtimeError = null;
-        if (pathsReader != null) {
-            try {
-                pathsReader.close();
-            } catch (IOException e) {
-                ioError = e;
-            } catch (RuntimeException e) {
-                runtimeError = e;
-            } finally {
-                pathsReader = null;
-            }
-        }
         if (contentReader != null) {
             try {
                 contentReader.close();
             } catch (IOException e) {
-                if (ioError == null) ioError = e;
-            } catch (RuntimeException e) {
-                if (runtimeError == null) runtimeError = e;
-            } finally {
-                contentReader = null;
-            }
-        }
-        if (pathsWriter != null) {
-            try {
-                pathsWriter.rollback();
-            } catch (IOException e) {
                 ioError = e;
             } catch (RuntimeException e) {
                 runtimeError = e;
             } finally {
-                try {
-                    pathsWriter.close();
-                } catch (IOException e) {
-                    ioError = e;
-                } catch (RuntimeException e) {
-                    runtimeError = e;
-                } finally {
-                    pathsWriter = null;
-                }
+                contentReader = null;
             }
         }
         if (contentWriter != null) {
@@ -417,12 +307,10 @@ public class LuceneSearchSession implements WorkspaceSession {
         QueryParser parser = new QueryParser(Version.LUCENE_29, ContentIndex.FULL_TEXT, workspace.analyzer);
         Query query = parser.parse(fullTextSearchExpression);
         planningNanos = System.nanoTime() - planningNanos;
-        TopDocs docs = getContentSearcher().search(query, maxRows + offset);
 
-        // Collect the results ...
+        // Execute the search and place the results into the supplied list ...
+        TopDocs docs = getContentSearcher().search(query, maxRows + offset);
         IndexReader contentReader = getContentReader();
-        IndexReader pathReader = getPathsReader();
-        IndexSearcher pathSearcher = getPathsSearcher();
         ScoreDoc[] scoreDocs = docs.scoreDocs;
         int numberOfResults = scoreDocs.length;
         if (numberOfResults > offset) {
@@ -431,14 +319,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                 ScoreDoc result = scoreDocs[i];
                 int docId = result.doc;
                 // Find the UUID of the node (this UUID might be artificial, so we have to find the path) ...
-                Document doc = contentReader.document(docId, DOC_ID_FIELD_SELECTOR);
-                String id = doc.get(ContentIndex.ID);
-                Document pathDoc = getPathDocument(id, pathReader, pathSearcher, LOCATION_FIELDS_SELECTOR);
-                Location location = readLocation(pathDoc);
-                if (location == null) {
-                    // No path record found ...
-                    continue;
-                }
+                Document doc = contentReader.document(docId, LOCATION_FIELDS_SELECTOR);
+                Location location = readLocation(doc);
                 // Now add the location ...
                 results.add(new Object[] {location, result.score});
             }
@@ -449,10 +331,10 @@ public class LuceneSearchSession implements WorkspaceSession {
 
     protected Location readLocation( Document doc ) {
         // Read the path ...
-        String pathString = doc.get(PathIndex.PATH);
+        String pathString = doc.get(ContentIndex.PATH);
         Path path = processor.pathFactory.create(pathString);
         // Look for the Location's ID properties ...
-        String[] idProps = doc.getValues(PathIndex.LOCATION_ID_PROPERTIES);
+        String[] idProps = doc.getValues(ContentIndex.LOCATION_ID_PROPERTIES);
         if (idProps.length == 0) {
             return Location.create(path);
         }
@@ -472,11 +354,33 @@ public class LuceneSearchSession implements WorkspaceSession {
         return properties.isEmpty() ? Location.create(path) : Location.create(path, properties);
     }
 
-    protected void setOrReplaceProperties( String idString,
+    protected void setOrReplaceProperties( Location location,
                                            Iterable<Property> properties ) throws IOException {
         // Create the document for the content (properties) ...
         Document doc = new Document();
-        doc.add(new Field(ContentIndex.ID, idString, Field.Store.YES, Field.Index.NOT_ANALYZED));
+
+        // Add the information every node has ...
+        Path path = location.getPath();
+        String pathStr = processor.pathAsString(path);
+        String nameStr = path.isRoot() ? "" : processor.stringFactory.create(path.getLastSegment().getName());
+        String localNameStr = path.isRoot() ? "" : path.getLastSegment().getName().getLocalName();
+        int sns = path.isRoot() ? 1 : path.getLastSegment().getIndex();
+
+        // Create a separate document for the path, which makes it easier to handle moves since the path can
+        // be changed without changing any other content fields ...
+        doc.add(new Field(ContentIndex.PATH, pathStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(ContentIndex.NODE_NAME, nameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(ContentIndex.LOCAL_NAME, localNameStr, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new NumericField(ContentIndex.SNS_INDEX, Field.Store.YES, true).setIntValue(sns));
+        doc.add(new NumericField(ContentIndex.DEPTH, Field.Store.YES, true).setIntValue(path.size()));
+        if (location.hasIdProperties()) {
+            for (Property idProp : location.getIdProperties()) {
+                String fieldValue = processor.serializeProperty(idProp);
+                doc.add(new Field(ContentIndex.LOCATION_ID_PROPERTIES, fieldValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
+            }
+        }
+
+        // Index the properties
         String stringValue = null;
         StringBuilder fullTextSearchValue = null;
         for (Property property : properties) {
@@ -559,122 +463,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
-        getContentWriter().updateDocument(new Term(ContentIndex.ID, idString), doc);
-    }
-
-    protected Document getPathDocument( String id,
-                                        IndexReader pathReader,
-                                        IndexSearcher pathSearcher,
-                                        FieldSelector selector ) throws IOException {
-        // Find the path for this node (is there a better way to do this than one search per ID?) ...
-        TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.ID, id)), 1);
-        if (pathDocs.scoreDocs.length < 1) {
-            // No path record found ...
-            return null;
-        }
-        return pathReader.document(pathDocs.scoreDocs[0].doc, selector);
-    }
-
-    /**
-     * Get the set of IDs for the children of the node at the given path.
-     * 
-     * @param parentPath the path to the parent node; may not be null
-     * @return the doc IDs of the child nodes; never null but possibly empty
-     * @throws IOException if there is an error accessing the indexes
-     */
-    protected Set<String> getIdsForChildrenOf( Path parentPath ) throws IOException {
-        // Find the path of the parent ...
-        String stringifiedPath = processor.pathAsString(parentPath);
-        // Append a '/' to the parent path, so we'll only get decendants ...
-        stringifiedPath = stringifiedPath + '/';
-
-        // Create a query to find all the nodes below the parent path ...
-        Query query = new PrefixQuery(new Term(PathIndex.PATH, stringifiedPath));
-        // Include only the children ...
-        int childrenDepth = parentPath.size() + 1;
-        Query depthQuery = NumericRangeQuery.newIntRange(PathIndex.DEPTH, childrenDepth, childrenDepth, true, true);
-        // And combine ...
-        BooleanQuery combinedQuery = new BooleanQuery();
-        combinedQuery.add(query, Occur.MUST);
-        combinedQuery.add(depthQuery, Occur.MUST);
-        query = combinedQuery;
-
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return idCollector.getIds();
-    }
-
-    /**
-     * Get the set of IDs for the nodes that are descendants of the node at the given path.
-     * 
-     * @param parentPath the path to the parent node; may not be null and <i>may not be the root node</i>
-     * @param includeParent true if the parent node should be included in the results, or false if only the descendants should be
-     *        included
-     * @return the IDs of the nodes; never null but possibly empty
-     * @throws IOException if there is an error accessing the indexes
-     */
-    protected Set<String> getIdsForDescendantsOf( Path parentPath,
-                                                  boolean includeParent ) throws IOException {
-        assert !parentPath.isRoot();
-
-        // Find the path of the parent ...
-        String stringifiedPath = processor.pathAsString(parentPath);
-        if (!includeParent) {
-            // Append a '/' to the parent path, and we'll only get decendants ...
-            stringifiedPath = stringifiedPath + '/';
-        }
-
-        // Create a prefix query ...
-        Query query = new PrefixQuery(new Term(PathIndex.PATH, stringifiedPath));
-
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return idCollector.getIds();
-    }
-
-    /**
-     * Get the set containing the single ID for the node at the given path.
-     * 
-     * @param path the path to the node; may not be null
-     * @return the ID of the supplied node; or null if the node cannot be found
-     * @throws IOException if there is an error accessing the indexes
-     */
-    protected String getIdFor( Path path ) throws IOException {
-        // Create a query to find all the nodes below the parent path ...
-        IndexSearcher searcher = getPathsSearcher();
-        Query query = null;
-        if (path.isRoot()) {
-            // Look for the query
-            query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, 0, 0, true, true);
-        } else {
-            String stringifiedPath = processor.pathAsString(path);
-            query = new TermQuery(new Term(PathIndex.PATH, stringifiedPath));
-        }
-
-        // Now execute and collect the UUIDs ...
-        TopDocs topDocs = searcher.search(query, 1);
-        if (topDocs.totalHits == 0) return null;
-        Document pathDoc = getPathsReader().document(topDocs.scoreDocs[0].doc);
-        String idString = pathDoc.get(PathIndex.ID);
-        assert idString != null;
-        return idString;
-    }
-
-    protected Location getLocationFor( Path path ) throws IOException {
-        // Create a query to find all the nodes below the parent path ...
-        IndexSearcher searcher = getPathsSearcher();
-        String stringifiedPath = processor.pathAsString(path);
-        TermQuery query = new TermQuery(new Term(PathIndex.PATH, stringifiedPath));
-
-        // Now execute and collect the UUIDs ...
-        TopDocs topDocs = searcher.search(query, 1);
-        if (topDocs.totalHits == 0) return null;
-        Document pathDoc = getPathsReader().document(topDocs.scoreDocs[0].doc);
-        return readLocation(pathDoc);
+        getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
     }
 
     /**
@@ -686,35 +475,38 @@ public class LuceneSearchSession implements WorkspaceSession {
         return new DualIndexTupleCollector(this, columns);
     }
 
-    public Query findAllNodesWithIds( Set<String> ids ) {
-        if (ids.isEmpty()) {
-            // There are no children, so return a null query ...
-            return new MatchNoneQuery();
-        }
-        if (ids.size() == 1) {
-            String id = ids.iterator().next();
-            if (id == null) return new MatchNoneQuery();
-            return new TermQuery(new Term(ContentIndex.ID, id));
-        }
-        if (ids.size() < 50) {
-            // Create an OR boolean query for all the UUIDs, since this is probably more efficient ...
-            BooleanQuery query = new BooleanQuery();
-            for (String id : ids) {
-                Query uuidQuery = new TermQuery(new Term(ContentIndex.ID, id));
-                query.add(uuidQuery, Occur.SHOULD);
-            }
-            return query;
-        }
-        // Return a query that will always find all of the UUIDs ...
-        return new IdsQuery(ContentIndex.ID, ids);
+    public Location getLocationForRoot() throws IOException {
+        // Look for the root node ...
+        Query query = NumericRangeQuery.newIntRange(ContentIndex.DEPTH, 0, 0, true, true);
+
+        // Execute the search and place the results into the supplied list ...
+        List<Object[]> tuples = new ArrayList<Object[]>(1);
+        FullTextSearchTupleCollector collector = new FullTextSearchTupleCollector(this, tuples);
+        getContentSearcher().search(query, collector);
+
+        // Extract the location from the results ...
+        return tuples.isEmpty() ? Location.create(processor.pathFactory.createRootPath()) : (Location)tuples.get(0)[0];
     }
 
-    public Query findAllNodesBelow( Path ancestorPath ) throws IOException {
-        if (ancestorPath.isRoot()) {
+    public Query findAllNodesBelow( Path parentPath ) {
+        // Find the path of the parent ...
+        String stringifiedPath = processor.pathAsString(parentPath);
+        // Append a '/' to the parent path, and we'll only get decendants ...
+        stringifiedPath = stringifiedPath + '/';
+
+        // Create a prefix query ...
+        return new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
+    }
+
+    public Query findAllNodesAtOrBelow( Path parentPath ) {
+        if (parentPath.isRoot()) {
             return new MatchAllDocsQuery();
         }
-        Set<String> ids = getIdsForDescendantsOf(ancestorPath, false);
-        return findAllNodesWithIds(ids);
+        // Find the path of the parent ...
+        String stringifiedPath = processor.pathAsString(parentPath);
+
+        // Create a prefix query ...
+        return new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
     }
 
     /**
@@ -723,29 +515,38 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @param parentPath the path of the parent node.
      * @return the query; never null
-     * @throws IOException if there is an error finding the UUIDs of the child nodes
      */
-    public Query findChildNodes( Path parentPath ) throws IOException {
-        if (parentPath.isRoot()) {
-            return new MatchAllDocsQuery();
-        }
-        Set<String> childIds = getIdsForChildrenOf(parentPath);
-        return findAllNodesWithIds(childIds);
+    public Query findChildNodes( Path parentPath ) {
+        // Find the path of the parent ...
+        String stringifiedPath = processor.pathAsString(parentPath);
+        // Append a '/' to the parent path, so we'll only get decendants ...
+        stringifiedPath = stringifiedPath + '/';
+
+        // Create a query to find all the nodes below the parent path ...
+        Query query = new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
+        // Include only the children ...
+        int childrenDepth = parentPath.size() + 1;
+        Query depthQuery = NumericRangeQuery.newIntRange(ContentIndex.DEPTH, childrenDepth, childrenDepth, true, true);
+        // And combine ...
+        BooleanQuery combinedQuery = new BooleanQuery();
+        combinedQuery.add(query, Occur.MUST);
+        combinedQuery.add(depthQuery, Occur.MUST);
+        return combinedQuery;
     }
 
     /**
-     * Create a query that can be used to find the one document (or node) that exists at the exact path supplied. This method
-     * first queries the {@link PathIndex path index} to find the ID of the node at the supplied path, and then returns a query
-     * that matches the ID.
+     * Create a query that can be used to find the one document (or node) that exists at the exact path supplied.
      * 
      * @param path the path of the node
      * @return the query; never null
-     * @throws IOException if there is an error finding the ID for the supplied path
      */
-    public Query findNodeAt( Path path ) throws IOException {
-        String id = getIdFor(path);
-        if (id == null) return null;
-        return new TermQuery(new Term(ContentIndex.ID, id));
+    public Query findNodeAt( Path path ) {
+        if (path.isRoot()) {
+            // Look for the root node ...
+            return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, 0, 0, true, true);
+        }
+        String stringifiedPath = processor.pathAsString(path);
+        return new TermQuery(new Term(ContentIndex.PATH, stringifiedPath));
     }
 
     public Query findNodesLike( String fieldName,
@@ -1037,7 +838,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                             Object upperValue,
                                             boolean includesLower,
                                             boolean includesUpper ) {
-        return findNodesWithNumericRange(PathIndex.DEPTH, lowerValue, upperValue, includesLower, includesUpper);
+        return findNodesWithNumericRange(ContentIndex.DEPTH, lowerValue, upperValue, includesLower, includesUpper);
     }
 
     protected Query findNodesWithNumericRange( String field,
@@ -1085,7 +886,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( NodePath nodePath,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) throws IOException {
+                                boolean caseSensitive ) {
         if (!caseSensitive) value = processor.stringFactory.create(value).toLowerCase();
         Path pathValue = operator != Operator.LIKE ? processor.pathFactory.create(value) : null;
         Query query = null;
@@ -1096,44 +897,40 @@ public class LuceneSearchSession implements WorkspaceSession {
                 return new NotQuery(findNodeAt(pathValue));
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
-                query = findNodesLike(PathIndex.PATH, likeExpression, caseSensitive);
+                query = findNodesLike(ContentIndex.PATH, likeExpression, caseSensitive);
                 break;
             case GREATER_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThan(pathValue,
-                                                                                PathIndex.PATH,
+                                                                                ContentIndex.PATH,
                                                                                 processor.valueFactories,
                                                                                 caseSensitive);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThanOrEqualTo(pathValue,
-                                                                                         PathIndex.PATH,
+                                                                                         ContentIndex.PATH,
                                                                                          processor.valueFactories,
                                                                                          caseSensitive);
                 break;
             case LESS_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathLessThan(pathValue,
-                                                                             PathIndex.PATH,
+                                                                             ContentIndex.PATH,
                                                                              processor.valueFactories,
                                                                              caseSensitive);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathLessThanOrEqualTo(pathValue,
-                                                                                      PathIndex.PATH,
+                                                                                      ContentIndex.PATH,
                                                                                       processor.valueFactories,
                                                                                       caseSensitive);
                 break;
         }
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return findAllNodesWithIds(idCollector.getIds());
+        return query;
     }
 
     public Query findNodesWith( NodeName nodeName,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) throws IOException {
+                                boolean caseSensitive ) {
         ValueFactories factories = processor.valueFactories;
         String stringValue = processor.stringFactory.create(value);
         if (!caseSensitive) stringValue = stringValue.toLowerCase();
@@ -1143,39 +940,41 @@ public class LuceneSearchSession implements WorkspaceSession {
         switch (operator) {
             case EQUAL_TO:
                 BooleanQuery booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(PathIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, snsIndex, snsIndex, true, false), Occur.MUST);
+                booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
+                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
+                                 Occur.MUST);
                 return booleanQuery;
             case NOT_EQUAL_TO:
                 booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(PathIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, snsIndex, snsIndex, true, false), Occur.MUST);
+                booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
+                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
+                                 Occur.MUST);
                 return new NotQuery(booleanQuery);
             case GREATER_THAN:
                 query = CompareNameQuery.createQueryForNodesWithNameGreaterThan(segment,
-                                                                                PathIndex.NODE_NAME,
-                                                                                PathIndex.SNS_INDEX,
+                                                                                ContentIndex.NODE_NAME,
+                                                                                ContentIndex.SNS_INDEX,
                                                                                 factories,
                                                                                 caseSensitive);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = CompareNameQuery.createQueryForNodesWithNameGreaterThanOrEqualTo(segment,
-                                                                                         PathIndex.NODE_NAME,
-                                                                                         PathIndex.SNS_INDEX,
+                                                                                         ContentIndex.NODE_NAME,
+                                                                                         ContentIndex.SNS_INDEX,
                                                                                          factories,
                                                                                          caseSensitive);
                 break;
             case LESS_THAN:
                 query = CompareNameQuery.createQueryForNodesWithNameLessThan(segment,
-                                                                             PathIndex.NODE_NAME,
-                                                                             PathIndex.SNS_INDEX,
+                                                                             ContentIndex.NODE_NAME,
+                                                                             ContentIndex.SNS_INDEX,
                                                                              factories,
                                                                              caseSensitive);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = CompareNameQuery.createQueryForNodesWithNameLessThanOrEqualTo(segment,
-                                                                                      PathIndex.NODE_NAME,
-                                                                                      PathIndex.SNS_INDEX,
+                                                                                      ContentIndex.NODE_NAME,
+                                                                                      ContentIndex.SNS_INDEX,
                                                                                       factories,
                                                                                       caseSensitive);
                 break;
@@ -1187,7 +986,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     String localNameExpression = likeExpression.substring(0, openBracketIndex);
                     String snsIndexExpression = likeExpression.substring(openBracketIndex);
                     Query localNameQuery = CompareStringQuery.createQueryForNodesWithFieldLike(localNameExpression,
-                                                                                               PathIndex.NODE_NAME,
+                                                                                               ContentIndex.NODE_NAME,
                                                                                                factories,
                                                                                                caseSensitive);
                     Query snsQuery = createSnsIndexQuery(snsIndexExpression);
@@ -1213,120 +1012,98 @@ public class LuceneSearchSession implements WorkspaceSession {
                 } else {
                     // There is no SNS expression ...
                     query = CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
-                                                                                PathIndex.NODE_NAME,
+                                                                                ContentIndex.NODE_NAME,
                                                                                 factories,
                                                                                 caseSensitive);
                 }
                 assert query != null;
                 break;
         }
-
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return findAllNodesWithIds(idCollector.getIds());
+        return query;
     }
 
     public Query findNodesWith( NodeLocalName nodeName,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) throws IOException {
+                                boolean caseSensitive ) {
         String nameValue = processor.stringFactory.create(value);
         Query query = null;
         switch (operator) {
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
-                query = findNodesLike(PathIndex.LOCAL_NAME, likeExpression, caseSensitive);
+                query = findNodesLike(ContentIndex.LOCAL_NAME, likeExpression, caseSensitive);
                 break;
             case EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
-                                                                               PathIndex.LOCAL_NAME,
+                                                                               ContentIndex.LOCAL_NAME,
                                                                                processor.valueFactories,
                                                                                caseSensitive);
                 break;
             case NOT_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
-                                                                               PathIndex.LOCAL_NAME,
+                                                                               ContentIndex.LOCAL_NAME,
                                                                                processor.valueFactories,
                                                                                caseSensitive);
                 query = new NotQuery(query);
                 break;
             case GREATER_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(nameValue,
-                                                                                   PathIndex.LOCAL_NAME,
+                                                                                   ContentIndex.LOCAL_NAME,
                                                                                    processor.valueFactories,
                                                                                    caseSensitive);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(nameValue,
-                                                                                            PathIndex.LOCAL_NAME,
+                                                                                            ContentIndex.LOCAL_NAME,
                                                                                             processor.valueFactories,
                                                                                             caseSensitive);
                 break;
             case LESS_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThan(nameValue,
-                                                                                PathIndex.LOCAL_NAME,
+                                                                                ContentIndex.LOCAL_NAME,
                                                                                 processor.valueFactories,
                                                                                 caseSensitive);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(nameValue,
-                                                                                         PathIndex.LOCAL_NAME,
+                                                                                         ContentIndex.LOCAL_NAME,
                                                                                          processor.valueFactories,
                                                                                          caseSensitive);
                 break;
         }
-
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return findAllNodesWithIds(idCollector.getIds());
+        return query;
     }
 
     public Query findNodesWith( NodeDepth depthConstraint,
                                 Operator operator,
-                                Object value ) throws IOException {
+                                Object value ) {
         int depth = processor.valueFactories.getLongFactory().create(value).intValue();
-        Query query = null;
         switch (operator) {
             case EQUAL_TO:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, depth, depth, true, true);
-                break;
+                return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, depth, true, true);
             case NOT_EQUAL_TO:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, depth, depth, true, true);
-                query = new NotQuery(query);
-                break;
+                Query query = NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, depth, true, true);
+                return new NotQuery(query);
             case GREATER_THAN:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, depth, MAX_DEPTH, false, true);
-                break;
+                return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, MAX_DEPTH, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, depth, MAX_DEPTH, true, true);
-                break;
+                return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, MAX_DEPTH, true, true);
             case LESS_THAN:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, MIN_DEPTH, depth, true, false);
-                break;
+                return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, MIN_DEPTH, depth, true, false);
             case LESS_THAN_OR_EQUAL_TO:
-                query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, MIN_DEPTH, depth, true, true);
-                break;
+                return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, MIN_DEPTH, depth, true, true);
             case LIKE:
                 // This is not allowed ...
                 return null;
         }
-
-        // Now execute and collect the IDs ...
-        IdCollector idCollector = new IdCollector();
-        IndexSearcher searcher = getPathsSearcher();
-        searcher.search(query, idCollector);
-        return findAllNodesWithIds(idCollector.getIds());
+        return null;
     }
 
     protected Query createLocalNameQuery( String likeExpression,
                                           boolean caseSensitive ) {
         if (likeExpression == null) return null;
         return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
-                                                                   PathIndex.LOCAL_NAME,
+                                                                   ContentIndex.LOCAL_NAME,
                                                                    processor.valueFactories,
                                                                    caseSensitive);
     }
@@ -1358,16 +1135,16 @@ public class LuceneSearchSession implements WorkspaceSession {
         }
         if (likeExpression.equals("_")) {
             // The SNS expression can only be one digit ...
-            return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, MIN_SNS_INDEX, 9, true, true);
+            return NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, MIN_SNS_INDEX, 9, true, true);
         }
         if (likeExpression.equals("%")) {
             // The SNS expression can be any digits ...
-            return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, MIN_SNS_INDEX, MAX_SNS_INDEX, true, true);
+            return NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, MIN_SNS_INDEX, MAX_SNS_INDEX, true, true);
         }
         if (likeExpression.indexOf('_') != -1) {
             if (likeExpression.indexOf('%') != -1) {
                 // Contains both ...
-                return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
+                return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
             }
             // It presumably contains some numbers and at least one '_' character ...
             int firstWildcardChar = likeExpression.indexOf('_');
@@ -1376,7 +1153,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 int secondWildcardChar = likeExpression.indexOf('_', firstWildcardChar + 1);
                 if (secondWildcardChar != -1) {
                     // There are multiple '_' characters ...
-                    return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
+                    return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
                 }
             }
             // There's only one '_', so parse the lowermost value and uppermost value ...
@@ -1386,7 +1163,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 // This SNS is just a number ...
                 int lowerSns = Integer.parseInt(lowerExpression);
                 int upperSns = Integer.parseInt(upperExpression);
-                return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, lowerSns, upperSns, true, true);
+                return NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, lowerSns, upperSns, true, true);
             } catch (NumberFormatException e) {
                 // It's not a number but it's in the SNS field, so there will be no results ...
                 return new MatchNoneQuery();
@@ -1394,87 +1171,16 @@ public class LuceneSearchSession implements WorkspaceSession {
         }
         if (likeExpression.indexOf('%') != -1) {
             // It presumably contains some numbers and at least one '%' character ...
-            return findNodesLike(PathIndex.SNS_INDEX, likeExpression, true);
+            return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
         }
         // This is not a LIKE expression but an exact value specification and should be a number ...
         try {
             // This SNS is just a number ...
             int sns = Integer.parseInt(likeExpression);
-            return NumericRangeQuery.newIntRange(PathIndex.SNS_INDEX, sns, sns, true, true);
+            return NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, sns, sns, true, true);
         } catch (NumberFormatException e) {
             // It's not a number but it's in the SNS field, so there will be no results ...
             return new MatchNoneQuery();
-        }
-    }
-
-    /**
-     * A {@link Collector} implementation that only captures the UUID of the documents returned by a query. Score information is
-     * not recorded. This is often used when querying the {@link PathIndex} to collect the UUIDs of a set of nodes satisfying some
-     * path constraint.
-     * 
-     * @see LuceneSearchSession#findChildNodes(Path)
-     */
-    protected static class IdCollector extends Collector {
-        private final Set<String> ids = new HashSet<String>();
-        private String[] idsByDocId;
-
-        // private int baseDocId;
-
-        protected IdCollector() {
-        }
-
-        /**
-         * Get the UUIDs that have been collected.
-         * 
-         * @return the set of UUIDs; never null
-         */
-        public Set<String> getIds() {
-            return ids;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#acceptsDocsOutOfOrder()
-         */
-        @Override
-        public boolean acceptsDocsOutOfOrder() {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#setScorer(org.apache.lucene.search.Scorer)
-         */
-        @Override
-        public void setScorer( Scorer scorer ) {
-            // we don't care about scoring
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#collect(int)
-         */
-        @Override
-        public void collect( int docId ) {
-            assert docId >= 0;
-            String idString = idsByDocId[docId];
-            assert idString != null;
-            ids.add(idString);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.apache.lucene.search.Collector#setNextReader(org.apache.lucene.index.IndexReader, int)
-         */
-        @Override
-        public void setNextReader( IndexReader reader,
-                                   int docBase ) throws IOException {
-            this.idsByDocId = FieldCache.DEFAULT.getStrings(reader, ContentIndex.ID); // same value as PathIndex.ID
-            // this.baseDocId = docBase;
         }
     }
 
@@ -1483,7 +1189,6 @@ public class LuceneSearchSession implements WorkspaceSession {
      */
     protected static class DualIndexTupleCollector extends TupleCollector {
         private final LuceneSearchSession session;
-        private final LuceneSearchProcessor processor;
         private final LinkedList<Object[]> tuples = new LinkedList<Object[]>();
         private final Columns columns;
         private final int numValues;
@@ -1494,14 +1199,11 @@ public class LuceneSearchSession implements WorkspaceSession {
         private Scorer scorer;
         private IndexReader currentReader;
         private int docOffset;
-        private boolean resolvedLocations = false;
 
         protected DualIndexTupleCollector( LuceneSearchSession session,
                                            Columns columns ) {
             this.session = session;
-            this.processor = session.processor;
             this.columns = columns;
-            assert this.processor != null;
             assert this.columns != null;
             this.numValues = this.columns.getTupleSize();
             assert this.numValues >= 0;
@@ -1510,13 +1212,16 @@ public class LuceneSearchSession implements WorkspaceSession {
             this.locationIndex = this.columns.getLocationIndex(selectorName);
             this.recordScore = this.columns.hasFullTextSearchScores();
             this.scoreIndex = this.recordScore ? this.columns.getFullTextSearchScoreIndexFor(selectorName) : -1;
-            final Set<String> columnNames = new HashSet<String>(this.columns.getColumnNames());
-            columnNames.add(ContentIndex.ID); // add the UUID, which we'll put into the Location ...
+
+            // Create the set of field names that we need to load from the document ...
+            final Set<String> fieldNames = new HashSet<String>(this.columns.getColumnNames());
+            fieldNames.add(ContentIndex.LOCATION_ID_PROPERTIES); // add the UUID, which we'll put into the Location ...
+            fieldNames.add(ContentIndex.PATH); // add the UUID, which we'll put into the Location ...
             this.fieldSelector = new FieldSelector() {
                 private static final long serialVersionUID = 1L;
 
                 public FieldSelectorResult accept( String fieldName ) {
-                    return columnNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
+                    return fieldNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
                 }
             };
         }
@@ -1526,41 +1231,7 @@ public class LuceneSearchSession implements WorkspaceSession {
          */
         @Override
         public LinkedList<Object[]> getTuples() {
-            resolveLocations();
             return tuples;
-        }
-
-        protected void resolveLocations() {
-            if (resolvedLocations) return;
-            try {
-                // The Location field in the tuples all contain the ID of the document, so we need to replace these
-                // with the appropriate Location objects, using the content from the PathIndex ...
-                IndexReader pathReader = session.getPathsReader();
-                IndexSearcher pathSearcher = session.getPathsSearcher();
-                for (Object[] tuple : tuples) {
-                    String id = (String)tuple[locationIndex];
-                    assert id != null;
-                    Location location = getLocationForDocument(id, pathReader, pathSearcher);
-                    if (location == null) continue;
-                    tuple[locationIndex] = location;
-                }
-                resolvedLocations = true;
-            } catch (IOException e) {
-                throw new LuceneException(e);
-            }
-        }
-
-        protected Location getLocationForDocument( String id,
-                                                   IndexReader pathReader,
-                                                   IndexSearcher pathSearcher ) throws IOException {
-            // Find the path for this node (is there a better way to do this than one search per ID?) ...
-            TopDocs pathDocs = pathSearcher.search(new TermQuery(new Term(PathIndex.ID, id)), 1);
-            if (pathDocs.scoreDocs.length < 1) {
-                // No path record found ...
-                return null;
-            }
-            Document pathDoc = pathReader.document(pathDocs.scoreDocs[0].doc);
-            return session.readLocation(pathDoc);
         }
 
         /**
@@ -1626,9 +1297,87 @@ public class LuceneSearchSession implements WorkspaceSession {
                 tuple[scoreIndex] = scorer.score();
             }
 
-            // Load the document ID (which is a stringified UUID) into the Location slot,
-            // which will be replaced later with a real Location ...
-            tuple[locationIndex] = document.get(ContentIndex.ID);
+            // Read the location ...
+            tuple[locationIndex] = session.readLocation(document);
+            tuples.add(tuple);
+        }
+    }
+
+    /**
+     * This collector is responsible for loading the value for each of the columns into each tuple array.
+     */
+    protected static class FullTextSearchTupleCollector extends TupleCollector {
+        private final List<Object[]> tuples;
+        private final FieldSelector fieldSelector;
+        private final LuceneSearchSession session;
+        private Scorer scorer;
+        private IndexReader currentReader;
+        private int docOffset;
+
+        protected FullTextSearchTupleCollector( LuceneSearchSession session,
+                                                List<Object[]> tuples ) {
+            assert session != null;
+            assert tuples != null;
+            this.session = session;
+            this.tuples = tuples;
+            this.fieldSelector = LOCATION_FIELDS_SELECTOR;
+        }
+
+        /**
+         * @return tuples
+         */
+        @Override
+        public List<Object[]> getTuples() {
+            return tuples;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#acceptsDocsOutOfOrder()
+         */
+        @Override
+        public boolean acceptsDocsOutOfOrder() {
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#setNextReader(org.apache.lucene.index.IndexReader, int)
+         */
+        @Override
+        public void setNextReader( IndexReader reader,
+                                   int docBase ) {
+            this.currentReader = reader;
+            this.docOffset = docBase;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#setScorer(org.apache.lucene.search.Scorer)
+         */
+        @Override
+        public void setScorer( Scorer scorer ) {
+            this.scorer = scorer;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.lucene.search.Collector#collect(int)
+         */
+        @Override
+        public void collect( int doc ) throws IOException {
+            int docId = doc + docOffset;
+            Object[] tuple = new Object[2];
+            Document document = currentReader.document(docId, fieldSelector);
+            // Read the Location ...
+            tuple[0] = session.readLocation(document);
+            // And read the score ...
+            tuple[1] = scorer.score();
+            // And add the tuple ...
             tuples.add(tuple);
         }
     }
