@@ -11,7 +11,9 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.map.MapNode;
 import org.jboss.dna.graph.connector.map.MapRequestProcessor;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
@@ -59,61 +61,69 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
         int maximumDepth = request.maximumDepth();
         List<MapNode> branch = workspace.getBranch(request.at(), maximumDepth);
 
-        if (!branch.isEmpty()) {
-            Map<UUID, LocationWithDepth> locations = new HashMap<UUID, LocationWithDepth>(branch.size());
+        if (branch.isEmpty()) {
+            Path lowest = null;
 
-            /*
-             * Add the first (root) node to the request
-             */
-            MapNode root = branch.get(0);
-            Location rootLocation = getActualLocation(request.at(), root);
-            request.setActualLocationOfNode(rootLocation);
-            locations.put(root.getUuid(), new LocationWithDepth(rootLocation, 0));
-
-            /*
-             * The obvious thing to do here would be to call root.getChildren(), but that would
-             * result in the JPA implementation running an extra query to load the collection of
-             * children for the entity even though we've already loaded all of the children 
-             * with the call to workspace.getBranch(...) earlier.  
-             * 
-             * We'll build the list of children ourselves knowing that all children are in the result set.
-             * 
-             * The concrete type is used in the variable declaration instead of the relevant interface
-             * (Multimap<UUID, Location>) because we need to cast the result of a .get(UUID) operation
-             * to a List<Location> below and the interface only guarantees a Collection<Location>.
-             */
-            LinkedListMultimap<UUID, Location> childrenByParentUuid = LinkedListMultimap.create();
-
-            /*
-             * We don't want to process the root node (the first node) in this loop
-             * as this would cause us to unnecessarily load the root node's parent node.
-             */
-            for (int i = 1; i < branch.size(); i++) {
-                MapNode node = branch.get(i);
-                UUID parentUuid = node.getParent().getUuid();
-
-                LocationWithDepth parentLocation = locations.get(parentUuid);
-                Location nodeLocation = locationFor(parentLocation.getLocation(), node);
-                locations.put(node.getUuid(), new LocationWithDepth(nodeLocation, parentLocation.getDepth() + 1));
-
-                childrenByParentUuid.put(parentUuid, locationFor(locations.get(parentUuid).getLocation(), node));
+            if (request.at().hasPath()) {
+                lowest = workspace.getLowestExistingPath(request.at().getPath());
             }
+            request.setError(new PathNotFoundException(request.at(), lowest));
+            return;
+        }
 
-            request.setChildren(rootLocation, childrenByParentUuid.get(root.getUuid()));
-            request.setProperties(rootLocation, root.getProperties().values());
+        Map<UUID, LocationWithDepth> locations = new HashMap<UUID, LocationWithDepth>(branch.size());
 
-            /*
-             * Process the subsequent nodes
-             */
-            for (int i = 1; i < branch.size(); i++) {
-                MapNode node = branch.get(i);
+        /*
+         * Add the first (root) node to the request
+         */
+        MapNode root = branch.get(0);
+        Location rootLocation = getActualLocation(request.at(), root);
+        request.setActualLocationOfNode(rootLocation);
+        locations.put(root.getUuid(), new LocationWithDepth(rootLocation, 0));
 
-                UUID nodeUuid = node.getUuid();
-                LocationWithDepth nodeLocation = locations.get(nodeUuid);
-                if (nodeLocation.getDepth() < maximumDepth) {
-                    request.setChildren(nodeLocation.getLocation(), childrenByParentUuid.get(nodeUuid));
-                    request.setProperties(nodeLocation.getLocation(), node.getProperties().values());
-                }
+        /*
+         * The obvious thing to do here would be to call root.getChildren(), but that would
+         * result in the JPA implementation running an extra query to load the collection of
+         * children for the entity even though we've already loaded all of the children 
+         * with the call to workspace.getBranch(...) earlier.  
+         * 
+         * We'll build the list of children ourselves knowing that all children are in the result set.
+         * 
+         * The concrete type is used in the variable declaration instead of the relevant interface
+         * (Multimap<UUID, Location>) because we need to cast the result of a .get(UUID) operation
+         * to a List<Location> below and the interface only guarantees a Collection<Location>.
+         */
+        LinkedListMultimap<UUID, Location> childrenByParentUuid = LinkedListMultimap.create();
+
+        /*
+         * We don't want to process the root node (the first node) in this loop
+         * as this would cause us to unnecessarily load the root node's parent node.
+         */
+        for (int i = 1; i < branch.size(); i++) {
+            MapNode node = branch.get(i);
+            UUID parentUuid = node.getParent().getUuid();
+
+            LocationWithDepth parentLocation = locations.get(parentUuid);
+            Location nodeLocation = locationFor(parentLocation.getLocation(), node);
+            locations.put(node.getUuid(), new LocationWithDepth(nodeLocation, parentLocation.getDepth() + 1));
+
+            childrenByParentUuid.put(parentUuid, locationFor(locations.get(parentUuid).getLocation(), node));
+        }
+
+        request.setChildren(rootLocation, childrenByParentUuid.get(root.getUuid()));
+        request.setProperties(rootLocation, root.getProperties().values());
+
+        /*
+         * Process the subsequent nodes
+         */
+        for (int i = 1; i < branch.size(); i++) {
+            MapNode node = branch.get(i);
+
+            UUID nodeUuid = node.getUuid();
+            LocationWithDepth nodeLocation = locations.get(nodeUuid);
+            if (nodeLocation.getDepth() < maximumDepth) {
+                request.setChildren(nodeLocation.getLocation(), childrenByParentUuid.get(nodeUuid));
+                request.setProperties(nodeLocation.getLocation(), node.getProperties().values());
             }
         }
 
