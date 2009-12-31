@@ -139,8 +139,10 @@ class NodeTypeSchemata implements Schemata {
         Set<String> fullTextSearchableNames = new HashSet<String>();
         for (JcrPropertyDefinition defn : propertyDefinitions) {
             if (defn.isResidual()) continue;
+            if (defn.isPrivate()) continue;
             // if (defn.isMultiple()) continue;
             Name name = defn.getInternalName();
+
             String columnName = name.getString(registry);
             if (first) {
                 builder.addTable(tableName, columnName);
@@ -229,11 +231,17 @@ class NodeTypeSchemata implements Schemata {
         for (JcrPropertyDefinition defn : defns) {
             if (defn.isResidual()) continue;
             if (defn.isMultiple()) continue;
+            if (defn.isPrivate()) continue;
             Name name = defn.getInternalName();
+
             String columnName = name.getString(registry);
             if (first) first = false;
             else viewDefinition.append(',');
             viewDefinition.append('[').append(columnName).append(']');
+        }
+        if (first) {
+            // All the properties were skipped ...
+            return;
         }
         viewDefinition.append(" FROM ").append(AllNodes.ALL_NODES_NAME);
 

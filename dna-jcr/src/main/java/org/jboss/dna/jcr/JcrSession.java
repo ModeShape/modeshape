@@ -65,6 +65,7 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.session.GraphSession;
 import org.jboss.dna.jcr.JcrContentHandler.EnclosingSAXException;
 import org.jboss.dna.jcr.JcrContentHandler.SaveMode;
@@ -877,6 +878,29 @@ class JcrSession implements Session {
      */
     public void save() throws RepositoryException {
         cache.save();
+    }
+
+    /**
+     * Crawl and index the content in this workspace.
+     * 
+     * @throws IllegalArgumentException if the workspace is null
+     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
+     */
+    public void reindexContent() {
+        repository().queryManager().reindexContent(workspace());
+    }
+
+    /**
+     * Crawl and index the content starting at the supplied path in this workspace, to the designated depth.
+     * 
+     * @param path the path of the content to be indexed
+     * @param depth the depth of the content to be indexed
+     * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
+     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
+     */
+    public void reindexContent( String path,
+                                int depth ) {
+        repository().queryManager().reindexContent(workspace(), path, depth);
     }
 
     /**

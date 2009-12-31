@@ -82,8 +82,6 @@ public class XPathQueryParser implements QueryParser {
     public QueryCommand parseQuery( String query,
                                     TypeSystem typeSystem ) throws InvalidQueryException, ParsingException {
         Component xpath = new XPathParser(typeSystem).parseXPath(query);
-        System.out.println(query);
-        System.out.println(" --> " + xpath);
         // Convert the result into a QueryCommand ...
         QueryCommand command = new XPathToQueryTranslator(typeSystem, query).createQuery(xpath);
         return command;

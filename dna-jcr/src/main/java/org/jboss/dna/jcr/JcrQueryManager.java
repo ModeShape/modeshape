@@ -114,6 +114,10 @@ class JcrQueryManager implements QueryManager {
         try {
             // Parsing must be done now ...
             QueryCommand command = parser.parseQuery(expression, typeSystem);
+            if (command == null) {
+                // The query is not well-formed and cannot be parsed ...
+                throw new InvalidQueryException(JcrI18n.queryCannotBeParsedUsingLanguage.text(language, expression));
+            }
             PlanHints hints = new PlanHints();
             // If using XPath, we need to add a few hints ...
             if (Query.XPATH.equals(language)) {
@@ -419,6 +423,16 @@ class JcrQueryManager implements QueryManager {
             final int numRows = results.getRowCount();
             final List<Object[]> tuples = results.getTuples();
             return new QueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return results.toString();
         }
     }
 

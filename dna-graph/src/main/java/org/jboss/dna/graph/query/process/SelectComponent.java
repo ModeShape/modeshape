@@ -26,6 +26,7 @@ package org.jboss.dna.graph.query.process;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -44,6 +45,7 @@ import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.Or;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.SameNode;
+import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.StaticOperand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
@@ -234,7 +236,6 @@ public class SelectComponent extends DelegatingComponent {
      *        in perhaps an non-ideal manner
      * @return the constraint evaluator; never null
      */
-    @SuppressWarnings( "unchecked" )
     protected ConstraintChecker createChecker( final TypeSystem types,
                                                Schemata schemata,
                                                Columns columns,
@@ -396,77 +397,117 @@ public class SelectComponent extends DelegatingComponent {
             Comparison comparison = (Comparison)constraint;
 
             // Create the correct dynamic operation ...
-            final DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, comparison.getOperand1());
-            final String expectedType = dynamicOperation.getExpectedType();
-
-            // Determine the literal value ...
+            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, comparison.getOperand1());
+            Operator operator = comparison.getOperator();
             StaticOperand staticOperand = comparison.getOperand2();
-            Object literalValue = null;
-            if (staticOperand instanceof BindVariableName) {
-                BindVariableName bindVariable = (BindVariableName)staticOperand;
-                String variableName = bindVariable.getVariableName();
-                literalValue = variables.get(variableName); // may be null
-            } else {
-                Literal literal = (Literal)staticOperand;
-                literalValue = literal.getValue();
+            return createChecker(types, schemata, columns, dynamicOperation, operator, staticOperand);
+        }
+        if (constraint instanceof SetCriteria) {
+            SetCriteria setCriteria = (SetCriteria)constraint;
+            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, setCriteria.getLeftOperand());
+            Operator operator = Operator.EQUAL_TO;
+            final List<ConstraintChecker> checkers = new LinkedList<ConstraintChecker>();
+            for (StaticOperand setValue : setCriteria.getRightOperands()) {
+                ConstraintChecker rightChecker = createChecker(types, schemata, columns, dynamicOperation, operator, setValue);
+                assert rightChecker != null;
+                checkers.add(rightChecker);
             }
-            // Create the correct comparator ...
-            final TypeFactory<?> typeFactory = types.getTypeFactory(expectedType);
-            assert typeFactory != null;
-            final Comparator<Object> comparator = (Comparator<Object>)typeFactory.getComparator();
-            assert comparator != null;
-            // Create the correct operation ...
-            final TypeFactory<?> literalFactory = types.getTypeFactory(expectedType);
-            final Object rhs = literalFactory.create(literalValue);
-            switch (comparison.getOperator()) {
-                case EQUAL_TO:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) == 0;
-                        }
-                    };
-                case GREATER_THAN:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) > 0;
-                        }
-                    };
-                case GREATER_THAN_OR_EQUAL_TO:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) >= 0;
-                        }
-                    };
-                case LESS_THAN:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) < 0;
-                        }
-                    };
-                case LESS_THAN_OR_EQUAL_TO:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) <= 0;
-                        }
-                    };
-                case NOT_EQUAL_TO:
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            return comparator.compare(dynamicOperation.evaluate(tuples), rhs) != 0;
-                        }
-                    };
-                case LIKE:
-                    // Convert the LIKE expression to a regular expression
-                    final Pattern pattern = createRegexFromLikeExpression(types.asString(rhs));
-                    return new ConstraintChecker() {
-                        public boolean satisfiesConstraints( Object[] tuples ) {
-                            Object tupleValue = dynamicOperation.evaluate(tuples);
-                            if (tupleValue == null) return false;
-                            String value = types.asString(tupleValue);
-                            return pattern.matcher(value).matches();
-                        }
-                    };
+            if (checkers.isEmpty()) {
+                // Nothing will satisfy these constraints ...
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuple ) {
+                        return false;
+                    }
+                };
             }
+            return new ConstraintChecker() {
+                public boolean satisfiesConstraints( Object[] tuple ) {
+                    for (ConstraintChecker checker : checkers) {
+                        if (checker.satisfiesConstraints(tuple)) return true;
+                    }
+                    return false;
+                }
+            };
+        }
+        assert false;
+        return null;
+    }
+
+    @SuppressWarnings( "unchecked" )
+    protected ConstraintChecker createChecker( final TypeSystem types,
+                                               Schemata schemata,
+                                               Columns columns,
+                                               final DynamicOperation dynamicOperation,
+                                               Operator operator,
+                                               StaticOperand staticOperand ) {
+        final String expectedType = dynamicOperation.getExpectedType();
+
+        // Determine the literal value ...
+        Object literalValue = null;
+        if (staticOperand instanceof BindVariableName) {
+            BindVariableName bindVariable = (BindVariableName)staticOperand;
+            String variableName = bindVariable.getVariableName();
+            literalValue = variables.get(variableName); // may be null
+        } else {
+            Literal literal = (Literal)staticOperand;
+            literalValue = literal.getValue();
+        }
+        // Create the correct comparator ...
+        final TypeFactory<?> typeFactory = types.getTypeFactory(expectedType);
+        assert typeFactory != null;
+        final Comparator<Object> comparator = (Comparator<Object>)typeFactory.getComparator();
+        assert comparator != null;
+        // Create the correct operation ...
+        final TypeFactory<?> literalFactory = types.getTypeFactory(expectedType);
+        final Object rhs = literalFactory.create(literalValue);
+        switch (operator) {
+            case EQUAL_TO:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) == 0;
+                    }
+                };
+            case GREATER_THAN:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) > 0;
+                    }
+                };
+            case GREATER_THAN_OR_EQUAL_TO:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) >= 0;
+                    }
+                };
+            case LESS_THAN:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) < 0;
+                    }
+                };
+            case LESS_THAN_OR_EQUAL_TO:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) <= 0;
+                    }
+                };
+            case NOT_EQUAL_TO:
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        return comparator.compare(dynamicOperation.evaluate(tuples), rhs) != 0;
+                    }
+                };
+            case LIKE:
+                // Convert the LIKE expression to a regular expression
+                final Pattern pattern = createRegexFromLikeExpression(types.asString(rhs));
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuples ) {
+                        Object tupleValue = dynamicOperation.evaluate(tuples);
+                        if (tupleValue == null) return false;
+                        String value = types.asString(tupleValue);
+                        return pattern.matcher(value).matches();
+                    }
+                };
         }
         assert false;
         return null;

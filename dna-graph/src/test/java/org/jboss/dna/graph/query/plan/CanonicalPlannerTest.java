@@ -26,7 +26,9 @@ package org.jboss.dna.graph.query.plan;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.graph.ExecutionContext;
@@ -71,6 +73,14 @@ public class CanonicalPlannerTest {
 
     protected SelectorName selector( String name ) {
         return new SelectorName(name);
+    }
+
+    protected Set<SelectorName> selectors( String... names ) {
+        Set<SelectorName> selectors = new HashSet<SelectorName>();
+        for (String name : names) {
+            selectors.add(selector(name));
+        }
+        return selectors;
     }
 
     @SuppressWarnings( "unchecked" )
@@ -158,6 +168,41 @@ public class CanonicalPlannerTest {
         PlanNode source = plan.getFirstChild();
         assertSourceNode(source, "someTable", null, "column1", "column2", "column3");
         assertThat(source.getChildCount(), is(0));
+    }
+
+    @Test
+    public void shouldProducePlanWhenSelectingColumnsFromTableWithoutAlias() {
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
+        query = builder.select("column1", "column2").from("someTable").where().path("someTable").isEqualTo(1L).end().query();
+        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+        assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
+        assertThat(plan.getSelectors(), is(selectors("someTable")));
+    }
+
+    @Test
+    public void shouldProducePlanWhenSelectingColumnsFromTableWithAlias() {
+        schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
+        query = builder.select("column1", "column2").from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
+        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+        System.out.println(plan);
+        assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
+        assertThat(plan.getSelectors(), is(selectors("t1")));
+    }
+
+    @Test
+    public void shouldProducePlanWhenSelectingAllColumnsFromTableWithAlias() {
+        schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
+        query = builder.selectStar().from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
+        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+        System.out.println(plan);
+        assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
+        assertThat(plan.getSelectors(), is(selectors("t1")));
     }
 
     @Test

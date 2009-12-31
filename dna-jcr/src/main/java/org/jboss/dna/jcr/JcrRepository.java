@@ -321,6 +321,22 @@ public class JcrRepository implements Repository {
      */
     protected static final Map<Option, String> DEFAULT_OPTIONS;
 
+    public static final class QueryLanguage {
+        /**
+         * The standard JCR 1.0 XPath query language.
+         */
+        public static final String XPATH = Query.XPATH;
+        /**
+         * The SQL dialect that is based upon an enhanced version of the JCR 2.0 SQL query language.
+         */
+        public static final String SQL = SqlQueryParser.LANGUAGE;
+        /**
+         * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
+         * specification.
+         */
+        public static final String SEARCH = FullTextSearchParser.LANGUAGE;
+    }
+
     static {
         // Initialize the unmodifiable map of default options ...
         EnumMap<Option, String> defaults = new EnumMap<Option, String>(Option.class);
@@ -932,7 +948,7 @@ public class JcrRepository implements Repository {
         if (this.federatedSource != null) {
             this.federatedSource.close();
         }
-        
+
         this.repositoryObservationManager.shutdown();
     }
 
@@ -1192,7 +1208,7 @@ public class JcrRepository implements Repository {
         /**
          * @param repositoryObservable the repository library observable this observer should register with
          */
-        protected RepositoryObservationManager(Observable repositoryObservable) {
+        protected RepositoryObservationManager( Observable repositoryObservable ) {
             this.repositoryObservable = repositoryObservable;
             this.repositoryObservable.register(this);
         }
@@ -1249,7 +1265,7 @@ public class JcrRepository implements Repository {
                 this.observerService.shutdown();
             }
         }
-        
+
         /**
          * {@inheritDoc}
          * 

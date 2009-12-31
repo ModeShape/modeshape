@@ -291,7 +291,7 @@ class JcrContentHandler extends DefaultHandler {
         private String currentPropName;
         private int currentPropType;
 
-        private StringBuffer valueBuffer;
+        private StringBuilder valueBuffer;
         private final Map<String, List<Value>> currentProps;
 
         /**
@@ -303,7 +303,6 @@ class JcrContentHandler extends DefaultHandler {
             this.parentStack.push(currentNode);
 
             this.currentProps = new HashMap<String, List<Value>>();
-            this.valueBuffer = new StringBuffer();
 
             this.svNameName = JcrSvLexicon.NAME.getString(namespaces());
             this.svTypeName = JcrSvLexicon.TYPE.getString(namespaces());
@@ -320,6 +319,8 @@ class JcrContentHandler extends DefaultHandler {
                                   String localName,
                                   String name,
                                   Attributes atts ) throws SAXException {
+            // Always create a new string buffer for the content value, because we're starting a new element ...
+            valueBuffer = new StringBuilder();
             if ("node".equals(localName)) {
                 if (currentNodeName != null) {
                     addNodeIfPending();
@@ -346,7 +347,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (rawUuid != null) {
                         assert rawUuid.size() == 1;
                         uuid = UUID.fromString(rawUuid.get(0).getString());
-                        
+
                         try {
                             // Deal with any existing node ...
                             AbstractJcrNode existingNodeWithUuid = cache().findJcrNode(Location.create(uuid));
@@ -363,20 +364,23 @@ class JcrContentHandler extends DefaultHandler {
                                         throw new ConstraintViolationException(
                                                                                JcrI18n.cannotRemoveParentNodeOfTarget.text(existingNodeWithUuid.getPath(),
                                                                                                                            uuid,
-                                                                                                                           parentStack.firstElement().getPath()));
+                                                                                                                           parentStack.firstElement()
+                                                                                                                                      .getPath()));
                                     }
                                     existingNodeWithUuid.remove();
                                     break;
                                 case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
                                     throw new ItemExistsException(
                                                                   JcrI18n.itemAlreadyExistsWithUuid.text(uuid,
-                                                                                                         cache().session().workspace().getName(),
+                                                                                                         cache().session()
+                                                                                                                .workspace()
+                                                                                                                .getName(),
                                                                                                          existingNodeWithUuid.getPath()));
                             }
                         } catch (ItemNotFoundException e) {
                             // there wasn't an existing item, so just continue
                         }
-                        
+
                     }
 
                     String typeName = currentProps.get(primaryTypeName).get(0).getString();
@@ -439,7 +443,6 @@ class JcrContentHandler extends DefaultHandler {
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
                 }
-                valueBuffer = new StringBuffer();
             }
         }
 
@@ -453,7 +456,6 @@ class JcrContentHandler extends DefaultHandler {
                                 int start,
                                 int length ) {
             valueBuffer.append(ch, start, length);
-
         }
     }
 

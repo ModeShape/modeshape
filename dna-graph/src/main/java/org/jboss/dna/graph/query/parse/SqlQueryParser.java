@@ -493,6 +493,11 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
             }
+        } else {
+            // We expected SELECT ...
+            Position pos = tokens.nextPosition();
+            String msg = GraphI18n.unexpectedToken.text(tokens.consume(), pos.getLine(), pos.getColumn());
+            throw new ParsingException(pos, msg);
         }
         return command;
     }
@@ -804,7 +809,7 @@ public class SqlQueryParser implements QueryParser {
             return new FullTextSearchParser().parse(expression);
         } catch (ParsingException e) {
             // Convert the position in the exception into a position in the query.
-        	Position queryPos = startOfExpression.add(e.getPosition());
+            Position queryPos = startOfExpression.add(e.getPosition());
             throw new ParsingException(queryPos, e.getMessage());
         }
     }
@@ -1110,7 +1115,7 @@ public class SqlQueryParser implements QueryParser {
         }
         // Otherwise the source should be a single named selector
         if (source instanceof Selector) {
-            selectorName = ((Selector)source).getName();
+            selectorName = ((Selector)source).getAliasOrName();
             return new PropertyValue(selectorName, firstWord);
         }
         String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());

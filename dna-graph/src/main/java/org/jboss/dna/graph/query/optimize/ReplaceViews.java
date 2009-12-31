@@ -102,6 +102,7 @@ public class ReplaceViews implements OptimizerRule {
 
                 // Resolve the node to find the definition in the schemata ...
                 SelectorName tableName = sourceNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                SelectorName tableAlias = sourceNode.getProperty(Property.SOURCE_ALIAS, SelectorName.class);
                 Table table = schemata.getTable(tableName);
                 if (table instanceof View) {
                     View view = (View)table;
@@ -120,6 +121,11 @@ public class ReplaceViews implements OptimizerRule {
                     // tables/views used by the view ...
                     PlanUtil.ColumnMapping viewMappings = PlanUtil.createMappingFor(view, viewPlan);
                     PlanUtil.replaceViewReferences(context, viewPlan, viewMappings);
+                    if (tableAlias != null) {
+                        // We also need to replace references to the alias for the view ...
+                        PlanUtil.ColumnMapping aliasMappings = PlanUtil.createMappingForAliased(tableAlias, view, viewPlan);
+                        PlanUtil.replaceViewReferences(context, viewPlan, aliasMappings);
+                    }
 
                     if (viewPlan.is(Type.PROJECT)) {
                         // The PROJECT from the plan may actually not be needed if there is another PROJECT above it ...

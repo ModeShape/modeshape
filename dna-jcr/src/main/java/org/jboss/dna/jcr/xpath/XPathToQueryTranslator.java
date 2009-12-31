@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryBuilder;
 import org.jboss.dna.graph.query.QueryBuilder.ConstraintBuilder;
@@ -37,6 +38,7 @@ import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
+import org.jboss.dna.jcr.JcrNtLexicon;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AttributeNameTest;
 import org.jboss.dna.jcr.xpath.XPath.AxisStep;
@@ -298,6 +300,14 @@ public class XPathToQueryTranslator {
     protected String translateSource( String tableName,
                                       List<StepExpression> path,
                                       ConstraintBuilder where ) {
+        if (path.size() == 0) {
+            // This is a query against the root node ...
+            ExecutionContext context = new ExecutionContext();
+            String alias = newAlias();
+            builder.from(JcrNtLexicon.BASE.getString(context.getNamespaceRegistry()) + " AS " + alias);
+            where.path(alias).isEqualTo("/");
+            return alias;
+        }
         String alias = newAlias();
         if (tableName != null) {
             // This is after some element(...) steps, so we need to join ...
@@ -310,7 +320,7 @@ public class XPathToQueryTranslator {
         if (path.size() == 1 && path.get(0).collapse() instanceof NameTest) {
             // Node immediately below root ...
             NameTest nodeName = (NameTest)path.get(0).collapse();
-            where.nodeName(alias).isEqualTo(nameFrom(nodeName)).and().depth(alias).isEqualTo(1);
+            where.path(alias).isEqualTo("/" + nameFrom(nodeName));
         } else if (path.size() == 2 && path.get(0) instanceof DescendantOrSelf && path.get(1).collapse() instanceof NameTest) {
             // Node anywhere ...
             NameTest nodeName = (NameTest)path.get(1).collapse();

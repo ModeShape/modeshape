@@ -43,6 +43,7 @@ import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.observe.Changes;
 import org.jboss.dna.graph.observe.Observable;
 import org.jboss.dna.graph.observe.Observer;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryEngine;
 import org.jboss.dna.graph.query.QueryResults;
@@ -62,8 +63,10 @@ import org.jboss.dna.graph.query.process.QueryProcessor;
 import org.jboss.dna.graph.query.process.SelectComponent.Analyzer;
 import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.graph.request.AccessQueryRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.jboss.dna.graph.search.SearchEngine;
+import org.jboss.dna.graph.search.SearchEngineIndexer;
 import org.jboss.dna.graph.search.SearchEngineProcessor;
 import org.jboss.dna.search.lucene.IndexRules;
 import org.jboss.dna.search.lucene.LuceneConfiguration;
@@ -96,6 +99,42 @@ class RepositoryQueryManager {
                                 int maxRowCount,
                                 int offset ) throws InvalidQueryException {
         return workspace.graph().search(searchExpression, maxRowCount, offset);
+    }
+
+    /**
+     * Crawl and index the content in the named workspace.
+     * 
+     * @throws IllegalArgumentException if the workspace is null
+     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
+     */
+    public void reindexContent() {
+        // do nothing by default
+    }
+
+    /**
+     * Crawl and index the content in the named workspace.
+     * 
+     * @param workspace the workspace
+     * @throws IllegalArgumentException if the workspace is null
+     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
+     */
+    public void reindexContent( JcrWorkspace workspace ) {
+        // do nothing by default
+    }
+
+    /**
+     * Crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
+     * 
+     * @param workspace the workspace
+     * @param path the path of the content to be indexed
+     * @param depth the depth of the content to be indexed
+     * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
+     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
+     */
+    public void reindexContent( JcrWorkspace workspace,
+                                String path,
+                                int depth ) {
+        // do nothing by default
     }
 
     static class Disabled extends RepositoryQueryManager {
@@ -138,6 +177,7 @@ class RepositoryQueryManager {
         private final Observer searchObserver;
         private final ExecutorService service;
         private final QueryEngine queryEngine;
+        private final RepositoryConnectionFactory connectionFactory;
 
         SelfContained( ExecutionContext context,
                        String nameOfSourceToBeSearchable,
@@ -147,6 +187,7 @@ class RepositoryQueryManager {
                        boolean updateIndexesSynchronously ) throws RepositoryException {
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
+            this.connectionFactory = connectionFactory;
             // Define the configuration ...
             TextEncoder encoder = new UrlEncoder();
             if (indexDirectory != null) {
@@ -270,6 +311,59 @@ class RepositoryQueryManager {
                 return queryEngine.execute(context, query);
             } finally {
                 processor.close();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.RepositoryQueryManager#reindexContent()
+         */
+        @Override
+        public void reindexContent() {
+            // Index the existing content ...
+            Graph graph = Graph.create(sourceName, connectionFactory, context);
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            try {
+                for (String workspace : graph.getWorkspaces()) {
+                    indexer.index(workspace);
+                }
+            } finally {
+                indexer.close();
+            }
+
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.RepositoryQueryManager#reindexContent(org.jboss.dna.jcr.JcrWorkspace)
+         */
+        @Override
+        public void reindexContent( JcrWorkspace workspace ) {
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            try {
+                indexer.index(workspace.getName());
+            } finally {
+                indexer.close();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.RepositoryQueryManager#reindexContent(org.jboss.dna.jcr.JcrWorkspace, java.lang.String, int)
+         */
+        @Override
+        public void reindexContent( JcrWorkspace workspace,
+                                    String path,
+                                    int depth ) {
+            Path at = workspace.context().getValueFactories().getPathFactory().create(path);
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            try {
+                indexer.index(workspace.getName(), at, depth);
+            } finally {
+                indexer.close();
             }
         }
 

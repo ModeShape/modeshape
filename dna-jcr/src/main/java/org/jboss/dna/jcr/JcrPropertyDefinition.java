@@ -31,6 +31,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Binary;
@@ -56,6 +57,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     private final String[] valueConstraints;
     private final boolean multiple;
     private final boolean fullTextSearchable;
+    private final boolean isPrivate;
     private PropertyDefinitionId id;
     private ConstraintChecker checker = null;
 
@@ -77,6 +79,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.valueConstraints = valueConstraints;
         this.multiple = multiple;
         this.fullTextSearchable = fullTextSearchable;
+        this.isPrivate = name.getNamespaceUri().equals(DnaIntLexicon.Namespace.URI);
     }
 
     /**
@@ -126,6 +129,15 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      */
     public boolean isMultiple() {
         return multiple;
+    }
+
+    /**
+     * Return whether this property definition is considered private.
+     * 
+     * @return true if the definition is private, or false otherwise
+     */
+    public boolean isPrivate() {
+        return isPrivate;
     }
 
     public boolean isFullTextSearchable() {

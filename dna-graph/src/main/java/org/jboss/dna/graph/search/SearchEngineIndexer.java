@@ -35,8 +35,10 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.NamedThreadFactory;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
@@ -286,6 +288,11 @@ public class SearchEngineIndexer {
         Location topNode = locationIter.next();
         assert topNode.equals(startingLocation);
         Map<Name, Property> properties = readSubgraph.getPropertiesFor(topNode);
+        if (startingLocation.getPath().isRoot()) {
+            // The properties of the root node generally don't include the primary type, but we need to add it here ...
+            Property rootPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.ROOT);
+            properties.put(JcrLexicon.PRIMARY_TYPE, rootPrimaryType);
+        }
         UpdatePropertiesRequest request = new UpdatePropertiesRequest(topNode, workspaceName, properties, true);
         request.setActualLocationOfNode(topNode);
         process(request);

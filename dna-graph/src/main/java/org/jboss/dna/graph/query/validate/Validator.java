@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.query.validate;
 
+import java.util.HashMap;
 import java.util.Map;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.GraphI18n;
@@ -59,6 +60,7 @@ public class Validator extends AbstractVisitor {
 
     private final QueryContext context;
     private final Problems problems;
+    private final Map<SelectorName, Table> selectorsByNameOrAlias;
     private final Map<SelectorName, Table> selectorsByName;
 
     /**
@@ -69,7 +71,11 @@ public class Validator extends AbstractVisitor {
                       Map<SelectorName, Table> selectorsByName ) {
         this.context = context;
         this.problems = this.context.getProblems();
-        this.selectorsByName = selectorsByName;
+        this.selectorsByNameOrAlias = selectorsByName;
+        this.selectorsByName = new HashMap<SelectorName, Table>();
+        for (Table table : selectorsByName.values()) {
+            this.selectorsByName.put(table.getName(), table);
+        }
     }
 
     /**
@@ -301,8 +307,17 @@ public class Validator extends AbstractVisitor {
         verify(obj.getSelector2Name());
     }
 
+    protected Table tableWithNameOrAlias( SelectorName tableName ) {
+        Table table = selectorsByNameOrAlias.get(tableName);
+        if (table == null) {
+            // Try looking up the table by it's real name (if an alias were used) ...
+            table = selectorsByName.get(tableName);
+        }
+        return table;
+    }
+
     protected Table verify( SelectorName selectorName ) {
-        Table table = selectorsByName.get(selectorName);
+        Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, selectorName.getName());
         }
@@ -310,7 +325,7 @@ public class Validator extends AbstractVisitor {
     }
 
     protected Table verifyTable( SelectorName tableName ) {
-        Table table = selectorsByName.get(tableName);
+        Table table = tableWithNameOrAlias(tableName);
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, tableName.getName());
         }
@@ -319,7 +334,7 @@ public class Validator extends AbstractVisitor {
 
     protected Schemata.Column verify( SelectorName selectorName,
                                       String propertyName ) {
-        Table table = selectorsByName.get(selectorName);
+        Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, selectorName.getName());
             return null;

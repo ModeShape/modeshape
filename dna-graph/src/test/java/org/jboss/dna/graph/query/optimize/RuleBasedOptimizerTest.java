@@ -184,6 +184,79 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     }
 
     @Test
+    public void shouldOptimizePlanForSimpleQueryWithSelectStarWithAlias() {
+        node = optimize("SELECT * FROM t1 AS x1");
+        // Create the expected plan ...
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("x1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("x1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("x1", "c11"), column("x1", "c12"), column("x1", "c13")));
+        PlanNode source = new PlanNode(Type.SOURCE, project, selector("x1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_ALIAS, selector("x1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(expected), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithSelectStarFromTableWithAliasAndValueCriteria() {
+        node = optimize("SELECT * FROM t1 AS x1 WHERE c13 < CAST('3' AS LONG)");
+        // Create the expected plan ...
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("x1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("x1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("x1", "c11"), column("x1", "c12"), column("x1", "c13")));
+        PlanNode select = new PlanNode(Type.SELECT, project, selector("x1"));
+        select.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("x1"), "c13"), Operator.LESS_THAN,
+                                                                    new Literal(3L)));
+        PlanNode source = new PlanNode(Type.SOURCE, select, selector("x1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_ALIAS, selector("x1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(expected), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithSelectStarFromViewWithNoAliasAndValueCriteria() {
+        node = optimize("SELECT * FROM v1 WHERE c11 = 'value'");
+        // Create the expected plan ...
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12", "c2")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("t1"));
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"), Operator.EQUAL_TO,
+                                                                     new Literal("value")));
+        PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("t1"));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"),
+                                                                     Operator.LESS_THAN, new Literal(3L)));
+        PlanNode source = new PlanNode(Type.SOURCE, select2, selector("t1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(expected), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithSelectStarFromViewWithAliasAndValueCriteria() {
+        node = optimize("SELECT * FROM v1 AS x1 WHERE c11 = 'value'");
+        // Create the expected plan ...
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12", "c2")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project, selector("t1"));
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"), Operator.EQUAL_TO,
+                                                                     new Literal("value")));
+        PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("t1"));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"),
+                                                                     Operator.LESS_THAN, new Literal(3L)));
+        PlanNode source = new PlanNode(Type.SOURCE, select2, selector("t1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(expected), is(true));
+    }
+
+    @Test
     public void shouldOptimizePlanForSimpleQueryWithPropertyValueCriteria() {
         node = optimize("SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         // Create the expected plan ...

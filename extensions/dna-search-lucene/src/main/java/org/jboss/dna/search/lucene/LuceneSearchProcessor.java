@@ -45,7 +45,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.DateTime;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.query.QueryResults.Columns;
@@ -81,9 +80,10 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
     protected static final TextEncoder NAMESPACE_ENCODER = new SecureHashTextEncoder(Algorithm.SHA_1, 10);
 
     protected static ExecutionContext contextWithEncodedNamespaces( ExecutionContext context ) {
-        NamespaceRegistry encodingRegistry = new EncodingNamespaceRegistry(context.getNamespaceRegistry(), NAMESPACE_ENCODER);
-        ExecutionContext encodingContext = context.with(encodingRegistry);
-        return encodingContext;
+        return context;
+        // NamespaceRegistry encodingRegistry = new EncodingNamespaceRegistry(context.getNamespaceRegistry(), NAMESPACE_ENCODER);
+        // ExecutionContext encodingContext = context.with(encodingRegistry);
+        // return encodingContext;
     }
 
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();

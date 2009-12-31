@@ -186,7 +186,7 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetStatementTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.GetPropertyNamesTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.GetPropertyNamesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.PredicatesTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
 

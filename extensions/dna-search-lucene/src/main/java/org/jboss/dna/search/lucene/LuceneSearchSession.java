@@ -646,8 +646,14 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected String getIdFor( Path path ) throws IOException {
         // Create a query to find all the nodes below the parent path ...
         IndexSearcher searcher = getPathsSearcher();
-        String stringifiedPath = processor.pathAsString(path);
-        TermQuery query = new TermQuery(new Term(PathIndex.PATH, stringifiedPath));
+        Query query = null;
+        if (path.isRoot()) {
+            // Look for the query
+            query = NumericRangeQuery.newIntRange(PathIndex.DEPTH, 0, 0, true, true);
+        } else {
+            String stringifiedPath = processor.pathAsString(path);
+            query = new TermQuery(new Term(PathIndex.PATH, stringifiedPath));
+        }
 
         // Now execute and collect the UUIDs ...
         TopDocs topDocs = searcher.search(query, 1);

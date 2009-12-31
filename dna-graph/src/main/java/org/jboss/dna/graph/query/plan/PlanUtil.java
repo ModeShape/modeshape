@@ -827,6 +827,30 @@ public class PlanUtil {
         return mapping;
     }
 
+    public static ColumnMapping createMappingForAliased( SelectorName viewAlias,
+                                                         View view,
+                                                         PlanNode viewPlan ) {
+        ColumnMapping mapping = new ColumnMapping(viewAlias);
+
+        // Find the PROJECT node in the view plan ...
+        PlanNode project = viewPlan.findAtOrBelow(Type.PROJECT);
+        assert project != null;
+
+        // Get the Columns from the PROJECT in the plan node ...
+        List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+
+        // Get the Schemata columns defined by the view ...
+        List<org.jboss.dna.graph.query.validate.Schemata.Column> viewColumns = view.getColumns();
+        assert viewColumns.size() == projectedColumns.size();
+
+        for (int i = 0; i != viewColumns.size(); ++i) {
+            Column projectedColunn = projectedColumns.get(i);
+            String viewColumnName = viewColumns.get(i).getName();
+            mapping.map(viewColumnName, projectedColunn);
+        }
+        return mapping;
+    }
+
     /**
      * Defines how the view columns are mapped (or resolved) into the columns from the source tables.
      */

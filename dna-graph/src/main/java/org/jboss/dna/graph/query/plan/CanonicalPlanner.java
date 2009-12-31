@@ -391,14 +391,16 @@ public class CanonicalPlanner implements Planner {
         if (columns.isEmpty()) {
             columns = new LinkedList<Column>();
             // SELECT *, so find all of the columns that are available from all the sources ...
-            for (Table table : selectors.values()) {
+            for (Map.Entry<SelectorName, Table> entry : selectors.entrySet()) {
+                SelectorName tableName = entry.getKey();
+                Table table = entry.getValue();
                 // Add the selector that is being used ...
-                projectNode.addSelector(table.getName());
+                projectNode.addSelector(tableName);
                 // Compute the columns from this selector ...
                 for (Schemata.Column column : table.getColumns()) {
                     String columnName = column.getName();
                     String propertyName = columnName;
-                    columns.add(new Column(table.getName(), propertyName, columnName));
+                    columns.add(new Column(tableName, propertyName, columnName));
                 }
             }
         } else {
