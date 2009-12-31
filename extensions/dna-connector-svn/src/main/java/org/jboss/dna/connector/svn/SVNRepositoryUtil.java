@@ -28,6 +28,8 @@ import java.util.Collections;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.tmatesoft.svn.core.SVNDirEntry;
+import org.tmatesoft.svn.core.SVNErrorCode;
+import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
@@ -215,7 +217,7 @@ public class SVNRepositoryUtil {
     }
 
     public static boolean exists( SVNRepository repository,
-                                  String path ) {
+                                  String path ) throws SVNException{
         try {
             if (repository.checkPath(path, -1) == SVNNodeKind.NONE) {
                 return false;
@@ -223,7 +225,10 @@ public class SVNRepositoryUtil {
                 return false;
             }
         } catch (SVNException e) {
-            return false;
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "unknow error during delete action: {0)",
+                                                         e.getMessage());
+            throw new SVNException(err);
         }
         return true;
     }

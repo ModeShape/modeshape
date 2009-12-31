@@ -40,7 +40,8 @@ import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionFactory;
 import org.jboss.dna.connector.svn.mgnt.AddDirectory;
 import org.jboss.dna.connector.svn.mgnt.AddFile;
-import org.jboss.dna.connector.svn.mgnt.MergeFile;
+import org.jboss.dna.connector.svn.mgnt.DeleteEntry;
+import org.jboss.dna.connector.svn.mgnt.UpdateFile;
 import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -360,7 +361,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         if (parentPath == null) return;
 
         // svn connector does not support same name sibling
-        sameNameSiblingIsNotSupported(parentPath, request);
+        sameNameSiblingIsNotSupported(parentPath);
 
         SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
         assert workspaceRoot != null;
@@ -395,30 +396,32 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             boolean skipWrite = false;
 
             if (request.under().getPath().isRoot()) {
-
                 if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
                     newChildPath = newName;
                 } else {
                     newChildPath = "/" + newName;
                 }
             } else {
-
                 newChildPath = getPathAsString(request.under().getPath()) + "/" + newName;
-
                 if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
                     newChildPath = newChildPath.substring(1);
                 }
             }
 
             // check if the new name already exist
-            if (SVNRepositoryUtil.exists(workspaceRoot, newChildPath)) {
-                if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
-                    I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                    throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
-                } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
-                    skipWrite = true;
+            try {
+                if (SVNRepositoryUtil.exists(workspaceRoot, newChildPath)) {
+                    if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
+                        I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                        throw new InvalidRequestException(msg.text("SVN Connector does not support Same Name Sibling"));
+                    } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
+                        skipWrite = true;
+                    }
                 }
+            } catch (SVNException e1) {
+                throw new RepositorySourceException(getSourceName(), e1.getMessage());
             }
+
             // Don't try to write if the node conflict behavior is DO_NOT_REPLACE
             if (!skipWrite) {
                 // create a new, empty file
@@ -430,7 +433,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                         } else {
                             rootPath = getPathAsString(request.under().getPath());
                         }
-                        newFile(rootPath, newName, "".getBytes(), null, request.inWorkspace(), this.defaultWorkspace);
+                        newFile(rootPath, newName, "".getBytes(), null, request.inWorkspace(), workspaceRoot);
                     } catch (SVNException e) {
                         I18n msg = SVNRepositoryConnectorI18n.couldNotCreateFile;
                         request.setError(new RepositorySourceException(getSourceName(),
@@ -480,7 +483,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             if (parent != SVNNodeKind.NONE || parent != SVNNodeKind.UNKNOWN) {
                 if (request.conflictBehavior().equals(NodeConflictBehavior.APPEND)) {
                     I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                    throw new InvalidRequestException(msg.text(this.getSourceName(), newName));
+                    throw new InvalidRequestException(msg.text("SVN Connector does not support Same Name Sibling"));
                 } else if (request.conflictBehavior().equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
                     // TODO check if the file already has content
                     skipWrite = true;
@@ -521,13 +524,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                             rootPath = "";
                         }
 
-                        modifyFile(rootPath,
-                                   fileName,
-                                   oldData,
-                                   binary.getBytes(),
-                                   null,
-                                   request.inWorkspace(),
-                                   this.defaultWorkspace);
+                        modifyFile(rootPath, fileName, oldData, binary.getBytes(), null, request.inWorkspace(), workspaceRoot);
                     }
                 } catch (SVNException e) {
                     I18n msg = SVNRepositoryConnectorI18n.couldNotReadData;
@@ -600,7 +597,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         for (Path.Segment segment : path) {
             if (segment.getIndex() > 1) {
                 I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+                throw new RepositorySourceException(getSourceName(), msg.text("SVN Connector does not support Same Name Sibling"));
             }
         }
 
@@ -625,13 +622,12 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return kind;
     }
 
-    private void sameNameSiblingIsNotSupported( Path path,
-                                                CreateNodeRequest request ) {
+    protected void sameNameSiblingIsNotSupported( Path path ) {
         for (Path.Segment segment : path) {
             // Verify the segment is valid ...
             if (segment.getIndex() > 1) {
                 I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
+                throw new RepositorySourceException(getSourceName(), msg.text("SVN Connector does not support Same Name Sibling"));
             }
         }
     }
@@ -674,7 +670,67 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     @Override
     public void process( DeleteBranchRequest request ) {
-        updatesAllowed(request);
+        logger.trace(request.toString());
+        if (!updatesAllowed(request)) return;
+
+        SVNRepository workspaceRoot = getWorkspaceDirectory(request.inWorkspace());
+        assert workspaceRoot != null;
+        
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+
+        Path requestedPath = request.at().getPath();
+        // svn connector does not support same name sibling
+        sameNameSiblingIsNotSupported(requestedPath);
+
+        if (!requestedPath.isRoot() && JcrLexicon.CONTENT.equals(requestedPath.getLastSegment().getName())) {
+            Path p = requestedPath.getAncestor(1);
+            if(p != null) {
+                String itemPath = getPathAsString(p);
+                if (itemPath.equals("") || itemPath.equals("/")) {
+                    return;
+                }
+                String filePath = null;
+                if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                    filePath = itemPath.substring(1);
+                }
+                try {
+                    //check if the file exist
+                    if (!SVNRepositoryUtil.exists(workspaceRoot, filePath)) return;
+                    
+                    //update the file
+                    SVNProperties fileProperties = new SVNProperties();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    workspaceRoot.getFile(filePath, -1, fileProperties, baos);
+                    
+                    String rootPath = getPathAsString(p.getAncestor(1));
+                    String fileName = p.getLastSegment().getString(registry);
+                    modifyFile(rootPath, fileName, baos.toByteArray(), "".getBytes(), null, request.inWorkspace(), workspaceRoot);
+
+                } catch (SVNException e) {
+                    throw new RepositorySourceException(getSourceName(),
+                                                        SVNRepositoryConnectorI18n.deleteFailed.text(itemPath, getSourceName()));
+
+                }
+            }
+
+
+        } else {
+
+            String nodePath = getPathAsString(requestedPath);
+
+            if (!accessData.getRepositoryRootUrl().equals(request.inWorkspace())) {
+                nodePath = nodePath.substring(1);
+            }
+
+            try {
+                if (!SVNRepositoryUtil.exists(workspaceRoot, nodePath)) return;
+                eraseEntry(nodePath, null, request.inWorkspace(), workspaceRoot);
+            } catch (SVNException e) {
+                throw new RepositorySourceException(getSourceName(),
+                                                    SVNRepositoryConnectorI18n.deleteFailed.text(nodePath, getSourceName()));
+
+            }
+        }
     }
 
     /**
@@ -822,6 +878,385 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
+     * Get the repository driver.
+     * 
+     * @return repository
+     */
+    public SVNRepository getDefaultWorkspace() {
+        return defaultWorkspace;
+    }
+
+    /**
+     * Get the last revision.
+     * 
+     * @param repos
+     * @return the last revision number.
+     * @throws Exception
+     */
+    public long getLatestRevision( SVNRepository repos ) throws Exception {
+        try {
+            return repos.getLatestRevision();
+        } catch (SVNException e) {
+            e.printStackTrace();
+            // logger.error( "svn error: " );
+            throw e;
+        }
+    }
+
+    /**
+     * Create a directory .
+     * 
+     * @param rootDirPath - the root directory where the created directory will reside
+     * @param childDirPath - the name of the created directory.
+     * @param comment - comment for the creation.
+     * @param inWorkspace
+     * @param currentRepository
+     * @throws SVNException - if during the creation, there is an error.
+     */
+    private void mkdir( String rootDirPath,
+                        String childDirPath,
+                        String comment,
+                        String inWorkspace,
+                        SVNRepository currentRepository ) throws SVNException {
+
+        String tempParentPath = rootDirPath;
+        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
+                tempParentPath = tempParentPath.substring(1);
+            } else if (tempParentPath.equals("/")) {
+                tempParentPath = "";
+            }
+        }
+        String checkPath = tempParentPath.length() == 0 ? childDirPath : tempParentPath + "/" + childDirPath;
+        SVNNodeKind nodeKind = null;
+        try {
+            nodeKind = currentRepository.checkPath(checkPath, -1);
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
+                                                         e.getMessage());
+            throw new SVNException(err);
+        }
+
+        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
+            ScmAction addNodeAction = addDirectory(rootDirPath, childDirPath);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "Create a new file " + childDirPath : comment;
+            executor.execute(addNodeAction, comment);
+        } else {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "Node with name '{0}' can't be created",
+                                                         childDirPath);
+            throw new SVNException(err);
+        }
+    }
+
+    /**
+     * Create a file.
+     * 
+     * @param rootDirPath
+     * @param childFilePath
+     * @param content
+     * @param comment
+     * @param inWorkspace
+     * @param currentRepository
+     * @throws SVNException
+     */
+    private void newFile( String rootDirPath,
+                         String childFilePath,
+                         byte[] content,
+                         String comment,
+                         String inWorkspace,
+                         SVNRepository currentRepository ) throws SVNException {
+
+        String tempParentPath = rootDirPath;
+        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
+                tempParentPath = tempParentPath.substring(1);
+            }
+        }
+        String checkPath = tempParentPath + "/" + childFilePath;
+        SVNNodeKind nodeKind = null;
+        try {
+            nodeKind = currentRepository.checkPath(checkPath, -1);
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
+                                                         e.getMessage());
+            throw new SVNException(err);
+        }
+
+        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
+            ScmAction addFileNodeAction = addFile(rootDirPath, childFilePath, content);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "Create a new file " + childFilePath : comment;
+            executor.execute(addFileNodeAction, comment);
+        } else {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "Item with name '{0}' can't be created (already exist)",
+                                                         childFilePath);
+            throw new SVNException(err);
+        }
+    }
+
+    /**
+     * Modify a file
+     * 
+     * @param rootPath
+     * @param fileName
+     * @param oldData
+     * @param newData
+     * @param comment
+     * @param inWorkspace
+     * @param currentRepository
+     * @throws SVNException
+     */
+    private void modifyFile( String rootPath,
+                             String fileName,
+                             byte[] oldData,
+                             byte[] newData,
+                             String comment,
+                             String inWorkspace,
+                             SVNRepository currentRepository ) throws SVNException {
+        assert rootPath != null;
+        assert fileName != null;
+        assert oldData != null;
+        assert inWorkspace != null;
+        assert currentRepository != null;
+
+        try {
+
+            if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
+                if (rootPath.equals("/")) {
+                    rootPath = "";
+                } else {
+                    rootPath = rootPath.substring(1) + "/";
+                }
+            } else {
+                if (!rootPath.equals("/")) {
+                    rootPath = rootPath + "/";
+                }
+            }
+            String path = rootPath + fileName;
+
+            SVNNodeKind nodeKind = currentRepository.checkPath(path, -1);
+            if (nodeKind == SVNNodeKind.NONE || nodeKind == SVNNodeKind.UNKNOWN) {
+                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.ENTRY_NOT_FOUND,
+                                                             "Item with name '{0}' can't be found",
+                                                             path);
+                throw new SVNException(err);
+            }
+
+            ScmAction modifyFileAction = updateFile(rootPath, fileName, oldData, newData);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "modify the " + fileName : comment;
+            executor.execute(modifyFileAction, comment);
+
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "This error is appeared: '{0}'", e.getMessage());
+            throw new SVNException(err);
+        }
+
+    }
+
+    /**
+     * Delete entry from the repository
+     * 
+     * @param path
+     * @param comment
+     * @param inWorkspace
+     * @param currentRepository
+     * @throws SVNException
+     */
+    private void eraseEntry( String path,
+                             String comment,
+                             String inWorkspace,
+                             SVNRepository currentRepository ) throws SVNException {
+        assert path != null;
+        assert inWorkspace != null;
+        if (path.equals("/") || path.equals("")) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.BAD_URL, "The root directory cannot be deleted");
+            throw new SVNException(err);
+        }
+
+        try {
+            ScmAction deleteEntryAction = deleteEntry(path);
+            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
+            comment = comment == null ? "Delete the " + path : comment;
+            executor.execute(deleteEntryAction, comment);
+        } catch (SVNException e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "unknow error during delete action: {0)",
+                                                         e.getMessage());
+            throw new SVNException(err);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#addDirectory(java.lang.String, java.lang.String)
+     */
+    public ScmAction addDirectory( String root,
+                                   String path ) {
+        return new AddDirectory(root, path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#addFile(java.lang.String, java.lang.String, byte[])
+     */
+    public ScmAction addFile( String path,
+                              String file,
+                              byte[] content ) {
+        return new AddFile(path, file, content);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#updateFile(java.lang.String, java.lang.String, byte[], byte[])
+     */
+    public ScmAction updateFile( String rootPath,
+                                 String fileName,
+                                 byte[] oldData,
+                                 byte[] newData ) {
+        return new UpdateFile(rootPath, fileName, oldData, newData);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#deleteEntry(java.lang.String)
+     */
+    public ScmAction deleteEntry( String path ) {
+        return new DeleteEntry(path);
+    }
+
+    protected void checkThePath( Path path,
+                                 Request request ) {
+        for (Path.Segment segment : path) {
+            // Verify the segment is valid ...
+            if (segment.getIndex() > 1) {
+                I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
+                throw new RepositorySourceException(getSourceName(), msg.text("SVN Connector does not support Same Name Sibling"));
+            }
+        }
+    }
+
+    protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
+        SVNRepository repository = defaultWorkspace;
+        if (workspaceName != null) {
+            SVNRepository repos = SVNRepositoryUtil.createRepository(workspaceName,
+                                                                     accessData.getUsername(),
+                                                                     accessData.getPassword());
+            if (SVNRepositoryUtil.isDirectory(repos, "")) {
+                repository = repos;
+            } else {
+                return null;
+            }
+        }
+        return repository;
+    }
+
+    protected SVNNodeKind getNodeKind( SVNRepository repository,
+                                       Path path,
+                                       String repositoryRootUrl,
+                                       String inWorkspace ) throws SVNException {
+        assert path != null;
+        assert repositoryRootUrl != null;
+        assert inWorkspace != null;
+        // See if the path is a "jcr:content" node ...
+        if (path.endsWith(JcrLexicon.CONTENT)) {
+            // We only want to use the parent path to find the actual file ...
+            path = path.getParent();
+        }
+        String pathAsString = getPathAsString(path);
+        if (!repositoryRootUrl.equals(inWorkspace)) {
+            pathAsString = pathAsString.substring(1);
+        }
+        SVNNodeKind kind = repository.checkPath(pathAsString, -1);
+        if (kind == SVNNodeKind.NONE) {
+            // node does not exist or requested node is not correct.
+            throw new PathNotFoundException(Location.create(path), null,
+                                            SVNRepositoryConnectorI18n.nodeDoesNotExist.text(pathAsString));
+        } else if (kind == SVNNodeKind.UNKNOWN) {
+            // node is unknown
+            throw new PathNotFoundException(Location.create(path), null,
+                                            SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(pathAsString));
+        }
+        return kind;
+    }
+
+    /**
+     * Checks that the collection of {@code properties} only contains properties with allowable names.
+     * 
+     * @param properties
+     * @param validPropertyNames
+     * @throws RepositorySourceException if {@code properties} contains a
+     * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
+     * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
+     */
+    protected void ensureValidProperties( Collection<Property> properties,
+                                          Set<Name> validPropertyNames ) {
+        List<String> invalidNames = new LinkedList<String>();
+        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
+
+        for (Property property : properties) {
+            if (!validPropertyNames.contains(property.getName())) {
+                invalidNames.add(property.getName().getString(registry));
+            }
+        }
+
+        if (!invalidNames.isEmpty()) {
+            throw new RepositorySourceException(this.getSourceName(),
+                                                SVNRepositoryConnectorI18n.invalidPropertyNames.text(invalidNames.toString()));
+        }
+    }
+    
+    /**
+     * Validate the kind of node and throws an exception if necessary.
+     * 
+     * @param repos
+     * @param requestedPath
+     * @return the kind.
+     */
+    protected SVNNodeKind validateNodeKind( SVNRepository repos,
+                                            Path requestedPath ) {
+        SVNNodeKind kind;
+        String myPath;
+        if (getPathAsString(requestedPath).trim().equals("/")) {
+            myPath = getPathAsString(requestedPath);
+        } else if (requestedPath.endsWith(JcrLexicon.CONTENT)) {
+            myPath = getPathAsString(requestedPath.getParent());
+        } else {
+            // directory and file
+            myPath = getPathAsString(requestedPath);
+        }
+
+        try {
+
+            kind = repos.checkPath(myPath, -1);
+            if (kind == SVNNodeKind.NONE) {
+                // node does not exist or requested node is not correct.
+                throw new PathNotFoundException(Location.create(requestedPath), null,
+                                                SVNRepositoryConnectorI18n.nodeDoesNotExist.text(myPath));
+            } else if (kind == SVNNodeKind.UNKNOWN) {
+                // node is unknown
+                throw new PathNotFoundException(Location.create(requestedPath), null,
+                                                SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(myPath));
+            }
+        } catch (SVNException e) {
+            throw new RepositorySourceException(
+                                                getSourceName(),
+                                                SVNRepositoryConnectorI18n.connectingFailureOrUserAuthenticationProblem.text(getSourceName()));
+        }
+
+        return kind;
+    }
+    
+    /**
      * Verify if change is allowed on a specific source.
      * 
      * @throws RepositorySourceException if change on that repository source is not allowed.
@@ -916,58 +1351,8 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         getDefaultWorkspace().getFile(path, -1, properties, os);
 
     }
-
-    /**
-     * Get the repository driver.
-     * 
-     * @return repository
-     */
-    public SVNRepository getDefaultWorkspace() {
-        return defaultWorkspace;
-    }
-
-    /**
-     * Validate the kind of node and throws an exception if necessary.
-     * 
-     * @param repos
-     * @param requestedPath
-     * @return the kind.
-     */
-    protected SVNNodeKind validateNodeKind( SVNRepository repos,
-                                            Path requestedPath ) {
-        SVNNodeKind kind;
-        String myPath;
-        if (getPathAsString(requestedPath).trim().equals("/")) {
-            myPath = getPathAsString(requestedPath);
-        } else if (requestedPath.endsWith(JcrLexicon.CONTENT)) {
-            myPath = getPathAsString(requestedPath.getParent());
-        } else {
-            // directory and file
-            myPath = getPathAsString(requestedPath);
-        }
-
-        try {
-
-            kind = repos.checkPath(myPath, -1);
-            if (kind == SVNNodeKind.NONE) {
-                // node does not exist or requested node is not correct.
-                throw new PathNotFoundException(Location.create(requestedPath), null,
-                                                SVNRepositoryConnectorI18n.nodeDoesNotExist.text(myPath));
-            } else if (kind == SVNNodeKind.UNKNOWN) {
-                // node is unknown
-                throw new PathNotFoundException(Location.create(requestedPath), null,
-                                                SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(myPath));
-            }
-        } catch (SVNException e) {
-            throw new RepositorySourceException(
-                                                getSourceName(),
-                                                SVNRepositoryConnectorI18n.connectingFailureOrUserAuthenticationProblem.text(getSourceName()));
-        }
-
-        return kind;
-    }
-
-    private String getPathAsString( Path path ) {
+    
+    protected String getPathAsString( Path path ) {
         return path.getString(getExecutionContext().getNamespaceRegistry());
     }
 
@@ -990,343 +1375,5 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                                                 SVNRepositoryConnectorI18n.connectingFailureOrUserAuthenticationProblem.text(getSourceName()));
         }
         return entry;
-    }
-
-    /**
-     * Get the last revision.
-     * 
-     * @param repos
-     * @return the last revision number.
-     * @throws Exception
-     */
-    public long getLatestRevision( SVNRepository repos ) throws Exception {
-        try {
-            return repos.getLatestRevision();
-        } catch (SVNException e) {
-            e.printStackTrace();
-            // logger.error( "svn error: " );
-            throw e;
-        }
-    }
-
-    /**
-     * Create a directory .
-     * 
-     * @param rootDirPath - the root directory where the created directory will reside
-     * @param childDirPath - the name of the created directory.
-     * @param comment - comment for the creation.
-     * @param inWorkspace
-     * @param currentRepository
-     * @throws SVNException - if during the creation, there is an error.
-     */
-    private void mkdir( String rootDirPath,
-                        String childDirPath,
-                        String comment,
-                        String inWorkspace,
-                        SVNRepository currentRepository ) throws SVNException {
-
-        String tempParentPath = rootDirPath;
-        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
-            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
-                tempParentPath = tempParentPath.substring(1);
-            } else if (tempParentPath.equals("/")) {
-                tempParentPath = "";
-            }
-        }
-        String checkPath = tempParentPath.length() == 0 ? childDirPath : tempParentPath + "/" + childDirPath;
-        SVNNodeKind nodeKind = null;
-        try {
-            nodeKind = currentRepository.checkPath(checkPath, -1);
-        } catch (SVNException e) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
-                                                         e.getMessage());
-            throw new SVNException(err);
-        }
-
-        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
-            ScmAction addNodeAction = addDirectory(rootDirPath, childDirPath);
-            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
-            comment = comment == null ? "Create a new file " + childDirPath : comment;
-            executor.execute(addNodeAction, comment);
-        } else {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "Node with name '{0}' can't be created",
-                                                         childDirPath);
-            throw new SVNException(err);
-        }
-    }
-
-    /**
-     * Create a file.
-     * 
-     * @param rootDirPath
-     * @param childFilePath
-     * @param content
-     * @param comment
-     * @param inWorkspace
-     * @param currentRepository
-     * @throws SVNException
-     */
-    public void newFile( String rootDirPath,
-                         String childFilePath,
-                         byte[] content,
-                         String comment,
-                         String inWorkspace,
-                         SVNRepository currentRepository ) throws SVNException {
-
-        String tempParentPath = rootDirPath;
-        if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
-            if (!tempParentPath.equals("/") && tempParentPath.startsWith("/")) {
-                tempParentPath = tempParentPath.substring(1);
-            }
-        }
-        String checkPath = tempParentPath + "/" + childFilePath;
-        SVNNodeKind nodeKind = null;
-        try {
-            nodeKind = currentRepository.checkPath(checkPath, -1);
-        } catch (SVNException e) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "May be a Connecting problem to the repository or a user's authentication failure: {0}",
-                                                         e.getMessage());
-            throw new SVNException(err);
-        }
-
-        if (nodeKind != null && nodeKind == SVNNodeKind.NONE) {
-            ScmAction addFileNodeAction = addFile(rootDirPath, childFilePath, content);
-            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
-            comment = comment == null ? "Create a new file " + childFilePath : comment;
-            executor.execute(addFileNodeAction, comment);
-        } else {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
-                                                         "Item with name '{0}' can't be created (already exist)",
-                                                         childFilePath);
-            throw new SVNException(err);
-        }
-    }
-
-    /**
-     * Modify a file
-     * 
-     * @param rootPath
-     * @param fileName
-     * @param oldData
-     * @param newData
-     * @param comment
-     * @param inWorkspace
-     * @param currentRepository
-     * @throws SVNException
-     */
-    private void modifyFile( String rootPath,
-                             String fileName,
-                             byte[] oldData,
-                             byte[] newData,
-                             String comment,
-                             String inWorkspace,
-                             SVNRepository currentRepository ) throws SVNException {
-        assert rootPath != null;
-        assert fileName != null;
-        assert oldData != null;
-        assert inWorkspace != null;
-        assert currentRepository != null;
-
-        try {
-
-            if (!this.accessData.getRepositoryRootUrl().equals(inWorkspace)) {
-                if (rootPath.equals("/")) {
-                    rootPath = "";
-                } else {
-                    rootPath = rootPath.substring(1) + "/";
-                }
-            } else {
-                if (!rootPath.equals("/")) {
-                    rootPath = rootPath + "/";
-                }
-            }
-            String path = rootPath + fileName;
-
-            SVNNodeKind nodeKind = currentRepository.checkPath(path, -1);
-            if (nodeKind == SVNNodeKind.NONE || nodeKind == SVNNodeKind.UNKNOWN) {
-                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.ENTRY_NOT_FOUND,
-                                                             "Item with name '{0}' can't be found",
-                                                             path);
-                throw new SVNException(err);
-            }
-
-            ScmAction modifyFileAction = mergeFile(rootPath, fileName, oldData, newData);
-            SVNActionExecutor executor = new SVNActionExecutor(currentRepository);
-            comment = comment == null ? "modify the " + fileName : comment;
-            executor.execute(modifyFileAction, comment);
-
-        } catch (SVNException e) {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "This error is appeared: '{0}'", e.getMessage());
-            throw new SVNException(err);
-        }
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#addDirectory(java.lang.String, java.lang.String)
-     */
-    public ScmAction addDirectory( String root,
-                                   String path ) {
-        return new AddDirectory(root, path);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#addFile(java.lang.String, java.lang.String, byte[])
-     */
-    public ScmAction addFile( String path,
-                              String file,
-                              byte[] content ) {
-        return new AddFile(path, file, content);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#mergeFile(java.lang.String, java.lang.String, byte[], byte[])
-     */
-    public ScmAction mergeFile( String rootPath,
-                                String fileName,
-                                byte[] oldData,
-                                byte[] newData ) {
-        return new MergeFile(rootPath, fileName, oldData, newData);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#copyDirectory(java.lang.String, java.lang.String, long)
-     */
-    public ScmAction copyDirectory( String path,
-                                    String newPath,
-                                    long revision ) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#deleteDirectory(java.lang.String)
-     */
-    public ScmAction deleteDirectory( String path ) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.scm.ScmActionFactory#deleteFile(java.lang.String, java.lang.String)
-     */
-    public ScmAction deleteFile( String path,
-                                 String file ) {
-        return null;
-    }
-
-    @SuppressWarnings( "unused" )
-    private byte[] getContent( Object[] objs ) {
-        byte[] content = null;
-        for (Object object : objs) {
-            if (object != null && object instanceof Binary) {
-                Binary buf = (Binary)object;
-                content = buf.getBytes();
-            }
-        }
-        return content;
-    }
-
-    @SuppressWarnings( "unused" )
-    private Object[] values( Collection<Property> childNodeProperties ) {
-        Set<Object> result = new HashSet<Object>();
-        for (Property property : childNodeProperties) {
-            result.add(property.getFirstValue());
-        }
-        return result.toArray();
-    }
-
-    private void checkThePath( Path path,
-                               Request request ) {
-        for (Path.Segment segment : path) {
-            // Verify the segment is valid ...
-            if (segment.getIndex() > 1) {
-                I18n msg = SVNRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                throw new RepositorySourceException(getSourceName(), msg.text(getSourceName(), request));
-            }
-        }
-    }
-
-    protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
-        SVNRepository repository = defaultWorkspace;
-        if (workspaceName != null) {
-            SVNRepository repos = SVNRepositoryUtil.createRepository(workspaceName,
-                                                                     accessData.getUsername(),
-                                                                     accessData.getPassword());
-            if (SVNRepositoryUtil.isDirectory(repos, "")) {
-                repository = repos;
-            } else {
-                return null;
-            }
-        }
-        return repository;
-    }
-
-    protected SVNNodeKind getNodeKind( SVNRepository repository,
-                                       Path path,
-                                       String repositoryRootUrl,
-                                       String inWorkspace ) throws SVNException {
-        assert path != null;
-        assert repositoryRootUrl != null;
-        assert inWorkspace != null;
-        // See if the path is a "jcr:content" node ...
-        if (path.endsWith(JcrLexicon.CONTENT)) {
-            // We only want to use the parent path to find the actual file ...
-            path = path.getParent();
-        }
-        String pathAsString = getPathAsString(path);
-        if (!repositoryRootUrl.equals(inWorkspace)) {
-            pathAsString = pathAsString.substring(1);
-        }
-        SVNNodeKind kind = repository.checkPath(pathAsString, -1);
-        if (kind == SVNNodeKind.NONE) {
-            // node does not exist or requested node is not correct.
-            throw new PathNotFoundException(Location.create(path), null,
-                                            SVNRepositoryConnectorI18n.nodeDoesNotExist.text(pathAsString));
-        } else if (kind == SVNNodeKind.UNKNOWN) {
-            // node is unknown
-            throw new PathNotFoundException(Location.create(path), null,
-                                            SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(pathAsString));
-        }
-        return kind;
-    }
-
-    /**
-     * Checks that the collection of {@code properties} only contains properties with allowable names.
-     * 
-     * @param properties
-     * @param validPropertyNames
-     * @throws RepositorySourceException if {@code properties} contains a
-     * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
-     * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
-     */
-    protected void ensureValidProperties( Collection<Property> properties,
-                                          Set<Name> validPropertyNames ) {
-        List<String> invalidNames = new LinkedList<String>();
-        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
-
-        for (Property property : properties) {
-            if (!validPropertyNames.contains(property.getName())) {
-                invalidNames.add(property.getName().getString(registry));
-            }
-        }
-
-        if (!invalidNames.isEmpty()) {
-            throw new RepositorySourceException(this.getSourceName(),
-                                                SVNRepositoryConnectorI18n.invalidPropertyNames.text(invalidNames.toString()));
-        }
     }
 }

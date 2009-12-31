@@ -63,6 +63,7 @@ public final class SVNRepositoryConnectorI18n {
     public static I18n missingRequiredProperty;
     public static I18n couldNotCreateFile;
     public static I18n couldNotReadData;
+    public static I18n deleteFailed;
 
     static {
         try {

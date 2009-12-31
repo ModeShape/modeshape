@@ -29,6 +29,7 @@ import org.tmatesoft.svn.core.io.ISVNEditor;
 
 /**
  * root should be the last, previously created, parent folder. Each directory in the path will be created.
+ * @author serge pagop
  */
 public class AddDirectory implements ScmAction {
     private String rootDirPath;

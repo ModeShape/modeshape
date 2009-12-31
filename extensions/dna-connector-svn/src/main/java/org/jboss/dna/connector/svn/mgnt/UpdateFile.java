@@ -28,13 +28,13 @@ import org.jboss.dna.connector.scm.ScmAction;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
 
-public class MergeFile implements ScmAction {
+public class UpdateFile implements ScmAction {
     private String path;
     private String file;
     private byte[] oldData;
     private byte[] newData;
 
-    public MergeFile( String path,
+    public UpdateFile( String path,
                       String file,
                       byte[] oldData,
                       byte[] newData ) {
