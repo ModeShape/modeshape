@@ -297,6 +297,10 @@ class JcrQueryManager implements QueryManager {
             this.variables = null;
         }
 
+        protected QueryCommand getCommand() {
+            return query;
+        }
+
         /**
          * {@inheritDoc}
          * 

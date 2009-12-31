@@ -44,6 +44,7 @@ import javax.jcr.query.QueryResult;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.jcr.JcrQueryManager.JcrQuery;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.jcr.JcrRepository.QueryLanguage;
 import org.junit.After;
@@ -79,6 +80,7 @@ public class JcrQueryManagerTest {
     private static JcrEngine engine;
     private static JcrRepository repository;
     private Session session;
+    private boolean print;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -110,6 +112,13 @@ public class JcrQueryManagerTest {
                 stream.close();
             }
 
+            // Create a branch that contains some same-name-siblings ...
+            Node other = session.getRootNode().addNode("Other", "nt:unstructured");
+            other.addNode("NodeA", "nt:unstructured");
+            other.addNode("NodeA", "nt:unstructured");
+            other.addNode("NodeA", "nt:unstructured");
+            session.save();
+
             // Prime creating a first XPath query and SQL query ...
             session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
             session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.SQL);
@@ -131,6 +140,7 @@ public class JcrQueryManagerTest {
 
     @Before
     public void beforeEach() throws Exception {
+        print = false;
         // Obtain a session using the anonymous login capability, which we granted READ privilege
         session = repository.login();
     }
@@ -162,6 +172,21 @@ public class JcrQueryManagerTest {
         return result;
     }
 
+    protected void assertResults( Query query,
+                                  QueryResult result,
+                                  long numberOfResults ) throws RepositoryException {
+        assertThat(query, is(notNullValue()));
+        assertThat(result, is(notNullValue()));
+        if (print) {
+            System.out.println();
+            System.out.println(query.getLanguage() + ": " + query.getStatement());
+            System.out.println(" --> : " + ((JcrQuery)query).getCommand());
+            System.out.println(result);
+        }
+        assertThat(result.getNodes().getSize(), is(numberOfResults));
+        assertThat(result.getRows().getSize(), is(numberOfResults));
+    }
+
     protected void assertResultsHaveColumns( QueryResult result,
                                              String... columnNames ) throws RepositoryException {
         Set<String> expectedNames = new HashSet<String>();
@@ -187,7 +212,7 @@ public class JcrQueryManagerTest {
         assertThat(node.hasNode("Sports"), is(true));
         assertThat(node.hasNode("Utility"), is(true));
         assertThat(node.hasNode("Hybrid"), is(true));
-        System.out.println(node.getNode("Hybrid").getNodes().nextNode().getPath());
+        // System.out.println(node.getNode("Hybrid").getNodes().nextNode().getPath());
         assertThat(node.hasNode("Hybrid/Toyota Prius"), is(true));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:unstructured"));
     }
@@ -207,8 +232,8 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
+        assertResults(query, result, 22);
         assertResultsHaveColumns(result, "jcr:primaryType");
-        // System.out.println(result);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -219,6 +244,7 @@ public class JcrQueryManagerTest {
     public void shouldBeAbleToCreateXPathQuery() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
+        assertResults(query, query.execute(), 21);
     }
 
     @Test
@@ -226,7 +252,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 22);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -235,7 +261,29 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
+        assertResults(query, result, 21);
         assertThat(result, is(notNullValue()));
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindSameNameSiblingsByIndex() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        print = true;
+        assertResults(query, result, 1);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.getNodes().nextNode().getIndex(), is(1));
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+
+        query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA[2]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        result = query.execute();
+        print = true;
+        assertResults(query, result, 1);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.getNodes().nextNode().getIndex(), is(2));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -245,7 +293,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        // System.out.println(result);
+        assertResults(query, result, 12);
         assertResultsHaveColumns(result,
                                  "jcr:primaryType",
                                  "jcr:path",
@@ -268,18 +316,27 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        // System.out.println(result);
+        assertResults(query, result, 1);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNode() throws RepositoryException {
-    // Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars", Query.XPATH);
-    // assertThat(query, is(notNullValue()));
-    // QueryResult result = query.execute();
-    // assertThat(result, is(notNullValue()));
-    // System.out.println(result);
-    // assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    // }
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNode() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNodeWithTypeCriteria() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars[@jcr:primaryType]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
 }

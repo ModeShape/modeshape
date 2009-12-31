@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryBuilder;
 import org.jboss.dna.graph.query.QueryBuilder.ConstraintBuilder;
@@ -38,7 +37,6 @@ import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
-import org.jboss.dna.jcr.JcrNtLexicon;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AttributeNameTest;
 import org.jboss.dna.jcr.xpath.XPath.AxisStep;
@@ -153,12 +151,12 @@ public class XPathToQueryTranslator {
                 AxisStep axis = (AxisStep)step;
                 NodeTest nodeTest = axis.getNodeTest();
                 if (nodeTest instanceof NameTest) {
-                    if (appliesToPathConstraint(axis.getPredicates())) {
-                        // Can go into the path constraint ...
+                    NameTest nameTest = (NameTest)nodeTest;
+                    if (!nameTest.isWildcard()) {
                         path.add(step);
-                    } else {
+                    }
+                    if (!appliesToPathConstraint(axis.getPredicates())) {
                         // The constraints are more complicated, so we need to define a new source/table ...
-                        // path.add(step);
                         tableName = translateSource(tableName, path, where);
                         translatePredicates(axis.getPredicates(), tableName, where);
                         path.clear();
@@ -302,19 +300,18 @@ public class XPathToQueryTranslator {
                                       ConstraintBuilder where ) {
         if (path.size() == 0) {
             // This is a query against the root node ...
-            ExecutionContext context = new ExecutionContext();
             String alias = newAlias();
-            builder.from(JcrNtLexicon.BASE.getString(context.getNamespaceRegistry()) + " AS " + alias);
+            builder.from("nt:base AS " + alias);
             where.path(alias).isEqualTo("/");
             return alias;
         }
         String alias = newAlias();
         if (tableName != null) {
             // This is after some element(...) steps, so we need to join ...
-            builder.joinAllNodesAs(alias);
+            builder.join("nt:base AS " + alias);
         } else {
             // This is the only part of the query ...
-            builder.fromAllNodesAs(alias);
+            builder.from("nt:base AS " + alias);
         }
         tableName = alias;
         if (path.size() == 1 && path.get(0).collapse() instanceof NameTest) {
@@ -341,7 +338,7 @@ public class XPathToQueryTranslator {
         NameTest typeName = elementTest.getTypeName();
         if (typeName.isWildcard()) {
             tableName = newAlias();
-            builder.fromAllNodesAs(tableName);
+            builder.from("nt:base AS " + tableName);
         } else {
             if (typeName.getLocalTest() == null) {
                 throw new InvalidQueryException(
@@ -417,7 +414,7 @@ public class XPathToQueryTranslator {
             // This adds the criteria that the child node exists ...
             NameTest childName = (NameTest)predicate;
             String alias = newAlias();
-            builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
+            builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
             if (!childName.isWildcard()) where.nodeName(alias).isEqualTo(nameFrom(childName));
             tableName = alias;
         } else if (predicate instanceof Comparison) {
@@ -535,7 +532,7 @@ public class XPathToQueryTranslator {
                 } else if (param1 instanceof NameTest) {
                     // refers to child node, so we need to add a join ...
                     String alias = newAlias();
-                    builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
+                    builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
                     // Now add the criteria ...
                     where.search(alias, value);
                     tableName = alias;
@@ -583,7 +580,7 @@ public class XPathToQueryTranslator {
                 // Special case where this is similar to '[a/@id]'
                 NameTest childName = (NameTest)firstStep;
                 String alias = newAlias();
-                builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
+                builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
                 if (!childName.isWildcard()) {
                     where.nodeName(alias).isEqualTo(nameFrom(childName));
                 }
@@ -592,12 +589,12 @@ public class XPathToQueryTranslator {
             if (firstStep instanceof DescendantOrSelf) {
                 // Special case where this is similar to '[a/@id]'
                 String alias = newAlias();
-                builder.joinAllNodesAs(alias).onDescendant(tableName, alias);
+                builder.join("nt:base AS " + alias).onDescendant(tableName, alias);
                 return translatePredicate(new PathExpression(true, steps.subList(1, steps.size())), alias, where);
             }
             // Add the join ...
             String alias = newAlias();
-            builder.joinAllNodesAs(alias).onDescendant(tableName, alias);
+            builder.join("nt:base AS " + alias).onDescendant(tableName, alias);
             // Now add the criteria ...
             translatePathExpressionConstraint(pathExpr, where, alias);
         } else {

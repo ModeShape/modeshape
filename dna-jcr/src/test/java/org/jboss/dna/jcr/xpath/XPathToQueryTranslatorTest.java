@@ -65,12 +65,12 @@ public class XPathToQueryTranslatorTest {
 
     @Test
     public void shouldTranslateFromXPathOfAnyNode() {
-        assertThat(xpath("//element(*)"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("/jcr:root//element(*)"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("//*"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("/jcr:root//*"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("//."), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("/jcr:root//."), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1"));
+        assertThat(xpath("//element(*)"), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("/jcr:root//element(*)"), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("//*"), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("/jcr:root//*"), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("//."), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("/jcr:root//."), isSql("SELECT * FROM [nt:base] AS nodeSet1"));
     }
 
     @Test
@@ -80,69 +80,70 @@ public class XPathToQueryTranslatorTest {
 
     @Test
     public void shouldTranslateFromXPathContainingExplicitPath() {
-        assertThat(xpath("/jcr:root/a"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a'"));
-        assertThat(xpath("/jcr:root/a/b"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
-        assertThat(xpath("/jcr:root/a/b/c"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c'"));
-        assertThat(xpath("/jcr:root/a/b/c/d"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c/d'"));
+        assertThat(xpath("/jcr:root/a"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a'"));
+        assertThat(xpath("/jcr:root/a/b"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+        assertThat(xpath("/jcr:root/a/b/c"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c'"));
+        assertThat(xpath("/jcr:root/a/b/c/d"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c/d'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingExplicitPathWithChildNumbers() {
-        assertThat(xpath("/jcr:root/a[2]/b"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b'"));
-        assertThat(xpath("/jcr:root/a/b[3]"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[3]'"));
-        assertThat(xpath("/jcr:root/a[2]/b[3]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b[3]'"));
+        assertThat(xpath("/jcr:root/a[2]/b"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b'"));
+        assertThat(xpath("/jcr:root/a/b[3]"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[3]'"));
+        assertThat(xpath("/jcr:root/a[2]/b[3]"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b[3]'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingExplicitPathWithWildcardChildNumbers() {
-        assertThat(xpath("/jcr:root/a[*]/b"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
-        assertThat(xpath("/jcr:root/a/b[*]"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
-        assertThat(xpath("/jcr:root/a[*]/b[*]"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+        assertThat(xpath("/jcr:root/a[*]/b"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+        assertThat(xpath("/jcr:root/a/b[*]"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+        assertThat(xpath("/jcr:root/a[*]/b[*]"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPathWithDescendantOrSelf() {
         assertThat(xpath("/jcr:root/a/b//c"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c' OR PATH(nodeSet1) LIKE '/a/b/%/c'"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c' OR PATH(nodeSet1) LIKE '/a/b/%/c'"));
         assertThat(xpath("/jcr:root/a/b[2]//c"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c'"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c'"));
         assertThat(xpath("/jcr:root/a/b//c[4]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c[4]' OR PATH(nodeSet1) LIKE '/a/b/%/c[4]'"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c[4]' OR PATH(nodeSet1) LIKE '/a/b/%/c[4]'"));
         assertThat(xpath("/jcr:root/a/b[2]//c[4]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c[4]' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c[4]'"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c[4]' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c[4]'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPathWithMultipleDescendantOrSelf() {
         assertThat(xpath("/jcr:root/a/b//c//d"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE (((PATH(nodeSet1) = '/a/b/c/d' OR PATH(nodeSet1) LIKE '/a/b/%/c/d') OR PATH(nodeSet1) LIKE '/a/b/c/%/d') OR PATH(nodeSet1) LIKE '/a/b/%/c/%/d')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE (((PATH(nodeSet1) = '/a/b/c/d' OR PATH(nodeSet1) LIKE '/a/b/%/c/d') OR PATH(nodeSet1) LIKE '/a/b/c/%/d') OR PATH(nodeSet1) LIKE '/a/b/%/c/%/d')"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPredicatesUsingRelativePaths() {
         assertThat(xpath("//element(*,my:type)[a/@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) WHERE NAME(nodeSet1) = 'a' AND nodeSet1.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) WHERE NAME(nodeSet1) = 'a' AND nodeSet1.id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[a/b/@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND nodeSet2.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND nodeSet2.id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[a/b/((@id and @name) or not(@address))]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(nodeSet2.address IS NOT NULL)))"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(nodeSet2.address IS NOT NULL)))"));
         assertThat(xpath("//element(*,my:type)[./a/b/((@id and @name) or not(@address))]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(nodeSet2.address IS NOT NULL)))"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(nodeSet2.address IS NOT NULL)))"));
         assertThat(xpath("//element(*,my:type)[a/b/((@id and @name) or not(jcr:contains(@desc,'rock star')))]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(CONTAINS(nodeSet2.desc,'rock star'))))"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE (NAME(nodeSet1) = 'a' AND NAME(nodeSet2) = 'b') AND ((nodeSet2.id IS NOT NULL and nodeSet2.name IS NOT NULL) OR (NOT(CONTAINS(nodeSet2.desc,'rock star'))))"));
         assertThat(xpath("//element(*,my:type)[*/@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) WHERE nodeSet1.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) WHERE nodeSet1.id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[*/*/@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE nodeSet2.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE nodeSet2.id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[./*/*/@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN __ALLNODES__ as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE nodeSet2.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISCHILDNODE(nodeSet1,[my:type]) JOIN [nt:base] as nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE nodeSet2.id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[.//@id]"),
-                   isSql("SELECT * FROM [my:type] JOIN __ALLNODES__ as nodeSet1 ON ISDESCENDANTNODE(nodeSet1,[my:type]) WHERE nodeSet1.id IS NOT NULL"));
+                   isSql("SELECT * FROM [my:type] JOIN [nt:base] as nodeSet1 ON ISDESCENDANTNODE(nodeSet1,[my:type]) WHERE nodeSet1.id IS NOT NULL"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPredicatesIdentifyingPropertiesThatMustHaveValues() {
+        assertThat(xpath("/jcr:root/testroot/serializationNode[@jcr:primaryType]"),
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/testroot/serializationNode' AND nodeSet1.[jcr:primaryType] IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[@id]"), isSql("SELECT * FROM [my:type] WHERE id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[@id][@name]"),
                    isSql("SELECT * FROM [my:type] WHERE id IS NOT NULL AND name IS NOT NULL"));
@@ -191,8 +192,8 @@ public class XPathToQueryTranslatorTest {
         assertThat(xpath("//element(*,my:type)/(@id union @name)"), isSql("SELECT id, name FROM [my:type]"));
         assertThat(xpath("//element(*,my:type)/(@id union @name union @x:address)"),
                    isSql("SELECT id, name, [x:address] FROM [my:type]"));
-        assertThat(xpath("//(@id|@name)"), isSql("SELECT nodeSet1.id, nodeSet1.name FROM __ALLNODES__ AS nodeSet1"));
-        assertThat(xpath("//./(@id|@name)"), isSql("SELECT nodeSet1.id, nodeSet1.name FROM __ALLNODES__ AS nodeSet1"));
+        assertThat(xpath("//(@id|@name)"), isSql("SELECT nodeSet1.id, nodeSet1.name FROM [nt:base] AS nodeSet1"));
+        assertThat(xpath("//./(@id|@name)"), isSql("SELECT nodeSet1.id, nodeSet1.name FROM [nt:base] AS nodeSet1"));
     }
 
     @Test
@@ -207,68 +208,64 @@ public class XPathToQueryTranslatorTest {
 
     @Test
     public void shouldTranslateFromXPathOfAnyNodeWithName() {
-        assertThat(xpath("//element(nodeName,*)"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
+        assertThat(xpath("//element(nodeName,*)"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
 
-        assertThat(xpath("//element(nodeName,*)"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
+        assertThat(xpath("//element(nodeName,*)"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
 
-        assertThat(xpath("//nodeName"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
+        assertThat(xpath("//nodeName"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
 
         assertThat(xpath("/jcr:root//element(nodeName,*)"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
 
-        assertThat(xpath("/jcr:root//nodeName"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
+        assertThat(xpath("/jcr:root//nodeName"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName'"));
     }
 
     @Test
     public void shouldTranslateFromXPathOfNodeWithNameUnderRoot() {
         assertThat(xpath("/jcr:root/element(nodeName,*)"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
 
-        assertThat(xpath("/jcr:root/nodeName"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
+        assertThat(xpath("/jcr:root/nodeName"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
 
-        assertThat(xpath("nodeName"), isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
+        assertThat(xpath("nodeName"), isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
     }
 
     @Test
     public void shouldTranslateFromXPathOfAnyNodeUsingPredicate() {
         assertThat(xpath("//.[jcr:contains(.,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE CONTAINS(nodeSet1.*,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE CONTAINS(nodeSet1.*,'bar')"));
         assertThat(xpath("//.[jcr:contains(a,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE CONTAINS(nodeSet2.*,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE CONTAINS(nodeSet2.*,'bar')"));
         assertThat(xpath("//*[jcr:contains(.,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 WHERE CONTAINS(nodeSet1.*,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 WHERE CONTAINS(nodeSet1.*,'bar')"));
         assertThat(xpath("//*[jcr:contains(a,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE CONTAINS(nodeSet2.*,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE CONTAINS(nodeSet2.*,'bar')"));
         assertThat(xpath("//*[jcr:contains(a/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
         assertThat(xpath("//*[jcr:contains(a/*/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN __ALLNODES__ AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN [nt:base] AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
         assertThat(xpath("/jcr:root//element(*)[jcr:contains(a/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
         assertThat(xpath("/jcr:root//element(*)[jcr:contains(a/*/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN __ALLNODES__ AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN [nt:base] AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
         assertThat(xpath("/jcr:root//*[jcr:contains(a/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet2.b,'bar')"));
         assertThat(xpath("/jcr:root//*[jcr:contains(a/*/@b,'bar')]"),
-                   isSql("SELECT * FROM __ALLNODES__ AS nodeSet1 JOIN __ALLNODES__ AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN __ALLNODES__ AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
+                   isSql("SELECT * FROM [nt:base] AS nodeSet1 JOIN [nt:base] AS nodeSet2 ON ISCHILDNODE(nodeSet2,nodeSet1) JOIN [nt:base] AS nodeSet3 ON ISCHILDNODE(nodeSet3,nodeSet2) WHERE NAME(nodeSet2) = 'a' AND CONTAINS(nodeSet3.b,'bar')"));
     }
 
-    // @Test
-    // public void shouldParseXPathExpressions() {
-    // assertParsable("/jcr:root/a/b/c");
-    // assertParsable("/jcr:root/a/b/c[*]");
-    // assertParsable("/jcr:root/some[1]/element(nodes, my:type)[1]");
-    // assertParsable("//element(*,my:type)");
-    // assertParsable("//element(*,my:type)[@jcr:title='something' and @globalProperty='something else']");
-    // assertParsable("//element(*,my:type)[@jcr:title | @globalProperty]");
-    // assertParsable("//element(*, my:type) order by @my:title");
-    // assertParsable("//element(*, my:type) [jcr:contains(., 'jcr')] order by jcr:score() descending");
-    // assertParsable("//element(*, employee)[@secretary and @assistant]");
-    // }
+    @Test
+    public void shouldParseXPathExpressions() {
+        xpath("/jcr:root/a/b/c");
+        xpath("/jcr:root/a/b/c[*]");
+        xpath("/jcr:root/some[1]/element(nodes, my:type)[1]");
+        xpath("//element(*,my:type)");
+        xpath("//element(*,my:type)[@jcr:title='something' and @globalProperty='something else']");
+        xpath("//element(*,my:type)[@jcr:title | @globalProperty]");
+        xpath("//element(*, my:type) order by @my:title");
+        xpath("//element(*, my:type) [jcr:contains(., 'jcr')] order by jcr:score() descending");
+        xpath("//element(*, employee)[@secretary and @assistant]");
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // utility methods

@@ -177,7 +177,7 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
             // These might not all be level one tests
-            // addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
@@ -188,7 +188,7 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetPropertyNamesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.PredicatesTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
 
             // The tests in this suite are level one
             addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());

@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.jcr.RepositoryException;
@@ -287,6 +288,8 @@ class RepositoryQueryManager {
             };
             this.queryEngine = new QueryEngine(planner, optimizer, processor);
 
+            // Index any existing content ...
+            reindexContent();
         }
 
         protected void process( Changes changes ) {
@@ -321,11 +324,13 @@ class RepositoryQueryManager {
          */
         @Override
         public void reindexContent() {
-            // Index the existing content ...
-            Graph graph = Graph.create(sourceName, connectionFactory, context);
+            // Get the workspace names ...
+            Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
+
+            // Index the existing content (this obtains a connection and possibly locks the source) ...
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
             try {
-                for (String workspace : graph.getWorkspaces()) {
+                for (String workspace : workspaces) {
                     indexer.index(workspace);
                 }
             } finally {

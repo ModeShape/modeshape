@@ -373,6 +373,14 @@ public class LuceneSearchEngineTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
+    public void shouldFindAllNodesBySimpleQuery() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT [jcr:primaryType] FROM __ALLNODES__";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 18);
+    }
+
+    @Test
     public void shouldFindNodesBySimpleQuery() {
         indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__";

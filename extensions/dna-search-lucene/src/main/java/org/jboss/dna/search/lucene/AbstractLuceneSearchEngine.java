@@ -25,6 +25,7 @@ package org.jboss.dna.search.lucene;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -87,7 +88,6 @@ import org.jboss.dna.graph.query.model.Or;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SameNode;
-import org.jboss.dna.graph.query.model.SelectorName;
 import org.jboss.dna.graph.query.model.SetCriteria;
 import org.jboss.dna.graph.query.model.StaticOperand;
 import org.jboss.dna.graph.query.model.TypeSystem;
@@ -103,6 +103,8 @@ import org.jboss.dna.graph.search.AbstractSearchEngine;
 import org.jboss.dna.graph.search.SearchEngine;
 import org.jboss.dna.graph.search.SearchEngineProcessor;
 import org.jboss.dna.graph.search.SearchEngineWorkspace;
+import org.jboss.dna.search.lucene.query.HasValueQuery;
+import org.jboss.dna.search.lucene.query.MatchNoneQuery;
 
 /**
  * An abstract {@link SearchEngine} implementation that is set up to use the Lucene library. This provides an abstract
@@ -349,11 +351,22 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             Query pushDownQuery = null;
             Constraint postProcessConstraint = null;
             try {
+                QueryFactory queryFactory = null;
                 for (Constraint andedConstraint : request.andedConstraints()) {
                     // Determine if it can be represented as a Lucene query ...
                     assert andedConstraint != null;
-                    Query constraintQuery = queryFactory(session, request.variables()).createQuery(andedConstraint);
+                    if (queryFactory == null) queryFactory = queryFactory(session, request.variables());
+                    Query constraintQuery = queryFactory.createQuery(andedConstraint);
                     if (constraintQuery != null) {
+                        if (constraintQuery instanceof MatchAllDocsQuery) {
+                            // This constraint includes all values, so we can just skip it ...
+                            continue;
+                        }
+                        if (constraintQuery instanceof MatchNoneQuery) {
+                            // This constraint invalidates all of the other AND-ed constraints ...
+                            pushDownQuery = constraintQuery;
+                            break;
+                        }
                         // The AND-ed constraint _can_ be represented as a push-down Lucene query ...
                         if (pushDownQuery == null) {
                             // This must be the first query ...
@@ -398,47 +411,54 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             // Get the results from Lucene ...
             List<Object[]> tuples = null;
             final Columns columns = request.resultColumns();
-            try {
-                // Execute the query against the content indexes ...
-                IndexSearcher searcher = session.getContentSearcher();
-                TupleCollector collector = session.createTupleCollector(columns);
-                searcher.search(pushDownQuery, collector);
-                tuples = collector.getTuples();
-            } catch (IOException e) {
-                // There was a problem executing the Lucene query ...
-                request.setError(e);
-                return;
+            if (pushDownQuery instanceof MatchNoneQuery) {
+                // There are no results ...
+                tuples = Collections.emptyList();
+            } else {
+                try {
+                    // Execute the query against the content indexes ...
+                    IndexSearcher searcher = session.getContentSearcher();
+                    TupleCollector collector = session.createTupleCollector(columns);
+                    searcher.search(pushDownQuery, collector);
+                    tuples = collector.getTuples();
+                } catch (IOException e) {
+                    // There was a problem executing the Lucene query ...
+                    request.setError(e);
+                    return;
+                }
             }
 
-            if (postProcessConstraint != null && !tuples.isEmpty()) {
-                // Create a delegate processing component that will return the tuples we've already found ...
-                final List<Object[]> allTuples = tuples;
-                QueryContext queryContext = new QueryContext(request.schemata(), typeSystem, null, new SimpleProblems(),
-                                                             request.variables());
-                ProcessingComponent tuplesProcessor = new ProcessingComponent(queryContext, columns) {
-                    @Override
-                    public List<Object[]> execute() {
-                        return allTuples;
-                    }
-                };
-                // Create a processing component that will apply these constraints to the tuples we already found ...
-                SelectComponent selector = new SelectComponent(tuplesProcessor, postProcessConstraint, request.variables());
-                tuples = selector.execute();
-            }
+            if (!tuples.isEmpty()) {
+                if (postProcessConstraint != null) {
+                    // Create a delegate processing component that will return the tuples we've already found ...
+                    final List<Object[]> allTuples = tuples;
+                    QueryContext queryContext = new QueryContext(request.schemata(), typeSystem, null, new SimpleProblems(),
+                                                                 request.variables());
+                    ProcessingComponent tuplesProcessor = new ProcessingComponent(queryContext, columns) {
+                        @Override
+                        public List<Object[]> execute() {
+                            return allTuples;
+                        }
+                    };
+                    // Create a processing component that will apply these constraints to the tuples we already found ...
+                    SelectComponent selector = new SelectComponent(tuplesProcessor, postProcessConstraint, request.variables());
+                    tuples = selector.execute();
+                }
 
-            // Limit the tuples ...
-            Limit limit = request.limit();
-            if (!limit.isUnlimited()) {
-                int firstIndex = limit.getOffset();
-                int maxRows = Math.min(tuples.size(), limit.getRowLimit());
-                if (firstIndex > 0) {
-                    if (firstIndex > tuples.size()) {
-                        tuples.clear();
+                // Limit the tuples ...
+                Limit limit = request.limit();
+                if (!limit.isUnlimited()) {
+                    int firstIndex = limit.getOffset();
+                    int maxRows = Math.min(tuples.size(), limit.getRowLimit());
+                    if (firstIndex > 0) {
+                        if (firstIndex > tuples.size()) {
+                            tuples.clear();
+                        } else {
+                            tuples = tuples.subList(firstIndex, maxRows);
+                        }
                     } else {
-                        tuples = tuples.subList(firstIndex, maxRows);
+                        tuples = tuples.subList(0, maxRows);
                     }
-                } else {
-                    tuples = tuples.subList(0, maxRows);
                 }
             }
 
@@ -518,7 +538,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof PropertyExistence) {
                     PropertyExistence existence = (PropertyExistence)constraint;
-                    return createQuery(existence.getSelectorName(), existence.getPropertyName());
+                    return createQuery(existence);
                 }
                 if (constraint instanceof Between) {
                     Between between = (Between)constraint;
@@ -680,10 +700,13 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 return valueFactory.create(stringFactory.create(value).toLowerCase());
             }
 
-            public Query createQuery( SelectorName selectorName,
-                                      String propertyName ) {
-                Term term = new Term(fieldNameFor(propertyName));
-                return new TermQuery(term);
+            public Query createQuery( PropertyExistence existence ) {
+                String propertyName = existence.getPropertyName();
+                if ("jcr:primaryType".equals(propertyName)) {
+                    // All nodes have a primary type, so therefore we can match all documents ...
+                    return new MatchAllDocsQuery();
+                }
+                return new HasValueQuery(fieldNameFor(propertyName));
             }
 
             public Query createQuery( String fieldName,
