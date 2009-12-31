@@ -46,7 +46,6 @@ import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
@@ -83,8 +82,6 @@ public class DnaEngine {
     private final SequencingService sequencingService;
     private final ExecutorService executorService;
     private final MimeTypeDetectors detectors;
-
-    private final RepositoryConnectionFactory connectionFactory;
 
     protected DnaEngine( ExecutionContext context,
                          DnaConfiguration.ConfigurationDefinition configuration ) {
@@ -130,19 +127,8 @@ public class DnaEngine {
         for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
             sequencingService.addSequencer(sequencerConfig);
         }
-
-        // Set up the connection factory for this engine ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                RepositorySource source = DnaEngine.this.getRepositorySource(sourceName);
-                if (source == null) {
-                    throw new RepositorySourceException(sourceName);
-                }
-
-                return source.getConnection();
-            }
-        };
     }
+
 
     /**
      * Get the problems that were encountered when setting up this engine from the configuration.
@@ -182,7 +168,7 @@ public class DnaEngine {
      */
     public final RepositoryConnectionFactory getRepositoryConnectionFactory() {
         checkRunning();
-        return connectionFactory;
+        return repositoryService.getRepositoryLibrary();
     }
 
     /**
