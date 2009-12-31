@@ -45,24 +45,20 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 @NotThreadSafe
 public class SimpleJpaConnection implements RepositoryConnection {
 
-    private final SimpleJpaRepository repository;
+    private SimpleJpaRepository repository;
     private final JpaSource source;
     private EntityManager entityManager;
 
     public SimpleJpaConnection( JpaSource source ) {
         this.source = source;
 
-        this.entityManager = source.getEntityManagers().checkout();
-        this.entityManager.getTransaction().begin();
-        this.repository = new SimpleJpaRepository(source.getName(), source.getRootUuid(), source.getDefaultWorkspaceName(),
-                                                  source.getPredefinedWorkspaceNames(), entityManager,
-                                                  source.getRepositoryContext().getExecutionContext(), source.isCompressData(),
-                                                  source.isCreatingWorkspacesAllowed(), source.getLargeValueSizeInBytes());
     }
 
     public boolean ping( long time,
                          TimeUnit unit ) {
-        return entityManager != null && entityManager.isOpen();
+        // Most pings will occur before or after an execute() call, when there is no entityManger
+        // If there is no entity manager, the connection is still valid!
+        return entityManager == null || entityManager.isOpen();
     }
 
     public CachePolicy getDefaultCachePolicy() {
@@ -77,7 +73,18 @@ public class SimpleJpaConnection implements RepositoryConnection {
         return null;
     }
 
-    public void close() {
+    private void acquireRepository() {
+        this.entityManager = source.getEntityManagers().checkout();
+        this.entityManager.getTransaction().begin();
+        this.repository = new SimpleJpaRepository(source.getName(), source.getRootUuid(), source.getDefaultWorkspaceName(),
+                                                  source.getPredefinedWorkspaceNames(), entityManager,
+                                                  source.getRepositoryContext().getExecutionContext(), source.isCompressData(),
+                                                  source.isCreatingWorkspacesAllowed(), source.getLargeValueSizeInBytes());
+
+    }
+
+    private void releaseRepository() {
+        this.repository = null;
         if (entityManager != null) {
             try {
                 source.getEntityManagers().checkin(entityManager);
@@ -85,6 +92,10 @@ public class SimpleJpaConnection implements RepositoryConnection {
                 entityManager = null;
             }
         }
+
+    }
+
+    public void close() {
     }
 
     /**
@@ -101,6 +112,9 @@ public class SimpleJpaConnection implements RepositoryConnection {
             sw = new Stopwatch();
             sw.start();
         }
+
+        acquireRepository();
+
         // Do any commands update/write?
         Observer observer = this.source.getRepositoryContext().getObserver();
         RequestProcessor processor = new SimpleRequestProcessor(context, this.repository, observer, source.areUpdatesAllowed());
@@ -139,6 +153,9 @@ public class SimpleJpaConnection implements RepositoryConnection {
                 }
             }
         }
+
+        releaseRepository();
+
         if (logger.isTraceEnabled()) {
             assert sw != null;
             sw.stop();

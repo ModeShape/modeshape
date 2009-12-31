@@ -68,7 +68,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     private List<Integer> ruleExecutionOrder;
     private QueryContext context;
     private PlanNode node;
-    private boolean print = false;
+    private final boolean print = false;
 
     @Before
     public void beforeEach() {
@@ -139,7 +139,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
             public PlanNode execute( QueryContext context,
                                      PlanNode plan,
                                      LinkedList<OptimizerRule> ruleStack ) {
-                context.getProblems().addError(GraphI18n.closedConnectionMayNotBeUsed);
+                context.getProblems().addError(GraphI18n.errorReadingPropertyValueBytes);
                 return plan;
             }
         });

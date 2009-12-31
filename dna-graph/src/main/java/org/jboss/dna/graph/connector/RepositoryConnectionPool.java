@@ -779,7 +779,9 @@ public class RepositoryConnectionPool {
             mainLock.lock();
             // Remove the connection from the in-use set ...
             boolean removed = this.inUseConnections.remove(wrapper);
-            assert removed;
+
+            // This means that the wrapper was already closed at least once since the last time it was opened
+            if (!removed) return;
 
             // If we're shutting down the pool, then just close the connection ...
             if (this.runState != RUNNING) {
@@ -932,7 +934,6 @@ public class RepositoryConnectionPool {
         private final RepositoryConnection original;
         private final long timeCreated;
         private long lastUsed;
-        private boolean closed = false;
 
         protected ConnectionWrapper( RepositoryConnection connection ) {
             assert connection != null;
@@ -972,7 +973,6 @@ public class RepositoryConnectionPool {
          * {@inheritDoc}
          */
         public XAResource getXAResource() {
-            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             return this.original.getXAResource();
         }
 
@@ -980,7 +980,6 @@ public class RepositoryConnectionPool {
          * {@inheritDoc}
          */
         public CachePolicy getDefaultCachePolicy() {
-            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             return this.original.getDefaultCachePolicy();
         }
 
@@ -992,7 +991,6 @@ public class RepositoryConnectionPool {
          */
         public void execute( ExecutionContext context,
                              Request request ) throws RepositorySourceException {
-            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             this.original.execute(context, request);
         }
 
@@ -1001,7 +999,6 @@ public class RepositoryConnectionPool {
          */
         public boolean ping( long time,
                              TimeUnit unit ) throws InterruptedException {
-            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             return this.original.ping(time, unit);
         }
 
@@ -1009,12 +1006,8 @@ public class RepositoryConnectionPool {
          * {@inheritDoc}
          */
         public void close() {
-            if (!closed) {
-                this.lastUsed = System.currentTimeMillis();
-                this.original.close();
-                this.closed = true;
-                returnConnection(this);
-            }
+            this.lastUsed = System.currentTimeMillis();
+            returnConnection(this);
         }
     }
 

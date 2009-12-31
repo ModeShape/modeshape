@@ -33,7 +33,6 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class GraphI18n {
 
-    public static I18n closedConnectionMayNotBeUsed;
     public static I18n errorConvertingIo;
     public static I18n errorConvertingType;
     public static I18n errorReadingPropertyValueBytes;
