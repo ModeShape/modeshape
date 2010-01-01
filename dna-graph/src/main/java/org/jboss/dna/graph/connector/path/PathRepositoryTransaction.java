@@ -26,7 +26,7 @@ package org.jboss.dna.graph.connector.path;
 import org.jboss.dna.graph.connector.map.MapRepositoryTransaction;
 
 /**
- * A transaction returned by the {@link PathRepository#startTransaction(boolean)}.
+ * A transaction for a {@link PathRepository}.
  * 
  * @see MapRepositoryTransaction
  */
@@ -37,7 +37,6 @@ public interface PathRepositoryTransaction {
      * committing the changes, but the transaction is still expected to be closed.
      * 
      * @see #rollback()
-     * @see PathRepository#startTransaction(boolean)
      */
     void commit();
 
@@ -46,7 +45,6 @@ public interface PathRepositoryTransaction {
      * rolling back the changes, but the transaction is still expected to be closed.
      * 
      * @see #commit()
-     * @see PathRepository#startTransaction(boolean)
      */
     void rollback();
 
