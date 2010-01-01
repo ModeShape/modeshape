@@ -274,9 +274,9 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the UUID that is used for the root node of each workspace
+     * Get the maximum path length (in characters) allowed by the underlying file system
      * 
-     * @return the UUID that is used for the root node of each workspace
+     * @return the maximum path length (in characters) allowed by the underlying file system
      */
     public int getMaxPathLength() {
         return maxPathLength;
