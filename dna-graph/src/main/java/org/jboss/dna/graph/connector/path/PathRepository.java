@@ -6,6 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.observe.Observer;
 
 @ThreadSafe
 public abstract class PathRepository {
@@ -106,20 +109,20 @@ public abstract class PathRepository {
      */
     protected abstract void initialize();
 
-    /**
-     * Begin a transaction, hinting whether the transaction will be used only to read the content. If this is called, then the
-     * transaction must be either {@link PathRepositoryTransaction#commit() committed} or
-     * {@link PathRepositoryTransaction#rollback() rolled back}.
-     * 
-     * @param readonly true if the transaction will not modify any content, or false if changes are to be made
-     * @return the transaction; never null
-     * @see PathRepositoryTransaction#commit()
-     * @see PathRepositoryTransaction#rollback()
-     */
-    public PathRepositoryTransaction startTransaction( boolean readonly ) {
+    public boolean isWritable() {
+        return false;
+    }
 
-        // Read-only repositories can return a default NOP implementation
-        return new PathRepositoryTransaction() {
+    PathRequestProcessor createRequestProcessor( ExecutionContext context,
+                                                 PathRepositorySource source ) {
+        RepositoryContext repositoryContext = source.getRepositoryContext();
+        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
+        boolean updatesAllowed = source.areUpdatesAllowed();
+
+        /**
+         * Read-only implementations can use a NOP transaction.
+         */
+        PathRepositoryTransaction txn = new PathRepositoryTransaction() {
 
             public void commit() {
             }
@@ -128,9 +131,7 @@ public abstract class PathRepository {
             }
 
         };
-    }
 
-    public boolean isWritable() {
-        return false;
+        return new PathRequestProcessor(context, this, observer, updatesAllowed, txn);
     }
 }

@@ -49,7 +49,6 @@ import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.path.AbstractWritablePathWorkspace;
 import org.jboss.dna.graph.connector.path.DefaultPathNode;
 import org.jboss.dna.graph.connector.path.PathNode;
-import org.jboss.dna.graph.connector.path.PathRepositoryTransaction;
 import org.jboss.dna.graph.connector.path.WritablePathRepository;
 import org.jboss.dna.graph.connector.path.WritablePathWorkspace;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
@@ -169,11 +168,6 @@ public class FileSystemRepository extends WritablePathRepository {
         File directory = this.repositoryRoot == null ? new File(workspaceName) : new File(repositoryRoot, workspaceName);
         if (directory.exists() && directory.isDirectory() && directory.canRead()) return directory;
         return null;
-    }
-
-    @Override
-    public PathRepositoryTransaction startTransaction( boolean readonly ) {
-        return new FileSystemTransaction();
     }
 
     /**

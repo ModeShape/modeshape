@@ -1,6 +1,7 @@
 package org.jboss.dna.graph.connector.path;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,21 @@ public class DefaultPathNode implements PathNode {
         this.uuid = uuid;
         this.properties = properties;
         this.childSegments = childSegments;
+    }
+
+    public DefaultPathNode( Path path,
+                            UUID uuid,
+                            Iterable<Property> properties,
+                            List<Segment> childSegments ) {
+        super();
+        this.path = path;
+        this.uuid = uuid;
+        this.childSegments = childSegments;
+        this.properties = new HashMap<Name, Property>();
+
+        for (Property property : properties) {
+            this.properties.put(property.getName(), property);
+        }
     }
 
     public List<Segment> getChildSegments() {

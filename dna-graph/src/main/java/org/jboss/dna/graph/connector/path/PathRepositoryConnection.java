@@ -7,11 +7,8 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.request.Request;
-import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 public class PathRepositoryConnection implements RepositoryConnection {
 
@@ -78,10 +75,8 @@ public class PathRepositoryConnection implements RepositoryConnection {
         }
 
         // Do any commands update/write?
-        PathRepositoryTransaction txn = repository.startTransaction(request.isReadOnly());
-        RepositoryContext repositoryContext = this.source.getRepositoryContext();
-        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        RequestProcessor processor = new PathRequestProcessor(context, this.repository, observer, source.areUpdatesAllowed());
+        PathRequestProcessor processor = repository.createRequestProcessor(context, source);
+        PathRepositoryTransaction txn = processor.getTransaction();
 
         boolean commit = true;
         try {

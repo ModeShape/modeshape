@@ -51,15 +51,18 @@ public class PathRequestProcessor extends RequestProcessor {
     private final PathFactory pathFactory;
     private final PathRepository repository;
     private final boolean updatesAllowed;
+    private final PathRepositoryTransaction txn;
 
     public PathRequestProcessor( ExecutionContext context,
                                  PathRepository repository,
                                  Observer observer,
-                                 boolean updatesAllowed ) {
+                                 boolean updatesAllowed,
+                                 PathRepositoryTransaction txn ) {
         super(repository.getSourceName(), context, observer);
         this.repository = repository;
         pathFactory = context.getValueFactories().getPathFactory();
         this.updatesAllowed = updatesAllowed;
+        this.txn = txn;
     }
 
     protected boolean updatesAllowed( Request request ) {
@@ -575,4 +578,15 @@ public class PathRequestProcessor extends RequestProcessor {
         return node;
     }
 
+    /**
+     * Returns the transaction associated with this request processor. This transaction must eventually either be
+     * {@link PathRepositoryTransaction#commit() committed} or {@link PathRepositoryTransaction#rollback() rolled back}.
+     * 
+     * @return the transaction associated with this request processor; never null
+     * @see PathRepositoryTransaction#commit()
+     * @see PathRepositoryTransaction#rollback()
+     */
+    public PathRepositoryTransaction getTransaction() {
+        return this.txn;
+    }
 }
