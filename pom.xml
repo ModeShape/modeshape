@@ -130,6 +130,7 @@
 		<!--module>extensions/dna-sequencer-esbMessage</module-->
 		<module>extensions/dna-sequencer-cnd</module>
 		<module>extensions/dna-sequencer-java</module>
+		<module>extensions/dna-sequencer-classfile</module>
 		<module>extensions/dna-sequencer-msoffice</module>
 		<module>extensions/dna-sequencer-text</module>
 		<module>extensions/dna-sequencer-xml</module>

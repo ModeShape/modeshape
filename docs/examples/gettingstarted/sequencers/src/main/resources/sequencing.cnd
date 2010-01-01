@@ -5,6 +5,8 @@
 <mp3='http://www.jboss.org/dna/mp3/1.0'>
 <java='http://www.jboss.org/dna/java/1.0'>
 <zip='http://www.jboss.org/dna/zip/1.0'>
+<class='http://www.jboss.org/dna/sequencer/javaclass/1.0'>
+
 
 // ----------------------------------------------------------
 // JCR Pre-defined Mixin Types that are not loaded by default
@@ -283,4 +285,74 @@
 [zip:content] > nt:unstructured, mix:mimeTyped
   + * (nt:folder)
   + * (nt:file)
+
+// -------------------
+// DNA Java Class Sequencer
+// -------------------
+ 
+[class:annotationMember]
+- class:name (string) mandatory
+- class:value (string) 
+
+[class:annotation]
+- class:name (string) mandatory
++ * (class:annotationMember) = class:annotationMember
+
+[class:annotations]
++ * (class:annotation) = class:annotation
+
+[class:field]
+- class:name (string) mandatory 
+- class:typeClassName (string) mandatory 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:static (boolean) mandatory
+- class:final (boolean) mandatory
+- class:transient (boolean) mandatory
+- class:volatile (boolean) mandatory
++ class:annotations (class:annotations) = class:annotations
+
+[class:fields]
++ * (class:field) = class:field
+
+[class:interfaces]
+- * (string)
+
+[class:parameters]
+- * (string)
+
+[class:method]
+- class:name (string) mandatory 
+- class:returnTypeClassName (string) mandatory 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:static (boolean) mandatory
+- class:final (boolean) mandatory
+- class:abstract (boolean) mandatory
+- class:strictFp (boolean) mandatory
+- class:native (boolean) mandatory
+- class:synchronized (boolean) mandatory
+- class:parameters (string) multiple
++ class:annotations (class:annotations) = class:annotations
+
+[class:methods]
++ * (class:method) = class:method
+
+[class:constructors]
++ * (class:method) = class:method
+
+[class:class]
+- class:name (string) mandatory 
+- class:superClassName (string) 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:abstract (boolean) mandatory
+- class:interface (boolean) mandatory
+- class:final (boolean) mandatory
+- class:strictFp (boolean) mandatory
+- class:interfaces (string) multiple
++ class:annotations (class:annotations) = class:annotations
++ class:constructors (class:constructors) = class:constructors
++ class:methods (class:methods) = class:methods
++ class:fields (class:fields) = class:fields
+
+[class:enum] > class:class
+- class:enumValues (string) mandatory multiple
  

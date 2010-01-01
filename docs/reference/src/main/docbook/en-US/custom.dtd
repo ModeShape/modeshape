@@ -155,7 +155,6 @@
 <!ENTITY Sequencer		    			"<ulink url='&API;repository/sequencer/Sequencer.html'><interface>Sequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencer/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">
 <!ENTITY SequencerContext		    			"<ulink url='&API;graph/sequencer/SequencerContext.html'><interface>SequencerContext</interface></ulink>">
-<!ENTITY StreamequencerContext		    "<ulink url='&API;graph/sequencer/StreamequencerContext.html'><interface>StreamequencerContext</interface></ulink>">
 <!ENTITY MimeTypeDetector					  	"<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 <!ENTITY MockSequencerOutput		    	"<ulink url='&API;graph/sequencer/MockSequencerOutput.html'><interface>MockSequencerOutput</interface></ulink>">
 <!ENTITY MockSequencerContext		    	"<ulink url='&API;graph/sequencer/MockSequencerContext.html'><interface>MockSequencerContext</interface></ulink>">
@@ -215,6 +214,11 @@
 <!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/aperture/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
 <!ENTITY DnaJcrDeployer	  						"<ulink url='&API;web/jcr/rest/DnaJcrDeployer.html'><classname>DnaJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
+
+<!ENTITY JavaMetadataSequencer		  	"<ulink url='&API;sequencer/java/JavaMetadataSequencer.html'><classname>JavaMetadataSequencer</classname></ulink>">
+<!ENTITY ClassFileSequencer		  		"<ulink url='&API;sequencer/classfile/ClassFileSequencer.html'><classname>ClassFileSequencer</classname></ulink>">
+<!ENTITY ClassFileRecorder		  		"<ulink url='&API;sequencer/classfile/ClassFileRecorder.html'><classname>ClassFileRecorder</classname></ulink>">
+<!ENTITY DefaultClassFileRecorder		  "<ulink url='&API;sequencer/classfile/DefaultClassFileRecorder.html'><classname>DefaultClassFileRecorder</classname></ulink>">
 
 <!ENTITY AbstractTextSequencer		  	"<ulink url='&API;sequencer/text/AbstractTextSequencer.html'><classname>AbstractTextSequencer</classname></ulink>">
 <!ENTITY DelimitedTextSequencer		  	"<ulink url='&API;sequencer/text/DelimitedTextSequencer'><classname>DelimitedTextSequencer</classname></ulink>">

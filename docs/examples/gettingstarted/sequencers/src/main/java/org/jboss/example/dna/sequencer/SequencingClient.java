@@ -50,6 +50,8 @@ import org.jboss.dna.jcr.JcrTools;
 import org.jboss.dna.jcr.SecurityContextCredentials;
 import org.jboss.dna.repository.sequencer.SequencingService;
 import org.jboss.dna.repository.util.SessionFactory;
+import org.jboss.dna.sequencer.classfile.ClassFileSequencer;
+import org.jboss.dna.sequencer.classfile.ClassFileSequencerLexicon;
 
 /**
  * The main application for running the sequencers.
@@ -74,7 +76,11 @@ public class SequencingClient {
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryId).addNodeTypes("sequencing.cnd").setSource("store");
+        config.repository(repositoryId)
+              .addNodeTypes("sequencing.cnd")
+              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX,
+                                 ClassFileSequencerLexicon.Namespace.URI)              
+              .setSource("store");
         // Set up the image sequencer ...
         config.sequencer("Image Sequencer")
               .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
@@ -89,6 +95,12 @@ public class SequencingClient {
               .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
               .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/mp3s/$1");
+        // Set up the Java class file sequencer ...
+        config.sequencer("Java Class Sequencer")
+              .usingClass(ClassFileSequencer.class)
+              .setDescription("Sequences Java class files to extract the structure of the classes")
+              .sequencingFrom("//*.class[*]/jcr:content[@jcr:data]")
+              .andOutputtingTo("/classes");
         // Set up the Java source file sequencer ...
         config.sequencer("Java Sequencer")
               .usingClass("org.jboss.dna.sequencer.java.JavaMetadataSequencer")
@@ -273,7 +285,7 @@ public class SequencingClient {
                 while (!nodesToVisit.isEmpty()) {
                     Node node = nodesToVisit.remove();
 
-                    String nodeType = "nt:file".equals(node.getPrimaryNodeType()) ? "file" : "folder";
+                    String nodeType = "nt:folder".equals(node.getPrimaryNodeType().getName()) ? "folder" : "file";
                     infos.add(new MediaInfo(node.getPath(), node.getName(), nodeType, new Properties()));
 
                     for (NodeIterator i = node.getNodes(); i.hasNext();) {
@@ -343,6 +355,32 @@ public class SequencingClient {
                 }
             }
 
+            if (root.hasNode("classes")) {
+                LinkedList<Node> nodesToVisit = new LinkedList<Node>();
+
+                for (NodeIterator i = root.getNode("classes").getNodes(); i.hasNext();) {
+                    nodesToVisit.addLast(i.nextNode());
+                }
+
+                while (!nodesToVisit.isEmpty()) {
+                    Node node = nodesToVisit.remove();
+
+                    if ("class:class".equals(node.getPrimaryNodeType().getName())) {
+                        Properties props = new Properties();
+                        props.put("constructors", node.getNode("class:constructors").getNodes().getSize());
+                        props.put("methods", node.getNode("class:methods").getNodes().getSize());
+                        props.put("fields", node.getNode("class:fields").getNodes().getSize());
+                        
+                        infos.add(new MediaInfo(node.getPath(), node.getName(), "class", props));
+
+                    } else {
+                        for (NodeIterator i = node.getNodes(); i.hasNext();) {
+                            nodesToVisit.addLast(i.nextNode());
+                        }
+                    }
+
+                }
+            }
             if (root.hasNode("java")) {
                 Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
                 // Find the compilation unit node ...
@@ -545,6 +583,7 @@ public class SequencingClient {
         if (filename.endsWith(".java")) return "text/x-java-source";
         if (filename.endsWith(".csv")) return "text/csv";
         if (filename.endsWith(".txt")) return "text/plain";
+        if (filename.endsWith(".clazz")) return "application/x-java-class";
         return null;
     }
 

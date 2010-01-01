@@ -35,6 +35,8 @@ import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrRepository;
+import org.jboss.dna.sequencer.classfile.ClassFileSequencer;
+import org.jboss.dna.sequencer.classfile.ClassFileSequencerLexicon;
 import org.jboss.dna.sequencer.java.JavaMetadataSequencer;
 import org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer;
 import org.jboss.dna.sequencer.zip.ZipSequencer;
@@ -52,6 +54,7 @@ public class SequencingClientTest {
     private URL jpegImageUrl;
     private URL mp3Url;
     private URL jarUrl;
+    private URL classUrl;
     private URL javaSourceUrl;
     private URL csvUrl;
     private URL fixedWidthFileUrl;
@@ -64,6 +67,7 @@ public class SequencingClientTest {
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");
         this.mp3Url = Thread.currentThread().getContextClassLoader().getResource("sample1.mp3");
         this.jarUrl = Thread.currentThread().getContextClassLoader().getResource("test.jar");
+        this.classUrl = Thread.currentThread().getContextClassLoader().getResource("JcrRepository.clazz");
         this.csvUrl = Thread.currentThread().getContextClassLoader().getResource("test.csv");
         this.fixedWidthFileUrl = Thread.currentThread().getContextClassLoader().getResource("fixedWidthFile.txt");
 
@@ -78,9 +82,12 @@ public class SequencingClientTest {
               .usingClass(InMemoryRepositorySource.class)
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
+
         // Set up the JCR repository to use the source ...
         config.repository(repositoryId)
               .addNodeTypes(getClass().getClassLoader().getResource("sequencing.cnd"))
+              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX,
+                                 ClassFileSequencerLexicon.Namespace.URI)              
               .setSource("store")
               .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         // Set up the image sequencer ...
@@ -108,6 +115,13 @@ public class SequencingClientTest {
               .setDescription("Sequences Java files to extract the AST structure of the Java source code")
               .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/java/$1");
+        // Set up the Java class file sequencer ...
+        // Only looking for one class to make verification easier
+        config.sequencer("Java Class Sequencer")
+              .usingClass(ClassFileSequencer.class)
+              .setDescription("Sequences Java class files to extract the structure of the classes")
+              .sequencingFrom("//JcrRepository.clazz[*]/jcr:content[@jcr:data]")
+              .andOutputtingTo("/classes");
         // Set up the CSV file sequencer ...
         config.sequencer("CSV Sequencer")
               .usingClass("org.jboss.dna.sequencer.text.DelimitedTextSequencer")
@@ -124,7 +138,7 @@ public class SequencingClientTest {
               .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
               .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/txt/$1");
-        
+
         // Now start the client and tell it which repository and workspace to use ...
         client = new SequencingClient(config, repositoryId, workspaceName);
     }
@@ -132,6 +146,9 @@ public class SequencingClientTest {
     @After
     public void afterEach() throws Exception {
         if (client != null) client.shutdownRepository();
+        // while (true) {
+        // Thread.sleep(300000);
+        // }
     }
 
     @Test
@@ -191,6 +208,19 @@ public class SequencingClientTest {
     @Test
     public void shouldUploadAndSequenceZipFile() throws Exception {
         client.setUserInterface(new MockUserInterface(this.jarUrl, "/a/b/test.jar", 168));
+        client.startRepository();
+        client.uploadFile();
+
+        waitUntilSequencedNodesIs(1);
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+    }
+
+    @Test
+    public void shouldUploadAndSequenceClassFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.classUrl, "/a/b/JcrRepository.clazz", 1));
         client.startRepository();
         client.uploadFile();
 
