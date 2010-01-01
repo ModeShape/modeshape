@@ -38,7 +38,6 @@ public class ClassFileSequencer implements StreamSequencer {
 
     private ClassFileRecorder classFileRecorder = DEFAULT_CLASS_FILE_RECORDER;
 
-    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

@@ -40,7 +40,6 @@ import org.jboss.dna.sequencer.classfile.metadata.MethodMetadata;
 
 public class DefaultClassFileRecorder implements ClassFileRecorder {
 
-    @Override
     public void recordClass( StreamSequencerContext context,
                              SequencerOutput output,
                              ClassMetadata classMetadata ) {
