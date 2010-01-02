@@ -32,7 +32,6 @@
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-classfile</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
