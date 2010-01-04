@@ -822,6 +822,7 @@ public abstract class RequestProcessor {
         // Update the current values
         SetPropertyRequest setProperty = new SetPropertyRequest(on, workspaceName, newProperty);
         process(setProperty);
+        request.setNewProperty(setProperty.isNewProperty());
 
         if (setProperty.hasError()) {
             request.setError(setProperty.getError());

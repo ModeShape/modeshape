@@ -39,6 +39,7 @@ public class UpdateValuesRequest extends ChangeRequest {
     private Location actualLocation;
     private List<Object> actualAddedValues;
     private List<Object> actualRemovedValues;
+    private boolean actualCreation;
 
     public UpdateValuesRequest( String workspaceName,
                                 Location on,
@@ -148,6 +149,18 @@ public class UpdateValuesRequest extends ChangeRequest {
     }
 
     /**
+     * Record that the property did not exist prior to the processing of this request and was actually created by this request.
+     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}
+     * .
+     * 
+     * @param created true if the property was created by this request, or false if this request updated an existing property
+     * @throws IllegalStateException if the request is frozen
+     */
+    public void setNewProperty( boolean created ) {
+        this.actualCreation = created;
+    }
+
+    /**
      * Get the actual location of the node that was updated.
      * 
      * @return the actual location, or null if the actual location was not set
@@ -176,6 +189,15 @@ public class UpdateValuesRequest extends ChangeRequest {
     }
 
     /**
+     * Get whether the {@link #property() property} was created.
+     * 
+     * @return true if this request created the property, or false if this request changed an existing property
+     */
+    public boolean isNewProperty() {
+        return actualCreation;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * This method does not clone the results.
@@ -188,6 +210,7 @@ public class UpdateValuesRequest extends ChangeRequest {
         UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, actualLocation != null ? actualLocation : on,
                                                               propertyName, addedValues, removedValues);
         request.setActualLocation(actualLocation, actualAddedValues, actualRemovedValues);
+        request.setNewProperty(actualCreation);
         return request;
     }
 }
