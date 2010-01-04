@@ -68,7 +68,7 @@ public final class Utils {
     public static String getMimeType( File file ) {
         if (mimeTypeUtils == null) {
             // load custom extensions
-            InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/jboss/dna/web/jcr/rest/client/mime.types"); //$NON-NLS-1$
+            InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/jboss/dna/web/jcr/rest/client/mime.types");
             Map<String, String> customMap = MimeTypeUtil.load(stream, null);
 
             // construct
@@ -76,7 +76,7 @@ public final class Utils {
         }
 
         String mimeType = mimeTypeUtils.mimeTypeOf(file);
-        return ((mimeType == null) ? "application/octet-stream" : mimeType); //$NON-NLS-1$
+        return ((mimeType == null) ? "application/octet-stream" : mimeType);
     }
 
     // ===========================================================================================================================

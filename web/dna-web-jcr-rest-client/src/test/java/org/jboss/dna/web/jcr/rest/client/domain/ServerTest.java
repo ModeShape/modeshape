@@ -40,14 +40,14 @@ public final class ServerTest {
     // Constants
     // ===========================================================================================================================
 
-    private static final String URL1 = "file:/tmp/temp.txt"; //$NON-NLS-1$
-    private static final String URL2 = "http:www.redhat.com"; //$NON-NLS-1$
+    private static final String URL1 = "file:/tmp/temp.txt";
+    private static final String URL2 = "http:www.redhat.com";
 
-    private static final String USER1 = "user1"; //$NON-NLS-1$
-    private static final String USER2 = "user2"; //$NON-NLS-1$
+    private static final String USER1 = "user1";
+    private static final String USER2 = "user2";
 
-    private static final String PSWD1 = "pwsd1"; //$NON-NLS-1$
-    private static final String PSWD2 = "pwsd2"; //$NON-NLS-1$
+    private static final String PSWD1 = "pwsd1";
+    private static final String PSWD2 = "pwsd2";
 
     private static Server SERVER1 = new Server(URL1, USER1, PSWD1);
 

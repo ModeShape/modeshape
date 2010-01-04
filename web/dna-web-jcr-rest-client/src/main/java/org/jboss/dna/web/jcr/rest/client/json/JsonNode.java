@@ -50,7 +50,7 @@ public abstract class JsonNode extends JSONObject {
      * @param id the node identifier (never <code>null</code>)
      */
     protected JsonNode( String id ) {
-        CheckArg.isNotNull(id, "id"); //$NON-NLS-1$
+        CheckArg.isNotNull(id, "id");
         this.id = id;
     }
 
@@ -87,16 +87,16 @@ public abstract class JsonNode extends JSONObject {
     @Override
     public String toString() {
         StringBuilder txt = new StringBuilder();
-        txt.append("ID: ").append(getId()); //$NON-NLS-1$
-        txt.append(", URL: "); //$NON-NLS-1$
+        txt.append("ID: ").append(getId());
+        txt.append(", URL: ");
 
         try {
             txt.append(getUrl());
         } catch (Exception e) {
-            txt.append("exception obtaining URL"); //$NON-NLS-1$
+            txt.append("exception obtaining URL");
         }
 
-        txt.append(", content: ").append(super.toString()); //$NON-NLS-1$
+        txt.append(", content: ").append(super.toString());
         return txt.toString();
     }
 

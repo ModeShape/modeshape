@@ -37,7 +37,7 @@ public class OracleDdlLexicon extends StandardDdlLexicon {
     }
 
     // MIXINS
-    public static final Name TYPE_BACKSLASH_TERMINATOR = new BasicName(Namespace.URI, "backslashTerminator"); //$NON-NLS-1$
+    public static final Name TYPE_BACKSLASH_TERMINATOR = new BasicName(Namespace.URI, "backslashTerminator");
     
     public static final Name TYPE_CREATE_CLUSTER_STATEMENT 			= new BasicName(Namespace.URI, "createIndexStatement");
     public static final Name TYPE_CREATE_CONTEXT_STATEMENT 			= new BasicName(Namespace.URI, "createContextStatement");
@@ -151,11 +151,11 @@ public class OracleDdlLexicon extends StandardDdlLexicon {
     public static final Name TYPE_RENAME_CONSTRAINT 				= new BasicName(Namespace.URI, "renameConstraint");
 
     // PROPERTY NAMES
-    public static final Name TARGET_OBJECT_TYPE = new BasicName(Namespace.URI, "targetObjectType"); //$NON-NLS-1$
-    public static final Name TARGET_OBJECT_NAME = new BasicName(Namespace.URI, "targetObjectName"); //$NON-NLS-1$
-    public static final Name COMMENT = new BasicName(Namespace.URI, "comment"); //$NON-NLS-1$
-    public static final Name UNIQUE_INDEX = new BasicName(Namespace.URI, "unique"); //$NON-NLS-1$
-    public static final Name BITMAP_INDEX = new BasicName(Namespace.URI, "bitmap"); //$NON-NLS-1$
-    public static final Name TABLE_NAME = new BasicName(Namespace.URI, "tableName"); //$NON-NLS-1$
+    public static final Name TARGET_OBJECT_TYPE = new BasicName(Namespace.URI, "targetObjectType");
+    public static final Name TARGET_OBJECT_NAME = new BasicName(Namespace.URI, "targetObjectName");
+    public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
+    public static final Name UNIQUE_INDEX = new BasicName(Namespace.URI, "unique");
+    public static final Name BITMAP_INDEX = new BasicName(Namespace.URI, "bitmap");
+    public static final Name TABLE_NAME = new BasicName(Namespace.URI, "tableName");
 
 }

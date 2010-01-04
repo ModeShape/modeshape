@@ -78,8 +78,8 @@ public final class FileNode extends JsonNode {
                      File file ) throws Exception {
         super(file.getName());
 
-        CheckArg.isNotNull(workspace, "workspace"); //$NON-NLS-1$
-        CheckArg.isNotNull(path, "path"); //$NON-NLS-1$
+        CheckArg.isNotNull(workspace, "workspace");
+        CheckArg.isNotNull(path, "path");
 
         this.file = file;
         this.path = path;
@@ -106,8 +106,8 @@ public final class FileNode extends JsonNode {
         // add required jcr:lastModified property
         Calendar lastModified = Calendar.getInstance();
         lastModified.setTimeInMillis(file.lastModified());
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"); //$NON-NLS-1$
-        formatter.setTimeZone(TimeZone.getTimeZone("GMT")); //$NON-NLS-1$
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
         properties.put(IJcrConstants.LAST_MODIFIED, formatter.format(lastModified.getTime()));
 
         // add required jcr:mimeType property (just use a default value)
@@ -143,7 +143,7 @@ public final class FileNode extends JsonNode {
      * @see #getFileContentsUrl()
      */
     String getFileContents( String jsonResponse ) throws Exception {
-        CheckArg.isNotNull(jsonResponse, "jsonResponse"); //$NON-NLS-1$
+        CheckArg.isNotNull(jsonResponse, "jsonResponse");
         JSONObject contentNode = new JSONObject(jsonResponse);
         JSONObject props = (JSONObject)contentNode.get(IJsonConstants.PROPERTIES_KEY);
         String encodedContents = props.getString(IJcrConstants.DATA_PROPERTY);

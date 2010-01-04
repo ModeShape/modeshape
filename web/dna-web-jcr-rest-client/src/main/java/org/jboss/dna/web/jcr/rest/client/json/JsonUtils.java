@@ -43,7 +43,7 @@ public final class JsonUtils {
     /**
      * The default character set being used.
      */
-    private static final String DEFAULT_CHARSET = "UTF-8"; //$NON-NLS-1$ // TODO need to property drive charset
+    private static final String DEFAULT_CHARSET = "UTF-8"; // TODO need to property drive charset
 
     // ===========================================================================================================================
     // Class Methods
@@ -55,7 +55,7 @@ public final class JsonUtils {
      * @throws UnsupportedEncodingException if the charset is not supported
      */
     public static String decode( String text ) throws UnsupportedEncodingException {
-        CheckArg.isNotNull(text, "text"); //$NON-NLS-1$
+        CheckArg.isNotNull(text, "text");
         return URLDecoder.decode(text, DEFAULT_CHARSET);
     }
 
@@ -67,7 +67,7 @@ public final class JsonUtils {
      * @throws UnsupportedEncodingException if the charset is not supported
      */
     public static String encode( String text ) throws UnsupportedEncodingException {
-        CheckArg.isNotNull(text, "text"); //$NON-NLS-1$
+        CheckArg.isNotNull(text, "text");
 
         // don't encode '/' as it needs to stay that way in the URL
         StringBuilder encoded = new StringBuilder();
@@ -87,7 +87,7 @@ public final class JsonUtils {
      * @throws IOException if there is a problem reading from the connection
      */
     public static String readInputStream( HttpURLConnection connection ) throws IOException {
-        CheckArg.isNotNull(connection, "connection"); //$NON-NLS-1$
+        CheckArg.isNotNull(connection, "connection");
 
         InputStream stream = connection.getInputStream();
         int bytesRead;

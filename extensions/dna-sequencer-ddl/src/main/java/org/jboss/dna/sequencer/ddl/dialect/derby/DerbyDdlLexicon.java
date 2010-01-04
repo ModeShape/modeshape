@@ -84,7 +84,7 @@ public class DerbyDdlLexicon extends StandardDdlLexicon {
     public static final Name TYPE_DROP_SYNONYM_STATEMENT 			= new BasicName(Namespace.URI, "dropSynonymStatement");
     public static final Name TYPE_DROP_TRIGGER_STATEMENT 			= new BasicName(Namespace.URI, "dropTriggerStatement");
     
-    public static final Name UNIQUE_INDEX 			= new BasicName(Namespace.URI, "unique"); //$NON-NLS-1$
-    public static final Name TABLE_NAME 			= new BasicName(Namespace.URI, "tableName"); //$NON-NLS-1$
-    public static final Name GENERATED_COLUMN_SPEC_CLAUSE = new BasicName(Namespace.URI, "generatedColumnSpecClause"); //$NON-NLS-1$
+    public static final Name UNIQUE_INDEX 			= new BasicName(Namespace.URI, "unique");
+    public static final Name TABLE_NAME 			= new BasicName(Namespace.URI, "tableName");
+    public static final Name GENERATED_COLUMN_SPEC_CLAUSE = new BasicName(Namespace.URI, "generatedColumnSpecClause");
 }

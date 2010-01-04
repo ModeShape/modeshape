@@ -126,17 +126,17 @@ public final class StatusTest {
 
     @Test
     public void shouldBeAbleToPrintWithMessageAndNullException() {
-        new Status(Severity.WARNING, "the message goes here", null).toString(); //$NON-NLS-1$
+        new Status(Severity.WARNING, "the message goes here", null).toString();
     }
 
     @Test
     public void shouldBeAbleToPrintWithMessageAndException() {
-        new Status(Severity.WARNING, "the message goes here", new RuntimeException("exception message")).toString(); //$NON-NLS-1$ //$NON-NLS-2$
+        new Status(Severity.WARNING, "the message goes here", new RuntimeException("exception message")).toString();
     }
 
     @Test
     public void shouldBeAbleToPrintWithNullMessageAndException() {
-        new Status(Severity.WARNING, null, new RuntimeException("exception message")).toString(); //$NON-NLS-1$
+        new Status(Severity.WARNING, null, new RuntimeException("exception message")).toString();
     }
 
     @Test

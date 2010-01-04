@@ -59,7 +59,7 @@ public class HashCodeTest {
     @Test
     public void shouldAcceptNullArguments() {
         assertThat(HashCode.compute((Object)null), is(0));
-        assertThat(HashCode.compute("abc", (Object)null), is(not(0))); //$NON-NLS-1$
+        assertThat(HashCode.compute("abc", (Object)null), is(not(0)));
     }
 
 }

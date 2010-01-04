@@ -94,7 +94,7 @@ public final class ClassUtil {
     private static boolean addSeparator( boolean separatorNeeded,
                                          StringBuffer text ) {
         if (separatorNeeded) {
-            text.append(", "); //$NON-NLS-1$
+            text.append(", ");
         }
         return true;
     }
@@ -125,7 +125,7 @@ public final class ClassUtil {
      */
     public static String nonPackageQualifiedName( final Class<?> clazz ) {
         // if (clazz == null) {
-        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Class")); //$NON-NLS-1$
+        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Class"));
         // }
         String name = clazz.getName();
         return name.substring(name.lastIndexOf('.') + 1);
@@ -138,7 +138,7 @@ public final class ClassUtil {
      */
     public static String nonPackageQualifiedName( final Object object ) {
         // if (object == null) {
-        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Object")); //$NON-NLS-1$
+        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Object"));
         // }
         return nonPackageQualifiedName(object.getClass());
     }

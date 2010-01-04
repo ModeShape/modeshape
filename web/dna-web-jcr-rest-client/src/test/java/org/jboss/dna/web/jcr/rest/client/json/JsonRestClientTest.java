@@ -52,21 +52,21 @@ public final class JsonRestClientTest {
     // ===========================================================================================================================
 
     // user and password configured in pom
-    private static final String PSWD = "password"; //$NON-NLS-1$
-    private static final String USER = "dnauser"; //$NON-NLS-1$
+    private static final String PSWD = "password";
+    private static final String USER = "dnauser";
 
-    private static final Server SERVER = new Server("http://localhost:8080", USER, PSWD); //$NON-NLS-1$
-    private static final String REPOSITORY_NAME = "dna:repository"; //$NON-NLS-1$
+    private static final Server SERVER = new Server("http://localhost:8080", USER, PSWD);
+    private static final String REPOSITORY_NAME = "dna:repository";
     private static final Repository REPOSITORY1 = new Repository(REPOSITORY_NAME, SERVER);
-    private static final String WORKSPACE_NAME = "default"; //$NON-NLS-1$
+    private static final String WORKSPACE_NAME = "default";
     private static final Workspace WORKSPACE1 = new Workspace(WORKSPACE_NAME, REPOSITORY1);
 
-    private static final String WORKSPACE_PATH = "/myproject/myfolder/"; //$NON-NLS-1$
-    private static final String FILE_PATH = WORKSPACE_PATH + "document.txt"; //$NON-NLS-1$
-    private static final String BINARY_FILE_PATH = WORKSPACE_PATH + "picture.jpg"; //$NON-NLS-1$
+    private static final String WORKSPACE_PATH = "/myproject/myfolder/";
+    private static final String FILE_PATH = WORKSPACE_PATH + "document.txt";
+    private static final String BINARY_FILE_PATH = WORKSPACE_PATH + "picture.jpg";
 
-    private static final String WORKSPACE_UNUSUALPATH = "/myproject/My.Test - Folder/"; //$NON-NLS-1$
-    private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-().txt"; //$NON-NLS-1$
+    private static final String WORKSPACE_UNUSUALPATH = "/myproject/My.Test - Folder/";
+    private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-().txt";
 
     // ===========================================================================================================================
     // Fields
@@ -103,7 +103,7 @@ public final class JsonRestClientTest {
 
     @Test
     public void shouldNotUnpublishNonexistentFile() throws Exception {
-        File file = new File("bogusfile"); //$NON-NLS-1$
+        File file = new File("bogusfile");
         Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
 
         if (status.isError()) {

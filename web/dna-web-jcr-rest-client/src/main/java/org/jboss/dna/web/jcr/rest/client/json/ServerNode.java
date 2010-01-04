@@ -81,13 +81,12 @@ public final class ServerNode extends JsonNode {
         StringBuilder url = new StringBuilder(this.server.getUrl());
 
         // strip off last '/' if necessary
-        if (url.lastIndexOf("/") == (url.length() - 1)) { //$NON-NLS-1$
+        if (url.lastIndexOf("/") == (url.length() - 1)) {
             url.delete((url.length() - 1), (url.length() - 1));
         }
 
-        // append server context and insert user
+        // append server context
         url.append(IJsonConstants.SERVER_CONTEXT);
-        //        url.insert(url.indexOf(":") + 1, this.server.getUser() + '@'); //$NON-NLS-1$
 
         return new URL(url.toString());
     }
@@ -107,9 +106,9 @@ public final class ServerNode extends JsonNode {
      */
     @SuppressWarnings( "unchecked" )
     public Collection<Repository> getRepositories( String jsonResponse ) throws Exception {
-        CheckArg.isNotNull(jsonResponse, "jsonResponse"); //$NON-NLS-1$
+        CheckArg.isNotNull(jsonResponse, "jsonResponse");
         Collection<Repository> repositories = new ArrayList<Repository>();
-        this.logger.trace("getRepositories:jsonResponse={0}", jsonResponse); //$NON-NLS-1$
+        this.logger.trace("getRepositories:jsonResponse={0}", jsonResponse);
         JSONObject jsonObj = new JSONObject(jsonResponse);
 
         // keys are the repository names
@@ -117,7 +116,7 @@ public final class ServerNode extends JsonNode {
             String name = JsonUtils.decode(itr.next());
             Repository repository = new Repository(name, this.server);
             repositories.add(repository);
-            this.logger.trace("getRepositories: adding repository={0}", repository); //$NON-NLS-1$
+            this.logger.trace("getRepositories: adding repository={0}", repository);
         }
 
         return repositories;

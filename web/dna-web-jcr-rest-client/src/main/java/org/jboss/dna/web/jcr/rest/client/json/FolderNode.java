@@ -59,8 +59,8 @@ public final class FolderNode extends JsonNode {
                        String fullPath ) throws Exception {
         super(fullPath);
 
-        CheckArg.isNotNull(workspace, "workspace"); //$NON-NLS-1$
-        CheckArg.isNotNull(fullPath, "fullPath"); //$NON-NLS-1$
+        CheckArg.isNotNull(workspace, "workspace");
+        CheckArg.isNotNull(fullPath, "fullPath");
 
         this.workspace = workspace;
 
@@ -96,12 +96,12 @@ public final class FolderNode extends JsonNode {
         // make sure path starts with a '/'
         String path = getPath();
 
-        if (!path.startsWith("/")) { //$NON-NLS-1$
+        if (!path.startsWith("/")) {
             path = '/' + path;
         }
 
         // make sure path does NOT end with a '/'
-        if (path.endsWith("/")) { //$NON-NLS-1$
+        if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
 

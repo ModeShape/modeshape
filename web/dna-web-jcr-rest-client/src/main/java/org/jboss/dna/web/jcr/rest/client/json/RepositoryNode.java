@@ -87,7 +87,7 @@ public final class RepositoryNode extends JsonNode {
      */
     @SuppressWarnings( "unchecked" )
     public Collection<Workspace> getWorkspaces( String jsonResponse ) throws Exception {
-        CheckArg.isNotNull(jsonResponse, "jsonResponse"); //$NON-NLS-1$
+        CheckArg.isNotNull(jsonResponse, "jsonResponse");
         Collection<Workspace> workspaces = new ArrayList<Workspace>();
         JSONObject jsonObj = new JSONObject(jsonResponse);
 

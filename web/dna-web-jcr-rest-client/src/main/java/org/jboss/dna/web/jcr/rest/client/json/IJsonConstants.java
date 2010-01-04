@@ -57,21 +57,21 @@ public interface IJsonConstants {
     /**
      * The key in the <code>JSONObject</code> whose value is the collection of node children.
      */
-    String CHILDREN_KEY = "children"; //$NON-NLS-1$
+    String CHILDREN_KEY = "children";
 
     /**
      * The key in the <code>JSONObject</code> whose value is the collection of node properties.
      */
-    String PROPERTIES_KEY = "properties"; //$NON-NLS-1$
+    String PROPERTIES_KEY = "properties";
 
     /**
      * The server context added to URLs.
      */
-    String SERVER_CONTEXT = "/resources"; //$NON-NLS-1$
+    String SERVER_CONTEXT = "/resources";
 
     /**
      * The workspace context added to the URLs.
      */
-    String WORKSPACE_CONTEXT = "/items"; //$NON-NLS-1$
+    String WORKSPACE_CONTEXT = "/items";
 
 }

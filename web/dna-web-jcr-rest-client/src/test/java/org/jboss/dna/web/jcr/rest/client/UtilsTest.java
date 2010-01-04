@@ -55,7 +55,7 @@ public final class UtilsTest {
     @Test
     public void shouldHaveCorrectMimetypeForEclipseTextFiles() {
         for (String extension : TEXT_EXTENSIONS) {
-            String mimetype = Utils.getMimeType(new File('.' + extension)); //$NON-NLS-1$
+            String mimetype = Utils.getMimeType(new File('.' + extension));
             assertThat(mimetype, is(TEXT_MIMETYPE));
         }
     }

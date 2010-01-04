@@ -80,9 +80,9 @@ public final class HttpClientConnection {
     public HttpClientConnection( Server server,
                                  URL url,
                                  RequestMethod method ) throws Exception {
-        CheckArg.isNotNull(server, "server"); //$NON-NLS-1$
-        CheckArg.isNotNull(url, "url"); //$NON-NLS-1$
-        CheckArg.isNotNull(method, "method"); //$NON-NLS-1$
+        CheckArg.isNotNull(server, "server");
+        CheckArg.isNotNull(url, "url");
+        CheckArg.isNotNull(method, "method");
 
         this.httpClient = new DefaultHttpClient();
         this.httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()),
@@ -149,7 +149,7 @@ public final class HttpClientConnection {
      * @throws Exception if there is a problem writing to the connection
      */
     public void write( byte[] bytes ) throws Exception {
-        CheckArg.isNotNull(bytes, "bytes"); //$NON-NLS-1$
+        CheckArg.isNotNull(bytes, "bytes");
 
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
         entity.setContentType(MediaType.APPLICATION_JSON);

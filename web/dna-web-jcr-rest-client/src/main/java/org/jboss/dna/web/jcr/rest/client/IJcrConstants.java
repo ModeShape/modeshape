@@ -31,41 +31,41 @@ public interface IJcrConstants {
     /**
      * The JCR content property name (<code>jcr:content</code>).
      */
-    String CONTENT_PROPERTY = "jcr:content"; //$NON-NLS-1$
+    String CONTENT_PROPERTY = "jcr:content";
 
     /**
      * The JCR data property name (<code>jcr:data</code>).
      */
-    String DATA_PROPERTY = "jcr:data/base64/"; //$NON-NLS-1$
+    String DATA_PROPERTY = "jcr:data/base64/";
 
     /**
      * The JCR file node type (<code>nt:file</code>).
      */
-    String FILE_NODE_TYPE = "nt:file"; //$NON-NLS-1$
+    String FILE_NODE_TYPE = "nt:file";
 
     /**
      * The JCR folder node type (<code>nt:folder</code>).
      */
-    String FOLDER_NODE_TYPE = "nt:folder"; //$NON-NLS-1$
+    String FOLDER_NODE_TYPE = "nt:folder";
 
     /**
      * The JCR data property name (<code>jcr:lastModified</code>).
      */
-    String LAST_MODIFIED = "jcr:lastModified"; //$NON-NLS-1$
+    String LAST_MODIFIED = "jcr:lastModified";
 
     /**
      * The JCR data property name (<code>jcr:lastModified</code>).
      */
-    String MIME_TYPE = "jcr:mimeType"; //$NON-NLS-1$
+    String MIME_TYPE = "jcr:mimeType";
 
     /**
      * The JCR primary type property name (<code>jcr:primaryType</code>).
      */
-    String PRIMARY_TYPE_PROPERTY = "jcr:primaryType"; //$NON-NLS-1$
+    String PRIMARY_TYPE_PROPERTY = "jcr:primaryType";
 
     /**
      * The JCR resource node type (<code>nt:resource</code>).
      */
-    String RESOURCE_NODE_TYPE = "nt:resource"; //$NON-NLS-1$
+    String RESOURCE_NODE_TYPE = "nt:resource";
 
 }
