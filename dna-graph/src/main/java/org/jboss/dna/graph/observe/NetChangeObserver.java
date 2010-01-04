@@ -225,12 +225,18 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 // the new location is a new node event
                 details.addEventType(ChangeType.NODE_ADDED);
             } else if (change instanceof UpdateValuesRequest) {
-                // TODO need to know if this is a new property
                 UpdateValuesRequest updateValuesRequest = (UpdateValuesRequest)change;
 
                 if (!updateValuesRequest.addedValues().isEmpty() || !updateValuesRequest.removedValues().isEmpty()) {
-                    details.addEventType(ChangeType.PROPERTY_CHANGED);
-                    // TODO need to set property like details.changeProperty(property);
+                    assert (updateValuesRequest.getActualProperty() != null);
+
+                    if (updateValuesRequest.isNewProperty()) {
+                        details.addEventType(ChangeType.PROPERTY_ADDED);
+                        details.addProperty(updateValuesRequest.getActualProperty());
+                    } else {
+                        details.addEventType(ChangeType.PROPERTY_CHANGED);
+                        details.changeProperty(updateValuesRequest.getActualProperty());
+                    }
                 } else if (details.getEventTypes().isEmpty()) {
                     // details was just created for this request and now it is not needed
                     deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);

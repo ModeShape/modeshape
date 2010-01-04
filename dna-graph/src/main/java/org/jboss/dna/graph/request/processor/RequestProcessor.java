@@ -822,13 +822,13 @@ public abstract class RequestProcessor {
         // Update the current values
         SetPropertyRequest setProperty = new SetPropertyRequest(on, workspaceName, newProperty);
         process(setProperty);
-        request.setNewProperty(setProperty.isNewProperty());
 
         if (setProperty.hasError()) {
             request.setError(setProperty.getError());
         } else {
-            // Set the actual location ...
+            // Set the actual location and property
             request.setActualLocation(setProperty.getActualLocationOfNode(), request.addedValues(), actualRemovedValues);
+            request.setActualProperty(newProperty, setProperty.isNewProperty());
         }
 
     }

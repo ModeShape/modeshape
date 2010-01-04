@@ -2,6 +2,7 @@ package org.jboss.dna.graph.request;
 
 import java.util.Collections;
 import java.util.List;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
@@ -40,6 +41,7 @@ public class UpdateValuesRequest extends ChangeRequest {
     private List<Object> actualAddedValues;
     private List<Object> actualRemovedValues;
     private boolean actualCreation;
+    private Property actualProperty;
 
     public UpdateValuesRequest( String workspaceName,
                                 Location on,
@@ -150,14 +152,28 @@ public class UpdateValuesRequest extends ChangeRequest {
 
     /**
      * Record that the property did not exist prior to the processing of this request and was actually created by this request.
-     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}
-     * .
+     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}.
      * 
+     * @param property the property being created or updated (may not be <code>null</code>)
      * @param created true if the property was created by this request, or false if this request updated an existing property
      * @throws IllegalStateException if the request is frozen
+     * @throws IllegalArgumentException if the property is <code>null</code>
      */
-    public void setNewProperty( boolean created ) {
+    public void setActualProperty( Property property,
+                                   boolean created ) {
+        CheckArg.isNotNull(property, "property");
+        checkNotFrozen();
+        this.actualProperty = property;
         this.actualCreation = created;
+    }
+    
+    /**
+     * Get the actual node property that was created or updated.
+     * 
+     * @return the actual property or <code>null</code> if the actual property was not set
+     */
+    public Property getActualProperty() {
+        return this.actualProperty;
     }
 
     /**
@@ -210,7 +226,11 @@ public class UpdateValuesRequest extends ChangeRequest {
         UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, actualLocation != null ? actualLocation : on,
                                                               propertyName, addedValues, removedValues);
         request.setActualLocation(actualLocation, actualAddedValues, actualRemovedValues);
-        request.setNewProperty(actualCreation);
+        
+        // don't call request.setActualProperty(Property, boolean) here as the actual property may have not been set
+        request.actualProperty = actualProperty;
+        request.actualCreation = actualCreation;
+        
         return request;
     }
 }
