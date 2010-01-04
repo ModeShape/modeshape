@@ -51,6 +51,7 @@ import org.jboss.dna.graph.connector.path.DefaultPathNode;
 import org.jboss.dna.graph.connector.path.PathNode;
 import org.jboss.dna.graph.connector.path.WritablePathRepository;
 import org.jboss.dna.graph.connector.path.WritablePathWorkspace;
+import org.jboss.dna.graph.connector.path.cache.WorkspaceCache;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.BinaryFactory;
@@ -80,7 +81,7 @@ public class FileSystemRepository extends WritablePathRepository {
     private File repositoryRoot;
 
     public FileSystemRepository( FileSystemSource source ) {
-        super(source.getName(), source.getRootNodeUuid(), source.getDefaultWorkspaceName());
+        super(source);
 
         this.source = source;
         initialize();
@@ -123,6 +124,11 @@ public class FileSystemRepository extends WritablePathRepository {
         if (!workspaces.containsKey(defaultWorkspaceName)) {
             doCreateWorkspace(context, defaultWorkspaceName);
         }
+    }
+
+
+    public WorkspaceCache getCache( String workspaceName ) {
+        return source.getPathRepositoryCache().getCache(workspaceName);
     }
 
     /**
@@ -376,7 +382,18 @@ public class FileSystemRepository extends WritablePathRepository {
                                                                               getName(),
                                                                               getSourceName()));
             }
-            return getNode(newPath);
+
+            PathNode node = getNode(newPath);
+
+            List<Segment> newChildren = new ArrayList<Segment>(parentNode.getChildSegments().size() + 1);
+            newChildren.addAll(parentNode.getChildSegments());
+            newChildren.add(node.getPath().getLastSegment());
+
+            WorkspaceCache cache = getCache(getName());
+            cache.set(new DefaultPathNode(parentNode.getPath(), parentNode.getUuid(), parentNode.getProperties(), newChildren));
+            cache.set(node);
+
+            return node;
         }
 
         public boolean removeNode( ExecutionContext context,
@@ -411,56 +428,15 @@ public class FileSystemRepository extends WritablePathRepository {
             return true;
         }
 
-        public PathNode removeProperties( ExecutionContext context,
-                                          Path nodePath,
-                                          Iterable<Name> propertyNames ) {
-
-            PathNode targetNode = getNode(nodePath);
-            if (targetNode == null) return null;
-            if (source.getCustomPropertiesFactory() == null) return targetNode;
-
-            Property primaryTypeProp = targetNode.getProperty(JcrLexicon.PRIMARY_TYPE);
-            Name primaryTypeName = (Name)primaryTypeProp.getFirstValue();
-            Map<Name, Property> properties = new HashMap<Name, Property>(targetNode.getProperties());
-
-            for (Name propertyName : propertyNames) {
-                properties.remove(propertyName);
-            }
-
-            CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
-            Location location = Location.create(nodePath, targetNode.getUuid());
-
-            /*
-             * You can't remove any of the protected properties that the repository provides by default, but you could
-             * remove custom properties.
-             */
-            if (JcrNtLexicon.FILE.equals(primaryTypeName)) {
-                customPropertiesFactory.recordFileProperties(context, getSourceName(), location, fileFor(nodePath), properties);
-            } else if (DnaLexicon.RESOURCE.equals(primaryTypeName)) {
-                File file = fileFor(nodePath.getParent());
-                customPropertiesFactory.recordResourceProperties(context, getSourceName(), location, file, properties);
-            } else {
-                File file = fileFor(nodePath);
-                customPropertiesFactory.recordDirectoryProperties(context, getSourceName(), location, file, properties);
-            }
-
-            return getNode(nodePath);
-        }
-
         public PathNode setProperties( ExecutionContext context,
                                        Path nodePath,
-                                       Iterable<Property> newProperties ) {
+                                       Map<Name, Property> properties ) {
             PathNode targetNode = getNode(nodePath);
             if (targetNode == null) return null;
             if (source.getCustomPropertiesFactory() == null) return targetNode;
 
             Property primaryTypeProp = targetNode.getProperty(JcrLexicon.PRIMARY_TYPE);
             Name primaryTypeName = (Name)primaryTypeProp.getFirstValue();
-            Map<Name, Property> properties = new HashMap<Name, Property>(targetNode.getProperties());
-
-            for (Property newProperty : newProperties) {
-                properties.put(newProperty.getName(), newProperty);
-            }
 
             CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
             Location location = Location.create(nodePath, targetNode.getUuid());
@@ -479,7 +455,10 @@ public class FileSystemRepository extends WritablePathRepository {
                 customPropertiesFactory.recordDirectoryProperties(context, getSourceName(), location, file, properties);
             }
 
-            return getNode(nodePath);
+            PathNode node = getNode(nodePath);
+            getCache(getName()).set(node);
+
+            return node;
         }
 
         @Override
@@ -492,7 +471,11 @@ public class FileSystemRepository extends WritablePathRepository {
             if (beforeNode != null) {
                 throw new InvalidRequestException(FileSystemI18n.nodeOrderingNotSupported.text(getSourceName()));
             }
-            return super.moveNode(context, node, desiredNewName, originalWorkspace, newParent, beforeNode);
+            PathNode movedNode = super.moveNode(context, node, desiredNewName, originalWorkspace, newParent, beforeNode);
+
+            getCache(getName()).invalidate(node.getPath());
+
+            return movedNode;
         }
 
         public Path getLowestExistingPath( Path path ) {
@@ -525,6 +508,11 @@ public class FileSystemRepository extends WritablePathRepository {
         }
 
         public PathNode getNode( Path path ) {
+            WorkspaceCache cache = getCache(getName());
+
+            PathNode node = cache.get(path);
+            if (node != null) return node;
+
             Map<Name, Property> properties = new HashMap<Name, Property>();
 
             PropertyFactory factory = context.getPropertyFactory();
@@ -615,9 +603,11 @@ public class FileSystemRepository extends WritablePathRepository {
             }
             properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
             properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
-            return new DefaultPathNode(path, null, properties,
+            node = new DefaultPathNode(path, null, properties,
                                        Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
 
+            cache.set(node);
+            return node;
         }
 
         /**

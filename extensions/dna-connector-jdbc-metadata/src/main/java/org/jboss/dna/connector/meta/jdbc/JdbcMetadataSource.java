@@ -24,14 +24,10 @@
 package org.jboss.dna.connector.meta.jdbc;
 
 import java.beans.PropertyVetoException;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.UUID;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
@@ -40,17 +36,15 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.path.AbstractPathRepositorySource;
 import org.jboss.dna.graph.connector.path.PathRepositoryConnection;
-import org.jboss.dna.graph.connector.path.PathRepositorySource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 @ThreadSafe
-public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
+public class JdbcMetadataSource extends AbstractPathRepositorySource implements ObjectFactory {
 
     private static final long serialVersionUID = 1L;
 
@@ -99,11 +93,6 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
     public static final boolean SUPPORTS_CREATING_WORKSPACES = false;
 
     /**
-     * The default UUID that is used for root nodes in a store.
-     */
-    public static final String DEFAULT_ROOT_NODE_UUID = "cafebabe-cafe-babe-cafe-babecafebabe";
-
-    /**
      * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
@@ -120,8 +109,7 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_SCHEMA = "default";
 
-    private static final int DEFAULT_RETRY_LIMIT = 0;
-    private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
+
     private static final int DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL = 5;
     private static final int DEFAULT_MINIMUM_CONNECTIONS_IN_POOL = 0;
     private static final int DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = 60 * 10; // 10 minutes
@@ -130,22 +118,18 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
     private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
     private static final MetadataCollector DEFAULT_METADATA_COLLECTOR = new JdbcMetadataCollector();
 
-    private volatile String name;
     private volatile String dataSourceJndiName;
     private volatile String username;
     private volatile String password;
     private volatile String url;
     private volatile String driverClassName;
     private volatile String driverClassloaderName;
-    private volatile String rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
     private volatile int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
     private volatile int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
     private volatile int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
     private volatile int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
     private volatile int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
     private volatile int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
-    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
-    private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     private volatile String defaultCatalogName = DEFAULT_NAME_OF_DEFAULT_CATALOG;
     private volatile String defaultSchemaName = DEFAULT_NAME_OF_DEFAULT_SCHEMA;
@@ -157,52 +141,14 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
                                                                                                   SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
     private transient DataSource dataSource;
-    private transient CachePolicy cachePolicy;
     private transient JdbcMetadataRepository repository;
-    private transient RepositoryContext repositoryContext;
-    private transient UUID rootUuid = UUID.fromString(rootNodeUuid);
     private transient MetadataCollector metadataCollector = DEFAULT_METADATA_COLLECTOR;
 
     final JdbcMetadataRepository repository() {
         return this.repository;
     }
 
-    /**
-     * Set the time in milliseconds that content returned from this source may used while in the cache.
-     * 
-     * @param cacheTimeToLive the time to live, in milliseconds; 0 if the time to live is not specified by this source; or a
-     *        negative number for the default value
-     */
-    public synchronized void setCacheTimeToLiveInMilliseconds( int cacheTimeToLive ) {
-        if (cacheTimeToLive < 0) cacheTimeToLive = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS;
-        this.cacheTimeToLiveInMilliseconds = cacheTimeToLive;
-        if (this.cacheTimeToLiveInMilliseconds == 0) {
-            this.cachePolicy = null;
-        } else {
-            final int ttl = this.cacheTimeToLiveInMilliseconds;
-            this.cachePolicy = new CachePolicy() {
-
-                private static final long serialVersionUID = 1L;
-
-                public long getTimeToLive() {
-                    return ttl;
-                }
-            };
-        }
-    }
-
-    public long getCacheTimeToLiveInMilliseconds() {
-        return this.cacheTimeToLiveInMilliseconds;
-    }
-
-    public CachePolicy getDefaultCachePolicy() {
-        return this.cachePolicy;
-    }
-
-    public RepositoryContext getRepositoryContext() {
-        return this.repositoryContext;
-    }
-
+    @Override
     public void close() {
         if (this.dataSource instanceof ComboPooledDataSource) {
             ((ComboPooledDataSource)this.dataSource).close();
@@ -299,51 +245,13 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
         return new PathRepositoryConnection(this, repository);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.RepositorySource#getName()
-     */
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName( String name ) {
-        this.name = name;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
-     */
-    public int getRetryLimit() {
-        return this.retryLimit;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
-     */
-    public void initialize( RepositoryContext context ) throws RepositorySourceException {
-        this.repositoryContext = context;
-
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
-     */
-    public void setRetryLimit( int limit ) {
-        this.retryLimit = limit;
-
-    }
-
     public Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
 
         ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid()));
+        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
         ref.add(new StringRefAddr(DATA_SOURCE_JNDI_NAME, getDataSourceJndiName()));
         ref.add(new StringRefAddr(USERNAME, getUsername()));
         ref.add(new StringRefAddr(PASSWORD, getPassword()));
@@ -359,7 +267,6 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
                                   Integer.toString(getNumberOfConnectionsToAcquireAsNeeded())));
         ref.add(new StringRefAddr(IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS,
                                   Integer.toString(getIdleTimeInSecondsBeforeTestingConnections())));
-        ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Long.toString(getCacheTimeToLiveInMilliseconds())));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
 
@@ -378,37 +285,27 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
             return null;
         }
 
-        Map<String, String> values = new HashMap<String, String>();
-        Reference ref = (Reference)obj;
-        Enumeration<?> en = ref.getAll();
-        while (en.hasMoreElements()) {
-            RefAddr subref = (RefAddr)en.nextElement();
-            if (subref instanceof StringRefAddr) {
-                String key = subref.getType();
-                Object value = subref.getContent();
-                if (value != null) values.put(key, value.toString());
-            }
-        }
-        String sourceName = values.get(SOURCE_NAME);
-        String rootNodeUuid = values.get(ROOT_NODE_UUID);
-        String dataSourceJndiName = values.get(DATA_SOURCE_JNDI_NAME);
-        String username = values.get(USERNAME);
-        String password = values.get(PASSWORD);
-        String url = values.get(URL);
-        String driverClassName = values.get(DRIVER_CLASS_NAME);
-        String driverClassloaderName = values.get(DRIVER_CLASSLOADER_NAME);
-        String maxConnectionsInPool = values.get(MAXIMUM_CONNECTIONS_IN_POOL);
-        String minConnectionsInPool = values.get(MINIMUM_CONNECTIONS_IN_POOL);
-        String maxConnectionIdleTimeInSec = values.get(MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS);
-        String maxSizeOfStatementCache = values.get(MAXIMUM_SIZE_OF_STATEMENT_CACHE);
-        String acquisitionIncrement = values.get(NUMBER_OF_CONNECTIONS_TO_BE_ACQUIRED_AS_NEEDED);
-        String idleTimeInSeconds = values.get(IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS);
-        String cacheTtlInMillis = values.get(CACHE_TIME_TO_LIVE_IN_MILLISECONDS);
-        String retryLimit = values.get(RETRY_LIMIT);
-        String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
-        String defaultCatalogName = values.get(DEFAULT_CATALOG_NAME);
-        String defaultSchemaName = values.get(DEFAULT_SCHEMA_NAME);
-        String metadataCollectorClassName = values.get(METADATA_COLLECTOR_CLASS_NAME);
+        Map<String, Object> values = valuesFrom((Reference)obj);
+
+        String sourceName = (String)values.get(SOURCE_NAME);
+        String rootNodeUuid = (String)values.get(ROOT_NODE_UUID);
+        String dataSourceJndiName = (String)values.get(DATA_SOURCE_JNDI_NAME);
+        String username = (String)values.get(USERNAME);
+        String password = (String)values.get(PASSWORD);
+        String url = (String)values.get(URL);
+        String driverClassName = (String)values.get(DRIVER_CLASS_NAME);
+        String driverClassloaderName = (String)values.get(DRIVER_CLASSLOADER_NAME);
+        String maxConnectionsInPool = (String)values.get(MAXIMUM_CONNECTIONS_IN_POOL);
+        String minConnectionsInPool = (String)values.get(MINIMUM_CONNECTIONS_IN_POOL);
+        String maxConnectionIdleTimeInSec = (String)values.get(MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS);
+        String maxSizeOfStatementCache = (String)values.get(MAXIMUM_SIZE_OF_STATEMENT_CACHE);
+        String acquisitionIncrement = (String)values.get(NUMBER_OF_CONNECTIONS_TO_BE_ACQUIRED_AS_NEEDED);
+        String idleTimeInSeconds = (String)values.get(IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS);
+        String retryLimit = (String)values.get(RETRY_LIMIT);
+        String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
+        String defaultCatalogName = (String)values.get(DEFAULT_CATALOG_NAME);
+        String defaultSchemaName = (String)values.get(DEFAULT_SCHEMA_NAME);
+        String metadataCollectorClassName = (String)values.get(METADATA_COLLECTOR_CLASS_NAME);
 
         // Create the source instance ...
         JdbcMetadataSource source = new JdbcMetadataSource();
@@ -426,7 +323,6 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
         if (maxSizeOfStatementCache != null) source.setMaximumSizeOfStatementCache(Integer.parseInt(maxSizeOfStatementCache));
         if (acquisitionIncrement != null) source.setNumberOfConnectionsToAcquireAsNeeded(Integer.parseInt(acquisitionIncrement));
         if (idleTimeInSeconds != null) source.setIdleTimeInSecondsBeforeTestingConnections(Integer.parseInt(idleTimeInSeconds));
-        if (cacheTtlInMillis != null) source.setCacheTimeToLiveInMilliseconds(Integer.parseInt(cacheTtlInMillis));
         if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
         if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
         if (defaultCatalogName != null) source.setDefaultCatalogName(defaultCatalogName);
@@ -627,30 +523,6 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
     }
 
     /**
-     * @return rootNodeUuid
-     */
-    public String getRootNodeUuid() {
-        return rootNodeUuid;
-    }
-
-    /**
-     * @return rootUuid
-     */
-    public UUID getRootUuid() {
-        return rootUuid;
-    }
-
-    /**
-     * @param rootNodeUuid Sets rootNodeUuid to the specified value.
-     * @throws IllegalArgumentException if the string value cannot be converted to UUID
-     */
-    public void setRootNodeUuid( String rootNodeUuid ) {
-        if (rootNodeUuid != null && rootNodeUuid.trim().length() == 0) rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
-        this.rootUuid = UUID.fromString(rootNodeUuid);
-        this.rootNodeUuid = rootNodeUuid;
-    }
-
-    /**
      * Get the name of the default workspace.
      * 
      * @return the name of the workspace that should be used by default, or null if there is no default workspace
@@ -750,10 +622,6 @@ public class JdbcMetadataSource implements PathRepositorySource, ObjectFactory {
      */
     public synchronized MetadataCollector getMetadataCollector() {
         return metadataCollector;
-    }
-
-    public boolean areUpdatesAllowed() {
-        return false;
     }
 
     /**

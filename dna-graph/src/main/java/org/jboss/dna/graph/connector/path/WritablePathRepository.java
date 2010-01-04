@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.graph.connector.path;
 
-import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Path;
@@ -37,15 +36,8 @@ import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
 @ThreadSafe
 public abstract class WritablePathRepository extends PathRepository {
 
-    public WritablePathRepository( String sourceName,
-                                   UUID rootNodeUuid,
-                                   String defaultWorkspaceName ) {
-        super(sourceName, rootNodeUuid, defaultWorkspaceName);
-    }
-
-    public WritablePathRepository( String sourceName,
-                                   UUID rootNodeUuid ) {
-        super(sourceName, rootNodeUuid);
+    public WritablePathRepository( PathRepositorySource source ) {
+        super(source);
     }
 
     /**
@@ -141,7 +133,7 @@ public abstract class WritablePathRepository extends PathRepository {
             PathNode root = workspace.getNode(rootPath);
             PathNode origRoot = original.getNode(rootPath);
             workspace.removeProperties(context, rootPath, root.getProperties().keySet());
-            workspace.setProperties(context, rootPath, origRoot.getProperties().values());
+            workspace.setProperties(context, rootPath, origRoot.getProperties());
 
             // Loop over each child and call this method to copy the immediate children (and below).
             for (Segment childSegment : origRoot.getChildSegments()) {

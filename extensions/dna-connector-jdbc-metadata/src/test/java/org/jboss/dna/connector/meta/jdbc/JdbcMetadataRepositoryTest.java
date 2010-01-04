@@ -32,6 +32,7 @@ import static org.mockito.Mockito.stub;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
 import java.util.Set;
@@ -101,7 +102,11 @@ public class JdbcMetadataRepositoryTest {
         workspace = repository.getWorkspace(source.getDefaultWorkspaceName());
         assertThat(workspace, is(notNullValue()));
 
+        try {
         TestEnvironment.executeDdl(this.source.getDataSource(), "create.ddl", this);
+        } catch (SQLException se) {
+
+        }
 
         DataSource dataSource = source.getDataSource();
         Connection conn = dataSource.getConnection();

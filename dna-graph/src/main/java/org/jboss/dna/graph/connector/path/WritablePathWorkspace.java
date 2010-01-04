@@ -135,7 +135,7 @@ public interface WritablePathWorkspace extends PathWorkspace {
      */
     public PathNode setProperties( ExecutionContext context,
                                    Path nodePath,
-                                   Iterable<Property> properties );
+                                   Map<Name, Property> properties );
 
     /**
      * Removes the properties with the given names

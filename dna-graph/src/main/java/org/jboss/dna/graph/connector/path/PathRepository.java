@@ -20,35 +20,18 @@ public abstract class PathRepository {
     protected final ConcurrentMap<String, PathWorkspace> workspaces = new ConcurrentHashMap<String, PathWorkspace>();
 
     /**
-     * Creates a {@code PathRepository} with the given repository source name, root node UUID, and a default workspace named
-     * {@code ""} (the empty string).
+     * Creates a {@code PathRepository} with the given repository source, root node UUID, and a default workspace with the given
+     * name.
      * 
-     * @param sourceName the name of the repository source for use in error and informational messages; may not be null or empty
-     * @param rootNodeUuid the UUID that will be used as the root node UUID for each workspace in the repository; may not be null
-     *        or empty
+     * @param source the path repository source; may not be null
      */
-    protected PathRepository( String sourceName,
-                              UUID rootNodeUuid ) {
-        this(sourceName, rootNodeUuid, null);
-    }
-
-    /**
-     * Creates a {@code PathRepository} with the given repository source name, root node UUID, and a default workspace with the
-     * given name.
-     * 
-     * @param sourceName the name of the repository source for use in error and informational messages; may not be null or empty
-     * @param rootNodeUuid the UUID that will be used as the root node UUID for each workspace in the repository; may not be null
-     *        or empty
-     * @param defaultWorkspaceName the name of the default, auto-created workspace
-     */
-    protected PathRepository( String sourceName,
-                              UUID rootNodeUuid,
-                              String defaultWorkspaceName ) {
-        CheckArg.isNotEmpty(sourceName, "sourceName");
-        CheckArg.isNotNull(rootNodeUuid, "rootNodeUUID");
-        this.rootNodeUuid = rootNodeUuid;
-        this.sourceName = sourceName;
-        this.defaultWorkspaceName = defaultWorkspaceName != null ? defaultWorkspaceName : "";
+    protected PathRepository( PathRepositorySource source ) {
+        CheckArg.isNotNull(source, "source");
+        CheckArg.isNotEmpty(source.getName(), "source.name");
+        CheckArg.isNotNull(source.getRootNodeUuid(), "source.rootNodeUUID");
+        this.rootNodeUuid = source.getRootNodeUuid();
+        this.sourceName = source.getName();
+        this.defaultWorkspaceName = source.getDefaultWorkspaceName() != null ? source.getDefaultWorkspaceName() : "";
     }
 
     /**
@@ -112,6 +95,7 @@ public abstract class PathRepository {
     public boolean isWritable() {
         return false;
     }
+
 
     PathRequestProcessor createRequestProcessor( ExecutionContext context,
                                                  PathRepositorySource source ) {

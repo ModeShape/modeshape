@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.NoOpEncoder;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
@@ -20,6 +22,8 @@ import org.jboss.dna.graph.property.Path.Segment;
  */
 @Immutable
 public class DefaultPathNode implements PathNode {
+
+    private final static TextEncoder TO_STRING_ENCODER = new NoOpEncoder();
 
     private final Path path;
     private final Map<Name, Property> properties;
@@ -94,5 +98,12 @@ public class DefaultPathNode implements PathNode {
         return null;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder buff = new StringBuilder();
+        buff.append(path.getString(TO_STRING_ENCODER)).append('(').append(properties.keySet()).append(')');
+        return buff.toString();
+    }
 
+    
 }

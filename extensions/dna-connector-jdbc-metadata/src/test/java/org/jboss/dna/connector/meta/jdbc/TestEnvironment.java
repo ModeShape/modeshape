@@ -70,9 +70,6 @@ public class TestEnvironment {
         value = properties.getProperty("jpaSource.maximumConnectionIdleTimeInSeconds");
         if (isValue(value)) source.setMaximumConnectionIdleTimeInSeconds(Integer.parseInt(value));
 
-        value = properties.getProperty("jpaSource.cacheTimeToLiveInMilliseconds");
-        if (isValue(value)) source.setCacheTimeToLiveInMilliseconds(Integer.parseInt(value));
-
         value = properties.getProperty("jpaSource.defaultWorkspaceName");
         if (isValue(value)) source.setDefaultWorkspaceName(value);
 

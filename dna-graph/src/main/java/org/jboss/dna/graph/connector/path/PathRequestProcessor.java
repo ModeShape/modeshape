@@ -498,7 +498,7 @@ public class PathRequestProcessor extends RequestProcessor {
         WritablePathWorkspace newWorkspace = (WritablePathWorkspace)workspace;
 
         // Now set (or remove) the properties to the supplied node ...
-        newWorkspace.setProperties(getExecutionContext(), node.getPath(), request.properties().values());
+        newWorkspace.setProperties(getExecutionContext(), node.getPath(), request.properties());
 
         request.setActualLocationOfNode(Location.create(node.getPath(), node.getUuid()));
         recordChange(request);

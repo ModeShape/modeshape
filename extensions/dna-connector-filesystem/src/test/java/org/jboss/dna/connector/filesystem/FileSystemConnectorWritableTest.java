@@ -155,7 +155,6 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         File newFolder = new File(testWorkspaceRoot, "testFolder");
         assertThat(newFolder.exists(), is(true));
         assertThat(newFolder.isDirectory(), is(true));
-        System.out.println("Created new folder at: " + newFolder.getCanonicalPath());
 
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")

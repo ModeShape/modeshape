@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.connector.path;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
@@ -110,6 +111,17 @@ public abstract class AbstractWritablePathWorkspace implements WritablePathWorks
         PathNode newCopy = copyNode(context, node, originalWorkspace, newParent, desiredNewName, true);
         originalWorkspace.removeNode(context, node.getPath());
         return newCopy;
+    }
+
+    public PathNode removeProperties( ExecutionContext context,
+                                      Path nodePath,
+                                      Iterable<Name> propertyNames ) {
+        Map<Name, Property> properties = new HashMap<Name, Property>();
+        for (Name propertyName : propertyNames) {
+            properties.put(propertyName, null);
+        }
+
+        return setProperties(context, nodePath, properties);
     }
 
     public QueryResults query( ExecutionContext context,

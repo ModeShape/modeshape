@@ -48,6 +48,7 @@ import org.jboss.dna.graph.connector.path.DefaultPathNode;
 import org.jboss.dna.graph.connector.path.PathNode;
 import org.jboss.dna.graph.connector.path.PathRepository;
 import org.jboss.dna.graph.connector.path.PathWorkspace;
+import org.jboss.dna.graph.connector.path.cache.WorkspaceCache;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
@@ -75,7 +76,7 @@ public class JdbcMetadataRepository extends PathRepository {
     private int databaseMinorVersion;
 
     public JdbcMetadataRepository( JdbcMetadataSource source ) {
-        super(source.getName(), source.getRootUuid(), source.getDefaultWorkspaceName());
+        super(source);
         this.source = source;
         initialize();
     }
@@ -122,6 +123,10 @@ public class JdbcMetadataRepository extends PathRepository {
         }
     }
 
+    public WorkspaceCache getCache( String workspaceName ) {
+        return source.getPathRepositoryCache().getCache(workspaceName);
+    }
+
     Connection getConnection() {
         try {
             return source.getDataSource().getConnection();
@@ -144,9 +149,11 @@ public class JdbcMetadataRepository extends PathRepository {
     private class JdbcMetadataWorkspace implements PathWorkspace {
 
         private final String name;
+        private final WorkspaceCache cache;
 
         JdbcMetadataWorkspace( String name ) {
             this.name = name;
+            cache = getCache(name);
         }
 
         public Path getLowestExistingPath( Path path ) {
@@ -176,37 +183,45 @@ public class JdbcMetadataRepository extends PathRepository {
         public PathNode getNode( Path path ) {
             assert path != null;
 
+            PathNode node = cache.get(path);
+            if (node != null) return node;
+
             List<Segment> segments = path.getSegmentsList();
             switch (segments.size()) {
                 case 0:
-                    return getRoot();
+                    node = getRoot();
+                    break;
                 case 1:
-                    return catalogNodeFor(segments);
+                    node = catalogNodeFor(segments);
+                    break;
                 case 2:
-                    return schemaNodeFor(segments);
+                    node = schemaNodeFor(segments);
+                    break;
                 case 3:
                     if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
-                        return tablesNodeFor(segments);
+                        node = tablesNodeFor(segments);
                     } else if (PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
-                        return proceduresNodeFor(segments);
+                        node = proceduresNodeFor(segments);
                     }
-
-                    return null;
+                    break;
                 case 4:
                     if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
-                        return tableNodeFor(segments);
+                        node = tableNodeFor(segments);
                     } else if (PROCEDURES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
-                        return procedureNodeFor(segments);
+                        node = procedureNodeFor(segments);
                     }
-                    return null;
+                    break;
                 case 5:
                     if (TABLES_SEGMENT_NAME.equals(segments.get(2).getName().getLocalName())) {
-                        return columnNodeFor(segments);
+                        node = columnNodeFor(segments);
                     }
-                    return null;
+                    break;
                 default:
                     return null;
             }
+
+            if (node != null) cache.set(node);
+            return node;
         }
 
         private PathNode catalogNodeFor( List<Segment> segments ) throws RepositorySourceException {
@@ -759,7 +774,7 @@ public class JdbcMetadataRepository extends PathRepository {
         }
 
         public UUID getUuid() {
-            return source.getRootUuid();
+            return source.getRootNodeUuid();
         }
 
         public Map<Name, Property> getProperties() {

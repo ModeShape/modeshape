@@ -1,8 +1,10 @@
 package org.jboss.dna.graph.connector.path;
 
+import java.util.UUID;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.path.cache.PathCachePolicy;
 
 /**
  * An extension of the {@link RepositorySource} class that provides a {@link CachePolicy cache policy} and a
@@ -28,11 +30,25 @@ public interface PathRepositorySource extends RepositorySource {
     void setUpdatesAllowed( boolean updatesAllowed );
 
     /**
-     * Returns the {@link CachePolicy cache policy} for the repository source
+     * Returns the {@link PathCachePolicy cache policy} for the repository source
      * 
-     * @return the {@link CachePolicy cache policy} for the repository source
+     * @return the {@link PathCachePolicy cache policy} for the repository source
      */
-    CachePolicy getDefaultCachePolicy();
+    PathCachePolicy getCachePolicy();
+
+    /**
+     * Get the UUID that is used for the root node of each workspace
+     * 
+     * @return the UUID that is used for the root node of each workspace
+     */
+    UUID getRootNodeUuid();
+
+    /**
+     * Get the name of the default workspace.
+     * 
+     * @return the name of the workspace that should be used by default; never null
+     */
+    String getDefaultWorkspaceName();
 
     /**
      * Returns the {@link RepositoryContext repository context} for the repository source
@@ -40,5 +56,4 @@ public interface PathRepositorySource extends RepositorySource {
      * @return the {@link RepositoryContext repository context} for the repository source
      */
     RepositoryContext getRepositoryContext();
-
 }

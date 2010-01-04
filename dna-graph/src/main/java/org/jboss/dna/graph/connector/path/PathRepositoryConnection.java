@@ -34,7 +34,7 @@ public class PathRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public CachePolicy getDefaultCachePolicy() {
-        return source.getDefaultCachePolicy();
+        return source.getCachePolicy();
     }
 
     /**

@@ -24,33 +24,26 @@
 
 package org.jboss.dna.connector.filesystem;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
-import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
@@ -59,14 +52,12 @@ import org.jboss.dna.graph.DnaIntLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.path.AbstractPathRepositorySource;
 import org.jboss.dna.graph.connector.path.PathRepositoryConnection;
-import org.jboss.dna.graph.connector.path.PathRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Property;
@@ -77,7 +68,7 @@ import org.jboss.dna.graph.property.Property;
  * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
  */
 @ThreadSafe
-public class FileSystemSource implements PathRepositorySource, ObjectFactory {
+public class FileSystemSource extends AbstractPathRepositorySource implements ObjectFactory {
 
     /**
      * An immutable {@link CustomPropertiesFactory} implementation that is used by default when none is provided. Note that this
@@ -96,8 +87,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
     protected static final String SOURCE_NAME = "sourceName";
-    protected static final String CACHE_TIME_TO_LIVE_IN_MILLISECONDS = "cacheTimeToLiveInMilliseconds";
-    protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
     protected static final String WORKSPACE_ROOT = "workspaceRootPath";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
@@ -128,18 +117,12 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_REFERENCES = false;
 
-    public static final int DEFAULT_RETRY_LIMIT = 0;
-    public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
 
-    private volatile String name;
-    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
-    private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private volatile String defaultWorkspaceName = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     private volatile String workspaceRootPath;
     private volatile String[] predefinedWorkspaces = new String[] {};
-    private volatile UUID rootNodeUuid = UUID.randomUUID();
     private volatile int maxPathLength = DEFAULT_MAX_PATH_LENGTH;
     private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
@@ -148,8 +131,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
                                                                                                   SUPPORTS_EVENTS,
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
-    private transient RepositoryContext repositoryContext;
-    private transient CachePolicy defaultCachePolicy;
     private transient FileSystemRepository repository;
     private volatile CustomPropertiesFactory customPropertiesFactory;
 
@@ -166,28 +147,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
      */
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#getName()
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Set the name for the source
-     * 
-     * @param name the new name for the source
-     */
-    public synchronized void setName( String name ) {
-        if (name != null) {
-            name = name.trim();
-            if (name.length() == 0) name = null;
-        }
-        this.name = name;
     }
 
     /**
@@ -252,25 +211,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
             };
         }
         return filenameFilter;
-    }
-
-    /**
-     * Get the UUID that is used for the root node of each workspace
-     * 
-     * @return the UUID that is used for the root node of each workspace
-     */
-    public UUID getRootNodeUuid() {
-        return rootNodeUuid;
-    }
-
-    /**
-     * Set the {@code jcr:uuid} property of the root node in each workspace to the given value.
-     * 
-     * @param rootNodeUuid the UUID to use for the root nodes of all workspaces
-     */
-    public synchronized void setRootNodeUuid( String rootNodeUuid ) {
-        CheckArg.isNotNull(rootNodeUuid, "rootNodeUuid");
-        this.rootNodeUuid = UUID.fromString(rootNodeUuid);
     }
 
     /**
@@ -377,6 +317,7 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
      * @return true if this source allows updates by clients, or false if no updates are allowed
      * @see #setUpdatesAllowed(boolean)
      */
+    @Override
     public boolean areUpdatesAllowed() {
         return capabilities.supportsUpdates();
     }
@@ -392,45 +333,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowUpdates,
                                                         capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
                                                         capabilities.supportsReferences());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
-     */
-    public int getRetryLimit() {
-        return retryLimit;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
-     */
-    public synchronized void setRetryLimit( int limit ) {
-        this.retryLimit = limit < 0 ? 0 : limit;
-    }
-
-    /**
-     * Get the time in milliseconds that content returned from this source may used while in the cache.
-     * 
-     * @return the time to live, in milliseconds, or 0 if the time to live is not specified by this source
-     */
-    public int getCacheTimeToLiveInMilliseconds() {
-        return cacheTimeToLiveInMilliseconds;
-    }
-
-    /**
-     * Set the time in milliseconds that content returned from this source may used while in the cache.
-     * 
-     * @param cacheTimeToLive the time to live, in milliseconds; 0 if the time to live is not specified by this source; or a
-     *        negative number for the default value
-     */
-    public synchronized void setCacheTimeToLiveInMilliseconds( int cacheTimeToLive ) {
-        if (cacheTimeToLive < 0) cacheTimeToLive = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS;
-        this.cacheTimeToLiveInMilliseconds = cacheTimeToLive;
-        this.defaultCachePolicy = cacheTimeToLiveInMilliseconds > 0 ? new FileSystemCachePolicy(cacheTimeToLiveInMilliseconds) : null;
     }
 
     /**
@@ -458,23 +360,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
-     */
-    public synchronized void initialize( RepositoryContext context ) throws RepositorySourceException {
-        this.repositoryContext = context;
-    }
-
-    public RepositoryContext getRepositoryContext() {
-        return this.repositoryContext;
-    }
-
-    public CachePolicy getDefaultCachePolicy() {
-        return defaultCachePolicy;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see javax.naming.Referenceable#getReference()
      */
     public synchronized Reference getReference() {
@@ -485,8 +370,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
         if (getName() != null) {
             ref.add(new StringRefAddr(SOURCE_NAME, getName()));
         }
-        ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Integer.toString(getCacheTimeToLiveInMilliseconds())));
-        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         ref.add(new StringRefAddr(EXCLUSION_PATTERN, exclusionPattern));
@@ -518,30 +401,9 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
                                      Context nameCtx,
                                      Hashtable<?, ?> environment ) throws Exception {
         if (obj instanceof Reference) {
-            Map<String, Object> values = new HashMap<String, Object>();
-            Reference ref = (Reference)obj;
-            Enumeration<?> en = ref.getAll();
-            while (en.hasMoreElements()) {
-                RefAddr subref = (RefAddr)en.nextElement();
-                if (subref instanceof StringRefAddr) {
-                    String key = subref.getType();
-                    Object value = subref.getContent();
-                    if (value != null) values.put(key, value.toString());
-                } else if (subref instanceof BinaryRefAddr) {
-                    String key = subref.getType();
-                    Object value = subref.getContent();
-                    if (value instanceof byte[]) {
-                        // Deserialize ...
-                        ByteArrayInputStream bais = new ByteArrayInputStream((byte[])value);
-                        ObjectInputStream ois = new ObjectInputStream(bais);
-                        value = ois.readObject();
-                        values.put(key, value);
-                    }
-                }
-            }
+            Map<String, Object> values = valuesFrom((Reference)obj);
+
             String sourceName = (String)values.get(SOURCE_NAME);
-            String cacheTtlInMillis = (String)values.get(CACHE_TIME_TO_LIVE_IN_MILLISECONDS);
-            String retryLimit = (String)values.get(RETRY_LIMIT);
             String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
             String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
@@ -558,8 +420,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
             // Create the source instance ...
             FileSystemSource source = new FileSystemSource();
             if (sourceName != null) source.setName(sourceName);
-            if (cacheTtlInMillis != null) source.setCacheTimeToLiveInMilliseconds(Integer.parseInt(cacheTtlInMillis));
-            if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
@@ -587,14 +447,6 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
         return new PathRepositoryConnection(this, repository);
     }
 
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#close()
-     */
-    public synchronized void close() {
-    }
 
     protected static class StandardPropertiesFactory implements CustomPropertiesFactory {
         private static final long serialVersionUID = 1L;
@@ -719,20 +571,4 @@ public class FileSystemSource implements PathRepositorySource, ObjectFactory {
         }
 
     }
-
-    @Immutable
-    /*package*/class FileSystemCachePolicy implements CachePolicy {
-        private static final long serialVersionUID = 1L;
-        private final int ttl;
-
-        /*package*/FileSystemCachePolicy( int ttl ) {
-            this.ttl = ttl;
-        }
-
-        public long getTimeToLive() {
-            return ttl;
-        }
-
-    }
-
 }
