@@ -311,7 +311,6 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( VerifyNodeExistsRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -343,7 +342,6 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( ReadNodeRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -414,7 +412,6 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( ReadAllChildrenRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.of(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -504,7 +501,6 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( ReadAllPropertiesRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -538,7 +534,6 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( ReadPropertyRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -578,15 +573,18 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( ReadBranchRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
-        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
 
-        // And process the branch, creating ReadNodeRequests for each placeholder, and ReadBranchRequests for each proxy node...
-        if (request.maximumDepth() > 0) {
-            processBranch(federatedRequest, projectedNode, workspace, request.maximumDepth());
+        if (projectedNode != null) {
+            FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+
+            // And process the branch, creating ReadNodeRequests for each placeholder, and ReadBranchRequests for each proxy
+            // node...
+            if (request.maximumDepth() > 0) {
+                processBranch(federatedRequest, projectedNode, workspace, request.maximumDepth());
+            }
         }
 
         // Submit the requests for processing ...
@@ -645,10 +643,13 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( CreateNodeRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.under(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         PlaceholderNode placeholder = null;
@@ -724,10 +725,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( RemovePropertyRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.from(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -759,10 +764,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( UpdatePropertiesRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -794,10 +803,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( UpdateValuesRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -830,10 +843,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( SetPropertyRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -865,10 +882,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( DeleteChildrenRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // A delete should be executed against any ProxyNode that applies ...
         FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
@@ -892,10 +913,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( DeleteBranchRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // A delete should be executed against any ProxyNode that applies ...
         FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
@@ -965,9 +990,15 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( CopyBranchRequest request ) {
         // Figure out where the 'from' is projected ...
         ProjectedNode projectedFromNode = project(request.from(), request.fromWorkspace(), request, false);
-        if (projectedFromNode == null) return;
+        if (projectedFromNode == null) {
+            submit(new FederatedRequest(request));
+            return;
+        }
         ProjectedNode projectedIntoNode = project(request.into(), request.intoWorkspace(), request, true);
-        if (projectedIntoNode == null) return;
+        if (projectedIntoNode == null) {
+            submit(new FederatedRequest(request));
+            return;
+        }
 
         // Limitation: only able to project the copy if the 'from' and 'into' are in the same source & projection ...
         while (projectedFromNode != null) {
@@ -1023,9 +1054,15 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( CloneBranchRequest request ) {
         // Figure out where the 'from' is projected ...
         ProjectedNode projectedFromNode = project(request.from(), request.fromWorkspace(), request, false);
-        if (projectedFromNode == null) return;
+        if (projectedFromNode == null) {
+            submit(new FederatedRequest(request));
+            return;
+        }
         ProjectedNode projectedIntoNode = project(request.into(), request.intoWorkspace(), request, true);
-        if (projectedIntoNode == null) return;
+        if (projectedIntoNode == null) {
+            submit(new FederatedRequest(request));
+            return;
+        }
 
         // Limitation: only able to project the copy if the 'from' and 'into' are in the same source & projection ...
         while (projectedFromNode != null) {
@@ -1082,7 +1119,10 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( MoveBranchRequest request ) {
         // Figure out where the 'from' is projected ...
         ProjectedNode projectedFromNode = project(request.from(), request.inWorkspace(), request, true);
-        if (projectedFromNode == null) return;
+        if (projectedFromNode == null) {
+            submit(new FederatedRequest(request));
+            return;
+        }
 
         ProjectedNode projectedBeforeNode = request.before() != null ? project(request.before(),
                                                                                request.inWorkspace(),
@@ -1164,10 +1204,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( RenameNodeRequest request ) {
         // Figure out where the 'at' is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -1199,10 +1243,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( LockBranchRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -1234,10 +1282,14 @@ class ForkRequestProcessor extends RequestProcessor {
     public void process( UnlockBranchRequest request ) {
         // Figure out where this request is projected ...
         ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, true);
-        if (projectedNode == null) return;
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
+
+        if (projectedNode == null) {
+            submit(federatedRequest);
+            return;
+        }
 
         // Any non-read request should be submitted to the first ProxyNode ...
         while (projectedNode != null) {
@@ -1273,7 +1325,6 @@ class ForkRequestProcessor extends RequestProcessor {
             // Get the root location ...
             Location root = Location.create(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
             ProjectedNode projectedNode = project(root, workspace.getName(), request, false);
-            if (projectedNode == null) return;
 
             // Create the federated request ...
             FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -1378,5 +1429,4 @@ class ForkRequestProcessor extends RequestProcessor {
             channel.cancel(mayInterruptIfRunning);
         }
     }
-
 }

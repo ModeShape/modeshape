@@ -204,7 +204,7 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( VerifyNodeExistsRequest request ) {
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.at();
         int numMerged = 0;
@@ -258,7 +258,7 @@ class JoinRequestProcessor extends RequestProcessor {
         Map<Name, Property> properties = request.getPropertiesByName();
         Map<Name, Integer> childSnsIndexes = new HashMap<Name, Integer>();
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.at();
         int numMerged = 0;
@@ -409,7 +409,7 @@ class JoinRequestProcessor extends RequestProcessor {
         Path federatedPath = request.of().getPath();
         Map<Name, Integer> childSnsIndexes = new HashMap<Name, Integer>();
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.of();
         int numMerged = 0;
@@ -506,7 +506,7 @@ class JoinRequestProcessor extends RequestProcessor {
     public void process( ReadAllPropertiesRequest request ) {
         Map<Name, Property> properties = request.getPropertiesByName();
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.at();
         int numMerged = 0;
@@ -568,7 +568,7 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadPropertyRequest request ) {
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.on();
         int numMerged = 0;
@@ -631,7 +631,7 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadBranchRequest request ) {
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         request.setCachePolicy(getDefaultCachePolicy());
         Location actualLocation = request.at();
         int numMerged = 0;
@@ -838,8 +838,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CreateNodeRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        Request projectedRequest = projected.getRequest();
+
+        Request projectedRequest = projected == null ? null : projected.getRequest();
         // Check the error first ...
         if (checkErrorOrCancel(request, projectedRequest)) return;
 
@@ -866,8 +866,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( UpdatePropertiesRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        UpdatePropertiesRequest source = (UpdatePropertiesRequest)projected.getRequest();
+
+        UpdatePropertiesRequest source = projected == null ? null : (UpdatePropertiesRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
@@ -882,8 +882,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( SetPropertyRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
+
+        SetPropertyRequest source = projected == null ? null : (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         // Set the actual location and created flags ...
         Location sourceLocation = source.getActualLocationOfNode();
@@ -899,8 +899,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( RemovePropertyRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
+
+        SetPropertyRequest source = projected == null ? null : (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.from(), projected.getProjection(), sourceLocation, request));
@@ -914,6 +914,11 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( DeleteBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+
+        // Do an initial check to make sure that there was no error on the source that prevented projection
+        Request projectedSource = projected == null ? null : projected.getRequest();
+        if (checkErrorOrCancel(request, projectedSource)) return;
+
         // Go through the projected requests, and look for the top-most node ...
         Location highest = null;
         while (projected != null) {
@@ -949,6 +954,11 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( DeleteChildrenRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+
+        // Do an initial check to make sure that there was no error on the source that prevented projection
+        Request projectedSource = projected == null ? null : projected.getRequest();
+        if (checkErrorOrCancel(request, projectedSource)) return;
+
         // Go through the projected requests, and look for the top-most node ...
         Location highest = null;
         while (projected != null) {
@@ -976,8 +986,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( RenameNodeRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        RenameNodeRequest source = (RenameNodeRequest)projected.getRequest();
+
+        RenameNodeRequest source = projected == null ? null : (RenameNodeRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -994,8 +1004,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CopyBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        CopyBranchRequest source = (CopyBranchRequest)projected.getRequest();
+
+        CopyBranchRequest source = projected == null ? null : (CopyBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1012,8 +1022,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CloneBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        CloneBranchRequest source = (CloneBranchRequest)projected.getRequest();
+
+        CloneBranchRequest source = projected == null ? null : (CloneBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1037,8 +1047,8 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( MoveBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
-        assert !projected.hasNext();
-        MoveBranchRequest source = (MoveBranchRequest)projected.getRequest();
+
+        MoveBranchRequest source = projected == null ? null : (MoveBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1057,7 +1067,7 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( VerifyWorkspaceRequest request ) {
         ProjectedRequest projectedRequest = federatedRequest.getFirstProjectedRequest();
-        assert projectedRequest != null;
+
         Location actualLocation = Location.create(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
         while (projectedRequest != null) {
             VerifyNodeExistsRequest readFromSource = (VerifyNodeExistsRequest)projectedRequest.getRequest();
