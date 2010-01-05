@@ -267,8 +267,6 @@ public class OracleDdlParser extends StandardDdlParser
             return parseStatement(tokens, STMT_PURGE, parentNode, TYPE_PURGE_STATEMENT);
         } else if (tokens.matches(STMT_RENAME)) {
             return parseStatement(tokens, STMT_RENAME, parentNode, TYPE_RENAME_STATEMENT);
-        } else if (tokens.matches(STMT_REVOKE)) {
-            return parseStatement(tokens, STMT_REVOKE, parentNode, TYPE_REVOKE_STATEMENT);
         } else if (tokens.matches(STMT_ROLLBACK)) {
             return parseStatement(tokens, STMT_ROLLBACK, parentNode, TYPE_ROLLBACK_STATEMENT);
         } else if (tokens.matches(STMT_ROLLBACK_WORK)) {
@@ -578,6 +576,18 @@ public class OracleDdlParser extends StandardDdlParser
         // return grantNode;
 
         // return super.parseGrantStatement(tokens, parentNode);
+    }
+
+    
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.ddl.StandardDdlParser#parseRevokeStatement(org.jboss.dna.sequencer.ddl.DdlTokenStream, org.jboss.dna.sequencer.ddl.node.AstNode)
+     */
+    @Override
+    protected AstNode parseRevokeStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        return parseStatement(tokens, STMT_REVOKE, parentNode, TYPE_REVOKE_STATEMENT);
     }
 
     @Override

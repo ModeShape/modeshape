@@ -100,6 +100,12 @@ public class StandardDdlLexicon {
     public static final Name TYPE_GRANT_ON_COLLATION_STATEMENT = new BasicName(Namespace.URI, "grantOnCollationStatement");
     public static final Name TYPE_GRANT_ON_CHARACTER_SET_STATEMENT = new BasicName(Namespace.URI, "grantOnCharacterSetStatement");
     public static final Name TYPE_GRANT_ON_TRANSLATION_STATEMENT = new BasicName(Namespace.URI, "grantOnTranslationStatement");
+    public static final Name TYPE_REVOKE_STATEMENT = new BasicName(Namespace.URI, "revokeStatement");
+    public static final Name TYPE_REVOKE_ON_TABLE_STATEMENT = new BasicName(Namespace.URI, "revokeOnTableStatement");
+    public static final Name TYPE_REVOKE_ON_DOMAIN_STATEMENT = new BasicName(Namespace.URI, "revokeOnDomainStatement");
+    public static final Name TYPE_REVOKE_ON_COLLATION_STATEMENT = new BasicName(Namespace.URI, "revokeOnCollationStatement");
+    public static final Name TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT = new BasicName(Namespace.URI, "revokeOnCharacterSetStatement");
+    public static final Name TYPE_REVOKE_ON_TRANSLATION_STATEMENT = new BasicName(Namespace.URI, "revokeOnTranslationStatement");
     public static final Name TYPE_SET_STATEMENT = new BasicName(Namespace.URI, "setStatement");
     public static final Name TYPE_INSERT_STATEMENT = new BasicName(Namespace.URI, "insertStatement");
 

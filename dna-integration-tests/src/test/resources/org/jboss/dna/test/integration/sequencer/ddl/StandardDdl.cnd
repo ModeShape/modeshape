@@ -278,3 +278,18 @@
 [ddl:grantOnCollationStatement]     > ddl:grantStatement, ddl:collationOperand mixin
 [ddl:grantOnCharacterSetStatement]  > ddl:grantStatement, ddl:characterSetOperand mixin
 [ddl:grantOnTranslationStatement]   > ddl:grantStatement, ddl:translationOperand mixin
+
+// =============================================================================
+// REVOKE STATEMENTS
+// =============================================================================
+
+[ddl:revokeStatement] > ddl:statement, ddl:revokable, ddl:droppable mixin
+  - ddl:allPrivileges (boolean)
+  + * (ddl:grantPrivilege) = ddl:grantPrivilege multiple
+  + * (ddl:grantee) = ddl:grantee multiple
+
+[ddl:revokeOnTableStatement]         > ddl:revokeStatement, ddl:tableOperand mixin
+[ddl:revokeOnDomainStatement]        > ddl:revokeStatement, ddl:domainOperand mixin
+[ddl:revokeOnCollationStatement]     > ddl:revokeStatement, ddl:collationOperand mixin
+[ddl:revokeOnCharacterSetStatement]  > ddl:revokeStatement, ddl:characterSetOperand mixin
+[ddl:revokeOnTranslationStatement]   > ddl:revokeStatement, ddl:translationOperand mixin

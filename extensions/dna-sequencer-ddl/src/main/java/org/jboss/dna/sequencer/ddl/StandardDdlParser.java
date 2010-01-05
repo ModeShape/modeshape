@@ -276,6 +276,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             stmtNode = parseSetStatement(tokens, node);
         } else if (tokens.matches(GRANT)) {
             stmtNode = parseGrantStatement(tokens, node);
+        } else if( tokens.matches(REVOKE)) {
+            stmtNode = parseRevokeStatement(tokens, node);
         }
 
         if (stmtNode == null) {
@@ -807,39 +809,38 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         tokens.consume("GRANT");
 
-            if( tokens.canConsume("ALL", "PRIVILEGES")) {
-                allPrivileges = true;
-            } else { 
-                parseGrantPrivileges(tokens, privileges);
-            }
-            tokens.consume("ON");
+        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+            allPrivileges = true;
+        } else { 
+            parseGrantPrivileges(tokens, privileges);
+        }
+        tokens.consume("ON");
 
-            if( tokens.canConsume("DOMAIN") ) {
-                String name = parseName(tokens);
-                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_DOMAIN_STATEMENT);
-            } else if( tokens.canConsume("COLLATION")) {
-                String name = parseName(tokens);
-                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_COLLATION_STATEMENT);
-            } else if( tokens.canConsume("CHARACTER", "SET")) {
-                String name = parseName(tokens);
-                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_CHARACTER_SET_STATEMENT);
-            } else if( tokens.canConsume("TRANSLATION")) {
-                String name = parseName(tokens);
-                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TRANSLATION_STATEMENT);
-            } else {
-                tokens.canConsume(TABLE); // OPTIONAL
-                String name = parseName(tokens);
-                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
-            }
-
+        if( tokens.canConsume("DOMAIN") ) {
+            String name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_DOMAIN_STATEMENT);
+        } else if( tokens.canConsume("COLLATION")) {
+            String name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_COLLATION_STATEMENT);
+        } else if( tokens.canConsume("CHARACTER", "SET")) {
+            String name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_CHARACTER_SET_STATEMENT);
+        } else if( tokens.canConsume("TRANSLATION")) {
+            String name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TRANSLATION_STATEMENT);
+        } else {
+            tokens.canConsume(TABLE); // OPTIONAL
+            String name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
+        }
             
-            // Attach privileges to grant node
-            for( AstNode node : privileges ) {
-                node.setParent(grantNode);
-            }
-            if( allPrivileges ) {
-                grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
-            }
+        // Attach privileges to grant node
+        for( AstNode node : privileges ) {
+            node.setParent(grantNode);
+        }
+        if( allPrivileges ) {
+            grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+        }
 
         
         tokens.consume("TO");
@@ -850,7 +851,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } while( tokens.canConsume(COMMA));
         
         if( tokens.canConsume("WITH", "GRANT", "OPTION")) {
-            grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+            grantNode.setProperty(WITH_GRANT_OPTION, "WITH GRANT OPTION");
         }
         
         markEndOfStatement(tokens, grantNode);
@@ -909,6 +910,93 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } while( tokens.canConsume(COMMA));
 
     }
+    
+    protected AstNode parseRevokeStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+        assert tokens.matches(REVOKE);
+        
+        markStartOfStatement(tokens);
+        
+        //    <revoke statement> ::=
+        //        REVOKE [ GRANT OPTION FOR ]
+        //            <privileges>
+        //            ON <object name>
+        //            FROM <grantee> [ { <comma> <grantee> }... ] <drop behavior>
+        
+        AstNode revokeNode = null;
+        boolean allPrivileges = false;
+        boolean withGrantOption = false;
+
+        List<AstNode> privileges = new ArrayList<AstNode>();
+
+        tokens.consume("REVOKE");
+        
+        withGrantOption = tokens.canConsume("WITH", "GRANT", "OPTION");
+
+        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+            allPrivileges = true;
+        } else { 
+            parseGrantPrivileges(tokens, privileges);
+        }
+        tokens.consume("ON");
+
+        if( tokens.canConsume("DOMAIN") ) {
+            String name = parseName(tokens);
+            revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_DOMAIN_STATEMENT);
+        } else if( tokens.canConsume("COLLATION")) {
+            String name = parseName(tokens);
+            revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_COLLATION_STATEMENT);
+        } else if( tokens.canConsume("CHARACTER", "SET")) {
+            String name = parseName(tokens);
+            revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT);
+        } else if( tokens.canConsume("TRANSLATION")) {
+            String name = parseName(tokens);
+            revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_TRANSLATION_STATEMENT);
+        } else {
+            tokens.canConsume(TABLE); // OPTIONAL
+            String name = parseName(tokens);
+            revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_TABLE_STATEMENT);
+        }
+        
+        // Attach privileges to grant node
+        for( AstNode node : privileges ) {
+            node.setParent(revokeNode);
+        }
+        
+        if( allPrivileges ) {
+            revokeNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+        }
+
+        tokens.consume("FROM");
+        
+        do {
+            String grantee = parseName(tokens);
+            nodeFactory().node(grantee, revokeNode, GRANTEE);
+        } while( tokens.canConsume(COMMA));
+        
+        String behavior = null;
+        
+        if (tokens.canConsume("CASCADE")) {
+            behavior = "CASCADE";
+        } else if (tokens.canConsume("RESTRICT")) {
+            behavior = "RESTRICT";
+        }
+        
+        if (behavior != null) {
+            revokeNode.setProperty(DROP_BEHAVIOR, behavior);
+        }
+        
+        if( withGrantOption ) {
+            revokeNode.setProperty(WITH_GRANT_OPTION, "WITH GRANT OPTION");
+        }
+        
+        markEndOfStatement(tokens, revokeNode);
+
+        return revokeNode;
+    }
+    
     /**
      * Catch-all method to parse unknown (not registered or handled by sub-classes) statements.
      * 

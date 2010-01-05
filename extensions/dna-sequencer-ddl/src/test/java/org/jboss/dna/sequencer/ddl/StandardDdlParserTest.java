@@ -847,4 +847,17 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertThat(true, is(success));
         assertThat(rootNode.getChildCount(), is(4));
     }
+    
+    @Test
+    public void shouldParseRevokeStatements() {
+        printTest("shouldParseRevokeStatements()");
+        String content = "REVOKE SELECT ON TABLE purchaseOrders FROM maria,harry;" + NEWLINE
+            + "REVOKE UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi CASCADE;" + NEWLINE
+            + "REVOKE SELECT ON TABLE orders.bills FROM PUBLIC RESTRICT;" + NEWLINE
+            + "REVOKE INSERT(a, b, c) ON TABLE purchaseOrders FROM purchases_reader_role;";
+
+        boolean success = parser.parse(content, rootNode);
+        assertThat(true, is(success));
+        assertThat(rootNode.getChildCount(), is(4));
+    }
 }

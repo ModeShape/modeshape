@@ -38,6 +38,7 @@ public interface DdlConstants {
     public static final String DROP = "DROP";
     public static final String FOREIGN = "FOREIGN";
     public static final String GRANT = "GRANT";
+    public static final String REVOKE = "REVOKE";
     public static final String INDEX = "INDEX";
     public static final String INSERT = "INSERT";
     public static final String UPDATE = "UPDATE";
@@ -99,7 +100,8 @@ public interface DdlConstants {
         public static final String[] STMT_CREATE_TRANSLATION = {CREATE, "TRANSLATION"};
         public static final String[] STMT_ALTER_TABLE = {ALTER, TABLE};
         public static final String[] STMT_ALTER_DOMAIN = {ALTER, "DOMAIN"};
-        public static final String[] STMT_GRANT = {"GRANT"};
+        public static final String[] STMT_GRANT = {GRANT};
+        public static final String[] STMT_REVOKE = {REVOKE};
         public static final String[] STMT_DROP_SCHEMA = {DROP, SCHEMA};
         public static final String[] STMT_DROP_TABLE = {DROP, TABLE};
         public static final String[] STMT_DROP_VIEW = {DROP, VIEW};
@@ -114,9 +116,9 @@ public interface DdlConstants {
         public final static String[][] SQL_92_ALL_PHRASES = {STMT_CREATE_SCHEMA, STMT_CREATE_TABLE,
             STMT_CREATE_GLOBAL_TEMPORARY_TABLE, STMT_CREATE_LOCAL_TEMPORARY_TABLE, STMT_CREATE_VIEW, STMT_CREATE_OR_REPLACE_VIEW,
             STMT_CREATE_ASSERTION, STMT_CREATE_CHARACTER_SET, STMT_CREATE_COLLATION, STMT_CREATE_TRANSLATION, STMT_CREATE_DOMAIN,
-            STMT_ALTER_TABLE, STMT_ALTER_DOMAIN, STMT_GRANT, STMT_DROP_SCHEMA, STMT_DROP_TABLE, STMT_DROP_VIEW, STMT_DROP_DOMAIN,
-            STMT_DROP_CHARACTER_SET, STMT_DROP_COLLATION, STMT_DROP_TRANSLATION, STMT_DROP_ASSERTION, STMT_INSERT_INTO,
-            STMT_SET_DEFINE};
+            STMT_ALTER_TABLE, STMT_ALTER_DOMAIN, STMT_GRANT, STMT_REVOKE, STMT_DROP_SCHEMA, STMT_DROP_TABLE, STMT_DROP_VIEW,
+            STMT_DROP_DOMAIN, STMT_DROP_CHARACTER_SET, STMT_DROP_COLLATION, STMT_DROP_TRANSLATION, STMT_DROP_ASSERTION,
+            STMT_INSERT_INTO, STMT_SET_DEFINE};
 
         // <schema definition>
         // | <table definition>
