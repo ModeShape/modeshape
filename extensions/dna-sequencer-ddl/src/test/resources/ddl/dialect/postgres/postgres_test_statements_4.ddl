@@ -43,7 +43,7 @@ GRANT UPDATE, TRIGGER ON TABLE t TO anita,zhi;
 
 GRANT SELECT ON TABLE s.v to PUBLIC;
 
-GRANT EXECUTE ON PROCEDURE p TO george;
+GRANT EXECUTE ON FUNCTION p(a int, b TEXT) TO george;
 -- 10 STATEMENTS *******************************************************
 GRANT purchases_reader_role TO george,maria;
 

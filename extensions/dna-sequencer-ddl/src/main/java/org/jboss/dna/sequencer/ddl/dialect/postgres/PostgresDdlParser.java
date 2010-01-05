@@ -1,118 +1,11 @@
 package org.jboss.dna.sequencer.ddl.dialect.postgres;
 
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_ORIGINAL_EXPRESSION;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
 import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.VALUE;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.SCHEMA_NAME;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ABORT_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_AGGREGATE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_CONVERSION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_DATABASE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FUNCTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_GROUP_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_INDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_LANGUAGE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_OPERATOR_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_ROLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SCHEMA_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SEQUENCE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SERVER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLESPACE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TEXT_SEARCH_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TYPE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_USER_MAPPING_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_USER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_VIEW_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ANALYZE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CLUSTER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COPY_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_AGGREGATE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CAST_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CONSTRAINT_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CONVERSION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_DATABASE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FOREIGN_DATA_WRAPPER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_GROUP_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_LANGUAGE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_OPERATOR_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SERVER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TABLESPACE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TEXT_SEARCH_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TYPE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_USER_MAPPING_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_USER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DEALLOCATE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DECLARE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_AGGREGATE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CAST_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CONSTRAINT_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CONVERSION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_DATABASE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_FOREIGN_DATA_WRAPPER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_GROUP_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_LANGUAGE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_OPERATOR_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_OWNED_BY_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_RULE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_SEQUENCE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_SERVER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TABLESPACE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TEXT_SEARCH_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TYPE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_USER_MAPPING_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_USER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_EXPLAIN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_FETCH_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LISTEN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LOAD_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_MOVE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_NOTIFY_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_PREPARE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_REASSIGN_OWNED_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_REINDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RELEASE_SAVEPOINT_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ROLLBACK_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_SELECT_INTO_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_SHOW_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_TRUNCATE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_UNLISTEN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_VACUUM_STATEMENT;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.*;
+import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.dna.common.text.ParsingException;
@@ -1138,14 +1031,357 @@ public class PostgresDdlParser extends StandardDdlParser
 
         return newNode;
     }
-
+    
+    /**
+     * 
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.ddl.StandardDdlParser#parseGrantStatement(org.jboss.dna.sequencer.ddl.DdlTokenStream, org.jboss.dna.sequencer.ddl.node.AstNode)
+     */
     @Override
     protected AstNode parseGrantStatement( DdlTokenStream tokens,
                                            AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
+        assert tokens.matches(GRANT);
+        
+        markStartOfStatement(tokens);
 
-        return super.parseGrantStatement(tokens, parentNode);
+        // NOTE: The first wack at this does not take into account the apparent potential repeating name elements after each type
+        // declaration. Example:
+        //          GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
+        //             [,...] | ALL [ PRIVILEGES ] }
+        //             ON [ TABLE ] tablename [, ...]
+        //             TO { [ GROUP ] rolename | PUBLIC } [, ...] [ WITH GRANT OPTION ]
+        //
+        // the "ON [ TABLE ] tablename [, ...]" seems to indicate that you can grant privileges on multiple tables at once, which is
+        // different thatn the SQL 92 standard. So this pass ONLY allows one and an parsing error will probably occur if multiple.
+        //
+        //      Syntax for tables
+        //
+        //             GRANT <privileges> ON <object name>
+        //                      TO <grantee> [ { <comma> <grantee> }... ]
+        //                      [ WITH GRANT OPTION ]
+        //
+        //        <object name> ::=
+        //            [ TABLE ] <table name>
+        //          | SEQUENCE <sequence name>
+        //          | DATABASE <db name>
+        //          | FOREIGN DATA WRAPPER <fdw name>
+        //          | FOREIGN SERVER <server name>
+        //          | FUNCTION <function name>
+        //          | LANGUAGE <language name>
+        //          | SCHEMA <schema name>
+        //          | TABLESPACE <tablespace name>
+
+        //
+        //      Syntax for roles
+        //
+        //          GRANT roleName [ {, roleName }* ] TO grantees
+        
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        List<AstNode> grantNodes = new ArrayList<AstNode>();
+        boolean allPrivileges = false;
+
+        List<AstNode> privileges = new ArrayList<AstNode>();
+
+        tokens.consume("GRANT");
+
+        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+            allPrivileges = true;
+        } else { 
+            parseGrantPrivileges(tokens, privileges);
+        }
+        
+        if( allPrivileges || !privileges.isEmpty() ) {
+            
+            tokens.consume("ON");
+            
+            if( tokens.canConsume("SCHEMA")) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_SCHEMA_STATEMENT);
+            } else if( tokens.canConsume("SEQUENCE") ) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_SEQUENCE_STATEMENT);
+            } else if( tokens.canConsume("TABLESPACE") ) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_TABLESPACE_STATEMENT);
+            } else if( tokens.canConsume("DATABASE")) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_DATABASE_STATEMENT);
+            } else if( tokens.canConsume("FUNCTION")) {
+                grantNodes = parseFunctionAndParameters(tokens, parentNode);
+            } else if( tokens.canConsume("LANGUAGE")) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_LANGUAGE_STATEMENT);
+            } else if( tokens.canConsume("FOREIGN", "DATA", "WRAPPER")) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT);
+            } else if( tokens.canConsume("FOREIGN", "SERVER")) {
+                grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_FOREIGN_SERVER_STATEMENT);
+            } else {
+                tokens.canConsume(TABLE); // OPTIONAL
+                String name = parseName(tokens);
+                AstNode grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
+                grantNodes.add(grantNode);
+                while( tokens.canConsume(COMMA) ) {
+                    // Assume more names here
+                    name = parseName(tokens);
+                    grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
+                    grantNodes.add(grantNode);
+                }
+            }
+        } else {
+            // Assume ROLES here
+            // role [, ...]
+            AstNode grantNode = nodeFactory().node("roles", parentNode, TYPE_GRANT_ROLES_STATEMENT);
+            grantNodes.add(grantNode);
+            do {
+                String role = parseName(tokens);
+                nodeFactory().node(role, grantNode, ROLE);
+            } while( tokens.canConsume(COMMA));
+        }
+        
+        tokens.consume("TO");
+        List<String> grantees = new ArrayList<String>();
+        
+        do {
+            String grantee = parseName(tokens);
+            grantees.add(grantee);
+        } while( tokens.canConsume(COMMA));
+        
+        boolean withGrantOption = false;
+        if( tokens.canConsume("WITH", "GRANT", "OPTION")) {
+            withGrantOption = true;
+        }
+        
+        // Set all properties and children on Grant Nodes
+        for( AstNode grantNode : grantNodes) {
+            List<AstNode> copyOfPrivileges = copyOfPrivileges(privileges);
+            // Attach privileges to grant node
+            for( AstNode node : copyOfPrivileges ) {
+                node.setParent(grantNode);
+            }
+            if( allPrivileges ) {
+                grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+            }
+            for( String grantee : grantees) {
+                nodeFactory().node(grantee, grantNode, GRANTEE);
+            }
+            
+            if( withGrantOption ) {
+                AstNode optionNode = nodeFactory().node("withGrant", grantNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "WITH GRANT OPTION");
+            }
+        }
+        AstNode firstGrantNode = grantNodes.get(0);
+        
+        markEndOfStatement(tokens, firstGrantNode);
+
+        // Update additional grant nodes with statement info
+        
+        for( int i=1; i<grantNodes.size(); i++) {
+            AstNode grantNode = grantNodes.get(i);
+            grantNode.setProperty(DDL_EXPRESSION, firstGrantNode.getProperty(DDL_EXPRESSION));
+            grantNode.setProperty(DDL_START_LINE_NUMBER, firstGrantNode.getProperty(DDL_START_LINE_NUMBER));
+            grantNode.setProperty(DDL_START_CHAR_INDEX, firstGrantNode.getProperty(DDL_START_CHAR_INDEX));
+            grantNode.setProperty(DDL_START_COLUMN_NUMBER, firstGrantNode.getProperty(DDL_START_COLUMN_NUMBER));
+        }
+        
+        
+        return grantNodes.get(0);
+    }
+
+
+    /**
+     * 
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.ddl.StandardDdlParser#parseGrantPrivileges(org.jboss.dna.sequencer.ddl.DdlTokenStream, java.util.List)
+     */
+    @Override
+    protected void parseGrantPrivileges( DdlTokenStream tokens, List<AstNode> privileges) throws ParsingException {
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        //      privilege-list
+        //
+        //          table-privilege {, table-privilege }*
+        //
+        //      table-privilege
+        //          SELECT [ <left paren> <privilege column list> <right paren> ]
+        //        | DELETE
+        //        | INSERT [ <left paren> <privilege column list> <right paren> ]
+        //        | UPDATE [ <left paren> <privilege column list> <right paren> ]
+        //        | REFERENCES [ <left paren> <privilege column list> <right paren> ]
+        //        | USAGE
+        //        | TRIGGER
+        //        | TRUNCATE
+        //        | CREATE
+        //        | CONNECT
+        //        | TEMPORARY
+        //        | TEMP
+        //        | EXECUTE
+        
+        //  POSTGRES has the following Privileges:
+        //          GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
+        
+        do {
+            AstNode node = null;
+            
+            if( tokens.canConsume(DELETE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, DELETE);
+            } else if( tokens.canConsume(INSERT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, INSERT);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume("REFERENCES")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "REFERENCES");
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume(SELECT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, SELECT);
+                // Could have columns here
+                // GRANT SELECT (col1), UPDATE (col1) ON mytable TO miriam_rw;
+
+                // Let's just swallow the column data.
+                
+                consumeParenBoundedTokens(tokens, true);
+            } else if( tokens.canConsume("USAGE")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "USAGE");
+            } else if( tokens.canConsume(UPDATE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, UPDATE);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume("TRIGGER")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "TRIGGER");
+            } else if( tokens.canConsume("TRUNCATE")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "TRUNCATE");
+            } else if( tokens.canConsume("CREATE")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "CREATE");
+            } else if( tokens.canConsume("CONNECT")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "CONNECT");
+            } else if( tokens.canConsume("TEMPORARY")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "TEMPORARY");
+            } else if( tokens.canConsume("TEMP")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "TEMP");
+            } else if( tokens.canConsume("EXECUTE")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "EXECUTE");
+            }
+            
+            if( node == null) {
+                break;
+            }
+            nodeFactory().setType(node, GRANT_PRIVILEGE);
+            privileges.add(node);
+            
+        } while( tokens.canConsume(COMMA));
+
+    }
+    
+    private List<AstNode> parseMultipleGrantTargets(DdlTokenStream tokens,
+                                                    AstNode parentNode,
+                                                    Name nodeType) throws ParsingException {
+        List<AstNode> grantNodes = new ArrayList<AstNode>();
+        String name = parseName(tokens);
+        AstNode grantNode = nodeFactory().node(name, parentNode, nodeType);
+        grantNodes.add(grantNode);
+        while( tokens.canConsume(COMMA) ) {
+            // Assume more names here
+            name = parseName(tokens);
+            grantNode = nodeFactory().node(name, parentNode, nodeType);
+            grantNodes.add(grantNode);
+        }
+        
+        return grantNodes;
+    }
+    
+    private List<AstNode> copyOfPrivileges(List<AstNode> privileges) {
+        List<AstNode> copyOfPrivileges = new ArrayList<AstNode>();
+        for( AstNode node : privileges) {
+            copyOfPrivileges.add(node.clone());
+        }
+        
+        return copyOfPrivileges;
+    }
+    
+    private List<AstNode> parseFunctionAndParameters( DdlTokenStream tokens,
+                                                AstNode parentNode ) throws ParsingException {
+        boolean isFirstFunction = true;
+        List<AstNode> grantNodes = new ArrayList<AstNode>();
+        
+        // FUNCTION funcname ( [ [ argmode ] [ argname ] argtype [, ...] ] ) [, ...]
+
+        // argmode = [ IN, OUT, INOUT, or VARIADIC ]
+        
+        // p(a int, b TEXT), q(integer, double)
+        
+        //        [postgresddl:grantOnFunctionStatement]         > ddl:grantStatement, postgresddl:functionOperand mixin
+        //        + * (postgresddl:functionParameter) = postgresddl:functionParameter multiple
+        
+        do {
+            String name = parseName(tokens);
+            AstNode grantFunctionNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_FUNCTION_STATEMENT);
+            
+            grantNodes.add(grantFunctionNode);
+
+            // Parse Parameter Data
+            if( tokens.matches(L_PAREN)) {
+                tokens.consume(L_PAREN);
+                
+                if( !tokens.canConsume(R_PAREN)) {
+                    // check for datatype
+                    do{
+                        String mode = null;
+                        
+                        if( tokens.matchesAnyOf("IN", "OUT", "INOUT", "VARIADIC")) {
+                            mode = tokens.consume();
+                        }
+                        AstNode paramNode = null;
+                        
+                        DataType dType = getDatatypeParser().parse(tokens);
+                        if( dType != null ) {
+                            // NO Parameter Name, only DataType
+                            paramNode = nodeFactory().node("parameter", grantFunctionNode, FUNCTION_PARAMETER);
+                            if( mode != null ) {
+                                paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
+                            }
+                            getDatatypeParser().setPropertiesOnNode(paramNode, dType);
+                        } else {
+                            String paramName = parseName(tokens);
+                            dType = getDatatypeParser().parse(tokens);
+                            assert paramName != null;
+
+                            paramNode = nodeFactory().node(paramName, grantFunctionNode, FUNCTION_PARAMETER);
+                            if( mode != null ) {
+                                paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
+                            }
+                            if( dType != null ) {
+                                getDatatypeParser().setPropertiesOnNode(paramNode, dType);
+                            }
+                        }
+                    } while( tokens.canConsume(COMMA));
+                    
+                    tokens.consume(R_PAREN);
+                }
+            }
+            
+            // RESET first parameter flag
+            if( isFirstFunction ) {
+                isFirstFunction = false;
+            }
+        } while( tokens.canConsume(COMMA) );
+        
+        
+        return grantNodes;
     }
 
     @Override

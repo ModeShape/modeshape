@@ -133,9 +133,23 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final Name TYPE_UNLISTEN_STATEMENT 				= new BasicName(Namespace.URI, "unlistenStatement");
     public static final Name TYPE_VACUUM_STATEMENT 					= new BasicName(Namespace.URI, "vacuumStatement");
     
-    public static final Name TYPE_RENAME_COLUMN 					= new BasicName(Namespace.URI, "renameColumn");
+    public static final Name TYPE_GRANT_ON_SEQUENCE_STATEMENT       = new BasicName(Namespace.URI, "grantOnSequenceStatement");
+    public static final Name TYPE_GRANT_ON_DATABASE_STATEMENT       = new BasicName(Namespace.URI, "grantOnDatabaseStatement");
+    public static final Name TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT  = new BasicName(Namespace.URI, "grantOnForeignDataWrapperStatement");
+    public static final Name TYPE_GRANT_ON_FOREIGN_SERVER_STATEMENT = new BasicName(Namespace.URI, "grantOnForeignServerStatement");
+    public static final Name TYPE_GRANT_ON_FUNCTION_STATEMENT       = new BasicName(Namespace.URI, "grantOnFunctionStatement");
+    public static final Name TYPE_GRANT_ON_LANGUAGE_STATEMENT       = new BasicName(Namespace.URI, "grantOnLanguageStatement");
+    public static final Name TYPE_GRANT_ON_SCHEMA_STATEMENT         = new BasicName(Namespace.URI, "grantOnSchemaStatement");
+    public static final Name TYPE_GRANT_ON_TABLESPACE_STATEMENT     = new BasicName(Namespace.URI, "grantOnTablespaceStatement");
+    public static final Name TYPE_GRANT_ON_PROCEDURE_STATEMENT      = new BasicName(Namespace.URI, "grantOnProcedureStatement");
+    public static final Name TYPE_GRANT_ROLES_STATEMENT             = new BasicName(Namespace.URI, "grantRolesStatement");
+    
+    public static final Name TYPE_RENAME_COLUMN 					= new BasicName(Namespace.URI, "renamedColumn");
     
     public static final Name SCHEMA_NAME 							= new BasicName(Namespace.URI, "schemaName");
+    public static final Name FUNCTION_PARAMETER                     = new BasicName(Namespace.URI, "functionParameter");
+    public static final Name FUNCTION_PARAMETER_MODE                = new BasicName(Namespace.URI, "mode");
+    public static final Name ROLE                                   = new BasicName(Namespace.URI, "role");
     
     // PROPERTY NAMES
     public static final Name TARGET_OBJECT_TYPE = new BasicName(Namespace.URI, "targetObjectType");

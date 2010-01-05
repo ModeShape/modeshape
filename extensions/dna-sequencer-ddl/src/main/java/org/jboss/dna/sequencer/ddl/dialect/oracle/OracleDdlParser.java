@@ -422,7 +422,27 @@ public class OracleDdlParser extends StandardDdlParser
         CheckArg.isNotNull(tokens, "tokens");
         CheckArg.isNotNull(parentNode, "parentNode");
 
-        // return super.parseGrantStatement(tokens, parentNode);
+        //        GRANT { grant_system_privileges | grant_object_privileges } ;
+        //
+        //            ** grant_system_privileges **
+        //        
+        //            { system_privilege | role | ALL PRIVILEGES } [, { system_privilege | role | ALL PRIVILEGES } ]...
+        //             TO grantee_clause [ WITH ADMIN OPTION ]
+        //
+        //            ** grant_object_privileges **
+        //
+        //            { object_privilege | ALL [ PRIVILEGES ] } [ (column [, column ]...) ] [, { object_privilege | ALL [ PRIVILEGES ] }  [ (column [, column ]...) ] ]...
+        //                 on_object_clause
+        //              TO grantee_clause [ WITH HIERARCHY OPTION ] [ WITH GRANT OPTION ]
+
+        //            ** on_object_clause **
+        //
+        //            { [ schema. ] object | { DIRECTORY directory_name | JAVA { SOURCE | RESOURCE } [ schema. ] object } }
+        //
+        //            ** grantee_clause **
+        //
+        //            { user [ IDENTIFIED BY password ] | role | PUBLIC } [, { user [ IDENTIFIED BY password ] | role | PUBLIC  } ]...
+
         AstNode node = null;
 
         // Original implementation does NOT parse Insert statement, but just returns a generic TypedStatement
@@ -444,8 +464,8 @@ public class OracleDdlParser extends StandardDdlParser
 
         markEndOfStatement(tokens, node);
 
-        return node;
-
+        return node; 
+        
         // if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "TO")) {
         // markStartOfStatement(tokens);
         // tokens.consume(GRANT);

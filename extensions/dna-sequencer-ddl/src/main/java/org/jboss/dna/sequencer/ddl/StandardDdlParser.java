@@ -29,60 +29,7 @@
  */
 package org.jboss.dna.sequencer.ddl;
 
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.CHECK_SEARCH_CONDITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.COLLATION_NAME;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.MESSAGE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.NAME;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.NULLABLE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.PROBLEM_LEVEL;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TEMPORARY;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_DOMAIN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_CHARACTER_SET_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_COLLATION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_DOMAIN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TRANSLATION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_INSERT_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_SET_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -828,24 +775,140 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                                            AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
-
-        // Original implementation does NOT parse Insert statement, but just returns a generic TypedStatement
+        assert tokens.matches(GRANT);
+        
         markStartOfStatement(tokens);
 
-        tokens.consume(GRANT);
-        String name = GRANT;
+        //      Syntax for tables
+        //
+        //             GRANT <privileges> ON <object name>
+        //                      TO <grantee> [ { <comma> <grantee> }... ]
+        //                      [ WITH GRANT OPTION ]
+        //
+        //        <object name> ::=
+        //            [ TABLE ] <table name>
+        //          | DOMAIN <domain name>
+        //          | COLLATION <collation name>
+        //          | CHARACTER SET <character set name>
+        //          | TRANSLATION <translation name>
+        //
+        //      Syntax for roles
+        //
+        //          GRANT roleName [ {, roleName }* ] TO grantees
+        
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        AstNode grantNode = null;
+        boolean allPrivileges = false;
 
-        tokens.consume(); // First Privilege token
+        List<AstNode> privileges = new ArrayList<AstNode>();
 
-        AstNode node = nodeFactory().node(name, parentNode, TYPE_GRANT_STATEMENT);
+        tokens.consume("GRANT");
 
-        parseUntilTerminator(tokens);
+            if( tokens.canConsume("ALL", "PRIVILEGES")) {
+                allPrivileges = true;
+            } else { 
+                parseGrantPrivileges(tokens, privileges);
+            }
+            tokens.consume("ON");
 
-        markEndOfStatement(tokens, node);
+            if( tokens.canConsume("DOMAIN") ) {
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_DOMAIN_STATEMENT);
+            } else if( tokens.canConsume("COLLATION")) {
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_COLLATION_STATEMENT);
+            } else if( tokens.canConsume("CHARACTER", "SET")) {
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_CHARACTER_SET_STATEMENT);
+            } else if( tokens.canConsume("TRANSLATION")) {
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TRANSLATION_STATEMENT);
+            } else {
+                tokens.canConsume(TABLE); // OPTIONAL
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
+            }
 
-        return node;
+            
+            // Attach privileges to grant node
+            for( AstNode node : privileges ) {
+                node.setParent(grantNode);
+            }
+            if( allPrivileges ) {
+                grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+            }
+
+        
+        tokens.consume("TO");
+        
+        do {
+            String grantee = parseName(tokens);
+            nodeFactory().node(grantee, grantNode, GRANTEE);
+        } while( tokens.canConsume(COMMA));
+        
+        if( tokens.canConsume("WITH", "GRANT", "OPTION")) {
+            grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+        }
+        
+        markEndOfStatement(tokens, grantNode);
+
+        return grantNode;
     }
 
+    protected void parseGrantPrivileges( DdlTokenStream tokens, List<AstNode> privileges) throws ParsingException {
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        //      privilege-list
+        //
+        //          table-privilege {, table-privilege }*
+        //
+        //      table-privilege
+        //          SELECT
+        //        | DELETE
+        //        | INSERT [ <left paren> <privilege column list> <right paren> ]
+        //        | UPDATE [ <left paren> <privilege column list> <right paren> ]
+        //        | REFERENCES [ <left paren> <privilege column list> <right paren> ]
+        //        | USAGE
+
+        do {
+            AstNode node = null;
+            
+            if( tokens.canConsume(DELETE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, DELETE);
+            } else if( tokens.canConsume(INSERT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, INSERT);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume("REFERENCES")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "REFERENCES");
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume(SELECT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, SELECT);
+            } else if( tokens.canConsume("USAGE")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "USAGE");
+            } else if( tokens.canConsume(UPDATE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, UPDATE);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            }
+            if( node == null) {
+                break;
+            }
+            nodeFactory().setType(node, GRANT_PRIVILEGE);
+            privileges.add(node);
+            
+        } while( tokens.canConsume(COMMA));
+
+    }
     /**
      * Catch-all method to parse unknown (not registered or handled by sub-classes) statements.
      * 

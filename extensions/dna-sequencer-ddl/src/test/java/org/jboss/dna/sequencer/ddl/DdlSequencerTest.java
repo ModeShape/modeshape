@@ -47,6 +47,7 @@ import org.jboss.dna.sequencer.ddl.dialect.oracle.OracleDdlLexicon;
 import org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -488,6 +489,7 @@ public class DdlSequencerTest {
         assertThat(verifyMixinType(node_2, "ddl:columnDefinition"), is(true));
     }
     
+    @Ignore
     @Test
     public void shouldSequenceDerbyDdl() throws IOException {
         URL url = this.getClass().getClassLoader().getResource("ddl/dialect/derby/derby_test_statements.ddl");

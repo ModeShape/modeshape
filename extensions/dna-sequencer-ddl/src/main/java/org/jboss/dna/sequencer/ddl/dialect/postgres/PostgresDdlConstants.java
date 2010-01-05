@@ -243,10 +243,12 @@ public interface PostgresDdlConstants extends DdlConstants {
 	    public final static Name[] VALID_SCHEMA_CHILD_STMTS = {
 	    	StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT, 
 	    	StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT,
-	    	StandardDdlLexicon.TYPE_GRANT_STATEMENT,
+	    	StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT,
 	    	PostgresDdlLexicon.TYPE_CREATE_INDEX_STATEMENT,
 	    	PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT,
-	    	PostgresDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT
+	    	PostgresDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT,
+	    	PostgresDdlLexicon.TYPE_GRANT_ON_SEQUENCE_STATEMENT,
+	    	PostgresDdlLexicon.TYPE_GRANT_ON_SCHEMA_STATEMENT
 	  	};
 	    
 	    public final static Name[] COMPLEX_STMT_TYPES = {

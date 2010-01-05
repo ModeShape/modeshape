@@ -1,26 +1,7 @@
 package org.jboss.dna.sequencer.ddl.dialect.derby;
 
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.COLUMN_ATTRIBUTE_TYPE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TABLE_NAME;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_SYNONYM_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_SYNONYM_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.UNIQUE_INDEX;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.*;
+import static org.jboss.dna.sequencer.ddl.dialect.derby.DerbyDdlLexicon.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.dna.common.text.ParsingException;
@@ -38,7 +19,9 @@ import org.jboss.dna.sequencer.ddl.node.AstNode;
 /**
  * Derby-specific DDL Parser. Includes custom data types as well as custom DDL statements.
  */
-public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstants {
+public class DerbyDdlParser extends StandardDdlParser 
+        implements DerbyDdlConstants,
+        DerbyDdlConstants.DerbyStatementStartPhrases {
     private final String parserId = "DERBY";
 
     static List<String[]> derbyDataTypeStrings = new ArrayList<String[]>();
@@ -69,11 +52,11 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
     public void registerWords( DdlTokenStream tokens ) {
         tokens.registerKeyWords(CUSTOM_KEYWORDS);
 
-        tokens.registerStatementStartPhrase(DerbyStatementStartPhrases.ALTER_PHRASES);
-        tokens.registerStatementStartPhrase(DerbyStatementStartPhrases.CREATE_PHRASES);
-        tokens.registerStatementStartPhrase(DerbyStatementStartPhrases.DROP_PHRASES);
-        tokens.registerStatementStartPhrase(DerbyStatementStartPhrases.SET_PHRASES);
-        tokens.registerStatementStartPhrase(DerbyStatementStartPhrases.MISC_PHRASES);
+        tokens.registerStatementStartPhrase(ALTER_PHRASES);
+        tokens.registerStatementStartPhrase(CREATE_PHRASES);
+        tokens.registerStatementStartPhrase(DROP_PHRASES);
+        tokens.registerStatementStartPhrase(SET_PHRASES);
+        tokens.registerStatementStartPhrase(MISC_PHRASES);
         super.registerWords(tokens);
     }
 
@@ -94,7 +77,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
      */
     @Override
     protected Name[] getValidSchemaChildTypes() {
-        return DerbyStatementStartPhrases.VALID_SCHEMA_CHILD_STMTS;
+        return VALID_SCHEMA_CHILD_STMTS;
     }
 
     /**
@@ -111,34 +94,14 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         AstNode result = super.parseCustomStatement(tokens, parentNode);
         if (result == null) {
-            if (tokens.matches(DerbyStatementStartPhrases.STMT_LOCK_TABLE)) {
-                markStartOfStatement(tokens);
-                tokens.consume(DerbyStatementStartPhrases.STMT_LOCK_TABLE);
-                result = parseIgnorableStatement(tokens,
-                                                 getStatementTypeName(DerbyStatementStartPhrases.STMT_LOCK_TABLE),
-                                                 parentNode);
-                markEndOfStatement(tokens, result);
-            } else if (tokens.matches(DerbyStatementStartPhrases.STMT_RENAME_TABLE)) {
-                markStartOfStatement(tokens);
-                tokens.consume(DerbyStatementStartPhrases.STMT_RENAME_TABLE);
-                result = parseIgnorableStatement(tokens,
-                                                 getStatementTypeName(DerbyStatementStartPhrases.STMT_RENAME_TABLE),
-                                                 parentNode);
-                markEndOfStatement(tokens, result);
-            } else if (tokens.matches(DerbyStatementStartPhrases.STMT_RENAME_INDEX)) {
-                markStartOfStatement(tokens);
-                tokens.consume(DerbyStatementStartPhrases.STMT_RENAME_INDEX);
-                result = parseIgnorableStatement(tokens,
-                                                 getStatementTypeName(DerbyStatementStartPhrases.STMT_RENAME_INDEX),
-                                                 parentNode);
-                markEndOfStatement(tokens, result);
-            } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DECLARE_GLOBAL_TEMP_TABLE)) {
-                markStartOfStatement(tokens);
-                tokens.consume(DerbyStatementStartPhrases.STMT_DECLARE_GLOBAL_TEMP_TABLE);
-                result = parseIgnorableStatement(tokens,
-                                                 getStatementTypeName(DerbyStatementStartPhrases.STMT_DECLARE_GLOBAL_TEMP_TABLE),
-                                                 parentNode);
-                markEndOfStatement(tokens, result);
+            if (tokens.matches(STMT_LOCK_TABLE)) {
+                result = parseLockTable(tokens, parentNode);
+            } else if (tokens.matches(STMT_RENAME_TABLE)) {
+                result = parseRenameTable(tokens, parentNode);
+            } else if (tokens.matches(STMT_RENAME_INDEX)) {
+                result = parseRenameIndex(tokens, parentNode);
+            } else if (tokens.matches(STMT_DECLARE_GLOBAL_TEMP_TABLE)) {
+                result = parseDeclareGlobalTempTable(tokens, parentNode);
             }
         }
         return result;
@@ -156,31 +119,22 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         assert tokens != null;
         assert parentNode != null;
 
-        if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_INDEX)
-            || tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_UNIQUE_INDEX)) {
+        if (tokens.matches(STMT_CREATE_INDEX)
+            || tokens.matches(STMT_CREATE_UNIQUE_INDEX)) {
             return parseCreateIndex(tokens, parentNode);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_FUNCTION)) {
+        } else if (tokens.matches(STMT_CREATE_FUNCTION)) {
+            return parseCreateFunction(tokens, parentNode);
+        } else if (tokens.matches(STMT_CREATE_PROCEDURE)) {
             return parseStatement(tokens,
-                                  DerbyStatementStartPhrases.STMT_CREATE_FUNCTION,
-                                  parentNode,
-                                  TYPE_CREATE_FUNCTION_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_PROCEDURE)) {
-            return parseStatement(tokens,
-                                  DerbyStatementStartPhrases.STMT_CREATE_PROCEDURE,
+                                  STMT_CREATE_PROCEDURE,
                                   parentNode,
                                   TYPE_CREATE_PROCEDURE_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_ROLE)) {
-            return parseStatement(tokens, DerbyStatementStartPhrases.STMT_CREATE_ROLE, parentNode, TYPE_CREATE_ROLE_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_SYNONYM)) {
-            return parseStatement(tokens,
-                                  DerbyStatementStartPhrases.STMT_CREATE_SYNONYM,
-                                  parentNode,
-                                  TYPE_CREATE_SYNONYM_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_CREATE_TRIGGER)) {
-            return parseStatement(tokens,
-                                  DerbyStatementStartPhrases.STMT_CREATE_TRIGGER,
-                                  parentNode,
-                                  TYPE_CREATE_TRIGGER_STATEMENT);
+        } else if (tokens.matches(STMT_CREATE_ROLE)) {
+            return parseStatement(tokens, STMT_CREATE_ROLE, parentNode, TYPE_CREATE_ROLE_STATEMENT);
+        } else if (tokens.matches(STMT_CREATE_SYNONYM)) {
+            return parseCreateSynonym(tokens, parentNode);
+        } else if (tokens.matches(STMT_CREATE_TRIGGER)) {
+            return parseCreateTrigger(tokens, parentNode);
         }
 
         return super.parseCreateStatement(tokens, parentNode);
@@ -217,13 +171,189 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         indexNode.setProperty(UNIQUE_INDEX, isUnique);
         indexNode.setProperty(TABLE_NAME, tableName);
 
+        parseIndexTableColumns(tokens, indexNode);
+        
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, indexNode);
 
         return indexNode;
     }
+    
+    private void parseIndexTableColumns(DdlTokenStream tokens, AstNode indexNode) throws ParsingException {
+        assert tokens != null;
+        assert indexNode != null;
 
+        // Assume we start with open parenthesis '(', then we parse comma separated list of column names followed by optional
+        // ASC or DESC
+        
+        
+        tokens.consume(L_PAREN); // EXPECTED
+
+        while (!tokens.canConsume(R_PAREN)) {
+            String colName = parseName(tokens);
+            AstNode colRefNode = nodeFactory().node(colName, indexNode, TYPE_INDEX_COLUMN_REFERENCE);
+            if( tokens.canConsume("ASC")) {
+                colRefNode.setProperty(ORDER, "ASC");
+            } else if( tokens.canConsume("DESC")) {
+                colRefNode.setProperty(ORDER, "DESC");
+            }
+            tokens.canConsume(COMMA);
+        }
+    }
+    
+    /**
+     * Parses DDL CREATE FUNCTION statement
+     * 
+     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed CREATE FUNCTION statement node
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateFunction( DdlTokenStream tokens,
+                                        AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        //  CREATE FUNCTION function-name ( [ FunctionParameter [, FunctionParameter] ] * ) 
+        //        RETURNS ReturnDataType [ FunctionElement ] *
+        
+        //FunctionElement
+        //        {
+        //       | LANGUAGE { JAVA }
+        //       | {DETERMINISTIC | NOT DETERMINISTIC}
+        //       | EXTERNAL NAME string
+        //       | PARAMETER STYLE {JAVA | DERBY_JDBC_RESULT_SET}
+        //       | { NO SQL | CONTAINS SQL | READS SQL DATA }
+        //       | { RETURNS NULL ON NULL INPUT | CALLED ON NULL INPUT }
+        //        }
+        tokens.consume(CREATE, "FUNCTION"); // CREATE
+
+        String functionName = parseName(tokens);
+
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
+
+        parseFunctionParameters(tokens, functionNode);
+        
+        tokens.consume("RETURNS");
+
+        if( tokens.canConsume("TABLE")) {
+            AstNode tableNode = nodeFactory().node("TABLE", functionNode, TYPE_CREATE_TABLE_STATEMENT);
+            parseColumnsAndConstraints(tokens, tableNode);
+            tableNode.setProperty(IS_TABLE_TYPE, true);
+        } else {
+            // Assume DataType
+            DataType datatype = getDatatypeParser().parse(tokens);
+            if( datatype != null) {
+                getDatatypeParser().setPropertiesOnNode(functionNode, datatype);
+            } else {
+                String msg = DdlSequencerI18n.missingReturnTypeForFunction.text(functionName);
+                DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
+                addProblem(problem, functionNode);
+            }
+        }
+        
+        while( !isTerminator(tokens)) {
+            if( tokens.matches("LANGUAGE")) {
+                AstNode optionNode = nodeFactory().node("language", functionNode, TYPE_STATEMENT_OPTION);
+                if( tokens.canConsume("LANGUAGE", "JAVA")) {
+                    optionNode.setProperty(VALUE, "LANGUAGE JAVA");
+                } else {
+                    tokens.consume("LANGUAGE");
+                    optionNode.setProperty(VALUE, "LANGUAGE");
+                }
+            } else if( tokens.canConsume("DETERMINISTIC")) {
+                AstNode optionNode = nodeFactory().node("deterministic", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "DETERMINISTIC");
+            } else if( tokens.canConsume("NOT", "DETERMINISTIC")) {
+                AstNode optionNode = nodeFactory().node("deterministic", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "NOT DETERMINISTIC");
+            } else if( tokens.canConsume("EXTERNAL", "NAME")) {
+                String extName = parseName(tokens);
+                AstNode optionNode = nodeFactory().node("externalName", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "EXTERNAL NAME" + SPACE + extName);
+            } else if( tokens.canConsume("PARAMETER", "STYLE")) {
+                AstNode optionNode = nodeFactory().node("parameterStyle", functionNode, TYPE_STATEMENT_OPTION);
+                if( tokens.canConsume("JAVA")) {
+                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "JAVA");
+                } else {
+                    tokens.consume("DERBY_JDBC_RESULT_SET");
+                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "DERBY_JDBC_RESULT_SET");
+                }
+            } else if( tokens.canConsume("NO", "SQL")) {
+                AstNode optionNode = nodeFactory().node("sqlStatus", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "NO SQL");
+            } else if( tokens.canConsume("CONTAINS", "SQL")) {
+                AstNode optionNode = nodeFactory().node("sqlStatus", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "CONTAINS SQL");
+            } else if( tokens.canConsume("READS", "SQL", "DATA")) {
+                AstNode optionNode = nodeFactory().node("sqlStatus", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "READS SQL DATA");
+            } else if( tokens.canConsume("RETURNS", "NULL", "ON", "NULL", "INPUT")) {
+                AstNode optionNode = nodeFactory().node("nullInput", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "RETURNS NULL ON NULL INPUT");
+            } else if( tokens.canConsume("CALLED", "ON", "NULL", "INPUT")) {
+                AstNode optionNode = nodeFactory().node("nullInput", functionNode, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "CALLED ON NULL INPUT");
+            }
+        }
+
+        markEndOfStatement(tokens, functionNode);
+
+        return functionNode;
+    }
+    
+    private void parseFunctionParameters( DdlTokenStream tokens, AstNode functionNode) throws ParsingException {
+        assert tokens != null;
+        assert functionNode != null;
+
+        // Assume we start with open parenthesis '(', then we parse comma separated list of function parameters
+        // which have the form:  [ parameter-Name ] DataType
+        // So, try getting datatype, if datatype == NULL, then parseName() & parse datatype, then repeat as long as next token is ","
+        
+        tokens.consume(L_PAREN); // EXPECTED
+
+        while (!tokens.canConsume(R_PAREN)) {
+            DataType datatype = getDatatypeParser().parse(tokens);
+            if( datatype == null ) {
+                String paramName = parseName(tokens);
+                datatype = getDatatypeParser().parse(tokens);
+                AstNode paramNode = nodeFactory().node(paramName, functionNode, TYPE_FUNCTION_PARAMETER);
+                getDatatypeParser().setPropertiesOnNode(paramNode, datatype);
+            } else {
+                AstNode paramNode = nodeFactory().node("functionParameter", functionNode, TYPE_FUNCTION_PARAMETER);
+                getDatatypeParser().setPropertiesOnNode(paramNode, datatype);
+            }
+            tokens.canConsume(COMMA);
+        }
+    }
+
+    /**
+     * Parses DDL CREATE FUNCTION statement
+     * 
+     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed CREATE FUNCTION statement node
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateProcedure( DdlTokenStream tokens,
+                                        AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        
+        tokens.consume(CREATE, "PROCEDURE"); // CREATE
+
+        String functionName = parseName(tokens);
+
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
+
+        markEndOfStatement(tokens, functionNode);
+
+        return functionNode;
+    }
     /**
      * {@inheritDoc}
      * 
@@ -240,53 +370,34 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         String name = null;
 
-        if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_FUNCTION)) {
+        if (tokens.matches(STMT_DROP_FUNCTION)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_FUNCTION);
+            tokens.consume(STMT_DROP_FUNCTION);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_FUNCTION_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_INDEX)) {
+        } else if (tokens.matches(STMT_DROP_INDEX)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_INDEX);
+            tokens.consume(STMT_DROP_INDEX);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_INDEX_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_PROCEDURE)) {
+        } else if (tokens.matches(STMT_DROP_PROCEDURE)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_PROCEDURE);
+            tokens.consume(STMT_DROP_PROCEDURE);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_PROCEDURE_STATEMENT);
-
-            // CREATE PROCEDURE procedure-Name ( [ ProcedureParameter [, ProcedureParameter] ] * ) [ ProcedureElement ] *
-            // ProcedureParameter:
-            // [ { IN | OUT | INOUT } ] [ parameter-Name ] DataType
-            // ProcedureElement:
-            //
-            // {
-            // | [ DYNAMIC ] RESULT SETS INTEGER
-            // | LANGUAGE { JAVA }
-            // | DeterministicCharacteristic
-            // | EXTERNAL NAME string
-            // | PARAMETER STYLE JAVA
-            // | { NO SQL | MODIFIES SQL DATA | CONTAINS SQL | READS SQL DATA }
-            // }
-
-            // TODO: BARRY
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_ROLE)) {
+        } else if (tokens.matches(STMT_DROP_ROLE)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_ROLE);
+            tokens.consume(STMT_DROP_ROLE);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_ROLE_STATEMENT);
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_SYNONYM)) {
+        } else if (tokens.matches(STMT_DROP_SYNONYM)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_SYNONYM);
+            tokens.consume(STMT_DROP_SYNONYM);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_SYNONYM_STATEMENT);
-            // CREATE SYNONYM synonym-Name FOR { view-Name | table-Name }
-
-            // TODO: BARRY
-        } else if (tokens.matches(DerbyStatementStartPhrases.STMT_DROP_TRIGGER)) {
+        } else if (tokens.matches(STMT_DROP_TRIGGER)) {
             markStartOfStatement(tokens);
-            tokens.consume(DerbyStatementStartPhrases.STMT_DROP_TRIGGER);
+            tokens.consume(STMT_DROP_TRIGGER);
             name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_TRIGGER_STATEMENT);
         }
@@ -317,71 +428,150 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                                            AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
+        assert tokens.matches(GRANT);
+        
+        markStartOfStatement(tokens);
 
-        return super.parseGrantStatement(tokens, parentNode);
-        // Statement stmt = null;
-        //		
-        // if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "TO")) {
-        // stmt = new TypedStatement();
-        // consume(tokens, stmt, false, GRANT);
-        // String privilege = consume(tokens, stmt, true);
-        // tokens.consume("TO");
-        // String toValue = consume(tokens, stmt, true);
+        //      Syntax for tables
         //
-        // String value = parseUntilTerminator(tokens);
-        // stmt.appendSource(true, value);
-        // stmt.setType("GRANT" + SPACE + privilege + SPACE + "TO" + SPACE + toValue);
-        // consumeTerminator(tokens);
-        // return stmt;
-        // } else if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "ON")) {
-        // stmt = new TypedStatement();
-        // consume(tokens, stmt, false, GRANT);
-        // String privilege = consume(tokens, stmt, true);
-        // tokens.consume("ON");
-        //			
-        // tokens.canConsume("TABLE");
-        //			
-        // String onValue = tokens.consume();
-        //			
-        // String value = parseUntilTerminator(tokens);
-        // stmt.appendSource(true, value);
-        // stmt.setType("GRANT" + SPACE + privilege + SPACE + "ON" + SPACE + onValue);
-        // consumeTerminator(tokens);
-        // return stmt;
-        // } else if( tokens.matches(GRANT, "ALL", "PRIVILEGES", "ON")) {
-        // stmt = new TypedStatement();
-        // consume(tokens, stmt, false, GRANT);
-        // String privilege = consume(tokens, stmt, true,"ALL", "PRIVILEGES", "ON");
-        // tokens.canConsume("TABLE");
-        //			
-        // String onValue = tokens.consume();
-        //			
-        // String value = parseUntilTerminator(tokens);
-        // stmt.appendSource(true, value);
-        // stmt.setType("GRANT" + SPACE + privilege + SPACE + "ON" + SPACE + onValue);
-        // consumeTerminator(tokens);
-        // return stmt;
-        // } else if( tokens.matches(GRANT, "SELECT") ||
-        // tokens.matches(GRANT, "UPDATE") ||
-        // tokens.matches(GRANT, "DELETE") ||
-        // tokens.matches(GRANT, "INSERT") ||
-        // tokens.matches(GRANT, "TRIGGER") ||
-        // tokens.matches(GRANT, "REFERENCES")) {
-        // stmt = new TypedStatement();
-        // consume(tokens, stmt, false, GRANT);
-        //			
-        // String nextTok = consume(tokens, stmt, true) + SPACE + consume(tokens, stmt, true) + SPACE + consume(tokens, stmt,
-        // true);
+        //          GRANT privilege-type ON [TABLE] { table-Name | view-Name } TO grantees
         //
-        // String value = parseUntilTerminator(tokens);
-        // stmt.appendSource(true, value);
-        // stmt.setType("GRANT" + SPACE + nextTok);
-        // consumeTerminator(tokens);
-        // return stmt;
-        // }
-        //		
-        //		
-        // return null;
+        //      Syntax for routines
+        //
+        //          GRANT EXECUTE ON { FUNCTION | PROCEDURE } {function-name | procedure-name} TO grantees
+        //
+        //      Syntax for roles
+        //
+        //          GRANT roleName [ {, roleName }* ] TO grantees
+        
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        AstNode grantNode = null;
+        boolean allPrivileges = false;
+
+        List<AstNode> privileges = new ArrayList<AstNode>();
+
+        tokens.consume("GRANT");
+        if(tokens.canConsume("EXECUTE", "ON")) {
+            AstNode node = nodeFactory().node("privilege");
+            nodeFactory().setType(node, GRANT_PRIVILEGE);
+            node.setProperty(TYPE, "EXECUTE");
+            privileges = new ArrayList<AstNode>();
+            privileges.add(node);
+            if( tokens.canConsume("FUNCTION") ) {
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_FUNCTION_STATEMENT);
+            } else {
+                tokens.consume("PROCEDURE");
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_PROCEDURE_STATEMENT);
+            } 
+        } else {
+
+            
+            if( tokens.canConsume("ALL", "PRIVILEGES")) {
+                allPrivileges = true;
+            } else { 
+                parseGrantPrivileges(tokens, privileges);
+                
+                if( privileges.isEmpty() ) {
+                    // ASSUME:  GRANT roleName [ {, roleName }* ] TO grantees
+                    grantNode = nodeFactory().node("grantRoles", parentNode, TYPE_GRANT_ROLES_STATEMENT);
+                    do {
+                        String roleName = parseName(tokens);
+                        nodeFactory().node(roleName, grantNode, ROLE_NAME);
+                    } while( tokens.canConsume(COMMA));
+                }
+            }
+            if( grantNode == null ) {
+                tokens.consume("ON");
+                tokens.canConsume(TABLE); // OPTIONAL
+                String name = parseName(tokens);
+                grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
+                // Attach privileges to grant node
+                for( AstNode node : privileges ) {
+                    node.setParent(grantNode);
+                }
+                if( allPrivileges ) {
+                    grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
+                }
+            }
+            
+        }
+        
+        tokens.consume("TO");
+        
+        do {
+            String grantee = parseName(tokens);
+            nodeFactory().node(grantee, grantNode, GRANTEE);
+        } while( tokens.canConsume(COMMA));
+        
+        markEndOfStatement(tokens, grantNode);
+        
+        return grantNode;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.ddl.StandardDdlParser#parseGrantPrivileges(org.jboss.dna.sequencer.ddl.DdlTokenStream, java.util.List)
+     */
+    @Override
+    protected void parseGrantPrivileges( DdlTokenStream tokens, List<AstNode> privileges) throws ParsingException {
+        //      privilege-types
+        //
+        //          ALL PRIVILEGES | privilege-list
+        //
+        //      privilege-list
+        //
+        //          table-privilege {, table-privilege }*
+        //
+        //      table-privilege
+        //          DELETE |
+        //          INSERT |
+        //          REFERENCES [column list] |
+        //          SELECT [column list] |
+        //          TRIGGER |
+        //          UPDATE [column list]
+        //      column list
+        //           ( column-identifier {, column-identifier}* )
+        
+        do {
+            AstNode node = null;
+            
+            if( tokens.canConsume(DELETE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, DELETE);
+            } else if( tokens.canConsume(INSERT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, INSERT);
+            } else if( tokens.canConsume("REFERENCES")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "REFERENCES");
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume(SELECT)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, SELECT);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            } else if( tokens.canConsume("TRIGGER")) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, "TRIGGER");
+            } else if( tokens.canConsume(UPDATE)) {
+                node = nodeFactory().node("privilege");
+                node.setProperty(TYPE, UPDATE);
+                parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
+            }
+            if( node == null) {
+                break;
+            }
+            nodeFactory().setType(node, GRANT_PRIVILEGE);
+            privileges.add(node);
+            
+        } while( tokens.canConsume(COMMA));
+
     }
 
     /**
@@ -668,7 +858,324 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         return false;
     }
+    
+    private AstNode parseDeclareGlobalTempTable( DdlTokenStream tokens,
+                                                 AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
 
+        markStartOfStatement(tokens);
+        
+        // DECLARE GLOBAL TEMPORARY TABLE table-Name
+        //     { column-definition [ , column-definition ] * }
+        //     [ ON COMMIT {DELETE | PRESERVE} ROWS ]  
+        //      NOT LOGGED [ON ROLLBACK DELETE ROWS]
+
+        tokens.consume(STMT_DECLARE_GLOBAL_TEMP_TABLE);
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_DECLARE_GLOBAL_TEMPORARY_TABLE_STATEMENT);
+        
+        parseColumnsAndConstraints(tokens, node);
+        
+        if( tokens.canConsume("ON", "COMMIT"))  {
+            AstNode optionNode = nodeFactory().node("onCommit", node, TYPE_STATEMENT_OPTION);
+            if( tokens.canConsume("DELETE", "ROWS")) {
+                optionNode.setProperty(VALUE, "ON COMMIT DELETE ROWS");
+            } else {
+                tokens.consume("PRESERVE", "ROWS");
+                optionNode.setProperty(VALUE, "ON COMMIT PRESERVE ROWS");
+            }
+        }
+        tokens.consume("NOT", "LOGGED");
+        
+        if( tokens.canConsume("ON", "ROLLBACK", "DELETE", "ROWS"))  {
+            AstNode optionNode = nodeFactory().node("onRollback", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, "ON ROLLBACK DELETE ROWS");
+        }
+
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    private AstNode parseLockTable( DdlTokenStream tokens,
+                                                 AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        
+        // LOCK TABLE table-Name IN { SHARE | EXCLUSIVE } MODE;
+        
+        tokens.consume(STMT_LOCK_TABLE);
+        
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_LOCK_TABLE_STATEMENT);
+        
+        tokens.consume("IN");
+        
+        if( tokens.canConsume("SHARE")) {
+            AstNode propNode = nodeFactory().node("lockMode", node, TYPE_STATEMENT_OPTION);
+            propNode.setProperty(VALUE, "SHARE");
+        } else {
+            tokens.consume("EXCLUSIVE");
+            AstNode propNode = nodeFactory().node("lockMode", node, TYPE_STATEMENT_OPTION);
+            propNode.setProperty(VALUE, "EXCLUSIVE");
+        }
+        tokens.consume("MODE");
+        
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    private AstNode parseRenameTable( DdlTokenStream tokens,
+                                    AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        
+        // RENAME TABLE SAMP.EMP_ACT TO EMPLOYEE_ACT;
+        
+        tokens.consume(STMT_RENAME_TABLE);
+        
+        String oldName = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(oldName, parentNode, TYPE_RENAME_TABLE_STATEMENT);
+        
+        tokens.consume("TO");
+        
+        String newName = parseName(tokens);
+        
+        node.setProperty(NEW_NAME, newName);
+        
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    private AstNode parseRenameIndex( DdlTokenStream tokens,
+                                      AstNode parentNode ) throws ParsingException {
+          assert tokens != null;
+          assert parentNode != null;
+
+          markStartOfStatement(tokens);
+          
+          // RENAME TABLE SAMP.EMP_ACT TO EMPLOYEE_ACT;
+          
+          tokens.consume(STMT_RENAME_INDEX);
+          
+          String oldName = parseName(tokens);
+          
+          AstNode node = nodeFactory().node(oldName, parentNode, TYPE_RENAME_INDEX_STATEMENT);
+          
+          tokens.consume("TO");
+          
+          String newName = parseName(tokens);
+          
+          node.setProperty(NEW_NAME, newName);
+          
+          markEndOfStatement(tokens, node);
+          
+          return node;
+    }
+    
+    private AstNode parseCreateSynonym( DdlTokenStream tokens,
+                                        AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        //CREATE SYNONYM synonym-Name FOR { view-Name | table-Name }
+        
+        tokens.consume(STMT_CREATE_SYNONYM);
+        
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_SYNONYM_STATEMENT);
+        
+        tokens.consume("FOR");
+        
+        String tableOrViewName = parseName(tokens);
+        
+        node.setProperty(TABLE_NAME, tableOrViewName);
+        
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    private AstNode parseCreateTrigger( DdlTokenStream tokens,
+                                        AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+        //      CREATE TRIGGER TriggerName
+        //      { AFTER | NO CASCADE BEFORE } 
+        //      { INSERT | DELETE | UPDATE [ OF column-Name [, column-Name]* ] }
+        //      ON table-Name
+        //      [ ReferencingClause ]
+        //      [ FOR EACH { ROW | STATEMENT } ] [ MODE DB2SQL ] 
+        //      Triggered-SQL-statement
+        
+        //      ReferencingClause
+        //        REFERENCING
+        //        {
+        //        { OLD | NEW } [ ROW ] [ AS ] correlation-Name [ { OLD | NEW } [ ROW ] [ AS ] correlation-Name ] | 
+        //        { OLD TABLE | NEW TABLE } [ AS ] Identifier [ { OLD TABLE | NEW TABLE } [AS] Identifier ]  |
+        //        { OLD_TABLE | NEW_TABLE } [ AS ] Identifier [ { OLD_TABLE | NEW_TABLE } [AS] Identifier ] 
+        //        }
+        
+        
+        // EXAMPLE:
+        //        CREATE TRIGGER t1 NO CASCADE BEFORE UPDATE ON x
+        //        FOR EACH ROW MODE DB2SQL
+        //        values app.notifyEmail('Jerry', 'Table x is about to be updated'); 
+        
+        tokens.consume(STMT_CREATE_TRIGGER);
+        
+        String name = parseName(tokens);
+        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_TRIGGER_STATEMENT);
+        
+        String type = null;
+        
+        if( tokens.canConsume("AFTER") ) {
+            AstNode optionNode = nodeFactory().node("beforeOrAfter", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, "AFTER");
+        } else {
+            tokens.consume("NO", "CASCADE", "BEFORE");
+            AstNode optionNode = nodeFactory().node("beforeOrAfter", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, "NO CASCADE BEFORE");
+        }
+        
+        if( tokens.canConsume(INSERT)) {
+            AstNode optionNode = nodeFactory().node("eventType", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, INSERT);
+            type = INSERT;
+        } else if( tokens.canConsume(DELETE) ) {
+            AstNode optionNode = nodeFactory().node("eventType", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, DELETE);
+            type = DELETE;
+        } else {
+            tokens.consume(UPDATE);
+            AstNode optionNode = nodeFactory().node("eventType", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, UPDATE);
+            type = UPDATE;
+        }
+        
+        if( tokens.canConsume("OF") ) {
+            // Parse comma separated column names
+            String colName = parseName(tokens);
+            nodeFactory().node(colName, node, TYPE_COLUMN_REFERENCE);
+            
+            while( tokens.canConsume(COMMA)) {
+                colName = parseName(tokens);
+                nodeFactory().node(colName, node, TYPE_COLUMN_REFERENCE);
+            }
+        }
+        tokens.consume("ON");
+        
+        String tableName = parseName(tokens);
+        
+        node.setProperty(TABLE_NAME, tableName);
+        
+        if( tokens.canConsume("REFERENCING") ) {
+            //      ReferencingClause
+            //        REFERENCING
+            //        {
+            //        { OLD | NEW } [ ROW ] [ AS ] correlation-Name [ { OLD | NEW } [ ROW ] [ AS ] correlation-Name ] | 
+            //        { OLD TABLE | NEW TABLE } [ AS ] Identifier [ { OLD TABLE | NEW TABLE } [AS] Identifier ]  |
+            //        { OLD_TABLE | NEW_TABLE } [ AS ] Identifier [ { OLD_TABLE | NEW_TABLE } [AS] Identifier ] 
+            //        }
+            
+            StringBuffer sb = new StringBuffer();
+            if( tokens.matchesAnyOf("OLD", "NEW") ) {
+                if( tokens.canConsume("OLD")) {
+                    sb.append("OLD");
+                } else {
+                    tokens.consume("NEW");
+                    sb.append("NEW");
+                }
+                if( tokens.canConsume("ROW") ) {
+                    sb.append(SPACE).append("ROW");
+                }
+                if( tokens.canConsume("AS") ) {
+                    sb.append(SPACE).append("AS");
+                }
+                if( tokens.matchesAnyOf("OLD", "NEW")) {
+                    if( tokens.canConsume("OLD")) {
+                        sb.append(SPACE).append("OLD");
+                    } else {
+                        tokens.consume("NEW");
+                        sb.append(SPACE).append("NEW");
+                    }
+                    
+                    if( tokens.canConsume("ROW") ) {
+                        sb.append(SPACE).append("ROW");
+                    }
+                    if( tokens.canConsume("AS") ) {
+                        sb.append(SPACE).append("AS");
+                    }
+                    if( ! tokens.matchesAnyOf("FOR", "MODE", type)) {
+                        String corrName = parseName(tokens);
+                        sb.append(SPACE).append(corrName);
+                    }
+                } else {
+                    String corrName = parseName(tokens);
+                    sb.append(SPACE).append(corrName);
+                    
+                    if( tokens.matchesAnyOf("OLD", "NEW") ) {
+                        if( tokens.canConsume("OLD")) {
+                            sb.append(SPACE).append("OLD");
+                        } else {
+                            tokens.consume("NEW");
+                            sb.append(SPACE).append("NEW");
+                        }
+                        
+                        if( tokens.canConsume("ROW") ) {
+                            sb.append(SPACE).append("ROW");
+                        }
+                        if( tokens.canConsume("AS") ) {
+                            sb.append(SPACE).append("AS");
+                        }
+                        if( ! tokens.matchesAnyOf("FOR", "MODE", type)) {
+                            corrName = parseName(tokens);
+                            sb.append(SPACE).append(corrName);
+                        }
+                    }
+                }
+            }
+        }            
+        //[ FOR EACH { ROW | STATEMENT } ] [ MODE DB2SQL ]
+        if( tokens.canConsume("FOR", "EACH")) {
+            if( tokens.canConsume("ROW")) {
+                AstNode optionNode = nodeFactory().node("forEach", node, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "FOR EACH ROW");
+            } else {
+                tokens.consume("STATEMENT");
+                AstNode optionNode = nodeFactory().node("forEach", node, TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(VALUE, "FOR EACH STATEMENT");
+            }
+        }
+        if( tokens.canConsume("MODE")) {
+            tokens.consume("DB2SQL");
+            AstNode optionNode = nodeFactory().node("mode", node, TYPE_STATEMENT_OPTION);
+            optionNode.setProperty(VALUE, "MODE DB2SQL");
+        }
+                                                        
+        String sql = parseUntilTerminatorIgnoreEmbeddedStatements(tokens);
+        node.setProperty(SQL, sql);
+        
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
     /**
      * {@inheritDoc}
      * 
@@ -796,23 +1303,28 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 dataType.setKMGLength(isKMGLength);
                 dataType.setKMGValue(kmgValue);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_BIGINT)) {
+                dataType = new DataType();
                 typeName = consume(tokens, dataType, true);
-                dataType = new DataType(typeName);
+                dataType.setName(typeName);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_LONG_VARCHAR_FBD)) {
+                dataType = new DataType();
                 typeName = consume(tokens, dataType, true) + SPACE + consume(tokens, dataType, true) + SPACE
                            + consume(tokens, dataType, true) + SPACE + consume(tokens, dataType, true) + SPACE
                            + consume(tokens, dataType, true);
-                dataType = new DataType(typeName);
+                dataType.setName(typeName);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_LONG_VARCHAR)) {
+                dataType = new DataType();
                 typeName = consume(tokens, dataType, true) + SPACE + consume(tokens, dataType, true);
                 typeName = consume(tokens, dataType, true);
-                dataType = new DataType(typeName);
+                dataType.setName(typeName);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_DOUBLE)) {
+                dataType = new DataType();
                 typeName = consume(tokens, dataType, true);
-                dataType = new DataType(typeName);
+                dataType.setName(typeName);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_XML)) {
+                dataType = new DataType();
                 typeName = consume(tokens, dataType, true);
-                dataType = new DataType(typeName);
+                dataType.setName(typeName);
             }
 
             if (dataType == null) {

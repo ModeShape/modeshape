@@ -42,7 +42,7 @@
 [postgresddl:databaseOperand]       > ddl:operand abstract
 [postgresddl:foreignDataOperand]    > ddl:operand abstract
 [postgresddl:groupOperand]          > ddl:operand abstract
-[postgresddl:functionOperand]       > ddl:operand abstractmandatory
+[postgresddl:functionOperand]       > ddl:operand abstract
 [postgresddl:indexOperand]          > ddl:operand abstract
 [postgresddl:languageOperand]       > ddl:operand abstract
 [postgresddl:operatorOperand]       > ddl:operand abstract
@@ -57,7 +57,20 @@
 [postgresddl:typeOperand]           > ddl:operand abstract
 [postgresddl:userOperand]           > ddl:operand abstract
 [postgresddl:userMappingOperand]    > ddl:operand abstract
+[postgresddl:parameterOperand]      > ddl:operand abstract
 
+[postgresddl:functionParameter]     > postgresddl:parameterOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - ddl:nullable (STRING)
+  - ddl:defaultOption (STRING)
+  - postgresddl:mode (STRING)
+
+[postgresddl:role]                  > postgresddl:roleOperand mixin
+
+[postgresddl:renamedColumn]         > ddl:renamable mixin
 
 // =============================================================================
 // ALTER STATEMENTS
@@ -86,7 +99,7 @@
 [postgresddl:alterTableStatement] > ddl:alterTableStatement mixin
   - postgresddl:newTableName (STRING)
   - postgresddl:schemaName (STRING)
-  + postgresddl:renameColumn (ddl:renamable) = ddl:renamable multiple
+  + postgresddl:renameColumn (postgresddl:renamedColumn) = postgresddl:renamedColumn multiple
 
   
 // =============================================================================
@@ -175,4 +188,18 @@
 [postgresddl:unlistenStatement]         > ddl:statement mixin
 [postgresddl:vacuumStatement]           > ddl:statement mixin
 
-
+// =============================================================================
+// GRANT STATEMENTS
+// =============================================================================
+[postgresddl:grantOnTableStatement]            > ddl:grantStatement, ddl:tableOperand mixin
+[postgresddl:grantOnSequenceStatement]         > ddl:grantStatement, postgresddl:sequenceOperand mixin
+[postgresddl:grantOnDatabaseStatement]         > ddl:grantStatement, postgresddl:databaseOperand mixin
+[postgresddl:grantOnForeignDataWrapperStatement] > ddl:grantStatement, postgresddl:foreignDataOperand mixin
+[postgresddl:grantOnForeignServerStatement]    > ddl:grantStatement, postgresddl:serverOperand mixin
+[postgresddl:grantOnFunctionStatement]         > ddl:grantStatement, postgresddl:functionOperand mixin
+  + postgresddl:parameter (postgresddl:functionParameter) = postgresddl:functionParameter multiple
+[postgresddl:grantOnLanguageStatement]         > ddl:grantStatement, postgresddl:languageOperand mixin
+[postgresddl:grantOnSchemaStatement]           > ddl:grantStatement, ddl:schemaOperand mixin
+[postgresddl:grantOnTablespaceStatement]       > ddl:grantStatement, postgresddl:tablespaceOperand mixin
+[postgresddl:grantRolesStatement]              > ddl:grantStatement mixin
+  + postgresddl:grantRole (postgresddl:role) = postgresddl:role multiple

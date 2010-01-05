@@ -23,16 +23,8 @@
  */
 package org.jboss.dna.sequencer.ddl.dialect.postgres;
 
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LISTEN_STATEMENT;
-import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
+import static org.jboss.dna.sequencer.ddl.StandardDdlLexicon.*;
+import static org.jboss.dna.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.jboss.dna.graph.JcrLexicon;
@@ -422,7 +414,58 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         assertEquals(true, success);
         assertEquals(2, rootNode.getChildCount());
     }
+    
+    @Test
+    public void shouldParseGrantOnTable() {
+        printTest("shouldParseGrantOnTable()");
+        String content = "GRANT UPDATE, TRIGGER ON TABLE t TO anita,zhi;";
 
+        boolean success = parser.parse(content, rootNode);
+
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+    }
+    
+    @Test
+    public void shouldParseGrantOnMultipleTables() {
+        printTest("shouldParseGrantOnMultipleTables()");
+        String content = "GRANT UPDATE, TRIGGER ON TABLE t1, t2, t3 TO anita,zhi;";
+
+        boolean success = parser.parse(content, rootNode);
+
+        assertEquals(true, success);
+        assertEquals(3, rootNode.getChildCount());
+    }
+    
+    @Test
+    public void shouldParseGrantExecuteOnFunction() {
+        printTest("shouldParseGrantExecuteOnFunction()");
+        String content = "GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;";
+
+        boolean success = parser.parse(content, rootNode);
+
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_ON_FUNCTION_STATEMENT));
+    }
+    
+    @Test
+    public void shouldParseGrantExecuteAndUpdateOnMultipleFunctions() {
+        printTest("shouldParseGrantExecuteOnMultipleFunctions()");
+        String content = "GRANT EXECUTE, UPDATE ON FUNCTION cos(), sin(b double precision) TO peter;";
+
+        boolean success = parser.parse(content, rootNode);
+
+        assertEquals(true, success);
+        assertEquals(2, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChild(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_ON_FUNCTION_STATEMENT));
+        assertEquals(3, childNode.getChildCount());
+        childNode = rootNode.getChild(1);
+        assertEquals(4, childNode.getChildCount());
+    }
+    
     @Test
     public void shouldParsePostgresStatements_1() {
         printTest("shouldParsePostgresStatements_1()");

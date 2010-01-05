@@ -39,7 +39,7 @@ import org.jboss.dna.sequencer.ddl.node.AstNode;
  */
 public class DdlParserTestHelper implements DdlConstants {
 	private boolean printToConsole = false;
-	
+	public final static String NEWLINE = "\n";
 
 	/**
 	 * 

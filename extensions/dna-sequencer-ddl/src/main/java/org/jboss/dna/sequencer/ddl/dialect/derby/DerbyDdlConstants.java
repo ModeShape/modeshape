@@ -96,7 +96,7 @@ public interface DerbyDdlConstants extends DdlConstants {
 	    public final static Name[] VALID_SCHEMA_CHILD_STMTS = {
 	    	StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT, 
 	    	StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT,
-	    	StandardDdlLexicon.TYPE_GRANT_STATEMENT
+	    	StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT
 	  	};
 	}
 	interface DerbyDataTypes {

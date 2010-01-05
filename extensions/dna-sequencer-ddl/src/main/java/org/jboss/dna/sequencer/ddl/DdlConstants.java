@@ -40,6 +40,9 @@ public interface DdlConstants {
     public static final String GRANT = "GRANT";
     public static final String INDEX = "INDEX";
     public static final String INSERT = "INSERT";
+    public static final String UPDATE = "UPDATE";
+    public static final String DELETE = "DELETE";
+    public static final String SELECT = "SELECT";
     public static final String KEY = "KEY";
     public static final String OFF = "OFF";
     public static final String ON = "ON";
@@ -125,7 +128,9 @@ public interface DdlConstants {
         // | <translation definition>
         // | <assertion definition>
         public final static Name[] VALID_SCHEMA_CHILD_TYPES = {StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT,
-            StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT, StandardDdlLexicon.TYPE_GRANT_STATEMENT,
+            StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT, StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT,
+            StandardDdlLexicon.TYPE_GRANT_ON_DOMAIN_STATEMENT, StandardDdlLexicon.TYPE_GRANT_ON_TRANSLATION_STATEMENT,
+            StandardDdlLexicon.TYPE_GRANT_ON_COLLATION_STATEMENT, StandardDdlLexicon.TYPE_GRANT_ON_CHARACTER_SET_STATEMENT,
             StandardDdlLexicon.TYPE_CREATE_DOMAIN_STATEMENT, StandardDdlLexicon.TYPE_CREATE_CHARACTER_SET_STATEMENT,
             StandardDdlLexicon.TYPE_CREATE_COLLATION_STATEMENT, StandardDdlLexicon.TYPE_CREATE_TRANSLATION_STATEMENT,
             StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT};

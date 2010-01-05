@@ -95,6 +95,11 @@ public class StandardDdlLexicon {
     public static final Name TYPE_ALTER_TABLE_STATEMENT = new BasicName(Namespace.URI, "alterTableStatement");
     public static final Name TYPE_ALTER_DOMAIN_STATEMENT = new BasicName(Namespace.URI, "alterDomainStatement");
     public static final Name TYPE_GRANT_STATEMENT = new BasicName(Namespace.URI, "grantStatement");
+    public static final Name TYPE_GRANT_ON_TABLE_STATEMENT = new BasicName(Namespace.URI, "grantOnTableStatement");
+    public static final Name TYPE_GRANT_ON_DOMAIN_STATEMENT = new BasicName(Namespace.URI, "grantOnDomainStatement");
+    public static final Name TYPE_GRANT_ON_COLLATION_STATEMENT = new BasicName(Namespace.URI, "grantOnCollationStatement");
+    public static final Name TYPE_GRANT_ON_CHARACTER_SET_STATEMENT = new BasicName(Namespace.URI, "grantOnCharacterSetStatement");
+    public static final Name TYPE_GRANT_ON_TRANSLATION_STATEMENT = new BasicName(Namespace.URI, "grantOnTranslationStatement");
     public static final Name TYPE_SET_STATEMENT = new BasicName(Namespace.URI, "setStatement");
     public static final Name TYPE_INSERT_STATEMENT = new BasicName(Namespace.URI, "insertStatement");
 
@@ -122,18 +127,21 @@ public class StandardDdlLexicon {
     public static final Name TYPE_FK_COLUMN_REFERENCE = new BasicName(Namespace.URI, "fkColumnReference");
     public static final Name TYPE_CLAUSE = new BasicName(Namespace.URI, "clause");
 
-    public static final Name DDL_EXPRESSION = new BasicName(Namespace.URI, "expression");
-    public static final Name DDL_ORIGINAL_EXPRESSION = new BasicName(Namespace.URI, "originalExpression");
-    public static final Name DDL_START_LINE_NUMBER = new BasicName(Namespace.URI, "startLineNumber");
-    public static final Name DDL_START_COLUMN_NUMBER = new BasicName(Namespace.URI, "startColumnNumber");
-    public static final Name DDL_START_CHAR_INDEX = new BasicName(Namespace.URI, "startCharIndex");
+    public static final Name DDL_EXPRESSION                 = new BasicName(Namespace.URI, "expression");
+    public static final Name DDL_ORIGINAL_EXPRESSION        = new BasicName(Namespace.URI, "originalExpression");
+    public static final Name DDL_START_LINE_NUMBER          = new BasicName(Namespace.URI, "startLineNumber");
+    public static final Name DDL_START_COLUMN_NUMBER        = new BasicName(Namespace.URI, "startColumnNumber");
+    public static final Name DDL_START_CHAR_INDEX           = new BasicName(Namespace.URI, "startCharIndex");
     // public static final Name DDL_LENGTH = new BasicName(Namespace.URI, "length");
 
     /*
      * node property names
      */
     public static final Name NAME = new BasicName(Namespace.URI, "name");
+    public static final Name OPTION = new BasicName(Namespace.URI, "option");
+    public static final Name TYPE = new BasicName(Namespace.URI, "type");
     public static final Name NEW_NAME = new BasicName(Namespace.URI, "newName");
+    public static final Name SQL = new BasicName(Namespace.URI, "sql");
     public static final Name TEMPORARY = new BasicName(Namespace.URI, "temporary");
     public static final Name ON_COMMIT_VALUE = new BasicName(Namespace.URI, "onCommitValue");
     public static final Name COLUMN_DEFINITIONS = new BasicName(Namespace.URI, "datatypeScale");
@@ -153,6 +161,10 @@ public class StandardDdlLexicon {
     public static final Name DROP_BEHAVIOR = new BasicName(Namespace.URI, "dropBehavior");
     public static final Name PROPERTY_VALUE = new BasicName(Namespace.URI, "propValue");
     public static final Name PROBLEM_LEVEL = new BasicName(Namespace.URI, "problemLevel");
+    public static final Name GRANT_PRIVILEGE = new BasicName(Namespace.URI, "grantPrivilege");
+    public static final Name ALL_PRIVILEGES = new BasicName(Namespace.URI, "allPrivileges");
+    public static final Name WITH_GRANT_OPTION = new BasicName(Namespace.URI, "withGrantOption");
+    public static final Name GRANTEE = new BasicName(Namespace.URI, "grantee");
 
     public static final Name CREATE_VIEW_QUERY_EXPRESSION = new BasicName(Namespace.URI, "queryExpression");
     public static final Name CREATE_VIEW_OPTION_CLAUSE = new BasicName(Namespace.URI, "createViewOption");
@@ -163,15 +175,7 @@ public class StandardDdlLexicon {
      * node child types
      */
 
-    // public static final Name COLUMN_REFERENCE_TYPE = new BasicName(Namespace.URI, "columnReference");
-    // public static final Name TABLE_CONSTRAINT_TYPE = new BasicName(Namespace.URI, "tableConstraint");
-    // public static final Name STATEMENT_OPTION_TYPE = new BasicName(Namespace.URI, "statementOption");
     public static final Name DROP_OPTION_TYPE = new BasicName(Namespace.URI, "dropOption");
-    // public static final Name DROP_COLUMN_DEFINITION_TYPE = new BasicName(Namespace.URI, "dropColumnDefinition");
-    // public static final Name DROP_TABLE_CONSTRAINT_TYPE = new BasicName(Namespace.URI, "dropTableConstraint");
-    // public static final Name ALTER_COLUMN_DEFINITION_TYPE = new BasicName(Namespace.URI, "alterColumnDefinition");
-    // public static final Name TABLE_REFERENCE_TYPE = new BasicName(Namespace.URI, "tableReference ");
-    // public static final Name FK_COLUMN_REFERENCE_TYPE = new BasicName(Namespace.URI, "fkColumnReference ");
     public static final Name COLUMN_ATTRIBUTE_TYPE = new BasicName(Namespace.URI, "columnAttribute");
     public static final Name CONSTRAINT_ATTRIBUTE_TYPE = new BasicName(Namespace.URI, "constraintAttribute ");
 }

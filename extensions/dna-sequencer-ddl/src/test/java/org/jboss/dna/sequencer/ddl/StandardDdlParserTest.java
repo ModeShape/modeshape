@@ -790,7 +790,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         boolean success = parser.parse(content, rootNode);
 
         assertThat(success, is(true));
-        assertThat(rootNode.getChildCount(), is(7));
+        assertThat(rootNode.getChildCount(), is(11));
 
         // List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_MISSING_TERMINATOR);
         // assertThat(theNodes.size(), is(3));
@@ -833,5 +833,18 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         assertThat(rootNode.getChildCount(), is(3));
 
+    }
+    
+    @Test
+    public void shouldParseGrantStatements() {
+        printTest("shouldParseGrantStatements()");
+        String content = "GRANT SELECT ON TABLE purchaseOrders TO maria,harry;" + NEWLINE
+            + "GRANT UPDATE, USAGE ON TABLE purchaseOrders TO anita,zhi;" + NEWLINE
+            + "GRANT SELECT ON TABLE orders.bills to PUBLIC;" + NEWLINE
+            + "GRANT INSERT(a, b, c) ON TABLE purchaseOrders TO purchases_reader_role;";
+
+        boolean success = parser.parse(content, rootNode);
+        assertThat(true, is(success));
+        assertThat(rootNode.getChildCount(), is(4));
     }
 }
