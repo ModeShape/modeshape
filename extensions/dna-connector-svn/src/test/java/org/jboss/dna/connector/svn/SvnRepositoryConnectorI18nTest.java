@@ -21,9 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.dna.connector.svn;
+
+import org.jboss.dna.common.AbstractI18nTest;
+import org.jboss.dna.connector.svn.SvnRepositoryConnectorI18n;
+
 /**
- * The classes that make up the connector that accesses content from an SVN repository.
  */
+public class SvnRepositoryConnectorI18nTest extends AbstractI18nTest {
 
-package org.jboss.dna.connector.svn2;
-
+    public SvnRepositoryConnectorI18nTest() {
+        super(SvnRepositoryConnectorI18n.class);
+    }
+}

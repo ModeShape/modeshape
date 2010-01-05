@@ -1,4 +1,4 @@
-package org.jboss.dna.connector.svn2;
+package org.jboss.dna.connector.svn;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

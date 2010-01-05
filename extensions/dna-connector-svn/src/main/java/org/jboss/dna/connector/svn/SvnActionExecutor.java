@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn2;
+package org.jboss.dna.connector.svn;
 
 import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionExecutor;

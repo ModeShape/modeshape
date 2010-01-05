@@ -1,5 +1,6 @@
-package org.jboss.dna.connector.svn2;
+package org.jboss.dna.connector.svn;
 
+import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.NotWritableConnectorTest;

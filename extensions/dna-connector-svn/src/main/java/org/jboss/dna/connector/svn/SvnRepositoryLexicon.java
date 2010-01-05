@@ -21,15 +21,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn2;
+package org.jboss.dna.connector.svn;
 
-import org.jboss.dna.common.AbstractI18nTest;
+import org.jboss.dna.connector.svn.SvnRepositorySource;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
+ * The namespace and property names used within a {@link SvnRepositorySource} to store internal information.
  */
-public class SvnRepositoryConnectorI18nTest extends AbstractI18nTest {
+public class SvnRepositoryLexicon {
 
-    public SvnRepositoryConnectorI18nTest() {
-        super(SvnRepositoryConnectorI18n.class);
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna/connector/svn";
+        public static final String PREFIX = "dnasvn";
     }
+
+    public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
+
 }

@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn2;
+package org.jboss.dna.connector.svn;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -42,6 +42,7 @@ import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
+import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.BasicCachePolicy;

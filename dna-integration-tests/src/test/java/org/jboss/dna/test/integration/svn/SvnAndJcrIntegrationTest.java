@@ -31,7 +31,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
-import org.jboss.dna.connector.svn2.SvnRepositorySource;
+import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
