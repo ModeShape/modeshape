@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionExecutor;
@@ -33,14 +33,14 @@ import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
  */
-public class SVNActionExecutor implements ScmActionExecutor {
+public class SvnActionExecutor implements ScmActionExecutor {
 
-    private SVNRepository repository;
+    private final SVNRepository repository;
 
     /**
      * @param repository
      */
-    public SVNActionExecutor( SVNRepository repository ) {
+    public SvnActionExecutor( SVNRepository repository ) {
         this.repository = repository;
     }
 
@@ -64,7 +64,7 @@ public class SVNActionExecutor implements ScmActionExecutor {
             action.applyAction(editor);
         } catch (Exception e) {
             SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "This error is appeared: '{0}'", e.getMessage());
-            throw new SVNException(err);
+            throw new SVNException(err, e);
         }
         editor.closeDir();
         editor.closeEdit();

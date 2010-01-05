@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -31,15 +31,21 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SVNIntegrationTest {
+public class SvnIntegrationTest {
 
     private ExecutionContext context;
-    private SVNRepositorySource source;
+    private SvnRepositorySource source;
     private String repositoryUrl;
     private String[] predefinedWorkspaceNames;
 
@@ -48,15 +54,40 @@ public class SVNIntegrationTest {
         repositoryUrl = "http://anonsvn.jboss.org/repos/dna/";
         predefinedWorkspaceNames = new String[] {repositoryUrl + "trunk", repositoryUrl + "tags", repositoryUrl + "branches"};
         context = new ExecutionContext();
-        source = new SVNRepositorySource();
+        source = new SvnRepositorySource();
         source.setName("svn repository source");
-        source.setRepositoryRootURL(repositoryUrl);
+        source.setRepositoryRootUrl(repositoryUrl);
         source.setUsername("anonymous");
         source.setPassword("");
         source.setCreatingWorkspacesAllowed(true);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
+        source.initialize(new RepositoryContext() {
+
+            public Subgraph getConfiguration( int depth ) {
+                return null;
+            }
+
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return new RepositoryConnectionFactory() {
+
+                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                        return null;
+                    }
+
+                };
+            }
+
+        });
     }
 
     @Test

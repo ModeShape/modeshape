@@ -21,24 +21,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
+
+import org.jboss.dna.common.AbstractI18nTest;
 
 /**
  */
-public enum SVNProtocol {
-    FILE("file"),
-    SVN("svn"),
-    SVN_SSH("svn+ssh"),
-    HTTP("http"),
-    HTTPS("https");
+public class SvnRepositoryConnectorI18nTest extends AbstractI18nTest {
 
-    SVNProtocol( String value ) {
-        this.value = value;
-    }
-
-    private final String value;
-
-    public String value() {
-        return value;
+    public SvnRepositoryConnectorI18nTest() {
+        super(SvnRepositoryConnectorI18n.class);
     }
 }

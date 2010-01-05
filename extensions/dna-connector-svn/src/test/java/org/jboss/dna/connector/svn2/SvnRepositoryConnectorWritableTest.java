@@ -21,10 +21,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +35,7 @@ import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.test.AbstractConnectorTest;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.junit.Test;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
@@ -44,12 +44,12 @@ import org.tmatesoft.svn.core.io.SVNRepository;
 /**
  * @author Serge Pagop
  */
-public class SVNRespositoryConnectorWriteableTest extends AbstractConnectorTest {
+public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
 
     protected static final String EMPTY_CONTENT = "";
     protected static final String TEST_CONTENT = "Test content";
     protected SVNRepository remoteRepos = null;
-    protected String repositoryRootURL;
+    protected String url;
     protected SVNNodeKind kind = null;
     protected SVNProperties fileProperties = null;
     protected ByteArrayOutputStream baos = null;
@@ -61,19 +61,19 @@ public class SVNRespositoryConnectorWriteableTest extends AbstractConnectorTest 
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        repositoryRootURL = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
-        String[] predefinedWorkspaceNames = new String[] {repositoryRootURL + "trunk", repositoryRootURL + "tags"};
-        SVNRepositorySource source = new SVNRepositorySource();
+        url = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+        String[] predefinedWorkspaceNames = new String[] {url + "trunk", url + "tags"};
+        SvnRepositorySource source = new SvnRepositorySource();
         source.setName("Test Repository");
         source.setUsername("sp");
         source.setPassword("");
-        source.setRepositoryRootURL(repositoryRootURL);
+        source.setRepositoryRootUrl(url);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(Boolean.TRUE);
         source.setUpdatesAllowed(true);
 
-        remoteRepos = SVNRepositoryUtil.createRepository(repositoryRootURL + "trunk", "sp", "");
+        remoteRepos = SvnConnectorTestUtil.createRepository(url + "trunk", "sp", "");
 
         return source;
     }
@@ -237,67 +237,34 @@ public class SVNRespositoryConnectorWriteableTest extends AbstractConnectorTest 
         assertContents(baos, TEST_CONTENT);
     }
 
-    // @Test
-    // public void shouldBeAbleToCopyFile() throws Exception {
-    // graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-    // graph.create("/testFile/jcr:content")
-    // .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
-    // .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
-    // .orReplace()
-    // .and();
-    //
-    // kind = remoteRepos.checkPath("testFile", -1);
-    // assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-    // fileProperties = new SVNProperties();
-    // baos = new ByteArrayOutputStream();
-    // remoteRepos.getFile("testFile", -1, fileProperties, baos);
-    // assertContents(baos, TEST_CONTENT);
-    //        
-    // graph.copy("/testFile").to("/copiedFile");
-    // kind = remoteRepos.checkPath("copiedFile", -1);
-    // assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-    // fileProperties = new SVNProperties();
-    // baos = new ByteArrayOutputStream();
-    // remoteRepos.getFile("copiedFile", -1, fileProperties, baos);
-    // assertContents(baos, TEST_CONTENT);
-    // }
-    //
-    // @Test
-    // public void shouldBeAbleToCopyFolder() throws Exception {
-    // graph.create("/testFolder").orReplace().and();
-    // graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-    // graph.create("/testFolder/testFile/jcr:content")
-    // .with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE)
-    // .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
-    // .orReplace()
-    // .and();
-    //
-    // kind = remoteRepos.checkPath("testFolder/testFile", -1);
-    // assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-    // fileProperties = new SVNProperties();
-    // baos = new ByteArrayOutputStream();
-    // remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
-    // assertContents(baos, TEST_CONTENT);
-    //        
-    //
-    // graph.copy("/testFolder").to("/copiedFolder");
-    // kind = remoteRepos.checkPath("copiedFolder", -1);
-    // assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
-    // fileProperties = new SVNProperties();
-    // baos = new ByteArrayOutputStream();
-    // remoteRepos.getFile("copiedFolder/testFile", -1, fileProperties, baos);
-    // assertContents(baos, TEST_CONTENT);
-    // }
+    @Test
+    public void shouldBeAbleToCopyFile() throws Exception {
+        graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
+                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+
+        kind = remoteRepos.checkPath("testFile", -1);
+        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+
+        graph.copy("/testFile").to("/copiedFile");
+        kind = remoteRepos.checkPath("copiedFile", -1);
+        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("copiedFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+    }
 
     @Test
-    public void shouldBeAbleToDeleteFolderWithContents() throws Exception {
+    public void shouldBeAbleToCopyFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
                                                                                                                 TEST_CONTENT.getBytes()).orReplace().and();
-
-        kind = remoteRepos.checkPath("testFolder", -1);
-        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
 
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -306,12 +273,37 @@ public class SVNRespositoryConnectorWriteableTest extends AbstractConnectorTest 
         remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
         assertContents(baos, TEST_CONTENT);
 
-        graph.delete("/testFolder");
+        graph.copy("/testFolder").to("/copiedFolder");
+        kind = remoteRepos.checkPath("copiedFolder", -1);
+        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("copiedFolder/testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+    }
 
-        kind = remoteRepos.checkPath("testFolder", -1);
-        assertThat(kind == SVNNodeKind.NONE, is(Boolean.TRUE));
-        
-       
+    @Test
+    public void shouldBeAbleToDeleteFolder() throws Exception {
+        graph.create("/testFolder").orReplace().and();
+        graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
+                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        kind = remoteRepos.checkPath("testFolder/testFile", -1);
+        assertThat(kind, is(SVNNodeKind.FILE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+
+        graph.getNodeAt("/testFolder");
+
+        graph.delete("/testFolder").and();
+
+        try {
+            graph.getNodeAt("/testFolder");
+        } catch (PathNotFoundException expected) {
+            // Expected
+        }
     }
 
     @Test
@@ -320,127 +312,49 @@ public class SVNRespositoryConnectorWriteableTest extends AbstractConnectorTest 
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
                                                                                                                 TEST_CONTENT.getBytes()).orReplace().and();
-
-        kind = remoteRepos.checkPath("testFolder", -1);
-        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
-
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
         baos = new ByteArrayOutputStream();
         remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
         assertContents(baos, TEST_CONTENT);
 
-        graph.delete("/testFolder/testFile");
+        graph.getNodeAt("/testFolder/testFile");
 
-        kind = remoteRepos.checkPath("testFolder/testFile", -1);
-        assertThat(kind == SVNNodeKind.NONE, is(Boolean.TRUE));
-        
-        
-        graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
-        kind = remoteRepos.checkPath("testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-        fileProperties = new SVNProperties();
-        baos = new ByteArrayOutputStream();
-        remoteRepos.getFile("testFile", -1, fileProperties, baos);
-        assertContents(baos, TEST_CONTENT);
+        graph.delete("/testFolder/testFile").and();
 
-        graph.delete("/testFile");
-
-        kind = remoteRepos.checkPath("testFile", -1);
-        assertThat(kind == SVNNodeKind.NONE, is(Boolean.TRUE));
+        try {
+            graph.getNodeAt("/testFolder/testFile");
+        } catch (PathNotFoundException expected) {
+            // Expected
+        }
     }
-    
+
     @Test
-    public void shouldBeAbleToDeleteOnlyTheFileContent() throws Exception {
+    public void shouldBeAbleToClearFileByRemovingDataProperty() throws Exception {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
                                                                                                      TEST_CONTENT.getBytes()).orReplace().and();
         kind = remoteRepos.checkPath("testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
         baos = new ByteArrayOutputStream();
         remoteRepos.getFile("testFile", -1, fileProperties, baos);
         assertContents(baos, TEST_CONTENT);
 
-        graph.delete("/testFile/jcr:content");
+        graph.remove("jcr:data").on("/testFile/jcr:content").and();
 
         kind = remoteRepos.checkPath("testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-
+        assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
         baos = new ByteArrayOutputStream();
         remoteRepos.getFile("testFile", -1, fileProperties, baos);
-
-        assertEmptyContents(baos, TEST_CONTENT);
-
-        graph.create("/testFolder").orReplace().and();
-        graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
-        kind = remoteRepos.checkPath("testFolder", -1);
-        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
-
-        kind = remoteRepos.checkPath("testFolder/testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-        fileProperties = new SVNProperties();
-        baos = new ByteArrayOutputStream();
-        remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
-        assertContents(baos, TEST_CONTENT);
-
-        graph.delete("/testFolder/testFile/jcr:content");
-
-        kind = remoteRepos.checkPath("testFolder/testFile", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-
-        fileProperties = new SVNProperties();
-        baos = new ByteArrayOutputStream();
-        remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
-
-        assertEmptyContents(baos, TEST_CONTENT);
-        
-        
-        graph.create("/testNode1").orReplace().and();
-        graph.create("/testNode1/testNode10").orReplace().and();
-        graph.create("/testNode1/testNode10/testItem0").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testNode1/testNode10/testItem0/jcr:content").with(JcrLexicon.PRIMARY_TYPE, DnaLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
-        kind = remoteRepos.checkPath("testNode1", -1);
-        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
-
-        kind = remoteRepos.checkPath("testNode1/testNode10", -1);
-        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
-        
-        kind = remoteRepos.checkPath("testNode1/testNode10/testItem0", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-        fileProperties = new SVNProperties();
-        baos = new ByteArrayOutputStream();
-        remoteRepos.getFile("testNode1/testNode10/testItem0", -1, fileProperties, baos);
-        assertContents(baos, TEST_CONTENT);
-
-        graph.delete("/testNode1/testNode10/testItem0/jcr:content");
-
-        kind = remoteRepos.checkPath("testNode1/testNode10/testItem0", -1);
-        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
-        
-        fileProperties = new SVNProperties();
-        baos = new ByteArrayOutputStream();
-        remoteRepos.getFile("testNode1/testNode10/testItem0", -1, fileProperties, baos);
-        
-        assertEmptyContents(baos, TEST_CONTENT);
+        assertContents(baos, "");
     }
 
     protected void assertContents( ByteArrayOutputStream baos,
                                    String contents ) {
         assertThat(baos, notNullValue());
         assertThat(baos.toString(), is(contents));
-    }
-    
-    protected void assertEmptyContents( ByteArrayOutputStream baos,
-                                   String contents ) {
-        assertThat(baos, notNullValue());
-        assertThat(baos.toString(), not(contents));
     }
 }

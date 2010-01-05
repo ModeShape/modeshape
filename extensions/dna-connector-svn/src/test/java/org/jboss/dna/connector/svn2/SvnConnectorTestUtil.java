@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,13 +43,13 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 /**
  * @author Serge Pagop
  */
-public class SVNConnectorTestUtil {
+public class SvnConnectorTestUtil {
 
     @SuppressWarnings( "unchecked" )
     public static void main( String[] args ) throws Exception {
         try {
             System.out.println("My repos. ......");
-            String svnUrl = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+            String svnUrl = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
             String username = "sp";
             String password = "";
             System.out.println(svnUrl);
@@ -170,7 +170,7 @@ public class SVNConnectorTestUtil {
         return segments[segments.length - 1];
     }
 
-    private SVNConnectorTestUtil() {
+    private SvnConnectorTestUtil() {
         // prevent constructor
     }
 

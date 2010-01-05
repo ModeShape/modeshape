@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,7 +43,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 /**
  */
-public class SVNRepositoryUtil {
+public class SvnRepositoryUtil {
 
     /**
      * @param url
@@ -122,7 +122,7 @@ public class SVNRepositoryUtil {
             ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);
             repository.setAuthenticationManager(authManager);
         } catch (SVNException e) {
-            throw new InvalidWorkspaceException(SVNRepositoryConnectorI18n.workspaceDoesNotExist.text(e.getMessage()));
+            throw new InvalidWorkspaceException(SvnRepositoryConnectorI18n.workspaceDoesNotExist.text(e.getMessage()));
         }
         return repository;
     }
@@ -138,7 +138,7 @@ public class SVNRepositoryUtil {
         return segments[segments.length - 1];
     }
 
-    private SVNRepositoryUtil() {
+    private SvnRepositoryUtil() {
         // prvent construction
     }
 

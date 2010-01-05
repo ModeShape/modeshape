@@ -31,7 +31,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
-import org.jboss.dna.connector.svn.SVNRepositorySource;
+import org.jboss.dna.connector.svn2.SvnRepositorySource;
 import org.jboss.dna.graph.SecurityContext;
 import org.jboss.dna.jcr.JcrConfiguration;
 import org.jboss.dna.jcr.JcrEngine;
@@ -56,15 +56,16 @@ public class SvnAndJcrIntegrationTest {
         final String repositoryName = "svnRepository";
         final JcrConfiguration configuration = new JcrConfiguration();
         configuration.repositorySource(svnRepositorySource)
-                     .usingClass(SVNRepositorySource.class)
+                     .usingClass(SvnRepositorySource.class)
                      .setProperty("password", "")
                      .setProperty("username", "anonymous")
-                     .setProperty("repositoryRootURL", repositoryUrl)
+                     .setProperty("repositoryRootUrl", repositoryUrl)
                      .setProperty("predefinedWorkspaceNames", predefinedWorkspaceNames)
                      .setProperty("directoryForDefaultWorkspace", predefinedWorkspaceNames[0])
                      .setProperty("creatingWorkspacesAllowed", false);
 
-        configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.READ_DEPTH, "1");
+        configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.QUERY_EXECUTION_ENABLED, "false");
+
         configuration.save();
         this.engine = configuration.build();
         this.engine.start();
@@ -99,6 +100,19 @@ public class SvnAndJcrIntegrationTest {
     public void shouldProvideAccessToJcrDataNodeUnderFileNode() throws Exception {
         System.out.println("Getting /pom.xml/jcr:content and then walking its properties ...");
         Node resourceNodeOfPomFile = this.session.getRootNode().getNode("pom.xml/jcr:content");
+        assertThat(resourceNodeOfPomFile, is(notNullValue()));
+
+        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
+            Property property = iter.nextProperty();
+            assertThat(property.getName(), is(notNullValue()));
+        }
+    }
+
+    @Test
+    public void shouldProvideAccessToJcrDataNodeUnderDeepFileNode() throws Exception {
+        String path = "extensions/dna-sequencer-text/src/test/resources/delimited/multiLineCommaDelimitedFile.csv/jcr:content";
+        System.out.println("Getting " + path + " and then walking its properties ...");
+        Node resourceNodeOfPomFile = this.session.getRootNode().getNode(path);
         assertThat(resourceNodeOfPomFile, is(notNullValue()));
 
         for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {

@@ -1,13 +1,20 @@
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.WorkspaceConnectorTest;
+import org.junit.BeforeClass;
 
-public class SVNRepositoryConnectorNoCreateWorspaceTest extends WorkspaceConnectorTest {
+public class SvnRepositoryConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
 
-    
-    private String repositoryRootURL;
+    private static String url;
+
+    @BeforeClass
+    public static void beforeAny() throws Exception {
+        url = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -15,20 +22,19 @@ public class SVNRepositoryConnectorNoCreateWorspaceTest extends WorkspaceConnect
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        repositoryRootURL = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
-        String[] predefinedWorkspaceNames = new String[]{repositoryRootURL+"trunk", repositoryRootURL+"tags"};
-        SVNRepositorySource source = new SVNRepositorySource();
+        String[] predefinedWorkspaceNames = new String[] {url + "trunk", url + "tags"};
+        SvnRepositorySource source = new SvnRepositorySource();
         source.setName("Test Repository");
         source.setUsername("sp");
         source.setPassword("");
-        source.setRepositoryRootURL(repositoryRootURL);
+        source.setRepositoryRootUrl(url);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
-        
+
         return source;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -56,7 +62,7 @@ public class SVNRepositoryConnectorNoCreateWorspaceTest extends WorkspaceConnect
      */
     @Override
     protected String[] generateValidNamesForNewWorkspaces() {
-        return new String[] {repositoryRootURL + "branches"};
+        return new String[] {url + "branches"};
     }
 
 }

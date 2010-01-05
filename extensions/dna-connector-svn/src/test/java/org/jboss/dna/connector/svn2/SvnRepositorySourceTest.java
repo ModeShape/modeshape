@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.svn;
+package org.jboss.dna.connector.svn2;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -42,39 +42,75 @@ import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.observe.Observer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 
 /**
  * @author Serge Pagop
  */
-public class SVNRepositorySourceTest {
+public class SvnRepositorySourceTest {
 
-    private SVNRepositorySource source;
+    private SvnRepositorySource source;
     private RepositoryConnection connection;
     private String validName;
     private String validUuidPropertyName;
-    private String repositoryRootURL;
+    private static String url;
     private String username;
     private String password;
     private UUID validRootNodeUuid;
+    private final ExecutionContext context = new ExecutionContext();
+
+    @BeforeClass
+    public static void beforeAny() throws Exception {
+        url = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+
+    }
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        repositoryRootURL = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos",
-                                                                  "target/copy_of dummy_svn_repos");
-        this.source = new SVNRepositorySource();
+        this.source = new SvnRepositorySource();
         // Set the mandatory properties ...
         this.source.setName("Test Repository");
         this.source.setUsername("sp");
         this.source.setPassword("");
-        this.source.setRepositoryRootURL(repositoryRootURL);
+        this.source.setRepositoryRootUrl(url);
+        this.source.initialize(new RepositoryContext() {
+
+            public Subgraph getConfiguration( int depth ) {
+                return null;
+            }
+
+            public ExecutionContext getExecutionContext() {
+                return context;
+            }
+
+            public Observer getObserver() {
+                return null;
+            }
+
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return new RepositoryConnectionFactory() {
+
+                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                        return null;
+                    }
+
+                };
+            }
+
+        });
     }
 
     @After
@@ -101,7 +137,7 @@ public class SVNRepositorySourceTest {
 
     @Test
     public void shouldHaveNullSourceNameUponConstruction() {
-        source = new SVNRepositorySource();
+        source = new SvnRepositorySource();
         assertThat(source.getName(), is(nullValue()));
     }
 
@@ -123,17 +159,17 @@ public class SVNRepositorySourceTest {
 
     @Test
     public void shouldHaveDefaultRetryLimit() {
-        assertThat(source.getRetryLimit(), is(SVNRepositorySource.DEFAULT_RETRY_LIMIT));
+        assertThat(source.getRetryLimit(), is(SvnRepositorySource.DEFAULT_RETRY_LIMIT));
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSVNUrl() {
-        source.setRepositoryRootURL(null);
+        source.setRepositoryRootUrl(null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptySVNUrl() {
-        source.setRepositoryRootURL("");
+        source.setRepositoryRootUrl("");
     }
 
     @Test
@@ -183,7 +219,7 @@ public class SVNRepositorySourceTest {
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference(validName, validRootNodeUuid, repositoryRootURL, username, password, validUuidPropertyName, 100);
+        convertToAndFromJndiReference(validName, validRootNodeUuid, url, username, password, validUuidPropertyName, 100);
     }
 
     @Test
@@ -203,14 +239,14 @@ public class SVNRepositorySourceTest {
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
-        source.setRepositoryRootURL(url);
+        source.setRepositoryRootUrl(url);
         source.setUsername(username);
         source.setPassword(password);
 
         Reference ref = source.getReference();
 
-        assertThat(ref.getClassName(), is(SVNRepositorySource.class.getName()));
-        assertThat(ref.getFactoryClassName(), is(SVNRepositorySource.class.getName()));
+        assertThat(ref.getClassName(), is(SvnRepositorySource.class.getName()));
+        assertThat(ref.getFactoryClassName(), is(SvnRepositorySource.class.getName()));
 
         Map<String, Object> refAttributes = new HashMap<String, Object>();
         Enumeration<RefAddr> enumeration = ref.getAll();
@@ -219,29 +255,29 @@ public class SVNRepositorySourceTest {
             refAttributes.put(addr.getType(), addr.getContent());
         }
 
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SOURCE_NAME), is(source.getName()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_REPOSITORY_ROOT_URL), is(source.getRepositoryRootURL()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_USERNAME), is(source.getUsername()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_PASSWORD), is(source.getPassword()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.ALLOW_CREATING_WORKSPACES),
+        assertThat((String)refAttributes.remove(SvnRepositorySource.SOURCE_NAME), is(source.getName()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_REPOSITORY_ROOT_URL), is(source.getRepositoryRootUrl()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_USERNAME), is(source.getUsername()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_PASSWORD), is(source.getPassword()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.ROOT_NODE_UUID), is(source.getRootNodeUuid().toString()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.ALLOW_CREATING_WORKSPACES),
                    is(Boolean.toString(source.isCreatingWorkspacesAllowed())));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.CACHE_TIME_TO_LIVE_IN_MILLISECONDS), is(Integer.toString(source.getCacheTimeToLiveInMilliseconds())));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.DEFAULT_WORKSPACE),
+        assertThat((String)refAttributes.remove(SvnRepositorySource.DEFAULT_WORKSPACE),
                    is(source.getDirectoryForDefaultWorkspace()));
-        refAttributes.remove(SVNRepositorySource.PREDEFINED_WORKSPACE_NAMES);
+        refAttributes.remove(SvnRepositorySource.PREDEFINED_WORKSPACE_NAMES);
         assertThat(refAttributes.isEmpty(), is(true));
 
         // Recreate the object, use a newly constructed source ...
-        ObjectFactory factory = new SVNRepositorySource();
+        ObjectFactory factory = new SvnRepositorySource();
         Name name = mock(Name.class);
         Context context = mock(Context.class);
         Hashtable<?, ?> env = new Hashtable<Object, Object>();
-        SVNRepositorySource recoveredSource = (SVNRepositorySource)factory.getObjectInstance(ref, name, context, env);
+        SvnRepositorySource recoveredSource = (SvnRepositorySource)factory.getObjectInstance(ref, name, context, env);
         assertThat(recoveredSource, is(notNullValue()));
 
         assertThat(recoveredSource.getName(), is(source.getName()));
-        assertThat(recoveredSource.getRepositoryRootURL(), is(source.getRepositoryRootURL()));
+        assertThat(recoveredSource.getRepositoryRootUrl(), is(source.getRepositoryRootUrl()));
         assertThat(recoveredSource.getUsername(), is(source.getUsername()));
         assertThat(recoveredSource.getPassword(), is(source.getPassword()));
 
