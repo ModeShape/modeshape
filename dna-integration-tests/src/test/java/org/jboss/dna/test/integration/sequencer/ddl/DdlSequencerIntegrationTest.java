@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.test.integration.sequencer.ddl;
 
+import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -199,6 +200,53 @@ public class DdlSequencerIntegrationTest {
     }
     
     @Test
+    public void shouldSequenceStandardDdlFile() throws Exception {
+        System.out.println("STARTED:  shouldSequenceStandardDdlFile(standard_test_statements.ddl)");
+        URL url = getUrl(cndDdlFolder + "standard_test_statements.ddl");
+        uploadFile(url);
+        
+        waitUntilSequencedNodesIs(1);
+        
+        // Find the node ...
+        Node root = session.getRootNode();
+
+        if (root.hasNode("ddls") ) {
+            if (root.hasNode("ddls")) {
+                Node ddlsNode = root.getNode("ddls");
+                //System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                    Node ddlNode = iter.nextNode();
+
+                    //printNodeProperties(ddlNode);
+                    
+                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                    assertEquals(numStatements, 11);
+                    
+                    //GRANT SELECT ON TABLE purchaseOrders TO maria,harry;
+                    Node grantNode = findNode(ddlNode, "purchaseOrders", "ddl:grantOnTableStatement");
+                    assertNotNull(grantNode);
+                    Node granteeNode = findNode(grantNode, "maria", "ddl:grantee");
+                    assertNotNull(granteeNode);
+                    Node privNode = findNode(grantNode, "privilege", "ddl:grantPrivilege");
+                    assertNotNull(privNode);
+                    verifySingleValueProperty(privNode, "ddl:type", "SELECT");
+                    
+                    //GRANT UPDATE, USAGE ON TABLE purchaseOrders TO anita,zhi;
+                    grantNode = findNode(ddlNode, "billedOrders", "ddl:grantOnTableStatement");
+                    assertNotNull(grantNode);
+                    privNode = findNode(grantNode, "privilege", "ddl:grantPrivilege");
+                    assertNotNull(privNode);
+                    verifySingleValueProperty(privNode, "ddl:type", "UPDATE");
+                    granteeNode = findNode(grantNode, "anita", "ddl:grantee");
+                    assertNotNull(granteeNode);
+                }
+            }
+        }
+        
+        System.out.println("FINISHED:  shouldSequenceStandardDdlFile(create_schema.ddl)");
+    }
+    
+    @Test
     public void shouldSequenceDerbyDdlFile() throws Exception {
         System.out.println("STARTED:  shouldSequenceDerbyDdlFile(derby_test_statements.ddl)");
         URL url = getUrl(cndDdlFolder + "derby_test_statements.ddl");
@@ -225,6 +273,89 @@ public class DdlSequencerIntegrationTest {
                     verifyNode(ddlNode, "SAMP.DEPARTMENT", "ddl:expression");
                     verifyNode(ddlNode, "HOTEL_ID", "ddl:datatypeName");
                     verifyNode(ddlNode, "CITIES", "ddl:startLineNumber");
+                    
+                    // Create Function
+                    verifyNode(ddlNode, "PROPERTY_FILE_READER", "ddl:startLineNumber", 71);
+                    verifyNodeTypes(ddlNode, "PROPERTY_FILE_READER", 
+                                    "derbyddl:createFunctionStatement", 
+                                    "ddl:creatable", 
+                                    "derbyddl:functionOperand");
+                    verifyNode(ddlNode, "KEY_COL", "ddl:datatypeName", "VARCHAR");
+                    
+                    Node functionNode = findNode(ddlNode, "TO_DEGREES");
+                    assertNotNull(functionNode);
+                    verifyChildNode(functionNode, "parameterStyle", "ddl:value", "PARAMETER STYLE JAVA");
+                    
+                    // Create Index
+                    // CREATE INDEX IXSALE ON SAMP.SALES (SALES);
+                    Node indexNode = findNode(ddlNode, "IXSALE", "derbyddl:createIndexStatement");
+                    assertNotNull(indexNode);
+                    verifySimpleStringProperty(indexNode, "derbyddl:tableName", "SAMP.SALES");
+                    Node colRefNode = findNode(indexNode, "SALES");
+                    assertNotNull(colRefNode);
+                    colRefNode = findNode(ddlNode, "SALES", "derbyddl:indexColumnReference");
+                    assertNotNull(colRefNode);
+                    verifyNodeTypes(colRefNode, "SALES", 
+                                    "derbyddl:indexColumnReference", 
+                                    "ddl:columnReference", 
+                                    "ddl:referenceOperand");
+                    
+                    // declare global temporary table SESSION.t1(c11 int) not logged;
+                    Node ttNode = findNode(ddlNode, "SESSION.t1", "derbyddl:declareGlobalTemporaryTableStatement");
+                    assertNotNull(ttNode);
+                    Node colNode = findNode(ttNode, "c11");
+                    assertNotNull(colNode);
+                    verifySimpleStringProperty(colNode, "ddl:datatypeName", "int");
+                    
+                    // LOCK TABLE FlightAvailability IN EXCLUSIVE MODE;
+                    Node lockNode = findNode(ddlNode, "FlightAvailability", "derbyddl:lockTableStatement");
+                    assertNotNull(lockNode);
+                    Node optionNode = findNode(lockNode, "lockMode");
+                    assertNotNull(optionNode);
+                    verifySimpleStringProperty(optionNode, "ddl:value", "EXCLUSIVE");
+                    
+                    // RENAME TABLE SAMP.EMP_ACT TO EMPLOYEE_ACT
+                    Node renameTableNode = findNode(ddlNode, "SAMP.EMP_ACT", "derbyddl:renameTableStatement");
+                    assertNotNull(renameTableNode);
+                    verifySimpleStringProperty(renameTableNode, "ddl:newName", "EMPLOYEE_ACT");
+                    
+                    // CREATE SYNONYM SAMP.T1 FOR SAMP.TABLEWITHLONGNAME;
+                    Node synonymNode = findNode(ddlNode, "SAMP.T1", "derbyddl:createSynonymStatement");
+                    assertNotNull(synonymNode);
+                    verifySimpleStringProperty(synonymNode, "derbyddl:tableName", "SAMP.TABLEWITHLONGNAME");
+                    
+                    //CREATE TRIGGER FLIGHTSDELETE3
+                    //   AFTER DELETE ON FLIGHTS
+                    //   REFERENCING OLD AS OLD
+                    //   FOR EACH ROW 
+                    //   DELETE FROM FLIGHTAVAILABILITY WHERE FLIGHT_ID = OLD.FLIGHT_ID;
+                    Node triggerNode = findNode(ddlNode, "FLIGHTSDELETE3", "derbyddl:createTriggerStatement");
+                    assertNotNull(triggerNode);
+                    verifySimpleStringProperty(triggerNode, "derbyddl:tableName", "FLIGHTS");
+                    
+                    //CREATE TRIGGER t1 NO CASCADE BEFORE UPDATE ON x
+                    //   FOR EACH ROW MODE DB2SQL
+                    //   values app.notifyEmail('Jerry', 'Table x is about to be updated');
+                    triggerNode = findNode(ddlNode, "t1", "derbyddl:createTriggerStatement");
+                    assertNotNull(triggerNode);
+                    verifySimpleStringProperty(triggerNode, "derbyddl:tableName", "x");
+                    optionNode = findNode(triggerNode, "forEach");
+                    assertNotNull(optionNode);
+                    verifySimpleStringProperty(optionNode, "ddl:value", "FOR EACH ROW");
+                    optionNode = findNode(triggerNode, "eventType");
+                    assertNotNull(optionNode);
+                    verifySimpleStringProperty(optionNode, "ddl:value", "UPDATE");
+                    
+                    //GRANT EXECUTE ON PROCEDURE p TO george;
+                    Node grantNode = findNode(ddlNode, "p", "derbyddl:grantOnProcedureStatement");
+                    assertNotNull(grantNode);
+                    
+                    //GRANT purchases_reader_role TO george,maria;
+                    grantNode = findNode(ddlNode, "grantRoles", "derbyddl:grantRolesStatement");
+                    assertNotNull(grantNode);
+                    Node roleNode = findNode(grantNode, "george", "ddl:grantee");
+                    assertNotNull(roleNode);
+                    
                 }
             }
         }
@@ -288,7 +419,7 @@ public class DdlSequencerIntegrationTest {
                     Node ddlNode = iter.nextNode();
                     
                     long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 101);
+                    assertEquals(numStatements, 106);
                     
                     //printNodeProperties(ddlNode);
                     
@@ -307,6 +438,20 @@ public class DdlSequencerIntegrationTest {
                     verifyNode(ddlNode, "my_function", "ddl:startLineNumber", 44);
                     verifyNode(ddlNode, "my_function", "ddl:startCharIndex", 1573);
                     verifyNode(ddlNode, "my_function", "postgresddl:comment", "'Returns Roman Numeral'");
+                    
+                    //ALTER TABLE foreign_companies RENAME COLUMN address TO city;
+                    Node alterTableNode = findNode(ddlNode, "foreign_companies", "postgresddl:alterTableStatement");
+                    assertNotNull(alterTableNode);
+                    Node renameColNode = findNode(alterTableNode, "address","postgresddl:renamedColumn");
+                    assertNotNull(renameColNode);
+                    verifySingleValueProperty(renameColNode, "ddl:newName", "city");
+                    
+                    //GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;
+                    Node grantNode = findNode(ddlNode, "divideByTwo", "postgresddl:grantOnFunctionStatement");
+                    assertNotNull(grantNode);
+                    Node parameter_1 = findNode(grantNode, "numerator","postgresddl:functionParameter");
+                    assertNotNull(parameter_1);
+                    verifySingleValueProperty(parameter_1, "ddl:datatypeName", "int");
                 }
             }
         }
@@ -345,10 +490,31 @@ public class DdlSequencerIntegrationTest {
     
     public void printNodeProperties(Node node) throws Exception {
         printProperties(node);
+        
         for (NodeIterator iter = node.getNodes(); iter.hasNext();) { 
             printNodeProperties(iter.nextNode());
         }
          
+    }
+    
+    private void verifyChildNode(Node parentNode, String childNodeName, String propName, String expectedValue) throws Exception {
+        // Find child node
+        Node childNode = null;
+        for (NodeIterator iter = parentNode.getNodes(); iter.hasNext();) {
+            Node nextNode = iter.nextNode();
+            if( nextNode.getName().equals(childNodeName)) {
+                childNode = nextNode;
+                break;
+            }
+        }
+        if( childNode != null ) {
+            assertThat( childNode.hasProperty(propName), is(true));
+            verifySingleValueProperty(childNode, propName, expectedValue);
+            
+        } else {
+            fail("NODE: " + childNodeName + " not found");
+        }
+        
     }
     
     private void verifyNode(Node topNode, String name, String propName) throws Exception {
@@ -360,6 +526,11 @@ public class DdlSequencerIntegrationTest {
             fail("NODE: " + name + " not found");
         }
         
+    }
+    
+    private void verifySimpleStringProperty(Node node, String propName, String expectedValue) throws Exception {
+        assertThat( node.hasProperty(propName), is(true));
+        verifySingleValueProperty(node, propName, expectedValue);
     }
     
     private void verifyNode(Node topNode, String name, String propName, String expectedValue) throws Exception {
@@ -433,15 +604,19 @@ public class DdlSequencerIntegrationTest {
         }
     }
     
-    private void verifyMixin(Node node, String nodeType) throws Exception {
-        boolean foundMixin = false;
+    private boolean hasMixin(Node node, String nodeType) throws Exception { 
         for( NodeType mixin : node.getMixinNodeTypes() ) {
             String mixinName = mixin.getName();
             if( mixinName.equals(nodeType) ) {
-                foundMixin = true;
-                break;
+                return true;
             }
         }
+        return false;
+    }
+    
+    private void verifyMixin(Node node, String nodeType) throws Exception {
+        boolean foundMixin = hasMixin(node, nodeType);
+
         
         assertThat(foundMixin, is(true));
     }
@@ -451,6 +626,20 @@ public class DdlSequencerIntegrationTest {
         
         if( node != null ) {
             assertThat(node.isNodeType(nodeTypeName), is(true));
+        } else {
+            fail("NODE: " + nodeName + " not found");
+        }
+        
+    }
+    
+    private void verifyNodeTypes(Node topNode, String nodeName, String nodeTypeName, String...moreNodeTypeNames) throws Exception {
+        Node node = findNode(topNode, nodeName);
+        
+        if( node != null ) {
+            assertThat(node.isNodeType(nodeTypeName), is(true));
+            for( String nextTypeName : moreNodeTypeNames ) {
+                assertThat(node.isNodeType(nextTypeName), is(true));
+            }
         } else {
             fail("NODE: " + nodeName + " not found");
         }
@@ -467,6 +656,24 @@ public class DdlSequencerIntegrationTest {
                 return nextNode;
             }
             Node someNode = findNode(nextNode, name);
+            if( someNode != null ) {
+                return someNode;
+            }
+        }
+        
+        return null;
+    }
+    
+    private Node findNode(Node node, String name, String type) throws Exception  {
+        if( node.getName().equals(name) && node.isNodeType(type)) { //(hasMixin(node, type) || node.isNodeType(type))) {
+            return node;
+        }
+        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            Node nextNode = iter.nextNode();
+            if( nextNode.getName().equals(name) && node.isNodeType(type)) { //(hasMixin(node, type) || node.isNodeType(type))) {
+                return nextNode;
+            }
+            Node someNode = findNode(nextNode, name, type);
             if( someNode != null ) {
                 return someNode;
             }

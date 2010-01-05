@@ -595,4 +595,15 @@ CREATE TEXT SEARCH TEMPLATE my_search_template (
 CREATE TRIGGER trigger_name BEFORE dawn
     ON table
     EXECUTE PROCEDURE funcname ( 'arg1', 'arg2' );
--- 101 STATEMENTS *******************************************************
+
+ALTER TABLE foreign_companies RENAME COLUMN address TO city;
+
+ALTER TABLE us_companies RENAME TO suppliers;
+
+ALTER TABLE old_addresses ALTER COLUMN street SET NOT NULL;
+
+ALTER TABLE new_addresses ALTER COLUMN street DROP NOT NULL;
+
+GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;
+
+-- 106 STATEMENTS *******************************************************

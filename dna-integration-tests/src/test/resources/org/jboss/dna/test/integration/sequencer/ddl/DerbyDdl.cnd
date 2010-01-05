@@ -41,25 +41,43 @@
 [derbyddl:synonymOperand]   > ddl:operand abstract
 [derbyddl:triggerOperand]   > ddl:operand abstract
 
+[derbyddl:roleName]         > derbyddl:roleOperand mixin
+
 // =============================================================================
 // COLUMN
 // =============================================================================
 [derbyddl:columnDefinition] > ddl:columnDefinition mixin
   - derbyddl:dropDefault (boolean)
   
+[derbyddl:functionParameter] > ddl:columnDefinition mixin
+
+[derbyddl:indexColumnReference] > ddl:columnReference mixin
+  - derbyddl:order (STRING)
+  
 // =============================================================================
 // CREATE STATEMENTS
 // =============================================================================
 [derbyddl:createFunctionStatement]     > ddl:creatable, ddl:statement, derbyddl:functionOperand mixin
-[derbyddl:createIndex]                 > ddl:statement, ddl:creatable, derbyddl:indexOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - ddl:isTableType (boolean)
+  + * (derbyddl:functionParameter) = derbyddl:functionParameter multiple
+  + * (ddl:statementOption) = ddl:statementOption multiple
+[derbyddl:createIndexStatement]        > ddl:statement, ddl:creatable, derbyddl:indexOperand mixin
   - derbyddl:tableName (string) mandatory
   - derbyddl:unique (boolean)
-  + * (ddl:columnReference) = ddl:columnReference multiple
+  + * (derbyddl:indexColumnReference) = derbyddl:indexColumnReference multiple
 [derbyddl:createProcedureStatement]    > ddl:creatable, ddl:statement, derbyddl:procedureOperand mixin
 [derbyddl:createRoleStatement]         > ddl:creatable, ddl:statement, derbyddl:roleOperand mixin
 [derbyddl:createSynonymStatement]      > ddl:creatable, ddl:statement, derbyddl:synonymOperand mixin
+  - derbyddl:tableName (string) mandatory
 [derbyddl:createTriggerStatement]      > ddl:creatable, ddl:statement, derbyddl:triggerOperand mixin
-
+  - derbyddl:tableName (string) mandatory
+  - ddl:sql (string) mandatory
+  + * (ddl:columnReference) = ddl:columnreference multiple
+[derbyddl:declareGlobalTemporaryTableStatement] > ddl:createTableStatement mixin
 
 // =============================================================================
 // DROP STATEMENTS
@@ -70,3 +88,15 @@
 [derbyddl:dropRoleStatement]        > ddl:droppable, derbyddl:roleOperand mixin
 [derbyddl:dropSynonymStatement]     > ddl:droppable, derbyddl:synonymOperand mixin
 [derbyddl:dropTriggerStatement]     > ddl:droppable, derbyddl:triggerOperand mixin
+
+// =============================================================================
+// MISC STATEMENTS
+// =============================================================================
+[derbyddl:lockTableStatement]       > ddl:statement, ddl:tableOperand mixin
+[derbyddl:renameTableStatement]     > ddl:statement, ddl:renamable, ddl:tableOperand mixin
+
+[derbyddl:grantOnFunctionStatement]     > ddl:grantStatement, derbyddl:functionOperand mixin
+[derbyddl:grantOnProcedureStatement]    > ddl:grantStatement, derbyddl:procedureOperand mixin
+
+[derbyddl:grantRolesStatement]          > ddl:grantStatement mixin
+  + ddl:name (derbyddl:roleName) = derbyddl:roleName multiple

@@ -63,7 +63,7 @@
 [ddl:settable]  > ddl:operation abstract
 [ddl:grantable] > ddl:operation abstract
 [ddl:revokable] > ddl:operation abstract
-[ddl:renamable] > ddl:operation, ddl:operand abstract
+[ddl:renamable] > ddl:operation abstract
   - ddl:newName (STRING)
 
 // =============================================================================
@@ -119,6 +119,7 @@
 [ddl:columnReference]       > ddl:referenceOperand mixin
 [ddl:tableReference]        > ddl:referenceOperand mixin
 [ddl:fkColumnReference]     > ddl:referenceOperand mixin
+[ddl:grantee]               > ddl:referenceOperand mixin
 
 // =============================================================================
 // SIMPLE STRING PROPERTY
@@ -258,9 +259,22 @@
    
 [ddl:insertStatement] > ddl:statement, ddl:insertable mixin
    // TODO: THIS IS COMPLEX, NEED TO BREAK DOWN
-   
+
+// =============================================================================
+// GRANT STATEMENTS
+// =============================================================================
+
+[ddl:grantPrivilege] mixin
+  - ddl:type (STRING) mandatory
+  + * (ddl:columnReference) = ddl:columnReference multiple
+
 [ddl:grantStatement] > ddl:statement, ddl:grantable mixin
-   // TODO: THIS IS COMPLEX, NEED TO BREAK DOWN
+  - ddl:allPrivileges (boolean)
+  + * (ddl:grantPrivilege) = ddl:grantPrivilege multiple
+  + * (ddl:grantee) = ddl:grantee multiple
 
-
-
+[ddl:grantOnTableStatement]         > ddl:grantStatement, ddl:tableOperand mixin
+[ddl:grantOnDomainStatement]        > ddl:grantStatement, ddl:domainOperand mixin
+[ddl:grantOnCollationStatement]     > ddl:grantStatement, ddl:collationOperand mixin
+[ddl:grantOnCharacterSetStatement]  > ddl:grantStatement, ddl:characterSetOperand mixin
+[ddl:grantOnTranslationStatement]   > ddl:grantStatement, ddl:translationOperand mixin
