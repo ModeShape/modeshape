@@ -838,9 +838,11 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CreateNodeRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        Request projectedRequest = projected == null ? null : projected.getRequest();
-        // Check the error first ...
+        Request projectedRequest = projected.getRequest();
+        // Check the error on the projected request ...
         if (checkErrorOrCancel(request, projectedRequest)) return;
 
         // No error, so project the results back to the federated repository ...
@@ -866,8 +868,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( UpdatePropertiesRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        UpdatePropertiesRequest source = projected == null ? null : (UpdatePropertiesRequest)projected.getRequest();
+        UpdatePropertiesRequest source = (UpdatePropertiesRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.on(), projected.getProjection(), sourceLocation, request));
@@ -882,8 +886,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( SetPropertyRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        SetPropertyRequest source = projected == null ? null : (SetPropertyRequest)projected.getRequest();
+        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         // Set the actual location and created flags ...
         Location sourceLocation = source.getActualLocationOfNode();
@@ -899,8 +905,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( RemovePropertyRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        SetPropertyRequest source = projected == null ? null : (SetPropertyRequest)projected.getRequest();
+        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.from(), projected.getProjection(), sourceLocation, request));
@@ -914,9 +922,11 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( DeleteBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
         // Do an initial check to make sure that there was no error on the source that prevented projection
-        Request projectedSource = projected == null ? null : projected.getRequest();
+        Request projectedSource = projected.getRequest();
         if (checkErrorOrCancel(request, projectedSource)) return;
 
         // Go through the projected requests, and look for the top-most node ...
@@ -954,9 +964,11 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( DeleteChildrenRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
         // Do an initial check to make sure that there was no error on the source that prevented projection
-        Request projectedSource = projected == null ? null : projected.getRequest();
+        Request projectedSource = projected.getRequest();
         if (checkErrorOrCancel(request, projectedSource)) return;
 
         // Go through the projected requests, and look for the top-most node ...
@@ -986,8 +998,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( RenameNodeRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        RenameNodeRequest source = projected == null ? null : (RenameNodeRequest)projected.getRequest();
+        RenameNodeRequest source = (RenameNodeRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1004,8 +1018,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CopyBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        CopyBranchRequest source = projected == null ? null : (CopyBranchRequest)projected.getRequest();
+        CopyBranchRequest source = (CopyBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1022,8 +1038,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( CloneBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        CloneBranchRequest source = projected == null ? null : (CloneBranchRequest)projected.getRequest();
+        CloneBranchRequest source = (CloneBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1047,8 +1065,10 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( MoveBranchRequest request ) {
         ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        MoveBranchRequest source = projected == null ? null : (MoveBranchRequest)projected.getRequest();
+        MoveBranchRequest source = (MoveBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
         Location locationAfter = source.getActualLocationBefore();
@@ -1157,6 +1177,22 @@ class JoinRequestProcessor extends RequestProcessor {
     @Override
     public void process( FullTextSearchRequest request ) {
         throw new UnsupportedOperationException(); // should never be called
+    }
+
+    protected boolean checkErrorOrCancel( Request request,
+                                          FederatedRequest federatedRequest ) {
+        if (federatedRequest.getFirstProjectedRequest() == null) {
+            Request original = federatedRequest.original();
+            if (original.hasError()) {
+                // No source requests had results ...
+                request.setError(original.getError());
+                return true;
+            }
+            assert original.isCancelled();
+            request.cancel();
+            return true;
+        }
+        return false;
     }
 
     protected boolean checkErrorOrCancel( Request request,

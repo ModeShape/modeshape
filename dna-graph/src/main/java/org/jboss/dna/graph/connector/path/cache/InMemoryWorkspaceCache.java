@@ -62,18 +62,18 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
 
         CacheEntry entry = nodesByPath.get(path);
         if (entry == null) {
-            statistics.misses.getAndIncrement();
+            statistics.incrementMisses();
             return null;
         }
 
         PathNode node = entry.getNode();
         if (node != null) {
-            statistics.hits.getAndIncrement();
+            statistics.incrementHits();
             return node;
         }
 
         nodesByPath.remove(path, entry);
-        statistics.expirations.getAndIncrement();
+        statistics.incrementExpirations();
         return null;
     }
 
@@ -81,8 +81,8 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         assert node != null;
 
         if (!policy.shouldCache(node)) return;
-        
-        statistics.writes.getAndIncrement();
+
+        statistics.incrementWrites();
         nodesByPath.put(node.getPath(), new CacheEntry(node));
     }
 
@@ -104,13 +104,17 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         this.statistics = null;
     }
 
+    protected PathCachePolicy policy() {
+        return this.policy;
+    }
+
     class CacheEntry {
         private final SoftReference<PathNode> ref;
         private final long expiryTime;
 
         CacheEntry( PathNode node ) {
             ref = new SoftReference<PathNode>(node);
-            expiryTime = System.currentTimeMillis() + (policy.getTimeToLive() * 1000);
+            expiryTime = System.currentTimeMillis() + (policy().getTimeToLive() * 1000);
         }
 
         PathNode getNode() {
@@ -142,6 +146,22 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
 
         public long getExpirations() {
             return expirations.get();
+        }
+
+        public long incrementWrites() {
+            return writes.getAndIncrement();
+        }
+
+        public long incrementHits() {
+            return hits.getAndIncrement();
+        }
+
+        public long incrementMisses() {
+            return misses.getAndIncrement();
+        }
+
+        public long incrementExpirations() {
+            return expirations.getAndIncrement();
         }
     }
 }
