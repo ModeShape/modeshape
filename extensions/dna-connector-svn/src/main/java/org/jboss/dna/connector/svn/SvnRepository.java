@@ -50,13 +50,11 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNProperty;
-import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.SVNRepository;
-import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class SvnRepository extends WritablePathRepository {
@@ -89,7 +87,7 @@ public class SvnRepository extends WritablePathRepository {
             doCreateWorkspace(context, workspaceName);
         }
 
-        String defaultWorkspaceName = source.getDirectoryForDefaultWorkspace();
+        String defaultWorkspaceName = source.getDefaultWorkspaceName();
         if (defaultWorkspaceName != null && !workspaces.containsKey(defaultWorkspaceName)) {
             doCreateWorkspace(context, defaultWorkspaceName);
         }
@@ -161,15 +159,11 @@ public class SvnRepository extends WritablePathRepository {
                              UUID rootNodeUuid ) {
             super(name, rootNodeUuid);
 
-            try {
-                workspaceRoot = SVNRepositoryFactory.create(SVNURL.parseURIDecoded(name));
+            workspaceRoot = getWorkspaceDirectory(name);
 
-                ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(source.getUsername(),
-                                                                                                     source.getPassword());
-                workspaceRoot.setAuthenticationManager(authManager);
-            } catch (SVNException ex) {
-                throw new IllegalStateException(ex);
-            }
+            ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(source.getUsername(),
+                                                                                                 source.getPassword());
+            workspaceRoot.setAuthenticationManager(authManager);
         }
 
         public Path getLowestExistingPath( Path path ) {
@@ -845,7 +839,10 @@ public class SvnRepository extends WritablePathRepository {
         }
 
         protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
-            if (workspaceName == null) workspaceName = source.getDirectoryForDefaultWorkspace();
+            if (workspaceName == null) workspaceName = source.getDefaultWorkspaceName();
+
+            workspaceName = source.getRepositoryRootUrl() + workspaceName;
+
             SVNRepository repository = null;
             SVNRepository repos = SvnRepositoryUtil.createRepository(workspaceName, source.getUsername(), source.getPassword());
             if (SvnRepositoryUtil.isDirectory(repos, "")) {

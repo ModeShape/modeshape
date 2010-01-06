@@ -51,7 +51,7 @@ public class SvnAndJcrIntegrationTest {
     @Before
     public void beforeEach() throws Exception {
         final String repositoryUrl = "http://anonsvn.jboss.org/repos/dna/";
-        final String[] predefinedWorkspaceNames = {repositoryUrl + "trunk", repositoryUrl + "tags", repositoryUrl + "branches"};
+        final String[] predefinedWorkspaceNames = {"trunk", "tags", "branches"};
         final String svnRepositorySource = "svnRepositorySource";
         final String repositoryName = "svnRepository";
         final JcrConfiguration configuration = new JcrConfiguration();
@@ -61,7 +61,8 @@ public class SvnAndJcrIntegrationTest {
                      .setProperty("username", "anonymous")
                      .setProperty("repositoryRootUrl", repositoryUrl)
                      .setProperty("predefinedWorkspaceNames", predefinedWorkspaceNames)
-                     .setProperty("directoryForDefaultWorkspace", predefinedWorkspaceNames[0])
+.setProperty("defaultWorkspaceName",
+                                                                                                                                                                                                                                    predefinedWorkspaceNames[0])
                      .setProperty("creatingWorkspacesAllowed", false);
 
         configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.QUERY_EXECUTION_ENABLED, "false");

@@ -265,7 +265,7 @@ public class SvnRepositorySourceTest {
         assertThat((String)refAttributes.remove(SvnRepositorySource.ALLOW_CREATING_WORKSPACES),
                    is(Boolean.toString(source.isCreatingWorkspacesAllowed())));
         assertThat((String)refAttributes.remove(SvnRepositorySource.DEFAULT_WORKSPACE),
-                   is(source.getDirectoryForDefaultWorkspace()));
+                   is(source.getDefaultWorkspaceName()));
         refAttributes.remove(SvnRepositorySource.PREDEFINED_WORKSPACE_NAMES);
         assertThat(refAttributes.isEmpty(), is(true));
 

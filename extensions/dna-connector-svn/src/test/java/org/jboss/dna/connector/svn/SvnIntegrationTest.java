@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Map;
-import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -53,7 +52,7 @@ public class SvnIntegrationTest {
     @Before
     public void beforeEach() {
         repositoryUrl = "http://anonsvn.jboss.org/repos/dna/";
-        predefinedWorkspaceNames = new String[] {repositoryUrl + "trunk", repositoryUrl + "tags", repositoryUrl + "branches"};
+        predefinedWorkspaceNames = new String[] {"trunk", "tags", "branches"};
         context = new ExecutionContext();
         source = new SvnRepositorySource();
         source.setName("svn repository source");
@@ -62,7 +61,7 @@ public class SvnIntegrationTest {
         source.setPassword("");
         source.setCreatingWorkspacesAllowed(true);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
         source.initialize(new RepositoryContext() {
 

@@ -1,6 +1,5 @@
 package org.jboss.dna.connector.svn;
 
-import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.NotWritableConnectorTest;
@@ -23,14 +22,14 @@ public class SvnRepositoryConnectorNotWritableTest extends NotWritableConnectorT
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        String[] predefinedWorkspaceNames = new String[]{url+"trunk", url+"tags"};
+        String[] predefinedWorkspaceNames = new String[] {"trunk", "tags"};
         SvnRepositorySource source = new SvnRepositorySource();
         source.setName("Test Repository");
         source.setUsername("sp");
         source.setPassword("");
         source.setRepositoryRootUrl(url);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
         
         return source;

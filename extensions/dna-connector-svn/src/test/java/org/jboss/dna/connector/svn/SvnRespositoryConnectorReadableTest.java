@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.List;
-import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
@@ -59,14 +58,14 @@ public class SvnRespositoryConnectorReadableTest extends ReadableConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        String[] predefinedWorkspaceNames = new String[]{url + "trunk", url + "tags"};
+        String[] predefinedWorkspaceNames = new String[] {"trunk", "tags"};
         SvnRepositorySource source = new SvnRepositorySource();
         source.setName("Test Repository");
         source.setUsername("sp");
         source.setPassword("");
         source.setRepositoryRootUrl(url);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
         
         return source;

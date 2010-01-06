@@ -168,30 +168,28 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
     }
 
     /**
-     * Get the file system path to the existing directory that should be used for the default workspace. If the default is
-     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
-     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * Get the path to the existing directory that should be used for the default workspace. This path should be relative to the
+     * {@link #getRepositoryRootUrl() repository root URL}. If the default is specified as a null String or is not a valid and
+     * resolvable path, this source will consider the default to be the current working directory of this virtual machine, as
+     * defined by the <code>new File(".")</code>.
      * 
      * @return the file system path to the directory representing the default workspace, or null if the default should be the
      *         current working directory
      */
-    public String getDirectoryForDefaultWorkspace() {
-        return defaultWorkspace;
-    }
-
     public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
 
     /**
-     * Set the file system path to the existing directory that should be used for the default workspace. If the default is
-     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
-     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * Set the file system path to the existing directory that should be used for the default workspace. This path should be
+     * relative to the {@link #getRepositoryRootUrl() repository root URL}. If the default is specified as a null String or is not
+     * a valid and resolvable path, this source will consider the default to be the current working directory of this virtual
+     * machine, as defined by the <code>new File(".")</code>.
      * 
      * @param pathToDirectoryForDefaultWorkspace the valid and resolvable file system path to the directory representing the
      *        default workspace, or null if the current working directory should be used as the default workspace
      */
-    public synchronized void setDirectoryForDefaultWorkspace( String pathToDirectoryForDefaultWorkspace ) {
+    public synchronized void setDefaultWorkspaceName( String pathToDirectoryForDefaultWorkspace ) {
         this.defaultWorkspace = pathToDirectoryForDefaultWorkspace;
     }
 
@@ -315,7 +313,7 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
         }
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         ref.add(new StringRefAddr(ROOT_NODE_UUID, rootNodeUuid.toString()));
-        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDirectoryForDefaultWorkspace()));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -362,7 +360,7 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
         if (password != null) source.setPassword(password);
         if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
         if (rootNodeUuid != null) source.setRootNodeUuid(rootNodeUuid);
-        if (defaultWorkspace != null) source.setDirectoryForDefaultWorkspace(defaultWorkspace);
+        if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
         if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
         if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
         return source;
