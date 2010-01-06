@@ -289,6 +289,11 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
     /**
      * {@inheritDoc}
      * 

@@ -35,14 +35,12 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-import org.jboss.dna.connector.svn.SvnRepositorySource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
@@ -65,11 +63,9 @@ public class SvnRepositorySourceTest {
     private SvnRepositorySource source;
     private RepositoryConnection connection;
     private String validName;
-    private String validUuidPropertyName;
     private static String url;
     private String username;
     private String password;
-    private UUID validRootNodeUuid;
     private final ExecutionContext context = new ExecutionContext();
 
     @BeforeClass
@@ -93,6 +89,7 @@ public class SvnRepositorySourceTest {
                 return null;
             }
 
+            @SuppressWarnings( "synthetic-access" )
             public ExecutionContext getExecutionContext() {
                 return context;
             }
@@ -220,23 +217,21 @@ public class SvnRepositorySourceTest {
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference(validName, validRootNodeUuid, url, username, password, validUuidPropertyName, 100);
+        convertToAndFromJndiReference(validName, url, username, password, 100);
     }
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReferenceWithNullProperties() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference("some source", null, "url1", null, null, null, 100);
-        convertToAndFromJndiReference(null, null, "url2", null, null, null, 100);
+        convertToAndFromJndiReference("some source", "url1", null, null, 100);
+        convertToAndFromJndiReference(null, "url2", null, null, 100);
     }
 
     private void convertToAndFromJndiReference( String sourceName,
-                                                UUID rootNodeUuid,
                                                 String url,
                                                 String username,
                                                 String password,
-                                                String uuidPropertyName,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);

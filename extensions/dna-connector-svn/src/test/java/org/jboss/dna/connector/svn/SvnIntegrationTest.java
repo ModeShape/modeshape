@@ -69,6 +69,7 @@ public class SvnIntegrationTest {
                 return null;
             }
 
+            @SuppressWarnings( "synthetic-access" )
             public ExecutionContext getExecutionContext() {
                 return context;
             }
