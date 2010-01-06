@@ -56,6 +56,7 @@
 /extensions/dna-connector-svn/target
 /extensions/dna-mimetype-detector-aperture/.settings
 /extensions/dna-mimetype-detector-aperture/target
+/extensions/dna-sequencer-classfile/target
 /extensions/dna-sequencer-cnd/target
 /extensions/dna-sequencer-ddl/target
 /extensions/dna-sequencer-esbMessage/target

@@ -154,12 +154,11 @@ public class SvnRepositorySourceTest {
         assertThat(source.getName(), is(isNull()));
     }
 
-
     @Test
     public void shouldHaveDefaultRetryLimit() {
         assertThat(source.getRetryLimit(), is(SvnRepositorySource.DEFAULT_RETRY_LIMIT));
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSVNUrl() {
         source.setRepositoryRootUrl(null);
@@ -187,31 +186,30 @@ public class SvnRepositorySourceTest {
             assertThat(source.getRetryLimit(), is(i));
         }
     }
-    
+
     @Test( expected = RepositorySourceException.class )
     public void shouldFailToCreateConnectionIfSourceHasNoName() {
         source.setName(null);
         source.getConnection();
     }
-    
+
     @Test( expected = RepositorySourceException.class )
     public void shouldFailToCreateConnectionIfSourceHasNoUsername() {
         source.setUsername(null);
         source.getConnection();
     }
-    
+
     @Test( expected = RepositorySourceException.class )
     public void shouldFailToCreateConnectionIfSourceHasNoPassword() {
         source.setPassword(null);
         source.getConnection();
     }
-    
+
     @Test
     public void shouldCreateConnection() throws Exception {
         connection = source.getConnection();
         assertThat(connection, is(notNullValue()));
     }
-    
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {

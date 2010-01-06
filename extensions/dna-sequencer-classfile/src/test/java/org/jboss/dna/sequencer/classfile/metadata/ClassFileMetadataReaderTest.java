@@ -92,11 +92,11 @@ public class ClassFileMetadataReaderTest {
         ClassMetadata cmd = ClassFileMetadataReader.instance(input);
 
         assertThat(cmd, instanceOf(EnumMetadata.class));
-        EnumMetadata emd = (EnumMetadata) cmd;
-        
+        EnumMetadata emd = (EnumMetadata)cmd;
+
         List<String> enumValues = Arrays.asList(new String[] {"VALUE_A", "VALUE_B", "VALUE_C"});
         assertThat(emd.getValues(), is(enumValues));
-        
+
         for (FieldMetadata fmd : emd.getFields()) {
             assertThat(fmd.getName(), not(anyOf(is("VALUE_A"), is("VALUE_B"), is("VALUE_C"))));
         }
@@ -141,7 +141,7 @@ public class ClassFileMetadataReaderTest {
         checkConstructors(cmd, clazz);
     }
 
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings( {"unchecked", "synthetic-access"} )
     private void checkFields( ClassMetadata cmd,
                               Class<?> clazz ) throws Exception {
         Map<FieldKey, Field> clazzFields = new HashMap<FieldKey, Field>();
@@ -181,6 +181,7 @@ public class ClassFileMetadataReaderTest {
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     private void checkMethods( ClassMetadata cmd,
                                Class<?> clazz ) throws Exception {
         Map<MethodKey, Method> clazzMethods = new HashMap<MethodKey, Method>();
@@ -218,7 +219,6 @@ public class ClassFileMetadataReaderTest {
 
             assertThat(metaMethod.getAnnotations().size(), is(clazzMethod.getDeclaredAnnotations().length));
 
-
             // Can't really check this since some annotations are not runtime annotations
             // for (AnnotationMetadata amd : metaMethod.getAnnotations()) {
             // Class<Annotation> annotationClass = (Class<Annotation>)Class.forName(amd.getAnnotationClassName());
@@ -229,7 +229,7 @@ public class ClassFileMetadataReaderTest {
         }
     }
 
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings( {"unchecked", "synthetic-access"} )
     private void checkConstructors( ClassMetadata cmd,
                                     Class<?> clazz ) throws Exception {
         Map<MethodKey, Constructor> clazzCtors = new HashMap<MethodKey, Constructor>();

@@ -59,7 +59,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class SvnRepository extends WritablePathRepository {
 
-    protected static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+    private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
     protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     protected final SvnRepositorySource source;

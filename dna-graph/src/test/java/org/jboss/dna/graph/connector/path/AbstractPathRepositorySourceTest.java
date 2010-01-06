@@ -23,12 +23,10 @@
  */
 package org.jboss.dna.graph.connector.path;
 
-
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import javax.naming.NamingException;
 import javax.naming.Reference;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
@@ -65,7 +63,7 @@ public class AbstractPathRepositorySourceTest {
                 return null;
             }
 
-            public Reference getReference() throws NamingException {
+            public Reference getReference() {
                 return null;
             }
         };
