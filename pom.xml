@@ -382,7 +382,7 @@
 		        <database>hsqldb</database>
             <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:hsqldb:target/test/db/hsqldb/dna</jpaSource.url>
+            <jpaSource.url>jdbc:hsqldb:mem:dna</jpaSource.url>
             <jpaSource.username>sa</jpaSource.username>
             <jpaSource.password />
           </properties>
@@ -409,7 +409,7 @@
 		        <database>hsqldb</database>
             <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:hsqldb:target/test/db/hsqldb/dna</jpaSource.url>
+            <jpaSource.url>jdbc:hsqldb:mem:dna</jpaSource.url>
             <jpaSource.username>sa</jpaSource.username>
             <jpaSource.password />
           </properties>

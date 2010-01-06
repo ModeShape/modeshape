@@ -24,7 +24,6 @@
 package org.jboss.dna.connector.store.jpa;
 
 import org.jboss.dna.common.statistic.Stopwatch;
-import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.ReadableConnectorTest;
@@ -44,17 +43,6 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         // Set the connection properties using the environment defined in the POM files ...
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
 
-        // Create a graph and look up the root node. We do this to initialize the connection pool and
-        // force the database to be setup at this point. By doing it now, we don't include this overhead
-        // in our test timings.
-        try {
-            Graph graph = Graph.create(source, context);
-            graph.getNodeAt("/");
-        } catch (Throwable t) {
-            Logger.getLogger(getClass()).debug("Unable to read the root node while setting up the \"" + source.getName()
-                                               + "\" JPA source");
-        }
-
         return source;
     }
 
@@ -71,7 +59,11 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        graph.createWorkspace().named("default");
+        if (!graph.getWorkspaces().contains("default")) {
+            graph.createWorkspace().named("default");
+        } else {
+            graph.useWorkspace("default");
+        }
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
         graph.createWorkspace().named("other workspace");
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);

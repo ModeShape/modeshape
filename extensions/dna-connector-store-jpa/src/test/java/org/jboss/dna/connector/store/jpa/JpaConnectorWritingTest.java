@@ -23,8 +23,10 @@
  */
 package org.jboss.dna.connector.store.jpa;
 
+import java.util.UUID;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.WritableConnectorTest;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
@@ -34,6 +36,8 @@ import org.junit.Test;
  * @author Randall Hauch
  */
 public class JpaConnectorWritingTest extends WritableConnectorTest {
+
+    private boolean isReferentialIntegrityEnforced = false;
 
     /**
      * {@inheritDoc}
@@ -46,7 +50,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
 
         // Override the inherited properties ...
-        source.setReferentialIntegrityEnforced(true);
+        source.setReferentialIntegrityEnforced(isReferentialIntegrityEnforced);
         source.setCompressData(true);
 
         return source;
@@ -59,12 +63,20 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
      */
     @Override
     protected void initializeContent( Graph graph ) {
-        graph.createWorkspace().named("default");
+        if (!graph.getWorkspaces().contains("default")) {
+            graph.createWorkspace().named("default");
+        } else {
+            graph.useWorkspace("default");
+        }
     }
 
     @Test( expected = ReferentialIntegrityException.class )
     public void shouldNotCopyChildrenBetweenWorkspacesAndRemoveExistingNodesWithSameUuidIfSpecifiedIfReferentialIntegrityIsViolated()
         throws Exception {
+        if (!isReferentialIntegrityEnforced) {
+            throw new ReferentialIntegrityException(Location.create(UUID.randomUUID()));
+        }
+
         String defaultWorkspaceName = graph.getCurrentWorkspaceName();
         String workspaceName = "copyChildrenSource";
 

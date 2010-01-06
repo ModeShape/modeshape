@@ -49,7 +49,7 @@ public class JpaConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() {
-        predefinedWorkspaces = new String[] {"workspace1", "workspace2", "workspace3"};
+        predefinedWorkspaces = new String[] {"default", "workspace1", "workspace2", "workspace3"};
 
         // Set the connection properties using the environment defined in the POM files ...
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);

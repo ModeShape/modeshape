@@ -32,7 +32,7 @@ public class TestEnvironment {
                                                 Object testCase ) {
         Properties properties = new Properties();
         ClassLoader loader = testCase instanceof Class<?> ? ((Class<?>)testCase).getClassLoader() : testCase.getClass()
-                                                                                                         .getClassLoader();
+                                                                                                            .getClassLoader();
         try {
             properties.load(loader.getResourceAsStream("database.properties"));
         } catch (IOException e) {
@@ -42,7 +42,6 @@ public class TestEnvironment {
         // Set the connection properties to be an in-memory HSQL database ...
         JpaSource source = new JpaSource();
         source.setName(sourceName);
-        source.setModel(JpaSource.Models.BASIC.getName());
         source.setDialect(properties.getProperty("jpaSource.dialect"));
         source.setDriverClassName(properties.getProperty("jpaSource.driverClassName"));
         source.setUsername(properties.getProperty("jpaSource.username"));

@@ -36,6 +36,7 @@ public class BasicCreateWorkspacesTest extends JpaConnectorCreateWorkspacesTest 
 
         // Set the connection properties using the environment defined in the POM files ...
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
+        source.setModel(JpaSource.Models.BASIC.getName());
 
         // Override the inherited properties, since that's the focus of these tests ...
         source.setCreatingWorkspacesAllowed(true);
