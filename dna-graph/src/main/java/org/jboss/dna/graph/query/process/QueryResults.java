@@ -49,6 +49,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     private final Columns columns;
     private final List<Object[]> tuples;
     private final Statistics statistics;
+    private final String plan;
 
     /**
      * Create a results object for the supplied context, command, and result columns and with the supplied tuples.
@@ -57,17 +58,20 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      * @param statistics the statistics for this query; may not be null
      * @param tuples the tuples
      * @param problems the problems; may be null if there are no problems
+     * @param plan the text representation of the query plan, if the hints asked for it
      */
     public QueryResults( Columns columns,
                          Statistics statistics,
                          List<Object[]> tuples,
-                         Problems problems ) {
+                         Problems problems,
+                         String plan ) {
         assert columns != null;
         assert statistics != null;
         this.problems = problems != null ? problems : NO_PROBLEMS;
         this.columns = columns;
         this.tuples = tuples;
         this.statistics = statistics;
+        this.plan = plan;
     }
 
     /**
@@ -80,7 +84,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     public QueryResults( Columns columns,
                          Statistics statistics,
                          List<Object[]> tuples ) {
-        this(columns, statistics, tuples, NO_PROBLEMS);
+        this(columns, statistics, tuples, NO_PROBLEMS, null);
     }
 
     /**
@@ -93,7 +97,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
     public QueryResults( Columns columns,
                          Statistics statistics,
                          Problems problems ) {
-        this(columns, statistics, Collections.<Object[]>emptyList(), problems);
+        this(columns, statistics, Collections.<Object[]>emptyList(), problems, null);
     }
 
     /**
@@ -104,7 +108,7 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      */
     public QueryResults( Columns columns,
                          Statistics statistics ) {
-        this(columns, statistics, Collections.<Object[]>emptyList(), null);
+        this(columns, statistics, Collections.<Object[]>emptyList(), null, null);
     }
 
     /**
@@ -141,6 +145,15 @@ public class QueryResults implements org.jboss.dna.graph.query.QueryResults {
      */
     public int getRowCount() {
         return tuples.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.QueryResults#getPlan()
+     */
+    public String getPlan() {
+        return plan;
     }
 
     /**

@@ -92,7 +92,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldReturnSameTuplesListPassedIntoConstructor() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         assertThat(results.getTuples(), is(sameInstance(tuples)));
     }
 
@@ -105,14 +105,14 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldHaveNoTuplesIfConstructedWithEmptyTuplesList() {
         tuples.clear();
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         assertThat(results.getTuples().isEmpty(), is(true));
         assertThat(results.getCursor().hasNext(), is(false));
     }
 
     @Test
     public void shouldReturnMutableTuplesList() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         assertThat(results.getTuples().isEmpty(), is(false));
         results.getTuples().clear();
         assertThat(results.getTuples().isEmpty(), is(true));
@@ -121,7 +121,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldReturnCursorThatAccessesTuples() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         Cursor cursor = results.getCursor();
         Iterator<Object[]> expectedIter = tuples.iterator();
         int rowNumber = 0;
@@ -155,7 +155,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test( expected = IllegalStateException.class )
     public void shouldRequireNextOnCursorToBeCalledBeforeGettingValueUsingColumnIndex() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         Cursor cursor = results.getCursor();
         assertThat(cursor.hasNext(), is(true));
         cursor.getValue(0);
@@ -163,7 +163,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test( expected = IllegalStateException.class )
     public void shouldRequireNextOnCursorToBeCalledBeforeGettingValueUsingColumnName() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         Cursor cursor = results.getCursor();
         assertThat(cursor.hasNext(), is(true));
         cursor.getValue("colA");
@@ -171,14 +171,14 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldPrintToStringAllResults() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         List<String> lines = StringUtil.splitLines(results.toString());
         assertThat(lines.size(), is(tuples.size() + 4)); // = delim + header + delim + (...lines...) + delim
     }
 
     @Test
     public void shouldPrintToStringBuilderAllResults() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         StringBuilder sb = new StringBuilder();
         results.toString(typeSystem, sb);
         List<String> lines = StringUtil.splitLines(sb.toString());
@@ -188,7 +188,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldPrintToStringBuilderAllResultsEvenWhenNoTuples() {
         tuples.clear();
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         StringBuilder sb = new StringBuilder();
         results.toString(typeSystem, sb);
         List<String> lines = StringUtil.splitLines(sb.toString());
@@ -197,7 +197,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldPrintToStringBuilderOnlyFirstLinesOfResults() {
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         StringBuilder sb = new StringBuilder();
         results.toString(typeSystem, sb, 1);
         List<String> lines = StringUtil.splitLines(sb.toString());
@@ -207,7 +207,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldPrintToStringBuilderOnlyFirstLinesOfResultsEvenWhenNoTuples() {
         tuples.clear();
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         StringBuilder sb = new StringBuilder();
         results.toString(typeSystem, sb, 3);
         List<String> lines = StringUtil.splitLines(sb.toString());
@@ -217,7 +217,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldPrintToStringBuilderAllResultsWhenMaxRowParameterIsLargerThanNumberOfTuples() {
         tuples.clear();
-        results = new QueryResults(columns, statistics, tuples, context.getProblems());
+        results = new QueryResults(columns, statistics, tuples, context.getProblems(), null);
         StringBuilder sb = new StringBuilder();
         results.toString(typeSystem, sb, 3);
         List<String> lines = StringUtil.splitLines(sb.toString());

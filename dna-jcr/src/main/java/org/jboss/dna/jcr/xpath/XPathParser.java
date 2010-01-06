@@ -37,6 +37,7 @@ import org.jboss.dna.common.xml.XmlCharacters;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.jcr.xpath.XPath.Add;
 import org.jboss.dna.jcr.xpath.XPath.And;
@@ -63,6 +64,8 @@ import org.jboss.dna.jcr.xpath.XPath.NodeComparison;
 import org.jboss.dna.jcr.xpath.XPath.NodeComparisonOperator;
 import org.jboss.dna.jcr.xpath.XPath.NodeTest;
 import org.jboss.dna.jcr.xpath.XPath.Or;
+import org.jboss.dna.jcr.xpath.XPath.OrderBy;
+import org.jboss.dna.jcr.xpath.XPath.OrderBySpec;
 import org.jboss.dna.jcr.xpath.XPath.ParenthesizedExpression;
 import org.jboss.dna.jcr.xpath.XPath.PathExpression;
 import org.jboss.dna.jcr.xpath.XPath.ProcessingInstructionTest;
@@ -281,7 +284,8 @@ public class XPathParser {
             }
             relative = false;
         }
-        PathExpression result = new PathExpression(relative, parseRelativePathExpr(tokens).getSteps());
+        PathExpression relativeExpr = parseRelativePathExpr(tokens);
+        PathExpression result = new PathExpression(relative, relativeExpr.getSteps(), relativeExpr.getOrderBy());
         if (prependDependentOrSelf) {
             result.getSteps().add(0, new DescendantOrSelf());
         }
@@ -299,7 +303,8 @@ public class XPathParser {
                 steps.add(parseStepExpr(tokens));
             }
         }
-        return new PathExpression(true, steps);
+        OrderBy orderBy = parseOrderBy(tokens); // may be null
+        return new PathExpression(true, steps, orderBy);
     }
 
     protected StepExpression parseStepExpr( TokenStream tokens ) {
@@ -656,6 +661,37 @@ public class XPathParser {
     }
 
     protected void parseSequenceType( TokenStream tokens ) {
+    }
+
+    protected OrderBy parseOrderBy( TokenStream tokens ) {
+        if (tokens.canConsume("order", "by")) {
+            List<OrderBySpec> specs = new ArrayList<OrderBySpec>();
+            do {
+                OrderBySpec spec = parseOrderBySpec(tokens);
+                specs.add(spec);
+            } while (tokens.canConsume(','));
+            if (!specs.isEmpty()) return new OrderBy(specs);
+        }
+        return null;
+    }
+
+    protected OrderBySpec parseOrderBySpec( TokenStream tokens ) {
+        if (tokens.canConsume('@')) {
+            NameTest attributeName = parseQName(tokens);
+            Order order = Order.ASCENDING;
+            if (tokens.canConsume("ascending")) order = Order.ASCENDING;
+            else if (tokens.canConsume("descending")) order = Order.DESCENDING;
+            return new OrderBySpec(order, attributeName);
+        }
+        if (tokens.matches("jcr", ":", "score", "(")) {
+            FunctionCall scoreFunction = parseFunctionCall(tokens);
+            Order order = Order.ASCENDING;
+            if (tokens.canConsume("ascending")) order = Order.ASCENDING;
+            else if (tokens.canConsume("descending")) order = Order.DESCENDING;
+            return new OrderBySpec(order, scoreFunction);
+        }
+        throw new ParsingException(tokens.nextPosition(),
+                                   "Expected either 'jcr:score(tableName)' or '@<propertyName>' but found " + tokens.consume());
     }
 
     /**

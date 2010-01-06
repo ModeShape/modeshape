@@ -24,43 +24,66 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.HashCode;
 
 /**
- * A dynamic operand that evaluates to the lower-case representation of the supplied operand, used in a {@link Comparison}
- * constraint.
+ * A dynamic operand that represents a (binary) arithmetic operation upon one or more other operands, used in {@link Comparison}
+ * and {@link Ordering} components.
  */
 @Immutable
-public class LowerCase extends DynamicOperand {
+public class ArithmeticOperand extends DynamicOperand {
     private static final long serialVersionUID = 1L;
 
-    private final DynamicOperand operand;
+    private final ArithmeticOperator operator;
+    private final DynamicOperand left;
+    private final DynamicOperand right;
+    private final int hc;
 
     /**
-     * Create a dynamic operand that evaluates to the lower-case representation of the supplied operand.
+     * Create a arithmetic dynamic operand that operates upon the supplied operand(s).
      * 
-     * @param operand the operand that is to be lower-cased
+     * @param left the left-hand-side operand
+     * @param operator the arithmetic operator; may not be null
+     * @param right the right-hand-side operand
+     * @throws IllegalArgumentException if any of the arguments is null
      */
-    public LowerCase( DynamicOperand operand ) {
-        super(operand);
-        this.operand = operand;
+    public ArithmeticOperand( DynamicOperand left,
+                              ArithmeticOperator operator,
+                              DynamicOperand right ) {
+        super(left, right);
+        CheckArg.isNotNull(operator, "operator");
+        this.operator = operator;
+        this.left = left;
+        this.right = right;
+        this.hc = HashCode.compute(left, operator, right);
     }
 
     /**
-     * Get the dynamic operand that is to be lower-cased.
+     * Get the operator for this binary operand.
      * 
-     * @return the dynamic operand; never null
+     * @return the operator; never null
      */
-    public final DynamicOperand getOperand() {
-        return operand;
+    public ArithmeticOperator getOperator() {
+        return operator;
     }
 
     /**
-     * Get the selector symbol upon which this operand applies.
+     * Get the left-hand operand.
      * 
-     * @return the one selector names used by this operand; never null
+     * @return the left-hand operator; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public DynamicOperand getLeft() {
+        return left;
+    }
+
+    /**
+     * Get the right-hand operand.
+     * 
+     * @return the right-hand operator; never null
+     */
+    public DynamicOperand getRight() {
+        return right;
     }
 
     /**
@@ -80,7 +103,7 @@ public class LowerCase extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return operand.hashCode();
+        return hc;
     }
 
     /**
@@ -91,9 +114,10 @@ public class LowerCase extends DynamicOperand {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof LowerCase) {
-            LowerCase that = (LowerCase)obj;
-            return this.operand.equals(that.operand);
+        if (obj instanceof ArithmeticOperand) {
+            ArithmeticOperand that = (ArithmeticOperand)obj;
+            return this.getOperator() == that.getOperator() && this.getLeft().equals(that.getLeft())
+                   && this.getRight().equals(that.getRight());
         }
         return false;
     }

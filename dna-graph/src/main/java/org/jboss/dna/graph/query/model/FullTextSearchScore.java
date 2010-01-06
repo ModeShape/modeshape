@@ -24,17 +24,14 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A dynamic operand that evaluates to the full-text search score of a node given by a selector, used in a {@link Comparison}
- * constraint.
+ * constraint and {@link Ordering}s.
  */
 @Immutable
 public class FullTextSearchScore extends DynamicOperand {
     private static final long serialVersionUID = 1L;
-
-    private final SelectorName selectorName;
 
     /**
      * Create a dynamic operand that evaluates to the full-text search score of the node identified by the selector.
@@ -42,18 +39,16 @@ public class FullTextSearchScore extends DynamicOperand {
      * @param selectorName the name of the selector
      */
     public FullTextSearchScore( SelectorName selectorName ) {
-        CheckArg.isNotNull(selectorName, "selectorName");
-        this.selectorName = selectorName;
+        super(selectorName);
     }
 
     /**
-     * {@inheritDoc}
+     * Get the selector symbol upon which this operand applies.
      * 
-     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
+     * @return the one selector names used by this operand; never null
      */
-    @Override
     public SelectorName getSelectorName() {
-        return selectorName;
+        return getSelectorNames().iterator().next();
     }
 
     /**
@@ -73,7 +68,7 @@ public class FullTextSearchScore extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getSelectorName().hashCode();
+        return getSelectorNames().hashCode();
     }
 
     /**
@@ -86,7 +81,7 @@ public class FullTextSearchScore extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof FullTextSearchScore) {
             FullTextSearchScore that = (FullTextSearchScore)obj;
-            if (!this.selectorName.equals(that.selectorName)) return false;
+            if (!this.getSelectorNames().equals(that.getSelectorNames())) return false;
             return true;
         }
         return false;

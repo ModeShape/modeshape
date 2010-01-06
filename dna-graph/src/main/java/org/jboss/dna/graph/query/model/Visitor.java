@@ -94,6 +94,8 @@ public interface Visitor {
 
     void visit( SetQuery obj );
 
+    void visit( ArithmeticOperand obj );
+
     void visit( UpperCase obj );
 
 }

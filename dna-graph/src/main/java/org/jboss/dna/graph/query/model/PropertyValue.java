@@ -34,7 +34,6 @@ import org.jboss.dna.common.util.HashCode;
 public class PropertyValue extends DynamicOperand {
     private static final long serialVersionUID = 1L;
 
-    private final SelectorName selectorName;
     private final String propertyName;
     private final int hc;
 
@@ -47,21 +46,19 @@ public class PropertyValue extends DynamicOperand {
      */
     public PropertyValue( SelectorName selectorName,
                           String propertyName ) {
-        CheckArg.isNotNull(selectorName, "selectorName");
+        super(selectorName);
         CheckArg.isNotNull(propertyName, "propertyName");
-        this.selectorName = selectorName;
         this.propertyName = propertyName;
-        this.hc = HashCode.compute(this.selectorName, this.propertyName);
+        this.hc = HashCode.compute(selectorName, this.propertyName);
     }
 
     /**
-     * {@inheritDoc}
+     * Get the selector symbol upon which this operand applies.
      * 
-     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
+     * @return the one selector names used by this operand; never null
      */
-    @Override
-    public final SelectorName getSelectorName() {
-        return selectorName;
+    public SelectorName getSelectorName() {
+        return getSelectorNames().iterator().next();
     }
 
     /**
@@ -104,7 +101,7 @@ public class PropertyValue extends DynamicOperand {
         if (obj instanceof PropertyValue) {
             PropertyValue that = (PropertyValue)obj;
             if (this.hc != that.hc) return false;
-            return this.selectorName.equals(that.selectorName) && this.propertyName.equals(that.propertyName);
+            return this.getSelectorNames().equals(that.getSelectorNames()) && this.propertyName.equals(that.propertyName);
         }
         return false;
     }

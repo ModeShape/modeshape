@@ -466,6 +466,40 @@ public class QueryBuilderTest {
     }
 
     @Test
+    public void shouldBuildQueryWithCriteriaUsingPlus() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .depth("nodes")
+                       .plus()
+                       .depth("nodes")
+                       .plus()
+                       .depth("nodes")
+                       .isEqualTo(3)
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE ((DEPTH(nodes) + DEPTH(nodes)) + DEPTH(nodes)) = 3"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCriteriaUsingPlusAndMinus() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .depth("nodes")
+                       .minus()
+                       .depth("nodes")
+                       .plus()
+                       .fullTextSearchScore("nodes")
+                       .isEqualTo(3)
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE (DEPTH(nodes) - (DEPTH(nodes) + SCORE(nodes))) = 3"));
+    }
+
+    @Test
     public void shouldBuildQueryWithCriteriaUsingLengthEqualTo() {
         query = builder.selectStar()
                        .from("table AS nodes")
@@ -1369,7 +1403,7 @@ public class QueryBuilderTest {
     }
 
     @Test
-    public void shouldBuilderQueryWithSetCriteria() {
+    public void shouldBuildQueryWithSetCriteria() {
         query = builder.selectStar()
                        .from("table AS nodes")
                        .where()
@@ -1379,5 +1413,19 @@ public class QueryBuilderTest {
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
                                 "WHERE NAME(nodes) IN ('value1','value2','value3')"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithOneOrderByClause() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .orderBy()
+                       .ascending()
+                       .fullTextSearchScore("nodes")
+                       .then()
+                       .descending()
+                       .length("nodes", "column")
+                       .end()
+                       .query();
     }
 }

@@ -32,6 +32,7 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.QueryResults.Columns;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
 import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.Length;
@@ -317,6 +318,132 @@ public abstract class ProcessingComponent {
                     return tuple[index];
                 }
             };
+        }
+        if (operand instanceof ArithmeticOperand) {
+            ArithmeticOperand arith = (ArithmeticOperand)operand;
+            final DynamicOperation leftOp = createDynamicOperation(typeSystem, schemata, columns, arith.getLeft());
+            final DynamicOperation rightOp = createDynamicOperation(typeSystem, schemata, columns, arith.getRight());
+            // compute the expected (common) type ...
+            String leftType = leftOp.getExpectedType();
+            String rightType = rightOp.getExpectedType();
+            final String commonType = typeSystem.getCompatibleType(leftType, rightType);
+            if (typeSystem.getDoubleFactory().getTypeName().equals(commonType)) {
+                final TypeFactory<Double> commonTypeFactory = typeSystem.getDoubleFactory();
+                switch (arith.getOperator()) {
+                    case ADD:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Double right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Double left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null) return left;
+                                if (left == null) return right;
+                                return left.doubleValue() / right.doubleValue();
+                            }
+                        };
+                    case SUBTRACT:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Double right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Double left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null) return left;
+                                if (left == null) left = 0.0d;
+                                return left.doubleValue() * right.doubleValue();
+                            }
+                        };
+                    case MULTIPLY:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Double right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Double left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null || left == null) return null;
+                                return left.doubleValue() * right.doubleValue();
+                            }
+                        };
+                    case DIVIDE:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Double right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Double left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null || left == null) return null;
+                                return left.doubleValue() / right.doubleValue();
+                            }
+                        };
+                }
+            } else if (typeSystem.getLongFactory().getTypeName().equals(commonType)) {
+                final TypeFactory<Long> commonTypeFactory = typeSystem.getLongFactory();
+                switch (arith.getOperator()) {
+                    case ADD:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Long right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Long left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null) return left;
+                                if (left == null) return right;
+                                return left.longValue() / right.longValue();
+                            }
+                        };
+                    case SUBTRACT:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Long right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Long left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null) return left;
+                                if (left == null) left = 0L;
+                                return left.longValue() * right.longValue();
+                            }
+                        };
+                    case MULTIPLY:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Long right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Long left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null || left == null) return null;
+                                return left.longValue() * right.longValue();
+                            }
+                        };
+                    case DIVIDE:
+                        return new DynamicOperation() {
+                            public String getExpectedType() {
+                                return commonType;
+                            }
+
+                            public Object evaluate( Object[] tuple ) {
+                                Long right = commonTypeFactory.create(rightOp.evaluate(tuple));
+                                Long left = commonTypeFactory.create(leftOp.evaluate(tuple));
+                                if (right == null || left == null) return null;
+                                return left.longValue() / right.longValue();
+                            }
+                        };
+                }
+            }
         }
         assert false;
         return null;

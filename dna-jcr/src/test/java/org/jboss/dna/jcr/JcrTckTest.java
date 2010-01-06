@@ -147,8 +147,6 @@ public class JcrTckTest {
     private static class LevelOneFeatureTests extends TestSuite {
         protected LevelOneFeatureTests() {
             super("JCR Level 1 API Tests");
-            // We currently don't pass the tests in those suites that are commented out
-            // See https://jira.jboss.org/jira/browse/DNA-285
 
             addTestSuite(org.apache.jackrabbit.test.api.RootNodeTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);

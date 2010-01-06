@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A dynamic operand that evaluates to the qualified name of a node given by a selector, used in a {@link Comparison} constraint.
@@ -33,26 +32,22 @@ import org.jboss.dna.common.util.CheckArg;
 public class NodeName extends DynamicOperand {
     private static final long serialVersionUID = 1L;
 
-    private final SelectorName selectorName;
-
     /**
      * Create a dynamic operand that evaluates to the qualified name of the node identified by the selector.
      * 
      * @param selectorName the name of the selector
      */
     public NodeName( SelectorName selectorName ) {
-        CheckArg.isNotNull(selectorName, "selectorName");
-        this.selectorName = selectorName;
+        super(selectorName);
     }
 
     /**
-     * {@inheritDoc}
+     * Get the selector symbol upon which this operand applies.
      * 
-     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
+     * @return the one selector names used by this operand; never null
      */
-    @Override
-    public final SelectorName getSelectorName() {
-        return selectorName;
+    public SelectorName getSelectorName() {
+        return getSelectorNames().iterator().next();
     }
 
     /**
@@ -72,7 +67,7 @@ public class NodeName extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getSelectorName().hashCode();
+        return getSelectorNames().hashCode();
     }
 
     /**
@@ -85,7 +80,7 @@ public class NodeName extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof NodeName) {
             NodeName that = (NodeName)obj;
-            return this.selectorName.equals(that.selectorName);
+            return this.getSelectorNames().equals(that.getSelectorNames());
         }
         return false;
     }

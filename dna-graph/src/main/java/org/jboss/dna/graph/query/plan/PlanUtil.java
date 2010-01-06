@@ -27,12 +27,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
+import org.jboss.dna.graph.query.model.ArithmeticOperator;
 import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
@@ -558,6 +561,20 @@ public class PlanUtil {
                         // Nothing to do here, as the selector names are fixed elsewhere
                         break;
                     case SORT:
+                        // The selector names and Ordering objects needs to be changed ...
+                        List<Ordering> orderings = node.getPropertyAsList(Property.SORT_ORDER_BY, Ordering.class);
+                        List<Ordering> newOrderings = new ArrayList<Ordering>(orderings.size());
+                        node.getSelectors().clear();
+                        for (Ordering ordering : orderings) {
+                            DynamicOperand operand = ordering.getOperand();
+                            DynamicOperand newOperand = replaceViewReferences(context, operand, mappings, node);
+                            if (newOperand != operand) {
+                                ordering = new Ordering(newOperand, ordering.getOrder());
+                            }
+                            node.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
+                            newOrderings.add(ordering);
+                        }
+                        node.setProperty(Property.SORT_ORDER_BY, newOrderings);
                         break;
                     case GROUP:
                         // Don't yet use GROUP BY
@@ -678,11 +695,29 @@ public class PlanUtil {
                                                         DynamicOperand operand,
                                                         ColumnMapping mapping,
                                                         PlanNode node ) {
+        if (operand instanceof ArithmeticOperand) {
+            ArithmeticOperand arith = (ArithmeticOperand)operand;
+            DynamicOperand newLeft = replaceViewReferences(context, arith.getLeft(), mapping, node);
+            DynamicOperand newRight = replaceViewReferences(context, arith.getRight(), mapping, node);
+            return new ArithmeticOperand(newLeft, arith.getOperator(), newRight);
+        }
         if (operand instanceof FullTextSearchScore) {
             FullTextSearchScore score = (FullTextSearchScore)operand;
             if (!mapping.getOriginalName().equals(score.getSelectorName())) return score;
-            if (!mapping.isMappedToSingleSelector()) return score;
-            return new FullTextSearchScore(mapping.getSingleMappedSelectorName());
+            if (mapping.isMappedToSingleSelector()) {
+                return new FullTextSearchScore(mapping.getSingleMappedSelectorName());
+            }
+            // There are multiple mappings, so we have to create a composite score ...
+            DynamicOperand composite = null;
+            for (SelectorName name : mapping.getMappedSelectorNames()) {
+                FullTextSearchScore mappedScore = new FullTextSearchScore(name);
+                if (composite == null) {
+                    composite = mappedScore;
+                } else {
+                    composite = new ArithmeticOperand(composite, ArithmeticOperator.ADD, mappedScore);
+                }
+            }
+            return composite;
         }
         if (operand instanceof Length) {
             Length operation = (Length)operand;
@@ -857,7 +892,7 @@ public class PlanUtil {
     public static class ColumnMapping {
         private final SelectorName originalName;
         private final Map<String, Column> mappedColumnsByOriginalColumnName = new HashMap<String, Column>();
-        private final Set<SelectorName> mappedSelectorNames = new HashSet<SelectorName>();
+        private final Set<SelectorName> mappedSelectorNames = new LinkedHashSet<SelectorName>(); // maintains insertion order
 
         public ColumnMapping( SelectorName originalName ) {
             this.originalName = originalName;

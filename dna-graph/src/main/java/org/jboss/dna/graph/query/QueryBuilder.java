@@ -41,6 +41,8 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
+import org.jboss.dna.graph.query.model.ArithmeticOperator;
 import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
@@ -69,6 +71,7 @@ import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.Not;
 import org.jboss.dna.graph.query.model.Operator;
 import org.jboss.dna.graph.query.model.Or;
+import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.Ordering;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.PropertyValue;
@@ -703,6 +706,17 @@ public class QueryBuilder {
     }
 
     /**
+     * Obtain a builder that will create the order-by clause (with one or more {@link Ordering} statements) for the query. This
+     * method need be called only once to build the order-by clause, but can be called multiple times (it merely adds additional
+     * {@link Ordering} statements).
+     * 
+     * @return the order-by builder; never null
+     */
+    public OrderByBuilder orderBy() {
+        return new OrderByBuilder();
+    }
+
+    /**
      * Return a {@link QueryCommand} representing the currently-built query.
      * 
      * @return the resulting query command; never null
@@ -724,6 +738,255 @@ public class QueryBuilder {
             }
         }
         return result;
+    }
+
+    public interface OrderByOperandBuilder {
+        /**
+         * Adds to the order-by clause by using the length of the value for the given table and property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the property; may not be null and must refer to a valid property name
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder length( String table,
+                                      String property );
+
+        /**
+         * Adds to the order-by clause by using the value for the given table and property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the property; may not be null and must refer to a valid property name
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder propertyValue( String table,
+                                             String property );
+
+        /**
+         * Adds to the order-by clause by using the full-text search score for the given table.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder fullTextSearchScore( String table );
+
+        /**
+         * Adds to the order-by clause by using the depth of the node given by the named table.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder depth( String table );
+
+        /**
+         * Adds to the order-by clause by using the path of the node given by the named table.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder path( String table );
+
+        /**
+         * Adds to the order-by clause by using the local name of the node given by the named table.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder nodeLocalName( String table );
+
+        /**
+         * Adds to the order-by clause by using the node name (including namespace) of the node given by the named table.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder nodeName( String table );
+
+        /**
+         * Adds to the order-by clause by using the uppercase form of the next operand.
+         * 
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByOperandBuilder upperCaseOf();
+
+        /**
+         * Adds to the order-by clause by using the lowercase form of the next operand.
+         * 
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByOperandBuilder lowerCaseOf();
+    }
+
+    /**
+     * The component used to build the order-by clause. When the clause is completed, {@link #end()} should be called to return to
+     * the {@link QueryBuilder} instance.
+     */
+    public class OrderByBuilder {
+
+        protected OrderByBuilder() {
+        }
+
+        /**
+         * Begin specifying an order-by specification using {@link Order#ASCENDING ascending order}.
+         * 
+         * @return the interface for specifying the operand that is to be ordered; never null
+         */
+        public OrderByOperandBuilder ascending() {
+            return new SingleOrderByOperandBuilder(this, Order.ASCENDING);
+        }
+
+        /**
+         * Begin specifying an order-by specification using {@link Order#DESCENDING descending order}.
+         * 
+         * @return the interface for specifying the operand that is to be ordered; never null
+         */
+        public OrderByOperandBuilder descending() {
+            return new SingleOrderByOperandBuilder(this, Order.DESCENDING);
+        }
+
+        /**
+         * An optional convenience method that returns this builder, but which makes the code using this builder more readable.
+         * 
+         * @return this builder; never null
+         */
+        public OrderByBuilder then() {
+            return this;
+        }
+
+        /**
+         * Complete the order-by clause and return the QueryBuilder instance.
+         * 
+         * @return the query builder instance; never null
+         */
+        public QueryBuilder end() {
+            return QueryBuilder.this;
+        }
+    }
+
+    protected class SingleOrderByOperandBuilder implements OrderByOperandBuilder {
+        private final Order order;
+        private final OrderByBuilder builder;
+
+        protected SingleOrderByOperandBuilder( OrderByBuilder builder,
+                                               Order order ) {
+            this.order = order;
+            this.builder = builder;
+        }
+
+        protected OrderByBuilder addOrdering( DynamicOperand operand ) {
+            Ordering ordering = new Ordering(operand, order);
+            QueryBuilder.this.orderings.add(ordering);
+            return builder;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#propertyValue(java.lang.String, java.lang.String)
+         */
+        public OrderByBuilder propertyValue( String table,
+                                             String property ) {
+            return addOrdering(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#length(java.lang.String, java.lang.String)
+         */
+        public OrderByBuilder length( String table,
+                                      String property ) {
+            return addOrdering(new Length(new PropertyValue(selector(table), property)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#fullTextSearchScore(java.lang.String)
+         */
+        public OrderByBuilder fullTextSearchScore( String table ) {
+            return addOrdering(new FullTextSearchScore(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#depth(java.lang.String)
+         */
+        public OrderByBuilder depth( String table ) {
+            return addOrdering(new NodeDepth(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#path(java.lang.String)
+         */
+        public OrderByBuilder path( String table ) {
+            return addOrdering(new NodePath(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#nodeName(java.lang.String)
+         */
+        public OrderByBuilder nodeName( String table ) {
+            return addOrdering(new NodeName(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#nodeLocalName(java.lang.String)
+         */
+        public OrderByBuilder nodeLocalName( String table ) {
+            return addOrdering(new NodeLocalName(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#lowerCaseOf()
+         */
+        public OrderByOperandBuilder lowerCaseOf() {
+            return new SingleOrderByOperandBuilder(builder, order) {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.query.QueryBuilder.SingleOrderByOperandBuilder#addOrdering(org.jboss.dna.graph.query.model.DynamicOperand)
+                 */
+                @Override
+                protected OrderByBuilder addOrdering( DynamicOperand operand ) {
+                    return super.addOrdering(new LowerCase(operand));
+                }
+            };
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder#upperCaseOf()
+         */
+        public OrderByOperandBuilder upperCaseOf() {
+            return new SingleOrderByOperandBuilder(builder, order) {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.jboss.dna.graph.query.QueryBuilder.SingleOrderByOperandBuilder#addOrdering(org.jboss.dna.graph.query.model.DynamicOperand)
+                 */
+                @Override
+                protected OrderByBuilder addOrdering( DynamicOperand operand ) {
+                    return super.addOrdering(new UpperCase(operand));
+                }
+            };
+        }
     }
 
     /**
@@ -932,7 +1195,6 @@ public class QueryBuilder {
          * @return the interface for completing the criteria specification; never null
          */
         public DynamicOperandBuilder lowerCaseOf();
-
     }
 
     public class ConstraintBuilder implements DynamicOperandBuilder {
@@ -975,9 +1237,12 @@ public class QueryBuilder {
          * Complete the specification of a constraint clause, and return the builder for the parent constraint clause.
          * 
          * @return the constraint builder that was used to create this parenthetical constraint clause builder; never null
+         * @throws IllegalStateException if there was not an {@link #openParen() open parenthesis} to close
          */
         public ConstraintBuilder closeParen() {
-            assert parent != null;
+            if (parent == null) {
+                throw new IllegalStateException(GraphI18n.unexpectedClosingParenthesis.text());
+            }
             buildLogicalConstraint();
             return parent.setConstraint(constraint);
         }
@@ -1125,6 +1390,10 @@ public class QueryBuilder {
             return setConstraint(new FullTextSearch(selector(table), propertyName, searchExpression));
         }
 
+        protected ComparisonBuilder comparisonBuilder( DynamicOperand operand ) {
+            return new ComparisonBuilder(this, operand);
+        }
+
         /**
          * {@inheritDoc}
          * 
@@ -1132,7 +1401,7 @@ public class QueryBuilder {
          */
         public ComparisonBuilder length( String table,
                                          String property ) {
-            return new ComparisonBuilder(this, new Length(new PropertyValue(selector(table), property)));
+            return comparisonBuilder(new Length(new PropertyValue(selector(table), property)));
         }
 
         /**
@@ -1142,7 +1411,7 @@ public class QueryBuilder {
          */
         public ComparisonBuilder propertyValue( String table,
                                                 String property ) {
-            return new ComparisonBuilder(this, new PropertyValue(selector(table), property));
+            return comparisonBuilder(new PropertyValue(selector(table), property));
         }
 
         /**
@@ -1151,7 +1420,7 @@ public class QueryBuilder {
          * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#fullTextSearchScore(String)
          */
         public ComparisonBuilder fullTextSearchScore( String table ) {
-            return new ComparisonBuilder(this, new FullTextSearchScore(selector(table)));
+            return comparisonBuilder(new FullTextSearchScore(selector(table)));
         }
 
         /**
@@ -1160,7 +1429,7 @@ public class QueryBuilder {
          * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#depth(java.lang.String)
          */
         public ComparisonBuilder depth( String table ) {
-            return new ComparisonBuilder(this, new NodeDepth(selector(table)));
+            return comparisonBuilder(new NodeDepth(selector(table)));
         }
 
         /**
@@ -1169,7 +1438,7 @@ public class QueryBuilder {
          * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#path(java.lang.String)
          */
         public ComparisonBuilder path( String table ) {
-            return new ComparisonBuilder(this, new NodePath(selector(table)));
+            return comparisonBuilder(new NodePath(selector(table)));
         }
 
         /**
@@ -1178,7 +1447,7 @@ public class QueryBuilder {
          * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#nodeLocalName(String)
          */
         public ComparisonBuilder nodeLocalName( String table ) {
-            return new ComparisonBuilder(this, new NodeLocalName(selector(table)));
+            return comparisonBuilder(new NodeLocalName(selector(table)));
         }
 
         /**
@@ -1187,7 +1456,7 @@ public class QueryBuilder {
          * @see org.jboss.dna.graph.query.QueryBuilder.DynamicOperandBuilder#nodeName(String)
          */
         public ComparisonBuilder nodeName( String table ) {
-            return new ComparisonBuilder(this, new NodeName(selector(table)));
+            return comparisonBuilder(new NodeName(selector(table)));
         }
 
         /**
@@ -1365,7 +1634,8 @@ public class QueryBuilder {
          */
         @Override
         public ConstraintBuilder as( String type ) {
-            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, typeSystem.getTypeFactory(type).create(value));
+            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, typeSystem.getTypeFactory(type)
+                                                                                                 .create(value));
         }
     }
 
@@ -2172,6 +2442,124 @@ public class QueryBuilder {
         }
     }
 
+    public class ArithmeticBuilder {
+        protected final ArithmeticBuilder parent;
+        protected final ArithmeticOperator operator;
+        protected DynamicOperand left;
+        protected final ComparisonBuilder comparisonBuilder;
+
+        protected ArithmeticBuilder( ArithmeticOperator operator,
+                                     ComparisonBuilder comparisonBuilder,
+                                     DynamicOperand left,
+                                     ArithmeticBuilder parent ) {
+            this.operator = operator;
+            this.left = left;
+            this.comparisonBuilder = comparisonBuilder;
+            this.parent = parent; // may be null
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a property value whose length matches the
+         * criteria.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the property; may not be null and must refer to a valid property name
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder length( String table,
+                                         String property ) {
+            return comparisonBuilder(new Length(new PropertyValue(selector(table), property)));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for the named property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the property; may not be null and must refer to a valid property name
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder propertyValue( String table,
+                                                String property ) {
+            return comparisonBuilder(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must satisfy the supplied full-text search on the nodes'
+         * property values.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder fullTextSearchScore( String table ) {
+            return comparisonBuilder(new FullTextSearchScore(selector(table)));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table based upon criteria on the node's depth.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder depth( String table ) {
+            return comparisonBuilder(new NodeDepth(selector(table)));
+        }
+
+        // /**
+        // * Simulate the use of an open parenthesis in the constraint. The resulting builder should be used to define the
+        // * constraint within the parenthesis, and should always be terminated with a {@link #closeParen()}.
+        // *
+        // * @return the constraint builder that should be used to define the portion of the constraint within the parenthesis;
+        // * never null
+        // * @see #closeParen()
+        // */
+        // public ArithmeticBuilder openParen() {
+        // return new ArithmeticBuilder(operator, comparisonBuilder, left, this);
+        // }
+        //
+        // /**
+        // * Complete the specification of a constraint clause, and return the builder for the parent constraint clause.
+        // *
+        // * @return the constraint builder that was used to create this parenthetical constraint clause builder; never null
+        // * @throws IllegalStateException if there was not an {@link #openParen() open parenthesis} to close
+        // */
+        // public ComparisonBuilder closeParen() {
+        // if (parent == null) {
+        // throw new IllegalStateException(GraphI18n.unexpectedClosingParenthesis.text());
+        // }
+        // buildLogicalConstraint();
+        // return parent.setLeft(left).comparisonBuilder;
+        // }
+        // protected ArithmeticBuilder setLeft( DynamicOperand left ) {
+        // this.left = left;
+        // return this;
+        // }
+
+        protected ComparisonBuilder comparisonBuilder( DynamicOperand right ) {
+            DynamicOperand leftOperand = null;
+            // If the left operand is an arithmetic operand, then we need to check the operator precedence ...
+            if (left instanceof ArithmeticOperand) {
+                ArithmeticOperand leftArith = (ArithmeticOperand)left;
+                ArithmeticOperator operator = leftArith.getOperator();
+                if (this.operator.precedes(operator)) {
+                    // Need to do create an operand with leftArith.right and right
+                    DynamicOperand inner = new ArithmeticOperand(leftArith.getRight(), this.operator, right);
+                    leftOperand = new ArithmeticOperand(leftArith.getLeft(), operator, inner);
+                } else {
+                    // the left preceds this, so we can add the new operand on top ...
+                    leftOperand = new ArithmeticOperand(leftArith, operator, right);
+                }
+            } else {
+                // The left isn't an arith ...
+                leftOperand = new ArithmeticOperand(left, operator, right);
+            }
+            return new ComparisonBuilder(comparisonBuilder.constraintBuilder, leftOperand);
+        }
+    }
+
     /**
      * An interface used to set the right-hand side of a constraint.
      */
@@ -2194,6 +2582,26 @@ public class QueryBuilder {
                 right.add(literal instanceof Literal ? (Literal)literal : new Literal(literal));
             }
             return this.constraintBuilder.setConstraint(new SetCriteria(left, right));
+        }
+
+        /**
+         * Create a comparison object based upon the addition of the previously-constructed {@link DynamicOperand} and the next
+         * DynamicOperand to be created with the supplied builder.
+         * 
+         * @return the builder that should be used to create the right-hand-side of the operation; never null
+         */
+        public ArithmeticBuilder plus() {
+            return new ArithmeticBuilder(ArithmeticOperator.ADD, this, left, null);
+        }
+
+        /**
+         * Create a comparison object based upon the subtraction of the next {@link DynamicOperand} (created using the builder
+         * returned from this method) from the the previously-constructed DynamicOperand to be created with the supplied builder.
+         * 
+         * @return the builder that should be used to create the right-hand-side of the operation; never null
+         */
+        public ArithmeticBuilder minus() {
+            return new ArithmeticBuilder(ArithmeticOperator.SUBTRACT, this, left, null);
         }
 
         /**

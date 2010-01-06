@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A dynamic operand that evaluates to the upper-case representation of the supplied operand, used in a {@link Comparison}
@@ -42,18 +41,17 @@ public class UpperCase extends DynamicOperand {
      * @param operand the operand that is to be lower-cased
      */
     public UpperCase( DynamicOperand operand ) {
-        CheckArg.isNotNull(operand, "operand");
+        super(operand);
         this.operand = operand;
     }
 
     /**
-     * {@inheritDoc}
+     * Get the selector symbol upon which this operand applies.
      * 
-     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
+     * @return the one selector names used by this operand; never null
      */
-    @Override
     public SelectorName getSelectorName() {
-        return operand.getSelectorName();
+        return getSelectorNames().iterator().next();
     }
 
     /**

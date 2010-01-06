@@ -336,6 +336,9 @@ public class CanonicalPlanner implements Planner {
 
         context.getHints().hasSort = true;
         sortNode.setProperty(Property.SORT_ORDER_BY, orderings);
+        for (Ordering ordering : orderings) {
+            sortNode.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
+        }
 
         sortNode.addLastChild(plan);
         return sortNode;

@@ -26,10 +26,12 @@ package org.jboss.dna.jcr.xpath;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.common.collection.ReadOnlyIterator;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.ObjectUtil;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.Order;
 
 /**
  * Abstract syntax components of an XPath query. The supported grammar is defined by JCR 1.0, and is a subset of what is allowed
@@ -642,11 +644,14 @@ public class XPath {
     public static class PathExpression extends Component implements Iterable<StepExpression> {
         private final List<StepExpression> steps;
         private final boolean relative;
+        private final OrderBy orderBy;
 
         public PathExpression( boolean relative,
-                               List<StepExpression> steps ) {
+                               List<StepExpression> steps,
+                               OrderBy orderBy ) {
             this.steps = steps;
             this.relative = relative;
+            this.orderBy = orderBy;
         }
 
         /**
@@ -654,6 +659,15 @@ public class XPath {
          */
         public boolean isRelative() {
             return relative;
+        }
+
+        /**
+         * Get the order-by clause.
+         * 
+         * @return the order-by clause, or null if there is no such clause
+         */
+        public OrderBy getOrderBy() {
+            return orderBy;
         }
 
         /**
@@ -669,12 +683,12 @@ public class XPath {
 
         public PathExpression withoutLast() {
             assert !steps.isEmpty();
-            return new PathExpression(relative, steps.subList(0, steps.size() - 1));
+            return new PathExpression(relative, steps.subList(0, steps.size() - 1), orderBy);
         }
 
         public PathExpression withoutFirst() {
             assert !steps.isEmpty();
-            return new PathExpression(relative, steps.subList(1, steps.size()));
+            return new PathExpression(relative, steps.subList(1, steps.size()), orderBy);
         }
 
         /**
@@ -701,7 +715,10 @@ public class XPath {
             if (obj == this) return true;
             if (obj instanceof PathExpression) {
                 PathExpression that = (PathExpression)obj;
-                return this.relative == that.relative && this.steps.equals(that.steps);
+                if (this.relative != that.relative) return false;
+                if (this.orderBy != null && !this.orderBy.equals(that.orderBy)) return false;
+                if (this.orderBy == null && that.orderBy != null) return false;
+                return this.steps.equals(that.steps);
             }
             return false;
         }
@@ -1380,6 +1397,168 @@ public class XPath {
         @Override
         public String toString() {
             return "schema-attribute(" + attributeDeclarationName + ")";
+        }
+    }
+
+    public static class OrderBy extends Component implements Iterable<OrderBySpec> {
+        private final List<OrderBySpec> orderBySpecifications;
+
+        public OrderBy( List<OrderBySpec> orderBySpecifications ) {
+            this.orderBySpecifications = orderBySpecifications;
+        }
+
+        /**
+         *@return the list of order-by specifications; never null
+         */
+        public List<OrderBySpec> getOrderBySpecifications() {
+            return orderBySpecifications;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.xpath.XPath.Component#collapse()
+         */
+        @Override
+        public Component collapse() {
+            return super.collapse();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Iterable#iterator()
+         */
+        public Iterator<OrderBySpec> iterator() {
+            return new ReadOnlyIterator<OrderBySpec>(orderBySpecifications.iterator());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof OrderBy) {
+                OrderBy that = (OrderBy)obj;
+                return this.orderBySpecifications.equals(that.orderBySpecifications);
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("order-by(");
+            boolean first = true;
+            for (OrderBySpec spec : orderBySpecifications) {
+                if (first) first = false;
+                else sb.append(',');
+                sb.append(spec);
+            }
+            sb.append(')');
+            return sb.toString();
+        }
+    }
+
+    public static class OrderBySpec {
+        private final Order order;
+        private final FunctionCall scoreFunction;
+        private final NameTest attributeName;
+
+        public OrderBySpec( Order order,
+                            FunctionCall scoreFunction ) {
+            assert order != null;
+            assert scoreFunction != null;
+            this.order = order;
+            this.scoreFunction = scoreFunction;
+            this.attributeName = null;
+        }
+
+        public OrderBySpec( Order order,
+                            NameTest attributeName ) {
+            assert order != null;
+            assert attributeName != null;
+            this.order = order;
+            this.scoreFunction = null;
+            this.attributeName = attributeName;
+        }
+
+        /**
+         * Get the attribute name for this order specification.
+         * 
+         * @return the attribute name, or null if the order is defined by the {@link #getScoreFunction() score function}
+         */
+        public NameTest getAttributeName() {
+            return attributeName;
+        }
+
+        /**
+         * Get the score function for this order specification.
+         * 
+         * @return the score function with its parameters, or null if the order is defined by the {@link #getAttributeName()
+         *         attribute name}
+         */
+        public FunctionCall getScoreFunction() {
+            return scoreFunction;
+        }
+
+        /**
+         * The order for this specification
+         * 
+         * @return the order; never null
+         */
+        public Order getOrder() {
+            return order;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof OrderBySpec) {
+                OrderBySpec that = (OrderBySpec)obj;
+                if (this.order != that.order) return false;
+                if (this.attributeName != null && !this.attributeName.equals(that.attributeName)) return false;
+                if (this.scoreFunction != null && !this.scoreFunction.equals(that.scoreFunction)) return false;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (scoreFunction != null) {
+                sb.append(scoreFunction.toString());
+            } else {
+                sb.append('@').append(attributeName.toString());
+            }
+            switch (order) {
+                case ASCENDING:
+                    sb.append(" ascending");
+                    break;
+                case DESCENDING:
+                    sb.append(" descending");
+                    break;
+            }
+            return sb.toString();
         }
     }
 }

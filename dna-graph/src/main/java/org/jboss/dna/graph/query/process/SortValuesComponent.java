@@ -119,8 +119,8 @@ public class SortValuesComponent extends DelegatingComponent {
             return new Comparator<Object[]>() {
                 public int compare( Object[] tuple1,
                                     Object[] tuple2 ) {
-                    Object value1 = operation.evaluate(tuple1);
-                    Object value2 = operation.evaluate(tuple2);
+                    Object value1 = typeFactory.create(operation.evaluate(tuple1));
+                    Object value2 = typeFactory.create(operation.evaluate(tuple2));
                     return 0 - typeComparator.compare(value1, value2);
                 }
             };
@@ -128,8 +128,8 @@ public class SortValuesComponent extends DelegatingComponent {
         return new Comparator<Object[]>() {
             public int compare( Object[] tuple1,
                                 Object[] tuple2 ) {
-                Object value1 = operation.evaluate(tuple1);
-                Object value2 = operation.evaluate(tuple2);
+                Object value1 = typeFactory.create(operation.evaluate(tuple1));
+                Object value2 = typeFactory.create(operation.evaluate(tuple2));
                 return typeComparator.compare(value1, value2);
             }
         };

@@ -34,13 +34,19 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.query.AbstractQueryTest;
 import org.jboss.dna.graph.query.QueryContext;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
+import org.jboss.dna.graph.query.model.ArithmeticOperator;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.Comparison;
+import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
 import org.jboss.dna.graph.query.model.FullTextSearch;
+import org.jboss.dna.graph.query.model.FullTextSearchScore;
 import org.jboss.dna.graph.query.model.JoinType;
 import org.jboss.dna.graph.query.model.Literal;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.Order;
+import org.jboss.dna.graph.query.model.Ordering;
 import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.SelectorName;
@@ -507,12 +513,127 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         assertThat(node.isSameAs(access), is(true));
     }
 
+    @Test
+    public void shouldOptimizePlanForQueryWithOrderByClause() {
+        node = optimize("SELECT v2.c11 AS c1 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y' ORDER BY v2.c11, v2.c12 DESC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
+        PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
+                                                                          Operator.EQUAL_TO, new Literal("x")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryWithOrderByClauseThatUsesScoreFunction() {
+        node = optimize("SELECT v2.c11 AS c1 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y' ORDER BY SCORE(v2) ASC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"), selector("t2"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascendingScore("t1", "t2")));
+        PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
+                                                                          Operator.EQUAL_TO, new Literal("x")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utility methods ...
     // ----------------------------------------------------------------------------------------------------------------
 
     protected List<Column> columns( Column... columns ) {
         return Arrays.asList(columns);
+    }
+
+    protected List<Ordering> orderings( Ordering... orderings ) {
+        return Arrays.asList(orderings);
+    }
+
+    protected Ordering ascending( String table,
+                                  String columnName ) {
+        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.ASCENDING);
+    }
+
+    protected Ordering descending( String table,
+                                   String columnName ) {
+        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.DESCENDING);
+    }
+
+    protected Ordering ascendingScore( String... tableNames ) {
+        return new Ordering(score(tableNames), Order.ASCENDING);
+    }
+
+    protected Ordering descendingScore( String... tableNames ) {
+        return new Ordering(score(tableNames), Order.DESCENDING);
+    }
+
+    protected DynamicOperand score( String... tableNames ) {
+        DynamicOperand operand = null;
+        for (String tableName : tableNames) {
+            DynamicOperand right = new FullTextSearchScore(new SelectorName(tableName));
+            if (operand == null) operand = right;
+            else operand = new ArithmeticOperand(operand, ArithmeticOperator.ADD, right);
+        }
+        assert operand != null;
+        return operand;
     }
 
     protected Column column( String table,

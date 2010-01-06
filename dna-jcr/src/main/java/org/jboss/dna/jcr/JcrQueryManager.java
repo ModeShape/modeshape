@@ -46,8 +46,12 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.collection.Problem;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.Problem.Status;
 import org.jboss.dna.common.text.ParsingException;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
@@ -119,6 +123,7 @@ class JcrQueryManager implements QueryManager {
                 throw new InvalidQueryException(JcrI18n.queryCannotBeParsedUsingLanguage.text(language, expression));
             }
             PlanHints hints = new PlanHints();
+            hints.showPlan = true;
             // If using XPath, we need to add a few hints ...
             if (Query.XPATH.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
@@ -260,6 +265,18 @@ class JcrQueryManager implements QueryManager {
 
             return queryNode;
         }
+
+        protected void checkForProblems( Problems problems ) throws RepositoryException {
+            if (problems.hasErrors()) {
+                // Build a message with the problems ...
+                StringBuilder msg = new StringBuilder();
+                for (Problem problem : problems) {
+                    if (problem.getStatus() != Status.ERROR) continue;
+                    msg.append(problem.getMessageString()).append("\n");
+                }
+                throw new RepositoryException(msg.toString());
+            }
+        }
     }
 
     /**
@@ -297,7 +314,12 @@ class JcrQueryManager implements QueryManager {
             this.variables = null;
         }
 
-        protected QueryCommand getCommand() {
+        /**
+         * Get the underlying and immutable Abstract Query Model representation of this query.
+         * 
+         * @return the AQM representation; never null
+         */
+        public QueryCommand getAbstractQueryModel() {
             return query;
         }
 
@@ -314,12 +336,23 @@ class JcrQueryManager implements QueryManager {
                                                                             schemata,
                                                                             hints,
                                                                             variables);
+            checkForProblems(result.getProblems());
             if (Query.XPATH.equals(language)) {
                 return new XPathQueryResult(session, result);
             }
             return new JcrQueryResult(session, result);
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return language + " -> " + statement + "\n" + StringUtil.createString(' ', Math.min(language.length() - 3, 0))
+                   + "AQM -> " + query;
+        }
     }
 
     @NotThreadSafe
@@ -354,7 +387,18 @@ class JcrQueryManager implements QueryManager {
                                                                              statement,
                                                                              MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES,
                                                                              0);
+            checkForProblems(result.getProblems());
             return new JcrQueryResult(session, result);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return language + " -> " + statement;
         }
     }
 
@@ -427,6 +471,15 @@ class JcrQueryManager implements QueryManager {
             final int numRows = results.getRowCount();
             final List<Object[]> tuples = results.getTuples();
             return new QueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+        }
+
+        /**
+         * Get a description of the query plan, if requested.
+         * 
+         * @return the query plan, or null if the plan was not requested
+         */
+        public String getPlan() {
+            return results.getPlan();
         }
 
         /**

@@ -71,6 +71,13 @@ public interface QueryResults extends Serializable {
     public int getRowCount();
 
     /**
+     * Get a description of the query plan, if requested.
+     * 
+     * @return the query plan, or null if the plan was not requested
+     */
+    public String getPlan();
+
+    /**
      * Get the problems encountered during execution.
      * 
      * @return the problems; never null but possibly empty

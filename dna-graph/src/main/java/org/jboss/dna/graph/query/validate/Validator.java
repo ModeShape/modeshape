@@ -26,14 +26,17 @@ package org.jboss.dna.graph.query.validate;
 import java.util.HashMap;
 import java.util.Map;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.query.QueryContext;
 import org.jboss.dna.graph.query.model.AllNodes;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
 import org.jboss.dna.graph.query.model.ChildNode;
 import org.jboss.dna.graph.query.model.ChildNodeJoinCondition;
 import org.jboss.dna.graph.query.model.Column;
 import org.jboss.dna.graph.query.model.DescendantNode;
 import org.jboss.dna.graph.query.model.DescendantNodeJoinCondition;
+import org.jboss.dna.graph.query.model.DynamicOperand;
 import org.jboss.dna.graph.query.model.EquiJoinCondition;
 import org.jboss.dna.graph.query.model.FullTextSearch;
 import org.jboss.dna.graph.query.model.FullTextSearchScore;
@@ -49,6 +52,7 @@ import org.jboss.dna.graph.query.model.PropertyValue;
 import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
+import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.model.Visitor;
 import org.jboss.dna.graph.query.model.Visitors.AbstractVisitor;
 import org.jboss.dna.graph.query.validate.Schemata.Table;
@@ -87,6 +91,53 @@ public class Validator extends AbstractVisitor {
     public void visit( AllNodes obj ) {
         // this table doesn't have to be in the list of selected tables
         verifyTable(obj.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.query.model.Visitors.AbstractVisitor#visit(org.jboss.dna.graph.query.model.ArithmeticOperand)
+     */
+    @Override
+    public void visit( ArithmeticOperand obj ) {
+        verifyArithmeticOperand(obj.getLeft());
+        verifyArithmeticOperand(obj.getRight());
+    }
+
+    protected void verifyArithmeticOperand( DynamicOperand operand ) {
+        // The left and right operands must have LONG or DOUBLE types ...
+        if (operand instanceof NodeDepth) {
+            // good to go
+        } else if (operand instanceof Length) {
+            // good to go
+        } else if (operand instanceof ArithmeticOperand) {
+            // good to go
+        } else if (operand instanceof FullTextSearchScore) {
+            // good to go
+        } else if (operand instanceof PropertyValue) {
+            PropertyValue value = (PropertyValue)operand;
+            SelectorName selector = value.getSelectorName();
+            String propertyName = value.getPropertyName();
+            Schemata.Column column = verify(selector, propertyName);
+            if (column != null) {
+                // Check the type ...
+                String columnType = column.getPropertyType();
+                TypeSystem types = context.getTypeSystem();
+                String longType = types.getLongFactory().getTypeName();
+                String doubleType = types.getDoubleFactory().getTypeName();
+                if (longType.equals(types.getCompatibleType(columnType, longType))) {
+                    // Then the column type is long or can be converted to long ...
+                } else if (doubleType.equals(types.getCompatibleType(columnType, doubleType))) {
+                    // Then the column type is double or can be converted to double ...
+                } else {
+                    I18n msg = GraphI18n.columnTypeCannotBeUsedInArithmeticOperation;
+                    problems.addError(msg, selector, propertyName, columnType);
+                }
+            }
+        } else {
+            I18n msg = GraphI18n.dynamicOperandCannotBeUsedInArithmeticOperation;
+            problems.addError(msg, operand);
+        }
     }
 
     /**

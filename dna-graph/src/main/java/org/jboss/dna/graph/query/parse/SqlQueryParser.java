@@ -40,6 +40,8 @@ import org.jboss.dna.common.xml.XmlCharacters;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.query.model.And;
+import org.jboss.dna.graph.query.model.ArithmeticOperand;
+import org.jboss.dna.graph.query.model.ArithmeticOperator;
 import org.jboss.dna.graph.query.model.Between;
 import org.jboss.dna.graph.query.model.BindVariableName;
 import org.jboss.dna.graph.query.model.ChildNode;
@@ -106,6 +108,9 @@ import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
  * <code>&lt;dynamicOperand> [NOT] IN (&lt;staticOperand> {, &lt;staticOperand>})</code>"</li>
  * <li>Support for the BETWEEN clause: "<code>&lt;dynamicOperand> [NOT] BETWEEN &lt;lowerBoundStaticOperand> [EXCLUSIVE] AND
  * &lt;upperBoundStaticOperand> [EXCLUSIVE]</code>"</i>
+ * <li>Support for arithmetic operations ('+', '-', '*', '/') between dynamic operands used in <code>WHERE</code> criteria and <code>ORDER BY</code>
+ * clauses: "<code>WHERE &lt;dynamicOperand> + &lt;dynamicOperand> ...</code>" or "<code>ORDER BY (&lt;dynamicOperand> + &lt;dynamicOperand>) [ASC]</code>".
+ * Note that standard operator precedence is used, but grouping by (potentially nested) parentheses is also supported.</i>
  * </ul>
  * </p>
  * <h3>SQL grammar</h3>
@@ -346,7 +351,8 @@ import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
  * 
  * <pre>
  * DynamicOperand ::= PropertyValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
- *                    FullTextSearchScore | LowerCase | UpperCase
+ *                    FullTextSearchScore | LowerCase | UpperCase | Arithmetic | 
+ *                    '(' DynamicOperand ')'
  * </pre>
  * <h5>Property value</h5>
  * <pre>
@@ -395,6 +401,10 @@ import org.jboss.dna.graph.query.model.TypeSystem.TypeFactory;
  * <h5>Uppercase</h5>
  * <pre>
  * UpperCase ::= 'UPPER(' DynamicOperand ')'
+ * </pre>
+ * <h5>Arithmetic</h5>
+ * <pre>
+ * Arithmetic ::= DynamicOperand ('+'|'-'|'*'|'/') DynamicOperand
  * </pre>
  * 
  * <h4>Ordering</h4>
@@ -1036,7 +1046,10 @@ public class SqlQueryParser implements QueryParser {
                                                   Source source ) {
         DynamicOperand result = null;
         Position pos = tokens.nextPosition();
-        if (tokens.canConsume("LENGTH", "(")) {
+        if (tokens.canConsume('(')) {
+            result = parseDynamicOperand(tokens, typeSystem, source);
+            tokens.consume(")");
+        } else if (tokens.canConsume("LENGTH", "(")) {
             result = new Length(parsePropertyValue(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("LOWER", "(")) {
@@ -1097,6 +1110,44 @@ public class SqlQueryParser implements QueryParser {
             tokens.consume(")");
         } else {
             result = parsePropertyValue(tokens, typeSystem, source);
+        }
+
+        // Is this operand followed by an arithmetic operation ...
+        ArithmeticOperator arithmeticOperator = null;
+        if (tokens.canConsume('+')) {
+            arithmeticOperator = ArithmeticOperator.ADD;
+        } else if (tokens.canConsume('-')) {
+            arithmeticOperator = ArithmeticOperator.SUBTRACT;
+        } else if (tokens.canConsume('*')) {
+            arithmeticOperator = ArithmeticOperator.MULTIPLY;
+        } else if (tokens.canConsume('/')) {
+            arithmeticOperator = ArithmeticOperator.DIVIDE;
+        }
+        if (arithmeticOperator != null) {
+            if (tokens.matches('(')) {
+                // Don't use precendence, but instead use the next DynamicOperand as the RHS ...
+                DynamicOperand right = parseDynamicOperand(tokens, typeSystem, source);
+                result = new ArithmeticOperand(result, arithmeticOperator, right);
+            } else {
+                // There is no parenthesis, so use operator precedence ...
+                DynamicOperand right = parseDynamicOperand(tokens, typeSystem, source);
+                if (right instanceof ArithmeticOperand) {
+                    // But the RHS is an arithmetic operand, so we need to use operator precedence ...
+                    ArithmeticOperand arithRhs = (ArithmeticOperand)right;
+                    ArithmeticOperator rhsOperator = arithRhs.getOperator();
+                    if (arithmeticOperator.precedes(rhsOperator)) {
+                        // This operand's operator does take precedence, so this must be computed before working with the RHS ...
+                        DynamicOperand newRhs = arithRhs.getRight();
+                        DynamicOperand newLhs = new ArithmeticOperand(result, arithmeticOperator, arithRhs.getLeft());
+                        result = new ArithmeticOperand(newLhs, rhsOperator, newRhs);
+                    } else {
+                        result = new ArithmeticOperand(result, arithmeticOperator, right);
+                    }
+                } else {
+                    // The RHS is just another DynamicOperand ...
+                    result = new ArithmeticOperand(result, arithmeticOperator, right);
+                }
+            }
         }
         return result;
     }

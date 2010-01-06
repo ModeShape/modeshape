@@ -143,6 +143,8 @@ public final class GraphI18n {
     public static I18n columnDoesNotExistInQuery;
     public static I18n columnIsNotFullTextSearchable;
     public static I18n tableIsNotFullTextSearchable;
+    public static I18n columnTypeCannotBeUsedInArithmeticOperation;
+    public static I18n dynamicOperandCannotBeUsedInArithmeticOperation;
     public static I18n selectorDoesNotExistInQuery;
     public static I18n propertyOnSelectorIsNotUsedInQuery;
     public static I18n errorResolvingNodesFromLocationsUsingSourceAndWorkspace;
@@ -167,6 +169,7 @@ public final class GraphI18n {
     public static I18n expectingLiteralAndUnableToParseAsLong;
     public static I18n expectingLiteralAndUnableToParseAsDouble;
     public static I18n expectingLiteralAndUnableToParseAsDate;
+    public static I18n unexpectedClosingParenthesis;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;

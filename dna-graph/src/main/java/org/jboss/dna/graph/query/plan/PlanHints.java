@@ -25,6 +25,7 @@ package org.jboss.dna.graph.query.plan;
 
 import java.io.Serializable;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.graph.query.QueryResults;
 
 @NotThreadSafe
 public final class PlanHints implements Serializable {
@@ -61,6 +62,9 @@ public final class PlanHints implements Serializable {
     /** Flag indicates that the plan has at least one view somewhere */
     public boolean hasView = false;
 
+    /** Flag indicates whether the query plan should be included in the {@link QueryResults} */
+    public boolean showPlan = false;
+
     public PlanHints() {
     }
 
@@ -75,6 +79,7 @@ public final class PlanHints implements Serializable {
         sb.append(", hasLimit=").append(hasLimit);
         sb.append(", hasOptionalJoin=").append(hasOptionalJoin);
         sb.append(", hasFullTextSearch=").append(hasFullTextSearch);
+        sb.append(", showPlan=").append(showPlan);
         sb.append('}');
         return sb.toString();
     }

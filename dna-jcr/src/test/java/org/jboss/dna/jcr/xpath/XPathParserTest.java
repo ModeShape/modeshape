@@ -36,6 +36,7 @@ import org.jboss.dna.common.text.TokenStream;
 import org.jboss.dna.common.text.TokenStream.Tokenizer;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.Order;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.jcr.xpath.XPath.And;
 import org.jboss.dna.jcr.xpath.XPath.AnyKindTest;
@@ -55,6 +56,8 @@ import org.jboss.dna.jcr.xpath.XPath.Literal;
 import org.jboss.dna.jcr.xpath.XPath.NameTest;
 import org.jboss.dna.jcr.xpath.XPath.NodeTest;
 import org.jboss.dna.jcr.xpath.XPath.Or;
+import org.jboss.dna.jcr.xpath.XPath.OrderBy;
+import org.jboss.dna.jcr.xpath.XPath.OrderBySpec;
 import org.jboss.dna.jcr.xpath.XPath.ParenthesizedExpression;
 import org.jboss.dna.jcr.xpath.XPath.PathExpression;
 import org.jboss.dna.jcr.xpath.XPath.SchemaAttributeTest;
@@ -135,6 +138,22 @@ public class XPathParserTest {
                                                                             axisStep(nameTest("some"), literal("1")),
                                                                             axisStep(element(wildcard(), nameTest("my", "type")),
                                                                                      literal("1"))));
+    }
+
+    @Test
+    public void shouldParseXPathExpressionWithOrderBy() {
+        assertParsable("//element(*, my:type) order by @a1,@a2", pathExpr(orderBy(asc(nameTest("a1")), asc(nameTest("a2"))),
+                                                                          descendantOrSelf(),
+                                                                          axisStep(element(wildcard(), nameTest("my", "type")))));
+        assertParsable("//element(*, my:type) order by @p:a1, @a2",
+                       pathExpr(orderBy(asc(nameTest("p", "a1")), asc(nameTest("a2"))),
+                                descendantOrSelf(),
+                                axisStep(element(wildcard(), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, my:type) order by @p:a1", pathExpr(orderBy(asc(nameTest("p", "a1"))),
+                                                                                   axisStep(nameTest("jcr", "root")),
+                                                                                   axisStep(element(nameTest("name"),
+                                                                                                    nameTest("my", "type")))));
+        assertParsable("/jcr:root order by @p:a1", pathExpr(orderBy(asc(nameTest("p", "a1"))), axisStep(nameTest("jcr", "root"))));
     }
 
     @Ignore
@@ -851,8 +870,68 @@ public class XPathParserTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // order-by
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseOrderByOneAttributeNameClause() {
+        assertThat(parser.parseOrderBy(tokenize("order by @a1")), is(orderBy(asc(nameTest("a1")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending")), is(orderBy(asc(nameTest("a1")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending")), is(orderBy(desc(nameTest("a1")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1")), is(orderBy(asc(nameTest("pre", "a1")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1 ascending")), is(orderBy(asc(nameTest("pre", "a1")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1 descending")), is(orderBy(desc(nameTest("pre", "a1")))));
+    }
+
+    @Test
+    public void shouldParseOrderByMultipleAttributeNameClauses() {
+        assertThat(parser.parseOrderBy(tokenize("order by @a1,@a2")), is(orderBy(asc(nameTest("a1")), asc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 ascending")), is(orderBy(asc(nameTest("a1")),
+                                                                                                       asc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 ascending")), is(orderBy(desc(nameTest("a1")),
+                                                                                                       asc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 descending")), is(orderBy(asc(nameTest("a1")),
+                                                                                                        desc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 descending")), is(orderBy(desc(nameTest("a1")),
+                                                                                                        desc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1, @pre:a2")), is(orderBy(asc(nameTest("pre", "a1")),
+                                                                                          asc(nameTest("pre", "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 ascending")), is(orderBy(asc(nameTest("a1")),
+                                                                                                          asc(nameTest("pre",
+                                                                                                                       "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @pre:a2 ascending")), is(orderBy(desc(nameTest("a1")),
+                                                                                                           asc(nameTest("pre",
+                                                                                                                        "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 descending")), is(orderBy(asc(nameTest("a1")),
+                                                                                                           desc(nameTest("pre",
+                                                                                                                         "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @pre:a2 descending")),
+                   is(orderBy(desc(nameTest("a1")), desc(nameTest("pre", "a2")))));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // utility methods
     // ----------------------------------------------------------------------------------------------------------------
+
+    protected XPath.OrderBy orderBy( OrderBySpec... specs ) {
+        return new XPath.OrderBy(Arrays.asList(specs));
+    }
+
+    protected OrderBySpec asc( FunctionCall scoreFunction ) {
+        return new OrderBySpec(Order.ASCENDING, scoreFunction);
+    }
+
+    protected OrderBySpec desc( FunctionCall scoreFunction ) {
+        return new OrderBySpec(Order.DESCENDING, scoreFunction);
+    }
+
+    protected OrderBySpec asc( NameTest attributeName ) {
+        return new OrderBySpec(Order.ASCENDING, attributeName);
+    }
+
+    protected OrderBySpec desc( NameTest attributeName ) {
+        return new OrderBySpec(Order.DESCENDING, attributeName);
+    }
 
     protected TokenStream tokenize( String xpath ) {
         Tokenizer tokenizer = new XPathParser.XPathTokenizer(false); // skip comments
@@ -878,7 +957,17 @@ public class XPathParserTest {
     }
 
     protected PathExpression pathExpr( List<StepExpression> steps ) {
-        return new PathExpression(false, steps);
+        return new PathExpression(false, steps, null);
+    }
+
+    protected PathExpression pathExpr( List<StepExpression> steps,
+                                       OrderBy orderBy ) {
+        return new PathExpression(false, steps, orderBy);
+    }
+
+    protected PathExpression pathExpr( OrderBy orderBy,
+                                       StepExpression... steps ) {
+        return pathExpr(Arrays.asList(steps), orderBy);
     }
 
     protected PathExpression relativePathExpr( StepExpression... steps ) {
@@ -886,7 +975,12 @@ public class XPathParserTest {
     }
 
     protected PathExpression relativePathExpr( List<StepExpression> steps ) {
-        return new PathExpression(true, steps);
+        return new PathExpression(true, steps, null);
+    }
+
+    protected PathExpression relativePathExpr( List<StepExpression> steps,
+                                               OrderBy orderBy ) {
+        return new PathExpression(true, steps, orderBy);
     }
 
     protected Literal literal( String value ) {

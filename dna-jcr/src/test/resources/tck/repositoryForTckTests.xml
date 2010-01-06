@@ -55,7 +55,14 @@
     <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
        <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[2]!" />
     </nt:unstructured>
-    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
+    <nt:unstructured jcr:name="node1" prop1="prop1 value for node1[3]">
        <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[3]!" />
+    </nt:unstructured>
+    <!-- 
+        XPathOrderByTest requires multiple nodes of type 'nt:unstructured' with distinct 'prop1' values
+    -->
+    <nt:unstructured jcr:name="nodeForOrderBy" prop1="propValue3"/>
+    <nt:unstructured jcr:name="anotherNodeForOrderBy" prop1="propValue1">
+       <nt:unstructured jcr:name="aNestedNodeForOrderBy" prop1="propValue2"/>
     </nt:unstructured>
 </testroot>

@@ -138,6 +138,11 @@ public class Visitors {
             }
 
             @Override
+            public void visit( FullTextSearchScore fullTextSearchScore ) {
+                symbols.add(fullTextSearchScore.getSelectorName());
+            }
+
+            @Override
             public void visit( Length length ) {
                 symbols.add(length.getSelectorName());
             }
@@ -222,6 +227,14 @@ public class Visitors {
          * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.And)
          */
         public void visit( And obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.ArithmeticOperand)
+         */
+        public void visit( ArithmeticOperand obj ) {
         }
 
         /**
@@ -563,6 +576,18 @@ public class Visitors {
             strategy.visit(and);
             enqueue(and.getLeft());
             enqueue(and.getRight());
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.ArithmeticOperand)
+         */
+        public void visit( ArithmeticOperand arithmeticOperation ) {
+            strategy.visit(arithmeticOperation);
+            enqueue(arithmeticOperation.getLeft());
+            enqueue(arithmeticOperation.getRight());
             visitNext();
         }
 
@@ -1007,6 +1032,21 @@ public class Visitors {
             and.getLeft().accept(this);
             append(" AND ");
             and.getRight().accept(this);
+            append(')');
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.query.model.Visitor#visit(org.jboss.dna.graph.query.model.ArithmeticOperand)
+         */
+        public void visit( ArithmeticOperand arithmeticOperand ) {
+            append('(');
+            arithmeticOperand.getLeft().accept(this);
+            append(' ');
+            append(arithmeticOperand.getOperator().getSymbol());
+            append(' ');
+            arithmeticOperand.getRight().accept(this);
             append(')');
         }
 

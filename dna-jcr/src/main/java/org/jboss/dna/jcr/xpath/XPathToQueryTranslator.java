@@ -33,7 +33,11 @@ import java.util.Set;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.query.QueryBuilder;
 import org.jboss.dna.graph.query.QueryBuilder.ConstraintBuilder;
+import org.jboss.dna.graph.query.QueryBuilder.OrderByBuilder;
+import org.jboss.dna.graph.query.QueryBuilder.OrderByOperandBuilder;
+import org.jboss.dna.graph.query.model.AllNodes;
 import org.jboss.dna.graph.query.model.Operator;
+import org.jboss.dna.graph.query.model.Query;
 import org.jboss.dna.graph.query.model.QueryCommand;
 import org.jboss.dna.graph.query.model.TypeSystem;
 import org.jboss.dna.graph.query.parse.InvalidQueryException;
@@ -54,6 +58,8 @@ import org.jboss.dna.jcr.xpath.XPath.Literal;
 import org.jboss.dna.jcr.xpath.XPath.NameTest;
 import org.jboss.dna.jcr.xpath.XPath.NodeTest;
 import org.jboss.dna.jcr.xpath.XPath.Or;
+import org.jboss.dna.jcr.xpath.XPath.OrderBy;
+import org.jboss.dna.jcr.xpath.XPath.OrderBySpec;
 import org.jboss.dna.jcr.xpath.XPath.ParenthesizedExpression;
 import org.jboss.dna.jcr.xpath.XPath.PathExpression;
 import org.jboss.dna.jcr.xpath.XPath.StepExpression;
@@ -221,6 +227,55 @@ public class XPathToQueryTranslator {
             translateSource(tableName, path, where);
         }
         where.end();
+
+        // Process the order-by clause ...
+        OrderBy orderBy = pathExpression.getOrderBy();
+        if (orderBy != null) {
+            OrderByBuilder orderByBuilder = builder.orderBy();
+            for (OrderBySpec spec : orderBy) {
+                OrderByOperandBuilder operandBuilder = null;
+                switch (spec.getOrder()) {
+                    case ASCENDING:
+                        operandBuilder = orderByBuilder.ascending();
+                        break;
+                    case DESCENDING:
+                        operandBuilder = orderByBuilder.descending();
+                        break;
+                }
+                assert operandBuilder != null;
+                if (spec.getAttributeName() != null) {
+                    // This order by is defined by an attribute ...
+                    NameTest attribute = spec.getAttributeName();
+                    assert !attribute.isWildcard();
+                    operandBuilder.propertyValue(tableName, attribute.toString());
+                    builder.select(tableName + "." + attribute.toString());
+                } else {
+                    // This order-by is defined by a "jcr:score" function ...
+                    FunctionCall scoreFunction = spec.getScoreFunction();
+                    assert scoreFunction != null;
+                    List<Component> args = scoreFunction.getParameters();
+                    String nameOfTableToScore = tableName;
+                    if (!args.isEmpty()) {
+                        if (args.size() == 1 && args.get(0) instanceof NameTest) {
+                            // Just the table name ...
+                            NameTest tableNameTest = (NameTest)args.get(0);
+                            nameOfTableToScore = tableNameTest.toString();
+                        }
+                    }
+                    operandBuilder.fullTextSearchScore(nameOfTableToScore);
+                }
+            }
+            orderByBuilder.end();
+        }
+        // Try building this query, because we need to check the # of columns selected and the # of sources ...
+        Query query = (Query)builder.query();
+        if (query.getColumns().isEmpty() && query.getSource() instanceof AllNodes) {
+            // This is basically 'SELECT * FROM __ALLNODES__", which means that no type was explicitly specified and
+            // nothing was selected from that type. According to JCR 1.0 Section 6.6.3.1, this equates to
+            // 'SELECT * FROM [nt:base]', and since there is just one property on nt:base (but many on __ALLNODES__)
+            // this really equates to 'SELECT [jcr:primaryType] FROM __ALLNODES__'.
+            builder.select("jcr:primaryType");
+        }
     }
 
     /**
@@ -301,17 +356,17 @@ public class XPathToQueryTranslator {
         if (path.size() == 0) {
             // This is a query against the root node ...
             String alias = newAlias();
-            builder.from("nt:base AS " + alias);
+            builder.fromAllNodesAs(alias);
             where.path(alias).isEqualTo("/");
             return alias;
         }
         String alias = newAlias();
         if (tableName != null) {
             // This is after some element(...) steps, so we need to join ...
-            builder.join("nt:base AS " + alias);
+            builder.joinAllNodesAs(alias);
         } else {
             // This is the only part of the query ...
-            builder.from("nt:base AS " + alias);
+            builder.fromAllNodesAs(alias);
         }
         tableName = alias;
         if (path.size() == 1 && path.get(0).collapse() instanceof NameTest) {
@@ -326,7 +381,7 @@ public class XPathToQueryTranslator {
             }
         } else {
             // Must be just a bunch of descendant-or-self, axis and filter steps ...
-            translatePathExpressionConstraint(new PathExpression(true, path), where, alias);
+            translatePathExpressionConstraint(new PathExpression(true, path, null), where, alias);
         }
         return tableName;
     }
@@ -338,7 +393,7 @@ public class XPathToQueryTranslator {
         NameTest typeName = elementTest.getTypeName();
         if (typeName.isWildcard()) {
             tableName = newAlias();
-            builder.from("nt:base AS " + tableName);
+            builder.fromAllNodesAs(tableName);
         } else {
             if (typeName.getLocalTest() == null) {
                 throw new InvalidQueryException(
@@ -414,7 +469,7 @@ public class XPathToQueryTranslator {
             // This adds the criteria that the child node exists ...
             NameTest childName = (NameTest)predicate;
             String alias = newAlias();
-            builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
+            builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
             if (!childName.isWildcard()) where.nodeName(alias).isEqualTo(nameFrom(childName));
             tableName = alias;
         } else if (predicate instanceof Comparison) {
@@ -532,7 +587,7 @@ public class XPathToQueryTranslator {
                 } else if (param1 instanceof NameTest) {
                     // refers to child node, so we need to add a join ...
                     String alias = newAlias();
-                    builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
+                    builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
                     // Now add the criteria ...
                     where.search(alias, value);
                     tableName = alias;
@@ -570,31 +625,32 @@ public class XPathToQueryTranslator {
             // Requires that the descendant node with the relative path does exist ...
             PathExpression pathExpr = (PathExpression)predicate;
             List<StepExpression> steps = pathExpr.getSteps();
+            OrderBy orderBy = pathExpr.getOrderBy();
             assert steps.size() > 1; // 1 or 0 would have been collapsed ...
             Component firstStep = steps.get(0).collapse();
             if (firstStep instanceof ContextItem) {
                 // Remove the context and retry ...
-                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size())), tableName, where);
+                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size()), orderBy), tableName, where);
             }
             if (firstStep instanceof NameTest) {
                 // Special case where this is similar to '[a/@id]'
                 NameTest childName = (NameTest)firstStep;
                 String alias = newAlias();
-                builder.join("nt:base AS " + alias).onChildNode(tableName, alias);
+                builder.joinAllNodesAs(alias).onChildNode(tableName, alias);
                 if (!childName.isWildcard()) {
                     where.nodeName(alias).isEqualTo(nameFrom(childName));
                 }
-                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size())), alias, where);
+                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size()), orderBy), alias, where);
             }
             if (firstStep instanceof DescendantOrSelf) {
                 // Special case where this is similar to '[a/@id]'
                 String alias = newAlias();
-                builder.join("nt:base AS " + alias).onDescendant(tableName, alias);
-                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size())), alias, where);
+                builder.joinAllNodesAs(alias).onDescendant(tableName, alias);
+                return translatePredicate(new PathExpression(true, steps.subList(1, steps.size()), orderBy), alias, where);
             }
             // Add the join ...
             String alias = newAlias();
-            builder.join("nt:base AS " + alias).onDescendant(tableName, alias);
+            builder.joinAllNodesAs(alias).onDescendant(tableName, alias);
             // Now add the criteria ...
             translatePathExpressionConstraint(pathExpr, where, alias);
         } else {

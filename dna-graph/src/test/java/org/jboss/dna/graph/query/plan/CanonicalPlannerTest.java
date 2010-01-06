@@ -60,6 +60,7 @@ public class CanonicalPlannerTest {
     private Schemata schemata;
     private ImmutableSchemata.Builder schemataBuilder;
     private QueryContext queryContext;
+    private boolean print;
 
     @Before
     public void beforeEach() {
@@ -69,6 +70,11 @@ public class CanonicalPlannerTest {
         builder = new QueryBuilder(typeSystem);
         problems = new SimpleProblems();
         schemataBuilder = ImmutableSchemata.createBuilder(typeSystem);
+        print = false;
+    }
+
+    protected void print( PlanNode plan ) {
+        if (print) System.out.println(plan);
     }
 
     protected SelectorName selector( String name ) {
@@ -132,7 +138,7 @@ public class CanonicalPlannerTest {
         PlanNode source = plan.getFirstChild();
         assertSourceNode(source, "__ALLNODES__", null, "column1", "column2", "column3");
         assertThat(source.getChildCount(), is(0));
-        System.out.println(plan);
+        print(plan);
     }
 
     @Test
@@ -159,7 +165,7 @@ public class CanonicalPlannerTest {
         query = builder.selectStar().from("someTable").query();
         queryContext = new QueryContext(schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
-        System.out.println(plan);
+        print(plan);
         assertThat(problems.hasErrors(), is(false));
         assertThat(problems.isEmpty(), is(true));
         assertProjectNode(plan, "column1", "column2", "column3");
@@ -188,7 +194,7 @@ public class CanonicalPlannerTest {
         queryContext = new QueryContext(schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
-        System.out.println(plan);
+        print(plan);
         assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
         assertThat(plan.getSelectors(), is(selectors("t1")));
     }
@@ -200,7 +206,7 @@ public class CanonicalPlannerTest {
         queryContext = new QueryContext(schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
-        System.out.println(plan);
+        print(plan);
         assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
         assertThat(plan.getSelectors(), is(selectors("t1")));
     }
@@ -265,6 +271,50 @@ public class CanonicalPlannerTest {
         queryContext = new QueryContext(schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
+    }
+
+    @Test
+    public void shouldProducePlanWhenOrderByClauseIsUsed() {
+        schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
+        query = builder.selectStar()
+                       .from("dna:someTable AS t1")
+                       .where()
+                       .path("t1")
+                       .isEqualTo(1L)
+                       .end()
+                       .orderBy()
+                       .ascending()
+                       .propertyValue("t1", "column1")
+                       .end()
+                       .query();
+        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+        print(plan);
+        assertThat(plan.getType(), is(PlanNode.Type.SORT));
+        assertThat(plan.getSelectors(), is(selectors("t1")));
+    }
+
+    @Test
+    public void shouldProducePlanWhenOrderByClauseWithScoreIsUsed() {
+        schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
+        query = builder.selectStar()
+                       .from("dna:someTable AS t1")
+                       .where()
+                       .path("t1")
+                       .isEqualTo(1L)
+                       .end()
+                       .orderBy()
+                       .ascending()
+                       .fullTextSearchScore("t1")
+                       .end()
+                       .query();
+        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        plan = planner.createPlan(queryContext, query);
+        assertThat(problems.hasErrors(), is(false));
+        print(plan);
+        assertThat(plan.getType(), is(PlanNode.Type.SORT));
+        assertThat(plan.getSelectors(), is(selectors("t1")));
     }
 
 }

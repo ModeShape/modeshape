@@ -44,7 +44,7 @@ import javax.jcr.query.QueryResult;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path.Segment;
-import org.jboss.dna.jcr.JcrQueryManager.JcrQuery;
+import org.jboss.dna.jcr.JcrQueryManager.JcrQueryResult;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.jcr.JcrRepository.QueryLanguage;
 import org.junit.After;
@@ -179,8 +179,8 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         if (print) {
             System.out.println();
-            System.out.println(query.getLanguage() + ": " + query.getStatement());
-            System.out.println(" --> : " + ((JcrQuery)query).getCommand());
+            System.out.println(query);
+            System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
             System.out.println(result);
         }
         assertThat(result.getNodes().getSize(), is(numberOfResults));
@@ -259,6 +259,30 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertResults(query, result, 21);
+        assertThat(result, is(notNullValue()));
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByPropertyValue() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        print = true;
+        assertResults(query, result, 21);
+        assertThat(result, is(notNullValue()));
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByScore() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured) order by jcr:score()",
+                                                                           Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, 21);

@@ -24,7 +24,6 @@
 package org.jboss.dna.graph.query.model;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A dynamic operand that evaluates to the length of the supplied propety values, used in a {@link Comparison} constraint.
@@ -41,18 +40,8 @@ public class Length extends DynamicOperand {
      * @param propertyValue the property value operand
      */
     public Length( PropertyValue propertyValue ) {
-        CheckArg.isNotNull(propertyValue, "propertyValue");
+        super(propertyValue);
         this.propertyValue = propertyValue;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.query.model.DynamicOperand#getSelectorName()
-     */
-    @Override
-    public SelectorName getSelectorName() {
-        return propertyValue.getSelectorName();
     }
 
     /**
@@ -62,6 +51,15 @@ public class Length extends DynamicOperand {
      */
     public final PropertyValue getPropertyValue() {
         return propertyValue;
+    }
+
+    /**
+     * Get the selector symbol upon which this operand applies.
+     * 
+     * @return the one selector names used by this operand; never null
+     */
+    public SelectorName getSelectorName() {
+        return getSelectorNames().iterator().next();
     }
 
     /**
