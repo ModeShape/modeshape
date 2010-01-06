@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.jcr;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.apache.jackrabbit.test.RepositoryStub;
@@ -33,7 +32,6 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.security.config.IDTrustConfiguration;
-import org.xml.sax.SAXException;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on DNA-specific configuration.
@@ -42,11 +40,10 @@ public class DnaRepositoryStub extends RepositoryStub {
 
     public static final String DNA_SKIP_IMPORT = "javax.jcr.tck.dnaSkipImport";
     public static final String DNA_NODE_TYPE_PATH = "javax.jcr.tck.dnaNodeTypePath";
-    
+
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
     private static String currentConfigurationName = "default";
-
 
     private Properties configProps;
     private String repositoryConfigurationName;
@@ -93,30 +90,21 @@ public class DnaRepositoryStub extends RepositoryStub {
                 configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream(nodeTypePath));
             }
 
-        } catch (SAXException se) {
-            se.printStackTrace();
-            throw new IllegalStateException(se);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new IllegalStateException(ioe);
-        }
+            JcrEngine engine = configuration.build();
+            engine.start();
 
-        JcrEngine engine = configuration.build();
-        engine.start();
+            Problems problems = engine.getProblems();
+            // Print all of the problems from the engine configuration ...
+            for (Problem problem : problems) {
+                System.err.println(problem);
+            }
+            if (problems.hasErrors()) {
+                throw new IllegalStateException("Problems starting JCR repository");
+            }
 
-        Problems problems = engine.getProblems();
-        // Print all of the problems from the engine configuration ...
-        for (Problem problem : problems) {
-            System.err.println(problem);
-        }
-        if (problems.hasErrors()) {
-            throw new IllegalStateException("Problems starting JCR repository");
-        }
+            ExecutionContext executionContext = engine.getExecutionContext();
+            executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        ExecutionContext executionContext = engine.getExecutionContext();
-        executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-        try {
             repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
 
             // This needs to check configProps directly to avoid an infinite loop
