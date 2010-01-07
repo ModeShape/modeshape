@@ -51,7 +51,7 @@ public class SvnAndJcrIntegrationTest {
     @Before
     public void beforeEach() throws Exception {
         final String repositoryUrl = "http://anonsvn.jboss.org/repos/dna/";
-        final String[] predefinedWorkspaceNames = {"trunk", "tags", "branches"};
+        final String[] predefinedWorkspaceNames = {"trunk/dna-common/src/main/java/org/jboss/dna/common/xml",};
         final String svnRepositorySource = "svnRepositorySource";
         final String repositoryName = "svnRepository";
         final JcrConfiguration configuration = new JcrConfiguration();
@@ -61,11 +61,10 @@ public class SvnAndJcrIntegrationTest {
                      .setProperty("username", "anonymous")
                      .setProperty("repositoryRootUrl", repositoryUrl)
                      .setProperty("predefinedWorkspaceNames", predefinedWorkspaceNames)
-.setProperty("defaultWorkspaceName",
-                                                                                                                                                                                                                                    predefinedWorkspaceNames[0])
+                     .setProperty("defaultWorkspaceName", predefinedWorkspaceNames[0])
                      .setProperty("creatingWorkspacesAllowed", false);
 
-        configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.QUERY_EXECUTION_ENABLED, "false");
+        configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.QUERY_EXECUTION_ENABLED, "true");
 
         configuration.save();
         this.engine = configuration.build();
@@ -94,26 +93,13 @@ public class SvnAndJcrIntegrationTest {
         while (nodeIterator.hasNext()) {
             System.out.println(nodeIterator.nextNode());
         }
-        assertThat(this.session.getRootNode().getNode("dna-graph"), is(notNullValue()));
+        assertThat(this.session.getRootNode().getNode("XmlCharacters.java"), is(notNullValue()));
     }
 
     @Test
     public void shouldProvideAccessToJcrDataNodeUnderFileNode() throws Exception {
-        System.out.println("Getting /pom.xml/jcr:content and then walking its properties ...");
-        Node resourceNodeOfPomFile = this.session.getRootNode().getNode("pom.xml/jcr:content");
-        assertThat(resourceNodeOfPomFile, is(notNullValue()));
-
-        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
-            Property property = iter.nextProperty();
-            assertThat(property.getName(), is(notNullValue()));
-        }
-    }
-
-    @Test
-    public void shouldProvideAccessToJcrDataNodeUnderDeepFileNode() throws Exception {
-        String path = "extensions/dna-sequencer-text/src/test/resources/delimited/multiLineCommaDelimitedFile.csv/jcr:content";
-        System.out.println("Getting " + path + " and then walking its properties ...");
-        Node resourceNodeOfPomFile = this.session.getRootNode().getNode(path);
+        System.out.println("Getting /package-info.java/jcr:content and then walking its properties ...");
+        Node resourceNodeOfPomFile = this.session.getRootNode().getNode("package-info.java/jcr:content");
         assertThat(resourceNodeOfPomFile, is(notNullValue()));
 
         for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
