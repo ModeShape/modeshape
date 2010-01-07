@@ -52,6 +52,7 @@ import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.cache.config.ConfigurationException;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
@@ -584,6 +585,11 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(getName());
     }
 
     /**

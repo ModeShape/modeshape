@@ -48,6 +48,7 @@ import org.infinispan.Cache;
 import org.infinispan.manager.CacheManager;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -479,6 +480,11 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(getName());
     }
 
     /**
