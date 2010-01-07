@@ -29,7 +29,7 @@
  * <p>
  * Each {@code AbstractPathRepositorySource} has a local instance of {@link PathRepositoryCache} that reads the {@code PathCachePolicy} for the source and uses it to create instances of
  * {@link WorkspaceCache} for each workspace in the repository.  When a workspace cache instance is requested for the first time from the {@link PathRepositoryCache#getCache(String)} method,
- * an instance of the class is created using the no-argument constructor for the class and {@link WorkspaceCache#initialize(PathCachePolicy)} is called with the current cache policy. 
+ * an instance of the class is created using the no-argument constructor for the class and {@link WorkspaceCache#initialize(PathCachePolicy, String)} is called with the current cache policy. 
  * </p>
  * <p>
  * When {@link org.jboss.dna.graph.connector.path.AbstractPathRepositorySource#setCachePolicy(PathCachePolicy) the cache policy is changed} on the source, the existing {@code PathRepositoryCache}

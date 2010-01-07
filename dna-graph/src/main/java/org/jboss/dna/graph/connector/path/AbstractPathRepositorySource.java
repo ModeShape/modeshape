@@ -37,7 +37,7 @@ import javax.naming.StringRefAddr;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.path.cache.DefaultPathCachePolicy;
+import org.jboss.dna.graph.connector.path.cache.NoCachePolicy;
 import org.jboss.dna.graph.connector.path.cache.PathCachePolicy;
 import org.jboss.dna.graph.connector.path.cache.PathRepositoryCache;
 
@@ -59,12 +59,10 @@ public abstract class AbstractPathRepositorySource implements PathRepositorySour
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 30;
-
     /**
-     * The default cache policy for this repository source (cache all nodes which remain valid for 30 seconds)
+     * The default cache policy for this repository source (no caching)
      */
-    public static final PathCachePolicy DEFAULT_CACHE_POLICY = new DefaultPathCachePolicy(DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS);
+    public static final PathCachePolicy DEFAULT_CACHE_POLICY = new NoCachePolicy();
 
     protected int retryLimit = DEFAULT_RETRY_LIMIT;
     protected String name;

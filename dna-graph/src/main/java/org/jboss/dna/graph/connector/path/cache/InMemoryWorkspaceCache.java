@@ -27,7 +27,6 @@ import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.connector.path.PathNode;
 import org.jboss.dna.graph.property.Path;
@@ -39,9 +38,10 @@ import org.jboss.dna.graph.property.Path;
 public class InMemoryWorkspaceCache implements WorkspaceCache {
     private final ConcurrentMap<Path, CacheEntry> nodesByPath = new ConcurrentHashMap<Path, CacheEntry>();
     private PathCachePolicy policy = null;
-    private InMemoryStatistics statistics = new InMemoryStatistics();
+    private DefaultCacheStatistics statistics = new DefaultCacheStatistics();
 
-    public void initialize( PathCachePolicy policy ) {
+    public void initialize( PathCachePolicy policy,
+                            String workspaceName ) {
         if (this.policy != null) {
             throw new IllegalStateException();
         }
@@ -49,8 +49,12 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         this.policy = policy;
     }
 
+    protected PathCachePolicy policy() {
+        return policy;
+    }
+
     public void clearStatistics() {
-        statistics = new InMemoryStatistics();
+        statistics = new DefaultCacheStatistics();
     }
 
     public CacheStatistics getStatistics() {
@@ -81,7 +85,7 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         assert node != null;
 
         if (!policy.shouldCache(node)) return;
-
+        
         statistics.incrementWrites();
         nodesByPath.put(node.getPath(), new CacheEntry(node));
     }
@@ -104,10 +108,6 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         this.statistics = null;
     }
 
-    protected PathCachePolicy policy() {
-        return this.policy;
-    }
-
     class CacheEntry {
         private final SoftReference<PathNode> ref;
         private final long expiryTime;
@@ -126,42 +126,38 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
         }
     }
 
-    class InMemoryStatistics implements CacheStatistics {
-        private final AtomicLong writes = new AtomicLong(0);
-        private final AtomicLong hits = new AtomicLong(0);
-        private final AtomicLong misses = new AtomicLong(0);
-        private final AtomicLong expirations = new AtomicLong(0);
+    /**
+     * Trivial path cache policy implementation that caches all nodes in an in-memory cache.
+     * <p>
+     * As a result, this cache policy may not be safe for use with some large repositories as it does not attempt to limit cache
+     * attempts based on the size of the node or the current size of the cache.
+     * </p>
+     */
+    public static class InMemoryCachePolicy implements PathCachePolicy {
 
-        public long getWrites() {
-            return writes.get();
+        private static final long serialVersionUID = 1L;
+
+        private final long cacheTimeToLiveInSeconds;
+
+        public InMemoryCachePolicy( long cacheTimeToLiveInSeconds ) {
+            super();
+            this.cacheTimeToLiveInSeconds = cacheTimeToLiveInSeconds;
         }
 
-        public long getHits() {
-            return hits.get();
+        /**
+         * @return true for all nodes
+         * @see PathCachePolicy#shouldCache(PathNode)
+         */
+        public boolean shouldCache( PathNode node ) {
+            return true;
         }
 
-        public long getMisses() {
-            return misses.get();
+        public long getTimeToLive() {
+            return this.cacheTimeToLiveInSeconds;
         }
 
-        public long getExpirations() {
-            return expirations.get();
-        }
-
-        public long incrementWrites() {
-            return writes.getAndIncrement();
-        }
-
-        public long incrementHits() {
-            return hits.getAndIncrement();
-        }
-
-        public long incrementMisses() {
-            return misses.getAndIncrement();
-        }
-
-        public long incrementExpirations() {
-            return expirations.getAndIncrement();
+        public Class<? extends WorkspaceCache> getCacheClass() {
+            return InMemoryWorkspaceCache.class;
         }
     }
 }

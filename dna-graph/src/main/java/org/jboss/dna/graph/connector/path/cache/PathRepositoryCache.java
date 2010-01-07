@@ -63,18 +63,18 @@ public class PathRepositoryCache {
         WorkspaceCache cache = cachesByName.get(workspaceName);
         if (cache != null) return cache;
 
-        cache = newCache();
+        cache = newCache(workspaceName);
         cachesByName.putIfAbsent(workspaceName, cache);
 
         return cachesByName.get(workspaceName);
     }
 
-    private final WorkspaceCache newCache() {
+    private final WorkspaceCache newCache( String workspaceName ) {
         WorkspaceCache cache = null;
 
         try {
             cache = policy.getCacheClass().newInstance();
-            cache.initialize(policy);
+            cache.initialize(policy, workspaceName);
         } catch (IllegalAccessException iae) {
             throw new IllegalStateException(iae);
         } catch (InstantiationException ie) {

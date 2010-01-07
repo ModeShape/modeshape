@@ -134,7 +134,8 @@ public class AbstractPathRepositorySourceTest {
         boolean closed = false;
         PathCachePolicy policy;
 
-        public void initialize( PathCachePolicy policy ) {
+        public void initialize( PathCachePolicy policy,
+                                String workspaceName ) {
             this.policy = policy;
         }
 

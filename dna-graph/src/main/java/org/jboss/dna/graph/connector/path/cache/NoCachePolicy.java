@@ -27,34 +27,23 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.connector.path.PathNode;
 
 /**
- * Trivial path cache policy implementation that caches all nodes in an in-memory cache.
- * <p>
- * As a result, this cache policy may not be safe for use with some large repositories as it does not attempt to limit cache
- * attempts based on the size of the node or the current size of the cache.
- * </p>
+ * Trivial path cache policy implementation that performs no caching at all
  */
 @Immutable
-public class DefaultPathCachePolicy implements PathCachePolicy {
+public class NoCachePolicy implements PathCachePolicy {
 
     private static final long serialVersionUID = 1L;
 
-    private final long cacheTimeToLiveInSeconds;
-
-    public DefaultPathCachePolicy( long cacheTimeToLiveInSeconds ) {
-        super();
-        this.cacheTimeToLiveInSeconds = cacheTimeToLiveInSeconds;
-    }
-
     /**
-     * @return true for all nodes
+     * @return false for all nodes
      * @see PathCachePolicy#shouldCache(PathNode)
      */
     public boolean shouldCache( PathNode node ) {
-        return true;
+        return false;
     }
 
     public long getTimeToLive() {
-        return this.cacheTimeToLiveInSeconds;
+        return 0;
     }
 
     public Class<? extends WorkspaceCache> getCacheClass() {

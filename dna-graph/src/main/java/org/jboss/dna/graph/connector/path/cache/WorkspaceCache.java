@@ -31,7 +31,7 @@ import org.jboss.dna.graph.property.Path;
  * The basic contract for a workspace-level cache of paths to the nodes stored at that path.
  * <p>
  * Implementations must provide a no-argument constructor in order to be instantiated by {@link PathRepositoryCache}. After
- * instantiation, the {@link #initialize(PathCachePolicy)} method will be called to inject the cache policy into the
+ * instantiation, the {@link #initialize(PathCachePolicy, String)} method will be called to inject the cache policy into the
  * implementation.
  * </p>
  * <p>
@@ -45,9 +45,11 @@ public interface WorkspaceCache {
      * Injects the cache policy into the cache
      * 
      * @param policy the active cache policy for the repository source with which this cache is associated
+     * @param workspaceName the name of the workspace that this cache is managing
      * @throws IllegalStateException if this method is called on a cache that has already been initialized.
      */
-    public void initialize( PathCachePolicy policy );
+    public void initialize( PathCachePolicy policy,
+                            String workspaceName );
 
     /**
      * Clears all statistics for this cache
@@ -71,7 +73,7 @@ public interface WorkspaceCache {
 
     /**
      * Attempts to cache the given node. Implementations must call {@link PathCachePolicy#shouldCache(PathNode)} on the policy
-     * from the {@link #initialize(PathCachePolicy)} method to determine if the node should be cached.
+     * from the {@link #initialize(PathCachePolicy, String)} method to determine if the node should be cached.
      * 
      * @param node the node that is to be cached; may not be null
      */
