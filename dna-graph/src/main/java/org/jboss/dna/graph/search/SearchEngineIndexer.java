@@ -288,6 +288,7 @@ public class SearchEngineIndexer {
         Location topNode = locationIter.next();
         assert topNode.equals(startingLocation);
         Map<Name, Property> properties = readSubgraph.getPropertiesFor(topNode);
+        if (properties == null) return;
         if (startingLocation.getPath().isRoot()) {
             // The properties of the root node generally don't include the primary type, but we need to add it here ...
             Property rootPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.ROOT);
