@@ -160,6 +160,8 @@ public final class JcrI18n {
     public static I18n cannotRedefineProperty;
     public static I18n autocreatedPropertyNeedsDefault;
     public static I18n singleValuedPropertyNeedsSingleValuedDefault;
+    public static I18n couldNotFindDefinitionOfRequiredPrimaryType;
+    public static I18n cannotRedefineChildNodeWithIncompatibleDefinition;
 
     public static I18n noDefinition;
     public static I18n noSnsDefinition;
@@ -174,6 +176,7 @@ public final class JcrI18n {
     public static I18n cannotUnregisterSupertype;
     public static I18n cannotUnregisterRequiredPrimaryType;
     public static I18n cannotUnregisterDefaultPrimaryType;
+    public static I18n cannotUnregisterInUseType;
 
     public static I18n cannotAddMixin;
     public static I18n invalidMixinTypeForNode;

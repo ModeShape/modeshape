@@ -45,6 +45,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.CheckArg;
@@ -1922,23 +1923,32 @@ class RepositoryNodeTypeManager {
         for (JcrNodeDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
-                                                                                                                    .getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                             "child node"));
             }
 
             if (ancestor.isMandatory() && !node.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
-                                                                                                                        .getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                                 "child node"));
 
             }
 
-            for (int i = 0; i < ancestor.getRequiredPrimaryTypes().length; i++) {
-                NodeType apt = ancestor.getRequiredPrimaryTypes()[i];
+            Name[] requiredPrimaryTypeNames = ancestor.requiredPrimaryTypeNames();
+            for (int i = 0; i < requiredPrimaryTypeNames.length; i++) {
+                NodeType apt = findTypeInMapOrList(requiredPrimaryTypeNames[i], pendingTypes);
+
+                if (apt == null) {
+                    I18n msg = JcrI18n.couldNotFindDefinitionOfRequiredPrimaryType;
+                    throw new InvalidNodeTypeDefinitionException(msg.text(requiredPrimaryTypeNames[i],
+                                                                          node.getName(),
+                                                                          node.getDeclaringNodeType()));
+
+                }
+
                 boolean found = false;
-                for (Name name : node.getRequiredPrimaryTypeNames()) {
+
+                for (Name name : node.requiredPrimaryTypeNames()) {
                     JcrNodeType npt = findTypeInMapOrList(name, pendingTypes);
 
                     if (npt.isNodeType(apt.getName())) {
@@ -1947,12 +1957,8 @@ class RepositoryNodeTypeManager {
                     }
                 }
                 if (!found) {
-                    throw new InvalidNodeTypeDefinitionException(
-                                                                 "Cannot redefine child node '"
-                                                                 + nodeName
-                                                                 + "' with required type '"
-                                                                 + apt.getName()
-                                                                 + "' with new child node that does not required that type or a subtype of that type.");
+                    I18n msg = JcrI18n.cannotRedefineChildNodeWithIncompatibleDefinition;
+                    throw new InvalidNodeTypeDefinitionException(msg.text(nodeName, apt.getName(), node.getDeclaringNodeType()));
 
                 }
             }
@@ -1995,16 +2001,15 @@ class RepositoryNodeTypeManager {
 
         Value[] defaultValues = prop.getDefaultValues();
         if (prop.isAutoCreated() && !prop.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
-            throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
-                                                                                                      prop.getDeclaringNodeType()
-                                                                                                          .getName()));
+            throw new InvalidNodeTypeDefinitionException(
+                                                         JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
+                                                                                                      prop.getDeclaringNodeType().getName()));
         }
 
         if (!prop.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
             throw new InvalidNodeTypeDefinitionException(
                                                          JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(prop.getName(),
-                                                                                                                   prop.getDeclaringNodeType()
-                                                                                                                       .getName()));
+                                                                                                                   prop.getDeclaringNodeType().getName()));
         }
 
         Name propName = context.getValueFactories().getNameFactory().create(prop.getName());
@@ -2018,15 +2023,13 @@ class RepositoryNodeTypeManager {
         for (JcrPropertyDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
-                                                                                                                    .getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                             "property"));
             }
 
             if (ancestor.isMandatory() && !prop.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
-                                                                                                                        .getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
                                                                                                                 "property"));
 
             }
@@ -2037,16 +2040,14 @@ class RepositoryNodeTypeManager {
                 && !Arrays.equals(ancestor.getValueConstraints(), prop.getValueConstraints())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.constraintsChangedInSubtype.text(propName,
-                                                                                                      ancestor.getDeclaringNodeType()
-                                                                                                              .getName()));
+                                                                                                      ancestor.getDeclaringNodeType().getName()));
             }
 
             if (!isAlwaysSafeConversion(prop.getRequiredType(), ancestor.getRequiredType())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.cannotRedefineProperty.text(propName,
                                                                                                  PropertyType.nameFromValue(prop.getRequiredType()),
-                                                                                                 ancestor.getDeclaringNodeType()
-                                                                                                         .getName(),
+                                                                                                 ancestor.getDeclaringNodeType().getName(),
                                                                                                  PropertyType.nameFromValue(ancestor.getRequiredType())));
 
             }
