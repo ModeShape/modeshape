@@ -361,11 +361,11 @@ public class CanonicalPlanner implements Planner {
 
         boolean attach = false;
         if (limit.getOffset() != 0) {
-            limitNode.setProperty(Property.LIMIT_COUNT, limit.getOffset());
+            limitNode.setProperty(Property.LIMIT_OFFSET, limit.getOffset());
             attach = true;
         }
         if (!limit.isUnlimited()) {
-            limitNode.setProperty(Property.LIMIT_OFFSET, limit.getRowLimit());
+            limitNode.setProperty(Property.LIMIT_COUNT, limit.getRowLimit());
             attach = true;
         }
         if (attach) {

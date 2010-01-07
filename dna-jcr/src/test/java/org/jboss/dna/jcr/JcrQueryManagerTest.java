@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +40,7 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
@@ -47,6 +49,8 @@ import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.jcr.JcrQueryManager.JcrQueryResult;
 import org.jboss.dna.jcr.JcrRepository.Option;
 import org.jboss.dna.jcr.JcrRepository.QueryLanguage;
+import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -93,9 +97,21 @@ public class JcrQueryManagerTest {
                      .registerNamespace("car", "http://www.jboss.org/dna/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
                      .setOption(Option.ANONYMOUS_USER_ROLES,
-                                JcrSession.DNA_READ_PERMISSION + "," + JcrSession.DNA_WRITE_PERMISSION);
+                                JcrSession.DNA_READ_PERMISSION + "," + JcrSession.DNA_WRITE_PERMISSION)
+                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
         engine = configuration.build();
         engine.start();
+
+        // Initialize the JAAS configuration to allow for an admin login later
+        // Initialize IDTrust
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+
+        try {
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
 
         // Start the repository ...
         repository = engine.getRepository("cars");
@@ -363,4 +379,23 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
+
+    /*
+     * Adding this test case since its primarily a test of integration between the RNTM and the query engine
+     */
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
+    public void shouldNotAllowUnregisteringUsedPrimaryType() throws Exception {
+        Session adminSession = null;
+
+        try {
+            adminSession = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+            adminSession.setNamespacePrefix("cars", "http://www.jboss.org/dna/examples/cars/1.0");
+
+            JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)adminSession.getWorkspace().getNodeTypeManager();
+            nodeTypeManager.unregisterNodeType(Collections.singletonList("cars:Car"));
+        } finally {
+            if (adminSession != null) adminSession.logout();
+        }
+    }
+
 }

@@ -65,11 +65,9 @@ public class WorkspaceLockManagerTest {
         validUuid = UUID.randomUUID();
         validLocation = Location.create(validUuid);
 
-        // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context, true);
 
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
+        stub(repository.getExecutionContext()).toReturn(context);
         stub(repository.getRepositorySourceName()).toReturn(sourceName);
         stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
         stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
@@ -91,6 +89,11 @@ public class WorkspaceLockManagerTest {
                 return workspaceLockManager;
             }
         });
+
+        // Stub out the repository, since we only need a few methods ...
+        repoTypeManager = new RepositoryNodeTypeManager(repository, true);
+
+        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
 
         executedRequests.clear();
     }

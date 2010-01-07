@@ -95,6 +95,7 @@ import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
 import org.jboss.dna.graph.query.parse.QueryParsers;
 import org.jboss.dna.graph.query.parse.SqlQueryParser;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
+import org.jboss.dna.jcr.RepositoryQueryManager.PushDown;
 import org.jboss.dna.jcr.xpath.XPathQueryParser;
 
 /**
@@ -536,7 +537,8 @@ public class JcrRepository implements Repository {
         // Set up the repository type manager ...
         try {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, includeInheritedProperties);
+            // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
             this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
                 "/org/jboss/dna/jcr/jsr_170_builtins.cnd", "/org/jboss/dna/jcr/dna_builtins.cnd"}));
         } catch (RepositoryException re) {
@@ -585,7 +587,7 @@ public class JcrRepository implements Repository {
             // We can query the federated source if it supports queries and searches
             // AND the original source supports queries and searches ...
             if (canQuerySource && canQueryFederated) {
-                this.queryManager = new RepositoryQueryManager();
+                this.queryManager = new PushDown(this.sourceName, executionContext, connectionFactory);
             } else {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
@@ -595,7 +597,7 @@ public class JcrRepository implements Repository {
                                                                              indexDirectory, updateIndexesSynchronously);
             }
         } else {
-            this.queryManager = new RepositoryQueryManager.Disabled();
+            this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
         }
 
         /*
@@ -950,6 +952,13 @@ public class JcrRepository implements Repository {
         }
 
         this.repositoryObservationManager.shutdown();
+    }
+
+    /**
+     * @return a list of all workspace names, without regard to the access permissions of any particular user
+     */
+    Set<String> workspaceNames() {
+        return Graph.create(sourceName, connectionFactory, executionContext).getWorkspaces();
     }
 
     /**

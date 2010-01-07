@@ -331,7 +331,7 @@ class JcrQueryManager implements QueryManager {
         public QueryResult execute() throws RepositoryException {
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
-            QueryResults result = session.repository().queryManager().query(session.workspace(),
+            QueryResults result = session.repository().queryManager().query(session.workspace().getName(),
                                                                             query,
                                                                             schemata,
                                                                             hints,
@@ -383,7 +383,7 @@ class JcrQueryManager implements QueryManager {
          */
         public QueryResult execute() throws RepositoryException {
             // Submit immediately to the workspace graph ...
-            QueryResults result = session.repository().queryManager().search(session.workspace(),
+            QueryResults result = session.repository().queryManager().search(session.workspace().getName(),
                                                                              statement,
                                                                              MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES,
                                                                              0);

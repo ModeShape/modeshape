@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -35,6 +36,7 @@ import org.jboss.dna.graph.property.Name;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * Test of CND-based type definitions. These test cases focus on ensuring that an import of a type from a CND file registers the
@@ -49,6 +51,8 @@ public class CndNodeTypeRegistrationTest {
     private ExecutionContext context;
     private RepositoryNodeTypeManager repoTypeManager;
     private JcrNodeTypeSource nodeTypes;
+    @Mock
+    protected JcrRepository repository;
 
     @Before
     public void beforeEach() throws Exception {
@@ -56,7 +60,9 @@ public class CndNodeTypeRegistrationTest {
         context = new ExecutionContext();
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        repoTypeManager = new RepositoryNodeTypeManager(context, true);
+        stub(repository.getExecutionContext()).toReturn(context);
+
+        repoTypeManager = new RepositoryNodeTypeManager(repository, true);
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
                 "/org/jboss/dna/jcr/dna_builtins.cnd"}));

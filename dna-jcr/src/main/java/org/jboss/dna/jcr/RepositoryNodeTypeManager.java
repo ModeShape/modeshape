@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.PropertyType;
@@ -42,6 +43,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
@@ -64,6 +66,12 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.query.QueryResults;
+import org.jboss.dna.graph.query.model.QueryCommand;
+import org.jboss.dna.graph.query.model.TypeSystem;
+import org.jboss.dna.graph.query.parse.QueryParser;
+import org.jboss.dna.graph.query.parse.SqlQueryParser;
+import org.jboss.dna.graph.query.validate.Schemata;
 import org.jboss.dna.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.jboss.dna.jcr.nodetype.NodeTypeDefinition;
 import org.jboss.dna.jcr.nodetype.NodeTypeExistsException;
@@ -105,6 +113,8 @@ class RepositoryNodeTypeManager {
 
     private static final TextEncoder NAME_ENCODER = new XmlNameEncoder();
 
+    private final JcrRepository repository;
+    private final QueryParser queryParser;
     private final ExecutionContext context;
 
     @GuardedBy( "nodeTypeManagerLock" )
@@ -142,9 +152,10 @@ class RepositoryNodeTypeManager {
         ANY
     }
 
-    RepositoryNodeTypeManager( ExecutionContext context,
+    RepositoryNodeTypeManager( JcrRepository repository,
                                boolean includeColumnsForInheritedProperties ) {
-        this.context = context;
+        this.repository = repository;
+        this.context = repository.getExecutionContext();
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
@@ -152,6 +163,8 @@ class RepositoryNodeTypeManager {
         propertyDefinitions = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
         childNodeDefinitions = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
         nodeTypes = new HashMap<Name, JcrNodeType>(50);
+        queryParser = new SqlQueryParser();
+
     }
 
     /**
@@ -1199,19 +1212,54 @@ class RepositoryNodeTypeManager {
                                                                                                                           childNode.getName()));
                         }
                     }
+
+                    /*
+                     * Search the content graph to make sure that this type isn't being used
+                     */
+                    if (isNodeTypeInUse(nodeTypeName)) {
+                        throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotUnregisterInUseType.text(name));
+
+                    }
+
                 }
             }
 
-            /*
-             * Do a full recursive search over the content graph to make sure that this type isn't being used
-             */
-            // TODO: replace this with a query after queries work
             this.nodeTypes.keySet().removeAll(nodeTypeNames);
             this.schemata = null;
 
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Check if the named node type is in use in any workspace in the repository
+     * 
+     * @param nodeTypeName the name of the node type to check
+     * @return true if at least one node is using that type; false otherwise
+     * @throws InvalidQueryException if there is an error searching for uses of the named node type
+     */
+    boolean isNodeTypeInUse( Name nodeTypeName ) throws InvalidQueryException {
+        String nodeTypeString = nodeTypeName.getString(context.getNamespaceRegistry());
+        String expression = "SELECT * from [" + nodeTypeString + "] LIMIT 1";
+
+        TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
+        // Parsing must be done now ...
+        QueryCommand command = queryParser.parseQuery(expression, typeSystem);
+        assert command != null : "Could not parse " + expression;
+
+        Schemata schemata = getRepositorySchemata();
+
+        Set<String> workspaceNames = repository.workspaceNames();
+        for (String workspaceName : workspaceNames) {
+            QueryResults result = repository.queryManager().query(workspaceName, command, schemata, null, null);
+
+            if (result.getRowCount() > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

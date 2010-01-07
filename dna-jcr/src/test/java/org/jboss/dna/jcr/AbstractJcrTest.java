@@ -26,7 +26,6 @@ package org.jboss.dna.jcr;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.IOException;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import org.jboss.dna.graph.ExecutionContext;
@@ -49,6 +48,7 @@ import org.junit.BeforeClass;
 public abstract class AbstractJcrTest {
 
     protected static ExecutionContext context;
+    protected static JcrRepository repository;
     protected static RepositoryNodeTypeManager rntm;
     protected InMemoryRepositorySource source;
     protected Graph store;
@@ -57,7 +57,6 @@ public abstract class AbstractJcrTest {
     protected JcrSession jcrSession;
     protected JcrNodeTypeManager nodeTypes;
     protected Workspace workspace;
-    protected Repository repository;
 
     /**
      * Initialize the expensive activities, and in particular the RepositoryNodeTypeManager instance.
@@ -70,7 +69,10 @@ public abstract class AbstractJcrTest {
 
         // Create the node type manager ...
         context.getNamespaceRegistry().register(Vehicles.Lexicon.Namespace.PREFIX, Vehicles.Lexicon.Namespace.URI);
-        rntm = new RepositoryNodeTypeManager(context, true);
+        repository = mock(JcrRepository.class);
+        stub(repository.getExecutionContext()).toReturn(context);
+
+        rntm = new RepositoryNodeTypeManager(repository, true);
         try {
             rntm.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
                 "/org/jboss/dna/jcr/dna_builtins.cnd"}));
@@ -115,7 +117,6 @@ public abstract class AbstractJcrTest {
         // Stub the session, workspace, and repository; then stub some critical methods ...
         jcrSession = mock(JcrSession.class);
         workspace = mock(Workspace.class);
-        repository = mock(Repository.class);
         stub(jcrSession.getExecutionContext()).toReturn(context);
         stub(jcrSession.getWorkspace()).toReturn(workspace);
         stub(jcrSession.getRepository()).toReturn(repository);

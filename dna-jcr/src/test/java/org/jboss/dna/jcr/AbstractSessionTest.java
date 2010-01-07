@@ -122,8 +122,24 @@ public abstract class AbstractSessionTest {
             }
         };
 
+        stub(repository.getExecutionContext()).toReturn(context);
+        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
+        stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
+        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
+            }
+        });
+        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
+            }
+        });
+        stub(this.repository.getRepositoryObservable()).toReturn(new MockObservable());
+
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(context, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, true);
+        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
 
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/jboss/dna/jcr/jsr_170_builtins.cnd",
@@ -138,21 +154,6 @@ public abstract class AbstractSessionTest {
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
         this.repoTypeManager.projectOnto(graph, pathFactory.create("/jcr:system/jcr:nodeTypes"));
-
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
-        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
-            public Graph answer( InvocationOnMock invocation ) throws Throwable {
-                return graph;
-            }
-        });
-        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
-            public Graph answer( InvocationOnMock invocation ) throws Throwable {
-                return graph;
-            }
-        });
-        stub(this.repository.getRepositoryObservable()).toReturn(new MockObservable());
 
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, DnaLexicon.LOCKS);
         workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);

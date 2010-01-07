@@ -77,30 +77,24 @@ import org.jboss.dna.search.lucene.LuceneSearchEngine;
 /**
  * 
  */
-class RepositoryQueryManager {
+abstract class RepositoryQueryManager {
 
-    RepositoryQueryManager() {
+    protected final String sourceName;
+
+    RepositoryQueryManager( String sourceName ) {
+        this.sourceName = sourceName;
     }
 
-    @SuppressWarnings( "unused" )
-    public QueryResults query( JcrWorkspace workspace,
-                               QueryCommand query,
-                               Schemata schemata,
-                               PlanHints hints,
-                               Map<String, Object> variables ) throws InvalidQueryException {
-        Graph.BuildQuery builder = workspace.graph().query(query, schemata);
-        if (variables != null) builder.using(variables);
-        if (hints != null) builder.using(hints);
-        return builder.execute();
-    }
+    public abstract QueryResults query( String workspaceName,
+                                        QueryCommand query,
+                                        Schemata schemata,
+                                        PlanHints hints,
+                                        Map<String, Object> variables ) throws InvalidQueryException;
 
-    @SuppressWarnings( "unused" )
-    public QueryResults search( JcrWorkspace workspace,
-                                String searchExpression,
-                                int maxRowCount,
-                                int offset ) throws InvalidQueryException {
-        return workspace.graph().search(searchExpression, maxRowCount, offset);
-    }
+    public abstract QueryResults search( String workspaceName,
+                                         String searchExpression,
+                                         int maxRowCount,
+                                         int offset ) throws InvalidQueryException;
 
     /**
      * Crawl and index the content in the named workspace.
@@ -138,35 +132,82 @@ class RepositoryQueryManager {
         // do nothing by default
     }
 
-    static class Disabled extends RepositoryQueryManager {
+    static class PushDown extends RepositoryQueryManager {
+        private final ExecutionContext context;
+        private final RepositoryConnectionFactory connectionFactory;
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.RepositoryQueryManager#query(org.jboss.dna.jcr.JcrWorkspace,
-         *      org.jboss.dna.graph.query.model.QueryCommand, org.jboss.dna.graph.query.validate.Schemata,
-         *      org.jboss.dna.graph.query.plan.PlanHints, java.util.Map)
-         */
+        PushDown( String sourceName,
+                  ExecutionContext context,
+                  RepositoryConnectionFactory connectionFactory ) {
+            super(sourceName);
+            this.context = context;
+            this.connectionFactory = connectionFactory;
+        }
+
+        private Graph workspaceGraph( String workspaceName ) {
+            Graph graph = Graph.create(this.sourceName, connectionFactory, context);
+
+            if (workspaceName != null) {
+                graph.useWorkspace(workspaceName);
+            }
+
+            return graph;
+        }
+
         @Override
-        public QueryResults query( JcrWorkspace workspace,
+        public QueryResults query( String workspaceName,
                                    QueryCommand query,
                                    Schemata schemata,
                                    PlanHints hints,
                                    Map<String, Object> variables ) throws InvalidQueryException {
-            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(workspace.getSourceName()));
+            Graph.BuildQuery builder = workspaceGraph(workspaceName).query(query, schemata);
+            if (variables != null) builder.using(variables);
+            if (hints != null) builder.using(hints);
+            return builder.execute();
+        }
+
+        @Override
+        public QueryResults search( String workspaceName,
+                                    String searchExpression,
+                                    int maxRowCount,
+                                    int offset ) throws InvalidQueryException {
+            return workspaceGraph(workspaceName).search(searchExpression, maxRowCount, offset);
+        }
+
+    }
+
+    static class Disabled extends RepositoryQueryManager {
+
+        Disabled( String sourceName ) {
+            super(sourceName);
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.jcr.RepositoryQueryManager#search(org.jboss.dna.jcr.JcrWorkspace, java.lang.String, int, int)
+         * @see org.jboss.dna.jcr.RepositoryQueryManager#query(java.lang.String, org.jboss.dna.graph.query.model.QueryCommand,
+         *      org.jboss.dna.graph.query.validate.Schemata, org.jboss.dna.graph.query.plan.PlanHints, java.util.Map)
          */
         @Override
-        public QueryResults search( JcrWorkspace workspace,
+        public QueryResults query( String workspaceName,
+                                   QueryCommand query,
+                                   Schemata schemata,
+                                   PlanHints hints,
+                                   Map<String, Object> variables ) throws InvalidQueryException {
+            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(this.sourceName));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.jcr.RepositoryQueryManager#search(java.lang.String, java.lang.String, int, int)
+         */
+        @Override
+        public QueryResults search( String workspaceName,
                                     String searchExpression,
                                     int maxRowCount,
                                     int offset ) throws InvalidQueryException {
-            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(workspace.getSourceName()));
+            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(this.sourceName));
         }
     }
 
@@ -186,6 +227,8 @@ class RepositoryQueryManager {
                        Observable observable,
                        String indexDirectory,
                        boolean updateIndexesSynchronously ) throws RepositoryException {
+            super(nameOfSourceToBeSearchable);
+
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
             this.connectionFactory = connectionFactory;
@@ -301,20 +344,34 @@ class RepositoryQueryManager {
         }
 
         @Override
-        public QueryResults query( JcrWorkspace workspace,
+        public QueryResults query( String workspaceName,
                                    QueryCommand query,
                                    Schemata schemata,
                                    PlanHints hints,
                                    Map<String, Object> variables ) {
-            TypeSystem typeSystem = workspace.context().getValueFactories().getTypeSystem();
+            TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
             SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
             try {
                 QueryContext context = new GraphQueryContext(schemata, typeSystem, hints, new SimpleProblems(), variables,
-                                                             processor, workspace.getName());
+                                                             processor, workspaceName);
                 return queryEngine.execute(context, query);
             } finally {
                 processor.close();
             }
+        }
+
+        @Override
+        public QueryResults search( String workspaceName,
+                                    String searchExpression,
+                                    int maxRowCount,
+                                    int offset ) throws InvalidQueryException {
+            Graph graph = Graph.create(sourceName, connectionFactory, context);
+
+            if (workspaceName != null) {
+                graph.useWorkspace(workspaceName);
+            }
+
+            return graph.search(searchExpression, maxRowCount, offset);
         }
 
         /**
