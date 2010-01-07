@@ -10,7 +10,7 @@
 	<!-- The groupId and version values are inherited from parent -->
 	<artifactId>dna-connector-jdbc-metadata</artifactId>
 	<packaging>jar</packaging>
-	<name>JBoss DNA Connector to JDBC</name>
+	<name>JBoss DNA Connector to JDBC Schemas</name>
 	<description>JBoss DNA Connector that processes JDBC metadata</description>
 	<url>http://labs.jboss.org/dna</url>
 	<dependencies>
