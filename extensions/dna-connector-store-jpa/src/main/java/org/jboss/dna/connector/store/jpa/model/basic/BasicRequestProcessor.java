@@ -363,9 +363,13 @@ public class BasicRequestProcessor extends RequestProcessor {
                     while (iter.hasPrevious()) {
                         Location existing = iter.previous();
                         Path.Segment segment = existing.getPath().getLastSegment();
-                        if (!segment.getName().equals(childName)) continue;
-                        // Otherwise the name matched, so get the indexes ...
-                        nextSnsIndex = segment.getIndex() + 1;
+                        if (segment.getName().equals(childName)) {
+                            // Otherwise the name matched, so get the indexes ...
+                            nextSnsIndex = segment.getIndex() + 1;
+
+                            // We've found the last match, so no need to loop further
+                            break;
+                        }
                     }
                 }
             } else {
