@@ -121,7 +121,11 @@ public class ClassFileSequencerTest {
             called = true;
         }
 
-        @SuppressWarnings( "unused" )
+        /**
+         * @param context
+         * @param output
+         * @param enumMetadata
+         */
         public void recordEnum( StreamSequencerContext context,
                                 SequencerOutput output,
                                 EnumMetadata enumMetadata ) {
