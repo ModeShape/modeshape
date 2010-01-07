@@ -33,6 +33,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.UuidAlreadyExistsException;
@@ -719,6 +720,11 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(getName());
     }
 
     /**

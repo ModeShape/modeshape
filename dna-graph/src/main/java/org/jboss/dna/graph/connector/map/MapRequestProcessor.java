@@ -98,8 +98,13 @@ public class MapRequestProcessor extends RequestProcessor {
     public void process( ReadAllChildrenRequest request ) {
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         MapNode node = getTargetNode(workspace, request, request.of());
-        if (node == null) return;
+        if (node == null) {
+            assert request.hasError();
+            return;
+        }
+
         Location actualLocation = getActualLocation(request.of(), node);
+        assert actualLocation != null;
         Path path = actualLocation.getPath();
         // Get the names of the children ...
         List<MapNode> children = node.getChildren();
@@ -142,13 +147,19 @@ public class MapRequestProcessor extends RequestProcessor {
     public void process( ReadAllPropertiesRequest request ) {
         MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
         MapNode node = getTargetNode(workspace, request, request.at());
-        if (node == null) return;
+        if (node == null) {
+            assert request.hasError();
+            return;
+        }
+
         // Get the properties of the node ...
         Location actualLocation = getActualLocation(request.at(), node);
         request.addProperty(propertyFactory.create(DnaLexicon.UUID, node.getUuid()));
         for (Property property : node.getProperties().values()) {
             request.addProperty(property);
         }
+
+        assert actualLocation != null;
         request.setActualLocationOfNode(actualLocation);
         setCacheableInfo(request);
     }
