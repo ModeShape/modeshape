@@ -611,7 +611,14 @@ class ForkRequestProcessor extends RequestProcessor {
                 ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), workspace.getName());
                 List<Location> children = new ArrayList<Location>(placeholder.children().size());
                 for (ProjectedNode child : placeholder.children()) {
-                    children.add(child.location()); // the ProxyNodes will have only a path!
+                    if (child instanceof ProxyNode) {
+                        ProxyNode proxy = (ProxyNode)child;
+                        children.add(proxy.federatedLocation()); // the ProxyNodes will have only a path!
+                        proxy.federatedLocation();
+                    } else {
+                        assert child instanceof PlaceholderNode;
+                        children.add(child.location());
+                    }
                 }
                 placeholderRequest.addChildren(children);
                 placeholderRequest.addProperties(placeholder.properties().values());

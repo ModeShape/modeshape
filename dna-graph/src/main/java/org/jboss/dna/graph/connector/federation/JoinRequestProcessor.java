@@ -497,6 +497,17 @@ class JoinRequestProcessor extends RequestProcessor {
         return actual;
     }
 
+    protected Location determineActualLocation( Location actualInSource,
+                                                Projection projection ) {
+        assert projection != null;
+        // Get the projection from the source-specific location ...
+        Path pathInSource = actualInSource.getPath();
+        for (Path path : projection.getPathsInRepository(pathInSource, pathFactory)) {
+            return actualInSource.with(path);
+        }
+        return actualInSource;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -657,6 +668,8 @@ class JoinRequestProcessor extends RequestProcessor {
                     projectToFederated(actualLocation, projection, request, parent, children, properties);
                 }
                 Location locationOfProxy = readFromSource.getActualLocationOfNode();
+                // The location is in terms of the source, so get the projected location ...
+                locationOfProxy = determineActualLocation(locationOfProxy, projection);
                 actualLocationsOfProxyNodes.put(locationOfProxy.getPath(), locationOfProxy);
             }
             setCacheableInfo(request, fromSource.getCachePolicy());

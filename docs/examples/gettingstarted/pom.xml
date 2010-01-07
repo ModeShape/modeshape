@@ -10,7 +10,7 @@
 
   <modules>
     <module>sequencers</module>
-    <!-- module>repositories</module -->
+    <module>repositories</module>
   </modules>
 
   <dependencyManagement>
