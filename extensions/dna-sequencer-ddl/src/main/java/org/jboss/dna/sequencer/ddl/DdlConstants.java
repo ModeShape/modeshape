@@ -25,6 +25,9 @@ public interface DdlConstants {
     public static final int CONSTRAINT_FK = 1;
     public static final int CONSTRAINT_PK = 2;
     public static final int CONSTRAINT_C = 3;
+    
+    public static final String PRIMARY_KEY = "PRIMARY KEY";
+    public static final String FOREIGN_KEY = "FOREIGN KEY";
 
     /*
      * Common DDL Keywords

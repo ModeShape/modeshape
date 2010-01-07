@@ -64,6 +64,7 @@ public class DataTypeParser implements DdlConstants {
     	basicCharStringTypes.add(DataTypes.DTYPE_CHAR_VARYING);
     	basicCharStringTypes.add(DataTypes.DTYPE_VARCHAR);
     	
+    	basicNationalCharStringTypes.add(DataTypes.DTYPE_NCHAR);
     	basicNationalCharStringTypes.add(DataTypes.DTYPE_NATIONAL_CHARACTER);
     	basicNationalCharStringTypes.add(DataTypes.DTYPE_NATIONAL_CHARACTER_VARYING);
     	basicNationalCharStringTypes.add(DataTypes.DTYPE_NATIONAL_CHAR);

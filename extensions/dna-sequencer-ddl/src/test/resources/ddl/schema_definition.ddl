@@ -105,8 +105,17 @@ CREATE DOMAIN us_postal_code AS TEXT
 	);
 
 -- ==================================================================
---      DOMAIN DEFINITION
+--      ASSERTION DEFINITION
 -- ==================================================================
 
+--<assertion definition> ::=
+--    CREATE ASSERTION <constraint name> <assertion check>
+--      [ <constraint attributes> ]
+--
+--<assertion check> ::=
+--    CHECK
+--        <left paren> <search condition> <right paren>
 
+CREATE ASSERTION assertNotNull CHECK (value != null) NOT DEFERRABLE
 
+CREATE ASSERTION assertIsZero CHECK (value != null and value == 0) INITIALLY DEFERRED

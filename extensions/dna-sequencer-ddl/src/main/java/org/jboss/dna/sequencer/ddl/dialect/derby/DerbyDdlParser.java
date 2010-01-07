@@ -228,7 +228,7 @@ public class DerbyDdlParser extends StandardDdlParser
         //       | { NO SQL | CONTAINS SQL | READS SQL DATA }
         //       | { RETURNS NULL ON NULL INPUT | CALLED ON NULL INPUT }
         //        }
-        tokens.consume(CREATE, "FUNCTION"); // CREATE
+        tokens.consume(CREATE, "FUNCTION");
 
         String functionName = parseName(tokens);
 
@@ -330,11 +330,11 @@ public class DerbyDdlParser extends StandardDdlParser
     }
 
     /**
-     * Parses DDL CREATE FUNCTION statement
+     * Parses DDL CREATE PROCEDURE statement
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
-     * @return the parsed CREATE FUNCTION statement node
+     * @return the parsed CREATE PROCEDURE statement node
      * @throws ParsingException
      */
     protected AstNode parseCreateProcedure( DdlTokenStream tokens,
@@ -344,7 +344,7 @@ public class DerbyDdlParser extends StandardDdlParser
 
         markStartOfStatement(tokens);
         
-        tokens.consume(CREATE, "PROCEDURE"); // CREATE
+        tokens.consume(CREATE, "PROCEDURE");
 
         String functionName = parseName(tokens);
 

@@ -25,7 +25,6 @@ package org.jboss.dna.test.integration.sequencer.ddl.dialect.derby;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import java.net.URL;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
@@ -87,10 +86,6 @@ public class DerbyDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
     }
 
-    private URL getUrl(String urlStr) {
-        return this.getClass().getClassLoader().getResource(urlStr);
-    }
-
     @After
     public void afterEach() throws Exception {
         if (this.session != null) {
@@ -103,9 +98,8 @@ public class DerbyDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     
     @Test
     public void shouldSequenceDerbyDdlFile() throws Exception {
-        System.out.println("STARTED:  shouldSequenceDerbyDdlFile(derby_test_statements.ddl)");
-        URL url = getUrl(resourceFolder + "derby_test_statements.ddl");
-        uploadFile(url);
+
+        uploadFile(resourceFolder, "derby_test_statements.ddl", "shouldSequenceDerbyDdlFile");
         
         waitUntilSequencedNodesIs(1);
         
@@ -214,7 +208,5 @@ public class DerbyDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
                 }
             }
         }
-        
-        System.out.println("FINISHED:  shouldSequenceDerbyDdlFile(derby_test_statements.ddl)");
     }
 }

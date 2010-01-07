@@ -340,7 +340,7 @@ public class DdlSequencerTest {
         SubgraphNode pk_1_Node = tableNode.getNode(path("PK_1"));
         assertNotNull(pk_1_Node);
         assertThat(verifyPrimaryType(pk_1_Node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(pk_1_Node, "ddl:constraintType", "2"), is(true));
+        assertThat(verifyProperty(pk_1_Node, "ddl:constraintType", "PRIMARY KEY"), is(true));
         assertThat(verifyMixinType(pk_1_Node, "ddl:tableConstraint"), is(true));
         
         // One column reference
@@ -597,7 +597,7 @@ public class DdlSequencerTest {
         // <name = "CREATE OR REPLACE DIRECTORY" startLineNumber = "164" primaryType = "nt:unstructured" uuid = "c45eb2bb-1b85-469d-9dfc-0012fdfd8ac4" startColumnNumber = "1" mixinTypes = "oracleddl:createDirectoryStatement" expression = "CREATE OR REPLACE DIRECTORY bfile_dir AS '/private1/LOB/files';" startCharIndex = "3887">
         SubgraphNode createOrReplDirNode = statementsNode.getNode(path("CREATE OR REPLACE DIRECTORY"));
         assertNotNull(createOrReplDirNode);
-        verifyBaseProperties(createOrReplDirNode, "nt:unstructured", "164", "1", "3887", 0);
+        verifyBaseProperties(createOrReplDirNode, "nt:unstructured", "164", "1", "3886", 0);
         assertThat(verifyMixinType(createOrReplDirNode, "oracleddl:createDirectoryStatement"), is(true));
         
         // <name = "countries" startLineNumber = "9" primaryType = "nt:unstructured" uuid = "70f45acc-57b0-41c9-b166-bcba4f8c75b8" startColumnNumber = "1" mixinTypes = "ddl:alterTableStatement" expression = "ALTER TABLE countries 
@@ -623,7 +623,7 @@ public class DdlSequencerTest {
         SubgraphNode check_1_node = countriesNode.getNode(path("CHECK_1"));
         assertNotNull(check_1_node);
         assertThat(verifyPrimaryType(check_1_node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(check_1_node, "ddl:constraintType", "3"), is(true));
+        assertThat(verifyProperty(check_1_node, "ddl:constraintType", "CHECK"), is(true));
         assertThat(verifyMixinType(check_1_node, "ddl:addTableConstraintDefinition"), is(true));
         assertThat(verifyProperty(check_1_node, "ddl:searchCondition", "( duty_pct < 10 . 5 )"), is(true));
         

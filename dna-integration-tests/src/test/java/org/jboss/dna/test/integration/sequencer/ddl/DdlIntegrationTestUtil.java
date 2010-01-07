@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.test.integration.sequencer.ddl;
 
+import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
@@ -53,6 +54,16 @@ public class DdlIntegrationTestUtil {
     public JcrTools tools;
     public static final String ddlTestResourceRootFolder = "org/jboss/dna/test/integration/sequencer/ddl/";
     
+    protected URL getUrl(String urlStr) {
+        return this.getClass().getClassLoader().getResource(urlStr);
+    }
+    
+    public void uploadFile(String folder, String fileName, String testMethod) throws RepositoryException, IOException {
+        printStart(fileName, testMethod);
+
+        URL url = getUrl(folder + fileName);
+        uploadFile(url);
+    }
     
     public void uploadFile(URL url) throws RepositoryException, IOException {
         // Grab the last segment of the URL path, using it as the filename
@@ -316,6 +327,29 @@ public class DdlIntegrationTestUtil {
         return null;
     }
     
+    public Node assertNode(Node node, String name, String type) throws Exception {
+        Node existingNode = findNode(node, name, type);
+        assertNotNull(node);
+        
+        return existingNode;
+    }
+    
+    public void printPropertiesRecursive( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
+        printProperties(node);
+        
+        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            printPropertiesRecursive(iter.nextNode());
+        }
+        
+    }
+    
+    public void printChildProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
+        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            printProperties(iter.nextNode());
+        }
+        
+    }
+    
     public void printProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
         
         System.out.println("\n >>>  NODE PATH: " + node.getPath() );
@@ -344,5 +378,13 @@ public class DdlIntegrationTestUtil {
             System.out.println("   | PROP: " + name + "  VALUE: " + stringValue);
             //props.put(name, stringValue);
         }
+    }
+    
+    public void printStart(String fileName, String testMethod) {
+        System.out.println("STARTED:  " + testMethod + "(" + fileName +")");
+    }
+    
+    public void printEnd(String fileName, String testMethod) {
+        System.out.println("ENDED:    " + testMethod + "(" + fileName +")");
     }
 }

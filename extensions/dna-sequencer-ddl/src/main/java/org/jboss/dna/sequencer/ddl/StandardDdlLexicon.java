@@ -150,7 +150,6 @@ public class StandardDdlLexicon {
     public static final Name SQL = new BasicName(Namespace.URI, "sql");
     public static final Name TEMPORARY = new BasicName(Namespace.URI, "temporary");
     public static final Name ON_COMMIT_VALUE = new BasicName(Namespace.URI, "onCommitValue");
-    public static final Name COLUMN_DEFINITIONS = new BasicName(Namespace.URI, "datatypeScale");
     public static final Name NULLABLE = new BasicName(Namespace.URI, "nullable");
     public static final Name DEFAULT_OPTION = new BasicName(Namespace.URI, "defaultOption");
     public static final Name COLLATION_NAME = new BasicName(Namespace.URI, "collationName");

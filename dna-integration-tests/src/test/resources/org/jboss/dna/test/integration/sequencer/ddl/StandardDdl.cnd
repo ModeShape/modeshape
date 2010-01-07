@@ -81,6 +81,28 @@
 [ddl:tableConstraintOperand]    > ddl:operand abstract
 [ddl:referenceOperand]          > ddl:operand abstract
 
+
+// =============================================================================
+// SIMPLE STRING PROPERTY
+// =============================================================================
+[ddl:simpleProperty] mixin
+  - ddl:propValue (STRING) mandatory
+
+[ddl:constraintAttribute]       > ddl:simpleProperty mixin
+
+// =============================================================================
+// STATEMENT OPTION
+// =============================================================================
+[ddl:statementOption] mixin
+  - ddl:value (STRING) mandatory
+  
+// =============================================================================
+// DDL PROBLEM
+// =============================================================================
+[ddl:ddlProblem] mixin
+  - ddl:problemLevel (LONG) mandatory
+  - ddl:message (STRING) mandatory
+
 // =============================================================================
 // COLUMN
 // =============================================================================
@@ -101,7 +123,7 @@
 // =============================================================================
 // TABLE CONSTRAINT
 // =============================================================================
-[ddl:tableConstraintDefinition] > ddl:creatable, ddl:tableConstraintOperand mixin
+[ddl:tableConstraint] > ddl:creatable, ddl:tableConstraintOperand mixin
   - ddl:constraintType (STRING) mandatory
       < 'UNIQUE', 'PRIMARY KEY', 'FOREIGN KEY', 'CHECK'
   - ddl:deferrable (STRING)
@@ -111,7 +133,7 @@
   + * (ddl:columnReference) = ddl:columnReference multiple
   + * (ddl:tableReference) = ddl:tableReference
   + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple
-  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  + ddl:constAttribute (ddl:constraintAttribute) = ddl:constraintAttribute multiple
   
 // =============================================================================
 // REFERENCE
@@ -120,25 +142,6 @@
 [ddl:tableReference]        > ddl:referenceOperand mixin
 [ddl:fkColumnReference]     > ddl:referenceOperand mixin
 [ddl:grantee]               > ddl:referenceOperand mixin
-
-// =============================================================================
-// SIMPLE STRING PROPERTY
-// =============================================================================
-[ddl:simpleProperty] mixin
-  - ddl:propValue (STRING) mandatory
-
-// =============================================================================
-// STATEMENT OPTION
-// =============================================================================
-[ddl:statementOption] mixin
-  - ddl:value (STRING) mandatory
-  
-// =============================================================================
-// DDL PROBLEM
-// =============================================================================
-[ddl:ddlProblem] mixin
-  - ddl:problemLevel (LONG) mandatory
-  - ddl:message (STRING) mandatory
 
 // =============================================================================
 // CREATE SCHEMA
@@ -156,7 +159,7 @@
   - ddl:onCommitValue (STRING)
     < 'DELETE ROWS', 'PRESERVE ROWS'
   + * (ddl:columnDefinition) = ddl:columnDefinition multiple
-  + * (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition multiple
+  + * (ddl:tableConstraint) = ddl:tableConstraint multiple
   + * (ddl:statementOption) = ddl:statementOption multiple 
 
 // =============================================================================
@@ -181,15 +184,14 @@
   - ddl:defaultValue (STRING)
   - ddl:defaultPrecision (LONG)
   - ddl:collationName (STRING)
-  + ddl:domainConstraintDefinition (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition multiple
+  + ddl:domainConstraintDefinition (ddl:tableConstraint) = ddl:tableConstraint multiple
 
 // =============================================================================
 // CREATE ASSERTION
 // =============================================================================
-[ddl:createAssertionStatement] > ddl:statement, ddl:creatable, ddl:assertionOperand mixin
-  - ddl:constraintName (STRING) mandatory
+[ddl:createAssertionStatement] > ddl:statement, ddl:creatable, ddl:tableConstraintOperand mixin
   - ddl:searchCondition (STRING) mandatory
-  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  + ddl:constAttribute (ddl:constraintAttribute) = ddl:constraintAttribute multiple
 
 // =============================================================================
 // CREATE CHARACTER SET
@@ -248,8 +250,8 @@
 [ddl:alterColumnDefinition]         > ddl:columnDefinition, ddl:alterable mixin
 [ddl:addColumnDefinition]           > ddl:columnDefinition, ddl:creatable mixin
 [ddl:dropColumnDefinition]          > ddl:columnDefinition, ddl:droppable mixin
-[ddl:addTableConstraintDefinition]  > ddl:tableConstraintDefinition, ddl:creatable mixin
-[ddl:dropTableConstraintDefinition] > ddl:tableConstraintDefinition, ddl:droppable mixin
+[ddl:addTableConstraintDefinition]  > ddl:tableConstraint, ddl:creatable mixin
+[ddl:dropTableConstraintDefinition] > ddl:tableConstraint, ddl:droppable mixin
 
 // =============================================================================
 // MISC STATEMENTS

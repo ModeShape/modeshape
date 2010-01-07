@@ -25,7 +25,6 @@ package org.jboss.dna.test.integration.sequencer.ddl.dialect.postgres;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import java.net.URL;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
@@ -86,10 +85,6 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
 
     }
 
-    private URL getUrl(String urlStr) {
-        return this.getClass().getClassLoader().getResource(urlStr);
-    }
-
     @After
     public void afterEach() throws Exception {
         if (this.session != null) {
@@ -102,9 +97,8 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
     
     @Test
     public void shouldSequencePostgresDdlFile() throws Exception {
-        System.out.println("STARTED:  shouldSequencePostgresDdlFile(postgres_test_statements.ddl)");
-        URL url = getUrl(resourceFolder + "postgres_test_statements.ddl");
-        uploadFile(url);
+
+        uploadFile(resourceFolder, "postgres_test_statements.ddl", "shouldSequencePostgresDdlFile");
         
         waitUntilSequencedNodesIs(1);
         
@@ -155,7 +149,5 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
                 }
             }
         }
-        
-        System.out.println("FINISHED:  shouldSequencePostgresDdlFile(postgres_test_statements.ddl)");
     }
 }

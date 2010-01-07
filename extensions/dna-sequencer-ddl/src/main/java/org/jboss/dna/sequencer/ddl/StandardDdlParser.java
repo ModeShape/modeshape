@@ -482,15 +482,15 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } else if (tokens.matches(STMT_CREATE_VIEW) || tokens.matches(STMT_CREATE_OR_REPLACE_VIEW)) {
             stmtNode = parseCreateViewStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_ASSERTION)) {
-            stmtNode = parseStatement(tokens, STMT_CREATE_ASSERTION, parentNode, TYPE_CREATE_ASSERTION_STATEMENT);
+            stmtNode = parseCreateAssertionStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_CHARACTER_SET)) {
-            stmtNode = parseStatement(tokens, STMT_CREATE_CHARACTER_SET, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
+            stmtNode = parseCreateCharacterSetStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_COLLATION)) {
-            stmtNode = parseStatement(tokens, STMT_CREATE_COLLATION, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
+            stmtNode = parseCreateCollationStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_TRANSLATION)) {
-            stmtNode = parseStatement(tokens, STMT_CREATE_TRANSLATION, parentNode, TYPE_CREATE_TRANSLATION_STATEMENT);
+            stmtNode = parseCreateTranslationStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_DOMAIN)) {
-            stmtNode = parseStatement(tokens, STMT_CREATE_DOMAIN, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
+            stmtNode = parseCreateDomainStatement(tokens, parentNode);
         } else {
             markStartOfStatement(tokens);
 
@@ -766,7 +766,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     }
 
     /**
-     * Parses DDL INSERT {@link AstNode} based on SQL 92 specifications.
+     * Parses DDL GRANT statement {@link AstNode} based on SQL 92 specifications.
      * 
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
@@ -995,6 +995,126 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         markEndOfStatement(tokens, revokeNode);
 
         return revokeNode;
+    }
+    
+    
+    /**
+     * Parses DDL CREATE DOMAIN {@link AstNode} based on SQL 92 specifications.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed statement node {@link AstNode}
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateDomainStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+        
+        //<domain definition> ::=
+        //    CREATE DOMAIN <domain name>
+        //        [ AS ] <data type>
+        //      [ <default clause> ]
+        //      [ <domain constraint>... ]
+        //      [ <collate clause> ]
+        
+        markStartOfStatement(tokens);
+
+        tokens.consume(STMT_CREATE_DOMAIN);
+        
+        String name = parseName(tokens);
+
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
+
+        parseUntilTerminator(tokens);
+
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    /**
+     * Parses DDL CREATE COLLATION {@link AstNode} based on SQL 92 specifications.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed statement node {@link AstNode}
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateCollationStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+        
+        markStartOfStatement(tokens);
+
+        tokens.consume(STMT_CREATE_COLLATION);
+        
+        String name = parseName(tokens);
+
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
+
+        parseUntilTerminator(tokens);
+
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    /**
+     * Parses DDL CREATE TRANSLATION {@link AstNode} based on SQL 92 specifications.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed statement node {@link AstNode}
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateTranslationStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+        
+        markStartOfStatement(tokens);
+
+        tokens.consume(STMT_CREATE_TRANSLATION);
+        
+        String name = parseName(tokens);
+
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_TRANSLATION_STATEMENT);
+
+        parseUntilTerminator(tokens);
+
+        markEndOfStatement(tokens, node);
+        
+        return node;
+    }
+    
+    /**
+     * Parses DDL CREATE CHARACTER SET {@link AstNode} based on SQL 92 specifications.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed statement node {@link AstNode}
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateCharacterSetStatement( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+        
+        markStartOfStatement(tokens);
+
+        tokens.consume(STMT_CREATE_CHARACTER_SET);
+        
+        String name = parseName(tokens);
+
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
+
+        parseUntilTerminator(tokens);
+
+        markEndOfStatement(tokens, node);
+        
+        return node;
     }
     
     /**
@@ -1377,7 +1497,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 // CONSTRAINT P_KEY_2a UNIQUE (PERMISSIONUID)
                 tokens.consume("UNIQUE"); // UNIQUE
 
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_UC);
+                constraintNode.setProperty(CONSTRAINT_TYPE, UNIQUE);
 
                 // CONSUME COLUMNS
                 parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1388,7 +1508,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 tokens.consume("PRIMARY"); // PRIMARY
                 tokens.consume("KEY"); // KEY
 
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_PK);
+                constraintNode.setProperty(CONSTRAINT_TYPE, PRIMARY_KEY);
 
                 // CONSUME COLUMNS
                 parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1400,7 +1520,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 // COLUMN_NAME DATATYPE NOT NULL DEFAULT (0) CONSTRAINT SOME_FK_NAME REFERENCES SOME_TABLE_NAME (SOME_COLUMN_NAME,
                 // ...)
 
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_FK);
+                constraintNode.setProperty(CONSTRAINT_TYPE, FOREIGN_KEY);
 
                 nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
 
@@ -1416,7 +1536,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(uc_name, columnNode.getParent(), mixinType);
 
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_UC);
+            constraintNode.setProperty(CONSTRAINT_TYPE, UNIQUE);
 
             nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
 
@@ -1428,7 +1548,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(pk_name, columnNode.getParent(), mixinType);
 
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_PK);
+            constraintNode.setProperty(CONSTRAINT_TYPE, PRIMARY_KEY);
 
             nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
 
@@ -1444,7 +1564,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(constraintName, columnNode.getParent(), mixinType);
 
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_FK);
+            constraintNode.setProperty(CONSTRAINT_TYPE, FOREIGN_KEY);
 
             nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
 
@@ -1461,7 +1581,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(constraintName, columnNode.getParent(), mixinType);
 
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_FK);
+            constraintNode.setProperty(CONSTRAINT_TYPE, FOREIGN_KEY);
 
             nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
 
@@ -1475,7 +1595,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(ck_name, columnNode.getParent(), mixinType);
             constraintNode.setProperty(NAME, ck_name);
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_C);
+            constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
 
             String clause = consumeParenBoundedTokens(tokens, true);
             constraintNode.setProperty(CHECK_SEARCH_CONDITION, clause);
@@ -1552,7 +1672,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 tokens.consume(); // UNIQUE
 
                 AstNode constraintNode = nodeFactory().node(uc_name, tableNode, mixinType);
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_UC);
+                constraintNode.setProperty(CONSTRAINT_TYPE, UNIQUE);
 
                 // CONSUME COLUMNS
                 parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1565,7 +1685,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 tokens.consume("PRIMARY", "KEY"); // PRIMARY KEY
 
                 AstNode constraintNode = nodeFactory().node(pk_name, tableNode, mixinType);
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_PK);
+                constraintNode.setProperty(CONSTRAINT_TYPE, PRIMARY_KEY);
 
                 // CONSUME COLUMNS
                 parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1583,7 +1703,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 }
 
                 AstNode constraintNode = nodeFactory().node(fk_name, tableNode, mixinType);
-                constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_FK);
+                constraintNode.setProperty(CONSTRAINT_TYPE, FOREIGN_KEY);
 
                 // CONSUME COLUMNS
                 parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1602,7 +1722,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             tokens.consume("UNIQUE"); // UNIQUE
 
             AstNode constraintNode = nodeFactory().node(uc_name, tableNode, mixinType);
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_UC);
+            constraintNode.setProperty(CONSTRAINT_TYPE, UNIQUE);
 
             // CONSUME COLUMNS
             parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1617,7 +1737,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             tokens.consume("PRIMARY", "KEY"); // PRIMARY KEY
 
             AstNode constraintNode = nodeFactory().node(pk_name, tableNode, mixinType);
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_PK);
+            constraintNode.setProperty(CONSTRAINT_TYPE, PRIMARY_KEY);
 
             // CONSUME COLUMNS
             parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1634,7 +1754,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             AstNode constraintNode = nodeFactory().node(fk_name, tableNode, mixinType);
 
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_FK);
+            constraintNode.setProperty(CONSTRAINT_TYPE, FOREIGN_KEY);
 
             // CONSUME COLUMNS
             parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
@@ -1653,7 +1773,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             tokens.consume("CHECK"); // CHECK
 
             AstNode constraintNode = nodeFactory().node(ck_name, tableNode, mixinType);
-            constraintNode.setProperty(CONSTRAINT_TYPE, CONSTRAINT_C);
+            constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
 
             String clause = consumeParenBoundedTokens(tokens, true);
             constraintNode.setProperty(CHECK_SEARCH_CONDITION, clause);
@@ -1866,6 +1986,44 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         markEndOfStatement(tokens, schemaNode);
 
         return schemaNode;
+    }
+    /**
+     * Parses DDL CREATE ASSERTION {@link AstNode} based on SQL 92 specifications. Initial implementation here does not parse the
+     * statement's search condition in detail.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed schema node
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateAssertionStatement( DdlTokenStream tokens,
+                                                  AstNode parentNode ) throws ParsingException {
+        markStartOfStatement(tokens);
+
+        //      <assertion definition> ::=
+        //      CREATE ASSERTION <constraint name> CHECK <left paren> <search condition> <right paren>  [ <constraint attributes> ]         
+        
+        AstNode node = null;
+
+        tokens.consume("CREATE", "ASSERTION");
+
+        String name = parseName(tokens);
+                
+        // Must have one or the other or both
+
+        node = nodeFactory().node(name, parentNode, TYPE_CREATE_ASSERTION_STATEMENT);
+        
+        tokens.consume("CHECK");
+        
+        String searchCondition = consumeParenBoundedTokens(tokens, false);
+        
+        node.setProperty(CHECK_SEARCH_CONDITION, searchCondition);
+
+        parseConstraintAttributes(tokens, node);
+
+        markEndOfStatement(tokens, node);
+
+        return node;
     }
 
     // ===========================================================================================================================

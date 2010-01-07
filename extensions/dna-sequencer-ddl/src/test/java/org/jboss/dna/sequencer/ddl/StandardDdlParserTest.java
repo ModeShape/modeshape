@@ -256,7 +256,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(1, alterTableNode.getChildCount());
         AstNode constraintNode = alterTableNode.getChild(0); // / FOREIGN KEY
         assertEquals("fk_name", constraintNode.getName().getString());
-        assertEquals(DdlConstants.CONSTRAINT_FK, constraintNode.getProperty(CONSTRAINT_TYPE).getFirstValue());
+        assertEquals(DdlConstants.FOREIGN_KEY, constraintNode.getProperty(CONSTRAINT_TYPE).getFirstValue());
         assertTrue(hasMixinType(constraintNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ADD_TABLE_CONSTRAINT_DEFINITION));
 
         // Expect 3 references: COLUMN REFERENCE for this table, External Table reference and column reference in external table
@@ -298,7 +298,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         String content = getFileContent(DDL_FILE_PATH + "schema_definition.ddl");
         parser.parse(content, rootNode);
 
-        assertEquals(11, rootNode.getChildCount());
+        assertEquals(13, rootNode.getChildCount());
 
         List<AstNode> schemaNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_SCHEMA_STATEMENT);
 
@@ -600,7 +600,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         AstNode foreignKeyNode = parser.nodeFactory().getChildforNameAndType(tableNode, "FK_SUPPLIER", TYPE_TABLE_CONSTRAINT);
 
-        assertEquals(DdlConstants.CONSTRAINT_FK, foreignKeyNode.getProperty(CONSTRAINT_TYPE).getFirstValue());
+        assertEquals(DdlConstants.FOREIGN_KEY, foreignKeyNode.getProperty(CONSTRAINT_TYPE).getFirstValue());
         assertEquals(3, foreignKeyNode.getChildCount()); // 2 COLUMN REFERENCES + 1 TABLE REFERENCE
     }
 
@@ -859,5 +859,19 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         boolean success = parser.parse(content, rootNode);
         assertThat(true, is(success));
         assertThat(rootNode.getChildCount(), is(4));
+    }
+    
+    @Test
+    public void shouldParseSchemaWithTableAndView() {
+        printTest("shouldParseSchemaWithTableAndView()");
+        String content = 
+              "create schema schema_1 authorization ADM default character set UNICODE" + NEWLINE
+            + "     create table table_1 (col1 varchar(20) not null, col2 nchar default current_user)" + NEWLINE
+            + "     create view view_1 (col1, col2) as select*from a with check option" + NEWLINE
+            + ";";
+
+        boolean success = parser.parse(content, rootNode);
+        assertThat(true, is(success));
+        assertThat(rootNode.getChildCount(), is(1));
     }
 }
