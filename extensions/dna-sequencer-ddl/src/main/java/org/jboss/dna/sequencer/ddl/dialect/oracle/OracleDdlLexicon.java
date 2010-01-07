@@ -51,7 +51,8 @@ public class OracleDdlLexicon extends StandardDdlLexicon {
     public static final Name TYPE_CREATE_INDEXTYPE_STATEMENT 		= new BasicName(Namespace.URI, "createIndextypeStatement");
     public static final Name TYPE_CREATE_JAVA_STATEMENT 			= new BasicName(Namespace.URI, "createJavaStatement");
     public static final Name TYPE_CREATE_LIBRARY_STATEMENT 			= new BasicName(Namespace.URI, "createLibraryStatement");
-    public static final Name TYPE_CREATE_MATERIALIZED_STATEMENT 	= new BasicName(Namespace.URI, "createMaterializedStatement");
+    public static final Name TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT 	      = new BasicName(Namespace.URI, "createMaterializedViewStatement");
+    public static final Name TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT      = new BasicName(Namespace.URI, "createMaterializedViewLogStatement");
     public static final Name TYPE_CREATE_OPERATOR_STATEMENT 		= new BasicName(Namespace.URI, "createOperatorStatement");
     public static final Name TYPE_CREATE_OUTLINE_STATEMENT 			= new BasicName(Namespace.URI, "createOutlineStatement");
     public static final Name TYPE_CREATE_PACKAGE_STATEMENT 			= new BasicName(Namespace.URI, "createPackageStatement");
@@ -149,13 +150,19 @@ public class OracleDdlLexicon extends StandardDdlLexicon {
     
     public static final Name TYPE_RENAME_COLUMN 					= new BasicName(Namespace.URI, "renameColumn");
     public static final Name TYPE_RENAME_CONSTRAINT 				= new BasicName(Namespace.URI, "renameConstraint");
+    public static final Name TYPE_FUNCTION_PARAMETER                = new BasicName(Namespace.URI, "functionParameter");
 
     // PROPERTY NAMES
     public static final Name TARGET_OBJECT_TYPE = new BasicName(Namespace.URI, "targetObjectType");
     public static final Name TARGET_OBJECT_NAME = new BasicName(Namespace.URI, "targetObjectName");
-    public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
-    public static final Name UNIQUE_INDEX = new BasicName(Namespace.URI, "unique");
-    public static final Name BITMAP_INDEX = new BasicName(Namespace.URI, "bitmap");
-    public static final Name TABLE_NAME = new BasicName(Namespace.URI, "tableName");
+    public static final Name COMMENT            = new BasicName(Namespace.URI, "comment");
+    public static final Name UNIQUE_INDEX       = new BasicName(Namespace.URI, "unique");
+    public static final Name BITMAP_INDEX       = new BasicName(Namespace.URI, "bitmap");
+    public static final Name TABLE_NAME         = new BasicName(Namespace.URI, "tableName");
+    public static final Name DEFAULT            = new BasicName(Namespace.URI, "default");
+    public static final Name DEFAULT_EXPRESSION = new BasicName(Namespace.URI, "defaultExpression");
+    public static final Name IN_OUT_NO_COPY     = new BasicName(Namespace.URI, "inOutNoCopy");
+    public static final Name AUTHID_VALUE       = new BasicName(Namespace.URI, "authIdValue");
+    
 
 }

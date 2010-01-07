@@ -51,6 +51,7 @@
 [oracleddl:operatorOperand]     > ddl:operand abstract
 [oracleddl:outlineOperand]      > ddl:operand abstract
 [oracleddl:packageOperand]      > ddl:operand abstract
+[oracleddl:parameterOperand]    > ddl:operand abstract
 [oracleddl:pfileOperand]        > ddl:operand abstract
 [oracleddl:procedureOperand]    > ddl:operand abstract
 [oracleddl:profileOperand]      > ddl:operand abstract
@@ -72,7 +73,18 @@
 // =============================================================================
 [oracleddl:columnDefinition] > ddl:columnDefinition
   - oracleddl:dropDefault (boolean)
-  
+
+//
+
+[oracleddl:functionParameter]     > oracleddl:parameterOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - oracleddl:default (STRING)
+  - oracleddl:defaultExpresssion (STRING)
+  - oracleddl:inOutNoCopy (STRING)
+
 // =============================================================================
 // ALTER STATEMENTS
 // =============================================================================
@@ -119,6 +131,11 @@
 [oracleddl:createDirectoryStatement]    > ddl:creatable, ddl:statement, oracleddl:directoryOperand mixin
 [oracleddl:createDiskgroupStatement]    > ddl:creatable, ddl:statement, oracleddl:diskgroupOperand mixin
 [oracleddl:createFunctionStatement]     > ddl:creatable, ddl:statement, oracleddl:functionOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
 [oracleddl:createIndexStatement]        > ddl:creatable, ddl:statement, oracleddl:indexOperand mixin
   - oracleddl:tableName (string) mandatory
   - oracleddl:unique (boolean)
@@ -133,6 +150,7 @@
 [oracleddl:createPackageStatement]      > ddl:creatable, ddl:statement, oracleddl:packageOperand mixin
 [oracleddl:createPfileStatement]        > ddl:creatable, ddl:statement, oracleddl:pfileOperand mixin
 [oracleddl:createProcedureStatement]    > ddl:creatable, ddl:statement, oracleddl:procedureOperand mixin
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
 [oracleddl:createRoleStatement]         > ddl:creatable, ddl:statement, oracleddl:roleOperand mixin
 [oracleddl:createRollbackStatement]     > ddl:creatable, ddl:statement, oracleddl:rollbackOperand mixin
 [oracleddl:createSequenceStatement]     > ddl:creatable, ddl:statement, oracleddl:sequenceOperand mixin

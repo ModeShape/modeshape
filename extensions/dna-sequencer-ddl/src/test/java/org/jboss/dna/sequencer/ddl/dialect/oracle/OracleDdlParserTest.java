@@ -303,6 +303,95 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
 		assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_FUNCTION_STATEMENT));
     }
     
+    @Test
+    public void shouldParseCreateProcedure_1() {
+        printTest("shouldParseCreateProcedure_1()");
+        String content = "CREATE PROCEDURE remove_emp (employee_id NUMBER) AS tot_emps NUMBER;" + NEWLINE
+                               + "BEGIN" + NEWLINE
+                               + "   DELETE FROM employees" + NEWLINE
+                               + "   WHERE employees.employee_id = remove_emp.employee_id;" + NEWLINE
+                               + "tot_emps := tot_emps - 1;" + NEWLINE
+                               + "END;" + NEWLINE
+                               + "/";
+        
+        boolean success = parser.parse(content, rootNode);
+        
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_PROCEDURE_STATEMENT));
+    }
+    
+    @Test
+    public void shouldParseCreateProcedure_2() {
+        printTest("shouldParseCreateProcedure_2()");
+        String content = "CREATE OR REPLACE PROCEDURE add_emp (employee_id NUMBER, employee_age NUMBER) AS tot_emps NUMBER;" + NEWLINE
+                               + "BEGIN" + NEWLINE
+                               + "   INSERT INTO employees" + NEWLINE
+                               + "   WHERE employees.employee_id = remove_emp.employee_id;" + NEWLINE
+                               + "tot_emps := tot_emps + 1;" + NEWLINE
+                               + "END;" + NEWLINE
+                               + "/";
+        
+        boolean success = parser.parse(content, rootNode);
+        
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_PROCEDURE_STATEMENT));
+        assertEquals(2, childNode.getChildCount());
+    }
+    
+    @Test
+    public void shouldParseOracleProceduresAndFunctions() {
+        printTest("shouldParseOracleProceduresAndFunctions()");
+        String content = getFileContent(DDL_FILE_PATH + "create_procedure_statements.ddl");
+
+        boolean success = parser.parse(content, rootNode);
+        
+        assertEquals(true, success);
+        assertEquals(4, rootNode.getChildCount());
+    }
+    
+    @Test
+    public void shouldParseCreateMaterializedView() {
+        setPrintToConsole(true);
+        parser.setTestMode(isPrintToConsole());
+        printTest("shouldParseCreateMaterializedView()");
+        String content = " CREATE MATERIALIZED VIEW sales_mv" + NEWLINE
+                                + "BUILD IMMEDIATE" + NEWLINE
+                                + "REFRESH FAST ON COMMIT" + NEWLINE
+                                + "AS SELECT t.calendar_year, p.prod_id, " + NEWLINE
+                                + "   SUM(s.amount_sold) AS sum_sales" + NEWLINE
+                                + "   FROM times t, products p, sales s" + NEWLINE
+                                + "   WHERE t.time_id = s.time_id AND p.prod_id = s.prod_id" + NEWLINE
+                                + "   GROUP BY t.calendar_year, p.prod_id;" + NEWLINE;
+        
+        boolean success = parser.parse(content, rootNode);
+        
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT));
+    }
+    
+    @Test
+    public void shouldParseCreateMaterializedViewLog() {
+        setPrintToConsole(true);
+        parser.setTestMode(isPrintToConsole());
+        printTest("shouldParseCreateMaterializedViewLog()");
+        String content = "CREATE MATERIALIZED VIEW LOG ON products" + NEWLINE
+                                + "WITH ROWID, SEQUENCE (prod_id)" + NEWLINE
+                                + "INCLUDING NEW VALUES;";
+        
+        boolean success = parser.parse(content, rootNode);
+        
+        assertEquals(true, success);
+        assertEquals(1, rootNode.getChildCount());
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT));
+    }
+    
 	@Test
 	public void shouldParseOracleStatements_1() {
 		printTest("shouldParseOracleStatements_1()");

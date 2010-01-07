@@ -72,7 +72,7 @@ COMMENT ON COLUMN employees.job_id
 
 COMMIT WORK; 
 
-COMMIT  COMMENT 'In-doubt transaction Code 36, Call (415) 555-2637'; 
+COMMIT COMMENT 'In-doubt transaction Code 36, Call (415) 555-2637'; 
 
 CREATE CLUSTER personnel
    (department NUMBER(4))
