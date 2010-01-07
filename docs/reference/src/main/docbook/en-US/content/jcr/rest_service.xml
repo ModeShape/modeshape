@@ -578,5 +578,66 @@ public Session getSession( HttpServletRequest request,
 			repository should shutdown and clean up any resources that are in use.
 		</para>
 	</sect1>
+
+    <sect1 id="dna_rest_client_api">
+        <title>DNA REST Client API</title>
+        <para>
+            The DNA REST Client API provides a POJO way of using the DNA REST web service to publish (upload) and 
+            unpublish (delete) files from DNA repositories. Java objects open the HTTP connection, create the HTTP request URLs, 
+            attach the payload associated with <code>PUT</code> and <code>POST</code> requests, parse the HTTP JSON response back 
+            into Java objects, and close the HTTP connection.
+        </para>
+        <para>
+            Here are the Java business objects you will need (all found in the <code>org.jboss.dna.web.jcr.rest.client.domain</code> 
+            package):
+
+            <itemizedlist>
+                <listitem>
+                    <para><code>Server</code> - hosts one or more DNA JCR repositories,</para>
+                </listitem>
+                <listitem>
+                    <para><code>Repository</code> - a DNA JCR repository containing one or more workspaces, and</para>
+                </listitem>
+                <listitem>
+                    <para><code>Workspace</code> - a DNA JCR repository workspace.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>
+            Along with the POJOs above, an <code>org.jboss.dna.web.jcr.rest.client.IRestClient</code> is needed. The 
+            <code>IRestClient</code> is responsible for executing the publishing and unpublishing operations. You can also use the
+            <code>IRestClient</code> to find out what repositories and workspaces are available on a DNA server.
+
+            <note>
+                <para>
+                    The only implementation of <code>IRestClient</code> is <code>JsonRestClient</code> as JSON-encoded responses are 
+                    all that are currently available.
+                </para>
+            </note>
+                
+            Here's a code snippet that publishes (uploads) a file:
+
+            <programlisting><![CDATA[
+// Setup POJOs
+Server server = new Server("http://localhost:8080", "username", "password");
+Repository repository = new Repository("repositoryName", server);
+Workspace workspace = new Workspace("workspaceName", repository);
+
+// Publish
+File file = new File("/path/to/file");
+IRestClient restClient = new JsonRestClient();
+Status status = restClient.publish(workspace, "/workspace/path/", file);
+
+if (status.isError() {
+    // Handle error here
+}
+            ]]></programlisting>
+        </para>
+        <para>
+            Results of successfully executing the above code is a JCR folder node (<code>nt:folder</code>) for each segment of the 
+            workspace path (a node is created if it doesn't already exist). Also, a JCR file node (a node with primary type <code>nt:file</code>) is 
+            created or updated under the last folder node and the file contents are encoded and uploaded into a child node of that file node.
+        </para>
+    </sect1>
 </chapter>
 

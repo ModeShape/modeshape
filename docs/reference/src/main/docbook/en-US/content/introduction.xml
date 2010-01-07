@@ -519,6 +519,14 @@
             can be consulted as a template for how to deploy the RESTful services in a custom implementation. 
           </para>
         </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-web-jcr-rest-client</emphasis>
+            is an API that uses POJOs to access the REST web service. This API eliminates the need for applications to know how
+            to create HTTP request URLs and payloads, and how to parse the JSON responses. It can be used to publish (upload) 
+            and unpublish (delete) files from DNA repositories. 
+          </para>
+        </listitem>
       </itemizedlist>
       There are also documentation modules (located in the source under the
       <code>docs/</code>
