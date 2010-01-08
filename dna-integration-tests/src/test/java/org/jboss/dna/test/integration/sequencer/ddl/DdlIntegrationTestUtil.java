@@ -59,7 +59,7 @@ public class DdlIntegrationTestUtil {
     }
     
     public void uploadFile(String folder, String fileName, String testMethod) throws RepositoryException, IOException {
-        printStart(fileName, testMethod);
+        //printStart(fileName, testMethod);
 
         URL url = getUrl(folder + fileName);
         uploadFile(url);

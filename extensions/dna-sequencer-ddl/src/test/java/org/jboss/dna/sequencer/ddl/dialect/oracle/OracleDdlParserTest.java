@@ -355,8 +355,6 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     
     @Test
     public void shouldParseCreateMaterializedView() {
-        setPrintToConsole(true);
-        parser.setTestMode(isPrintToConsole());
         printTest("shouldParseCreateMaterializedView()");
         String content = " CREATE MATERIALIZED VIEW sales_mv" + NEWLINE
                                 + "BUILD IMMEDIATE" + NEWLINE
@@ -377,8 +375,6 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     
     @Test
     public void shouldParseCreateMaterializedViewLog() {
-        setPrintToConsole(true);
-        parser.setTestMode(isPrintToConsole());
         printTest("shouldParseCreateMaterializedViewLog()");
         String content = "CREATE MATERIALIZED VIEW LOG ON products" + NEWLINE
                                 + "WITH ROWID, SEQUENCE (prod_id)" + NEWLINE

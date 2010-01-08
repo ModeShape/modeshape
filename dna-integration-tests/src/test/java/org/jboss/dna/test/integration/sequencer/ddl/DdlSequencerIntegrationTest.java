@@ -191,7 +191,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
                     assertNode(viewNode, "col1", "ddl:columnReference");
                     
                     Node tableNode = assertNode(ddlNode, "table_5", "ddl:createTableStatement");
-                    printChildProperties(tableNode);
+                    //printChildProperties(tableNode);
                     assertEquals(18, tableNode.getNodes().getSize());
                 }
             }
