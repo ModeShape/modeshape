@@ -463,7 +463,6 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
-        // System.out.println("Replaced " + doc);
         getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
     }
 

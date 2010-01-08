@@ -293,7 +293,6 @@ public class JcrQueryManagerTest {
         Query query = manager.createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
         assertResults(query, result, 21);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
@@ -301,7 +300,6 @@ public class JcrQueryManagerTest {
         query = manager.createQuery("//element(*,car:Car) order by @car:year", Query.XPATH);
         assertThat(query, is(notNullValue()));
         result = query.execute();
-        print = true;
         assertResults(query, result, 12);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
@@ -312,7 +310,6 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars/Hybrid/*", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
         assertResults(query, result, 3);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
@@ -389,7 +386,6 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
         assertResults(query, result, 1);
         assertThat(result, is(notNullValue()));
         assertThat(result.getNodes().nextNode().getIndex(), is(1));
@@ -398,7 +394,6 @@ public class JcrQueryManagerTest {
         query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA[2]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         result = query.execute();
-        print = true;
         assertResults(query, result, 1);
         assertThat(result, is(notNullValue()));
         assertThat(result.getNodes().nextNode().getIndex(), is(2));

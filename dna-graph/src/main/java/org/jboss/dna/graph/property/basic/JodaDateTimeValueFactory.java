@@ -64,10 +64,17 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         try {
             return new JodaDateTime(value.trim());
         } catch (IllegalArgumentException err) {
-            throw new ValueFormatException(value, getPropertyType(),
-                                           GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                              DateTime.class.getSimpleName(),
-                                                                              value), err);
+            // See if this string represents a LONG value ...
+            try {
+                Long longValue = Long.parseLong(value);
+                return new JodaDateTime(longValue);
+            } catch (NumberFormatException e) {
+                // Guess it wasn't a long value ...
+                throw new ValueFormatException(value, getPropertyType(),
+                                               GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                  DateTime.class.getSimpleName(),
+                                                                                  value), err);
+            }
         }
     }
 

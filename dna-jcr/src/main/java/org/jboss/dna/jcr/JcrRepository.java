@@ -392,13 +392,13 @@ public class JcrRepository implements Repository {
      * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
-    public JcrRepository( ExecutionContext executionContext,
-                          RepositoryConnectionFactory connectionFactory,
-                          String repositorySourceName,
-                          Observable repositoryObservable,
-                          RepositorySourceCapabilities repositorySourceCapabilities,
-                          Map<String, String> descriptors,
-                          Map<Option, String> options ) throws RepositoryException {
+    JcrRepository( ExecutionContext executionContext,
+                   RepositoryConnectionFactory connectionFactory,
+                   String repositorySourceName,
+                   Observable repositoryObservable,
+                   RepositorySourceCapabilities repositorySourceCapabilities,
+                   Map<String, String> descriptors,
+                   Map<Option, String> options ) throws RepositoryException {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -415,11 +415,17 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false");
+        modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false"); // not JCR 1.0 SQL
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "false");
-        modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "true");
-        modifiableDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, "true");
+        if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_DOC_ORDER)) {
+            // don't override what was supplied ...
+            modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "true");
+        }
+        if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_POS_INDEX)) {
+            // don't override what was supplied ...
+            modifiableDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, "true");
+        }
         // Vendor-specific descriptors (REP_XXX) will only be initialized if not already present, allowing for customer branding.
         if (!modifiableDescriptors.containsKey(Repository.REP_NAME_DESC)) {
             modifiableDescriptors.put(Repository.REP_NAME_DESC, JcrI18n.REP_NAME_DESC.text());
