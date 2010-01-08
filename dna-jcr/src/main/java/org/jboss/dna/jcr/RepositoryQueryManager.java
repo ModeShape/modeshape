@@ -159,7 +159,7 @@ abstract class RepositoryQueryManager {
                                    QueryCommand query,
                                    Schemata schemata,
                                    PlanHints hints,
-                                   Map<String, Object> variables ) throws InvalidQueryException {
+                                   Map<String, Object> variables ) {
             Graph.BuildQuery builder = workspaceGraph(workspaceName).query(query, schemata);
             if (variables != null) builder.using(variables);
             if (hints != null) builder.using(hints);
@@ -170,7 +170,7 @@ abstract class RepositoryQueryManager {
         public QueryResults search( String workspaceName,
                                     String searchExpression,
                                     int maxRowCount,
-                                    int offset ) throws InvalidQueryException {
+                                    int offset ) {
             return workspaceGraph(workspaceName).search(searchExpression, maxRowCount, offset);
         }
 
@@ -364,7 +364,7 @@ abstract class RepositoryQueryManager {
         public QueryResults search( String workspaceName,
                                     String searchExpression,
                                     int maxRowCount,
-                                    int offset ) throws InvalidQueryException {
+                                    int offset ) {
             Graph graph = Graph.create(sourceName, connectionFactory, context);
 
             if (workspaceName != null) {
