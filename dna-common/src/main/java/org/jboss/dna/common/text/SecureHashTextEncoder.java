@@ -24,10 +24,10 @@
 package org.jboss.dna.common.text;
 
 import java.security.NoSuchAlgorithmException;
+import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.SecureHash.Algorithm;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 /**
  * A text encoder that performs a secure hash of the input text and returns that hash as the encoded text. This encoder can be
@@ -88,7 +88,7 @@ public class SecureHashTextEncoder implements TextEncoder {
     public String encode( String text ) {
         try {
             byte[] hash = SecureHash.getHash(algorithm, text.getBytes());
-            String result = Base64.encode(hash);
+            String result = Base64.encodeBytes(hash);
             return result.length() < maxLength ? result : result.substring(0, maxLength);
         } catch (NoSuchAlgorithmException e) {
             return text;
