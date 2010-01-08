@@ -24,9 +24,11 @@
 package org.jboss.dna.jcr.xpath;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,12 +159,16 @@ public class XPathToQueryTranslator {
                 AxisStep axis = (AxisStep)step;
                 NodeTest nodeTest = axis.getNodeTest();
                 if (nodeTest instanceof NameTest) {
-                    NameTest nameTest = (NameTest)nodeTest;
-                    if (!nameTest.isWildcard()) {
+                    if (appliesToPathConstraint(axis.getPredicates())) {
+                        // Everything in this axis/step applies to the path, so add it and we'll translate it below ...
                         path.add(step);
-                    }
-                    if (!appliesToPathConstraint(axis.getPredicates())) {
-                        // The constraints are more complicated, so we need to define a new source/table ...
+                    } else {
+                        // The constraints are more complicated than can be applied to the path ...
+                        // if (!nameTest.isWildcard()) {
+                        // There is a non-wildcard name test that we still need to add to the path ...
+                        path.add(step);
+                        // }
+                        // We need to define a new source/table ...
                         tableName = translateSource(tableName, path, where);
                         translatePredicates(axis.getPredicates(), tableName, where);
                         path.clear();
@@ -464,6 +470,9 @@ public class XPathToQueryTranslator {
             // This adds the criteria that the attribute exists, and adds it to the select ...
             AttributeNameTest attribute = (AttributeNameTest)predicate;
             String propertyName = nameFrom(attribute.getNameTest());
+            // There is nothing in the JCR 1.0 spec that says that a property constrain implies it should be included in the
+            // result columns
+            // builder.select(tableName + "." + propertyName);
             where.hasProperty(tableName, propertyName);
         } else if (predicate instanceof NameTest) {
             // This adds the criteria that the child node exists ...
@@ -679,17 +688,28 @@ public class XPathToQueryTranslator {
     protected boolean translatePathExpressionConstraint( PathExpression pathExrp,
                                                          ConstraintBuilder where,
                                                          String tableName ) {
-        String[] paths = relativePathLikeExpressions(pathExrp);
-        if (paths == null || paths.length == 0) return false;
+        RelativePathLikeExpressions expressions = relativePathLikeExpressions(pathExrp);
+        if (expressions.isEmpty()) return false;
         where = where.openParen();
         boolean first = true;
         int number = 0;
-        for (String path : paths) {
-            if (path == null || path.length() == 0 || path.equals("%/")) continue;
+        for (String path : expressions) {
+            if (path == null || path.length() == 0 || path.equals("%/") || path.equals("%/%") || path.equals("%//%")) continue;
             if (first) first = false;
             else where.or();
             if (path.indexOf('%') != -1) {
                 where.path(tableName).isLike(path);
+                switch (expressions.depthMode) {
+                    case AT_LEAST:
+                        where.and().depth(tableName).isGreaterThanOrEqualTo().cast(expressions.depth).asLong();
+                        break;
+                    case EXACT:
+                        where.and().depth(tableName).isEqualTo().cast(expressions.depth).asLong();
+                        break;
+                    case DEFAULT:
+                        // don't have to add the DEPTH criteria ...
+                        break;
+                }
             } else {
                 where.path(tableName).isEqualTo(path);
             }
@@ -699,19 +719,59 @@ public class XPathToQueryTranslator {
         return true;
     }
 
-    protected String[] relativePathLikeExpressions( PathExpression pathExpression ) {
+    protected static enum DepthMode {
+        DEFAULT,
+        EXACT,
+        AT_LEAST;
+    }
+
+    protected static class RelativePathLikeExpressions implements Iterable<String> {
+        protected final List<String> paths;
+        protected final int depth;
+        protected final DepthMode depthMode;
+
+        protected RelativePathLikeExpressions() {
+            this.paths = null;
+            this.depth = 0;
+            this.depthMode = DepthMode.DEFAULT;
+        }
+
+        protected RelativePathLikeExpressions( String[] paths,
+                                               int depth,
+                                               DepthMode depthMode ) {
+            this.paths = Arrays.asList(paths);
+            this.depth = depth;
+            this.depthMode = depthMode;
+        }
+
+        protected boolean isEmpty() {
+            return paths == null || paths.isEmpty();
+        }
+
+        public Iterator<String> iterator() {
+            return paths.iterator();
+        }
+    }
+
+    protected RelativePathLikeExpressions relativePathLikeExpressions( PathExpression pathExpression ) {
         List<StepExpression> steps = pathExpression.getSteps();
-        if (steps.isEmpty()) return new String[] {};
-        if (steps.size() == 1 && steps.get(0) instanceof DescendantOrSelf) return new String[] {};
+        if (steps.isEmpty()) return new RelativePathLikeExpressions();
+        if (steps.size() == 1 && steps.get(0) instanceof DescendantOrSelf) return new RelativePathLikeExpressions();
         PathLikeBuilder builder = new SinglePathLikeBuilder();
-        for (StepExpression step : steps) {
+        int depth = 0;
+        DepthMode depthMode = DepthMode.EXACT;
+        for (Iterator<StepExpression> iterator = steps.iterator(); iterator.hasNext();) {
+            StepExpression step = iterator.next();
             if (step instanceof DescendantOrSelf) {
+                ++depth;
+                depthMode = DepthMode.DEFAULT;
                 if (builder.isEmpty()) {
                     builder.append("%/");
                 } else {
                     builder = new DualPathLikeBuilder(builder.clone(), builder.append("/%"));
                 }
             } else if (step instanceof AxisStep) {
+                ++depth;
                 AxisStep axis = (AxisStep)step;
                 NodeTest nodeTest = axis.getNodeTest();
                 assert !(nodeTest instanceof ElementTest);
@@ -764,7 +824,7 @@ public class XPathToQueryTranslator {
                 }
             }
         }
-        return builder.getPaths();
+        return new RelativePathLikeExpressions(builder.getPaths(), depth, depthMode);
     }
 
     protected static interface PathLikeBuilder {

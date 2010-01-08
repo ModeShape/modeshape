@@ -165,6 +165,16 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
+
+    /**
      * Rewrite the supplied comparisons, returning the new constraint and nulling in the supplied list those comparisons that were
      * rewritten (and leaving those that were not rewritten)
      * 

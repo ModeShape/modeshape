@@ -2666,7 +2666,8 @@ public class Graph {
                                                     msg,
                                                     accessNode.getString(),
                                                     accessRequest.workspace(),
-                                                    graphSourceName);
+                                                    graphSourceName,
+                                                    accessRequest.getError().getLocalizedMessage());
                 return emptyTuples();
             }
             return accessRequest.getTuples();

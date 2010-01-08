@@ -74,7 +74,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     private List<Integer> ruleExecutionOrder;
     private QueryContext context;
     private PlanNode node;
-    private final boolean print = false;
+    private boolean print;
 
     @Before
     public void beforeEach() {
@@ -124,6 +124,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
                 ruleStack.addAll(rules);
             }
         };
+        print = false;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -193,12 +194,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     public void shouldOptimizePlanForSimpleQueryWithSelectStarWithAlias() {
         node = optimize("SELECT * FROM t1 AS x1");
         // Create the expected plan ...
-        PlanNode expected = new PlanNode(Type.ACCESS, selector("x1"));
-        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("x1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("x1", "c11"), column("x1", "c12"), column("x1", "c13")));
-        PlanNode source = new PlanNode(Type.SOURCE, project, selector("x1"));
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12"), column("t1", "c13")));
+        PlanNode source = new PlanNode(Type.SOURCE, project, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        source.setProperty(Property.SOURCE_ALIAS, selector("x1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
         // Compare the expected and actual plan ...
         assertThat(node.isSameAs(expected), is(true));
@@ -208,15 +208,14 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     public void shouldOptimizePlanForSimpleQueryWithSelectStarFromTableWithAliasAndValueCriteria() {
         node = optimize("SELECT * FROM t1 AS x1 WHERE c13 < CAST('3' AS LONG)");
         // Create the expected plan ...
-        PlanNode expected = new PlanNode(Type.ACCESS, selector("x1"));
-        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("x1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("x1", "c11"), column("x1", "c12"), column("x1", "c13")));
-        PlanNode select = new PlanNode(Type.SELECT, project, selector("x1"));
-        select.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("x1"), "c13"), Operator.LESS_THAN,
+        PlanNode expected = new PlanNode(Type.ACCESS, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, expected, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12"), column("t1", "c13")));
+        PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
+        select.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c13"), Operator.LESS_THAN,
                                                                     new Literal(3L)));
-        PlanNode source = new PlanNode(Type.SOURCE, select, selector("x1"));
+        PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
-        source.setProperty(Property.SOURCE_ALIAS, selector("x1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
         // Compare the expected and actual plan ...
         assertThat(node.isSameAs(expected), is(true));
@@ -348,7 +347,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal('x')));
@@ -451,7 +450,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("all"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("all"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1"), column("all", "a2")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a1"), column("all", "a2"), column("all", "a3")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("all"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                           new Literal("t1"), new Literal("t0")));
@@ -464,7 +463,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("all"));
         PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("all"));
-        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a3"), column("all", "a4")));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("all", "a3"), column("all", "a4"), column("all", "a2")));
         PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("all"));
         rightSelect1.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("all"), "primaryType"),
                                                                            new Literal("t2"), new Literal("t0")));
@@ -514,7 +513,83 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     }
 
     @Test
-    public void shouldOptimizePlanForQueryWithOrderByClause() {
+    public void shouldOptimizePlanForQueryUsingTableAndOrderByClause() {
+        print = true;
+        node = optimize("SELECT t1.c11 AS c1 FROM t1 WHERE t1.c11 = 'x' AND t1.c12 = 'y' ORDER BY t1.c11, t1.c12 DESC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, sort, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryUsingTableWithAliasAndOrderByClause() {
+        print = true;
+        node = optimize("SELECT X.c11 AS c1 FROM t1 AS X WHERE X.c11 = 'x' AND X.c12 = 'y' ORDER BY X.c11, X.c12 DESC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, sort, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryUsingTableWithAliasAndOrderByClauseUsingAliasedColumn() {
+        print = true;
+        node = optimize("SELECT X.c11 AS c1 FROM t1 AS X WHERE X.c11 = 'x' AND X.c12 = 'y' ORDER BY X.c1, X.c12 DESC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, sort, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryUsingViewAndOrderByClause() {
+        print = true;
         node = optimize("SELECT v2.c11 AS c1 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y' ORDER BY v2.c11, v2.c12 DESC");
 
         // Create the expected plan ...
@@ -529,7 +604,49 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
+                                                                          Operator.EQUAL_TO, new Literal("x")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryUsingViewWithAliasAndOrderByClause() {
+        print = true;
+        node = optimize("SELECT Q.c11 AS c1 FROM v2 AS Q WHERE Q.c11 = 'x' AND Q.c12 = 'y' ORDER BY Q.c11, Q.c12 DESC");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
+        PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
@@ -570,7 +687,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
@@ -656,9 +773,9 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode optimized = new RuleBasedOptimizer().optimize(context, plan);
         assertThat("Problems optimizing query: " + sql + "\n" + problems, problems.hasErrors(), is(false));
         if (print) {
-            System.out.println();
             System.out.println(sql);
             System.out.println(optimized);
+            System.out.println();
         }
         return optimized;
     }

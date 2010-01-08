@@ -112,6 +112,18 @@ public class XPathToQueryTranslatorTest {
     }
 
     @Test
+    public void shouldTranslateFromXPathUsingNameTestsAndWildcardWithNoPredicates() {
+        assertThat(xpath("/jcr:root/testroot/*"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingNameTestsAndWildcardWithPredicates() {
+        assertThat(xpath("/jcr:root/testroot/*[@prop1]"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL"));
+    }
+
+    @Test
     public void shouldTranslateFromXPathContainingPathWithDescendantOrSelf() {
         assertThat(xpath("/jcr:root/a/b//c"),
                    isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c' OR PATH(nodeSet1) LIKE '/a/b/%/c'"));
@@ -272,11 +284,15 @@ public class XPathToQueryTranslatorTest {
     }
 
     @Test
-    public void shouldTranslateFromXPathUsingOrderBy() {
+    public void shouldTranslateFromXPathUsingElementWildcardAndOrderBy() {
         assertThat(xpath("//element(*,*) order by @title"),
                    isSql("SELECT nodeSet1.title FROM __ALLNODES__ AS nodeSet1 ORDER BY nodeSet1.title"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingNameTestsAndWildcardOrderBy() {
         assertThat(xpath("/jcr:root/testroot/*[@prop1] order by @prop1 ascending"),
-                   isSql("SELECT nodeSet1.prop1 FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) = '/testroot' AND nodeSet1.prop1 IS NOT NULL ORDER BY nodeSet1.prop1"));
+                   isSql("SELECT nodeSet1.prop1 FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL ORDER BY nodeSet1.prop1"));
     }
 
     @Test

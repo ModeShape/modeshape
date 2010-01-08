@@ -149,6 +149,7 @@ public class ReplaceViews implements OptimizerRule {
             // is completely done ...
             if (!(ruleStack.getFirst() instanceof RaiseSelectCriteria)) {
                 ruleStack.addFirst(RaiseSelectCriteria.INSTANCE);
+                ruleStack.addFirst(PushSelectCriteria.INSTANCE);
             }
 
             // We re-wrote at least one SOURCE, but the resulting plan tree for the view could actually reference

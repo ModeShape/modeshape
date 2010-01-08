@@ -494,7 +494,8 @@ abstract class RepositoryQueryManager {
                                                         msg,
                                                         accessNode.getString(),
                                                         accessRequest.workspace(),
-                                                        sourceName);
+                                                        sourceName,
+                                                        accessRequest.getError().getLocalizedMessage());
                     return emptyTuples();
                 }
                 return accessRequest.getTuples();

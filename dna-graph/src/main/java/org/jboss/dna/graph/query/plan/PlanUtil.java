@@ -69,6 +69,7 @@ import org.jboss.dna.graph.query.model.Visitors;
 import org.jboss.dna.graph.query.model.Visitors.AbstractVisitor;
 import org.jboss.dna.graph.query.plan.PlanNode.Property;
 import org.jboss.dna.graph.query.plan.PlanNode.Type;
+import org.jboss.dna.graph.query.validate.Schemata.Table;
 import org.jboss.dna.graph.query.validate.Schemata.View;
 
 /**
@@ -98,13 +99,11 @@ public class PlanUtil {
                                                     PlanNode planNode ) {
         List<Column> columns = null;
         PlanNode node = planNode;
-        PlanNode projectNode = null;
         // First find the columns from the nearest PROJECT ancestor ...
         do {
             switch (node.getType()) {
                 case PROJECT:
                     columns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
-                    projectNode = node;
                     node = null;
                     break;
                 default:
@@ -113,14 +112,12 @@ public class PlanUtil {
             }
         } while (node != null);
 
-        // If the supplied node is a PROJECT, just return the PROJECT node's column list ...
-        if (projectNode == planNode) return columns;
-
         // Find the names of the selectors ...
         Set<SelectorName> names = new HashSet<SelectorName>();
         for (PlanNode source : planNode.findAllAtOrBelow(Type.SOURCE)) {
             names.add(source.getProperty(Property.SOURCE_NAME, SelectorName.class));
-            names.add(source.getProperty(Property.SOURCE_ALIAS, SelectorName.class));
+            SelectorName alias = source.getProperty(Property.SOURCE_ALIAS, SelectorName.class);
+            if (alias != null) names.add(alias);
         }
 
         // Add the PROJECT columns first ...
@@ -131,7 +128,7 @@ public class PlanUtil {
             }
         }
 
-        // Now add the columns from the JOIN and SELECT ancestors ...
+        // Now add the columns from the JOIN, SELECT, PROJECT and SORT ancestors ...
         node = planNode;
         do {
             switch (node.getType()) {
@@ -145,9 +142,23 @@ public class PlanUtil {
                     criteria = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
                     Visitors.visitAll(criteria, collectionVisitor);
                     break;
+                case SORT:
+                    List<Object> orderBys = node.getPropertyAsList(Property.SORT_ORDER_BY, Object.class);
+                    if (orderBys != null && !orderBys.isEmpty()) {
+                        if (orderBys.get(0) instanceof Ordering) {
+                            for (int i = 0; i != orderBys.size(); ++i) {
+                                Ordering ordering = (Ordering)orderBys.get(i);
+                                Visitors.visitAll(ordering, collectionVisitor);
+                            }
+                        }
+                    }
+                    break;
                 case PROJECT:
-                    // Already handled above, but we can stop looking for columns ...
-                    return collectionVisitor.getRequiredColumns();
+                    if (node != planNode) {
+                        // Already handled above, but we can stop looking for columns ...
+                        return collectionVisitor.getRequiredColumns();
+                    }
+                    break;
                 default:
                     break;
             }
@@ -203,16 +214,28 @@ public class PlanUtil {
          */
         @Override
         public void visit( Column column ) {
-            requireColumn(column.getSelectorName(), column.getPropertyName());
+            requireColumn(column.getSelectorName(), column.getPropertyName(), column.getColumnName());
         }
 
         protected void requireColumn( SelectorName selector,
                                       String propertyName ) {
+            requireColumn(selector, propertyName, null);
+        }
+
+        protected void requireColumn( SelectorName selector,
+                                      String propertyName,
+                                      String alias ) {
             if (names.contains(selector)) {
                 // The column is part of the table we're interested in ...
-                if (requiredColumnNames.add(propertyName)) {
-                    String alias = propertyName;
-                    columns.add(new Column(selector, propertyName, alias));
+                if (alias != null && !alias.equals(propertyName)) {
+                    if (requiredColumnNames.add(propertyName) && requiredColumnNames.add(alias)) {
+                        columns.add(new Column(selector, propertyName, alias));
+                    }
+                } else {
+                    if (requiredColumnNames.add(propertyName)) {
+                        alias = propertyName;
+                        columns.add(new Column(selector, propertyName, alias));
+                    }
                 }
             }
         }
@@ -558,7 +581,10 @@ public class PlanUtil {
                         }
                         break;
                     case ACCESS:
-                        // Nothing to do here, as the selector names are fixed elsewhere
+                        // Add all the selectors used by the subnodes ...
+                        for (PlanNode child : node) {
+                            node.addSelectors(child.getSelectors());
+                        }
                         break;
                     case SORT:
                         // The selector names and Ordering objects needs to be changed ...
@@ -882,6 +908,31 @@ public class PlanUtil {
             Column projectedColunn = projectedColumns.get(i);
             String viewColumnName = viewColumns.get(i).getName();
             mapping.map(viewColumnName, projectedColunn);
+        }
+        return mapping;
+    }
+
+    public static ColumnMapping createMappingForAliased( SelectorName tableAlias,
+                                                         Table table,
+                                                         PlanNode tableSourceNode ) {
+        ColumnMapping mapping = new ColumnMapping(tableAlias);
+
+        // Find the projected columns on the nearest PROJECT ...
+        PlanNode project = tableSourceNode.findAncestor(Type.PROJECT);
+        assert project != null;
+
+        // Get the Columns from the PROJECT in the plan node ...
+        List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+
+        for (int i = 0; i != projectedColumns.size(); ++i) {
+            Column projectedColumn = projectedColumns.get(i);
+            Column projectedColumnInTable = projectedColumns.get(i).with(table.getName());
+            org.jboss.dna.graph.query.validate.Schemata.Column column = table.getColumn(projectedColumnInTable.getPropertyName());
+            mapping.map(column.getName(), projectedColumnInTable);
+            if (projectedColumn.getColumnName() != null) {
+                // The projected column has an alias, so add a mapping for it, too
+                mapping.map(projectedColumn.getColumnName(), projectedColumnInTable);
+            }
         }
         return mapping;
     }

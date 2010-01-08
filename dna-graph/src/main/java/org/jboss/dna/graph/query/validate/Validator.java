@@ -49,6 +49,7 @@ import org.jboss.dna.graph.query.model.NodeName;
 import org.jboss.dna.graph.query.model.NodePath;
 import org.jboss.dna.graph.query.model.PropertyExistence;
 import org.jboss.dna.graph.query.model.PropertyValue;
+import org.jboss.dna.graph.query.model.Query;
 import org.jboss.dna.graph.query.model.SameNode;
 import org.jboss.dna.graph.query.model.SameNodeJoinCondition;
 import org.jboss.dna.graph.query.model.SelectorName;
@@ -66,6 +67,7 @@ public class Validator extends AbstractVisitor {
     private final Problems problems;
     private final Map<SelectorName, Table> selectorsByNameOrAlias;
     private final Map<SelectorName, Table> selectorsByName;
+    private final Map<String, Schemata.Column> columnsByAlias;
 
     /**
      * @param context the query context
@@ -80,6 +82,7 @@ public class Validator extends AbstractVisitor {
         for (Table table : selectorsByName.values()) {
             this.selectorsByName.put(table.getName(), table);
         }
+        this.columnsByAlias = new HashMap<String, Schemata.Column>();
     }
 
     /**
@@ -340,6 +343,28 @@ public class Validator extends AbstractVisitor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.query.model.Visitors.AbstractVisitor#visit(org.jboss.dna.graph.query.model.Query)
+     */
+    @Override
+    public void visit( Query obj ) {
+        // Collect the map of columns by alias for this query ...
+        this.columnsByAlias.clear();
+        for (Column column : obj.getColumns()) {
+            // Find the schemata column ...
+            Table table = tableWithNameOrAlias(column.getSelectorName());
+            if (table != null) {
+                Schemata.Column tableColumn = table.getColumn(column.getPropertyName());
+                if (tableColumn != null) {
+                    this.columnsByAlias.put(column.getColumnName(), tableColumn);
+                }
+            }
+        }
+        super.visit(obj);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.query.model.Visitors.AbstractVisitor#visit(org.jboss.dna.graph.query.model.SameNode)
      */
     @Override
@@ -392,7 +417,11 @@ public class Validator extends AbstractVisitor {
         }
         Schemata.Column column = table.getColumn(propertyName);
         if (column == null) {
-            problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.getName());
+            // Maybe the supplied property name is really an alias ...
+            column = this.columnsByAlias.get(propertyName);
+            if (column == null) {
+                problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.getName());
+            }
         }
         return column;
     }

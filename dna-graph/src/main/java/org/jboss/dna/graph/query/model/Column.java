@@ -134,6 +134,17 @@ public class Column implements LanguageObject {
     }
 
     /**
+     * Create a copy of this Column except that uses the supplied selector name instead.
+     * 
+     * @param newSelectorName the new selector name
+     * @return a new Column with the supplied selector name and the property and column names from this object; never null
+     * @throws IllegalArgumentException if the supplied selector name is null
+     */
+    public Column with( SelectorName newSelectorName ) {
+        return new Column(newSelectorName, propertyName, columnName);
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.query.model.Visitable#accept(org.jboss.dna.graph.query.model.Visitor)

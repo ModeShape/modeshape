@@ -189,6 +189,23 @@ public class XPathParserTest {
                                                                                                         literal("3")))));
     }
 
+    @Test
+    public void shouldParsePathExpressionWithNameTestsAndWildcard() {
+        assertThat(parser.parsePathExpr(tokenize("/jcr:root/a/b/*")), is(pathExpr(axisStep(nameTest("jcr", "root")),
+                                                                                  axisStep(nameTest("a")),
+                                                                                  axisStep(nameTest("b")),
+                                                                                  axisStep(wildcard()))));
+    }
+
+    @Test
+    public void shouldParsePathExpressionWithNameTestsAndWildcardAndPropertyExistence() {
+        assertThat(parser.parsePathExpr(tokenize("/jcr:root/a/b/*[@prop]")),
+                   is(pathExpr(axisStep(nameTest("jcr", "root")),
+                               axisStep(nameTest("a")),
+                               axisStep(nameTest("b")),
+                               axisStep(wildcard(), attributeNameTest(nameTest("prop"))))));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Relative path expression
     // ----------------------------------------------------------------------------------------------------------------

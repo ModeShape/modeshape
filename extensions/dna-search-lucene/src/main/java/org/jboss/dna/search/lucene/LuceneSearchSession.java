@@ -441,8 +441,8 @@ public class LuceneSearchSession implements WorkspaceSession {
             for (Object value : property) {
                 if (value == null) continue;
                 stringValue = processor.stringFactory.create(value);
-                // Add a separate field for each property value ...
-                doc.add(new Field(nameString, stringValue, rule.getStoreOption(), rule.getIndexOption()));
+                // Add a separate field for each property value in exact form (not analyzed) ...
+                doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
 
                 if (rule.getIndexOption() != Field.Index.NO) {
                     // This field is to be full-text searchable ...
@@ -463,6 +463,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
+        // System.out.println("Replaced " + doc);
         getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
     }
 
@@ -883,6 +884,22 @@ public class LuceneSearchSession implements WorkspaceSession {
         return new MatchNoneQuery();
     }
 
+    protected String likeExpresionForWildcardPath( String path ) {
+        if (path.equals("/") || path.equals("%")) return path;
+        StringBuilder sb = new StringBuilder();
+        for (String segment : path.split("/")) {
+            if (segment.length() == 0) continue;
+            sb.append("/");
+            sb.append(segment);
+            if (segment.equals("%") || segment.equals("_")) continue;
+            if (!segment.endsWith("]")) {
+                sb.append("[1]");
+            }
+        }
+        if (path.endsWith("/")) sb.append("/");
+        return sb.toString();
+    }
+
     public Query findNodesWith( NodePath nodePath,
                                 Operator operator,
                                 Object value,
@@ -897,6 +914,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 return new NotQuery(findNodeAt(pathValue));
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
+                likeExpression = likeExpresionForWildcardPath(likeExpression);
                 query = findNodesLike(ContentIndex.PATH, likeExpression, caseSensitive);
                 break;
             case GREATER_THAN:
