@@ -267,14 +267,14 @@ public abstract class CompareQuery<ValueType> extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
+                if (docId >= maxDocId) return Scorer.NO_MORE_DOCS;
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;
                 }
                 ValueType value = readFromDocument(reader, docId);
                 if (evaluator.satisfiesConstraint(value, constraintValue)) return docId;
-            } while (docId < maxDocId);
-            return Scorer.NO_MORE_DOCS;
+            } while (true);
         }
 
         /**

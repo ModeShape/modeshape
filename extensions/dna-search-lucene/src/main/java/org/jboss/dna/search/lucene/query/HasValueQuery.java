@@ -219,13 +219,13 @@ public class HasValueQuery extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
+                if (docId >= maxDocId) return Scorer.NO_MORE_DOCS;
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;
                 }
                 if (hasValue(reader, docId)) return docId;
-            } while (docId < maxDocId);
-            return Scorer.NO_MORE_DOCS;
+            } while (true);
         }
 
         /**
