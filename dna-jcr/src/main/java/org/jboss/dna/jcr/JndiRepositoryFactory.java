@@ -116,7 +116,6 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}, the named repository does not
      *         exist in the given configuration resource, or the named repository could not be created
      */
-    @Override
     public JcrRepository getObjectInstance( Object obj,
                                             Name name,
                                             Context nameCtx,
