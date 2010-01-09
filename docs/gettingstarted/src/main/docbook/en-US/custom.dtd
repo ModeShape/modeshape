@@ -126,6 +126,7 @@
 <!ENTITY JcrConfiguration		       		"<ulink url='&API;jcr/JcrConfiguration.html'><classname>JcrConfiguration</classname></ulink>">
 <!ENTITY JcrRepository			       		"<ulink url='&API;jcr/JcrRepository.html'><classname>JcrRepository</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
+<!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">
 
 <!-- Types in extensions/ -->
 

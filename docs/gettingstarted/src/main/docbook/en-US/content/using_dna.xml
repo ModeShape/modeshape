@@ -46,27 +46,21 @@
 			Obtaining a &JcrEngine; instance is very easy - assuming that you have a valid &JcrConfiguration; instance.  We'll see
 			how to get one of those in a little bit, but if you have one then all you have to do is build and start the engine:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
-JcrConfiguration config = ...
+    <programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 JcrEngine engine = config.build();
-engine.start();
- ]]></programlisting>
+engine.start();]]></programlisting>
 		<para>
 			Obtaining a JCR &Repository; instance is a matter of simply asking the engine for it by the name defined in the configuration:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
-javax.jcr.Repository repository = engine.getRepository("Name of repository");
- ]]></programlisting>
+    <programlisting role="JAVA"><![CDATA[javax.jcr.Repository repository = engine.getRepository("Name of repository");]]></programlisting>
 		<para>
 			At this point, your application can proceed by working with the JCR API.
 		</para>
 		<para>
 			And, once you're finished with the &JcrEngine;, you should shut it down:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
-engine.shutdown();
-engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
- ]]></programlisting>
+    <programlisting role="JAVA"><![CDATA[engine.shutdown();
+engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 		<para>
 			When the <code>shutdown()</code> method is called, the &Repository; instances managed by the engine are marked as being shut down,
 			and they will not be able to create new &Session;s.  However, any existing &Session;s or ongoing operations (e.g., event notifications)
@@ -148,8 +142,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
 				Loading the JBoss DNA configuration from a file is actually very simple:
 			</para>
     	<programlisting role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
-configuration.loadFrom(file);
- ]]></programlisting>
+configuration.loadFrom(file);]]></programlisting>
 			<para>
 				where the <code>file</code> parameter can actually be a &File; instance, a &URL; to the file, an &InputStream; 
 				containing the contents of the file, or even a &String; containing the path to the file.  
@@ -169,8 +162,7 @@ configuration.loadFrom(file);
 				Here is the configuration file that is used in the repository example, though it has been simplified a bit and most comments 
 				have been removed for clarity):
 			</para>
-    	<programlisting role="JAVA"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
+    	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
 	  <!-- 
 	  Define the JCR repositories 
@@ -221,8 +213,7 @@ configuration.loadFrom(file);
     <dna:mimeTypeDetectors>
         <dna:mimeTypeDetector jcr:name="Detector" dna:description="Standard extension-based MIME type detector"/>
     </dna:mimeTypeDetectors>
-</configuration>
- ]]></programlisting>
+</configuration>]]></programlisting>
 		</sect2>
 		<sect2 id="loading_from_repository">
 			<title>Loading from a configuration repository</title>
@@ -231,11 +222,9 @@ configuration.loadFrom(file);
 				&RepositorySource; instance to point to the desired repository, and then call the <code>loadFrom(&RepositorySource; source)</code>
 				method:
 			</para>
-    	<programlisting role="JAVA"><![CDATA[
-RepositorySource configSource = ...
+    	<programlisting role="JAVA"><![CDATA[RepositorySource configSource = ...
 JcrConfiguration config = new JcrConfiguration();
-configuration.loadFrom(configSource);
- ]]></programlisting>
+configuration.loadFrom(configSource);]]></programlisting>
 			<para>
 				This really is a more advanced way to define your configuration, so we won't go into how you configure a &RepositorySource;.
 				Suffice to say that you can create a &JcrConfiguration; that uses a &RepositorySource;, programmatically define the configuration,
@@ -264,13 +253,11 @@ configuration.loadFrom(configSource);
 				<para>Each repository source definition must include the name of the &RepositorySource; class as well as each bean property
 					that should be set on the object:
 				</para>
-    		<programlisting role="JAVA"><![CDATA[
-JcrConfiguration config = ...
+    		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.repositorySource("source A")
       .usingClass(InMemoryRepositorySource.class)
       .setDescription("The repository for our content")
-      .setProperty("defaultWorkspaceName", workspaceName);
- ]]></programlisting>
+      .setProperty("defaultWorkspaceName", workspaceName);]]></programlisting>
 				<para>
 					This example defines an in-memory source with the name "source A", a description, and a single "defaultWorkspaceName" bean property.
 					Different &RepositorySource; implementations will the bean properties that are required and optional.
@@ -289,8 +276,7 @@ config.repositorySource("source A")
 				<title>Repositories</title>
 				<para>Each repository must be defined to use a named repository source, but all other aspects (e.g., namespaces, node types, options) 
 					are optional.</para> 
-    		<programlisting role="JAVA"><![CDATA[
-JcrConfiguration config = ...
+<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.repository("repository A")
       .addNodeTypes("myCustomNodeTypes.cnd")
       .setSource("source 1")
@@ -299,12 +285,10 @@ config.repository("repository A")
       
       /*
        * As a convenience, DNA allows guest users full access by default.  In a production system,
-	   * you would want to limit this access by adding one of the lines below to modify this option:
+       * you would want to limit this access by adding one of the lines below to modify this option:
        * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, ""); // No access
        * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, "readonly"); // Read-only access
-       */
-       
- ]]></programlisting>
+       */]]></programlisting>
 				<para>
 					This example defines a repository that uses the "source 1" repository source (which could be a federated source, an in-memory source,
 					a database store, or any other source).  Additionally, this example adds the node types in the "myCustomNodeTypes.cnd" file as those
@@ -325,15 +309,13 @@ config.repository("repository A")
 				<para>Each defined sequencer must specify the name of the &StreamSequencer; implementation class as well as the path expressions
 					defining which nodes should be sequenced and the output paths defining where the sequencer output should be placed (often as a function
 					of the input path expression).</para> 
-    		<programlisting role="JAVA"><![CDATA[
-JcrConfiguration config = ...
+    		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.sequencer("Image Sequencer")
       .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences image files to extract the characteristics of the image")
       .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
-      .andOutputtingTo("/images/$1");
- ]]></programlisting>
+      .andOutputtingTo("/images/$1");]]></programlisting>
 				<para>
 					This shows an example of a sequencer definition named "Image Sequencer" that uses the &ImageMetadataSequencer; class 
 					(loaded from the classpath), that is to sequence the "jcr:data" property on any new or changed nodes that are named 
@@ -356,11 +338,9 @@ config.sequencer("Image Sequencer")
 				<title>MIME type detectors</title>
 				<para>Each defined MIME type detector must specify the name of the &MimeTypeDetector; implementation class as well as any
 					other bean properties required by the implementation.</para> 
-    		<programlisting role="JAVA"><![CDATA[
-JcrConfiguration config = ...
+    		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.mimeTypeDetector("Extension Detector")
-      .usingClass(org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector.class);
- ]]></programlisting>
+      .usingClass(org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector.class);]]></programlisting>
 				<para>
 					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
 					the classpath or from a specific classpath).
@@ -373,6 +353,93 @@ config.mimeTypeDetector("Extension Detector")
 					</para>
 				</note>
 			</sect3>
+		</sect2>
+	</sect1>
+	<sect1 id="dna_and_jndi">
+		<title>Deploying JBoss DNA via JNDI</title>
+		<para>
+			Sometimes your applications can simply define a &JcrConfiguration; and instantiate the &JcrEngine; instance directly.
+			This is very straightforward, and this is what the <link linkend="downloading_and_running">JBoss DNA examples</link> do.
+		</para>
+		<para>
+			Web applications are a different story. Often, you may not want your web application to contain the code that initializes
+			a JBoss DNA engine.  Or, you may want the same &JcrEngine; instance to be reused in multiple web applications deployed 
+			to the same web/application server. In these cases, it is possible to configure the web/app server's JNDI instance to
+			instantiate the &JcrEngine;, meaning the web applications need only use the standard JNDI and JCR APIs.
+		</para>
+		<sect2 id="dna_and_jndi_application">
+			<title>Example application using JCR and JNDI</title>
+			<para>
+				Here's an example of how such a web application would obtain a JCR &Repository; instance, use it to create a &JcrSession;,
+				and then close the session when completed.  
+			</para>
+    	<programlisting role="JAVA"><![CDATA[Session session = null;
+
+try {
+  // Look up the JCR Repository object ...
+	InitialContext initCtx = new InitialContext();
+	Context envCtx = (Context) initCtx.lookup("java:comp/env");
+	Repository repo = (Repository) envCtx.lookup("jcr/local");		// name in JNDI is defined by configuration
+	
+	// Obtain a JCR Session using simple authentication
+	// (or use anonymous authentication if desired)
+	session = repo.login(new SimpleCredentials("username", "password".toCharArray()));
+	
+	// Use the JCR Session to do something interesting
+	
+} catch (Exception ex) {
+	ex.printStackTrace();
+} finally {
+	if (session != null) session.logout();
+}]]></programlisting>
+			<para>
+				Note that the location of the &Repository; instance in JNDI depends upon the configuration. In this example, we used
+				"<code>jcr/local</code>", but the only requirement is that it match the location where it was placed in JNDI.
+			</para>
+			<para>
+				We showed how web applications can use an existing &Repository; instance. In the next section, we describe how to configure
+				the web server so that the &Repository; instance is available in JNDI.
+			</para>
+		</sect2>
+		<sect2 id="dna_and_jndi_configuring">
+			<title>Configuring JCR and JNDI</title>
+			<para>
+				Each kind of web server or application server is different, but all servlet containers do provide a way of configuring
+				objects and placing them into JNDI.  JBoss DNA provides a &JndiRepositoryFactory; class that implements &ObjectFactory;
+				and that can be used in the server's configuration. The &JndiRepositoryFactory; requires two properties:
+				<itemizedlist>
+					<listitem>
+						<para>
+							<emphasis role="strong"><code>configFile</code></emphasis> is the path to the 
+							<link linkend="loading_from_file">configuration file</link> resource, which must be available on the classpath
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+							<emphasis role="strong"><code>repositoryName</code></emphasis> is the name of a JCR repository that exists
+							in the &JcrConfiguration; and that will be made available by this JNDI entry
+						</para>
+					</listitem>
+				</itemizedlist>
+			</para>
+			<para>
+				Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat:
+			</para>
+<programlisting role="XML"><![CDATA[<Resource name="jcr/local" 
+          auth="Container"
+          type="javax.jcr.Repository"
+          factory="org.jboss.dna.jcr.JndiRepositoryFactory"
+          configFile="/resource/path/to/configuration.xml"
+          repositoryName="Test Repository Source" />]]></programlisting>
+			<para>
+				Note that it is possible to have multiple <code>Resource</code> entries. The &JndiRepositoryFactory; ensures
+				that only one &JcrEngine; is instantiated, but that a &Repository; instance is registered for each entry.
+			</para>
+			<para>
+				Before the server can start, however, all of the JBoss DNA jars need to be placed on the classpath for the server.
+				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
+				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
+			</para>
 		</sect2>
 	</sect1>
 	<sect1 id="using_dna_whats_next">

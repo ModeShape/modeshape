@@ -152,12 +152,12 @@
 			</listitem>
 		</itemizedlist>
 		<para>
-			<figure id="dna-connectors-0.2">
+			<figure id="dna-connectors">
 				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
 				<graphic align="center" scale="100" fileref="dna-connectors.png"/>
 			</figure>
 	  	And the JBoss DNA project has plans to create other connectors, too.  For instance, we're going to build a connector 
-	    to other JCR repositories.  And another to existing databases so that some or all of the existing data (in whatever structure)
+	    to other JCR repositories.  And another to access existing databases so that some or all of the existing data (in whatever structure)
 	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
 			<figure id="dna-connectors-future">
 				<title>Future JBoss DNA connectors</title>
