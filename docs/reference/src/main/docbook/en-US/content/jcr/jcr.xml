@@ -214,11 +214,14 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				JBoss DNA does currently supports the optional JCR locking and observation features.  
+				JBoss DNA does currently supports the optional JCR locking and observation features (though there still are
+				a few known issues with our implementation of observation).
 				<note>
 					<para>
-						The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
-						Instead, JBoss DNA supports the JCR-SQL2 query language defined by the <ulink url="&JSR283;">JSR-283</ulink> specification.
+						The JCR-SQL optional feature of <ulink url="&JSR170;">JSR-170</ulink> is not planned to be implemented
+						as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
+						Instead, JBoss DNA already supports its replacement, the JCR-SQL2 query language defined by the 
+						<ulink url="&JSR283;">JSR-283</ulink> specification.
 						For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
 					</para>
 				</note>
