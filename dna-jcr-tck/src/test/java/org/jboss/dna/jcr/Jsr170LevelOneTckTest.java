@@ -99,11 +99,6 @@ public class Jsr170LevelOneTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
 
             addTestSuite(org.apache.jackrabbit.test.api.query.ElementTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDateTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDoubleTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByLongTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByMultiTypeTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByStringTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);

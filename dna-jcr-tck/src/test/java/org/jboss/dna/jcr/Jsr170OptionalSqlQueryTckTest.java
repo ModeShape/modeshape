@@ -65,6 +65,12 @@ public class Jsr170OptionalSqlQueryTckTest {
         protected OptionalSqlQueryFeatureTests() {
             super("JCR Optional Feature (JCR-SQL Query) Tests");
 
+            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDateTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDoubleTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByLongTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByMultiTypeTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.OrderByStringTest.class);
+
             addTestSuite(SQLOrderByTest.class);
             addTestSuite(SQLQueryLevel2Test.class);
             addTestSuite(SQLJoinTest.class);

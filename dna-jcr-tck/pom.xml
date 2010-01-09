@@ -18,44 +18,50 @@
   defined in the dependencyManagement section of the parent pom.
   -->
   <dependencies>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-common</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-graph</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-graph</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-repository</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-jcr</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-jcr</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-classloader-maven</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-repository</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-jcr</artifactId>
+		</dependency>
+		<dependency>
+            <groupId>org.jboss.dna</groupId>
+            <artifactId>dna-sequencer-ddl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+		<!-- 
+      Testing (note the scope)
+    -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-common</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-jcr</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
     <!-- 
     Testing (note the scope)
     -->
@@ -81,19 +87,14 @@
       <artifactId>log4j</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- 
-    Java Concurrency in Practice annotations
-    -->
-  <dependency>
-    <groupId>net.jcip</groupId>
-    <artifactId>jcip-annotations</artifactId>
-  </dependency>
+
     <!-- 
       Java Content Repository API 
     -->
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- 
       Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
@@ -101,13 +102,11 @@
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-jcr-tests</artifactId>
+      <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.google.code.google-collections</groupId>
-      <artifactId>google-collect</artifactId>
-      <version>snapshot-20080530</version>
-    </dependency>
-
+		<!-- 
+      ID Trust (JAAS Dependency)
+    -->
 	<dependency>
 		<groupId>org.jboss.security</groupId>
 		<artifactId>jboss-idtrust</artifactId>
@@ -115,27 +114,32 @@
       <scope>test</scope>
 	</dependency>
 
-	<dependency>
-		<groupId>org.jboss.security</groupId>
-		<artifactId>jboss-security-spi-bare</artifactId>
-		<version>2.0.2.SP6</version>
+		<dependency>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jboss-security-spi-bare</artifactId>
+			<version>2.0.2.SP6</version>
       <scope>test</scope>
-	</dependency>
-	<dependency>
-		<groupId>org.jboss.security</groupId>
-		<artifactId>jbosssx-bare</artifactId>
-		<version>2.0.2.SP6</version>
-		<exclusions>
-			<exclusion>
-				<groupId>apache-xalan</groupId>
-				<artifactId>xalan</artifactId>
-		 	</exclusion>
-			<exclusion>
-				<groupId>apache-xalan</groupId>
-				<artifactId>serializer</artifactId>
-			</exclusion>
-		</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jbosssx-bare</artifactId>
+			<version>2.0.2.SP6</version>
       <scope>test</scope>
-	</dependency>    
+			<exclusions>
+				<exclusion>
+					<groupId>apache-xalan</groupId>
+					<artifactId>xalan</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>apache-xalan</groupId>
+					<artifactId>serializer</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+    <dependency>
+         <groupId>com.google.collections</groupId>
+         <artifactId>google-collections</artifactId>
+    </dependency>
   </dependencies>
 </project>

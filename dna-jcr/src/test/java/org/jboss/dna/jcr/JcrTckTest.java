@@ -174,7 +174,7 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
-            // These might not all be level one tests
+            // addTestSuite(org.apache.jackrabbit.test.api.query.ElementTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
@@ -269,6 +269,7 @@ public class JcrTckTest {
             addTestSuite(SerializationTest.class);
 
             addTestSuite(ValueFactoryTest.class);
+            // addTestSuite(XPathQueryLevel2Test.class);
         }
     }
 
