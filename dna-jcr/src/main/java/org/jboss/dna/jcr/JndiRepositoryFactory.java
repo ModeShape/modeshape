@@ -30,11 +30,11 @@ import org.xml.sax.SAXException;
  * <pre>
  *   &lt;GlobalNamingResources&gt;
  *         &lt;!-- Other configuration omitted --&gt;
- *      &lt;Resource name="jcr/local" auth="Container"
- *           type="javax.jcr.Repository"
- *           factory="org.jboss.dna.jcr.JndiRepositoryFactory"
- *           configFile="/tck/default/configRepository.xml"
- *           repositoryName="Test Repository Source"
+ *      &lt;Resource name=&quot;jcr/local&quot; auth=&quot;Container&quot;
+ *           type=&quot;javax.jcr.Repository&quot;
+ *           factory=&quot;org.jboss.dna.jcr.JndiRepositoryFactory&quot;
+ *           configFile=&quot;/tck/default/configRepository.xml&quot;
+ *           repositoryName=&quot;Test Repository Source&quot;
  *           /&gt;
  *   &lt;/GlobalNamingResources&gt;
  * </pre>
@@ -110,6 +110,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * @param name ignored
      * @param nameCtx ignored
      * @param environment ignored
+     * @return the repository; never null
      * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
      * @throws SAXException if the contents of the configuration resource are not valid XML
      * @throws NamingException if there is an error registering the namespace listener
