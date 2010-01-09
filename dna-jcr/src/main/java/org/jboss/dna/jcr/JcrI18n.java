@@ -32,6 +32,12 @@ import org.jboss.dna.common.i18n.I18n;
 @Immutable
 public final class JcrI18n {
 
+    public static I18n engineStarting;
+    public static I18n engineStarted;
+    public static I18n couldNotStartEngine;
+    public static I18n engineStopping;
+    public static I18n engineStopped;
+
     public static I18n cannotConvertValue;
     public static I18n credentialsMustProvideJaasMethod;
     public static I18n mustBeInPrivilegedAction;
