@@ -380,9 +380,12 @@ public class LuceneSearchSession implements WorkspaceSession {
             }
         }
 
+        // Always include the local name in the full-text search field ...
+        StringBuilder fullTextSearchValue = new StringBuilder();
+        fullTextSearchValue.append(localNameStr);
+
         // Index the properties
         String stringValue = null;
-        StringBuilder fullTextSearchValue = null;
         for (Property property : properties) {
             Name name = property.getName();
             Rule rule = workspace.rules.getRule(name);
@@ -446,12 +449,7 @@ public class LuceneSearchSession implements WorkspaceSession {
 
                 if (rule.getIndexOption() != Field.Index.NO) {
                     // This field is to be full-text searchable ...
-                    if (fullTextSearchValue == null) {
-                        fullTextSearchValue = new StringBuilder();
-                    } else {
-                        fullTextSearchValue.append(' ');
-                    }
-                    fullTextSearchValue.append(stringValue);
+                    fullTextSearchValue.append(' ').append(stringValue);
 
                     // Also create a full-text-searchable field ...
                     String fullTextNameString = processor.fullTextFieldName(nameString);
@@ -460,7 +458,7 @@ public class LuceneSearchSession implements WorkspaceSession {
             }
         }
         // Add the full-text-search field ...
-        if (fullTextSearchValue != null && fullTextSearchValue.length() != 0) {
+        if (fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
         getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
