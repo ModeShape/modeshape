@@ -21,12 +21,12 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>src/main/resources/security/</directory>
-      <outputDirectory/>
+      <directory>src/main/resources/security</directory>
+      <outputDirectory>security</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>src/main/resources/ufoSource</directory>
-      <outputDirectory>src/main/resources/ufoSource</outputDirectory>
+      <directory>ufoSource</directory>
+      <outputDirectory>ufoSource</outputDirectory>
     </fileSet>
   </fileSets>
   <files>

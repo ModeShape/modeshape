@@ -72,7 +72,7 @@
         files and folders as JCR nodes.  It can save JCR nodes too, but only if they have certain primary types.
         -->
         <dna:source jcr:name="UFOs" dna:classname="org.jboss.dna.connector.filesystem.FileSystemSource"
-        	dna:workspaceRootPath="./src/main/resources/ufoSource"
+        	dna:workspaceRootPath="./ufoSource"
         	dna:defaultWorkspaceName="workspace1"
         	dna:creatingWorkspacesAllowed="false"
         	dna:updatesAllowed="true"/>    
