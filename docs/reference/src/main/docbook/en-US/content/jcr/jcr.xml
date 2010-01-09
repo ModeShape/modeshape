@@ -194,7 +194,8 @@ final &LoginContext; loginContext = ...;
 	<sect1>
 		<title>JCR Specification Support</title>
 		<para>
-		The JBoss DNA JCR implementation will not be JCR-compliant prior to the 1.0 release.  Additionally, the JCR 
+		The JBoss DNA JCR implementation is actually very close to being JCR-compliant, but it only passes about 96% of the JCR TCK.
+		Our goal is to pass 100% of the TCK tests by the 1.0 release. Additionally, the JCR 
 		specification allows some latitude to implementors for some implementation details.  The sections below
 		clarify JBoss DNA's current and planned behavior.  <emphasis>As always, please consult the 
 		<ulink url="&Roadmap;">current list of known issues and bugs</ulink>.</emphasis>
@@ -202,20 +203,23 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>L1 and L2 Features</title>
 			<para>
-				JBoss DNA currently supports most of the Level 1 and Level 2 feature set defined by the <ulink url="&JSR170;">JSR-170</ulink> specification.
-				Queries, which are part of Level 1, are not implemented.  Referential integrity for <code>REFERENCE</code> properties, a Level 2 feature, is also not yet implemented.  
-				As the current implementation does provide many of the features that may be needed by an application, we really hope that this release will allow you to give us 
-				some feedback on what we have so far.
+				JBoss DNA currently supports all Level 1 features and most of the Level 2 features defined by the 
+				<ulink url="&JSR170;">JSR-170</ulink> specification.
+				This release adds support for queries, which is described in more detail in <link linkend="jcr-query-and-search">later</link>.
+				However, referential integrity for <code>REFERENCE</code> properties, a Level 2 feature, is not yet implemented.  
+				As the current implementation does provide many of the features that may be needed by an application, we really hope 
+				that this release will allow you to give us some feedback on what we have so far.
 			</para>
 		</sect2>
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				JBoss DNA does currently supports the optional JCR locking feature.  Currently, the observation optional feature is planned to be complete prior
-				to the 1.0 release.  
+				JBoss DNA does currently supports the optional JCR locking and observation features.  
 				<note>
 					<para>
 						The JCR-SQL optional feature is not planned to be implemented as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
+						Instead, JBoss DNA supports the JCR-SQL2 query language defined by the <ulink url="&JSR283;">JSR-283</ulink> specification.
+						For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
 					</para>
 				</note>
 			</para>
