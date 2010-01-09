@@ -105,8 +105,8 @@
 			of where or how that information is persisted or stored.  <emphasis>This is in fact the main purpose of JBoss DNA:
 			provide a JCR implementation that provides access to content stored in many different kinds of systems.</emphasis>
 			A JBoss DNA repository isn't yet another silo of information, but rather it's a JCR view of the information you already have
-			in your environment: files systems, databases, other repositories, services, applications, etc.  JBoss DNA can 
-			help you understand the systems and information you already have.
+			in your environment: files systems, databases, other repositories, services, applications, etc. <emphasis role="strong">JBoss DNA can 
+			help you understand the systems and information you already have.</emphasis>
 		</para>
 		<para>
 			Of course when you start providing a unified view of all this information, you start recognizing the need to store more
@@ -116,7 +116,14 @@
 			images, media, documents, presentations, application components, reusable libraries, configuration files,
 			application installations, databases schemas, management scripts, and so on.  As files are loaded into the repository,
 			JBoss DNA can <emphasis>sequence</emphasis> these files to extract from their content meaningful information that
-			can be stored in the repository, where it can then be searched, accessed, and analyzed using the JCR API.
+			can be stored in the repository, where your applications can find it by using the standard JCR API to search,
+			access, and use the information.
+		</para>
+		<para>
+			So, JBoss DNA <emphasis>is</emphasis> a JCR implementation that can automatically sequence files loaded into the repository,
+			and it can be used as a traditional JCR silo repository.
+			But it <emphasis>can</emphasis> also let your applications use the JCR API to access the content in other systems, and
+			can unify the content from multiple external systems and multiple storage systems to provide a single, federated repository.
 		</para>
 	</sect1>
 	<sect1 id="introduction_whats_next">

@@ -31,8 +31,9 @@
 <chapter id="conclusion">
 	<title>Wrapping Up</title>
 	<para>
-		This document provided a very high-level overview of JBoss DNA, introducing you to what would be required to use JBoss DNA
-		in your own application.  We saw two simple examples that showed two different aspects of JBoss DNA: the sequencing system
+		This document provides a very high-level overview of JBoss DNA, introducing you to some basic concepts 
+		and showing what would be required to use JBoss DNA in your own application.  
+		We saw two simple examples that showed two different aspects of JBoss DNA: the sequencing system
 		and the connector system.  Each of these examples showed how to create a JBoss DNA configuration, how to start up
 		the JBoss DNA engine, and how to then access a <code>javax.jcr.Repository</code> instance, and after that your application
 		just uses the standard JCR API.
@@ -41,12 +42,10 @@
 		For a more in-depth description of JBoss DNA and the internal workings, see our &ReferenceGuide;.
 		This also describes how to write your own custom sequencers or connectors.
     If you have any questions or comments, please feel free to contact JBoss DNA's
-    <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>
-    or use the
-    <ulink url="http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">user forums</ulink>
-    or (preferably) the
-    <ulink url="http://www.jboss.org/dna/lists.html">mailing lists</ulink>.  If you find a bug or have a suggestion, please
-		create a new issue in the project's
+    <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>, use our
+    <ulink url="http://community.jboss.org/community/dna">discussion forums</ulink>,
+    or chat with the developers in the <ulink url="http://www.jboss.org/dna/chat.html">IRC chat room</ulink>.
+    If you find a bug or have a suggestion, please let us know or (better yet) create a new issue in the project's
     <ulink url="http://jira.jboss.org/jira/browse/DNA">JIRA issue management system</ulink>
     . If there's something in particular you're interested in, talk with the community - there may be others interested in the
     same thing.
@@ -54,19 +53,23 @@
 	<sect1 id="future">
 		<title>Future directions</title>
 		<para>
-			What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
-		  is stable enough so that more <link linkend="sequencers">sequencers</link> can be developed and used within your own applications.
-			We've also established the foundation for JBoss DNA repositories, including a number of <link linkend="repository-connectors">connectors</link>.
-			We'll continue to expand our library of sequencers and connectors, as well as expand our support of JCR.
-			Other components on our roadmap include a web user interface, a REST-ful server, and a view system that allows domain-specific
-			views of information in the repository.  These components are farther out on our roadmap, and at this time have not been
-			targeted to a particular release.
+			What's next for JBoss DNA?  We're very close to passing all of the JCR Technology Compatibility Kit (TCK) Level 1, Level 2
+			tests, plus the tests for the optional features including observation and locking.  (In fact, there are just a few outstanding
+			bugs that are preventing us from passing all of these test and becoming fully JCR compliant.)  We will soon be implementing
+			versioning, which is the last optional feature of JCR. 
+			We will also be adding support for clustering multiple JBoss DNA engines spread across multiple JVM processes.
+			And each release we continue to introduce more
+			<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library.
+			Other items on our long-term roadmap include a web user interface, Seam integration, and integration with even more kinds of
+			information systems and repositories.
 		</para>
 	</sect1>
 	<sect1 id="get_involved">
 		<title>Getting involved</title>
 		<para>
-		  If you're interested in getting involved with the JBoss DNA project, consider picking up one of the sequencers or connectors on our
+		  If you're interested in getting involved with the JBoss DNA project, take a look at our 
+		  <ulink url="http://www.jboss.org/dna/community.html">community pages</ulink>, 
+		  and consider picking up one of the sequencers or connectors on our
 		  <ulink url="&Roadmap;">roadmap</ulink>.
 		  Or, check out <ulink url="&JIRA;">JIRA</ulink>
 		  for the list of features we've thought of.  If you think of one that's not there, please add it to JIRA!

@@ -120,16 +120,44 @@
 			system that is designed around creating and accessing graphs.  The JBoss DNA JCR implementation actually just sits on
 			top of a single repository source, which it uses to access of the repositories content.
 			<figure id="dnajcr-and-connector">
-				<title>JBoss DNA's JCR implementation delegates to a repository source</title>
+				<title>JBoss DNA's JCR implementation delegates to a repository connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
-			That single repository source could be an in-memory repository, a JBoss Cache instance, or a federated repository.
+			That single repository connector could access:
+		</para>
+ 		<itemizedlist>
+			<listitem>
+				<para>a transient, in-memory repository</para>
+			</listitem>
+			<listitem>
+				<para>an Infinispan data grid that acts as an extremely scalable, highly-available store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a JBoss Cache instance that acts as a clustered and replicated store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a JDBC database used as a store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses existing JDBC databases to project the schema structure as read-only repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses a file systems to present the files and directory structure as (updatable) repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses an SVN repository to present the files and directory structure as (updatable) repository content</para>
+			</listitem>
+			<listitem>
+				<para>a federated repository that presents a unified, updatable view of the content in multiple other systems (which are accessed via connectors)</para>
+			</listitem>
+		</itemizedlist>
+		<para>
 			<figure id="dna-connectors-0.2">
 				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
-				<graphic align="center" scale="100" fileref="dna-connectors-0.2.png"/>
+				<graphic align="center" scale="100" fileref="dna-connectors.png"/>
 			</figure>
 	  	And the JBoss DNA project has plans to create other connectors, too.  For instance, we're going to build a connector 
-	    to other JCR repositories.  And another to a file system, so that the files and directories on an area of the file system
+	    to other JCR repositories.  And another to existing databases so that some or all of the existing data (in whatever structure)
 	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
 			<figure id="dna-connectors-future">
 				<title>Future JBoss DNA connectors</title>
@@ -260,8 +288,7 @@ client.setUserInterface(new ConsoleInput(client, args));
 		The <code>startRepositories()</code> method builds the <code>JcrEngine</code> component from the configuration, starts the engine,
 		and obtains the JCR <code>javax.jcr.Repository</code> instance that the client will use.  Note that the client has not yet
 		obtained a <code>javax.jcr.Session</code> instance, since this will be done each time the client needs to access content from
-		the repository.  (This is actually a common practice according to the JCR specification, since Sessions are intended to be
-		very lightweight.)
+		the repository.  (This is actually a common practice according to the JCR specification, since Sessions are lightweight.)
    </para>
 	<programlisting role="JAVA"><![CDATA[
 public void startRepositories() throws IOException, SAXException {
@@ -282,6 +309,8 @@ public void startRepositories() throws IOException, SAXException {
     // Now create the JCR engine ...
     engine = configuration.build();
     engine.start();
+
+    ...
 
     // For this example, we're using a couple of in-memory repositories (including one for the configuration repository).
     // Normally, these would exist already and would simply be accessed. But in this example, we're going to

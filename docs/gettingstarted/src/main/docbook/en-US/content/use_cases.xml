@@ -70,7 +70,10 @@
 		<para>
 			Integration with a management system can be done in a similar manner.  A JBoss DNA connector could access the management system
 			to discover the servers and enable auto-discovery of the services, and "tag" the services deployments with the lifecycle phase 
-			(dev, test, production, etc.).
+			(dev, test, production, etc.). Plus, JBoss DNA sequencers can automatically process the uploaded artifacts to extract a useful
+			structured representation of their content, and can then store that additional information in the repository. So not only are
+			the original artifacts stored in the repository, but a structured representation of their content is also stored. And all of
+			it can be accessed, navigated, searched, and even updated.
 		</para>
 		<para>
 			By using JBoss DNA, a service repository could manage the wide range of artifacts required in a SOA or web-oriented architecture,
@@ -89,10 +92,15 @@
 		<para>
 			Some of this information may actually be defined or controlled within the data sources themselves or within other systems.
 			For example, the DDL scripts used to migrate the database schemas are (hopefully) stored in a version control system,
-			and the databases themselves have the ability to describe their current schemas.  Using JBoss DNA, the repository could
-			use a connector to the version control system to expose the scripts, as well as connectors to the databases to expose
-			(and cache) the current schema of the databases.  The data repository would then be able to allow users to search over
-			this information without even touching the underlying systems.
+			and the databases themselves have the ability to describe their current schemas.
+		</para>
+		<para>
+			Using JBoss DNA, the repository could use a connector to the version control system to expose the scripts, as well as 
+			connectors to the databases to expose (and cache) the current schema of the databases as structured content.  
+			JBoss DNA sequencers can automatically process the uploaded assets and artifacts to extract a useful
+			structured representation of their content, and can then store that additional information in the repository.
+			Applications can access, search, navigate, and update all of this metadata about the databases and data services,
+			all through a single JCR repository using a standard JCR API and without having to touch the underlying systems.
 		</para>
 		<para>
 			However, the power of a data repository is really the ability to capture the relationships that otherwise were only captured
@@ -102,6 +110,7 @@
 			availability and deployment.  As web services are created to provide service-based access to the data in databases,
 			the repository can be used to maintain the relationships between these <emphasis>data services</emphasis> and the underlying sources.
 			Similarly, the repository can track how the databases are used by applications, ETL processes, and reports.
+			All of this information is just content that can be stored within the same JCR repository.
 		</para>
 	</sect1>
 	<sect1 id="configuration_repository">

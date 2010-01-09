@@ -98,7 +98,7 @@
 	</note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
-		<para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.4/jboss-dna-0.4-gettingstarted-examples.zip">download</ulink>
+		<para>The next step is to <ulink url="http://downloads.jboss.org/jbossdna/0.7/jboss-dna-0.7-gettingstarted-examples.zip">download</ulink>
       the example for this Getting Started guide, and extract the contents to a convenient location on your local disk.
       You'll find the example contains the following files, which are organized according to the standard Maven directory structure:</para>
 		<programlisting><![CDATA[
@@ -210,7 +210,16 @@ $ ]]></programlisting>
 					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the repository example application.</para>
 				</listitem>
 				<listitem>
+					<para><emphasis role="strong"><code>run.cmd</code></emphasis> is the Windows command file that will run the repository example application.</para>
+				</listitem>
+				<listitem>
 					<para><emphasis role="strong"><code>log4j.properties</code></emphasis> is the Log4J configuration file.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
+					  example application loads as its configuration and which defines the sources, repositories, sequencers (if used), and other
+					  components that make up the DNA JCR engine.
+					</para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>aircraft.xml</code></emphasis> is an XML file containing the information that the
@@ -223,26 +232,27 @@ $ ]]></programlisting>
 					</para>
 				</listitem>
 				<listitem>
+					<para><emphasis role="strong"><code>ufoSource</code></emphasis> subdirectory containing several folders and files used by the
+					 file system connector for the "UFOs" repository.
+				  </para>
+				</listitem>
+				<listitem>
 					<para><emphasis role="strong"><code>aircraft.cnd</code></emphasis>, <emphasis role="strong"><code>cars.cnd</code></emphasis>,
 					and <emphasis role="strong"><code>vehicles.cnd</code></emphasis> are the CND files used for the three different JCR Repositories
 					set up in the example.  The <emphasis role="strong"><code>vehicles.cnd</code></emphasis> is just a combination of the other two
-					(with duplicates removed).
-					</para>
-				</listitem>
-				<listitem>
-					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
-					  example application loads as its configuration and which defines the sources, repositories, sequencers (if used), and other
-					  components that make up the DNA JCR engine.
+					(with duplicates removed). The UFO source doesn't need a CND file, since the file system connector uses the 
+					"nt:file" and "nt:folder" node types built into the JCR standard.
 					</para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>security</code></emphasis> subdirectory containing several files related to the
-					  JAAS implementation used for authentication.
+				  JAAS implementation used for authentication and authorization.
 				  </para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts
-					  as well as those for other libraries required by JBoss DNA and the repository example.
+					  as well as those for other libraries required by JBoss DNA and the repository example. There are a lot of libraries here,
+					  but almost all of them are from the JPA connector (which depends upon Hibernate), HSQLDB, Lucene, and the JAAS implementation.
 			      </para>
 				</listitem>
 			</itemizedlist>

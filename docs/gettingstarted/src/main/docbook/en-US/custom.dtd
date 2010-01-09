@@ -1,5 +1,5 @@
 <!ENTITY versionNumber "0.6">
-<!ENTITY copyrightYears "2008-2009">
+<!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
 <!-- Frequently used URLs -->
@@ -7,14 +7,14 @@
 <!ENTITY Home       					"http://www.jboss.org/dna/">
 <!ENTITY Downloads  					"&Home;downloads.html">
 <!ENTITY Community  					"&Home;community.html">
-<!ENTITY DocHome    					"http://www.jboss.org/file-access/default/members/dna/freezone/">
-<!ENTITY API        					"&DocHome;docs/&versionNumber;/apidocs/org/jboss/dna/">
+<!ENTITY DocHome    					"http://docs.jboss.org/jbossdna">
+<!ENTITY API        					"&DocHome;/&versionNumber;/api/org/jboss/dna/">
 <!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/DNA">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/dna/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/DNA/">
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/dna/">
-<!ENTITY Forums     					"http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">
+<!ENTITY Forums     					"http://community.jboss.org/en/dna">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
 <!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
@@ -24,8 +24,8 @@
 
 <!ENTITY Java									"http://java.sun.com/j2se/1.5.0/docs/api/">
 
-<!ENTITY GettingStarted           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
-<!ENTITY ReferenceGuide           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
+<!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
+<!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
 
 <!-- Types in JRE -->
 

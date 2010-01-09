@@ -38,15 +38,45 @@
 	<sect1 id="running_sequencer_example">
 		<title>Running the sequencing example</title>
 		<para>The sequencing example consists of a client application that sets up an in-memory JCR repository and that allows a user to
-      upload files into that repository. The client also sets up the DNA services with two sequencers so that if any of the
-      uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's metadata (e.g., image
-      format, physical size, pixel density, etc.) and store that in the repository.  Alternatively, if the uploaded file 
-      is an MP3 audio file, DNA will extract some of the ID3 metadata (e.g., the author, title, album, year and comment)
-      and store that in the repository.</para>
+      upload files into that repository. The client also sets up the DNA services with seven sequencers:
+	 		<itemizedlist>
+				<listitem>
+					<para>an image metadata sequencer that processes PNG, JPEG, GIF, BMP or other image filetypes to extract
+						 the image's metadata (e.g., image format, physical size, pixel density, etc.)</para>
+				</listitem>
+				<listitem>
+					<para>an MP3 sequencer that extracts the ID3 metadata (e.g., the author, title, album, year and comment)</para>
+				</listitem>
+				<listitem>
+					<para>an MP3 sequencer that extracts the ID3 metadata (e.g., the author, title, album, year and comment)</para>
+				</listitem>
+				<listitem>
+					<para>a Java source code sequencer that extracts the structure of Java classes by parsing the source code</para>
+				</listitem>
+				<listitem>
+					<para>a Java class file sequencer that extracts the structure of Java classes by analyzing the class files</para>
+				</listitem>
+				<listitem>
+					<para>a text file sequencer that extracts the comma-separated structured information contained in CSV files</para>
+				</listitem>
+				<listitem>
+					<para>a text file sequencer that extracts the structured information contained in fixed-width files</para>
+				</listitem>
+				<listitem>
+					<para>a ZIP archive sequencer that extracts the files and directory structure contained in ZIP and JAR files</para>
+				</listitem>
+			</itemizedlist>
+      These sequencers automatically extract content from the files and store that content in the repository.
+    </para>
+		<note>
+			<para>JBoss DNA includes several other sequencers, including sequencers for DDL files, Microsoft Office files, 
+				JCR Compact Node Definition (CND) files, and XML files. Feel free to experiment with the example and add these
+				or even sequencers you write.</para>
+		</note>
 		<para>
       To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
-      <figure id="xample-sequencer-cli-client">
+      <figure id="example-sequencer-cli-client">
 				<title>Example client</title>
 				<graphic align="center" scale="60" fileref="example-sequencer-client.png"/>
 			</figure>
@@ -62,7 +92,8 @@
 				<graphic align="center" scale="60" fileref="example-sequencer-upload.png"/>
 			</figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
-      specified. The example client configures JBoss DNA to sequence MP3 audio files, Java source files, or image files with one of
+      specified. The example client configures JBoss DNA to sequence MP3 audio files, Java source files, Java class files,
+      ZIP files, text files (<code>.txt</code>), CSV files (<code>.csv</code>), or image files with one of
       the following extensions (technically, nodes that have names ending in the following):
       <code>jpg</code>, <code>jpeg</code>, <code>gif</code>, <code>bmp</code>, <code>pcx</code>, <code>png</code>,
       <code>iff</code>, <code>ras</code>, <code>pbm</code>, <code>pgm</code>, <code>ppm</code>, and <code>psd</code>.
@@ -188,6 +219,12 @@ config.sequencer("MP3 Sequencer")
       .setDescription("Sequences mp3 files to extract the id3 tags of the audio file")
       .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/mp3s/$1");
+// Set up the Java class file sequencer ...
+config.sequencer("Java Class Sequencer")
+      .usingClass(ClassFileSequencer.class)
+      .setDescription("Sequences Java class files to extract the structure of the classes")
+      .sequencingFrom("//*.class[*]/jcr:content[@jcr:data]")
+      .andOutputtingTo("/classes");
 // Set up the Java source file sequencer ...
 config.sequencer("Java Sequencer")
       .usingClass("org.jboss.dna.sequencer.java.JavaMetadataSequencer")
@@ -195,6 +232,22 @@ config.sequencer("Java Sequencer")
       .setDescription("Sequences Java files to extract the AST structure of the Java source code")
       .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/java/$1");
+// Set up the CSV file sequencer ...
+config.sequencer("CSV Sequencer")
+      .usingClass("org.jboss.dna.sequencer.text.DelimitedTextSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences CSV files to extract the contents")
+      .sequencingFrom("//(*.csv[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/csv/$1");
+// Set up the fixed width file sequencer ...
+config.sequencer("Fixed Width Sequencer")
+      .usingClass("org.jboss.dna.sequencer.text.FixedWidthTextSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences fixed width files to extract the contents")
+      .setProperty("commentMarker", "#")
+      .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
+      .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/txt/$1");
 
 // Now start the client and tell it which repository and workspace to use ...
 SequencingClient client = new SequencingClient(config, repositoryId, workspaceName);
