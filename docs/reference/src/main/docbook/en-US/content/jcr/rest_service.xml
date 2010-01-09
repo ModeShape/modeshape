@@ -271,7 +271,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 			The DNA REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
 			Here is an example web configuration that is used for integration testing of the DNA REST server along with
 			an explanation of its parts.
-<programlisting role="xml"><![CDATA[
+<programlisting role="XML"><![CDATA[
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
                          "http://java.sun.com/dtd/web-app_2_3.dtd">
@@ -283,7 +283,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>
 		<para>
 			The next stanza configures the <link linkend="jcr_rest_spi">repository provider</link>.
-<programlisting role="xml"><![CDATA[
+<programlisting role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
     the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
@@ -301,7 +301,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
 		<para>
 			Next we configure the DNA &JcrEngine; itself.
-<programlisting role="xml"><![CDATA[
+<programlisting role="XML"><![CDATA[
   <!--
     This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
@@ -320,7 +320,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
 		<para>
 			This is followed by a bit of RESTEasy and JAX-RS boilerplate.
-<programlisting role="xml"><![CDATA[
+<programlisting role="XML"><![CDATA[
   <!--
     This parameter defines the JAX-RS application class, which is really just a metadata class
     that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
@@ -361,7 +361,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		
 		<para>
 			Finally, security must be configured for the REST server.
-<programlisting role="xml"><![CDATA[
+<programlisting role="XML"><![CDATA[
   <!-- 
     The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
     within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
@@ -418,7 +418,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	  <para>
 	  		If you are using Maven to build your projects, the WAR can be built from a POM.  Here is a portion of the 
 	  		POM used to build the JBoss DNA REST Server integration subproject.
-<programlisting role='xml'>	<![CDATA[
+<programlisting role='XML'><![CDATA[
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -426,7 +426,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	<parent>
 		<artifactId>dna</artifactId>
 		<groupId>org.jboss.dna</groupId>
-		<version>0.6</version>
+		<version>0.7</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>dna-web-jcr-rest-war</artifactId>
@@ -438,7 +438,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-web-jcr-rest</artifactId>
-			<version>0.6</version>
+			<version>0.7</version>
 		</dependency>
 
 		<dependency>

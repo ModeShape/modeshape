@@ -131,7 +131,7 @@
 	        To use this sequencer, simply include the <code>dna-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
-	   	<programlisting>
+	   	<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Delimited Text Sequencer")
@@ -141,7 +141,7 @@ config.sequencer("Delimited Text Sequencer")
       .sequencingFrom("//(*.(txt)[*])/jcr:content[@jcr:data]")
       .setProperty("splitPattern", "|")
       .andOutputtingTo("/txt/$1"); 
-	    </programlisting>
+]]></programlisting>
 	</sect1>
 	<sect1>
         <title>Fixed Width Text Sequencer</title>
@@ -177,7 +177,7 @@ config.sequencer("Delimited Text Sequencer")
 	        To use this sequencer, simply include the <code>dna-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
-	   	<programlisting>
+	   	<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Fixed Width Text Sequencer")
@@ -187,6 +187,6 @@ config.sequencer("Fixed Width Text Sequencer")
       .sequencingFrom("//(*.(txt)[*])/jcr:content[@jcr:data]")
       .setProperty("columnStartPositions", "3,6,15")
       .andOutputtingTo("/txt/$1"); 
-	    </programlisting>
+]]></programlisting>
 	</sect1>
 </chapter>

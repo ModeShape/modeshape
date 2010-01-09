@@ -1,5 +1,5 @@
-<!ENTITY versionNumber "0.6">
-<!ENTITY copyrightYears "2008-2009">
+<!ENTITY versionNumber "0.7">
+<!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
 <!-- Frequently used URLs -->
@@ -7,14 +7,14 @@
 <!ENTITY Home       					"http://www.jboss.org/dna/">
 <!ENTITY Downloads  					"&Home;downloads.html">
 <!ENTITY Community  					"&Home;community.html">
-<!ENTITY DocHome    					"http://www.jboss.org/file-access/default/members/dna/freezone/">
-<!ENTITY API        					"&DocHome;docs/&versionNumber;/apidocs/org/jboss/dna/">
+<!ENTITY DocHome    					"http://docs.jboss.org/jbossdna">
+<!ENTITY API        					"&DocHome;/&versionNumber;/api/org/jboss/dna/">
 <!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/DNA">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/dna/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/DNA/">
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/dna/">
-<!ENTITY Forums     					"http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">
+<!ENTITY Forums     					"http://community.jboss.org/en/dna">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
 <!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
@@ -24,10 +24,10 @@
 <!ENTITY Git									"http://git-scm.com/">
 
 <!ENTITY Java									"http://java.sun.com/j2se/1.5.0/docs/api/">
-<!ENTITY JavaEE                                 "http://java.sun.com/javaee/5/docs/api/">
+<!ENTITY JavaEE               "http://java.sun.com/javaee/5/docs/api/">
 
-<!ENTITY GettingStarted           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
-<!ENTITY ReferenceGuide           		"<ulink url='&DocHome;docs/&versionNumber;/manuals/reference/html/index.html'>Getting Started</ulink>">
+<!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
+<!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
 
 <!ENTITY CND			      							"<ulink url='http://jackrabbit.apache.org/node-type-notation.html'>Compact Node Definition</ulink>">
 
@@ -35,7 +35,7 @@
 
 <!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">
 <!ENTITY File  							      		"<ulink url='&Java;java/io/File.html'><classname>File</classname></ulink>">
-<!ENTITY BufferedReader					      		"<ulink url='&Java;java/io/BufferedReader.html'><classname>BufferedReader</classname></ulink>">
+<!ENTITY BufferedReader					      "<ulink url='&Java;java/io/BufferedReader.html'><classname>BufferedReader</classname></ulink>">
 <!ENTITY URL  							      		"<ulink url='&Java;java/net/URL.html'><classname>URL</classname></ulink>">
 <!ENTITY URI  							      		"<ulink url='&Java;java/net/URL.html'><classname>URI</classname></ulink>">
 <!ENTITY InputStream				      		"<ulink url='&Java;java/io/InputStream.html'><interface>InputStream</interface></ulink>">
@@ -51,18 +51,18 @@
 <!ENTITY TimeUnit						      		"<ulink url='&Java;java/util/concurrent/TimeUnit.html'><interface>TimeUnit</interface></ulink>">
 <!ENTITY UUID						      				"<ulink url='&Java;java/util/UUID.html'><classname>UUID</classname></ulink>">
 <!ENTITY DataSource			      				"<ulink url='&Java;javax/sql/DataSource.html'><classname>DataSource</classname></ulink>">
-<!ENTITY DatabaseMetaData			      "<ulink url='&Java;java/sql/DatabaseMetaData.html'><classname>DatabaseMetaData</classname></ulink>">
+<!ENTITY DatabaseMetaData			      	"<ulink url='&Java;java/sql/DatabaseMetaData.html'><classname>DatabaseMetaData</classname></ulink>">
 <!ENTITY HttpServletRequest			      "<ulink url='&JavaEE;javax/servlet/http/HttpServletRequest.html'><classname>HttpServletRequest</classname></ulink>">
 <!ENTITY Serializable							    "<ulink url='&Java;java/io/Serializable.html'><interface>Serializable</interface></ulink>">
 <!ENTITY Iterator									    "<ulink url='&Java;java/util/Iterator.html'><interface>Iterator</interface></ulink>">
-<!ENTITY Iterable								    "<ulink url='&Java;java/util/Iterable.html'><interface>Iterable</interface></ulink>">
+<!ENTITY Iterable								    	"<ulink url='&Java;java/util/Iterable.html'><interface>Iterable</interface></ulink>">
 <!ENTITY Set											    "<ulink url='&Java;java/util/Set.html'><interface>Set</interface></ulink>">
 <!ENTITY Map											    "<ulink url='&Java;java/util/Map.html'><interface>Map</interface></ulink>">
 <!ENTITY List											    "<ulink url='&Java;java/util/List.html'><interface>List</interface></ulink>">
 <!ENTITY BigDecimal								    "<ulink url='&Java;java/math/BigDecimal.html'><classname>BigDecimal</classname></ulink>">
 <!ENTITY Calendar								    	"<ulink url='&Java;java/util/Calendar.html'><classname>Calendar</classname></ulink>">
 <!ENTITY Date											    "<ulink url='&Java;java/util/Date.html'><classname>Date</classname></ulink>">
-<!ENTITY EntityManagerFactory						      		"<ulink url='&Java;javax/persistence/EntityManagerFactory.html'><classname>EntityManagerFactory</classname></ulink>">
+<!ENTITY EntityManagerFactory					"<ulink url='&Java;javax/persistence/EntityManagerFactory.html'><classname>EntityManagerFactory</classname></ulink>">
 
 
 <!-- Types in JCR API -->
@@ -73,6 +73,11 @@
 <!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
 <!ENTITY LoginException						  	"<interface>LoginException</interface>">
 <!ENTITY AccessDeniedException				"<interface>AccessDeniedException</interface>">
+<!ENTITY QueryManager									"<interface>QueryManager</interface>">
+<!ENTITY Query												"<interface>Query</interface>">
+<!ENTITY QueryResult									"<interface>QueryResult</interface>">
+<!ENTITY NodeIterator									"<interface>NodeIterator</interface>">
+<!ENTITY RowIterator									"<interface>RowIterator</interface>">
 
 <!-- Types in dna-common -->
 
@@ -102,6 +107,7 @@
 <!ENTITY SecurityContext		       		"<ulink url='&API;graph/SecurityContext.html'><interface>SecurityContext</interface></ulink>">
 <!ENTITY JaasSecurityContext		      "<ulink url='&API;graph/JaasSecurityContext.html'><classname>JaasSecurityContext</classname></ulink>">
 <!ENTITY ServletSecurityContext		   	"<ulink url='&API;graph/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
+<!ENTITY MimeTypeDetector				      "<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 <!ENTITY Readable						       		"<ulink url='&API;graph/property/Readable.html'><interface>Readable</interface></ulink>">
 <!ENTITY Name								       		"<ulink url='&API;graph/property/Name.html'><interface>Name</interface></ulink>">
 <!ENTITY Path								       		"<ulink url='&API;graph/property/Path.html'><interface>Path</interface></ulink>">
@@ -109,7 +115,7 @@
 <!ENTITY Property						       		"<ulink url='&API;graph/property/Property.html'><interface>Property</interface></ulink>">
 <!ENTITY DateTime						       		"<ulink url='&API;graph/property/DateTime.html'><interface>DateTime</interface></ulink>">
 <!ENTITY Binary							       		"<ulink url='&API;graph/property/Binary.html'><interface>Binary</interface></ulink>">
-<!ENTITY Reference							       		"<ulink url='&API;graph/property/Reference'><interface>Reference</interface></ulink>">
+<!ENTITY Reference							      "<ulink url='&API;graph/property/Reference'><interface>Reference</interface></ulink>">
 <!ENTITY ValueFactory		       				"<ulink url='&API;graph/property/ValueFactory.html'><interface>ValueFactory</interface></ulink>">
 <!ENTITY ValueFactories       				"<ulink url='&API;graph/property/ValueFactories.html'><interface>ValueFactories</interface></ulink>">
 <!ENTITY ValueFormatException  				"<ulink url='&API;graph/property/ValueFormatException.html'><classname>ValueFormatException</classname></ulink>">
@@ -151,8 +157,8 @@
 <!ENTITY UnsupportedRequestException	"<ulink url='&API;graph/request/UnsupportedRequestException.html'><classname>UnsupportedRequestException</classname></ulink>">
 <!ENTITY RequestProcessor	       			"<ulink url='&API;graph/request/processor/RequestProcessor.html'><classname>RequestProcessor</classname></ulink>">
 <!ENTITY StreamSequencer		    			"<ulink url='&API;graph/sequencer/StreamSequencer.html'><interface>StreamSequencer</interface></ulink>">
-<!ENTITY StreamSequencerContext			"<ulink url='&API;graph/sequencer/StreamSequencerContext.html'><interface>StreamSequencerContext</interface></ulink>">
-<!ENTITY Sequencer		    			"<ulink url='&API;repository/sequencer/Sequencer.html'><interface>Sequencer</interface></ulink>">
+<!ENTITY StreamSequencerContext				"<ulink url='&API;graph/sequencer/StreamSequencerContext.html'><interface>StreamSequencerContext</interface></ulink>">
+<!ENTITY Sequencer		    						"<ulink url='&API;repository/sequencer/Sequencer.html'><interface>Sequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencer/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">
 <!ENTITY SequencerContext		    			"<ulink url='&API;graph/sequencer/SequencerContext.html'><interface>SequencerContext</interface></ulink>">
 <!ENTITY MimeTypeDetector					  	"<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
@@ -164,6 +170,7 @@
 <!ENTITY NetChangeObserver						"<ulink url='&API;graph/observer/NetChangeObserver.html'><classname>NetChangeObserver</classname></ulink>">
 <!ENTITY ChangeObservers							"<ulink url='&API;graph/observer/ChangeObservers.html'><classname>ChangeObservers</classname></ulink>">
 <!ENTITY Changes											"<ulink url='&API;graph/observer/Changes.html'><classname>Changes</classname></ulink>">
+<!ENTITY SearchEngine									"<ulink url='&API;graph/search/SearchEngine.html'><interface>SearchEngine</interface></ulink>">
 
 <!-- Types in dna-repository -->
 
@@ -188,6 +195,7 @@
 <!ENTITY JcrConfiguration		       		"<ulink url='&API;jcr/JcrConfiguration.html'><classname>JcrConfiguration</classname></ulink>">
 <!ENTITY JcrRepository			       		"<ulink url='&API;jcr/JcrRepository.html'><classname>JcrRepository</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
+<!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">
 <!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
 <!ENTITY JcrNodeTypeManager       		"<ulink url='&API;jcr/JcrNodeTypeManager.html'><classname>JcrNodeTypeManager</classname></ulink>">
 <!ENTITY NodeTypeTemplate          		"<ulink url='&API;jcr/nodetype/NodeTypeTemplate.html'><interface>NodeTypeTemplate</interface></ulink>">
@@ -199,11 +207,11 @@
 
 <!-- Types in extensions/ -->
 
-<!ENTITY FileSystemSource  				"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
+<!ENTITY FileSystemSource  						"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
 <!ENTITY CustomPropertiesFactory  		"<ulink url='&API;connector/filesystem/CustomPropertiesFactory'><classname>CustomPropertiesFactory</classname></ulink>">
 <!ENTITY JpaSource  									"<ulink url='&API;connector/store/jpa/JpaSource.html'><classname>JpaSource</classname></ulink>">
-<!ENTITY JdbcMetadataSource  			"<ulink url='&API;connector/meta/jdbc/JdbcMetadataSource.html'><classname>JdbcMetadataSource</classname></ulink>">
-<!ENTITY MetadataCollector  			"<ulink url='&API;connector/meta/jdbc/MetadataCollector'><classname>MetadataCollector</classname></ulink>">
+<!ENTITY JdbcMetadataSource  					"<ulink url='&API;connector/meta/jdbc/JdbcMetadataSource.html'><classname>JdbcMetadataSource</classname></ulink>">
+<!ENTITY MetadataCollector  					"<ulink url='&API;connector/meta/jdbc/MetadataCollector'><classname>MetadataCollector</classname></ulink>">
 <!ENTITY SVNRepositorySource  				"<ulink url='&API;connector/svn/SVNRepositorySource.html'><classname>SVNRepositorySource</classname></ulink>">
 <!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">
 <!ENTITY JBossCacheSource  						"<ulink url='&API;connector/jbosscache/JBossCacheSource.html'><classname>JBossCacheSource</classname></ulink>">
@@ -216,12 +224,12 @@
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
 
 <!ENTITY JavaMetadataSequencer		  	"<ulink url='&API;sequencer/java/JavaMetadataSequencer.html'><classname>JavaMetadataSequencer</classname></ulink>">
-<!ENTITY ClassFileSequencer		  		"<ulink url='&API;sequencer/classfile/ClassFileSequencer.html'><classname>ClassFileSequencer</classname></ulink>">
-<!ENTITY ClassFileRecorder		  		"<ulink url='&API;sequencer/classfile/ClassFileRecorder.html'><classname>ClassFileRecorder</classname></ulink>">
+<!ENTITY ClassFileSequencer		  			"<ulink url='&API;sequencer/classfile/ClassFileSequencer.html'><classname>ClassFileSequencer</classname></ulink>">
+<!ENTITY ClassFileRecorder		  			"<ulink url='&API;sequencer/classfile/ClassFileRecorder.html'><classname>ClassFileRecorder</classname></ulink>">
 <!ENTITY DefaultClassFileRecorder		  "<ulink url='&API;sequencer/classfile/DefaultClassFileRecorder.html'><classname>DefaultClassFileRecorder</classname></ulink>">
 
 <!ENTITY AbstractTextSequencer		  	"<ulink url='&API;sequencer/text/AbstractTextSequencer.html'><classname>AbstractTextSequencer</classname></ulink>">
 <!ENTITY DelimitedTextSequencer		  	"<ulink url='&API;sequencer/text/DelimitedTextSequencer'><classname>DelimitedTextSequencer</classname></ulink>">
-<!ENTITY FixedWidthTextSequencer		"<ulink url='&API;sequencer/text/FixedWidthTextSequencer'><classname>FixedWidthTextSequencer</classname></ulink>">
-<!ENTITY RowFactory		  				"<ulink url='&API;sequencer/text/RowFactory'><classname>RowFactory</classname></ulink>">
+<!ENTITY FixedWidthTextSequencer			"<ulink url='&API;sequencer/text/FixedWidthTextSequencer'><classname>FixedWidthTextSequencer</classname></ulink>">
+<!ENTITY RowFactory		  							"<ulink url='&API;sequencer/text/RowFactory'><classname>RowFactory</classname></ulink>">
 

@@ -80,28 +80,44 @@
 		</tgroup>
 	</table>
 	<para>
-		The default class file recorder creates a subgraph rooted at the output location that takes the following form (with primary types in parentheses):  
+		The default class file recorder creates a subgraph rooted at the output location that takes the following form:  
 	</para>
-	<programlisting>
-&lt;graph root&gt;
-  + &lt;package name 1&gt; (nt:unstructured)
-  	.
-  	.
-  	.
-    + &lt;package name N&gt;(nt:unstructured)
-       + &lt;class name&gt; (class:class)
-         + class:annotations (class:annotations)
-         | + &lt;annotation name&gt; - one per annotation (class:annotation)
-         + class:constructors (class:constructors)
-         | + &lt;constructor parameters&gt; - one per constructor (class:constructor)
-         |   + &lt;annotation name&gt; - one per annotation (class:annotation)
-         + class:methods (class:methods)
-         | + &lt;method name (parameters)&gt; - one per method (class:method)
-         |   + &lt;annotation name&gt; - one per annotation (class:annotation)
-         + class:fields (class:fields)
-           + &lt;field name&gt; - one per field (class:field)
-             + &lt;annotation name&gt; - one per annotation (class:annotation)
-	</programlisting>
+	<programlisting role="XML"><![CDATA[
+<nt:unstructured jcr:name="packageName1">
+	...
+    <nt:unstructured jcr:name="packageNameN">
+	    <class:class jcr:name="ClassName">
+		    <class:annotations jcr:name="class:annotations">
+			    <class:annotation jcr:name="AnnotationName1"/>
+			    ...
+			    <class:annotation jcr:name="AnnotationNameN"/>
+		    </class:annotations>
+		    <class:constructors jcr:name="class:constructors">
+			    <class:constructor jcr:name="constructor parameters">
+				    <class:annotation jcr:name="AnnotationName1"/>
+				    ...
+				    <class:annotation jcr:name="AnnotationNameN"/>
+			    </class:constructor>
+		    </class:constructors>
+		    <class:methods jcr:name="class:methods">
+			    <class:method jcr:name="methodName(parameters)">
+				    <class:annotation jcr:name="AnnotationName1"/>
+				    ...
+				    <class:annotation jcr:name="AnnotationNameN"/>
+			    </class:method>
+		    </class:methods>
+		    <class:fields jcr:name="class:field">
+			    <class:field jcr:name="fieldName">
+				    <class:annotation jcr:name="AnnotationName1"/>
+				    ...
+				    <class:annotation jcr:name="AnnotationNameN"/>
+			    </class:field>
+		    </class:fields>
+		  </class:class>
+    </nt:unstructured>
+	...
+</nt:unstructured>
+]]></programlisting>
 	<para>
 		The compact node definitions for the class:* types is provided below.  <emphasis>Please note that these definitions may change in a future release.</emphasis>
 	</para>
@@ -177,7 +193,7 @@
         To use this sequencer, simply include the <code>dna-sequencer-classfile</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-   	<programlisting>
+   	<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Java Class Sequencer")
@@ -185,6 +201,6 @@ config.sequencer("Java Class Sequencer")
       .setDescription("Sequences Java class files to extract the structure of the classes")
       .sequencingFrom("//*.class[*]/jcr:content[@jcr:data]")
       .andOutputtingTo("/classes");
-    </programlisting>
+]]></programlisting>
 
 </chapter>

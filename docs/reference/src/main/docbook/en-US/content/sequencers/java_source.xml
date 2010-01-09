@@ -44,7 +44,7 @@
 		To use this sequencer, simply include the <code>dna-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
 		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-  <programlisting>
+  <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Java Sequencer")
@@ -53,5 +53,5 @@ config.sequencer("Java Sequencer")
       .setDescription("Sequences java files to extract the characteristics of the Java source")
       .sequencingFrom("//(*.(java)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/java/$1");	
-</programlisting>
+]]></programlisting>
 </chapter>

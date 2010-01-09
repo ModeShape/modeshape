@@ -138,15 +138,18 @@
 			behavior.
 	  </para>
 	  <para>
-		  JBoss DNA has not yet passed enough of the TCK tests to publish the results.  We still have to implement
-		  queries, which is a required feature of Level 1 repositories.  However, suffice to say that JBoss DNA has passed
-		  many of the individual tests that make up the Level 1 and Level 2 tests, and it is a major objective of the next
-		  release to pass the remaining Level 1 and Level 2 tests (along with some other optional features).
-    </para>
+		  JBoss DNA has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
+		  features. The only optional feature not implemented is versioning, and that will be coming soon.
+		</para>
 		<para>
-			JBoss DNA also frequently runs the JCR unit tests from the Apache Jackrabbit project.  (Those these tests are not
+			The JBoss DNA project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not
 			the official TCK, they apparently are used within the official TCK.)  These unit tests are set up in the
 			<code>dna-jcr-tck</code> project.
+		</para>
+		<para>
+		  The 0.7 release passes 96% of the JCR TCK tests, and all of the failures are because of a handful of known issues.
+		  Fortunately, most of these are either less-frequently-used features of JCR or issues that can be worked around.
+		  The JBoss DNA project plans to focus on resolving all the remaining JCR TCK failures, and will publish the results.
 		</para>
   </sect1>
 </chapter>

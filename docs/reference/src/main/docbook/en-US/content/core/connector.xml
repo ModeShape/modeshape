@@ -64,22 +64,47 @@
 				<title>JBoss DNA's JCR implementation delegates to a connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
-			That single connector could use an in-memory repository, a JBoss Cache instance (including those that are clustered and replicated), 
-			or a federated repository where content from multiple sources is unified.
-			<figure id="dna-connectors-0.2">
-				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
-				<graphic align="center" scale="100" fileref="dna-connectors-0.2.png"/>
-			</figure>
+				That single repository connector could access:
+		</para>
+ 		<itemizedlist>
+			<listitem>
+				<para>a transient, in-memory repository</para>
+			</listitem>
+			<listitem>
+				<para>an Infinispan data grid that acts as an extremely scalable, highly-available store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a JBoss Cache instance that acts as a clustered and replicated store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a JDBC database used as a store for repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses existing JDBC databases to project the schema structure as read-only repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses a file systems to present the files and directory structure as (updatable) repository content</para>
+			</listitem>
+			<listitem>
+				<para>a repository that accesses an SVN repository to present the files and directory structure as (updatable) repository content</para>
+			</listitem>
+			<listitem>
+				<para>a federated repository that presents a unified, updatable view of the content in multiple other systems (which are accessed via connectors)</para>
+			</listitem>
+		</itemizedlist>
+		<figure id="dna-connectors">
+			<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
+			<graphic align="center" scale="100" fileref="dna-connectors.png"/>
+		</figure>
+		<para>
 			Really, the federated connector gives us all kinds of	possibilities, since we can use that connector on top of lots of connectors 
 			to other individual sources.  This simple connector architecture is fundamentally what makes JBoss DNA so powerful and flexible.
 			Along with a good library of connectors, which is what we're planning to create.
 		</para>
 		<para>
-			For instance, we want to build a connector to <ulink url="&JIRA-39;">other JCR repositories</ulink>, and another that accesses
-			the <ulink url="&JIRA-34;">local file system</ulink>.  We've already started on a <ulink url="&JIRA-36;">Subversion connector</ulink>, 
-			which will allow JCR to access the files in a SVN repository (and perhaps push changes into SVN through a commit).  
-			And of course we want to create a connector that accesses <ulink url="&JIRA-199;">data</ulink>
-			and <ulink url="&JIRA-37;">metadata</ulink> from relational databases.  For more information, check out our
+			For instance, we want to build a connector to <ulink url="&JIRA;-39">other JCR repositories</ulink>, and
+			another to access <ulink url="&JIRA;-199">existing databases</ulink> so that some or all of the existing data (in whatever structure)
+	    can be accessed through JCR.  For more information, check out our
 			<ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 			Of course, if we don't have a connector to suit your needs, you can <link linkend="custom-connectors">write your own</link>.
 			<figure id="dna-connectors-future">
@@ -248,7 +273,7 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
@@ -264,14 +289,14 @@
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>

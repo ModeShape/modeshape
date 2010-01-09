@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="jcr-query-and-search">
+  <title>Querying and Searching using JCR</title>
+  <para>
+	</para>
+  <sect1 id="jcr-query-api">	
+    <title>JCR Query API</title>
+	  <para>
+		</para>
+	</sect1>
+  <sect1 id="jcr-xpath-query-language">	
+    <title>JCR XPath Query Language</title>
+	  <para>
+		</para>
+	</sect1>
+  <sect1 id="jcr-sql2-query-language">	
+    <title>JCR-SQL2 Query Language</title>
+	  <para>
+		  The JCR-SQL2 query language is defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as a way to express
+		  queries using strings that are similar to SQL. JBoss DNA includes full support for this query language, and even
+		  adds several extensions to make it even more powerful.
+		</para>
+	</sect1>
+  <sect1 id="fulltext-search-query-language">	
+    <title>Full-Text Search Language</title>
+	  <para>
+		  There are times when a formal structured query language is overkill, and the easiest way to find the right content
+		  is to perform a search, like you would with a search engine such as Google or Yahoo! 
+		  This is where JBoss DNA's <emphasis role="strong">full-text search language</emphasis> comes in, because it allows
+		  you to use the JCR query API but with a far simpler, Google-style search grammar.
+		</para>
+		<para>
+			This query language is actually defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as the full-text 
+			search expression grammar used in the second parameter of the <code>CONTAINS(...)</code> function of the JCR-SQL2 language.
+			We just pulled it out and made it available as a first-class query language.
+		</para>
+		<para>
+			This language allows a JCR client to construct a query to find nodes with property values that match
+			the supplied terms. Nodes that "best" match the terms are returned before nodes that have a lesser match.
+			Of course, JBoss DNA uses a complex system to analyze the node content and the query terms, and may perform
+			a number of optimizations, such as (but not limited to) eliminating stop words (e.g., "the", "a", "and", etc.), treating terms
+			independent of case, and converting words to base forms using a process called <emphasis>stemming</emphasis> (e.g., "running"
+			into "run", "customers" into "customer").
+		</para>
+		<para>
+			Search terms can also include phrases by simply wrapping the phrase with double-quotes.  For example, 
+			the search term '<code>table "customer invoice"</code>' would rank higher those nodes with properties containing
+			the phrase "customer invoice" than nodes with properties containing just "customer" or "invoice".
+		</para>
+		<para>
+			Term in the query are implicitly AND-ed together, meaning that the matches occur when a node has property values
+			that match <emphasis>all</emphasis> of the terms. However, it is also possible to put an "OR" in between two terms
+			where either of those terms may occur.
+		</para>
+		<para>
+			It is also possible to specify that terms should <emphasis>not</emphasis> appear in the results. This is called
+			a <emphasis>negative term</emphasis>, and it reduces the rank of any node whose property values contain the
+			the value. To specify a negative term, simply prefix the term with a hyphen ('-').
+		</para>
+		<sect2 id='fulltext-grammar'>
+			<title>Grammar</title>
+			<para>
+				The grammar for this full-text search language is specified in Section 6.7.19 of the 
+				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, but it is also included here as a convenience:
+			</para>
+<programlisting><![CDATA[
+
+FulltextSearch ::= Disjunct {Space 'OR' Space Disjunct}
+
+Disjunct ::= Term {Space Term}
+
+Term ::= ['-'] SimpleTerm
+
+SimpleTerm ::= Word | '"' Word {Space Word} '"'
+
+Word ::= NonSpaceChar {NonSpaceChar}
+
+Space ::= SpaceChar {SpaceChar}
+
+NonSpaceChar ::= Char - SpaceChar /* Any Char except SpaceChar */
+
+SpaceChar ::= ' '
+
+Char ::= /* Any character */
+
+]]></programlisting>
+			<para>
+			  As you can see, this is a pretty simple and straightforward query language. But this language makes it extremely
+			  easy to find all the nodes in the repository that match a set of terms.
+ 		 	</para>
+		 	<para>
+			  When using this query language, the &QueryResult; always contains the "jcr:path" and "jcr:score" columns.
+ 		 	</para>
+		</sect2>
+	</sect1>
+</chapter>

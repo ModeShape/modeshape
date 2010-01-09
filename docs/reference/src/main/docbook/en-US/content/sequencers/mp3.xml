@@ -41,7 +41,7 @@
 					To use this sequencer, simply include the <code>dna-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
 					library in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	      </para>
-		    <programlisting>
+		    <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("MP3 Sequencer")
@@ -50,5 +50,5 @@ config.sequencer("MP3 Sequencer")
       .setDescription("Sequences MP3 files to extract the ID3 tags of the audio file")
       .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/mp3s/$1");	
-	</programlisting>
+]]></programlisting>
 </chapter>

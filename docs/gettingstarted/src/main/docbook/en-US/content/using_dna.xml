@@ -440,7 +440,122 @@ try {
 				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
 				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
 			</para>
+			<note>
+				<para>
+					The JBoss DNA community has solicited input on how we can make it easier to consume and use JBoss DNA in applications
+					that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
+					and please add any suggestions or opinions!
+				</para>
+			</note>
+			<para>
+				Then, your web application needs to reference the <code>Resource</code> and state its requirements in its 
+				<code>web.xml</code>:
+			</para>
+<programlisting role="XML"><![CDATA[<resource-env-ref>
+   <description>Repository</description>
+   <resource-env-ref-name>jcr/local</resource-env-ref-name>
+   <resource-env-ref-type>javax.jcr.Repository</resource-env-ref-type>
+</resource-env-ref>]]></programlisting>
+			<para>
+				Note that the value of <code>resource-env-ref-name</code> matches the value of the name attribute on the 
+				<code>&lt;Resource></code> tag in the <code>context.xml</code> described above.  This is a must.
+			</para>
+			<para>
+				At this point, your web application can perform the lookup of the &Repository; object, create and use a &Session;,
+				and then close the &Session;.  Here's an example of a JSP page that does this:
+			</para>
+<programlisting role="JAVA"><![CDATA[
+<%@ page import="
+	javax.naming.*,
+	javax.jcr.*,
+	org.jboss.security.config.IDTrustConfiguration
+	" %>
+<%!
+
+static {
+	// Initialize IDTrust
+	String configFile = "security/jaas.conf.xml";
+	IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+	try {
+	    idtrustConfig.config(configFile);
+	} catch (Exception ex) {
+	    throw new IllegalStateException(ex);
+	}
+}
+%>
+<%
+Session sess = null;
+try {
+	InitialContext initCtx = new InitialContext();
+	Context envCtx = (Context) initCtx.lookup("java:comp/env");
+	Repository repo = (Repository) envCtx.lookup("jcr/local");
+	sess = repo.login(new SimpleCredentials("readwrite", "readwrite".toCharArray()));
+
+	// Do something interesting with the Session ...
+	out.println(sess.getRootNode().getPrimaryNodeType().getName());
+} catch (Exception ex) {
+	ex.printStackTrace();
+} finally {
+	if (sess != null) sess.logout();
+}
+%>
+]]></programlisting>			
+			<para>
+				Since this uses a servlet container, there is no JAAS implementation configured, so note the 
+				loading of IDTrust to create the JAAS realm.  (To make this work in Tomcat, the security
+				folder that contains the <code>jaas.conf.xml</code>, <code>users.properties</code>, and
+				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.
+				Moving the security folder into the <code>conf</code> directory did not allow those files
+				to be visible by the JSP page.)
+			</para>
+			<note>
+				<para>
+				If you use an application server such as <ulink url="http://www.jboss.com/products/platforms/application/">JBoss EAP</ulink>,
+				you could just configure the JAAS realm as part of the server configuration and be done with it.
+			  </para>
+			</note>
 		</sect2>
+	</sect1>
+	<sect1 id="using_dna_via_maven">
+		<title>Using JBoss DNA via Maven</title>
+		<para>
+			JBoss DNA is a Maven-based project. If your application is using Maven, it is very easy to add a dependency on 
+			JBoss DNA's JCR library (plus any extensions), and Maven will ensure your application has access to all 
+			of the JBoss DNA artifacts and all 3rd-party libraries upon which DNA depends. 
+			Simply add a dependency in your application's POM:
+		</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-jcr</artifactId>
+  <version>0.7</version>
+</dependency>
+]]></programlisting>
+			<para>
+				plus dependencies for each optional extension (sequencers, connectors, MIME type detectors, etc.):
+			</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-connector-store-jpa</artifactId>
+  <version>0.7</version>
+</dependency>
+...
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-sequencer-java</artifactId>
+  <version>0.7</version>
+</dependency>
+]]></programlisting>
+		<para>
+			Then, continue by defining a &JcrConfiguration; and building the engine, as discussed <link linkend="jcr-engine">earlier</link>.
+			This is very straightforward, and this is exactly what the <link linkend="downloading_and_running">JBoss DNA examples</link> do.
+		</para>
+		<note>
+			<para>
+				The JBoss DNA community has solicited input on how we can make it easier to consume and use JBoss DNA in applications
+				that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
+				and please add any suggestions or opinions!
+			</para>
+		</note>
 	</sect1>
 	<sect1 id="using_dna_whats_next">
 		<title>What's next</title>

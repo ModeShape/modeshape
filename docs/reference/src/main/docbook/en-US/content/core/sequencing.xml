@@ -314,7 +314,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
 </dependency>
 	 ]]></programlisting>
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
@@ -325,14 +325,14 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -370,7 +370,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-jcr</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <scope>test</scope>
 </dependency>
 <!-- Java Content Repository API -->

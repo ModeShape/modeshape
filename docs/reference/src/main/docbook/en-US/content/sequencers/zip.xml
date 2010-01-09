@@ -39,7 +39,7 @@
 		To use this sequencer, simply include the <code>dna-sequencer-zip</code> JAR
 		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-   <programlisting>
+   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("ZIP Sequencer")
@@ -48,5 +48,5 @@ config.sequencer("ZIP Sequencer")
       .setDescription("Sequences compressed files to extract the internal file and folder structure")
       .sequencingFrom("//(*.(zip|gz|jar|war|ear)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/zips/$1");	
-	</programlisting>
+]]></programlisting>
 </chapter>

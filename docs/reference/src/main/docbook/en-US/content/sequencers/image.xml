@@ -95,7 +95,7 @@
 			To use this sequencer, simply include the <code>dna-sequencer-images</code> JAR
 			in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
      </para>
-   	<programlisting>
+   	<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.sequencer("Image Sequencer")
       .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
@@ -103,6 +103,5 @@ config.sequencer("Image Sequencer")
       .setDescription("Sequences image files to extract the characteristics of the image")
       .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/images/$1");
-
-</programlisting>
+]]></programlisting>
 </chapter>

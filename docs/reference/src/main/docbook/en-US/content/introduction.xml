@@ -221,62 +221,6 @@
 			the issues appropriately.
     </para>
   </sect1>
-  <sect1 id="methodology">
-    <title>Development methodology</title>
-    <para>
-			Rather than use a single formal development methodology, the JBoss DNA project incorporates those techniques, activities, and 
-			processes that are practical and work for the project. In fact, the committers are given a lot of freedom for how they develop 
-			the components and features they work on.
-		</para>
-		<para>
-			Nevertheless, we do encourage familiarity with several major techniques, including:
-			<itemizedlist>
-				<listitem>
-					<para>
-						<emphasis role="strong"><ulink url="&Wikipedia;Agile_software_development">Agile software development</ulink></emphasis>
-					  includes those software methodologies (e.g., Scrum) that promote development iterations and open collaboration.  While the
-						JBoss DNA project doesn't follow these closely, we do emphasize the importance of always having running software
-						and using running software as a measure of progress.  The JBoss DNA project also wants to move to more frequent
-						releases (on the order of 4-6 weeks)
-					</para>
-				</listitem>
-				<listitem>
-					<para>
-						<emphasis role="strong"><ulink url="&Wikipedia;Test-driven_development">Test-driven development (TDD)</ulink></emphasis>
-						techniques encourage first writing test cases for new features and functionality, then changing the code to add the
-						new features and functionality, and finally the code is refactored to clean-up and address any duplication or inconsistencies.
-					</para>
-				</listitem>
-				<listitem>
-					<para>
-						<emphasis role="strong"><ulink url="http://behaviour-driven.org/">Behavior-driven development (BDD)</ulink></emphasis>
-						is an evolution of TDD, where developers specify the desired behaviors first (rather than writing "tests").
-						In reality, this BDD adopts the language of the user so that tests are written using words that are meaningful
-						to users.  With recent test frameworks (like JUnit 4.4), we're able to write our unit tests to express
-						the desired behavior.  For example, a test class for sequencer implementation might have a test method
-						<code>shouldNotThrowAnErrorWhenStreamIsNull()</code>, which is very easy to understand the intent.
-						The result appears to be a larger number of finer-grained test methods, but which are more easily understood
-						and easier to write.  In fact, many advocates of BDD argue that one of the biggest challenges of TDD is knowing what
-						tests to write in the beginning, whereas with BDD the shift in focus and terminology make it easier for more
-						developers to enumerate the tests they need.
-					</para>
-				</listitem>
-				<listitem>
-					<para>
-						<emphasis role="strong"><ulink url="&Wikipedia;Lean_software_development">Lean software development</ulink></emphasis>
-						is an adaptation of <ulink url="&Wikipedia;Lean_manufacturing">lean manufacturing techniques</ulink>,
-						where emphasis is placed on eliminating waste (e.g., defects, unnecessary complexity, unnecessary code/functionality/features), 
-						delivering as fast as possible, deferring irrevocable decisions as much as possible,
-						continuous learning (continuously adapting and improving the process), empowering the team (or community, in our case),
-						and several other guidelines.  Lean software development can be thought of as an evolution of agile techniques
-						in the same way that behavior-driven development is an evolution of test-driven development.  Lean techniques
-						help the developer to recognize and understand how and why features, bugs, and even their processes impact the development
-						of software.
-					</para>
-				</listitem>
-			</itemizedlist>
-    </para>
-  </sect1>
   <sect1 id="modules">
     <title>JBoss DNA modules</title>
     <para>
@@ -288,11 +232,9 @@
             contains JBoss DNA's implementation of the JCR API. If you're using JBoss DNA as a JCR repository, this is the
  						top-level dependency that you'll want to use.  The module defines all required dependencies, except for
  						the repository connector(s) and any sequencer implementations needed by your configuration.
-						As we'll see later on, using JBoss DNA as a JCR repository is easy: simply create a configuration, start the JCR engine,
-						get the JCR &Repository; object for your repository, and then use the JCR API.
-						This module also contains the Jackrabbit JCR API unit tests that verify the behavior of the JBoss DNA implementation.
-						As DNA does not fully implement the JCR 1.0.1 specification, there are a series of tests that are currently commented 
-            out in this module.  The <code>dna-jcr-tck</code> module contains all of these tests.
+						As we'll see later on, using JBoss DNA as a JCR repository is easy: simply create a <link linkend="configuration">configuration</link>, 
+						start JBoss DNA's <link linkend="jcr_engine">JCR engine</link>,	get the JCR &Repository; object for your repository, and then use the JCR API.
+						This module also uses the JCR unit tests from the reference implementation to verify the behavior of the JBoss DNA implementation.
           </para>
         </listitem>
         <listitem>
@@ -304,19 +246,19 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-graph</emphasis>
-            defines the Application Programming Interface (API) for JBoss DNA's low-level graph model,
-						including a DSL-like API for working with graph content.  This module also defines the
- 						APIs necessary to implement custom connectors, sequencers, and MIME type detectors.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">dna-cnd</emphasis>
             provides a self-contained utility for parsing CND (Compact Node Definition) files and transforming
 						the node definitions into a graph notation compatible with JBoss DNA's JCR implementation.
           </para>
         </listitem>        
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-graph</emphasis>
+            defines the Application Programming Interface (API) for JBoss DNA's low-level graph model,
+						including a fluent-style API for working with graph content.  This module also defines the
+ 						APIs necessary to implement custom connectors, sequencers, and MIME type detectors.
+          </para>
+        </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-common</emphasis>
@@ -329,14 +271,6 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-jcr-tck</emphasis>
-            provides a separate testing project that executes all Jackrabbit JCR TCK tests on a nightly basis to track implementation
-            progress against the JCR 1.0 specification.  This module will likely be retired when the <code>dna-jcr</code> implementation
-            is complete.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">dna-integration-tests</emphasis>
             provides a home for all of the integration tests that involve more components that just unit tests. Integration
             tests are often more complicated, take longer, and involve testing the integration and functionality of multiple
@@ -345,93 +279,123 @@
           </para>
         </listitem>
       </itemizedlist>
-      The following modules are optional extensions that may be used selectively and as needed (and are located in the source
-      under the
-      <code>extensions/</code>
-      directory):
+      The following modules are optional extensions that may be used selectively and as needed
+ 			(and are located in the source under the <code>extensions/</code> directory):
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-classloader-maven</emphasis>
-            is a small library that provides a
-            <code>ClassLoaderFactory</code>
-            implementation that can create
-            <code>java.lang.ClassLoader</code>
-            instances capable of loading classes given a Maven Repository and a list of Maven coordinates. The Maven Repository
-            can be managed within a JCR repository.
+            <emphasis role="strong">dna-connector-infinispan</emphasis>
+            is the preferred DNA repository connector for persistently storing content.
+            <ulink url="http://infinispan.org">Infinispan</ulink> is an extremely scalable, highly available data grid platform
+ 						that distributes the data across the nodes in the grid.
+            This connector makes it possible for repository content to be stored in a very efficient, fast,
+            highly-concurrent (essentially lock- and synchronization-free), and reliable manner, 
+            even when the content size grows to massive sizes. This connector is capable of storing any kind of content, and
+						dictates how the content is stored on the data grid.  Therefore, this connector cannot be used to access the content
+						of existing data grids created by/for other applications.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-common-jdbc</emphasis>
-            contains several helpful utility classes for interacting with JDBC connections.
+            <emphasis role="strong">dna-connector-jbosscache</emphasis>
+            is a DNA repository connector that stores content within a
+            <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>
+            instance. JBoss Cache is a powerful cache implementation that can serve as a distributed cache and that can persist
+            information. The cache instance can be found via JNDI or created and managed by the connector.
+						This connector is capable of storing any kind of content, and dictates how the content is stored in the cache.
+						Therefore, this connector cannot be used to access the content
+						of existing cache instances created by/for other applications.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-federation</emphasis>
-            is a DNA repository connector that federates, integrates and caches information from multiple sources (via other
-            repository connectors).
+            <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
+            is a DNA repository connector that provides read-only access to metadata and schema information from relational databases 
+						through a JDBC connection.  This connector provides an optional and configurable caching facility to prevent frequent
+						requests to the database.
+          </para>
+        </listitem>        
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-connector-store-jpa</emphasis>
+            is a DNA repository connector that stores content in a JDBC database, using the Java Persistence API (JPA) and the
+						very highly-regarded and widely-used <ulink url="http://www.hibernate.org">Hibernate</ulink> implementation.
+						This connector is capable of storing any kind of content, and dictates the schema in which it stores the content.
+						Therefore, this connector cannot be used to access the data in existing created by/for other applications.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-filesystem</emphasis>
-            is a DNA repository connector that provides read-only access to file systems, allowing their structure and data to be 
-            viewed as repository content.
-          </para>
-        </listitem>
-        <!--listitem>
-          <para>
-            <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
-            is a prototype DNA repository connector that provides read-only access to metadata from relational databases through a JDBC 
-            connection.
-                        <emphasis>This is still under development.</emphasis>
-          </para>
-        </listitem-->        
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-connector-jbosscache</emphasis>
-            is a DNA repository connector that manages content within a
-            <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>
-            instance. JBoss Cache is a powerful cache implementation that can serve as a distributed cache and that can persist
-            information. The cache instance can be found via JNDI or created and managed by the connector.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-connector-infinispan</emphasis>
-            is a DNA repository connector that stores content in a deployed instance of <ulink url="http://infinispan.org">Infinispan</ulink>.
-            Infinispan is an extremely scalable, highly available data grid platform that distributes the data across the nodes 
-            in the grid.  This connector makes it possible for repository content to be stored in a very efficient, fast,
-            higly-concurrent (essentially lock- and synchronization-free) and reliable manner, 
-            even when the content size grows to massive sizes.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-connector-store-jpa</emphasis>
-            is a DNA sequencer that provides for persistent storage and access of DNA content in a relational database.  This connector
-            is based on JPA technology.
+            is a DNA repository connector that accesses the files and folders on (a part of) the local file system, providing that
+  					content in the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
+						support updating the file system when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
+						However, this connector does not support storing other kinds of nodes.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-svn</emphasis>
-            is a prototype DNA sequencer that obtains content from a Subversion repository, providing that content in
-						the form of <code>nt:file</code> and <code>nt:folder</code> nodes.
+            is a DNA repository connector that accesses the content of an existing Subversion repository, providing that content in
+						the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
+						support updating the SVN repository when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
+						However, this connector does not support storing other kinds of nodes.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-cnd</emphasis>
+            is a DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-ddl</emphasis>
+            is a DNA sequencer that extracts the structure and content from DDL files.
+            <emphasis>This is still under development and includes support for the basic DDL statements in
+							in the Oracle, PostgreSQL, Derby, and standard DDL dialects.</emphasis>
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-zip</emphasis>
-            is a DNA sequencer that extracts from ZIP archives the files (with content) and folders.
+            is a DNA sequencer that extracts the files (with content) and directories from ZIP archives.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-xml</emphasis>
             is a DNA sequencer that extracts the structure and content from XML files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-classfile</emphasis>
+            is a DNA sequencer that extracts the package, class/type, member, documentation, annotations, and other information
+            from Java class files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-java</emphasis>
+            is a DNA sequencer that extracts the package, class/type, member, documentation, annotations, and other information
+            from Java source files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-jbpm-jpdl</emphasis>
+            is a prototype DNA sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
+						<emphasis>This is still under development.</emphasis>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-msoffice</emphasis>
+            is a DNA sequencer that extracts metadata and summary information from
+            <ulink url="http://office.microsoft.com/en-us/">Microsoft Office</ulink>
+            documents. For example, the sequencer extracts from a PowerPoint presentation the outline as well as thumbnails of
+            each slide. Microsoft Word and Excel files are also supported.
           </para>
         </listitem>
         <listitem>
@@ -449,52 +413,32 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-java</emphasis>
-            is a DNA sequencer that extracts the package, class/type, member, documentation, annotations, and other information
-            from Java source files.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-sequencer-msoffice</emphasis>
-            is a DNA sequencer that extracts metadata and summary information from
-            <ulink url="http://office.microsoft.com/en-us/">Microsoft Office</ulink>
-            documents. For example, the sequencer extracts from a PowerPoint presentation the outline as well as thumbnails of
-            each slide. Microsoft Word and Excel files are also supported.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-sequencer-cnd</emphasis>
-            is a DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-sequencer-jbpm-jpdl</emphasis>
-            is a prototype DNA sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
-						<emphasis>This is still under development.</emphasis>
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            <emphasis role="strong">dna-sequencer-java</emphasis>
-            is a DNA sequencer that extracts the structure (methods, fields) from Java source files.
+            <emphasis role="strong">dna-sequencer-text</emphasis>
+            is a DNA sequencer that extracts data from text streams. There are separate sequencers for character-delimited sequencing 
+						and fixed width sequencing, but both treat the incoming text stream as a series of rows separated by line-terminators
+						with each row consisting of one or more columns. 
           </para>
         </listitem>  
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-ddl</emphasis>
-            is a DNA sequencer that extracts the structure and content from DDL files.
-                <emphasis>This is still under development and only includes a limited number of dialects and basic DDL statements.</emphasis>
+            <emphasis role="strong">dna-search-lucene</emphasis> is an implementation of the &SearchEngine; interface that
+						uses the <ulink url="http://lucene.apache.org/java/">Lucene</ulink> library. This module is one of the few
+						extensions that is used directly by the <code>dna-jcr</code> module.
           </para>
-        </listitem>      
+        </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-mimetype-detector-aperture</emphasis>
-            is a DNA MIME type detector that uses the
+            is a &MimeTypeDetector; implementation that uses the
             <ulink url="http://aperture.sourceforge.net/">Aperture</ulink>
-            library to determine the best MIME type from the filename and file contents.
+            library to determine the best MIME type given the name and contents of a file.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-classloader-maven</emphasis> is a small library that provides a
+            &ClassLoaderFactory; implementation that can create &ClassLoader; instances capable of loading classes given 
+						a Maven Repository and a list of Maven coordinates. The Maven Repository can be managed within a JCR repository.
           </para>
         </listitem>
       </itemizedlist>
@@ -522,7 +466,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-web-jcr-rest-client</emphasis>
-            is an API that uses POJOs to access the REST web service. This API eliminates the need for applications to know how
+            is a library that uses POJOs to access the REST web service. This module eliminates the need for applications to know how
             to create HTTP request URLs and payloads, and how to parse the JSON responses. It can be used to publish (upload) 
             and unpublish (delete) files from DNA repositories. 
           </para>
@@ -555,21 +499,80 @@
           </para>
         </listitem>
       </itemizedlist>
-      Finally, there is a module that represents the whole JBoss DNA project:
+      Another module provides some utility functionality:
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna</emphasis>
-            is the parent project that aggregates all of the other projects and that contains some asset files to create the
-            necessary Maven artifacts during a build.
+            <emphasis role="strong">dna-jpa-ddl-gen</emphasis> provides a standalone utility that can generate the DDL
+						for the database schema used by the JPA connector. Because it uses Hibernate, it can generate DDL for any
+						of the databases that the connector can use.
           </para>
         </listitem>
       </itemizedlist>
+      There is another module that runs the full suite of JCR TCK tests, and which at the moment still contains some failures.
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-jcr-tck</emphasis> provides a separate testing project that executes all reference implementation's
+ 						JCR TCK tests on a nightly basis to track implementation progress against the JCR 1.0 specification. 
+						This module will likely be retired when the JBoss DNA JCR implementation is complete, since <code>dna-jcr</code> and
+						<code>dna-integration-tests</code> will be running the full suite of JCR TCK unit tests.
+          </para>
+        </listitem>
+      </itemizedlist>
+      Finally, there is a Maven parent <code>pom.xml</code> file that aggregates all of the other projects, provides common
+      defaults for Maven plugins and dependency versions used throughout the modules, and definition of various asset files
+      to help build the necessary Maven artifacts during a build.
+    </para>
+  	<para>
       Each of these modules is a Maven project with a group ID of
       <code>org.jboss.dna</code>
       . All of these projects correspond to artifacts in the
       <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>
       .
     </para>
+	</sect1>
+  <sect1 id="whats_new">
+    <title>What's new?</title>
+	  <para>
+			With version 0.7, JBoss DNA introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
+			with a number of query languages, including the <link linkend="jcr-xpath-query-language">JCR XPath language</link> 
+			(required by the 1.0 specification), the <link linkend="jcr-sql2-query-language">JCR-SQL2 dialect</link>
+			defined by the JCR 2.0 specification, and a <link linkend="fulltext-search-query-language">full-text search language</link>.  
+			This release also adds support for JCR locking and observation.
+		</para>
+		<para>This means that <emphasis role="strong">JBoss DNA now implements all of the JCR Level 1 and Level 2 features, 
+			along with the optional locking and observation features</emphasis>. 
+			The only optional feature not implemented is versioning, and that will be coming soon.
+		  This version passes more than 95% of the JCR TCK tests, and all of the failures are because of a handful of known issues.
+		  Fortunately, most of these are either less-frequently-used features of JCR or issues that can be worked around.
+		</para>
+		<para>
+			This release also introduces a number of new and improved connectors.  Both the <link linkend="file-system-connector">file system connector</link>
+			and <link linkend="subversion-connector">SVN connector</link> were reworked to support reads and updates, and they 
+			both offer a preview of an optional caching system.  The <link linkend="jdbc-storage-connector">JPA storage connector</link>
+			was dramatically improved and is significantly faster, more capable, and more efficient.
+			The new <link linkend="jdbc-metadata-connector">JDBC metadata connector</link> is a technology preview of a connector
+			that provides read-only access to the schema information of relational databases through JDBC.
+		</para>
+		<para>
+			JBoss DNA 0.7 includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
+			is able to extract structured data from comma-separated or fixed-width text files. The new <link linkend="ddl-file-sequencer">DDL sequencer</link>
+			is capable of parsing a number of DDL dialects to extract the more important DDL statements. The <link linkend="cnd-sequencer">CND sequencer</link>
+			was rewritten and dramatically simplified to perform better, fix a number of known issues, and eliminate a dependency on a third-party library.
+			There is also a new <link linkend="java-class-sequencer">Java class file sequencer</link> that operates on Java class
+			files and produces output that is very similar to the <link linkend="java-source-sequencer">Java source file sequencer</link>,
+			and that can be used in conjunction with the <link linkend="zip-file-sequencer">ZIP file sequencer</link> to extract the Java metadata
+			from JARs, WARs, and EAR files.
+		</para>
+		<para>
+		  This release also brings numerous bug fixes and improvements, and upgrades all third-party dependencies to the latest
+		  versions available at the time of release. The build system now supports 
+			<ulink url="http://jbossdna.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
+		  of databases</ulink>, making it very easy to test against DBMSes that JBoss DNA doesn't directly test against.
+			A new DDL generation utility was also introduced that produces the DDL for the database used by the JPA connector.
+			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link>, and this is 
+			enabled by default but can easily be changed for production purposes.
+		</para>
   </sect1>
 </chapter>

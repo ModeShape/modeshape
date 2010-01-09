@@ -38,8 +38,65 @@
 		and compile preferences to ensure no warnings or errors.
   </para>
 	<para>
-		The rest of this chapter talks in more detail about these different tools and how to set them up.
+		The rest of this chapter talks in more detail about these different tools and how to set them up. But first, we briefly describe
+		our approach to development.
 	</para>
+  <sect1 id="methodology">
+    <title>Development methodology</title>
+    <para>
+			Rather than use a single formal development methodology, the JBoss DNA project incorporates those techniques, activities, and 
+			processes that are practical and work for the project. In fact, the committers are given a lot of freedom for how they develop 
+			the components and features they work on.
+		</para>
+		<para>
+			Nevertheless, we do encourage familiarity with several major techniques, including:
+			<itemizedlist>
+				<listitem>
+					<para>
+						<emphasis role="strong"><ulink url="&Wikipedia;Agile_software_development">Agile software development</ulink></emphasis>
+					  includes those software methodologies (e.g., Scrum) that promote development iterations and open collaboration.  While the
+						JBoss DNA project doesn't follow these closely, we do emphasize the importance of always having running software
+						and using running software as a measure of progress.  The JBoss DNA project also wants to move to more frequent
+						releases (on the order of 4-6 weeks)
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong"><ulink url="&Wikipedia;Test-driven_development">Test-driven development (TDD)</ulink></emphasis>
+						techniques encourage first writing test cases for new features and functionality, then changing the code to add the
+						new features and functionality, and finally the code is refactored to clean-up and address any duplication or inconsistencies.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong"><ulink url="http://behaviour-driven.org/">Behavior-driven development (BDD)</ulink></emphasis>
+						is an evolution of TDD, where developers specify the desired behaviors first (rather than writing "tests").
+						In reality, this BDD adopts the language of the user so that tests are written using words that are meaningful
+						to users.  With recent test frameworks (like JUnit 4.4), we're able to write our unit tests to express
+						the desired behavior.  For example, a test class for sequencer implementation might have a test method
+						<code>shouldNotThrowAnErrorWhenStreamIsNull()</code>, which is very easy to understand the intent.
+						The result appears to be a larger number of finer-grained test methods, but which are more easily understood
+						and easier to write.  In fact, many advocates of BDD argue that one of the biggest challenges of TDD is knowing what
+						tests to write in the beginning, whereas with BDD the shift in focus and terminology make it easier for more
+						developers to enumerate the tests they need.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong"><ulink url="&Wikipedia;Lean_software_development">Lean software development</ulink></emphasis>
+						is an adaptation of <ulink url="&Wikipedia;Lean_manufacturing">lean manufacturing techniques</ulink>,
+						where emphasis is placed on eliminating waste (e.g., defects, unnecessary complexity, unnecessary code/functionality/features), 
+						delivering as fast as possible, deferring irrevocable decisions as much as possible,
+						continuous learning (continuously adapting and improving the process), empowering the team (or community, in our case),
+						and several other guidelines.  Lean software development can be thought of as an evolution of agile techniques
+						in the same way that behavior-driven development is an evolution of test-driven development.  Lean techniques
+						help the developer to recognize and understand how and why features, bugs, and even their processes impact the development
+						of software.
+					</para>
+				</listitem>
+			</itemizedlist>
+    </para>
+  </sect1>
 	<sect1 id="jdk">
 		<title>JDK</title>
 		<para>

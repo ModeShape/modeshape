@@ -191,8 +191,7 @@
 		<para>The <code>main(String[] argv)</code> method is of course the method that is executed when the application is run.  This code
 		  creates the JBoss DNA configuration using the programmatic style.
 		</para>
-		<programlisting role="JAVA"><![CDATA[
-// Create the configuration. 
+		<programlisting role="JAVA"><![CDATA[// Create the configuration. 
 String repositoryId = "content";
 String workspaceName = "default";
 JcrConfiguration config = new JcrConfiguration();
