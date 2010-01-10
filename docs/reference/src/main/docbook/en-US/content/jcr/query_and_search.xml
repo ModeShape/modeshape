@@ -557,7 +557,8 @@ ORDER BY nodeSet1.title,
 				The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
 				Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
 				Terms surrounded by '{' and '}' denote terms that appear zero or more times.
-				Parentheses are used to identify groups, and are often used to surround possible values. 
+				Parentheses are used to identify groups, and are often used to surround possible values.
+				Literals (or keywords) are denoted by single-quotes. 
 			</para>
 		</note>
 			<sect2>

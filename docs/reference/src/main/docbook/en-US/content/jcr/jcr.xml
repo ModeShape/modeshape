@@ -201,11 +201,11 @@ final &LoginContext; loginContext = ...;
 		<ulink url="&Roadmap;">current list of known issues and bugs</ulink>.</emphasis>
 		</para> 
 		<sect2>
-			<title>L1 and L2 Features</title>
+			<title>Level 1 and Level 2 (Required) Features</title>
 			<para>
 				JBoss DNA currently supports all Level 1 features and most of the Level 2 features defined by the 
 				<ulink url="&JSR170;">JSR-170</ulink> specification.
-				This release adds support for queries, which is described in more detail in <link linkend="jcr-query-and-search">later</link>.
+				This release adds support for queries, which is described in more detail in the <link linkend="jcr-query-and-search">next chapter</link>.
 				However, referential integrity for <code>REFERENCE</code> properties, a Level 2 feature, is not yet implemented.  
 				As the current implementation does provide many of the features that may be needed by an application, we really hope 
 				that this release will allow you to give us some feedback on what we have so far.
