@@ -237,11 +237,13 @@
 						&RepositorySource; implementations. If the content your connector exposes has unique keys (such as a unique string,
 						UUID or other identifier), consider implementing &MapRepositorySource;, subclassing &MapRepository;, and
 						using the existing &MapRepositoryConnection; implementation.  This &MapRepositoryConnection; does most of the work
-						already, relying upon your &MapRepository; subclass for anything that might be source-specific. 
+						already, relying upon your &MapRepository; subclass for anything that might be source-specific.
+						(See the <ulink url="&API;graph/connector/map/package-frame.html">JavaDoc</ulink> for details.)
 						Or, if the content your connector exposes is simply path-based, consider implementing &PathRepositorySource;, 
 						subclassing &PathRepository;, and using the existing &PathRepositoryConnection; implementation.  
 						Again, &PathRepositoryConnection; class does almost all of the work and delegates to your &PathRepository;
 						subclass for anything that might be source-specific.
+						(See the <ulink url="&API;graph/connector/path/package-frame.html">JavaDoc</ulink> for details.)
 					</para>
 					<para>
 						Don't forget unit tests that verify that the connector is doing what it's expected to do.  (If you'll be committing the connector
