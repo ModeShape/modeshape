@@ -548,21 +548,19 @@ ORDER BY nodeSet1.title,
         </listitem>
       </itemizedlist>
 		</para>
-		<sect2 id="jcr-sql2-grammar">
-			<title>Grammar</title>
+		<para>
+			The grammar for the JCR-SQL2 query language is actually a superset of that defined by the
+			<ulink url="&JSR283;">JCR 2.0 specification</ulink>, and as such the complete grammar is included here.
+		</para>
+		<note>
 			<para>
-				The grammar for the JCR-SQL2 query language is actually a superset of that defined by the
-				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, and as such the complete grammar is included here.
+				The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
+				Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
+				Terms surrounded by '{' and '}' denote terms that appear zero or more times.
+				Parentheses are used to identify groups, and are often used to surround possible values. 
 			</para>
-			<note>
-				<para>
-					The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
-					Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
-					Terms surrounded by '{' and '}' denote terms that appear zero or more times.
-					Parentheses are used to identify groups, and are often used to surround possible values. 
-				</para>
-			</note>
-			<sect3>
+		</note>
+			<sect2>
 				<title>Queries</title>
 <programlisting><![CDATA[
 QueryCommand ::= Query | SetQuery
@@ -576,8 +574,8 @@ Query ::= 'SELECT' ['DISTINCT'] columns
           ['ORDER BY' orderings]
           [Limit]
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Sources</title>
 <programlisting><![CDATA[
 Source ::= Selector | Join
@@ -587,8 +585,8 @@ Selector ::= nodeTypeName ['AS' selectorName]
 nodeTypeName ::= Name
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Joins</title>
 <programlisting><![CDATA[
 	
@@ -614,8 +612,8 @@ JoinCondition ::= EquiJoinCondition | SameNodeJoinCondition |
                   ChildNodeJoinCondition | DescendantNodeJoinCondition
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Equi-Join Conditions</title>
 <programlisting><![CDATA[
 	
@@ -627,8 +625,8 @@ property1Name ::= propertyName
 property2Name ::= propertyName
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Same-Node Join Conditions</title>
 <programlisting><![CDATA[
 	
@@ -637,8 +635,8 @@ SameNodeJoinCondition ::= 'ISSAMENODE(' selector1Name ',' selector2Name [',' sel
 selector2Path ::= Path
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Child-Node Join Conditions</title>
 <programlisting><![CDATA[
 	
@@ -648,8 +646,8 @@ childSelectorName ::= selectorName
 parentSelectorName ::= selectorName
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Descendant-Node Join Conditions</title>
 <programlisting><![CDATA[
 	
@@ -659,8 +657,8 @@ descendantSelectorName ::= selectorName
 ancestorSelectorName ::= selectorName
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Constraints</title>
 <programlisting><![CDATA[
 	
@@ -670,8 +668,8 @@ ConstraintItem ::= And | Or | Not | Comparison | Between | PropertyExistence |
                    SetConstraint | FullTextSearch | SameNode | ChildNode | DescendantNode
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>And Constraints</title>
 <programlisting><![CDATA[
 
@@ -681,24 +679,24 @@ constraint1 ::= Constraint
 constraint2 ::= Constraint
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Or Constraints</title>
 <programlisting><![CDATA[
 	
 Or ::= constraint1 'OR' constraint2
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Not Constraints</title>
 <programlisting><![CDATA[
 	
 Not ::= 'NOT' Constraint
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Comparison Constraints</title>
 <programlisting><![CDATA[
 	
@@ -707,8 +705,8 @@ Comparison ::= DynamicOperand Operator StaticOperand
 Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE'
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Between Constraints</title>
 <programlisting><![CDATA[
 	
@@ -719,8 +717,8 @@ lowerBound ::= StaticOperand
 upperBound ::= StaticOperand
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Property Existence Constraints</title>
 <programlisting><![CDATA[
 	
@@ -728,8 +726,8 @@ PropertyExistence ::= selectorName'.'propertyName 'IS' ['NOT'] 'NULL' |
                       propertyName 'IS' ['NOT'] 'NULL' /* If only one selector exists in this query */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Set Constraints</title>
 <programlisting><![CDATA[
 
@@ -740,8 +738,8 @@ firstStaticOperand ::= StaticOperand
 additionalStaticOperand ::= StaticOperand
 
 ]]></programlisting>
-			</sect3>
-			<sect3 id="jcr-sql2-full-text-search-constraints">
+			</sect2>
+			<sect2 id="jcr-sql2-full-text-search-constraints">
 				<title>Full-text Search Constraints</title>
 <programlisting><![CDATA[
 	
@@ -749,11 +747,36 @@ FullTextSearch ::= 'CONTAINS(' ([selectorName'.']propertyName | selectorName'.*'
                            ',' ''' fullTextSearchExpression''' ')'
                    /* If only one selector exists in this query, explicit specification of the selectorName
                       preceding the propertyName is optional */
-fullTextSearchExpression ::= /* a full-text search expression, see FullTextSearchParser */
+
+fullTextSearchExpression ::= FulltextSearch
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			<para> where <code>FulltextSearch</code> is defined by the following, and is the same as the
+			  <link linkend='fulltext-search-expressions'>full-text search language</link> supported by JBoss DNA:
+			</para>
+<programlisting><![CDATA[
+
+FulltextSearch ::= Disjunct {Space 'OR' Space Disjunct}
+
+Disjunct ::= Term {Space Term}
+
+Term ::= ['-'] SimpleTerm
+
+SimpleTerm ::= Word | '"' Word {Space Word} '"'
+
+Word ::= NonSpaceChar {NonSpaceChar}
+
+Space ::= SpaceChar {SpaceChar}
+
+NonSpaceChar ::= Char - SpaceChar /* Any Char except SpaceChar */
+
+SpaceChar ::= ' '
+
+Char ::= /* Any character */
+
+]]></programlisting>
+			</sect2>
+			<sect2>
 				<title>Same-Node Constraint</title>
 <programlisting><![CDATA[
 	
@@ -762,8 +785,8 @@ SameNode ::= 'ISSAMENODE(' [selectorName ','] Path ')'
                       preceding the path is optional */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Child-Node Constraints</title>
 <programlisting><![CDATA[
 
@@ -772,8 +795,8 @@ ChildNode ::= 'ISCHILDNODE(' [selectorName ','] Path ')'
                       preceding the path is optional */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Descendant-Node Constraints</title>
 <programlisting><![CDATA[
 
@@ -782,8 +805,8 @@ DescendantNode ::= 'ISDESCENDANTNODE(' [selectorName ','] Path ')'
                       preceding the propertyName is optional */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Paths and Names</title>
 <programlisting><![CDATA[
 
@@ -800,8 +823,8 @@ simplePath ::= /* A JCR Path (rather Name) that contains only SQL-legal
                     characters (namely letters, digits, and underscore) */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Static Operands</title>
 <programlisting><![CDATA[
 	
@@ -821,8 +844,8 @@ UncastLiteral ::= UnquotedLiteral | ''' UnquotedLiteral ''' | '"' UnquotedLitera
 UnquotedLiteral ::= /* String form of a JCR Value, as defined in the JCR specification */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Bind Variables</title>
 <programlisting><![CDATA[
 	
@@ -832,8 +855,8 @@ bindVariableName ::= /* A string that conforms to the JCR Name syntax, though th
                         does not need to be a registered namespace prefix. */
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Dynamic Operands</title>
 <programlisting><![CDATA[
 	
@@ -874,8 +897,8 @@ UpperCase ::= 'UPPER(' DynamicOperand ')'
 Arithmetic ::= DynamicOperand ('+'|'-'|'*'|'/') DynamicOperand
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Ordering</title>
 <programlisting><![CDATA[
 	
@@ -886,8 +909,8 @@ Ordering ::= DynamicOperand [Order]
 Order ::= 'ASC' | 'DESC'
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Columns</title>
 <programlisting><![CDATA[
 	
@@ -901,8 +924,8 @@ propertyName ::= Name
 columnName ::= Name
 
 ]]></programlisting>
-			</sect3>
-			<sect3>
+			</sect2>
+			<sect2>
 				<title>Limit and Offset</title>
 <programlisting><![CDATA[
 	
@@ -910,7 +933,6 @@ Limit ::= 'LIMIT' count [ 'OFFSET' offset ]
 count ::= /* Positive integer value */
 offset ::= /* Non-negative integer value */
 ]]></programlisting>
-			</sect3>
 		</sect2>
 	</sect1>
   <sect1 id="fulltext-search-query-language">	
@@ -950,20 +972,20 @@ offset ::= /* Non-negative integer value */
 			a <emphasis>negative term</emphasis>, and it reduces the rank of any node whose property values contain the
 			the value. To specify a negative term, simply prefix the term with a hyphen ('-').
 		</para>
-		<sect2 id='fulltext-grammar'>
-			<title>Grammar</title>
-			<para>
-				The grammar for this full-text search language is specified in Section 6.7.19 of the 
-				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, but it is also included here as a convenience.
-				<note>
-					<para>
-						The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
-						Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
-						Terms surrounded by '{' and '}' denote terms that appear zero or more times.
-						Parentheses are used to identify groups, and are often used to surround possible values. 
-					</para>
-				</note>
-			</para>
+		<para>
+			The grammar for this full-text search language is specified in Section 6.7.19 of the 
+			<ulink url="&JSR283;">JCR 2.0 specification</ulink>, but it is also included here as a convenience.
+			<note>
+				<para>
+					The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
+					Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
+					Terms surrounded by '{' and '}' denote terms that appear zero or more times.
+					Parentheses are used to identify groups, and are often used to surround possible values. 
+				</para>
+			</note>
+		</para>
+		<sect2 id='fulltext-search-expressions'>
+			<title>Full-text Search Expressions</title>
 <programlisting><![CDATA[
 
 FulltextSearch ::= Disjunct {Space 'OR' Space Disjunct}
