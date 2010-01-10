@@ -48,7 +48,6 @@ class BasicJpaConnection implements RepositoryConnection {
     private final String name;
     private final CachePolicy cachePolicy;
     private final EntityManagers entityManagers;
-    private EntityManager entityManager;
     private final UUID rootNodeUuid;
     private final String nameOfDefaultWorkspace;
     private final String[] predefinedWorkspaceNames;
@@ -76,8 +75,6 @@ class BasicJpaConnection implements RepositoryConnection {
         this.name = sourceName;
         this.cachePolicy = cachePolicy; // may be null
         this.entityManagers = entityManagers;
-        // this.entityManager = entityManagers.checkout();
-        // assert this.entityManagers != null;
         this.rootNodeUuid = rootNodeUuid;
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
@@ -121,7 +118,12 @@ class BasicJpaConnection implements RepositoryConnection {
      */
     public boolean ping( long time,
                          TimeUnit unit ) {
-        return entityManager != null ? entityManager.isOpen() : false;
+        EntityManager entityManager = entityManagers.checkout();
+        try {
+            return entityManager != null ? entityManager.isOpen() : false;
+        } finally {
+            entityManagers.checkin(entityManager);
+        }
     }
 
     /**
@@ -141,10 +143,10 @@ class BasicJpaConnection implements RepositoryConnection {
         }
 
         RequestProcessor processor = null;
+        EntityManager entityManager = null;
         boolean commit = true;
-
         try {
-            this.entityManager = entityManagers.checkout();
+            entityManager = entityManagers.checkout();
 
             if (entityManager == null) {
                 throw new RepositorySourceException(JpaConnectorI18n.connectionIsNoLongerOpen.text(name));
@@ -161,37 +163,39 @@ class BasicJpaConnection implements RepositoryConnection {
                 commit = false;
             }
         } finally {
-            try {
-                processor.close();
-            } finally {
-                // Now commit or rollback ...
+            if (processor != null) {
                 try {
-                    EntityTransaction txn = entityManager.getTransaction();
-                    if (txn != null) {
-                        if (commit) {
-                            // Now commit the transaction ...
-                            txn.commit();
-                        } else {
-                            // Need to rollback the changes made to the repository ...
-                            txn.rollback();
+                    processor.close();
+                } finally {
+                    // Now commit or rollback ...
+                    try {
+                        EntityTransaction txn = entityManager.getTransaction();
+                        if (txn != null) {
+                            if (commit) {
+                                // Now commit the transaction ...
+                                txn.commit();
+                            } else {
+                                // Need to rollback the changes made to the repository ...
+                                txn.rollback();
+                            }
                         }
+                    } catch (Throwable commitOrRollbackError) {
+                        if (commit && !request.hasError()) {
+                            // Record the error on the request ...
+                            request.setError(commitOrRollbackError);
+                        }
+                        commit = false; // couldn't do it
                     }
-                } catch (Throwable commitOrRollbackError) {
-                    if (commit && !request.hasError()) {
-                        // Record the error on the request ...
-                        request.setError(commitOrRollbackError);
+                    if (commit) {
+                        // Now that we're not in a transaction anymore, notify the observer of the committed changes ...
+                        processor.notifyObserverOfChanges();
                     }
-                    commit = false; // couldn't do it
-                }
-                if (commit) {
-                    // Now that we're not in a transaction anymore, notify the observer of the committed changes ...
-                    processor.notifyObserverOfChanges();
                 }
             }
 
             // Do this only once ...
             try {
-                entityManagers.checkin(entityManager);
+                entityManagers.checkin(entityManager); // even if null
             } finally {
                 entityManager = null;
             }
