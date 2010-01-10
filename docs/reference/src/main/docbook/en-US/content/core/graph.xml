@@ -57,7 +57,7 @@
 			names are a very important concept.
 		</para>
 		<para>
-			JBoss DNA names consist of a local part and are qualified with a namespaces.  The local part can consist of
+			JBoss DNA names consist of a local part that is qualified with a namespace.  The local part can consist of
 			any character, and the namespace is identified by a URI.  Namespaces were introduced in the
 			<link linkend="execution-context">previous chapter</link> and are managed by the &ExecutionContext;'s
 			<link linkend="namespace-registry">namespace registry</link>.  Namespaces help reduce the risk of
@@ -102,7 +102,7 @@ public interface &Name; extends Comparable&lt;&Name;>, &Serializable;, &Readable
 		</para>
 		<para>
 			The factory for creating &Name; objects is called &NameFactory; and is available within the &ExecutionContext;, 
-			via the <code>getValueFactories()</code> method.  But before we see that, let's first discuss how names are represented as strings.
+			via the <code>getValueFactories()</code> method.  
 		</para>
 		<para>
 			We'll see how names are used later on, but one more point to make:  &Name; is both serializable and comparable,
@@ -351,7 +351,7 @@ public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property
 		</para>
 	</sect1>
 	<sect1 id="graph-value-factories">
-		<title>Values and value factories</title>
+		<title>Values and Value Factories</title>
 		<para>
 			JBoss DNA properties can hold a variety of value object types: strings, names, paths, 
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
@@ -707,6 +707,11 @@ public interface Readable {
 						"&amp;amp;", '&amp;lt;', '&amp;gt;', '&amp;quot;', and '&amp;#039;'.
 					</para>
 				</listitem>
+				<listitem>
+					<para>The &FileNameEncoder; escapes characters that are not allowed in file names on Linux, OS X, or Windows XP. 
+						Unsafe characters are escaped as described in the &UrlEncoder;.
+					</para>
+				</listitem>
 			</itemizedlist>
 			All of these classes also implement the &TextDecoder; interface, which defines a method that
 			<emphasis>decodes</emphasis> an encoded string using the opposite transformation.
@@ -728,7 +733,7 @@ public interface Readable {
 		      <para>the &Path; to the node; or</para>
 		    </listitem>
 		    <listitem>
-		      <para>one or more <emphasis>identification properties</emphasis> that are likely source=specific
+		      <para>one or more <emphasis>identification properties</emphasis> that are likely source-specific
 						and that are represented with &Property; objects; or</para>
 		    </listitem>
 		    <listitem>
@@ -804,7 +809,7 @@ public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparabl
 			The next few subsections describe how to use a &Graph; instance.
 		</para>
 		<sect2 id="graph-api-workspaces">
-			<title>Using workspaces</title>
+			<title>Using Workspaces</title>
 		<para>
 			JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis> that provide different views of the content.  Some graphs may have
 			one workspace, while others may have multiple workspaces.  Some graphs will allow a client to create new workspaces or destroy
@@ -880,7 +885,7 @@ graph.createWorkspace().clonedFrom("original").namedSomethingLike("something");
 </programlisting>
     </sect2>
 		<sect2 id="graph_api_nodes">
-			<title>Working with nodes</title>
+			<title>Working with Nodes</title>
 		<para>
 			Now let's switch to working with nodes.  This first example returns a map of properties (keyed by property name) 
 			for a node at a specific &Path;:
@@ -1280,7 +1285,7 @@ for ( &Location; child : results.getNode(path2) ) {
 		</table>
     <para>
 			Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
-			For example, DNA will likely support searching repository content in sources through an additional subclass of &Request;.
+			For example, DNA has recently added support for searching repository content in sources through an additional subclass of &Request;.
 			Getting the version history for a node will likely be another kind of request added in an upcoming release.
 		</para>
 		<para>
@@ -1320,7 +1325,7 @@ for ( &Location; child : results.getNode(path2) ) {
 		</para>
 		<para>
 			Many event frameworks define the listeners and sources as interfaces.  While this is often useful, it requires
-			the implementations properly address the thread-safe semantics of managing and calling the listeners.
+			that the implementations properly address the thread-safe semantics of managing and calling the listeners.
 			The JBoss DNA observation framework uses abstract or concrete classes to minimize the effort required for implementing
 			&ChangeObserver; or &Observable;. These abstract classes provide implementations for a number of
 			utility methods (such as the <code>unregister()</code> method on &ChangeObserver;) that
@@ -1391,8 +1396,8 @@ for ( &Location; child : results.getNode(path2) ) {
 		</sect2>
 		<para>
 			As we'll see in the <link linkend="connector-framework">next chapter</link>, each connector is responsible for propagating
-			the &ChangeRequest; objects to the connector's &Observer;.  But that's not the only use of &Observers;.
-			We'll also see later how the <link linkend="sequencing-framework">sequencing system</link> uses &Observers; to monitor
+			the &ChangeRequest; objects to the connector's &Observer;.  But that's not the only use of &Observer;s.
+			We'll also see later how the <link linkend="sequencing-framework">sequencing system</link> uses &Observer;s to monitor
 			for changes in the graph content to determine which, if any, sequencers should be run.  And, the
 			<link linkend="jcr">JCR implementation</link> also uses the observation framework to propagate those changes
 			to JCR clients.

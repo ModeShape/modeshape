@@ -33,7 +33,7 @@
   <para>
   	The JBoss DNA project uses automated testing to verify that the software is doing what it's supposed to
 		and not doing what it shouldn't do.  These automated tests are run continuously and also act as regression tests,
-		ensuring that we known if any problems we find and fix reappear later.  All of our tests are executed as part of
+		ensuring that we know if any problems we find and fix reappear later.  All of our tests are executed as part of
 		our <link linkend="maven">Maven</link> build process, and the entire build process (including the tests)
 		is automatically run using <link linkend="hudson">Hudson</link> continuous integration system.
   </para>
@@ -51,7 +51,7 @@
 			they may rely upon the file resources included in the project, but these tests should require no external resources
 			(like databases or servers).  Note that our unit tests are run during the "test" phase of the standard
 			<ulink url="http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">Maven lifecycle</ulink>.
-			This means that they are executed against the raw .class files created during complication.
+			This means that they are executed against the raw .class files created during compilation.
 		</para>
 		<para>
 			Developers are expected to run all of the JBoss DNA unit tests in their local environment before committing changes to SVN.
@@ -138,7 +138,7 @@
 			behavior.
 	  </para>
 	  <para>
-		  JBoss DNA has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
+		  JBoss DNA has implemented almost all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
 		  features. The only optional feature not implemented is versioning, and that will be coming soon.
 		</para>
 		<para>

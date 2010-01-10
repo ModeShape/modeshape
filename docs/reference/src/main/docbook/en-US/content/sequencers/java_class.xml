@@ -106,7 +106,7 @@
 				    <class:annotation jcr:name="AnnotationNameN"/>
 			    </class:method>
 		    </class:methods>
-		    <class:fields jcr:name="class:field">
+		    <class:fields jcr:name="class:fields">
 			    <class:field jcr:name="fieldName">
 				    <class:annotation jcr:name="AnnotationName1"/>
 				    ...

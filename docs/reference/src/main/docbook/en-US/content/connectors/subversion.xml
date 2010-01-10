@@ -31,7 +31,7 @@
 <chapter id="subversion-connector">
   <title>Subversion Connector</title>
   <para>
-		This connector provides read-only access to the directories and folders within a Subversion repository, providing that content in
+		This connector provides read and write access to the directories and folders within a Subversion repository, providing that content in
 		the form of <code>nt:file</code> and <code>nt:folder</code> nodes.
 		This source considers a workspace name to be the path to the directory on the repository's root directory location
 		that represents the root of that workspace (e.g., "trunk" or "branches"). 
@@ -53,20 +53,25 @@
 			</thead>
 			<tbody>
 				<row>
+					<entry>cachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy to use for caching information in the repository.  When not used, this source will not define a specific
+						duration for caching information.</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspaceAllowed</entry>
+					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
+				</row>
+				<row>
+					<entry>defaultWorkspaceName</entry>
+					<entry>Optional property that, if used, specifies the name of the workspace to use when no workspace name is specified in an operation.
+						Each workspace name is treated as a path relative to the SVN repository being exposed (e.g., a workspace name of "trunk" will map 
+						to the URL "http://acme.com/repo/trunk" if the repository root URL is "http://acme.com/repo/").
+					</entry>
+				</row>
+				<row>
 					<entry>name</entry>
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>repositoryRootURL</entry>
-					<entry>
-						Required property that should be set with the URL to the Subversion repository.
-					</entry>
-				</row>
-				<row>
-					<entry>username</entry>
-					<entry>
-						The username that should be used to establish a connection to the repository.
-					</entry>
 				</row>
 				<row>
 					<entry>password</entry>
@@ -76,22 +81,17 @@
 					</entry>
 				</row>
 				<row>
-					<entry>directoryForDefaultWorkspace</entry>
-					<entry>Optional property that, if used, specifies the relative path of the directory in the repository that should be
-						exposed as the default workspace.
-						Each workspace name is the URL of the portion of the SVN repository being exposed (e.g., "http://acme.com/repo/trunk").
-					</entry>
-				</row>
-				<row>
 					<entry>predefinedWorkspaceNames</entry>
 					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
-						Each workspace name is the URL of the portion of the SVN repository being exposed (e.g., "http://acme.com/repo/trunk").
-						This can be coupled with a "fase" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+						Each workspace name is treated as a path relative to the SVN repository being exposed (e.g., a workspace name of "trunk" will map 
+						to the URL "http://acme.com/repo/trunk" if the repository root URL is "http://acme.com/repo/").
+						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of predefined workspaces.
 					</entry>
 				</row>
 				<row>
-					<entry>creatingWorkspaceAllowed</entry>
-					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					<entry>repositoryRootURL</entry>
+					<entry>
+						Required property that should be set with the URL to the Subversion repository.
 					</entry>
 				</row>
 				<row>
@@ -100,10 +100,10 @@
 						following a communication failure. The default value is '0'.</entry>
 				</row>
 				<row>
-					<entry>cacheTimeToLiveInMilliseconds</entry>
-					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
-						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
-						duration for caching information.</entry>
+					<entry>username</entry>
+					<entry>
+						The username that should be used to establish a connection to the repository.
+					</entry>
 				</row>
 			</tbody>
 		</tgroup>
@@ -118,8 +118,8 @@ config.repositorySource("SVN Store")
       .usingClass(SVNRepositorySource.class)
       .setDescription("The DNA SVN repository (anonymous access)")
       .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/dna");
-      .setProperty("directoryForDefaultWorkspace", "http://anonsvn.jboss.org/repos/dna/trunk");
-      .setProperty("predefinedWorkspaceNames", new String[] {"http://anonsvn.jboss.org/repos/dna/trunk });
+      .setProperty("defaultWorkspaceName", "trunk");
+      .setProperty("predefinedWorkspaceNames", new String[] {"trunk });
  ]]></programlisting>
 	<para>
 		Another way to configure the Subversion connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
@@ -145,8 +145,8 @@ config.repositorySource("SVN Store")
                     dna:classname="org.jboss.dna.graph.connector.svn.SVNRepositorySource" 
                     dna:description="The DNA SVN repository (anonymous access)"
                     dna:repositoryRootUrl="http://anonsvn.jboss.org/repos/dna"
-                    dna:directoryForDefaultWorkspace="http://anonsvn.jboss.org/repos/dna/trunk"
-                    dna:predefinedWorkspaceNames="http://anonsvn.jboss.org/repos/dna/trunk"
+                    dna:defaultWorkspaceName="trunk"
+                    dna:predefinedWorkspaceNames="trunk"
                     dna:defaultWorkspaceName="default"/>    
     </dna:sources>
     

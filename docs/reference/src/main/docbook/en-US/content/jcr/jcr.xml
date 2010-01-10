@@ -134,7 +134,7 @@ final &LoginContext; loginContext = ...;
       </para>
 	  </sect2>
 		<sect2 id="jcr-sessions-custom">
-  		<title>Using Custom security</title>
+  		<title>Using Custom Security</title>
 			<para>
 		Not all applications can or want to use JAAS for their authentication system, so JBoss DNA provides a way to integrate your own custom
 		security provider.  The first step is to provide a custom implementation of &SecurityContext; that integrates with your application security, allowing
@@ -150,10 +150,6 @@ final &LoginContext; loginContext = ...;
 &Session; session = repository.login(new &SecurityContextCredentials;(securityContext));
 			</programlisting>			
       Once the &Session; is obtained, the repository content can be accessed and modified like any other JCR repository.
-		</para>
-		<para>
-		  At this time, no roles are required to connect to any workspace, but restrictions on workspace connections will likely be added to JBoss DNA in the near future.  
-		  Please see the <link linkend="dna_jcr_security">JCR Security section</link> for more details on how access is controlled.
 		</para>
 	</sect2>
 		<sect2 id="jcr-sessions-servlet">
@@ -214,7 +210,7 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				JBoss DNA does currently supports the optional JCR locking and observation features (though there still are
+				JBoss DNA does currently support the optional JCR locking and observation features (though there still are
 				a few known issues with our implementation of observation).
 				<note>
 					<para>
@@ -236,13 +232,13 @@ final &LoginContext; loginContext = ...;
 			</para>
 			<para>
 				JBoss DNA has extended the set of JCR-defined actions ("add_node", "set_property", "remove", and "read") with additional actions ("register_type",  
-				"register_namespace", and "unlock_any").  The register_type and register_namespace permissions restrict the ability to register (and unregister) types and namespaces, respectively.
+				"register_namespace", and "unlock_any").  The register_type and register_namespace permissions restrict the ability to register (and unregister) node types and namespaces, respectively.
 				The unlock_any permission grants the user the ability to unlock any locked node or branch (as opposed to users without that permission who can only unlock nodes or branches that they 
 				have locked themselves or for which they hold the lock token).  
 				Permissions to perform these actions are aggregated in roles that can be assigned to users. 
 			</para>
 			<para>
-				JBoss DNA currently defines three roles: <code>READONLY</code>, <code>READWRITE</code>, and <code>ADMIN</code>.  If the &Credentials; passed into 
+				JBoss DNA currently defines three roles: <code>readonly</code>, <code>readwrite</code>, and <code>admin</code>.  If the &Credentials; passed into 
 				<code>Session.login(...)</code> (or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) have any of these roles, 
 				the session will have the corresponding access to all workspaces within the repository.  The mapping from the roles to the actions that they allow is provided below.
 				for any values of <code>path</code>.  
@@ -257,9 +253,9 @@ final &LoginContext; loginContext = ...;
 			<thead>
 				<row>
 		  		<entry>Action Name</entry>
-		  		<entry>READONLY</entry>
-		  		<entry>READWRITE</entry>
-		  		<entry>ADMIN</entry>
+		  		<entry>readonly</entry>
+		  		<entry>readwrite</entry>
+		  		<entry>admin</entry>
 				</row>
 			</thead>
 			<tbody>
@@ -331,25 +327,25 @@ final &LoginContext; loginContext = ...;
 			<tbody>
 				<row>
 					<entry>ROLE_NAME</entry>
-					<entry><code>READONLY</code>, <code>ADMIN</code></entry>
+					<entry><code>readonly</code>, <code>admin</code></entry>
 					<entry>Grants the named role to the assigned user on every workspace in any repository on the DNA server.</entry>
 				</row>
 				<row>
 					<entry>ROLE_NAME.REPOSITORY_NAME</entry>
-					<entry><code>READONLY.dna_repo</code>, <code>ADMIN.localRepository</code></entry>
+					<entry><code>readonly.dna_repo</code>, <code>admin.localRepository</code></entry>
 					<entry>Grants the named role to the assigned user on every workspace in the named repository on the DNA server.</entry>
 				</row>
 				<row>
 					<entry>ROLE_NAME.REPOSITORY_NAME.WORKSPACE_NAME</entry>
-					<entry><code>READONLY.dna_repo.jsmith</code>, <code>ADMIN.localRepository.default</code></entry>
+					<entry><code>readonly.dna_repo.jsmith</code>, <code>admin.localRepository.default</code></entry>
 					<entry>Grants the named role to the assigned user on the named workspace in the named repository on the DNA server.</entry>
 				</row>
 			</tbody>
 		</tgroup>
 	</table>			
 			<para>
-				It is also possible to grant more than one role to the same user.  For example, the user jsmith could be granted the roles READ_ONLY.production, READ_WRITE.production.jsmith,
-				and READ_WRITE.staging to allow read-only access to any workspace on a production repository, read/write access to a personal workspace on the same production repository,
+				It is also possible to grant more than one role to the same user.  For example, the user jsmith could be granted the roles readonly.production, readwrite.production.jsmith,
+				and readwrite.staging to allow read-only access to any workspace on a production repository, read/write access to a personal workspace on the same production repository,
 				and read/write access to any workspace in a staging repository.    
 			</para>
 			<para>
@@ -382,7 +378,7 @@ final &LoginContext; loginContext = ...;
 				</note>
 			</para>
 			<para>
-				Although the JSR-283 specification is not yet final, it does provide a useful means of programmatically defining JCR node types.  JBoss DNA supports a comparable
+				The JSR-283 specification provides a useful means of programmatically defining JCR node types.  JBoss DNA supports a comparable
 				node type definition API that implements the functionality from the specification, albeit with interfaces in the <code>org.jboss.dna.jcr.nodetype</code> package.  
 				The intent is to deprecate these classes and replace their usage with the JSR-283 equivalents when JBoss DNA fully supports
 				the JSR-283 final adopted specification in a future release.
@@ -450,14 +446,24 @@ if (!nodeTypeSource.isValid()) {
 &JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
 nodeTypeManager.registerNodeTypes(nodeTypeSource);
 </programlisting>
+
     The &CndNodeTypeSource; class actually implements the &JcrNodeTypeSource; interface, so other implementations can actually be defined.
     For more information, see the JavaDoc for &JcrNodeTypeSource;.
-				<note>
-					<para> JBoss DNA does not yet support a simple means of unregistering types at this time, so be careful before registering types outside of a 
-					sandboxed environment.
-					</para>
-				</note> 	
+			</para>
+			<para> 
+				JBoss DNA now supports a simple means of unregistering types, although it is not possible to unregister types that are
+				currently being used by nodes or as required primary types or supertypes of other types.  Unused node types can be unregistered 
+				with the following code:
+<programlisting>
+String unusedNodeTypeName = ...;
 
+&Session; session = ... ;
+// Obtain the DNA-specific node type manager ...
+&Workspace; workspace = session.getWorkspace();
+&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
+nodeTypeManager.unregisterNodeType(Collections.singleton(unusedNodeTypeName));
+</programlisting>
+				
 			</para>
 		</sect2>
 	</sect1>

@@ -92,6 +92,7 @@
 <!ENTITY UrlEncoder				       			"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>UrlEncoder</classname></ulink>">
 <!ENTITY XmlNameEncoder				       	"<ulink url='&API;common/text/Jsr283Encoder.html'><classname>XmlNameEncoder</classname></ulink>">
 <!ENTITY XmlValueEncoder				      "<ulink url='&API;common/text/XmlValueEncoder.html'><classname>XmlValueEncoder</classname></ulink>">
+<!ENTITY FileNameEncoder				      "<ulink url='&API;common/text/FileNameEncoder.html'><classname>FileNameEncoder</classname></ulink>">
 <!ENTITY Problem								      "<ulink url='&API;common/collection/Problem.html'><interface>Problem</interface></ulink>">
 <!ENTITY Problems								      "<ulink url='&API;common/collection/Problems.html'><interface>Problems</interface></ulink>">
 
@@ -172,12 +173,13 @@
 <!ENTITY MimeTypeDetector					  	"<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 <!ENTITY MockSequencerOutput		    	"<ulink url='&API;graph/sequencer/MockSequencerOutput.html'><interface>MockSequencerOutput</interface></ulink>">
 <!ENTITY MockSequencerContext		    	"<ulink url='&API;graph/sequencer/MockSequencerContext.html'><interface>MockSequencerContext</interface></ulink>">
-<!ENTITY Observer											"<ulink url='&API;graph/observer/Observer.html'><interface>Observer</interface></ulink>">
-<!ENTITY Observable										"<ulink url='&API;graph/observer/Observable.html'><interface>Observable</interface></ulink>">
-<!ENTITY ChangeObserver								"<ulink url='&API;graph/observer/ChangeObserver.html'><classname>ChangeObserver</classname></ulink>">
-<!ENTITY NetChangeObserver						"<ulink url='&API;graph/observer/NetChangeObserver.html'><classname>NetChangeObserver</classname></ulink>">
-<!ENTITY ChangeObservers							"<ulink url='&API;graph/observer/ChangeObservers.html'><classname>ChangeObservers</classname></ulink>">
-<!ENTITY Changes											"<ulink url='&API;graph/observer/Changes.html'><classname>Changes</classname></ulink>">
+<!ENTITY Observer											"<ulink url='&API;graph/observe/Observer.html'><interface>Observer</interface></ulink>">
+<!ENTITY Observable										"<ulink url='&API;graph/observe/Observable.html'><interface>Observable</interface></ulink>">
+<!ENTITY ChangeObserver								"<ulink url='&API;graph/observe/ChangeObserver.html'><classname>ChangeObserver</classname></ulink>">
+<!ENTITY NetChange						"<ulink url='&API;graph/observe/NetChange.html'><classname>NetChange</classname></ulink>">
+<!ENTITY NetChangeObserver						"<ulink url='&API;graph/observe/NetChangeObserver.html'><classname>NetChangeObserver</classname></ulink>">
+<!ENTITY ChangeObservers							"<ulink url='&API;graph/observe/ChangeObservers.html'><classname>ChangeObservers</classname></ulink>">
+<!ENTITY Changes											"<ulink url='&API;graph/observe/Changes.html'><classname>Changes</classname></ulink>">
 <!ENTITY SearchEngine									"<ulink url='&API;graph/search/SearchEngine.html'><interface>SearchEngine</interface></ulink>">
 
 <!-- Types in dna-repository -->

@@ -35,7 +35,7 @@
 		service definitions, policy files, images, media, documents, presentations, application components, 
 		reusable libraries, configuration files, application installations, databases schemas, management scripts, and so on.
 		Unlocking the information buried within	all of those files is what JBoss DNA sequencing is all about.  
-		As files are loaded into the repository, you JBoss DNA can automatically sequence these files to extract 
+		As files are loaded into the repository, you JBoss DNA instance can automatically sequence these files to extract 
 		from their content meaningful information that can be stored in the repository, where it can then be 
 		searched, accessed, and analyzed using the JCR API.
 	</para>
@@ -222,11 +222,11 @@ public interface &SequencerOutput; {
 					</row>
 				</thead>
 				<tbody>
-					<row><entry>/a/(b|c|d)</entry><entry>Match children of the top level node "<code>a</code>" that are named "<code>a</code>", 
-							 "<code>b</code>" or "<code>c</code>". None of the nodes may have same-name-sibling indexes.</entry></row>
+					<row><entry>/a/(b|c|d)</entry><entry>Match children of the top level node "<code>a</code>" that are named "<code>b</code>", 
+							 "<code>c</code>" or "<code>d</code>". None of the nodes may have same-name-sibling indexes.</entry></row>
 					<row><entry>/a/b[c/d]</entry><entry>Match node "<code>b</code>" child of the top level node "<code>a</code>", when node
 					     "<code>b</code>" has a child named "<code>c</code>", and "<code>c</code>" has a child named "<code>d</code>".
-							 Node "<code>b</code>" is the selected node, while nodes "<code>b</code>" and "<code>b</code>" are used as criteria but are not
+							 Node "<code>b</code>" is the selected node, while nodes "<code>c</code>" and "<code>d</code>" are used as criteria but are not
 							 selected.</entry></row>
 					<row><entry>/a(/(b|c|d|)/e)[f/g/@something]</entry><entry>Match node "<code>/a/b/e</code>", "<code>/a/c/e</code>", "<code>/a/d/e</code>",
 					     or "<code>/a/e</code>" when they also have a child "<code>f</code>" that itself has a child "<code>g</code>" with property
@@ -258,7 +258,7 @@ public interface &SequencerOutput; {
 		</para>
   </sect1>
   <sect1 id="sequencer-library">
-    <title>Out-of-the-box sequencers</title>
+    <title>Out-of-the-box Sequencers</title>
     <para>
     	A number of sequencers are already available in JBoss DNA, and are outlined in detail
       <link linkend="provied-sequencers-part">later in the document</link>.
@@ -267,8 +267,8 @@ public interface &SequencerOutput; {
     </para>
   </sect1>
   <sect1 id="custom-sequencers">
-	  <title>Creating custom sequencers</title>
-	  <para>The current release of JBoss DNA comes with six sequencers.  However, it's very easy to create your own
+	  <title>Creating Custom Sequencers</title>
+	  <para>The current release of JBoss DNA comes with eleven sequencers.  However, it's very easy to create your own
 	  sequencers and to then configure JBoss DNA to use them in your own application.
 	  </para>
 	  <para>

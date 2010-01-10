@@ -33,8 +33,8 @@
   <para>
   	The Infinispan repository connector allows a <ulink url="http://www.jboss.org/infinispan/">Infinispan</ulink> instance to be 
 		used as a JBoss DNA (and thus JCR) repository.  This provides a way for the content in a repository to be stored in an
-		effective, scalable, and distributed data grid.  Like other connectors, this can be paired with other repository sources
-		to provide a local or <link linkend="federation-connector">federated</link> repository.
+		effective, scalable, and distributed data grid,
+		and can be <link linkend="federation-connector">federated</link> with other repository sources to provide a distributed repository.
   </para>
 	<para>
 		The &InfinispanSource; class provides a number of JavaBean properties that control its behavior:
@@ -51,10 +51,6 @@
 				</row>
 			</thead>
 			<tbody>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
 				<row>
 					<entry>cacheManagerJndiName</entry>
 					<entry>Optional property that, if used, specifies the name in JNDI where an existing Infinispan Cache Manager instance can be found.
@@ -76,6 +72,10 @@
 					<entry>defaultWorkspaceName</entry>
 					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
 						if none is specified.</entry>
+				</row>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
 					<entry>predefinedWorkspaceNames</entry>

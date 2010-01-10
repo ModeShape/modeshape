@@ -33,12 +33,12 @@
   <para>
 	  The JCR API defines a way to query a repository for content that meets user-defined criteria. 
 	  The JCR API actually makes it possible for implementations to support multiple query languages,
-	  and the only language required by <ulink url="&JSR170;">JCR 1.0</ulink> is a subset of XPath. The 1.0 specification
+	  but the only language required by <ulink url="&JSR170;">JCR 1.0</ulink> is a subset of XPath. The 1.0 specification
 	  also defines a SQL-like query language, but supporting it is optional.
   </para>
 	<para>
-		JBoss DNA now support this query feature, including the required XPath language and two other languages not
-		defined by the specification. This chapter describes how your applications can use queries to search
+		JBoss DNA now supports this query feature, including the required XPath language and two other languages not
+		defined in the <ulink url="&JSR170;">JCR 1.0</ulink> specification. This chapter describes how your applications can use queries to search
 		your repositories, and defines the three query languages that are available with JBoss DNA.
 	</para>
   <sect1 id="jcr-query-api">	
@@ -46,7 +46,7 @@
 	  <para>
 			Like most operations in the JCR API, querying is done through a &Session; instance, from which can be obtained
 			the &QueryManager; that defines methods for creating &Query; objects, storing queries as &Node;s in the repository,
-			and reconstituting queries that were stored on &Nodes;s.  Thus, querying a repository generally follows this pattern:
+			and reconstituting queries that were stored on &Node;s.  Thus, querying a repository generally follows this pattern:
 		</para>
 <programlisting role="JAVA"><![CDATA[
 // Obtain the query manager for the session ...
@@ -101,7 +101,7 @@ session.logout();
 		  the "document view", adapting XPath to workspace content is quite natural.
 		</para>
 		<para>
-			An JCR XPath query specifies the subset of nodes in a workspace that satisfy the constraints defined in the query.
+			A JCR XPath query specifies the subset of nodes in a workspace that satisfy the constraints defined in the query.
 			Constraints can limit the nodes in the results to be those nodes with a specific (primary or mixin) node type,
 			with properties having particular values, or to be within a specific subtree of the workspace.
 			The query also defines how the nodes are to be returned in the result sets using column specifiers
@@ -229,7 +229,7 @@ WHERE PATH([my:type]) LIKE '/nodes/%'
 	    <title>Property Constraints</title>
 			<para>
 				JCR 1.0 specifies that attribute tests on the last location step is required, but that
-				predicate tests on any other location steps is optional.
+				predicate tests on any other location steps are optional.
 			</para>
 			<para>
 				JBoss DNA does support using attribute tests on the last location step to specify
@@ -536,14 +536,14 @@ ORDER BY nodeSet1.title,
         <listitem>
 	        <para>
 						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
-						of discreet static operands.
+						of discrete static operands.
 						For example, "<code>WHERE ... [my:type].[prop1] IN (3,5,7,10,11,50) ...</code>".
 						For detail, see the <link linkend="jcr-sql2-set-constraints">grammar for set constraints</link>.
 	        </para>
         </listitem>
         <listitem>
 	        <para>
-						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discreet operands.
+						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discrete operands.
 						For example, "<code>WHERE ... [my:type].[prop1] BETWEEN 3 EXCLUSIVE AND 10 ...</code>".
 						For detail, see the <link linkend="jcr-sql2-between-constraints">grammar for between constraints</link>.
 	        </para>

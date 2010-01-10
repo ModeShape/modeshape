@@ -34,14 +34,14 @@
 		This connector exposes an area of the local file system as a graph of "nt:file" and "nt:folder" nodes. 
 		The connector can be configured so that the workspace name is either a path to the directory on the file system that represents the root of that
 		workspace <emphasis>or</emphasis> the name of subdirectory within a root directory (see the <code>workspaceRootPath</code> property below). Each 
-		connector can define whether it allows new workspaces can be created, but if so the names of the new workspaces
+		connector can define whether it allows new workspaces to be created, but if so the names of the new workspaces
 		must represent valid paths to existing directories.
 		<note>
 			<para>
 			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.
 			The <code>jcr:content</code> node will have a primary type of <code>dna:resource</code>.  The <code>dna:resource</code> node type is equivalent
 			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
-			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will not move or delete the files outside of DNA.
+			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will move or delete the files outside of DNA.
 			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
 
 			Additional properties (including mixin types) can be added by setting the <code>customPropertiesFactory</code> property to point to an implementation of 
@@ -65,19 +65,14 @@
 			</thead>
 			<tbody>
 				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>updatesAllowed</entry>
-					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
-						The default value is "false" to avoid unintentional security vulnerabilities.</entry>
-				</row>
-				<row>
-					<entry>cacheTimeToLiveInMilliseconds</entry>
-					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
-						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
+					<entry>cachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy for this repository source.  When not used, this source will not define a specific
 						duration for caching information.</entry>
+				</row>
+				<row>
+					<entry>creatingWorkspaceAllowed</entry>
+					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+					</entry>
 				</row>
 				<row>
 					<entry>defaultWorkspaceName</entry>
@@ -85,9 +80,8 @@
 						if none is specified.</entry>
 				</row>
 				<row>
-					<entry>creatingWorkspaceAllowed</entry>
-					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
-					</entry>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
 					<entry>predefinedWorkspaceNames</entry>
@@ -103,8 +97,13 @@
 				<row>
 					<entry>rootNodeUuid</entry>
 					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
-					specified, a random UUID is generated each time that the repository is started.</entry>
+					specified, a default UUID is used.</entry>
 				</row>	
+				<row>
+					<entry>updatesAllowed</entry>
+					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
+						The default value is "false" to avoid unintentional security vulnerabilities.</entry>
+				</row>
 				<row>
 					<entry>workspaceRootPath</entry>
 					<entry>

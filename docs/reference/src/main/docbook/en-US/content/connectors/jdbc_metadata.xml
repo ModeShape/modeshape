@@ -72,18 +72,10 @@
 			</thead>
 			<tbody>
 				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, defines the UUID of the root node in the repository.  If not used,
-						then a new UUID is generated.</entry>
-				</row>
-				<row>
-					<entry>nameOfDefaultWorkspace</entry>
-					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
+					<entry>cachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy to use for this repository source.  When not used, this source will not define a specific
+						duration for caching information.
+					</entry>
 				</row>
 				<row>
 					<entry>dataSourceJndiName</entry>
@@ -92,10 +84,17 @@
 					</entry>
 				</row>
 				<row>
-					<entry>driverClassName</entry>
+					<entry>defaultCatalogName</entry>
 					<entry>
-						The name of the JDBC driver class.
-						This is not required if the DataSource is found in JNDI, but is required otherwise.
+						The name to use for the catalog name if the database does not support catalogs or the database has a catalog with the empty string
+						as a name.  The default value is "default".
+					</entry>
+				</row>
+				<row>
+					<entry>defaultSchemaName</entry>
+					<entry>
+						The name to use for the schema name if the database does not support schemas or the database has a schema with the empty string
+						as a name.  The default value is "default".
 					</entry>
 				</row>
 				<row>
@@ -106,24 +105,17 @@
 					</entry>
 				</row>
 				<row>
-					<entry>url</entry>
+					<entry>driverClassName</entry>
 					<entry>
-						The URL that should be used when creating JDBC connections using the JDBC driver class.
-						This is not required if the DataSource is found in JNDI.
+						The name of the JDBC driver class.
+						This is not required if the DataSource is found in JNDI, but is required otherwise.
 					</entry>
 				</row>
 				<row>
-					<entry>username</entry>
+					<entry>idleTimeInSecondsBeforeTestingConnections</entry>
 					<entry>
-						The username that should be used when creating JDBC connections using the JDBC driver class.
-						This is not required if the DataSource is found in JNDI.
-					</entry>
-				</row>
-				<row>
-					<entry>password</entry>
-					<entry>
-						The password that should be used when creating JDBC connections using the JDBC driver class.  
-						This is not required if the DataSource is found in JNDI.
+						The number of seconds after a connection remains in the pool that the connection should be tested to ensure it is still valid.
+						The default is 180 seconds (or 3 minutes).
 					</entry>
 				</row>
 				<row>
@@ -131,13 +123,6 @@
 					<entry>
 						The maximum number of connections that may be in the connection pool.
 						The default is "5".
-					</entry>
-				</row>
-				<row>
-					<entry>minimumConnectionsInPool</entry>
-					<entry>
-						The minimum number of connections that will be kept in the connection pool.
-						The default is "0".
 					</entry>
 				</row>
 				<row>
@@ -156,17 +141,35 @@
 					</entry>
 				</row>
 				<row>
+					<entry>metadataCollectorClassName</entry>
+					<entry>
+						The name of a custom class to use for metadata collection.  The class must implement the &MetadataCollector; interface.  If a null
+						value is specified for this property, a default &MetadataCollector; implementation will be used that relies on the &DatabaseMetaData;
+						provided by the JDBC driver for the connection.  This property is provided as a means for connecting to databases with a JDBC driver
+						that provides a non-standard &DatabaseMetaData; implementation or no &DatabaseMetaData; implementation at all. 
+					</entry>
+				</row>
+				<row>
+					<entry>minimumConnectionsInPool</entry>
+					<entry>
+						The minimum number of connections that will be kept in the connection pool.
+						The default is "0".
+					</entry>
+				</row>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>nameOfDefaultWorkspace</entry>
+					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
+				</row>
+				<row>
 					<entry>numberOfConnectionsToAcquireAsNeeded</entry>
 					<entry>
 						The number of connections that should be added to the pool when there are not enough to be used.
 						The default is "1".
-					</entry>
-				</row>
-				<row>
-					<entry>idleTimeInSecondsBeforeTestingConnections</entry>
-					<entry>
-						The number of seconds after a connection remains in the pool that the connection should be tested to ensure it is still valid.
-						The default is 180 seconds (or 3 minutes).
 					</entry>
 				</row>
 				<row>
@@ -177,34 +180,29 @@
 					</entry>
 				</row>
 				<row>
-					<entry>cacheTimeToLiveInMilliseconds</entry>
-					<entry>Optional property that, if used, defines the maximum time in milliseconds that any information returned by this connector
-						is allowed to be cached before being considered invalid.  When not used, this source will not define a specific
-						duration for caching information.
-						The default value is "600000" milliseconds, or 10 minutes.
+					<entry>password</entry>
+					<entry>
+						The password that should be used when creating JDBC connections using the JDBC driver class.  
+						This is not required if the DataSource is found in JNDI.
 					</entry>
 				</row>
 				<row>
-					<entry>defaultCatalogName</entry>
+					<entry>rootNodeUuid</entry>
+					<entry>Optional property that, if used, defines the UUID of the root node in the repository.  If not used,
+						then a new UUID is generated.</entry>
+				</row>
+				<row>
+					<entry>url</entry>
 					<entry>
-						The name to use for the catalog name if the database does not support catalogs or the database has a catalog with the empty string
-						as a name.  The default value is "default".
+						The URL that should be used when creating JDBC connections using the JDBC driver class.
+						This is not required if the DataSource is found in JNDI.
 					</entry>
 				</row>
 				<row>
-					<entry>defaultSchemaName</entry>
+					<entry>username</entry>
 					<entry>
-						The name to use for the schema name if the database does not support schemas or the database has a schema with the empty string
-						as a name.  The default value is "default".
-					</entry>
-				</row>
-				<row>
-					<entry>metadataCollectorClassName</entry>
-					<entry>
-						The name of a custom class to use for metadata collection.  The class must implement the &MetadataCollector; interface.  If a null
-						value is specified for this property, a default &MetadataCollector; implementation will be used that relies on the &DatabaseMetaData;
-						provided by the JDBC driver for the connection.  This property is provided as a means for connecting to databases with a JDBC driver
-						that provides a non-standard &DatabaseMetaData; implementation or no &DatabaseMetaData; implementation at all. 
+						The username that should be used when creating JDBC connections using the JDBC driver class.
+						This is not required if the DataSource is found in JNDI.
 					</entry>
 				</row>
 			</tbody>

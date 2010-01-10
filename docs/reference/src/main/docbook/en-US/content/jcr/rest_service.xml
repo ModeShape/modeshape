@@ -73,7 +73,7 @@
 						<entry>Returns a list of available operations within the workspace</entry>
 						<entry>GET</entry>
 					</row>
-					<row>
+					<row>`
 						<entry>/resources/{repositoryName}/{workspaceName}/item/{path}</entry>
 						<entry>Accesses the item (node or property) at the path</entry>
 						<entry>ALL</entry>
@@ -271,6 +271,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 			The DNA REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
 			Here is an example web configuration that is used for integration testing of the DNA REST server along with
 			an explanation of its parts.
+		</para>
 <programlisting role="XML"><![CDATA[
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
@@ -278,11 +279,13 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 <web-app>
   <display-name>JBoss DNA JCR RESTful Interface</display-name>
 ]]></programlisting>			 
+		<para>
 		This first section is largely boilerplate and should look familiar to anyone who has deployed a servlet-based
 		application before.  The display-name can be customized, of course.
 		</para>
 		<para>
 			The next stanza configures the <link linkend="jcr_rest_spi">repository provider</link>.
+		</para>
 <programlisting role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
@@ -294,6 +297,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     <param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
+		<para>
 		As noted above, this parameter informs the &DnaJcrDeployer; of the specific repository provider in use.
 		Unless you are using the JBoss DNA REST server to connect to a different JCR implementation, this should
 		never change.
@@ -301,6 +305,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
 		<para>
 			Next we configure the DNA &JcrEngine; itself.
+		</para>
 <programlisting role="XML"><![CDATA[
   <!--
     This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
@@ -313,6 +318,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     <param-value>/configRepository.xml</param-value>
   </context-param>
 ]]></programlisting>			 
+		<para>
 		If you are not familiar with the file format for a &JcrEngine; configuration file, you can build one 
 		programatically with the &JcrConfiguration; class and call <code>save(...)</code> instead of <code>build()</code>
 		to output the configuration file that equates to the configuration.
@@ -320,6 +326,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
 		<para>
 			This is followed by a bit of RESTEasy and JAX-RS boilerplate.
+		</para>
 <programlisting role="XML"><![CDATA[
   <!--
     This parameter defines the JAX-RS application class, which is really just a metadata class
@@ -356,11 +363,13 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   </servlet-mapping>
 
 ]]></programlisting>			 
+		<para>
 		In general, this part of the web configuration file should not be modified.
 		</para>
 		
 		<para>
 			Finally, security must be configured for the REST server.
+		</para>
 <programlisting role="XML"><![CDATA[
   <!-- 
     The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
@@ -401,6 +410,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 </web-app>
 
 ]]></programlisting>			 
+		<para>
 		As noted above, the REST server will not function properly unless security is configured.  All authorization
 		methods supported by the Servlet specification are supported by JBoss DNA and can be used interchangeable, as
 		long as authenticated users have the connect role listed above. 
@@ -418,10 +428,11 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	  <para>
 	  		If you are using Maven to build your projects, the WAR can be built from a POM.  Here is a portion of the 
 	  		POM used to build the JBoss DNA REST Server integration subproject.
+		</para>
 <programlisting role='XML'><![CDATA[
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>dna</artifactId>
@@ -457,6 +468,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 </project>
 
 ]]></programlisting> 
+	  <para>
 		If you use this approach, make sure that web configuration file is in the <code>/src/main/webapp/WEB-INF</code>
 		directory.
 	  </para>
@@ -470,42 +482,45 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	|	+ log4j.properties (Optional)
 	+ /lib
 	|	+ activation-1.1.jar
-	|	+ antlr-runtime-3.1.3.jar
 	|	+ commons-codec-1.2.jar
 	|	+ commons-httpclient-3.1.jar
 	|	+ commons-logging-1.0.4.jar
-	|	+ dna-cnd-0.6.jar
-	|	+ dna-common-0.6.jar
-	|	+ dna-connector-federation-0.6.jar
-	|	+ dna-graph-0.6.jar
-	|	+ dna-jcr-0.6.jar
-	|	+ dna-repository-0.6.jar
-	|	+ dna-web-jcr-rest-0.6.jar
-	|	+ FastInfoset-1.2.2.jar
-	|	+ google-collect-snapshot-20080530.jar
+	|	+ dna-cnd-0.7.jar
+	|	+ dna-common-0.7.jar
+	|	+ dna-graph-0.7.jar
+	|	+ dna-jcr-0.7.jar
+	|	+ dna-repository-0.7.jar
+	|	+ dna-search-lucene-0.7.jar
+	|	+ dna-web-jcr-rest-0.7.jar
+	|	+ google-collections-1.0-rc3.jar
 	|	+ hamcrest-core-1.1.jar
+	|	+ httpclient-4.0.jar
+	|	+ httpcore-4.0.1.jar
+	|	+ jakarta-regexp-1.4.jar
 	|	+ javassist-3.6.0.GA.jar
 	|	+ jaxb-api-2.1.jar
-	|	+ jaxb-impl-2.1.9.jar
-	|	+ jaxrs-api-1.1-RC2.jar
+	|	+ jaxb-impl-2.1.12.jar
+	|	+ jaxrs-api-1.2.1-GA.jar
 	|	+ jcip-annotations-1.0.jar
+	|	+ jcl-over-slf4j-1.5.8.jar
 	|	+ jcr-1.0.1.jar
-	|	+ jettison-1.0.1.jar
+	|	+ jettison-1.1.jar
 	|	+ joda-time-1.4.jar
 	|	+ jsr250-api-1.0.jar
 	|	+ junit-dep-4.4.jar
-	|	+ resteasy-client-1.0-beta-8.jar
-	|	+ resteasy-common-1.0-beta-8.jar
-	|	+ resteasy-jaxb-provider-1.1-RC2.jar
-	|	+ resteasy-jaxrs-1.1-RC2.jar
+	|	+ lucene-analyzers-3.0.0.jar
+	|	+ lucene-core-3.0.0.jar
+	|	+ lucene-regex-3.0.0.jar
+	|	+ lucene-snowball-3.0.0.jar
+	|	+ resteasy-jaxb-provider-1.2.1-GA.jar
+	|	+ resteasy-jettison-provider-1.2.1-GA.jar
 	|	+ scannotation-1.0.2.jar
 	|	+ servlet-api-2.5.jar
 	|	+ sjsxp-1.0.1.jar
-	|	+ slf4j-api-1.4.3.jar
-	|	+ slf4j-log4j12-1.4.3.jar
-	|	+ slf4j-simple-1.5.2.jar
+	|	+ slf4j-api-1.5.8.jar
+	|	+ slf4j-log4j12-1.5.8.jar
+	|	+ slf4j-simple-1.5.8.jar
 	|	+ stax-api-1.0-2.jar
-	|	+ webserver-1.3.3.jar
 	+ web.xml
 			
 </programlisting>	  	
@@ -634,8 +649,8 @@ if (status.isError() {
             ]]></programlisting>
         </para>
         <para>
-            Results of successfully executing the above code is a JCR folder node (<code>nt:folder</code>) for each segment of the 
-            workspace path (a node is created if it doesn't already exist). Also, a JCR file node (a node with primary type <code>nt:file</code>) is 
+            Successfully executing the above code results in the creation a JCR folder node (<code>nt:folder</code>) for each segment of the 
+            workspace path (if the folder didn't already exist). Also, a JCR file node (a node with primary type <code>nt:file</code>) is 
             created or updated under the last folder node and the file contents are encoded and uploaded into a child node of that file node.
         </para>
     </sect1>

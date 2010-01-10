@@ -237,7 +237,7 @@
 <programlisting>
 /Vehicles => /                                  for source "Cars"
 /Vehicles/Aircraft => /Aviation                 for source "Aircraft"
-/Vehicles/Spacecraft => /Space Vehicles         for source "Cars"
+/Vehicles/Spacecraft => /Space Vehicles         for source "Spacecraft"
 </programlisting>
 		  <para>
 		  The result is a unified repository with the following structure:
@@ -436,7 +436,7 @@
 					We're using XML to represent a graph structure, since the two map pretty well.  Each XML element represents
 					a node and XML attributes represent properties on a node.  The name of the node is defined by either the 
 					<code>jcr:name</code> attribute (if it exists) or the name of the XML element.  And we use XML namespaces
-					to define the namespaces used in the node and property names.  BTW, this is exactly how the XML graph importer
+					to define the namespaces used in the node and property names.  As an aside, this is exactly how the XML graph importer
 					works.
 				</para>
 			</note>

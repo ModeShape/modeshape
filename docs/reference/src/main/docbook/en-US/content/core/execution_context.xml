@@ -37,7 +37,7 @@
 		and allows for a great deal of flexibility and customization in how the components are configured.  
   </para>
 	<para>
-		The approach that JBoss DNA takes is simple: a simple POJO that represents the everything about the environment
+		The approach that JBoss DNA takes is simple: a simple POJO that represents everything about the environment
 		in which components operate.  Called &ExecutionContext;, it contains references to most of the essential
 		facilities, including: security (authentication and authorization); namespace registry; name factories; factories 
 		for properties and property values; logging; and access to class loaders (given a classpath).  
@@ -182,7 +182,7 @@ String jaasRealm = ...
 &ExecutionContext; myAppContext = context.with(mySecurityContext);
 </programlisting>
 		<para>
-			These &ExecutionContext; then represent the authenticated user in any component that uses the context.
+			These &ExecutionContext;s then represent the authenticated user in any component that uses the context.
 		</para>
 		<sect2 id="jaas_security">
 			<title>JAAS</title>
@@ -302,7 +302,7 @@ HttpServletRequest request = ...
 &ExecutionContext; servletContext = context.with(securityContext);
 </programlisting>
 			<para>
-				We'll see later in the <link linkend="jcr">JCR chapter</link> how this can be use to obtain a JCR &Session; for
+				We'll see later in the <link linkend="jcr">JCR chapter</link> how this can be used to obtain a JCR &Session; for
 				the authenticated user.
 			</para>
 		</sect2>
@@ -411,7 +411,7 @@ interface &Namespace; extends Comparable&lt;&Namespace;> {
 </programlisting>
 			<para>
 				JBoss DNA actually uses several implementations of &NamespaceRegistry;, but you can even implement your own
-				and create &ExecutionContext;s that uses it:
+				and create &ExecutionContext;s that use it:
 			</para>
 <programlisting>
 &NamespaceRegistry; myRegistry = ...
@@ -419,7 +419,7 @@ interface &Namespace; extends Comparable&lt;&Namespace;> {
 </programlisting>
 	</sect1>
 	<sect1 id="class_loader_factory">
-		<title>Class loaders</title>
+		<title>Class Loaders</title>
 	  <para>
 	  	JBoss DNA is designed around extensions: sequencers, connectors, MIME type detectors, and class loader factories.
 			The core part of JBoss DNA is relatively small and has few dependencies, while many of the "interesting" components

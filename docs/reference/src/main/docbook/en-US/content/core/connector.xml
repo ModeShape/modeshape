@@ -40,7 +40,7 @@
 		would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
 		This not only is a lot of work, but it often makes it difficult to know whether information is accurate and "the master" data.
 	</para>
-  <para>JBoss DNA lets us leave information where it, yet access it through the JCR API as if it were in one big repository.
+  <para>JBoss DNA lets us leave information where it is, yet access it through the JCR API as if it were in one big repository.
 		One major benefit is that existing applications that use the information in the original locations don't break, since they
 		can keep using the information. But now our JCR clients can also access all the information, too.  And if our federating JBoss DNA repository is
     configured to allow updates, JCR client applications can change the information in the repository and JBoss DNA will propagate
@@ -83,7 +83,7 @@
 				<para>a repository that accesses existing JDBC databases to project the schema structure as read-only repository content</para>
 			</listitem>
 			<listitem>
-				<para>a repository that accesses a file systems to present the files and directory structure as (updatable) repository content</para>
+				<para>a repository that accesses a file system to present its files and directory structure as (updatable) repository content</para>
 			</listitem>
 			<listitem>
 				<para>a repository that accesses an SVN repository to present the files and directory structure as (updatable) repository content</para>
@@ -163,9 +163,9 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-		<para>As an example, consider that we want JBoss DNA to give us access through JCR to the schema information contained in a
+		<para>As an example, consider if we wanted JBoss DNA to give us access through JCR to the information contained in a
 			relational database.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
-			That connector would contain a &JdbcMetadataSource; Java class that implements &RepositorySource;,
+			That connector would contain a <code>JdbcAccessSource</code> Java class that implements &RepositorySource;,
 			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
 			and other properties.  If we add a JavaBean property defining the JNDI name, our connector could look in JNDI to find a JDBC
 			<code>DataSource</code> instance, perhaps already configured to use connection pools.
@@ -179,17 +179,17 @@
 			</para>
 		</note>
 		<para>
-			Our new connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
+			Our new connector might also have a <code>JdbcAccessConnection</code> Java class that implements the 
 			&RepositoryConnection; interface.  This class would probably wrap a JDBC database connection,
 			and would implement the <code>execute(...)</code> method such that the nodes exposed by the connector
-			describe the database schema of the database.  For example, the connector might represent each database table
+			describe the database tables and their contents.  For example, the connector might represent each database table
 			as a node with the table's name, with properties that describe the table (e.g., the description, whether it's a
-			temporary table), and with child nodes that represent each of the columns, keys and constraints.
+			temporary table), and with child nodes that represent rows in the table.
 		</para>
 		<para>
-			To use our connector in an application that uses JBoss DNA, we need to create an instance of the 
-			&JdbcMetadataSource; for each database instance that we want to access.  If we have 3 MySQL databases, 
-			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 &JdbcMetadataSource; 
+			To use our connector in an application that uses JBoss DNA, we would need to create an instance of the 
+			<code>JdbcAccessSource</code> for each database instance that we want to access.  If we have 3 MySQL databases, 
+			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 <code>JdbcAccessSource</code> 
 			instances, each with the properties describing a single database instance.  Those sources are then available for use by 
 			JBoss DNA components, including the <link linkend="jcr">JCR</link> implementation.
 		</para>
@@ -279,8 +279,7 @@
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
-					The <emphasis role="strong">dna-connector-filesystem</emphasis> project is small, but it may be tough to separate
-					the stuff that every connector needs from the extra code and data structures that manage the content.
+					The <emphasis role="strong">dna-connector-filesystem</emphasis> project is small and provides good example of implementing a path-based repository.
 		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-connector-filesystem/">&Subversion;trunk/extensions/dna-connector-filesystem/</ulink>
 		    </para>
 		  </note>
@@ -442,8 +441,14 @@
 					In summary, a connector has total control over whether and for how long the information it provides
 					is cached.
 				</para>
+				<note>
+					<para>
+						At this time, JBoss DNA does not yet take advantage of the connector's cache policies. 
+						However, it is anticipated that this will change.
+					</para>
+				</note>
 			</sect3>
-			<sect3 id="repository_source_jndi">
+ 			<sect3 id="repository_source_jndi">
 				<title>Leveraging JNDI</title>
 				<para>
 					Sometimes it is necessary (or easier) for a &RepositorySource; implementation to look up an object in JNDI.
@@ -516,9 +521,8 @@
 	    <programlisting>
 /**
  * A connection to a repository source.
- * <p>
+ *
  * These connections need not support concurrent operations by multiple threads.
- * </p>
  */
 @NotThreadSafe
 public interface &RepositoryConnection; {
@@ -574,16 +578,10 @@ public interface &RepositoryConnection; {
 }</programlisting>
 			<para>
 				While most of these methods are straightforward, a few warrant additional information.
-				The <code>ping(...)</code> allows DNA to check the connection to see if it is
+				The <code>ping(...)</code> method allows DNA to check the connection to see if it is
 				alive.  This method can be used in a variety of situations, ranging from verifying that a &RepositorySource;'s
 				JavaBean properties are correct to ensuring that a connection is still alive before returning the connection from
 				a connection pool.
-			</para>
-	    <para>
-				If the connector is able to publish events, then 
-				DNA hasn't yet defined the event mechanism, so connectors don't have any methods to invoke on the &RepositorySourceListener;.
-				This will be defined in the next release, so feel free to manage the listeners now.  Note that by default the &RepositorySourceCapabilities; returns
-				<code>false</code> for <code>supportsEvents()</code>.
 			</para>
 	    <para>
 				The most important method on this interface, though, is the <code>execute(...)</code> method, which serves as the
@@ -597,11 +595,6 @@ public interface &RepositoryConnection; {
 				<link linkend="graph-requests">previous chapter</link> for details).
 				Each request contains the information a connector needs to do the processing, and it also is the place
 				where the connector places the results (or the error, if one occurs).
-			</para>
-	    <para>
-				Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
-				For example, DNA will likely support searching repository content in sources through an additional subclass of &Request;.
-				Getting the version history for a node will likely be another kind of request added in an upcoming release.
 			</para>
 	    <para>
 				A connector is technically free to implement the <code>execute(...)</code> method in any way, as long as the semantics
@@ -628,7 +621,7 @@ public interface &RepositoryConnection; {
 				Also, make sure your &RequestProcessor; is properly <link linkend="connector_events">broadcasting the changes</link> made during execution.
 				The &RequestProcessor; class has a <code>recordChange(&ChangeRequest;)</code> that can be called from each of the <code>process(...)</code>
 				methods that take a &ChangeRequest;.  The &RequestProcessor; enqueues these requests, and when the &RequestProcessor; is
-				closed, the default implementation is to send a &Change; to the &Observer; supplied into the constructor.
+				closed, the default implementation is to send a &Changes; to the &Observer; supplied into the constructor.
 			</para>
 			<para>
 				Then, in your connector's <code>execute(&ExecutionContext;, &Request;)</code> method, instantiate your &RequestProcessor; subclass

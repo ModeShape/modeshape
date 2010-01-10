@@ -140,7 +140,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
 			Each of these approaches has their obvious advantages, so the choice of which one to use is entirely up to you.
 		</para>
 		<sect2 id="loading_from_file">
-			<title>Loading from a configuration file</title>
+			<title>Loading from a Configuration File</title>
 			<para>
 				Loading the JBoss DNA configuration from a file is actually very simple:
 			</para>
@@ -217,7 +217,7 @@ configuration.loadFrom(file);
  ]]></programlisting>
 		</sect2>
 		<sect2 id="loading_from_repository">
-			<title>Loading from a configuration repository</title>
+			<title>Loading from a Configuration Repository</title>
 			<para>
 				Loading the JBoss DNA configuration from an existing repository is also pretty straightforward.  Simply create and configure the
 				&RepositorySource; instance to point to the desired repository, and then call the <code>loadFrom(&RepositorySource; source)</code>
@@ -246,7 +246,7 @@ configuration.loadFrom(configSource);
 			</para>
 		</sect2>
 		<sect2 id="programmatic_configuration">
-			<title>Programmatic configuration</title>
+			<title>Programmatic Configuration</title>
 			<para>
 				Defining the configuration programmatically is not terribly complicated, and it for obvious reasons results in more verbose Java code.
 				But this approach is very useful and often the easiest approach when the configuration must change or is a reflection of other
@@ -257,7 +257,7 @@ configuration.loadFrom(configSource);
 				components, especially when using an IDE with code completion.  Here are several examples:
 			</para>
 			<sect3 id="programmatically_configuring_sources">
-				<title>Repository sources</title>
+				<title>Repository Sources</title>
 				<para>Each repository source definition must include the name of the &RepositorySource; class as well as each bean property
 					that should be set on the object:
 				</para>
@@ -328,7 +328,7 @@ config.sequencer("Image Sequencer")
 					(loaded from the classpath), that is to sequence the "jcr:data" property on any new or changed nodes that are named 
 					"jcr:content" below a parent node	with a name ending in ".jpg", ".jpeg", ".gif", ".bmp", ".pcx", ".iff", ".ras", 
 					".pbm", ".pgm", ".ppm" or ".psd".  The output of the sequencing operation should be placed at the "/images/$1" node,
-					where the "$1" value is captured as the name of the parent node.  (The capture groups work the same was as regular expressions.)
+					where the "$1" value is captured as the name of the parent node.  (The capture groups work the same way as regular expressions.)
 					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
 					the classpath or from a specific classpath).
 				</para>
@@ -341,7 +341,7 @@ config.sequencer("Image Sequencer")
 				</note>
 			</sect3>
 			<sect3 id="programmatically_configuring_mime_type_detectors">
-				<title>MIME type detectors</title>
+				<title>MIME Type Detectors</title>
 				<para>Each defined MIME type detector must specify the name of the &MimeTypeDetector; implementation class as well as any
 					other bean properties required by the implementation.</para> 
     		<programlisting role="JAVA"><![CDATA[
@@ -513,8 +513,8 @@ try {
 				loading of IDTrust to create the JAAS realm.  (To make this work in Tomcat, the security
 				folder that contains the <code>jaas.conf.xml</code>, <code>users.properties</code>, and
 				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.
-				Moving the security folder into the <code>conf</code> directory did not allow those files
-				to be visible by the JSP page.)
+				Moving the security folder into the <code>conf</code> directory does not allow those files
+				to be visible to the JSP page.)
 			</para>
 			<note>
 				<para>

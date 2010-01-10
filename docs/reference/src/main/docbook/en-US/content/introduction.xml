@@ -74,7 +74,7 @@
 		</para>
 		<para>
 			But these large and complex use cases aren't the only way to use a JBoss DNA repository.  You could use an embedded JBoss DNA repository
-			to manage configuration information for an application, or you could use JBoss DNA just provide a JCR interface on top of a few non-JCR systems.
+			to manage configuration information for an application, or you could use JBoss DNA just to provide a JCR interface on top of a few non-JCR systems.
 		</para>
 		<para>
 			The point is that JBoss DNA can be used in many different ways, ranging from the very tiny embedded repository to a large and distributed
@@ -102,7 +102,7 @@
 		<para>
 		What we want is <emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
 		We can connect to these back-end systems to dynamically access the content and project it into a single, unified
-		repository.  We can also cache it for faster access, as long as the cache can be invalidated based upon time or event.
+		repository.  We can cache it for faster access, as long as the cache can be invalidated based upon time or event.
 		But we also need to maintain a clear picture of where all the bits come from, so users can be sure they're looking
 		at the right information.  And we need to make it as easy as possible to write new connectors, since there are
 		a lot of systems out there that have information we want to federate.
@@ -145,8 +145,8 @@
 	  </para>
 	  <para>
 	    Another technique built into the Java language is
-	    <emphasis>Java serialization</emphasis>
-	    , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
+	    <emphasis>Java serialization</emphasis>,
+	    which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
 	    serialization can quickly become tricky if the classes are changed, and so it's beneficial usually when the information is
 	    persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
 	    process to another.  Using serialization for longer-term storage of information is more risky.
@@ -552,8 +552,8 @@
 			and <link linkend="subversion-connector">SVN connector</link> were reworked to support reads and updates, and they 
 			both offer a preview of an optional caching system.  The <link linkend="jdbc-storage-connector">JPA storage connector</link>
 			was dramatically improved and is significantly faster, more capable, and more efficient.
-			The new <link linkend="jdbc-metadata-connector">JDBC metadata connector</link> is a technology preview of a connector
-			that provides read-only access to the schema information of relational databases through JDBC.
+			The new <link linkend="jdbc-metadata-connector">JDBC metadata connector</link> provides read-only access to the schema 
+			information of relational databases through JDBC.
 		</para>
 		<para>
 			JBoss DNA 0.7 includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
@@ -561,7 +561,7 @@
 			is capable of parsing a number of DDL dialects to extract the more important DDL statements. The <link linkend="cnd-sequencer">CND sequencer</link>
 			was rewritten and dramatically simplified to perform better, fix a number of known issues, and eliminate a dependency on a third-party library.
 			There is also a new <link linkend="java-class-sequencer">Java class file sequencer</link> that operates on Java class
-			files and produces output that is very similar to the <link linkend="java-source-sequencer">Java source file sequencer</link>,
+			files and produces output that is comparable to the <link linkend="java-source-sequencer">Java source file sequencer</link>,
 			and that can be used in conjunction with the <link linkend="zip-file-sequencer">ZIP file sequencer</link> to extract the Java metadata
 			from JARs, WARs, and EAR files.
 		</para>
@@ -571,7 +571,7 @@
 			<ulink url="http://jbossdna.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
 		  of databases</ulink>, making it very easy to test against DBMSes that JBoss DNA doesn't directly test against.
 			A new DDL generation utility was also introduced that produces the DDL for the database used by the JPA connector.
-			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link>, and this is 
+			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link> - this is 
 			enabled by default but can easily be changed for production purposes.
 		</para>
   </sect1>

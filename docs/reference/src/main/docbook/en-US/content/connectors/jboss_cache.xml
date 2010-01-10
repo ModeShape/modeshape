@@ -33,8 +33,7 @@
   <para>
   	The JBoss Cache repository connector allows a <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink> instance to be 
 		used as a JBoss DNA (and thus JCR) repository.  This provides a repository that is an effective, scalable, and distributed cache,
-		and is often paired with other repository sources to provide a local or <link linkend="federation-connector">federated</link>
-		repository.
+		and can be <link linkend="federation-connector">federated</link> with other repository sources to provide a distributed repository.
   </para>
 	<para>
 		The &JBossCacheSource; class provides a number of JavaBean properties that control its behavior:
@@ -52,19 +51,15 @@
 			</thead>
 			<tbody>
 				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+					<entry>cacheConfigurationName</entry>
+					<entry>Optional property that, if used, specifies the name of the configuration that is supplied to the cache factory
+						when creating a new JBoss Cache instance.</entry>
 				</row>
 				<row>
 					<entry>cacheFactoryJndiName</entry>
 					<entry>Optional property that, if used, specifies the name in JNDI where an existing JBoss Cache Factory instance can be found.
 						That factory would then be used if needed to create a JBoss Cache instance.  If no value is provided, then the
 						JBoss Cache <code>DefaultCacheFactory</code> class is used.</entry>
-				</row>
-				<row>
-					<entry>cacheConfigurationName</entry>
-					<entry>Optional property that, if used, specifies the name of the configuration that is supplied to the cache factory
-						when creating a new JBoss Cache instance.</entry>
 				</row>
 				<row>
 					<entry>cacheJndiName</entry>
@@ -88,6 +83,10 @@
 						if none is specified.</entry>
 				</row>
 				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
 					<entry>predefinedWorkspaceNames</entry>
 					<entry>Optional property that defines the names of the workspaces that exist and that are available for use without having to create them.</entry>
 				</row>
@@ -102,14 +101,14 @@
 					specified, a random UUID is generated each time that the repository is started.</entry>
 				</row>	
 				<row>
-					<entry>uuidPropertyName</entry>
-					<entry>Optional property that, if used, defines the property that should be used to find the UUID value for each node
-						in the cache.  "<code>dna:uuid</code>" is the default.</entry>
-				</row>
-				<row>
 					<entry>updatesAllowed</entry>
 					<entry>Determines whether the content in the connector is can be updated ("true"), or if the content may only be read ("false").
 						The default value is "true".</entry>
+				</row>
+				<row>
+					<entry>uuidPropertyName</entry>
+					<entry>Optional property that, if used, defines the property that should be used to find the UUID value for each node
+						in the cache.  "<code>dna:uuid</code>" is the default.</entry>
 				</row>
 				
 			</tbody>

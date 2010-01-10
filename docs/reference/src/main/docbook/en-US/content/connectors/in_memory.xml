@@ -52,13 +52,24 @@
 			</thead>
 			<tbody>
 				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+					<entry>defaultCachePolicy</entry>
+					<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
+						cached by other, higher-level components.  The default value of null implies that this source does not define a specific
+						duration for caching information provided by this repository source.</entry>
+				</row>
+				<row>
+					<entry>defaultWorkspaceName</entry>
+					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
 				</row>
 				<row>
 					<entry>jndiName</entry>
 					<entry>Optional property that, if used, specifies the name in JNDI where an &InMemoryRepository; instance can be found.
 						This is an advanced property that is infrequently used.</entry>
+				</row>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
 					<entry>rootNodeUuid</entry>
@@ -69,17 +80,6 @@
 					<entry>retryLimit</entry>
 					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
 						following a communication failure. The default value is '0'.</entry>
-				</row>
-				<row>
-					<entry>defaultCachePolicy</entry>
-					<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
-						cached by other, higher-level components.  The default value of null implies that this source does not define a specific
-						duration for caching information provided by this repository source.</entry>
-				</row>
-				<row>
-					<entry>defaultWorkspaceName</entry>
-					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
 				</row>
 			</tbody>
 		</tgroup>

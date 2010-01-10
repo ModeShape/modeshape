@@ -38,7 +38,8 @@
   
   <para>
   	This sequencer can be added to the repository configuration like so:
-<programlisting role="JAVA"><![CDATA[
+  </para>
+  <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("CND Sequencer")
@@ -48,5 +49,4 @@ config.sequencer("CND Sequencer")
       .sequencingFrom("//(*.cnd[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/nodeTypes/$1");
 ]]></programlisting>  	 
-  </para>
 </chapter>

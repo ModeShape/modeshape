@@ -37,7 +37,7 @@
 				to their grammar, and thus require dialect-specific additions to the graph structure.
 		</para>
 		<para>
-			  The sequencer is designed to behave as smart as possible with as little configuration. Thus, the sequencer
+			  The sequencer is designed to behave as intelligently as possible with as little configuration. Thus, the sequencer
 			  automatically determines the dialect used by a given DDL stream. This can be tricky, of course, since most dialects
 			  are very similar and the distinguishing features of a dialect may only be apparent in some of the statements.
 		</para>

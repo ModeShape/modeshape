@@ -114,8 +114,8 @@
 				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
 				applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
 				However, considering that the end-of-life for Java 5 is 
-				<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we may be switching to 
-				Java 6 sometime in 2009.
+				<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we will likely be switching to 
+				Java 6 sometime in 2010.
 			</para>
 		</note>
 		<para>
@@ -152,7 +152,7 @@
 			<ulink url="http://www.jboss.org">JBoss.org</ulink>.  Although you can view the
 			<ulink url="&Subversion;trunk/">trunk</ulink> of the Subversion repository directly
 			(or using <ulink url="&Fisheye;trunk">FishEye</ulink>) through your browser,
-			it order to get more than just a few files of the latest version of the source code, you probably want
+			in order to get more than just a few files of the latest version of the source code, you probably want
 		 	to have an SVN client installed.  Several IDE's have SVN support included (or available as plugins),
 			but having the command-line SVN client is recommended.  See 
 			<ulink url="http://subversion.tigris.org/">http://subversion.tigris.org/</ulink> for downloads and instructions for your
@@ -352,7 +352,7 @@
 								"<code>oracle9i</code>", "<code>oracle10g</code>", "<code>oracle11g</code>", 
 								"<code>db2v8</code>", "<code>db2v9</code>", 
 								"<code>sybase15</code>", and 
-								"<code>mysql2005</code>".
+								"<code>mssql2005</code>".
 								The database connection information for these database profiles are in the parent "pom.xml" file,
 								and most of these are configured to use database instances within the JBoss Quality Assurance
 								lab and are accessible only to Red Hat employees.  However, feel free to add your own profiles
@@ -420,10 +420,8 @@
 		<title>Eclipse IDE</title>
 		<para>Many of the JBoss DNA committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
 			it pretty easy to get an Eclipse workspace running with all of the JBoss DNA projects.
-			Many of the JBoss DNA committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
-			it pretty easy to get an Eclipse workspace running with all of the JBoss DNA projects.
 		</para>
-		<para>We're using the latest released version of Eclipse (3.4, called "Ganymede"), 
+		<para>We're using the latest released version of Eclipse, 
 			available from <ulink url="http://www.eclipse.org/">Eclipse.org</ulink>.  Simply follow the instructions for your platform.
 		</para>
 		<para>
@@ -497,7 +495,7 @@
 		<sect2 id="build-all-artifacts-and-assemblies">
 			<title>Building all artifacts and assemblies</title>
 			<para>
-				By default, the project's Maven build process is does <emphasis>not</emphasis> build the documentation, JavaDocs, or assemblies.
+				By default, the project's Maven build process does <emphasis>not</emphasis> build the documentation, JavaDocs, or assemblies.
 				These take extra time, and most of our builds don't require them.  So the first step of releasing JBoss DNA
 				is to use Maven to build all of regular artifacts (e.g., JARs) and these extra documents and assemblies.
 			</para>
@@ -615,10 +613,9 @@
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we described the various aspects of developing code for the JBoss DNA project.  Before we start talking
-			about some of the details of JBoss DNA repositories, connectors, and sequencers, we'll first talk about
-			some very ubiquitous information: how does JBoss DNA load all of the extension classes?
-		  This is the topic of the <link linkend="classloaders">next chapter</link>.
+			In this chapter, we described the various aspects of developing code for the JBoss DNA project.  
+			Next, we must discuss the testing practices for JBoss DNA project.
+		  This is the topic of the <link linkend="testing">next chapter</link>.
 		</para>
 	</sect1>
 </chapter>
