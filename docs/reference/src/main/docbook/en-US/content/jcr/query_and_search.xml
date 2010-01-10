@@ -496,6 +496,7 @@ ORDER BY nodeSet1.title,
 		        Support for the "<code>FULL OUTER JOIN</code>" and "<code>CROSS JOIN</code>" join types, in addition to the
 		        "<code>LEFT OUTER JOIN</code>", "<code>RIGHT OUTER JOIN</code>" and "<code>INNER JOIN</code>" types defined by
 		  			JCR-SQL2. Note that "<code>JOIN</code>" is a shorthand for "<code>INNER JOIN</code>".
+						For detail, see the <link linkend="jcr-sql2-joins">grammar for joins</link>.
 	        </para>
         </listitem>
         <listitem>
@@ -505,11 +506,13 @@ ORDER BY nodeSet1.title,
 	          The <code>UNION</code> operator combines the rows from two result sets, the <code>INTERSECT</code> operator returns
 	          the difference between two result sets, and the <code>EXCEPT</code> operator returns the rows that are common to
 	          two result sets.  Duplicate rows are removed unless the operator is followed by the <code>ALL</code> keyword.
+						For detail, see the <link linkend="jcr-sql2-queries">grammar for set queries</link>.
 	        </para>
         </listitem>
         <listitem>
 	        <para>
 		        Removal of duplicate rows in the results, using "<code>SELECT DISTINCT ...</code>".
+						For detail, see the <link linkend="jcr-sql2-queries">grammar for queries</link>.
 	        </para>
         </listitem>
         <listitem>
@@ -517,6 +520,7 @@ ORDER BY nodeSet1.title,
 		        Limiting the number of rows in the result set with the "<code>LIMIT count</code>" clause, where <code>count</code>
 		        is the maximum number of rows that should be returned.  This clause may optionally be followed by the
 						"<code>OFFSET number</code>" clause to specify the number of initial rows that should be skipped.
+						For detail, see the <link linkend="jcr-sql2-limits">grammar for limits and offsets</link>.
 	        </para>
         </listitem>
         <listitem>
@@ -526,24 +530,30 @@ ORDER BY nodeSet1.title,
 						can be used in a manner similar to "<code>NAME([&lt;selectorName>])</code>" and "<code>LOCALNAME([&lt;selectorName>])</code>"
 						that are defined by JCR-SQL2.  Note in each of these cases, the selector name is optional if there is only one
 						selector in the query.
+						For detail, see the <link linkend="jcr-sql2-dynamic-operands">grammar for dynamic operands</link>.
 	        </para>
         </listitem>
         <listitem>
 	        <para>
 						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
-						of discreet static operands: "<code>&lt;dynamicOperand> [NOT] IN (&lt;staticOperand> {, &lt;staticOperand>})"</code>.
+						of discreet static operands.
+						For example, "<code>WHERE ... [my:type].[prop1] IN (3,5,7,10,11,50) ...</code>".
+						For detail, see the <link linkend="jcr-sql2-set-constraints">grammar for set constraints</link>.
 	        </para>
         </listitem>
         <listitem>
 	        <para>
-						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discreet operands: 
-						"<code>&lt;dynamicOperand> [NOT] BETWEEN &lt;lowerBoundStaticOperand> [EXCLUSIVE] AND &lt;upperBoundStaticOperand> [EXCLUSIVE]</code>"
+						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discreet operands.
+						For example, "<code>WHERE ... [my:type].[prop1] BETWEEN 3 EXCLUSIVE AND 10 ...</code>".
+						For detail, see the <link linkend="jcr-sql2-between-constraints">grammar for between constraints</link>.
 	        </para>
         </listitem>
         <listitem>
 	        <para>
 						Support for simple arithmetic in numeric-based criteria and order-by clauses.  For example, 
-						"<code>... WHERE SCORE(type1) + SCORE(type2) > 1.0</code>" or "<code>... ORDER BY (SCORE(type1) * SCORE(type2)) ASC</code>".
+						"<code>... WHERE</code> <code>SCORE(type1) +</code> <code>SCORE(type2) > 1.0</code>" or 
+						"<code>... ORDER BY</code> <code>(SCORE(type1) * SCORE(type2)) ASC,</code> <code>LENGTH(type2.property1) DESC</code>".
+						For detail, see the <link linkend="jcr-sql2-ordering">grammar for order-by clauses</link>.
 					</para>
         </listitem>
       </itemizedlist>
@@ -561,13 +571,13 @@ ORDER BY nodeSet1.title,
 				Literals (or keywords) are denoted by single-quotes. 
 			</para>
 		</note>
-			<sect2>
+			<sect2 id="jcr-sql2-queries">
 				<title>Queries</title>
 <programlisting><![CDATA[
 QueryCommand ::= Query | SetQuery
 
-SetQuery ::= Query ('UNION'|'INTERSECT'|'EXCEPT') [ALL] Query
-                 { ('UNION'|'INTERSECT'|'EXCEPT') [ALL] Query }
+SetQuery ::= Query ('UNION'|'INTERSECT'|'EXCEPT') ['ALL'] Query
+                 { ('UNION'|'INTERSECT'|'EXCEPT') ['ALL'] Query }
 
 Query ::= 'SELECT' ['DISTINCT'] columns
           'FROM' Source
@@ -587,7 +597,7 @@ nodeTypeName ::= Name
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-joins">
 				<title>Joins</title>
 <programlisting><![CDATA[
 	
@@ -707,7 +717,7 @@ Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE'
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-between-constraints">
 				<title>Between Constraints</title>
 <programlisting><![CDATA[
 	
@@ -728,7 +738,7 @@ PropertyExistence ::= selectorName'.'propertyName 'IS' ['NOT'] 'NULL' |
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-set-constraints">
 				<title>Set Constraints</title>
 <programlisting><![CDATA[
 
@@ -857,7 +867,7 @@ bindVariableName ::= /* A string that conforms to the JCR Name syntax, though th
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-dynamic-operands">
 				<title>Dynamic Operands</title>
 <programlisting><![CDATA[
 	
@@ -899,7 +909,7 @@ Arithmetic ::= DynamicOperand ('+'|'-'|'*'|'/') DynamicOperand
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-ordering">
 				<title>Ordering</title>
 <programlisting><![CDATA[
 	
@@ -926,7 +936,7 @@ columnName ::= Name
 
 ]]></programlisting>
 			</sect2>
-			<sect2>
+			<sect2 id="jcr-sql2-limits">
 				<title>Limit and Offset</title>
 <programlisting><![CDATA[
 	
