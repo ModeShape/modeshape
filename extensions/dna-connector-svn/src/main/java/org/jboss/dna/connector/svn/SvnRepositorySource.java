@@ -60,7 +60,6 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
     protected static final String SVN_REPOSITORY_ROOT_URL = "repositoryRootURL";
     protected static final String SVN_USERNAME = "username";
     protected static final String SVN_PASSWORD = "password";
-    protected static final String CACHE_TIME_TO_LIVE_IN_MILLISECONDS = "cacheTimeToLiveInMilliseconds";
     protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
