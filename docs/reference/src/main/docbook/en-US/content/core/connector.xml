@@ -164,12 +164,20 @@
 			</listitem>
 		</itemizedlist>
 		<para>As an example, consider that we want JBoss DNA to give us access through JCR to the schema information contained in a
-			relational databases.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
-			That connector would contain a <code>JdbcRepositorySource</code> Java class that implements &RepositorySource;,
+			relational database.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
+			That connector would contain a &JdbcMetadataSource; Java class that implements &RepositorySource;,
 			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
-			and other properties.  (Or we might have a JavaBean property that defines the JNDI name where we can find a JDBC
-			<code>DataSource</code> instance pointing to our JDBC database.)
+			and other properties.  If we add a JavaBean property defining the JNDI name, our connector could look in JNDI to find a JDBC
+			<code>DataSource</code> instance, perhaps already configured to use connection pools.
 		</para>
+		<note>
+			<para>
+				Of course, before you develop a connector, you should probably check the
+				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> JBoss DNA already provides out of the box.
+				With this latest release, JBoss DNA already includes this JDBC metadata connector!  And we're always interested in new
+				connectors and new contributors, so please consider developing your custom connector as part of JBoss DNA.
+			</para>
+		</note>
 		<para>
 			Our new connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
 			&RepositoryConnection; interface.  This class would probably wrap a JDBC database connection,
@@ -180,8 +188,8 @@
 		</para>
 		<para>
 			To use our connector in an application that uses JBoss DNA, we need to create an instance of the 
-			<classname>JdbcRepositorySource</classname> for each database instance that we want to access.  If we have 3 MySQL databases, 
-			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 <classname>JdbcRepositorySource</classname> 
+			&JdbcMetadataSource; for each database instance that we want to access.  If we have 3 MySQL databases, 
+			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 &JdbcMetadataSource; 
 			instances, each with the properties describing a single database instance.  Those sources are then available for use by 
 			JBoss DNA components, including the <link linkend="jcr">JCR</link> implementation.
 		</para>
@@ -218,12 +226,22 @@
 		    <listitem>
 		      <para>
 						Implement the &RepositorySource; interface, using JavaBean properties for each bit of information the implementation will
-						need to establish a connection to the source system.
-					</para>
-		      <para>
-						Then, implement the &RepositoryConnection; interface with a class that represents a connection to the source.  The 
+						need to establish a connection to the source system. Then, implement the &RepositoryConnection; interface with 
+						a class that represents a connection to the source.  The 
 						<code>execute(&ExecutionContext;, &Request;)</code> method should process any and all requests that may come down the pike,
-						and the results of each request can be put directly on that request.
+						and the results of each request can be put directly on that request. This approach is pretty straightforward, and gives
+						you ultimate freedom in terms of your class structure.
+					</para>
+					<para>
+						Alternatively, an easier way to get a complete read-write connector would be to extend one of our two abstract
+						&RepositorySource; implementations. If the content your connector exposes has unique keys (such as a unique string,
+						UUID or other identifier), consider implementing &MapRepositorySource;, subclassing &MapRepository;, and
+						using the existing &MapRepositoryConnection; implementation.  This &MapRepositoryConnection; does most of the work
+						already, relying upon your &MapRepository; subclass for anything that might be source-specific. 
+						Or, if the content your connector exposes is simply path-based, consider implementing &PathRepositorySource;, 
+						subclassing &PathRepository;, and using the existing &PathRepositoryConnection; implementation.  
+						Again, &PathRepositoryConnection; class does almost all of the work and delegates to your &PathRepository;
+						subclass for anything that might be source-specific.
 					</para>
 					<para>
 						Don't forget unit tests that verify that the connector is doing what it's expected to do.  (If you'll be committing the connector

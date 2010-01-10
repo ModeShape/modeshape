@@ -118,7 +118,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 			<itemizedlist>
 				<listitem>
 					<para><emphasis role="strong"><code>Loading from a file</code></emphasis> is conceptually the easiest and requires the least amount
-					of Java code, but it now requires a configuration file. More on that in a bit.</para>
+					of Java code, but it does require a configuration file. More on that in a bit.</para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>Loading from a configuration repository</code></emphasis> is not much more complicated than loading
@@ -176,7 +176,8 @@ configuration.loadFrom(file);]]></programlisting>
 	              <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
 	              <!--
 	              As a convenience, DNA defaults to granting guest users full access.  
-	              In a production system, you would want to limit this access by uncommenting one of the options below:
+	              In a production system, you would want to limit this access by uncommenting one of the 
+	              options below:
 	              
 	              for no access:
 	              <anonymousUserRoles jcr:PrimaryType="dna:option" dna:value="" />
@@ -188,11 +189,15 @@ configuration.loadFrom(file);]]></programlisting>
 	      </dna:repository>
 	  </dna:repositories>
     <!-- 
-    Define the sources for the content.  These sources are directly accessible using the DNA-specific Graph API.
+    Define the sources for the content.  These sources are directly accessible using the DNA-specific 
+    Graph API.
     -->
     <dna:sources jcr:primaryType="nt:unstructured">
-        <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
-        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+        <dna:source jcr:name="Cars" 
+                    dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" 
+                    dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
+        <dna:source jcr:name="Aircraft" 
+                    dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
             <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
             <defaultWorkspaceName>workspace2</defaultWorkspaceName>
         </dna:source>
@@ -201,17 +206,20 @@ configuration.loadFrom(file);]]></programlisting>
     Define the sequencers. This is an optional section. 
     -->
     <dna:sequencers>
-        <dna:sequencer jcr:name="Image Sequencer" dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+        <dna:sequencer jcr:name="Image Sequencer" 
+                       dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
             <dna:description>Image metadata sequencer</dna:description>        
             <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
             <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
         </dna:sequencer>
     </dna:sequencers>
     <!--
-	  Define how JBoss DNA will determine the MIME type of files. This is an optional section (and the default works pretty well).
+	  Define how JBoss DNA will determine the MIME type of files. This is an optional section 
+	  (and the default works pretty well).
     -->
     <dna:mimeTypeDetectors>
-        <dna:mimeTypeDetector jcr:name="Detector" dna:description="Standard extension-based MIME type detector"/>
+        <dna:mimeTypeDetector jcr:name="Detector" 
+                              dna:description="Standard extension-based MIME type detector"/>
     </dna:mimeTypeDetectors>
 </configuration>]]></programlisting>
 		</sect2>
@@ -465,19 +473,14 @@ try {
 				and then close the &Session;.  Here's an example of a JSP page that does this:
 			</para>
 <programlisting role="JAVA"><![CDATA[
-<%@ page import="
-	javax.naming.*,
-	javax.jcr.*,
-	org.jboss.security.config.IDTrustConfiguration
-	" %>
+<%@ page import="javax.naming.*, javax.jcr.*, org.jboss.security.config.IDTrustConfiguration" %>
 <%!
 
 static {
 	// Initialize IDTrust
-	String configFile = "security/jaas.conf.xml";
 	IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 	try {
-	    idtrustConfig.config(configFile);
+	    idtrustConfig.config("security/jaas.conf.xml");
 	} catch (Exception ex) {
 	    throw new IllegalStateException(ex);
 	}
@@ -504,9 +507,7 @@ try {
 				Since this uses a servlet container, there is no JAAS implementation configured, so note the 
 				loading of IDTrust to create the JAAS realm.  (To make this work in Tomcat, the security
 				folder that contains the <code>jaas.conf.xml</code>, <code>users.properties</code>, and
-				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.
-				Moving the security folder into the <code>conf</code> directory did not allow those files
-				to be visible by the JSP page.)
+				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.)
 			</para>
 			<note>
 				<para>

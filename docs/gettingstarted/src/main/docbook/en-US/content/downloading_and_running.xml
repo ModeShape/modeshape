@@ -35,7 +35,7 @@
     with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
     application running.
   </para>
-	<para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
+	<para>JBoss DNA uses Maven 2 for its build system, as does this example. Using Maven 2 has several advantages, including
     the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
     everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
     depends on the JBoss DNA JARs.</para>

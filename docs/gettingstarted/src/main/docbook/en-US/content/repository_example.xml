@@ -39,7 +39,7 @@
 	<sect1 id="running_repository_example">
 		<title>Running the repository example</title>
 		<para>The repository example consists of a client application that sets up three DNA repositories (named "Cars", "Airplanes", and "UFOs") and 
-			a federated repository ("Vehicles") that dynamically federates the information from the other two repositories.
+			a federated repository ("Vehicles") that dynamically federates the information from the other three repositories.
 			The client application allows you to interactively navigate each of these repositories just as you would navigate the
 			directory structure on a file system.</para>
 		<para>This collection of repositories is shown in the following figure:
@@ -48,7 +48,7 @@
 				<graphic align="center" scale="60" fileref="example-repositories.png"/>
 			</figure>
 			The "Cars" repository is an in-memory repository (using the In-Memory repository connector), the "Aircraft" repository is a JPA repository
-			(although it points to an in-memory HSQL database using the JPA repository connector), and the "UFOs" repository is
+			(using an in-memory HSQL database using the JPA repository connector), and the "UFOs" repository is
 			a file system repository (using the File System repository connector). The federated "Vehicles" repository
 			content is federated from the other repositories and cached into the "Cache" repository.  This is shown in the following figure: 
 	  	<figure id="example-federated-repository">
@@ -105,6 +105,7 @@
 			</para>
 			<para>You can also choose to navigate the "Vehicles" repository, which projects the "Cars" repository content under the
 				<code>/Vehicles/Cars</code> node, the "Airplanes" content under the <code>/Vehicles/Airplanes</code> branch,
+				the "UFOs" content under the <code>/Vehicles/UFOs</code> branch,
 				and the "Configuration" content under <code>/dna:system</code>.
 			</para>
 			<para>Try using the client to walk the different repositories.  And while this is a contrived application, it does demonstrate
@@ -215,19 +216,27 @@
 			</listitem>
 		</itemizedlist>
 		<para>As an example, consider that we want JBoss DNA to give us access through JCR to the schema information contained in a
-			relational databases.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
-			That connector would contain a <code>JdbcRepositorySource</code> Java class that implements &RepositorySource;,
+			relational database.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
+			That connector would contain a &JdbcMetadataSource; Java class that implements &RepositorySource;,
 			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
-			and other properties.  (Or we might have a JavaBean property that defines the JNDI name where we can find a JDBC
-			<code>DataSource</code> instance pointing to our JDBC database.)
+			and other properties.  If we add a JavaBean property defining the JNDI name, our connector could look in JNDI to find a JDBC
+			<code>DataSource</code> instance, perhaps already configured to use connection pools.
 		</para>
+		<note>
+			<para>
+				Of course, before you develop a connector, you should probably check the
+				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> JBoss DNA already provides out of the box.
+				With this latest release, JBoss DNA already includes this JDBC metadata connector!  And we're always interested in new
+				connectors and new contributors, so please consider developing your custom connector as part of JBoss DNA.
+			</para>
+		</note>
 		<para>So with this very high-level summary, let's dive a little deeper and look at the repository example.</para>
 	</sect1>
 	<sect1 id="example_repository_application_review">
 		<title>Reviewing the example repository application</title>
 		<para>Recall that the example repository application consists of a client application that sets up a repository service and the
 			repositories defined in a configuration repository, allowing the user to pick a repository and interactively navigate
-			the selected repository.  Several repositories are set up, including several in-memory repositories and one federated repository
+			the selected repository.  Several repositories are set up, including several standalone repositories and one federated repository
 			that dynamically federates the content from the other repositories.</para>
 		<para>
       The example is comprised of 2 classes and 1 interface, located in the <code>src/main/java</code> directory:</para>
@@ -238,8 +247,8 @@
   ]]></programlisting>
 		<para><code>RepositoryClient</code> is the class that contains the main application. It uses an instance of the
       <code>UserInterface</code> interface to  methods that will be called at runtime to obtain information about the
-      files that are imported into the in-memory repositories and the JAAS <code>CallbackHandler</code> implementation
-      that will be used by JAAS to prompt the user for authentication information.  Finally, the <code>ConsoleInput</code>
+      files that are imported into the standalone repositories and the JAAS <code>CallbackHandler</code> implementation
+      that will be used by JAAS to collect the authentication information.  Finally, the <code>ConsoleInput</code>
 			is an implementation of this that creates a text user interface,	allowing the user to operate the client from the command-line.  
 			We can easily create a graphical implementation of <code>UserInterface</code> at a later date, or we can also create a mock 
 			implementation for testing purposes that simulates a user entering data. This allows us to check the behavior of the client 
@@ -312,9 +321,10 @@ public void startRepositories() throws IOException, SAXException {
 
     ...
 
-    // For this example, we're using a couple of in-memory repositories (including one for the configuration repository).
-    // Normally, these would exist already and would simply be accessed. But in this example, we're going to
-    // populate these repositories here by importing from files. First do the configuration repository ...
+    // For this example, we're using a couple of in-memory repositories (including one for the 
+    // configuration repository). Normally, these would exist already and would simply be accessed. 
+    // But in this example, we're going to populate these repositories here by importing from files. 
+    // First do the configuration repository ...
     String location = this.userInterface.getLocationOfRepositoryFiles();
 
     // Now import the content for the two in-memory repositories ...
@@ -334,7 +344,8 @@ public void startRepositories() throws IOException, SAXException {
 			done to keep the example simple.
 		</para>
 		<para>
-			The <code>shutdown()</code> method of the example then logs out and requests the <code>JcrEngine</code> instance shuts down and, since that may take
+			The <code>shutdown()</code> method of the example then logs out and requests that the <code>JcrEngine</code> instance 
+			shut down and, since that may take
 		  a few moments (if there are any ongoing operations or enqueued activities) awaits for it to complete the shutdown.
 	   </para>
 		<programlisting role="JAVA"><![CDATA[

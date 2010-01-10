@@ -131,14 +131,14 @@
 		<para>
 			As we'll see in the <link linkend="use_cases">next chapter</link>, the ability of JBoss DNA to 
 			federate, integrate, and sequence information make JBoss DNA a powerful asset and tool.  
-			Then <link linkend="using_dna">Chapter 3</link> will show that once a JBoss DNA repository is set up, application see
-			JBoss DNA just as another JCR <code>javax.jcr.Repository</code> instance and uses the standard JCR API to obtain a <code>javax.jcr.Session</code>
+			Then <link linkend="using_dna">Chapter 3</link> will show that once a JBoss DNA repository is set up, applications see
+			JBoss DNA just as another JCR <code>javax.jcr.Repository</code> instance and use the standard JCR API to obtain a <code>javax.jcr.Session</code>
 			and work with the content.
 		</para>
 		<para>
 			<link linkend="downloading_and_running">Chapter 4</link> walks you through downloading
 			and building the JBoss DNA examples, while <link linkend="sequencer_example">Chapter 5</link>
-			and <link linkend="repository_example">Chapter 6</link> will run these very simple examples and walking through code.  
+			and <link linkend="repository_example">Chapter 6</link> will run these very simple examples and walk through their code.  
 			<link linkend="conclusion">Chapter 7</link> wraps things up with a discussion about the future of JBoss DNA
 			and what you can do next to start using JBoss DNA in your own applications.
 	  </para>

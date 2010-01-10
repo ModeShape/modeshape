@@ -61,7 +61,7 @@
 			with the content, allowing the same content to be presented in different hierarchical classifications. 
 			But JBoss DNA capabilities also offer a great advantage, since any file that is uploaded can be automatically sequenced and processed 
 			to extract information that's meaningful and useful but often locked up within the file.  For example, when a WSDL file is uploaded, 
-			the appropriate	sequencer(s) process the file and extract and stores in the repository the structured information describing the types, 
+			the appropriate	sequencer(s) process the file and extract and store in the repository the structured information describing the types, 
 			message structures, operations, port types, bindings, and services found within the WSDL file.
 			When an XML Schema Document is uploaded, JBoss DNA can do the same for the schema's complex and simple types, element and attribute 
 			declarations, model groups, namespaces, imports, includes, annotations, etc.  And JBoss DNA can do the same for the various policy files,
@@ -69,7 +69,7 @@
 		</para>
 		<para>
 			Integration with a management system can be done in a similar manner.  A JBoss DNA connector could access the management system
-			to discover the servers and enable auto-discovery of the services, and "tag" the services deployments with the lifecycle phase 
+			to discover the servers and enable auto-discovery of the services, and "tag" the services' deployments with the lifecycle phase 
 			(dev, test, production, etc.). Plus, JBoss DNA sequencers can automatically process the uploaded artifacts to extract a useful
 			structured representation of their content, and can then store that additional information in the repository. So not only are
 			the original artifacts stored in the repository, but a structured representation of their content is also stored. And all of
@@ -117,7 +117,7 @@
 		<title>Configuration repository</title>
 		<para>
 			Many applications and libraries have configuration files that allow the users (or developers) to dictate the setup and behavior.
-			Often this involves multiple files in a specific structure on the file system.  But invalid or inopportune changes to these files
+			Often this involves multiple files in a specific structure on the file system.  Invalid or inopportune changes to these files
 			sometimes corrupt the environment, but creating a more robust configuration management system is often way beyond the desired
 			effort.
 		</para>
