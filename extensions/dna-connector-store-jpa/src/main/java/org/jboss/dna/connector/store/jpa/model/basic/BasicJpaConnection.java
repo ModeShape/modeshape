@@ -76,8 +76,8 @@ class BasicJpaConnection implements RepositoryConnection {
         this.name = sourceName;
         this.cachePolicy = cachePolicy; // may be null
         this.entityManagers = entityManagers;
-        this.entityManager = entityManagers.checkout();
-        assert this.entityManagers != null;
+        // this.entityManager = entityManagers.checkout();
+        // assert this.entityManagers != null;
         this.rootNodeUuid = rootNodeUuid;
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
@@ -132,9 +132,6 @@ class BasicJpaConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        if (entityManager == null) {
-            throw new RepositorySourceException(JpaConnectorI18n.connectionIsNoLongerOpen.text(name));
-        }
 
         Logger logger = context.getLogger(getClass());
         Stopwatch sw = null;
@@ -142,14 +139,21 @@ class BasicJpaConnection implements RepositoryConnection {
             sw = new Stopwatch();
             sw.start();
         }
-        // Do any commands update/write?
-        RequestProcessor processor = new BasicRequestProcessor(name, context, observer, entityManager, rootNodeUuid,
-                                                               nameOfDefaultWorkspace, predefinedWorkspaceNames,
-                                                               largeValueMinimumSizeInBytes, creatingWorkspacesAllowed,
-                                                               compressData, enforceReferentialIntegrity);
 
+        RequestProcessor processor = null;
         boolean commit = true;
+
         try {
+            this.entityManager = entityManagers.checkout();
+
+            if (entityManager == null) {
+                throw new RepositorySourceException(JpaConnectorI18n.connectionIsNoLongerOpen.text(name));
+            }
+
+            // Do any commands update/write?
+            processor = new BasicRequestProcessor(name, context, observer, entityManager, rootNodeUuid, nameOfDefaultWorkspace,
+                                                  predefinedWorkspaceNames, largeValueMinimumSizeInBytes,
+                                                  creatingWorkspacesAllowed, compressData, enforceReferentialIntegrity);
             // Obtain the lock and execute the commands ...
             processor.process(request);
             if (request.hasError() && !request.isReadOnly()) {
@@ -184,7 +188,15 @@ class BasicJpaConnection implements RepositoryConnection {
                     processor.notifyObserverOfChanges();
                 }
             }
+
+            // Do this only once ...
+            try {
+                entityManagers.checkin(entityManager);
+            } finally {
+                entityManager = null;
+            }
         }
+
         if (logger.isTraceEnabled()) {
             assert sw != null;
             sw.stop();
@@ -198,14 +210,6 @@ class BasicJpaConnection implements RepositoryConnection {
      * @see org.jboss.dna.graph.connector.RepositoryConnection#close()
      */
     public void close() {
-        if (entityManager != null) {
-            // Do this only once ...
-            try {
-                entityManagers.checkin(entityManager);
-            } finally {
-                entityManager = null;
-            }
-        }
     }
 
 }
