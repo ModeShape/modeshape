@@ -230,7 +230,6 @@ configuration.loadFrom(configSource);
  ]]></programlisting>
 			<para>
 				This really is a more advanced way to define your configuration, so we won't go into how you configure a &RepositorySource;.
-				For more information, consult the &ReferenceGuide;.
 			</para>
 			<note>
 				<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
@@ -329,8 +328,7 @@ config.sequencer("Image Sequencer")
 					(loaded from the classpath), that is to sequence the "jcr:data" property on any new or changed nodes that are named 
 					"jcr:content" below a parent node	with a name ending in ".jpg", ".jpeg", ".gif", ".bmp", ".pcx", ".iff", ".ras", 
 					".pbm", ".pgm", ".ppm" or ".psd".  The output of the sequencing operation should be placed at the "/images/$1" node,
-					where the "$1" value is captured as the name of the parent node.  (The capture groups work the same was as regular expressions;
-					see the &ReferenceGuide; for more details.)
+					where the "$1" value is captured as the name of the parent node.  (The capture groups work the same was as regular expressions.)
 					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
 					the classpath or from a specific classpath).
 				</para>
@@ -448,7 +446,7 @@ try {
 			<para>
 				Before the server can start, however, all of the JBoss DNA jars need to be placed on the classpath for the server.
 				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
-				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
+				web application if you're using a simple servlet container.
 			</para>
 			<note>
 				<para>

@@ -31,24 +31,887 @@
 <chapter id="jcr-query-and-search">
   <title>Querying and Searching using JCR</title>
   <para>
+	  The JCR API defines a way to query a repository for content that meets user-defined criteria. 
+	  The JCR API actually makes it possible for implementations to support multiple query languages,
+	  and the only language required by <ulink url="&JSR170;">JCR 1.0</ulink> is a subset of XPath. The 1.0 specification
+	  also defines a SQL-like query language, but supporting it is optional.
+  </para>
+	<para>
+		JBoss DNA now support this query feature, including the required XPath language and two other languages not
+		defined by the specification. This chapter describes how your applications can use queries to search
+		your repositories, and defines the three query languages that are available with JBoss DNA.
 	</para>
   <sect1 id="jcr-query-api">	
     <title>JCR Query API</title>
 	  <para>
+			Like most operations in the JCR API, querying is done through a &Session; instance, from which can be obtained
+			the &QueryManager; that defines methods for creating &Query; objects, storing queries as &Node;s in the repository,
+			and reconstituting queries that were stored on &Nodes;s.  Thus, querying a repository generally follows this pattern:
+		</para>
+<programlisting role="JAVA"><![CDATA[
+// Obtain the query manager for the session ...
+javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
+
+// Create a query object ...
+String language = ...
+String expression = ...
+javax.jcr.Query query = queryManager.createQuery(expression,language);
+
+// Execute the query and get the results ...
+javax.jcr.QueryResult result = query.execute();
+
+// Iterate over the nodes in the results ...
+javax.jcr.NodeIterator nodeIter = result.getNodes();
+while ( nodeIter.hasNext() ) {
+    javax.jcr.Node node = nodeIter.nextNode();
+		...
+}
+
+// Or iterate over the rows in the results ...
+String[] columnNames = result.getColumnNames();
+javax.jcr.query.RowIterator rowIter = result.getRows();
+while ( rowIter.hasNext() ) {
+    javax.jcr.query.Row row = rowIter.nextRow();
+    // Iterate over the column values in each row ...
+    javax.jcr.Value[] values = row.getValues();
+    for ( javax.jcr.Value value : values ) {
+				...
+    }
+    // Or access the column values by name ...
+    for ( String columnName : columnNames ) {
+        javax.jcr.Value value = row.getValue(columnName);
+				...
+    }
+}
+
+// When finished, close the session ...
+session.logout();
+]]></programlisting>
+		<para>
+			For more detail about these methods or about how to use other facets of the JCR query API, please consult Section 6.7 of the 
+			<ulink url="&JSR170;">JCR 1.0 specification</ulink>.
 		</para>
 	</sect1>
   <sect1 id="jcr-xpath-query-language">	
     <title>JCR XPath Query Language</title>
 	  <para>
+		  The <ulink url="&JSR170;">JCR 1.0 specification</ulink> uses the XPath query language because node structures in JCR
+		  are very analogous to the structure of an XML document. Thus, XPath provides a useful language for selecting
+		  and searching workspace content. And since JCR 1.0 defines a mapping between XML and a workspace view called
+		  the "document view", adapting XPath to workspace content is quite natural.
+		</para>
+		<para>
+			An JCR XPath query specifies the subset of nodes in a workspace that satisfy the constraints defined in the query.
+			Constraints can limit the nodes in the results to be those nodes with a specific (primary or mixin) node type,
+			with properties having particular values, or to be within a specific subtree of the workspace.
+			The query also defines how the nodes are to be returned in the result sets using column specifiers
+			and ordering specifiers.
+		</para>
+		<note>
+			<para>
+				As an aside, JBoss DNA actually implements XPath queries by transforming them into the equivalent JCR-SQL2 representation.
+				And the JCR-SQL2 language, although often more verbose, is much more capable of representing complex queries with multiple combinations
+				of type, property, and path constraints.
+			</para>
+		</note>
+	  <sect2 id="jcr-xpath-column-specifiers">	
+	    <title>Column Specifiers</title>
+			<para>
+				JCR 1.0 specifies that support is required only for returning column values based upon single-valued, non-residual
+				properties that are declared on or inherited by the node types specified in the type constraint.
+				JBoss DNA follows this requirement, and does not specifying residual properties. However, JBoss DNA does allow
+				multi-valued properties to be specified as result columns.
+				And as per the specification, JBoss DNA always returns the "<code>jcr:path</code>" and "<code>jcr:score</code>"
+				pseudo-columns.
+			</para>
+			<para>
+				JBoss DNA uses the last location step with an attribute axis to specify the properties that are to be returned
+				as result columns. Multiple properties are specified with a union. 
+				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
+			</para>
+			<table frame='all'>
+				<title>Specifying result set columns</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='0'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>XPath</entry>
+				  		<entry>JCR-SQL2</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>//*</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)/@my:title</code></entry>
+							<entry><programlisting>SELECT [my:title] FROM [my:type]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)/(@my:title | @my:text)</code></entry>
+							<entry><programlisting>SELECT [my:title], [my:text] FROM [my:type]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)/(@my:title union @my:text)</code></entry>
+							<entry><programlisting>SELECT [my:title], [my:text] FROM [my:type]</programlisting></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</sect2>
+	  <sect2 id="jcr-xpath-type-constraints">	
+	    <title>Type Constraints</title>
+			<para>
+				JCR 1.0 specifies that support is required only for specifying constraints of one primary type, and it
+				is optional to support specifying constraints on one (or more) mixin types.  The specification
+				also defines that the XPath <code>element</code> test be used to test against node types,
+				and that it is optional to support <code>element</code> tests on location steps other than the last one.
+				Type constraints are inherently inheritance-sensitive, in that a constraint against a particular node type
+				'X' will be satisfied by nodes explicitly declared to be of type 'X' or of subtypes of 'X'.
+			</para>
+			<para>
+				JBoss DNA does support using the <code>element</code> test to test against primary or mixin type.
+				JBoss DNA also only supports using an <code>element</code> test on the last location step.
+				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
+			</para>
+			<table frame='all'>
+				<title>Specifying type constraints</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='0'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>XPath</entry>
+				  		<entry>JCR-SQL2</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>//*</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/nodes/element(*,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type] 
+WHERE PATH([my:type])> LIKE '/nodes/%'
+ AND DEPTH([my:type]) = CAST(2 AS LONG)</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/nodes//element(*,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type] 
+WHERE PATH([my:type]) LIKE '/nodes/%'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/nodes//element(ex:nodeName,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type] 
+WHERE PATH([my:type]) LIKE '/nodes/%'
+ AND NAME([my:type]) = 'ex:nodeName'</programlisting></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>
+				Note that the JCR-SQL2 language supported by JBoss DNA is far more capable of joining
+				multiple sets of nodes with different type, property and path constraints.
+			</para>
+		</sect2>
+	  <sect2 id="jcr-xpath-property-constraints">	
+	    <title>Property Constraints</title>
+			<para>
+				JCR 1.0 specifies that attribute tests on the last location step is required, but that
+				predicate tests on any other location steps is optional.
+			</para>
+			<para>
+				JBoss DNA does support using attribute tests on the last location step to specify
+				property constraints, as well as supporting axis and filter predicates on other location steps.
+				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
+			</para>
+			<table frame='all'>
+				<title>Specifying property constraints</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='0'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>XPath</entry>
+				  		<entry>JCR-SQL2</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>//*[@prop1]</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base] 
+WHERE [nt:base].prop1 IS NOT NULL</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[@prop1]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE [my:type].prop1 IS NOT NULL</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[@prop1=xs:boolean('true')]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE [my:type].prop1 = CAST('true' AS BOOLEAN)</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[@id&lt;1 and @name='john']</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE id &lt; 1 AND name = 'john'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[a/b/@id]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+JOIN [nt:base] as nodeSet1 
+  ON ISCHILDNODE(nodeSet1,[my:type])
+JOIN [nt:base] as nodeSet2 
+  ON ISCHILDNODE(nodeSet2,nodeSet1)
+WHERE (NAME(nodeSet1) = 'a' 
+  AND NAME(nodeSet2) = 'b')
+  AND nodeSet2.id IS NOT NULL</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[./*/*/@id]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+JOIN [nt:base] as nodeSet1 
+  ON ISCHILDNODE(nodeSet1,[my:type])
+JOIN [nt:base] as nodeSet2
+  ON ISCHILDNODE(nodeSet2,nodeSet1)
+WHERE nodeSet2.id IS NOT NULLL</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[.//@id]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+JOIN [nt:base] as nodeSet1 
+  ON ISDESCENDANTNODE(nodeSet1,[my:type])
+WHERE nodeSet2.id IS NOT NULLL</programlisting></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>
+				Section 6.6.3.3 of the JCR 1.0 specification contains an in-depth description of property value constraints using
+				various comparison operators.
+			</para>
+		</sect2>
+	  <sect2 id="jcr-xpath-path-constraints">	
+	    <title>Path Constraints</title>
+			<para>
+				JCR 1.0 specifies that exact, child node, and descendants-or-self path constraints be supported
+				on the location steps in an XPath query.
+			</para>
+			<para>
+				JBoss DNA does support the four kinds of path constraints.
+				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
+			</para>
+			<table frame='all'>
+				<title>Specifying path constraints</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='0'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>XPath</entry>
+				  		<entry>JCR-SQL2</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>/jcr:root/a/b[*]</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]
+WHERE PATH([nt:base]) = '/a/b'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/a[1]/b[*]</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]
+WHERE PATH([nt:base]) = '/a/b'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/a[2]/b</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]
+WHERE PATH([nt:base]) = '/a[2]/b'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/a/b[2]//c[4]</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE PATH([nt:base]) = '/a/b[2]/c[4]'
+   OR PATH(nodeSet1) LIKE '/a/b[2]/%/c[4]'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/a/b//c//d</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE PATH([nt:base]) = '/a/b/c/d'
+   OR PATH([nt:base]) LIKE '/a/b/%/c/d' 
+   OR PATH([nt:base]) LIKE '/a/b/c/%/d'
+   OR PATH([nt:base]) LIKE '/a/b/%/c/%/d'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type)[@id&lt;1 and @name='john']</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE id &lt; 1 AND name = 'john'</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>/jcr:root/a/b//element(*,my:type)</code></entry>
+							<entry><programlisting>SELECT * FROM [my:type]
+WHERE PATH([my:type]) = '/a/b/%'</programlisting></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>
+				Note that the JCR-SQL2 language supported by JBoss DNA is capable of representing a wider
+				combination of path constraints.
+			</para>
+		</sect2>
+	  <sect2 id="jcr-xpath-ordering-specifiers">	
+	    <title>Ordering Specifiers</title>
+			<para>
+				JCR 1.0 extends the XPath grammar to add support for ordering the results according to the
+				natural ordering of the values of one or more properties on the nodes.
+			</para>
+			<para>
+				JBoss DNA does support zero or more ordering specifiers, including whether each specifier
+				is ascending or descending. If no ordering specifiers are defined, the ordering of the results
+				is not predefined and may vary (though ordering by score is often the approach).
+				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
+			</para>
+			<table frame='all'>
+				<title>Specifying result ordering</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='0'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>XPath</entry>
+				  		<entry>JCR-SQL2</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><code>//element(*,*) order by @title</code></entry>
+							<entry><programlisting>SELECT nodeSet1.title
+FROM [nt:base] AS nodeSet1 
+ORDER BY nodeSet1.title</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,*) order by @title, @jcr:score</code></entry>
+							<entry><programlisting>SELECT nodeSet1.title
+FROM [nt:base] AS nodeSet1 
+ORDER BY nodeSet1.title,
+         SCORE([nt:base])</programlisting></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>
+				Note that the JCR-SQL2 language supported by JBoss DNA has a far richer <code>ORDER BY</code> clause,
+				allowing the use of any kind of dynamic operand, including ordering upon arithmetic operations
+				of multiple dynamic operands.
+			</para>
+		</sect2>
+	  <sect2 id="jcr-xpath-misc">	
+	    <title>Miscellaneous</title>
+			<para>
+				JCR 1.0 defines a number of other optional and required features, and these are summarized in this section.
+	      <itemizedlist>
+	        <listitem>
+		        <para>
+			        Only abbreviated XPath syntax is supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        Only the <code>child</code> axis (the default axis, represented by '/' in abbreviated syntax),
+							<code>descendant-or-self</code> axis (represented by '//' in abbreviated syntax), 
+							<code>self</code> axis (represented by '.' in abbreviated syntax),
+							and <code>attribute</code> axis (represent by '@' in abbreviated syntax) are supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>text()</code> node test is <emphasis>not</emphasis> supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>element()</code> node test is supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>jcr:like()</code> function is supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>jcr:contains()</code> function is supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>jcr:score()</code> function is supported.
+		        </para>
+	        </listitem>
+	        <listitem>
+		        <para>
+			        The <code>jcr:deref()</code> function is <emphasis>not</emphasis> supported.
+		        </para>
+	        </listitem>
+				</itemizedlist>
+			</para>
+		</sect2>
+	</sect1>
+  <sect1 id="jcr-sql-query-language">	
+    <title>JCR-SQL Query Language</title>
+	  <para>
+		  The JCR-SQL query language is defined by the <ulink url="&JSR170;">JCR 1.0 specification</ulink> as a way to express
+		  queries using strings that are similar to SQL. Support for the language is optional, and in fact this language
+		  was deprecated in the <ulink url="&JSR283;">JCR 2.0 specification</ulink> in favor of the improved and more powerful 
+		  (and more SQL-like) <link linkend="jcr-sql2-query-language">JCR-SQL2</link> language, which is covered in the next section.
+		  As such, <emphasis role="strong">JBoss DNA does not support the original JCR-SQL language</emphasis>.
 		</para>
 	</sect1>
   <sect1 id="jcr-sql2-query-language">	
     <title>JCR-SQL2 Query Language</title>
 	  <para>
 		  The JCR-SQL2 query language is defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as a way to express
-		  queries using strings that are similar to SQL. JBoss DNA includes full support for this query language, and even
-		  adds several extensions to make it even more powerful.
+		  queries using strings that are similar to SQL.  This query language is an improvement over the earlier JCR-SQL language,
+		  which has been deprecated in JCR 2.0 (see previous section).
 		</para>
+		<para>
+		  JBoss DNA includes full support for the complete JCR-SQL2 query language. 
+		  However, JBoss DNA adds several extensions to make it even more powerful:
+      <itemizedlist>
+        <listitem>
+	        <para>
+		        Support for the "<code>FULL OUTER JOIN</code>" and "<code>CROSS JOIN</code>" join types, in addition to the
+		        "<code>LEFT OUTER JOIN</code>", "<code>RIGHT OUTER JOIN</code>" and "<code>INNER JOIN</code>" types defined by
+		  			JCR-SQL2. Note that "<code>JOIN</code>" is a shorthand for "<code>INNER JOIN</code>".
+	        </para>
+        </listitem>
+        <listitem>
+          <para>
+	          Support for the <code>UNION</code>, <code>INTERSECT</code>, and <code>EXCEPT</code> set operations on multiple result
+	          sets to form a single result set. As with standard SQL, the result sets being combined must have the same columns.
+	          The <code>UNION</code> operator combines the rows from two result sets, the <code>INTERSECT</code> operator returns
+	          the difference between two result sets, and the <code>EXCEPT</code> operator returns the rows that are common to
+	          two result sets.  Duplicate rows are removed unless the operator is followed by the <code>ALL</code> keyword.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+		        Removal of duplicate rows in the results, using "<code>SELECT DISTINCT ...</code>".
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+		        Limiting the number of rows in the result set with the "<code>LIMIT count</code>" clause, where <code>count</code>
+		        is the maximum number of rows that should be returned.  This clause may optionally be followed by the
+						"<code>OFFSET number</code>" clause to specify the number of initial rows that should be skipped.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>" and "<code>PATH([&lt;selectorName>])</code>"
+						that enable placing constraints on the node depth and path, respectively.  These dynamic operands 
+						can be used in a manner similar to "<code>NAME([&lt;selectorName>])</code>" and "<code>LOCALNAME([&lt;selectorName>])</code>"
+						that are defined by JCR-SQL2.  Note in each of these cases, the selector name is optional if there is only one
+						selector in the query.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
+						of discreet static operands: "<code>&lt;dynamicOperand> [NOT] IN (&lt;staticOperand> {, &lt;staticOperand>})"</code>.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discreet operands: 
+						"<code>&lt;dynamicOperand> [NOT] BETWEEN &lt;lowerBoundStaticOperand> [EXCLUSIVE] AND &lt;upperBoundStaticOperand> [EXCLUSIVE]</code>"
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for simple arithmetic in numeric-based criteria and order-by clauses.  For example, 
+						"<code>... WHERE SCORE(type1) + SCORE(type2) > 1.0</code>" or "<code>... ORDER BY (SCORE(type1) * SCORE(type2)) ASC</code>".
+					</para>
+        </listitem>
+      </itemizedlist>
+		</para>
+		<sect2 id="jcr-sql2-grammar">
+			<title>Grammar</title>
+			<para>
+				The grammar for the JCR-SQL2 query language is actually a superset of that defined by the
+				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, and as such the complete grammar is included here.
+			</para>
+			<note>
+				<para>
+					The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
+					Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
+					Terms surrounded by '{' and '}' denote terms that appear zero or more times.
+					Parentheses are used to identify groups, and are often used to surround possible values. 
+				</para>
+			</note>
+			<sect3>
+				<title>Queries</title>
+<programlisting><![CDATA[
+QueryCommand ::= Query | SetQuery
+
+SetQuery ::= Query ('UNION'|'INTERSECT'|'EXCEPT') [ALL] Query
+                 { ('UNION'|'INTERSECT'|'EXCEPT') [ALL] Query }
+
+Query ::= 'SELECT' ['DISTINCT'] columns
+          'FROM' Source
+          ['WHERE' Constraint]
+          ['ORDER BY' orderings]
+          [Limit]
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Sources</title>
+<programlisting><![CDATA[
+Source ::= Selector | Join
+
+Selector ::= nodeTypeName ['AS' selectorName]
+
+nodeTypeName ::= Name
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Joins</title>
+<programlisting><![CDATA[
+	
+Join ::= left [JoinType] 'JOIN' right 'ON' JoinCondition
+         // If JoinType is omitted INNER is assumed.
+
+left ::= Source
+right ::= Source
+
+JoinType ::= Inner | LeftOuter | RightOuter | FullOuter | Cross
+
+Inner ::= 'INNER' ['JOIN']
+
+LeftOuter ::= 'LEFT JOIN' | 'OUTER JOIN' | 'LEFT OUTER JOIN'
+
+RightOuter ::= 'RIGHT OUTER' ['JOIN']
+
+RightOuter ::= 'FULL OUTER' ['JOIN']
+
+RightOuter ::= 'CROSS' ['JOIN']
+
+JoinCondition ::= EquiJoinCondition | SameNodeJoinCondition | 
+                  ChildNodeJoinCondition | DescendantNodeJoinCondition
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Equi-Join Conditions</title>
+<programlisting><![CDATA[
+	
+EquiJoinCondition ::= selector1Name'.'property1Name '=' selector2Name'.'property2Name
+
+selector1Name ::= selectorName
+selector2Name ::= selectorName
+property1Name ::= propertyName
+property2Name ::= propertyName
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Same-Node Join Conditions</title>
+<programlisting><![CDATA[
+	
+SameNodeJoinCondition ::= 'ISSAMENODE(' selector1Name ',' selector2Name [',' selector2Path] ')'
+
+selector2Path ::= Path
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Child-Node Join Conditions</title>
+<programlisting><![CDATA[
+	
+ChildNodeJoinCondition ::= 'ISCHILDNODE(' childSelectorName ',' parentSelectorName ')'
+
+childSelectorName ::= selectorName
+parentSelectorName ::= selectorName
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Descendant-Node Join Conditions</title>
+<programlisting><![CDATA[
+	
+DescendantNodeJoinCondition ::= 'ISDESCENDANTNODE(' descendantSelectorName 
+                                                ',' ancestorSelectorName ')'
+descendantSelectorName ::= selectorName
+ancestorSelectorName ::= selectorName
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Constraints</title>
+<programlisting><![CDATA[
+	
+Constraint ::= ConstraintItem | '(' ConstraintItem ')'
+
+ConstraintItem ::= And | Or | Not | Comparison | Between | PropertyExistence | 
+                   SetConstraint | FullTextSearch | SameNode | ChildNode | DescendantNode
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>And Constraints</title>
+<programlisting><![CDATA[
+
+And ::= constraint1 'AND' constraint2
+
+constraint1 ::= Constraint
+constraint2 ::= Constraint
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Or Constraints</title>
+<programlisting><![CDATA[
+	
+Or ::= constraint1 'OR' constraint2
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Not Constraints</title>
+<programlisting><![CDATA[
+	
+Not ::= 'NOT' Constraint
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Comparison Constraints</title>
+<programlisting><![CDATA[
+	
+Comparison ::= DynamicOperand Operator StaticOperand
+
+Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE'
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Between Constraints</title>
+<programlisting><![CDATA[
+	
+Between ::= DynamicOperand ['NOT'] 'BETWEEN' lowerBound ['EXCLUSIVE'] 
+                                   'AND' upperBound ['EXCLUSIVE']
+
+lowerBound ::= StaticOperand
+upperBound ::= StaticOperand
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Property Existence Constraints</title>
+<programlisting><![CDATA[
+	
+PropertyExistence ::= selectorName'.'propertyName 'IS' ['NOT'] 'NULL' | 
+                      propertyName 'IS' ['NOT'] 'NULL' /* If only one selector exists in this query */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Set Constraints</title>
+<programlisting><![CDATA[
+
+SetConstraint ::= selectorName'.'propertyName ['NOT'] 'IN' | 
+                      propertyName ['NOT'] 'IN' /* If only one selector exists in this query */
+                      '(' firstStaticOperand {',' additionalStaticOperand } ')'
+firstStaticOperand ::= StaticOperand
+additionalStaticOperand ::= StaticOperand
+
+]]></programlisting>
+			</sect3>
+			<sect3 id="jcr-sql2-full-text-search-constraints">
+				<title>Full-text Search Constraints</title>
+<programlisting><![CDATA[
+	
+FullTextSearch ::= 'CONTAINS(' ([selectorName'.']propertyName | selectorName'.*') 
+                           ',' ''' fullTextSearchExpression''' ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the propertyName is optional */
+fullTextSearchExpression ::= /* a full-text search expression, see FullTextSearchParser */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Same-Node Constraint</title>
+<programlisting><![CDATA[
+	
+SameNode ::= 'ISSAMENODE(' [selectorName ','] Path ')' 
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the path is optional */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Child-Node Constraints</title>
+<programlisting><![CDATA[
+
+ChildNode ::= 'ISCHILDNODE(' [selectorName ','] Path ')' 
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the path is optional */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Descendant-Node Constraints</title>
+<programlisting><![CDATA[
+
+DescendantNode ::= 'ISDESCENDANTNODE(' [selectorName ','] Path ')' 
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the propertyName is optional */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Paths and Names</title>
+<programlisting><![CDATA[
+
+Name ::= '[' quotedName ']' | '[' simpleName ']' | simpleName
+
+quotedName ::= /* A JCR Name (see the JCR specification) */
+simpleName ::= /* A JCR Name that contains only SQL-legal 
+                  characters (namely letters, digits, and underscore) */
+
+Path ::= '[' quotedPath ']' | '[' simplePath ']' | simplePath
+
+quotedPath ::= /* A JCR Path that contains non-SQL-legal characters */
+simplePath ::= /* A JCR Path (rather Name) that contains only SQL-legal 
+                    characters (namely letters, digits, and underscore) */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Static Operands</title>
+<programlisting><![CDATA[
+	
+StaticOperand ::= Literal | BindVariableValue
+
+Literal
+Literal ::= CastLiteral | UncastLiteral
+
+CastLiteral ::= 'CAST(' UncastLiteral ' AS ' PropertyType ')'
+
+PropertyType ::= 'STRING' | 'BINARY' | 'DATE' | 'LONG' | 'DOUBLE' | 'DECIMAL' | 
+                 'BOOLEAN' | 'NAME' | 'PATH' | 'REFERENCE' | 'WEAKREFERENCE' | 'URI'
+                 /* 'WEAKREFERENCE' is not currently supported in JCR 1.0 */
+
+UncastLiteral ::= UnquotedLiteral | ''' UnquotedLiteral ''' | '"' UnquotedLiteral '"'
+
+UnquotedLiteral ::= /* String form of a JCR Value, as defined in the JCR specification */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Bind Variables</title>
+<programlisting><![CDATA[
+	
+BindVariableValue ::= '$'bindVariableName
+
+bindVariableName ::= /* A string that conforms to the JCR Name syntax, though the prefix
+                        does not need to be a registered namespace prefix. */
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Dynamic Operands</title>
+<programlisting><![CDATA[
+	
+DynamicOperand ::= PropertyValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
+                   FullTextSearchScore | LowerCase | UpperCase | Arithmetic | 
+                   '(' DynamicOperand ')'
+
+PropertyValue ::= [selectorName'.'] propertyName
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the propertyName is optional */
+
+Length ::= 'LENGTH(' PropertyValue ')'
+
+NodeName ::= 'NAME(' [selectorName] ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      is optional */
+
+NodeLocalName ::= 'LOCALNAME(' [selectorName] ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      is optional */
+
+NodePath ::= 'PATH(' [selectorName] ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      is optional */
+
+NodeDepth ::= 'DEPTH(' [selectorName] ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      is optional */
+
+FullTextSearchScore ::= 'SCORE(' [selectorName] ')'
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      is optional */
+
+LowerCase ::= 'LOWER(' DynamicOperand ')'
+
+UpperCase ::= 'UPPER(' DynamicOperand ')'
+
+Arithmetic ::= DynamicOperand ('+'|'-'|'*'|'/') DynamicOperand
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Ordering</title>
+<programlisting><![CDATA[
+	
+orderings ::= Ordering {',' Ordering}
+
+Ordering ::= DynamicOperand [Order]
+
+Order ::= 'ASC' | 'DESC'
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Columns</title>
+<programlisting><![CDATA[
+	
+columns ::= (Column ',' {Column}) | '*'
+
+Column ::= ([selectorName'.']propertyName ['AS' columnName]) | (selectorName'.*')
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the propertyName is optional */
+selectorName ::= Name
+propertyName ::= Name
+columnName ::= Name
+
+]]></programlisting>
+			</sect3>
+			<sect3>
+				<title>Limit and Offset</title>
+<programlisting><![CDATA[
+	
+Limit ::= 'LIMIT' count [ 'OFFSET' offset ]
+count ::= /* Positive integer value */
+offset ::= /* Non-negative integer value */
+]]></programlisting>
+			</sect3>
+		</sect2>
 	</sect1>
   <sect1 id="fulltext-search-query-language">	
     <title>Full-Text Search Language</title>
@@ -59,8 +922,9 @@
 		  you to use the JCR query API but with a far simpler, Google-style search grammar.
 		</para>
 		<para>
-			This query language is actually defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as the full-text 
-			search expression grammar used in the second parameter of the <code>CONTAINS(...)</code> function of the JCR-SQL2 language.
+			This query language is actually defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as the 
+			<link linkend="jcr-sql2-full-text-search-constraint">full-text search expression grammar</link>
+			used in the second parameter of the <code>CONTAINS(...)</code> function of the JCR-SQL2 language.
 			We just pulled it out and made it available as a first-class query language.
 		</para>
 		<para>
@@ -90,7 +954,15 @@
 			<title>Grammar</title>
 			<para>
 				The grammar for this full-text search language is specified in Section 6.7.19 of the 
-				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, but it is also included here as a convenience:
+				<ulink url="&JSR283;">JCR 2.0 specification</ulink>, but it is also included here as a convenience.
+				<note>
+					<para>
+						The grammar is presented using the same EBNF nomenclature as used in the JCR 2.0 specification.
+						Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
+						Terms surrounded by '{' and '}' denote terms that appear zero or more times.
+						Parentheses are used to identify groups, and are often used to surround possible values. 
+					</para>
+				</note>
 			</para>
 <programlisting><![CDATA[
 

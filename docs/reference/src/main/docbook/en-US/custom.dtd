@@ -78,6 +78,7 @@
 <!ENTITY QueryResult									"<interface>QueryResult</interface>">
 <!ENTITY NodeIterator									"<interface>NodeIterator</interface>">
 <!ENTITY RowIterator									"<interface>RowIterator</interface>">
+<!ENTITY Node													"<interface>Node</interface>">
 
 <!-- Types in dna-common -->
 
