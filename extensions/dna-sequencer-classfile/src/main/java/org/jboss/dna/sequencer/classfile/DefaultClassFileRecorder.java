@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Path.Segment;
@@ -45,9 +46,14 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
                              ClassMetadata classMetadata ) {
 
         PathFactory pathFactory = pathFactoryFor(context);
+        DateTimeFactory dateFactory = dateFactoryFor(context);
         Path classPath = pathFor(pathFactory, classMetadata);
 
-        writeClassNode(output, pathFactory, classPath, classMetadata);
+        writeClassNode(output, pathFactory, dateFactory, classPath, classMetadata);
+    }
+
+    private DateTimeFactory dateFactoryFor( StreamSequencerContext context ) {
+        return context.getValueFactories().getDateFactory();
     }
 
     private PathFactory pathFactoryFor( StreamSequencerContext context ) {
@@ -67,6 +73,7 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
 
     private void writeClassNode( SequencerOutput output,
                                  PathFactory pathFactory,
+                                 DateTimeFactory dateFactory,
                                  Path classPath,
                                  ClassMetadata cmd ) {
 
@@ -86,6 +93,7 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
          */
 
         output.setProperty(classPath, ClassFileSequencerLexicon.NAME, cmd.getClassName());
+        output.setProperty(classPath, ClassFileSequencerLexicon.SEQUENCED_DATE, dateFactory.create());
         output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, cmd.getSuperclassName());
         output.setProperty(classPath, ClassFileSequencerLexicon.VISIBILITY, cmd.getVisibility().getDescription());
         output.setProperty(classPath, ClassFileSequencerLexicon.ABSTRACT, cmd.isAbstract());

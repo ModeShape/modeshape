@@ -24,14 +24,14 @@
 package org.jboss.dna.sequencer.classfile;
 
 import java.io.InputStream;
-import net.jcip.annotations.Immutable;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.sequencer.SequencerOutput;
 import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.graph.sequencer.StreamSequencerContext;
 import org.jboss.dna.sequencer.classfile.metadata.ClassFileMetadataReader;
 import org.jboss.dna.sequencer.classfile.metadata.ClassMetadata;
 
-@Immutable
+@ThreadSafe
 public class ClassFileSequencer implements StreamSequencer {
 
     private static final ClassFileRecorder DEFAULT_CLASS_FILE_RECORDER = new DefaultClassFileRecorder();

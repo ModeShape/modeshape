@@ -74,7 +74,8 @@
 + * (class:method) = class:method
 
 [class:class]
-- class:name (string) mandatory 
+- class:name (string) mandatory
+- class:sequencedDate (date) 
 - class:superClassName (string) 
 - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
 - class:abstract (boolean) mandatory

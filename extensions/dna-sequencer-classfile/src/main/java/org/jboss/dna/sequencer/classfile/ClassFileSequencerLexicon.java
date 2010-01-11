@@ -55,6 +55,7 @@ public class ClassFileSequencerLexicon {
     public static final Name NATIVE = new BasicName(Namespace.URI, "native");
     public static final Name PARAMETERS = new BasicName(Namespace.URI, "parameters");
     public static final Name RETURN_TYPE_CLASS_NAME = new BasicName(Namespace.URI, "returnTypeClassName");
+    public static final Name SEQUENCED_DATE = new BasicName(Namespace.URI, "sequencedDate");
     public static final Name STATIC = new BasicName(Namespace.URI, "static");
     public static final Name STRICT_FP = new BasicName(Namespace.URI, "strictFp");
     public static final Name SUPER_CLASS_NAME = new BasicName(Namespace.URI, "superClassName");
