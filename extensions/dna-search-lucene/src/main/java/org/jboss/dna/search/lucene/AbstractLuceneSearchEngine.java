@@ -42,6 +42,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.jboss.dna.common.collection.SimpleProblems;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
@@ -151,6 +152,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         protected final TypeSystem typeSystem;
         protected final PropertyFactory propertyFactory;
         protected final Workspaces<WorkspaceType> workspaces;
+        protected final Logger logger = Logger.getLogger(getClass());
 
         protected AbstractLuceneProcessor( String sourceName,
                                            ExecutionContext context,

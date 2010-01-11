@@ -68,6 +68,7 @@ import org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProc
 public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchWorkspace, LuceneSearchSession> {
 
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();
+    private final Logger logger = Logger.getLogger(getClass());
 
     protected LuceneSearchProcessor( String sourceName,
                                      ExecutionContext context,
@@ -165,13 +166,6 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         Location location = request.getActualLocationOfNode();
         assert location != null;
 
-        Logger logger = Logger.getLogger(getClass());
-        if (logger.isTraceEnabled()) {
-            logger.trace("indexing {0} in workspace \"{1}\"",
-                         location.getString(getExecutionContext().getNamespaceRegistry()),
-                         request.inWorkspace());
-        }
-
         try {
             session.setOrReplaceProperties(location, request.properties());
             session.recordChange();
@@ -218,6 +212,9 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
         assert !readOnly;
         try {
             // Create a query to find all the nodes at or below the specified path (this efficiently handles the root path) ...
+            if (logger.isTraceEnabled()) {
+                logger.trace("index for \"{0}\" workspace: DEL '{1}' branch", request.inWorkspace(), stringFactory.create(path));
+            }
             Query query = session.findAllNodesAtOrBelow(path);
             // Now delete the documents from each index using this query, which we can reuse ...
             session.getContentWriter().deleteDocuments(query);

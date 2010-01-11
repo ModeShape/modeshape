@@ -57,6 +57,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
@@ -120,6 +121,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     private IndexWriter contentWriter;
     private IndexSearcher contentSearcher;
     private int numChanges;
+    private final Logger logger = Logger.getLogger(getClass());
 
     protected LuceneSearchSession( LuceneSearchWorkspace workspace,
                                    LuceneSearchProcessor processor ) {
@@ -205,6 +207,10 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @see org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#commit()
      */
     public void commit() {
+        if (logger.isTraceEnabled() && numChanges > 0) {
+            logger.trace("index for \"{0}\" workspace: COMMIT", workspace.getWorkspaceName());
+        }
+
         // Is optimization required ...
         final boolean optimize = workspace.isOptimizationRequired(numChanges);
         numChanges = 0;
@@ -256,6 +262,9 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @see org.jboss.dna.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#rollback()
      */
     public void rollback() {
+        if (logger.isTraceEnabled() && numChanges > 0) {
+            logger.trace("index for \"{0}\" workspace: ROLLBACK", workspace.getWorkspaceName());
+        }
         numChanges = 0;
         IOException ioError = null;
         RuntimeException runtimeError = null;
@@ -461,6 +470,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
+        logger.trace("index for \"{0}\" workspace: ADD {1}", workspace.getWorkspaceName(), doc);
         getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
     }
 
