@@ -4,7 +4,7 @@
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>getting_started</artifactId>
   <packaging>pom</packaging>
-  <version>0.7</version>
+  <version>1.0.0.Beta1-SNAPSHOT</version>
   <name>JBoss DNA Getting Started examples</name>
   <description />
 

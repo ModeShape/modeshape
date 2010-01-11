@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jboss.dna</groupId>
 	<artifactId>dna</artifactId>
-	<version>0.7</version>
+	<version>1.0.0.Beta1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>JBoss DNA</name>
 	<url>http://www.jboss.org/dna</url>
@@ -11,8 +11,8 @@
 		JBoss DNA is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/tags/dna-0.7</connection>
-    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/tags/dna-0.7</developerConnection>   
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/trunk</connection>
+    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/trunk</developerConnection>   
 	</scm>
   <issueManagement>
     <system>jira</system>
