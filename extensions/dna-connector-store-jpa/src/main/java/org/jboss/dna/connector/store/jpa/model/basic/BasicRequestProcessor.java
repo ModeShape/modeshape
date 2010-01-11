@@ -260,6 +260,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                                 createProperties(workspace, uuidString, request.properties());
                             }
                             request.setActualLocationOfNode(childLocation);
+                            recordChange(request);
                             return;
                         }
                     }
@@ -306,6 +307,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocationOfNode(actualLocation);
+        recordChange(request);
     }
 
     /**
