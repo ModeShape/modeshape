@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jboss.dna</groupId>
 	<artifactId>dna</artifactId>
-	<version>0.7-SNAPSHOT</version>
+	<version>0.7</version>
 	<packaging>pom</packaging>
 	<name>JBoss DNA</name>
 	<url>http://www.jboss.org/dna</url>
@@ -11,8 +11,8 @@
 		JBoss DNA is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/trunk</connection>
-    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/trunk</developerConnection>   
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/tags/dna-0.7</connection>
+    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/tags/dna-0.7</developerConnection>   
 	</scm>
   <issueManagement>
     <system>jira</system>
@@ -155,11 +155,11 @@
 		     them via filtering to the resources. If a project needs files filtered, however, make sure to include
 		     a 'testResources' fragment in the 'build' section of the child project POM to say which files need to be filtered.
 		     See the "dna-integration" or "extensions/dna-connector-store-jpa" project POMs for examples. -->
-		<jpaSource.dialect/>
-		<jpaSource.driverClassName/>
-		<jpaSource.url/>
-		<jpaSource.username/>
-		<jpaSource.password/>
+		<jpaSource.dialect />
+		<jpaSource.driverClassName />
+		<jpaSource.url />
+		<jpaSource.username />
+		<jpaSource.password />
 		<jpaSource.maximumConnectionsInPool>1</jpaSource.maximumConnectionsInPool>
 		<jpaSource.minimumConnectionsInPool>0</jpaSource.minimumConnectionsInPool>
 		<jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
@@ -168,16 +168,16 @@
 		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
 		<jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
 		<jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
-		<jpaSource.compressData/>
-		<jpaSource.cacheTimeToLiveInMilliseconds/>
-		<jpaSource.creatingWorkspacesAllowed/>
-		<jpaSource.defaultWorkspaceName/>
-		<jpaSource.predefinedWorkspaceNames/>
-		<jpaSource.model/>
-		<jpaSource.numberOfConnectionsToAcquireAsNeeded/>
+		<jpaSource.compressData />
+		<jpaSource.cacheTimeToLiveInMilliseconds />
+		<jpaSource.creatingWorkspacesAllowed />
+		<jpaSource.defaultWorkspaceName />
+		<jpaSource.predefinedWorkspaceNames />
+		<jpaSource.model />
+		<jpaSource.numberOfConnectionsToAcquireAsNeeded />
 		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
 		<jpaSource.retryLimit>3</jpaSource.retryLimit>
-		<jpaSource.rootNodeUuid/>
+		<jpaSource.rootNodeUuid />
 		<jpaSource.showSql>false</jpaSource.showSql>
     <metadata.collectorClassName>org.jboss.dna.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 	</properties>
