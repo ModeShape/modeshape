@@ -33,7 +33,7 @@ import org.modeshape.web.jcr.rest.client.Utils;
  * The <code>Server</code> class is the business object for a server that is hosting one or more ModeShape repositories.
  */
 @Immutable
-public class Server implements IDnaObject {
+public class Server implements IModeShapeObject {
 
     // ===========================================================================================================================
     // Fields
@@ -99,7 +99,7 @@ public class Server implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getName()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
     public String getName() {
         return getUrl();
@@ -115,7 +115,7 @@ public class Server implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getShortDescription()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
     public String getShortDescription() {
         return RestClientI18n.serverShortDescription.text(this.url, this.user);

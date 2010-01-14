@@ -37,7 +37,7 @@ import org.modeshape.web.jcr.rest.spi.RepositoryProvider;
  * {@link RepositoryProvider}.
  * <p>
  * The repository factory implements a lifecycle for the repository providers. It is first {@link #initialize(ServletContext)
- * initialized} by {@link DnaJcrDeployer}, a servlet context listener that must be configured in the ModeShape JCR REST web
+ * initialized} by {@link ModeShapeJcrDeployer}, a servlet context listener that must be configured in the ModeShape JCR REST web
  * configuration (web.xml). The repository factory looks in the context for a parameter with the name of {@link #PROVIDER_KEY}.
  * This is assumed to be the FQN of the {@link RepositoryProvider repository provider}, which the factory will then instantiate.
  * </p>

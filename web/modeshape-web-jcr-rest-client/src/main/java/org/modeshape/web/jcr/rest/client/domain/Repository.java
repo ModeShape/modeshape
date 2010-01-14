@@ -32,7 +32,7 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
  * The Repository class is the business object for a ModeShape repository.
  */
 @Immutable
-public class Repository implements IDnaObject {
+public class Repository implements IModeShapeObject {
 
     // ===========================================================================================================================
     // Fields
@@ -88,7 +88,7 @@ public class Repository implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getName()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
     public String getName() {
         return this.name;
@@ -104,7 +104,7 @@ public class Repository implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getShortDescription()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
     public String getShortDescription() {
         return RestClientI18n.repositoryShortDescription.text(this.name, this.server.getName());

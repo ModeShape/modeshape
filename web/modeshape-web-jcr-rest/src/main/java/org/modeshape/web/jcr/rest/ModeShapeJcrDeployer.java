@@ -39,7 +39,7 @@ import org.modeshape.web.jcr.rest.spi.RepositoryProvider;
  * @see RepositoryFactory
  */
 @NotThreadSafe
-public class DnaJcrDeployer implements ServletContextListener {
+public class ModeShapeJcrDeployer implements ServletContextListener {
 
     /**
      * Alerts the repository factory that the web application is shutting down

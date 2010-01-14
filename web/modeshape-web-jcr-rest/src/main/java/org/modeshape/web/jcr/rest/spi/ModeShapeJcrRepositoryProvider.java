@@ -52,13 +52,13 @@ import org.xml.sax.SAXException;
  * @see Class#getResourceAsStream(String)
  */
 @ThreadSafe
-public class DnaJcrRepositoryProvider implements RepositoryProvider {
+public class ModeShapeJcrRepositoryProvider implements RepositoryProvider {
 
     public static final String CONFIG_FILE = "org.modeshape.web.jcr.rest.CONFIG_FILE";
 
     private JcrEngine jcrEngine;
 
-    public DnaJcrRepositoryProvider() {
+    public ModeShapeJcrRepositoryProvider() {
     }
 
     public Set<String> getJcrRepositoryNames() {

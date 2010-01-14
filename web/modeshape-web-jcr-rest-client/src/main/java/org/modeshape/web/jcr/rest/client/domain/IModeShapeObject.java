@@ -24,9 +24,9 @@
 package org.modeshape.web.jcr.rest.client.domain;
 
 /**
- * The <code>IDnaObject</code> class defines a ModeShape business object.
+ * The IModeShapeObject class defines a ModeShape business object.
  */
-public interface IDnaObject {
+public interface IModeShapeObject {
 
     /**
      * @return the object name (never <code>null</code>)

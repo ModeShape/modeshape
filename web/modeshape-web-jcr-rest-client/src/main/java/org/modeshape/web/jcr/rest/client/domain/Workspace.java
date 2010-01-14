@@ -32,7 +32,7 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
  * The <code>Workspace</code> class is the business object for a ModeShape repository workspace.
  */
 @Immutable
-public class Workspace implements IDnaObject {
+public class Workspace implements IModeShapeObject {
 
     // ===========================================================================================================================
     // Fields
@@ -88,7 +88,7 @@ public class Workspace implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getName()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
     public String getName() {
         return this.name;
@@ -111,7 +111,7 @@ public class Workspace implements IDnaObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IDnaObject#getShortDescription()
+     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
     public String getShortDescription() {
         return RestClientI18n.workspaceShortDescription.text(this.name, this.repository.getName());

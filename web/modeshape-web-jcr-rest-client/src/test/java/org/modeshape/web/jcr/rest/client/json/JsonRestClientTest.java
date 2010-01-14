@@ -30,13 +30,13 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * The <code>JsonRestClientTest</code> class is a test class for the {@link JsonRestClient JSON REST client} object.
