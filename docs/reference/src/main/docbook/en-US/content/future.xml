@@ -48,7 +48,7 @@
 	<para>
     We're always looking for suggestions and contributors.  If you'd like to get involved on ModeShape, the first
 		step is joining the <ulink url="&Home;lists.html">mailing lists</ulink> or hopping into our chat room
-		on IRC (at irc.freenode.net#jbossdna).  You can also <ulink url="&Home;subversion.html">download the code</ulink>
+		on IRC (at irc.freenode.net#jbossmodeshape).  You can also <ulink url="&Home;subversion.html">download the code</ulink>
 		and get it building, and start looking for simple issues or bugs in our
     <ulink url="&JIRA;">JIRA issue management system</ulink>.
   </para>

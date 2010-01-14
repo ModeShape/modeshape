@@ -71,7 +71,7 @@
 				or even sequencers you write.</para>
 		</note>
 		<para>
-      To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
+      To run the client application, go to the <code>examples/sequencers/target/modeshape-example-sequencers-basic.dir/</code>
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
       <figure id="example-sequencer-cli-client">
 				<title>Example client</title>
@@ -82,7 +82,7 @@
 		<para>
       The first step is to upload one of the example images. If you type 'u' and press return, you'll be prompted to supply the
       path to the file you want to upload. Since the application is running from within the
-      <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code> directory, you can specify any of the files 
+      <code>examples/sequencers/target/modeshape-example-sequencers-basic.dir/</code> directory, you can specify any of the files 
 			in that directory without specifying the path:
       <figure id="example-sequencer-upload">
 				<title>Uploading an image using the example client</title>

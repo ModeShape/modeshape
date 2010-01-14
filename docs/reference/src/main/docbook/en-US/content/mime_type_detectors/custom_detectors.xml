@@ -61,23 +61,23 @@
 	    </note>
 			<note>
 		    <para>
-					The <emphasis role="strong">dna-mimetype-detector-aperture</emphasis> project is a small, self-contained detector implementation that
+					The <emphasis role="strong">modeshape-mimetype-detector-aperture</emphasis> project is a small, self-contained detector implementation that
 			    that you can use to help you get going.  Starting with this project's source and modifying it to suit your needs
 			 		may be the easiest way to get started.
 			    See the subversion repository: 
-					<ulink url="&Subversion;trunk/extensions/dna-mimetype-detector-aperture/">&Subversion;trunk/sequencers/dna-mimetype-detector-aperture/</ulink>
+					<ulink url="&Subversion;trunk/extensions/modeshape-mimetype-detector-aperture/">&Subversion;trunk/sequencers/modeshape-mimetype-detector-aperture/</ulink>
 			  </para>
 			</note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
 	  	<programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-common</artifactId>
+  <artifactId>modeshape-common</artifactId>
   <version>0.1</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-graph</artifactId>
+  <artifactId>modeshape-graph</artifactId>
   <version>0.1</version>
 </dependency>
 <dependency>

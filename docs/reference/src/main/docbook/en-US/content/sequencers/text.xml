@@ -128,7 +128,7 @@
 			</tgroup>
 		</table>
 	    <para>
-	        To use this sequencer, simply include the <code>dna-sequencer-text</code> JAR
+	        To use this sequencer, simply include the <code>modeshape-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
 	   	<programlisting role="JAVA"><![CDATA[
@@ -174,7 +174,7 @@ config.sequencer("Delimited Text Sequencer")
 			</tgroup>
 		</table>
 	    <para>
-	        To use this sequencer, simply include the <code>dna-sequencer-text</code> JAR
+	        To use this sequencer, simply include the <code>modeshape-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
 	   	<programlisting role="JAVA"><![CDATA[

@@ -63,13 +63,13 @@ import org.xml.sax.SAXException;
 public class RepositoryClient {
 
     public static final String INMEMORY_REPOSITORY_SOURCE_CLASSNAME = "org.modeshape.connector.inmemory.InMemoryRepositorySource";
-    public static final String JAAS_LOGIN_CONTEXT_NAME = "dna-jcr";
+    public static final String JAAS_LOGIN_CONTEXT_NAME = "modeshape-jcr";
 
     /**
      * @param args
      */
     public static void main( String[] args ) {
-        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
             idtrustConfig.config("security/jaas.conf.xml");

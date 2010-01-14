@@ -712,6 +712,11 @@ public interface Readable {
 						Unsafe characters are escaped as described in the &UrlEncoder;.
 					</para>
 				</listitem>
+				<listitem>
+					<para>The &SecureHashTextEncoder; performs a secure hash of the input text and returns that hash as the encoded text. 
+						This encoder can be configured to use different secure hash algorithms and to return a fixed number of characters from the hash.
+					</para>
+				</listitem>
 			</itemizedlist>
 			All of these classes also implement the &TextDecoder; interface, which defines a method that
 			<emphasis>decodes</emphasis> an encoded string using the opposite transformation.

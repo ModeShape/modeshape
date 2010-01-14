@@ -120,25 +120,25 @@ config.repositorySource("Infinispan Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
     ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'Infinispan Store' repository is a Infinispan repository with a single default 
         workspace (though others could be created, too).
         -->
-        <dna:source jcr:name="Infinispan Store" 
-                    dna:classname="org.modeshape.graph.connector.infinispan.InfinispanSource" 
-                    dna:description="The repository for our content"
-                    dna:defaultworkspaceName="prod"
-                    dna:rootNodeUuid="84b73fc8-81a8-42ed-aa4b-3905094966f0"
-                    dna:predefinedWorkspaceNames="staging,dev"/>    
-    </dna:sources>
+        <mode:source jcr:name="Infinispan Store" 
+                    mode:classname="org.modeshape.graph.connector.infinispan.InfinispanSource" 
+                    mode:description="The repository for our content"
+                    mode:defaultworkspaceName="prod"
+                    mode:rootNodeUuid="84b73fc8-81a8-42ed-aa4b-3905094966f0"
+                    mode:predefinedWorkspaceNames="staging,dev"/>    
+    </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 
 </configuration>

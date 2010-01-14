@@ -91,17 +91,17 @@ GET http://www.example.com/resources
 		about the repositories like so:
 <programlisting><![CDATA[
 {
-	"dna%3arepository" : { 
+	"modeshape%3arepository" : { 
 		"repository" : {
-			"name" : "dna%3arepository",
-			"resources" : { "workspaces":"/resources/dna%3arepository" }
+			"name" : "modeshape%3arepository",
+			"resources" : { "workspaces":"/resources/modeshape%3arepository" }
 		}
 	}
 }
 ]]></programlisting>		 
 		The actual response wouldn't be pretty-printed like the example, but the format would be the same.  The name
-		of the repository ("dna:repository" URL-encoded) is mapped to a repository object that contains a name
-		(the redundant "dna:repository") and a list of available resources within the repository and their respective
+		of the repository ("mode:repository" URL-encoded) is mapped to a repository object that contains a name
+		(the redundant "mode:repository") and a list of available resources within the repository and their respective
 		URIs.  Note that ModeShape supports deploying multiple JCR repositories side-by-side on the same server,
 		so this response could easily contain multiple repositories in a real deployment.  
 	</para>
@@ -109,18 +109,18 @@ GET http://www.example.com/resources
 		The only thing that you can do with a repository through the REST interface at this time is to
 		get a list of its workspaces.  A request to do so can be built up from the previous response like this:
 <programlisting>
-GET http://www.example.com/resources/dna%3arepository
+GET http://www.example.com/resources/modeshape%3arepository
 </programlisting>		 
 		This request (and all of the following requests) actually create a JCR &Session; to service the request and
 		require that security be configured.  This process is described in more detail in 
-		<link linkend="dna_rest_server_configuration">a later section</link>.  Assuming that security has been properly
+		<link linkend="modeshape_rest_server_configuration">a later section</link>.  Assuming that security has been properly
 		configured, the response would look something like this:
 <programlisting><![CDATA[
 {
 	"default" : {
 		"workspace" : {
 			"name" : "default",
-			"resources" : { "items":"/resources/dna%3arepository/default/items" }
+			"resources" : { "items":"/resources/modeshape%3arepository/default/items" }
 		}
 	}
 }
@@ -133,14 +133,14 @@ GET http://www.example.com/resources/dna%3arepository
 		<para>
 		Now a request can be built to retrieve the root item of the repository.
 <programlisting>
-GET http://www.example.com/resources/dna%3arepository/default/items
+GET http://www.example.com/resources/modeshape%3arepository/default/items
 </programlisting>		 
 		Any other item in the repository could be accessed by appending its path to the URI above.  In a default
 		repository with no content, this would return the following response:  
 <programlisting><![CDATA[
 {
 	"properties": {
-		"jcr:primaryType": "dna:root",
+		"jcr:primaryType": "mode:root",
 		"jcr:uuid": "97d7e2ef-996e-4d99-8ec2-dc623e6c2239"
 	},
 	"children": ["jcr:system"]
@@ -150,22 +150,22 @@ GET http://www.example.com/resources/dna%3arepository/default/items
 	    as will shortly be shown.
 	    </para>
 	    <para>
-	    The items resource also contains an option query parameter: <code>dna:depth</code>.  This parameter, which defaults
+	    The items resource also contains an option query parameter: <code>mode:depth</code>.  This parameter, which defaults
 	    to 1, controls how deep the hierarchy of returned nodes should be.  Had the request had the parameter:
 <programlisting>
-GET http://www.example.com/resources/dna%3arepository/default/items?dna:depth=2
+GET http://www.example.com/resources/modeshape%3arepository/default/items?mode:depth=2
 </programlisting>		 
 	    Then the response would have contained details for the children of the root node as well.
 <programlisting><![CDATA[
 {
 	"properties": {
-		"jcr:primaryType": "dna:root",
+		"jcr:primaryType": "mode:root",
 		"jcr:uuid": "163bc5e5-3b57-4e63-b2ae-ededf43d3445"
 	},
 	"children": {
 		"jcr:system": {
-			"properties": {"jcr:primaryType": "dna:system"},
-    		"children": ["dna:namespaces"]
+			"properties": {"jcr:primaryType": "mode:system"},
+    		"children": ["mode:namespaces"]
 		}
 	}
 }
@@ -175,7 +175,7 @@ GET http://www.example.com/resources/dna%3arepository/default/items?dna:depth=2
 		It is also possible to use the RESTful API to add, modify and remove repository content.  Removes are simple -
 		a DELETE request with no body returns a response with no body.
 <programlisting>
-DELETE http://www.example.com/resources/dna%3arepository/default/items/path/to/deletedNode
+DELETE http://www.example.com/resources/modeshape%3arepository/default/items/path/to/deletedNode
 </programlisting>		 
 		</para>
 		<para>
@@ -183,7 +183,7 @@ DELETE http://www.example.com/resources/dna%3arepository/default/items/path/to/d
 		content that you wish to add and a request body in the same format as the response from a GET.  Adding multiple
 		nodes at once is supported, as shown below.
 <programlisting><![CDATA[
-POST http://www.example.com/resources/dna%3arepository/default/items/newNode
+POST http://www.example.com/resources/modeshape%3arepository/default/items/newNode
 
 {
 	"properties": {
@@ -208,7 +208,7 @@ POST http://www.example.com/resources/dna%3arepository/default/items/newNode
 		proper determination of whether the values are binary; see the 
 		<link linkend="binary_properties_in_rest_representations">next section"</link>").
 <programlisting><![CDATA[
-PUT http://www.example.com/resources/dna%3arepository/default/items/newNode/someProperty
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNode/someProperty
 
 {
 	"someProperty" : "bar"
@@ -217,7 +217,7 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode/some
 		Setting multiple properties at once can be performed by providing a URI to a node instead of a property. The
 		body of the request should then be a JSON object that maps property names to their new values.
 <programlisting><![CDATA[
-PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNode
 
 {
 	"someProperty": "foobar",
@@ -265,7 +265,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 			</para>
 		</sect2>
 	</sect1>
-	<sect1 id="dna_rest_server_configuration">
+	<sect1 id="modeshape_rest_server_configuration">
 		<title>Configuring the ModeShape REST Server</title>
 		<para>
 			The ModeShape REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
@@ -290,15 +290,15 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   <!--
     This parameter provides the fully-qualified name of a class that implements
     the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
-    by the DnaJcrDeployer that controls the lifecycle for the ModeShape REST server.
+    by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
   -->
   <context-param>
     <param-name>org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
-    <param-value>org.modeshape.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
+    <param-value>org.modeshape.web.jcr.rest.spi.ModeShapeJcrRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
-		As noted above, this parameter informs the &DnaJcrDeployer; of the specific repository provider in use.
+		As noted above, this parameter informs the &ModeShapeJcrDeployer; of the specific repository provider in use.
 		Unless you are using the ModeShape REST server to connect to a different JCR implementation, this should
 		never change.
 		</para>
@@ -308,7 +308,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>
 <programlisting role="XML"><![CDATA[
   <!--
-    This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
+    This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
     This configuration file must be on the classpath and is given as a classpath-relative
     directory.
@@ -347,7 +347,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
   <!-- Required parameter for ModeShape REST - should not be modified -->
   <listener>
-    <listener-class>org.modeshape.web.jcr.rest.DnaJcrDeployer</listener-class>
+    <listener-class>org.modeshape.web.jcr.rest.ModeShapeJcrDeployer</listener-class>
   </listener>
 
   <!-- Required parameter for RESTEasy - should not be modified -->
@@ -417,10 +417,10 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>	
 		
 	</sect1>
-	<sect1 id="dna_rest_server_deployment">
+	<sect1 id="modeshape_rest_server_deployment">
 		<title>Deploying the ModeShape REST Server</title>
 		<para>
-			Deploying the ModeShape REST server only requires three steps: <link linkend="dna_rest_server_configuration">
+			Deploying the ModeShape REST server only requires three steps: <link linkend="modeshape_rest_server_configuration">
 			preparing the web configuration</link>, configuring the users and their roles in your web container 
 			(outside the scope of this document), and assembling the WAR.  This section describes the requirements 
 			for assembling the WAR.
@@ -435,12 +435,12 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<artifactId>dna</artifactId>
+		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
 		<version>0.7</version>
 		<relativePath>../..</relativePath>
 	</parent>
-	<artifactId>dna-web-jcr-rest-war</artifactId>
+	<artifactId>modeshape-web-jcr-rest-war</artifactId>
 	<packaging>war</packaging>
 	<name>ModeShape JCR REST Servlet</name>
 	<description>ModeShape servlet that provides RESTful access to JCR items</description>
@@ -448,7 +448,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<dependencies>
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>dna-web-jcr-rest</artifactId>
+			<artifactId>modeshape-web-jcr-rest</artifactId>
 			<version>0.7</version>
 		</dependency>
 
@@ -485,13 +485,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ commons-codec-1.2.jar
 	|	+ commons-httpclient-3.1.jar
 	|	+ commons-logging-1.0.4.jar
-	|	+ dna-cnd-0.7.jar
-	|	+ dna-common-0.7.jar
-	|	+ dna-graph-0.7.jar
-	|	+ dna-jcr-0.7.jar
-	|	+ dna-repository-0.7.jar
-	|	+ dna-search-lucene-0.7.jar
-	|	+ dna-web-jcr-rest-0.7.jar
+	|	+ modeshape-cnd-0.7.jar
+	|	+ modeshape-common-0.7.jar
+	|	+ modeshape-graph-0.7.jar
+	|	+ modeshape-jcr-0.7.jar
+	|	+ modeshape-repository-0.7.jar
+	|	+ modeshape-search-lucene-0.7.jar
+	|	+ modeshape-web-jcr-rest-0.7.jar
 	|	+ google-collections-1.0-rc3.jar
 	|	+ hamcrest-core-1.1.jar
 	|	+ httpclient-4.0.jar
@@ -539,7 +539,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 			an implementation of the &RepositoryProvider; interface that connects to the other repository.			
 		</para>
 		<para>
-			The &RepositoryProvider; only has a few methods that must be implemented.  When the &DnaJcrDeployer; starts
+			The &RepositoryProvider; only has a few methods that must be implemented.  When the &ModeShapeJcrDeployer; starts
 			up, it will dynamically load the &RepositoryProvider; implementation (as noted above) and call the <code>
 			startup(ServletContext)</code> method on the provider.  The provider can use this method to load any
 			required configuration parameters from the web configuration (web.xml) and initialize the repository.
@@ -594,7 +594,7 @@ public Session getSession( HttpServletRequest request,
 		</para>
 	</sect1>
 
-    <sect1 id="dna_rest_client_api">
+    <sect1 id="modeshape_rest_client_api">
         <title>ModeShape REST Client API</title>
         <para>
             The ModeShape REST Client API provides a POJO way of using the ModeShape REST web service to publish (upload) and 

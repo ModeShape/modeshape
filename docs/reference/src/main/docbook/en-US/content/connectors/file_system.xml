@@ -39,7 +39,7 @@
 		<note>
 			<para>
 			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.
-			The <code>jcr:content</code> node will have a primary type of <code>dna:resource</code>.  The <code>dna:resource</code> node type is equivalent
+			The <code>jcr:content</code> node will have a primary type of <code>mode:resource</code>.  The <code>mode:resource</code> node type is equivalent
 			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
 			ModeShape cannot assign a persistent UUID to the files in the file system or guarantee that no other process will move or delete the files outside of ModeShape.
 			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
@@ -154,29 +154,29 @@ config.repositorySource("FS Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
     ModeShape-specific Graph API. In fact, this is how the ModeShape JCR implementation works.  You can 
     think of these as being similar to JDBC DataSource objects, except that they expose graph 
     content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'FS Store' repository is a file system source with a three predefined workspaces 
         ("prod", "staging", and "dev").
         -->
-        <dna:source jcr:name="FS Store" 
-        	dna:classname="org.modeshape.connector.filesystem.FileSystemSource"
-        	dna:description="The repository for our content"
-        	dna:workspaceRootPath="/home/content/someApp"
-        	dna:defaultWorkspaceName="prod"
-        	dna:predefinedWorkspaceNames="staging, dev"
-        	dna:rootNodeUuid="fd129c12-81a8-42ed-aa4b-820dba49e6f0"
-        	dna:creatingWorkspacesAllowed="false"
-        	dna:updatesAllowed="true"
+        <mode:source jcr:name="FS Store" 
+        	mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+        	mode:description="The repository for our content"
+        	mode:workspaceRootPath="/home/content/someApp"
+        	mode:defaultWorkspaceName="prod"
+        	mode:predefinedWorkspaceNames="staging, dev"
+        	mode:rootNodeUuid="fd129c12-81a8-42ed-aa4b-820dba49e6f0"
+        	mode:creatingWorkspacesAllowed="false"
+        	mode:updatesAllowed="true"
         	/>    
-    </dna:sources>
+    </mode:sources>
 
 	<!-- MIME type detectors and JCR repositories would be defined below --> 
 </configuration>

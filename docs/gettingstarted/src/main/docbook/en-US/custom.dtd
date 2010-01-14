@@ -1,24 +1,27 @@
-<!ENTITY versionNumber "0.7">
+<!ENTITY versionNumber "1.0.0.Beta1">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
 <!-- Frequently used URLs -->
 
 <!ENTITY Home       					"http://www.modeshape.org/">
-<!ENTITY Downloads  					"&Home;downloads.html">
-<!ENTITY Community  					"&Home;community.html">
-<!ENTITY DocHome    					"http://docs.jboss.org/jbossdna">
+<!ENTITY Downloads  					"http://www.jboss.org/modeshape/downloads.html">
+<!ENTITY Community  					"http://www.jboss.org/modeshape/community.html">
+<!ENTITY Chat			  					"http://www.jboss.org/modeshape/chat.html">
+<!ENTITY SourceCode  					"http://www.jboss.org/modeshape/sourcecode.html">
+<!ENTITY MailingLists					"http://www.jboss.org/modeshape/mailinglists.html">
+<!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
-<!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/ModeShape">
+<!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/MODE">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
-<!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/dna/">
+<!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/modeshape/">
+<!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/modeshape/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/ModeShape/">
-<!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/dna/">
-<!ENTITY Forums     					"http://community.jboss.org/en/dna">
+<!ENTITY Forums     					"http://community.jboss.org/community/modeshape">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
 <!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
-<!ENTITY MailTo     					"mailto:dna-users@jboss.org">
+<!ENTITY MailTo     					"mailto:modeshape-users@lists.jboss.org">
 <!ENTITY Wikipedia						"http://en.wikipedia.org/wiki/">
 <!ENTITY JBossMaven						"http://repository.jboss.com/maven2/">
 
@@ -53,13 +56,13 @@
 <!ENTITY Credentials					       	"<interface>Credentials</interface>">
 <!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
 
-<!-- Types in dna-common -->
+<!-- Types in modeshape-common -->
 
 <!ENTITY Logger							       		"<ulink url='&API;common/util/Logger.html'><interface>Logger</interface></ulink>">
 <!ENTITY ClassLoaderFactory       		"<ulink url='&API;common/component/ClassLoaderFactory.html'><interface>ClassLoaderFactory</interface></ulink>">
 <!ENTITY StandardClassLoaderFactory		"<ulink url='&API;common/component/StandardClassLoaderFactory.html'><classname>StandardClassLoaderFactory</classname></ulink>">
 
-<!-- Types in dna-graph -->
+<!-- Types in modeshape-graph -->
 
 <!ENTITY Graph							       		"<ulink url='&API;graph/Graph.html'><classname>Graph</classname></ulink>">
 <!ENTITY GraphBatch				       			"<ulink url='&API;graph/Graph.Batch.html'><classname>Graph.Batch</classname></ulink>">
@@ -103,10 +106,10 @@
 <!ENTITY MockSequencerOutput		    	"<ulink url='&API;graph/sequencer/MockSequencerOutput.html'><interface>MockSequencerOutput</interface></ulink>">
 <!ENTITY MockSequencerContext		    	"<ulink url='&API;graph/sequencer/MockSequencerContext.html'><interface>MockSequencerContext</interface></ulink>">
 
-<!-- Types in dna-repository -->
+<!-- Types in modeshape-repository -->
 
-<!ENTITY DnaEngine					       		"<ulink url='&API;repository/DnaEngine.html'><classname>DnaEngine</classname></ulink>">
-<!ENTITY DnaConfiguration		       		"<ulink url='&API;repository/DnaConfiguration.html'><classname>DnaConfiguration</classname></ulink>">
+<!ENTITY ModeShapeEngine		      		"<ulink url='&API;repository/ModeShapeEngine.html'><classname>ModeShapeEngine</classname></ulink>">
+<!ENTITY ModeShapeConfiguration		 		"<ulink url='&API;repository/ModeShapeConfiguration.html'><classname>ModeShapeConfiguration</classname></ulink>">
 <!ENTITY RepositoryLibrary	       		"<ulink url='&API;repository/RepositoryLibrary.html'><classname>RepositoryLibrary</classname></ulink>">
 <!ENTITY RepositoryService	       		"<ulink url='&API;repository/RepositoryService.html'><classname>RepositoryService</classname></ulink>">
 <!ENTITY ServiceAdministrator   			"<ulink url='&API;repository/service/ServiceAdministrator.html'><interface>ServiceAdministrator</interface></ulink>">
@@ -120,7 +123,7 @@
 <!ENTITY MimeTypeDetectorConfig		  	"<ulink url='&API;repository/mimetype/MimeTypeDetectorConfig.html'><interface>MimeTypeDetectorConfig</interface></ulink>">
 
 
-<!-- Types in dna-jcr -->
+<!-- Types in modeshape-jcr -->
 
 <!ENTITY JcrEngine					       		"<ulink url='&API;jcr/JcrEngine.html'><classname>JcrEngine</classname></ulink>">
 <!ENTITY JcrConfiguration		       		"<ulink url='&API;jcr/JcrConfiguration.html'><classname>JcrConfiguration</classname></ulink>">

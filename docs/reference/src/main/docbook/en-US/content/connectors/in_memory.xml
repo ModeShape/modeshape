@@ -103,23 +103,23 @@ config.repositorySource("IMR Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
     ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'IMR Store' repository is an in-memory source with a single default workspace (though 
         others could be created, too).
         -->
-        <dna:source jcr:name="IMR Store" 
-                    dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
-                    dna:description="The repository for our content" 
-                    dna:defaultWorkspaceName="default"/>    
-    </dna:sources>
+        <mode:source jcr:name="IMR Store" 
+                    mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
+                    mode:description="The repository for our content" 
+                    mode:defaultWorkspaceName="default"/>    
+    </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 
 </configuration>

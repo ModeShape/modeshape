@@ -190,7 +190,7 @@
 - class:enumValues (string) mandatory multiple
  ]]></programlisting>
     <para>
-        To use this sequencer, simply include the <code>dna-sequencer-classfile</code> JAR
+        To use this sequencer, simply include the <code>modeshape-sequencer-classfile</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
    	<programlisting role="JAVA"><![CDATA[

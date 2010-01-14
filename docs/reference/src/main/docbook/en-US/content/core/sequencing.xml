@@ -283,7 +283,7 @@ public interface &SequencerOutput; {
 	    </listitem>
 	    <listitem>
 	      <para>Add the sequencer configuration to the ModeShape &SequencingService; in your application
-	      as described in the <link linkend="using_dna">previous chapter</link>; and</para>
+	      as described in the <link linkend="using_modeshape">previous chapter</link>; and</para>
 	    </listitem>
 	    <listitem>
 	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to ModeShape
@@ -303,9 +303,9 @@ public interface &SequencerOutput; {
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing sequencer project.
-					The <emphasis role="strong">dna-sequencer-images</emphasis> project is a small, self-contained sequencer implementation that
+					The <emphasis role="strong">modeshape-sequencer-images</emphasis> project is a small, self-contained sequencer implementation that
 		    	has only the minimal dependencies.  
-		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-sequencer-images/">&Subversion;trunk/extensions/dna-sequencer-images/</ulink>
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/modeshape-sequencer-images/">&Subversion;trunk/extensions/modeshape-sequencer-images/</ulink>
 		    </para>
 		  </note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
@@ -313,7 +313,7 @@ public interface &SequencerOutput; {
 	  	<programlisting role="XML"><![CDATA[
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-graph</artifactId>
+  <artifactId>modeshape-graph</artifactId>
   <version>0.7</version>
 </dependency>
 	 ]]></programlisting>
@@ -324,14 +324,14 @@ public interface &SequencerOutput; {
 <!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-graph</artifactId>
+  <artifactId>modeshape-graph</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-common</artifactId>
+  <artifactId>modeshape-common</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
@@ -369,7 +369,7 @@ public interface &SequencerOutput; {
 <!-- ModeShape JCR Repository -->
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-jcr</artifactId>
+  <artifactId>modeshape-jcr</artifactId>
   <version>0.7</version>
   <scope>test</scope>
 </dependency>
@@ -465,7 +465,7 @@ public class &ImageMetadataSequencer; implements &StreamSequencer; {
 	    processed correctly and the desired output graph is generated.</para>
 	    <note>
 	      <para>For a complete example of a sequencer unit test, see the <code>ImageMetadataSequencerTest</code> unit test
-	      in the <code>org.modeshape.sequencer.images</code> package of the <code>dna-sequencers-image</code> project.
+	      in the <code>org.modeshape.sequencer.images</code> package of the <code>modeshape-sequencers-image</code> project.
 	      </para>
 	    </note>
 	    <para>The following code fragment shows one way of testing a sequencer, using JUnit 4.4 assertions and 
@@ -508,7 +508,7 @@ try {
 	    especially if a lot of output data is produced.  
 	    </para>
 	    <para>It may also be useful to create some integration tests
-	    that <link linkend="using_dna">configure ModeShape</link> to use a custom sequencer, and to then upload
+	    that <link linkend="using_modeshape">configure ModeShape</link> to use a custom sequencer, and to then upload
 	    content using the JCR API, verifying that the custom sequencer did run.  However, remember that ModeShape
 	    runs sequencers asynchronously in the background, and you must synchronize your tests to ensure that the
 	    sequencers have a chance to run before checking the results.

@@ -36,10 +36,10 @@
 		<productnumber>&versionNumber;</productnumber>
 		<mediaobject>
 			<imageobject role="fo">
-				<imagedata fileref="dna-logo.png" align="center"/>
+				<imagedata fileref="modeshape-logo.png" align="center"/>
 			</imageobject>
 			<imageobject role="html">
-				<imagedata fileref="dna-logo.png" depth="3cm"/>
+				<imagedata fileref="modeshape-logo.png" depth="3cm"/>
 			</imageobject>
 		</mediaobject>
 		<copyright>
@@ -98,7 +98,7 @@
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/query_and_search.xml"/>
-  	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_dna_jcr.xml"/ -->
+  	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_modeshape_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
 	<part id="provied-connectors-part">

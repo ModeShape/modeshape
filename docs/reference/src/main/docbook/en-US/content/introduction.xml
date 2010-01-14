@@ -100,7 +100,7 @@
 		that also provides navigation, caching, versioning, search, and notification of changes.  That would make our lives significantly easier.
 		</para>
 		<para>
-		What we want is <emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
+		What we want is <emphasis><link linkend="modeshape-connector-federation">federation</link></emphasis>.
 		We can connect to these back-end systems to dynamically access the content and project it into a single, unified
 		repository.  We can cache it for faster access, as long as the cache can be invalidated based upon time or event.
 		But we also need to maintain a clear picture of where all the bits come from, so users can be sure they're looking
@@ -228,7 +228,7 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-jcr</emphasis>
+            <emphasis role="strong">modeshape-jcr</emphasis>
             contains ModeShape's implementation of the JCR API. If you're using ModeShape as a JCR repository, this is the
  						top-level dependency that you'll want to use.  The module defines all required dependencies, except for
  						the repository connector(s) and any sequencer implementations needed by your configuration.
@@ -239,21 +239,21 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-repository</emphasis>
+            <emphasis role="strong">modeshape-repository</emphasis>
             provides the core ModeShape graph engine and services for managing repository connections, sequencers, MIME type detectors,
 						and observation. If you're using ModeShape repositories via our graph API rather than JCR, then this is where you'd start.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-cnd</emphasis>
+            <emphasis role="strong">modeshape-cnd</emphasis>
             provides a self-contained utility for parsing CND (Compact Node Definition) files and transforming
 						the node definitions into a graph notation compatible with ModeShape's JCR implementation.
           </para>
         </listitem>        
         <listitem>
           <para>
-            <emphasis role="strong">dna-graph</emphasis>
+            <emphasis role="strong">modeshape-graph</emphasis>
             defines the Application Programming Interface (API) for ModeShape's low-level graph model,
 						including a fluent-style API for working with graph content.  This module also defines the
  						APIs necessary to implement custom connectors, sequencers, and MIME type detectors.
@@ -261,7 +261,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-common</emphasis>
+            <emphasis role="strong">modeshape-common</emphasis>
             is a small low-level library of common utilities and frameworks, including logging, progress monitoring,
             internationalization/localization, text translators, component management, and class loader factories.
           </para>
@@ -271,7 +271,7 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-integration-tests</emphasis>
+            <emphasis role="strong">modeshape-integration-tests</emphasis>
             provides a home for all of the integration tests that involve more components that just unit tests. Integration
             tests are often more complicated, take longer, and involve testing the integration and functionality of multiple
             components (whereas unit tests focus on testing a single class or component and may use stubs or mock objects
@@ -284,7 +284,7 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-infinispan</emphasis>
+            <emphasis role="strong">modeshape-connector-infinispan</emphasis>
             is the preferred ModeShape repository connector for persistently storing content.
             <ulink url="http://infinispan.org">Infinispan</ulink> is an extremely scalable, highly available data grid platform
  						that distributes the data across the nodes in the grid.
@@ -297,7 +297,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-jbosscache</emphasis>
+            <emphasis role="strong">modeshape-connector-jbosscache</emphasis>
             is a ModeShape repository connector that stores content within a
             <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>
             instance. JBoss Cache is a powerful cache implementation that can serve as a distributed cache and that can persist
@@ -309,7 +309,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
+            <emphasis role="strong">modeshape-connector-jdbc-metadata</emphasis>
             is a ModeShape repository connector that provides read-only access to metadata and schema information from relational databases 
 						through a JDBC connection.  This connector provides an optional and configurable caching facility to prevent frequent
 						requests to the database.
@@ -317,7 +317,7 @@
         </listitem>        
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-store-jpa</emphasis>
+            <emphasis role="strong">modeshape-connector-store-jpa</emphasis>
             is a ModeShape repository connector that stores content in a JDBC database, using the Java Persistence API (JPA) and the
 						very highly-regarded and widely-used <ulink url="http://www.hibernate.org">Hibernate</ulink> implementation.
 						This connector is capable of storing any kind of content, and dictates the schema in which it stores the content.
@@ -326,7 +326,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-filesystem</emphasis>
+            <emphasis role="strong">modeshape-connector-filesystem</emphasis>
             is a ModeShape repository connector that accesses the files and folders on (a part of) the local file system, providing that
   					content in the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
 						support updating the file system when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
@@ -335,7 +335,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-svn</emphasis>
+            <emphasis role="strong">modeshape-connector-svn</emphasis>
             is a ModeShape repository connector that accesses the content of an existing Subversion repository, providing that content in
 						the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
 						support updating the SVN repository when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
@@ -344,13 +344,13 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-cnd</emphasis>
+            <emphasis role="strong">modeshape-sequencer-cnd</emphasis>
             is a ModeShape sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-ddl</emphasis>
+            <emphasis role="strong">modeshape-sequencer-ddl</emphasis>
             is a ModeShape sequencer that extracts the structure and content from DDL files.
             <emphasis>This is still under development and includes support for the basic DDL statements in
 							in the Oracle, PostgreSQL, Derby, and standard DDL dialects.</emphasis>
@@ -358,40 +358,40 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-zip</emphasis>
+            <emphasis role="strong">modeshape-sequencer-zip</emphasis>
             is a ModeShape sequencer that extracts the files (with content) and directories from ZIP archives.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-xml</emphasis>
+            <emphasis role="strong">modeshape-sequencer-xml</emphasis>
             is a ModeShape sequencer that extracts the structure and content from XML files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-classfile</emphasis>
+            <emphasis role="strong">modeshape-sequencer-classfile</emphasis>
             is a ModeShape sequencer that extracts the package, class/type, member, documentation, annotations, and other information
             from Java class files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-java</emphasis>
+            <emphasis role="strong">modeshape-sequencer-java</emphasis>
             is a ModeShape sequencer that extracts the package, class/type, member, documentation, annotations, and other information
             from Java source files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-jbpm-jpdl</emphasis>
+            <emphasis role="strong">modeshape-sequencer-jbpm-jpdl</emphasis>
             is a prototype ModeShape sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
 						<emphasis>This is still under development.</emphasis>
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-msoffice</emphasis>
+            <emphasis role="strong">modeshape-sequencer-msoffice</emphasis>
             is a ModeShape sequencer that extracts metadata and summary information from
             <ulink url="http://office.microsoft.com/en-us/">Microsoft Office</ulink>
             documents. For example, the sequencer extracts from a PowerPoint presentation the outline as well as thumbnails of
@@ -400,20 +400,20 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-images</emphasis>
+            <emphasis role="strong">modeshape-sequencer-images</emphasis>
             is a ModeShape sequencer that extracts the image metadata (e.g., size, date, etc.) from PNG, JPEG, GIF, BMP, PCS, IFF,
             RAS, PBM, PGM, and PPM image files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-mp3</emphasis>
+            <emphasis role="strong">modeshape-sequencer-mp3</emphasis>
             is a ModeShape sequencer that extracts metadata (e.g., author, album name, etc.) from MP3 audio files.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-sequencer-text</emphasis>
+            <emphasis role="strong">modeshape-sequencer-text</emphasis>
             is a ModeShape sequencer that extracts data from text streams. There are separate sequencers for character-delimited sequencing 
 						and fixed width sequencing, but both treat the incoming text stream as a series of rows separated by line-terminators
 						with each row consisting of one or more columns. 
@@ -421,14 +421,14 @@
         </listitem>  
         <listitem>
           <para>
-            <emphasis role="strong">dna-search-lucene</emphasis> is an implementation of the &SearchEngine; interface that
+            <emphasis role="strong">modeshape-search-lucene</emphasis> is an implementation of the &SearchEngine; interface that
 						uses the <ulink url="http://lucene.apache.org/java/">Lucene</ulink> library. This module is one of the few
-						extensions that is used directly by the <code>dna-jcr</code> module.
+						extensions that is used directly by the <code>modeshape-jcr</code> module.
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-mimetype-detector-aperture</emphasis>
+            <emphasis role="strong">modeshape-mimetype-detector-aperture</emphasis>
             is a &MimeTypeDetector; implementation that uses the
             <ulink url="http://aperture.sourceforge.net/">Aperture</ulink>
             library to determine the best MIME type given the name and contents of a file.
@@ -436,7 +436,7 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-classloader-maven</emphasis> is a small library that provides a
+            <emphasis role="strong">modeshape-classloader-maven</emphasis> is a small library that provides a
             &ClassLoaderFactory; implementation that can create &ClassLoader; instances capable of loading classes given 
 						a Maven Repository and a list of Maven coordinates. The Maven Repository can be managed within a JCR repository.
           </para>
@@ -449,7 +449,7 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-web-jcr-rest</emphasis>
+            <emphasis role="strong">modeshape-web-jcr-rest</emphasis>
             provides a set of JSR-311 (JAX-RS) objects that form the basis of a RESTful server for Java Content Repositories.  This project 
             provides integration with ModeShape's JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
             used to integrate other JCR implementations with these RESTful services in the future.  For ease of packaging, these classes are
@@ -458,14 +458,14 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-web-jcr-rest-war</emphasis>
-            wraps the RESTful services from the dna-web-jcr-rest JAR into a WAR and provides in-container integration tests.  This project
+            <emphasis role="strong">modeshape-web-jcr-rest-war</emphasis>
+            wraps the RESTful services from the modeshape-web-jcr-rest JAR into a WAR and provides in-container integration tests.  This project
             can be consulted as a template for how to deploy the RESTful services in a custom implementation. 
           </para>
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-web-jcr-rest-client</emphasis>
+            <emphasis role="strong">modeshape-web-jcr-rest-client</emphasis>
             is a library that uses POJOs to access the REST web service. This module eliminates the need for applications to know how
             to create HTTP request URLs and payloads, and how to parse the JSON responses. It can be used to publish (upload) 
             and unpublish (delete) files from ModeShape repositories. 
@@ -503,7 +503,7 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-jpa-ddl-gen</emphasis> provides a standalone utility that can generate the DDL
+            <emphasis role="strong">modeshape-jpa-ddl-gen</emphasis> provides a standalone utility that can generate the DDL
 						for the database schema used by the JPA connector. Because it uses Hibernate, it can generate DDL for any
 						of the databases that the connector can use.
           </para>
@@ -513,10 +513,10 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">dna-jcr-tck</emphasis> provides a separate testing project that executes all reference implementation's
+            <emphasis role="strong">modeshape-jcr-tck</emphasis> provides a separate testing project that executes all reference implementation's
  						JCR TCK tests on a nightly basis to track implementation progress against the JCR 1.0 specification. 
-						This module will likely be retired when the ModeShape JCR implementation is complete, since <code>dna-jcr</code> and
-						<code>dna-integration-tests</code> will be running the full suite of JCR TCK unit tests.
+						This module will likely be retired when the ModeShape JCR implementation is complete, since <code>modeshape-jcr</code> and
+						<code>modeshape-integration-tests</code> will be running the full suite of JCR TCK unit tests.
           </para>
         </listitem>
       </itemizedlist>
@@ -568,7 +568,7 @@
 		<para>
 		  This release also brings numerous bug fixes and improvements, and upgrades all third-party dependencies to the latest
 		  versions available at the time of release. The build system now supports 
-			<ulink url="http://jbossdna.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
+			<ulink url="http://jbossmodeshape.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
 		  of databases</ulink>, making it very easy to test against DBMSes that ModeShape doesn't directly test against.
 			A new DDL generation utility was also introduced that produces the DDL for the database used by the JPA connector.
 			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link> - this is 

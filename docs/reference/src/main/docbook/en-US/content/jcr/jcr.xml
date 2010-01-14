@@ -106,7 +106,7 @@ final &String; workspaceName = ...;
 		</para>
 		<para>The JCR API also allows supplying a JCR &Credentials; object directly as part of the login process, although ModeShape imposes
 		some requirements on what types of &Credentials; may be supplied.  The simplest way is to provide a JCR &SimpleCredentials; object.
-		These credentials will be validated against the JAAS realm named "dna-jcr", unless another realm name is provided as an option 
+		These credentials will be validated against the JAAS realm named "modeshape-jcr", unless another realm name is provided as an option 
 		during the JCR repository configuration.  For example:
 	    <programlisting>
 &String; userName = ...;
@@ -139,7 +139,7 @@ final &LoginContext; loginContext = ...;
 		Not all applications can or want to use JAAS for their authentication system, so ModeShape provides a way to integrate your own custom
 		security provider.  The first step is to provide a custom implementation of &SecurityContext; that integrates with your application security, allowing
 		ModeShape to discover the authenticated user's name, determine whether the authenticated user has been assigned particular roles
-		(see the <link linkend="dna_jcr_security">JCR Security section</link>), and to notify your application security system that the
+		(see the <link linkend="modeshape_jcr_security">JCR Security section</link>), and to notify your application security system that the
 		authenticated session (for JCR) has ended.
 		</para>
 		<para>
@@ -223,7 +223,7 @@ final &LoginContext; loginContext = ...;
 				</note>
 			</para>
 		</sect2>
-		<sect2 id="dna_jcr_security">
+		<sect2 id="modeshape_jcr_security">
 			<title>JCR Security</title>
 			<para>
 				Although the <ulink url="&JSR170;">JSR-170</ulink> specification requires implementation of the <code>Session.checkPermission(String, String)</code> method,
@@ -332,12 +332,12 @@ final &LoginContext; loginContext = ...;
 				</row>
 				<row>
 					<entry>ROLE_NAME.REPOSITORY_NAME</entry>
-					<entry><code>readonly.dna_repo</code>, <code>admin.localRepository</code></entry>
+					<entry><code>readonly.modeshape_repo</code>, <code>admin.localRepository</code></entry>
 					<entry>Grants the named role to the assigned user on every workspace in the named repository on the ModeShape server.</entry>
 				</row>
 				<row>
 					<entry>ROLE_NAME.REPOSITORY_NAME.WORKSPACE_NAME</entry>
-					<entry><code>readonly.dna_repo.jsmith</code>, <code>admin.localRepository.default</code></entry>
+					<entry><code>readonly.modeshape_repo.jsmith</code>, <code>admin.localRepository.default</code></entry>
 					<entry>Grants the named role to the assigned user on the named workspace in the named repository on the ModeShape server.</entry>
 				</row>
 			</tbody>
@@ -359,8 +359,8 @@ final &LoginContext; loginContext = ...;
 			(mix:versionable, nt:version, nt:versionLabels, nt:versionHistory, and nt:frozenNode) are semantically meaningless
 			as ModeShape does not yet support the versioning optional feature.
 			</para>
-			<para>Although ModeShape does define some custom node types in the <code>dna</code> namespace, none of these
-			node types except for <code>dna:resource</code> are intended to be used by developers integrating with ModeShape and may be changed or removed
+			<para>Although ModeShape does define some custom node types in the <code>modeshape</code> namespace, none of these
+			node types except for <code>mode:resource</code> are intended to be used by developers integrating with ModeShape and may be changed or removed
 			at any time.
 			</para>
 		</sect2>

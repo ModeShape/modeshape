@@ -473,7 +473,7 @@ public interface &ClassLoaderFactory; {
 </programlisting>
 		<note>
 	    <para>
-	    	The <code>dna-classloader-maven</code> project has a class loader factory implementation that parses the names into
+	    	The <code>modeshape-classloader-maven</code> project has a class loader factory implementation that parses the names into
 				<ulink url="http://maven.apache.org/pom.html#Maven_Coordinates">Maven coordinates</ulink>, then uses those coordinates
 				to look up artifacts in a Maven 2 repository.  The artifact's POM file is used to determine the dependencies,
 				which is done transitively to obtain the complete dependency graph.  The resulting class loader has access

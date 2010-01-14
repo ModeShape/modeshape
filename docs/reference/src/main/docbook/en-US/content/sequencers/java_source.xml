@@ -31,7 +31,7 @@
 <chapter id="java-source-sequencer">
   <title>Java Source File Sequencer</title>
     <para>
-		One of the sequencers that included in ModeShape is the <emphasis role="strong">dna-sequencer-java</emphasis> subproject.
+		One of the sequencers that included in ModeShape is the <emphasis role="strong">modeshape-sequencer-java</emphasis> subproject.
 		This sequencer parses Java source code added to the repository and extracts the basic structure of the classes and enumerations 
 		defined in the code.
 		This structure includes: the package structures, class declarations, class and member attribute declarations,
@@ -41,7 +41,7 @@
 		where it can be further processed, analyzed, searched, navigated, or referenced.
 	</para>
 	<para>
-		To use this sequencer, simply include the <code>dna-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
+		To use this sequencer, simply include the <code>modeshape-sequencer-java</code> JAR (plus all of the JARs that it is dependent upon)
 		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
   <programlisting role="JAVA"><![CDATA[

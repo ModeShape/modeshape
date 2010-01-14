@@ -232,24 +232,24 @@ config.repositorySource("Meta Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
     ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'Meta Store' repository is a JDBC metadata repository with a single default 
         workspace (though others could be created, too).
         -->
-        <dna:source jcr:name="Meta Store" 
-                    dna:classname="org.modeshape.graph.connector.meta.jdbc.JdbcMetadataSource" 
-                    dna:description="The database source for our content"
-                    dna:dataSourceJndiName="java:/MyDataSource"
-                    dna:defaultworkspaceName="default"/>    
-    </dna:sources>
+        <mode:source jcr:name="Meta Store" 
+                    mode:classname="org.modeshape.graph.connector.meta.jdbc.JdbcMetadataSource" 
+                    mode:description="The database source for our content"
+                    mode:dataSourceJndiName="java:/MyDataSource"
+                    mode:defaultworkspaceName="default"/>    
+    </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 
 </configuration>

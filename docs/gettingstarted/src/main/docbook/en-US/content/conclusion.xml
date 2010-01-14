@@ -42,11 +42,11 @@
 		For a more in-depth description of ModeShape and the internal workings, see our &ReferenceGuide;.
 		This also describes how to write your own custom sequencers or connectors.
     If you have any questions or comments, please feel free to contact ModeShape's
-    <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>, use our
-    <ulink url="http://community.jboss.org/community/dna">discussion forums</ulink>,
-    or chat with the developers in the <ulink url="http://www.modeshape.org/chat.html">IRC chat room</ulink>.
+    <ulink url="mailto:modeshape-users@lists.jboss.org">user mailing list</ulink>, use our
+    <ulink url="http://community.jboss.org/community/modeshape">discussion forums</ulink>,
+    or chat with the developers in the <ulink url="http://www.jboss.org/modeshape/chat.html">IRC chat room</ulink>.
     If you find a bug or have a suggestion, please let us know or (better yet) create a new issue in the project's
-    <ulink url="http://jira.jboss.org/jira/browse/ModeShape">JIRA issue management system</ulink>
+    <ulink url="&JIRA;">JIRA issue management system</ulink>
     . If there's something in particular you're interested in, talk with the community - there may be others interested in the
     same thing.
 	</para>
@@ -68,7 +68,7 @@
 		<title>Getting involved</title>
 		<para>
 		  If you're interested in getting involved with the ModeShape project, take a look at our 
-		  <ulink url="http://www.modeshape.org/community.html">community pages</ulink>, 
+		  <ulink url="http://www.jboss.org/modeshape/community.html">community pages</ulink>, 
 		  and consider picking up one of the sequencers or connectors on our
 		  <ulink url="&Roadmap;">roadmap</ulink>.
 		  Or, check out <ulink url="&JIRA;">JIRA</ulink>

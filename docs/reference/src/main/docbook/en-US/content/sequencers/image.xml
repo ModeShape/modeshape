@@ -92,7 +92,7 @@
 			"IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
      </para>
 		<para>
-			To use this sequencer, simply include the <code>dna-sequencer-images</code> JAR
+			To use this sequencer, simply include the <code>modeshape-sequencer-images</code> JAR
 			in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
      </para>
    	<programlisting role="JAVA"><![CDATA[

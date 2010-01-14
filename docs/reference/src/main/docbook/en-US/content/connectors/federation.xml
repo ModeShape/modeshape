@@ -38,9 +38,9 @@
 			The &FederatedRepositorySource; then looks in the configuration repository to determine the various workspaces
 			and how other sources are projected into each workspace.
      </para>
-		<figure id="dna-connector-federation-image">
+		<figure id="modeshape-connector-federation-image">
 			<title>Federating multiple sources using the Federated Repository Connector</title>
-			<graphic align="center" scale="100" fileref="dna-connector-federation.png"/>
+			<graphic align="center" scale="100" fileref="modeshape-connector-federation.png"/>
 		</figure>
 		<sect1>
 			<title>Projections</title>
@@ -405,31 +405,31 @@
 				which should contain information about the workspaces and how other sources are projected:
 			</para>
 			<programlisting role='xml'><![CDATA[<!-- Define the federation configuration. -->
-<dna:workspaces>
-  <dna:workspace jcr:name="default">
+<mode:workspaces>
+  <mode:workspace jcr:name="default">
     <!-- Define how the content in the two sources maps to the federated/unified repository.
          This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
          'Configuration' content (which is defined by this file) will appear under '/'. -->
-    <dna:projections>
+    <mode:projections>
       <!-- Project the 'Cars' content, starting with the '/Cars' node. -->
-      <dna:projection jcr:name="Cars projection" 
-      				  dna:source="Cars" 
-      				  dna:workspaceName="workspace1">
-          <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
-      </dna:projection>
+      <mode:projection jcr:name="Cars projection" 
+      				  mode:source="Cars" 
+      				  mode:workspaceName="workspace1">
+          <mode:projectionRules>/Vehicles/Cars => /Cars</mode:projectionRules>
+      </mode:projection>
       <!-- Project the 'Aicraft' content, starting with the '/Aircraft' node. -->
-      <dna:projection jcr:name="Aircarft projection" 
-      				  dna:source="Aircraft" 
-      				  dna:workspaceName="workspace2">
-          <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
-      </dna:projection>
+      <mode:projection jcr:name="Aircarft projection" 
+      				  mode:source="Aircraft" 
+      				  mode:workspaceName="workspace2">
+          <mode:projectionRules>/Vehicles/Aircraft => /Aircraft</mode:projectionRules>
+      </mode:projection>
       <!-- Project the 'System' content. Only needed when this source is accessed through JCR. -->
-      <dna:projection jcr:name="System projection" dna:source="System" dna:workspaceName="default">
-          <dna:projectionRules>/jcr:system => /</dna:projectionRules>
-      </dna:projection>
-    </dna:projections>
-  </dna:workspace>
-</dna:workspaces>
+      <mode:projection jcr:name="System projection" mode:source="System" mode:workspaceName="default">
+          <mode:projectionRules>/jcr:system => /</mode:projectionRules>
+      </mode:projection>
+    </mode:projections>
+  </mode:workspace>
+</mode:workspaces>
 ]]></programlisting>
 			<note>
 				<para>

@@ -134,7 +134,7 @@ CREATE SCHEMA hollywood
     <para>
     </para>
     <para>
-        To use this sequencer, simply include the <code>dna-sequencer-ddl</code> JAR
+        To use this sequencer, simply include the <code>modeshape-sequencer-ddl</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
    <programlisting role="JAVA"><![CDATA[

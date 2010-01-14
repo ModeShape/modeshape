@@ -38,7 +38,7 @@
 	general file information, including the name of the author, title, keywords, subject, comments, and various dates.
    </para>
 <para>
-	To use this sequencer, simply include the <code>dna-sequencer-msoffice</code> JAR and all of the
+	To use this sequencer, simply include the <code>modeshape-sequencer-msoffice</code> JAR and all of the
 	<ulink url="http://poi.apache.org/">POI</ulink> JARs
 	in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
    </para>

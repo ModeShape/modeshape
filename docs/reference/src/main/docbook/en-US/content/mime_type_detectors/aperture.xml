@@ -37,7 +37,7 @@
 		using both the file name and the actual content.
    </para>
 	<para>
-		To use, simply include the <code>dna-mime-type-detector-aperture.jar</code> file on the classpath
+		To use, simply include the <code>modeshape-mime-type-detector-aperture.jar</code> file on the classpath
 		and create a new &ExecutionContext; subcontext with it:
 	</para>
 <programlisting>

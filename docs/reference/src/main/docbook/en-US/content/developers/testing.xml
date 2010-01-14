@@ -144,7 +144,7 @@
 		<para>
 			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not
 			the official TCK, they apparently are used within the official TCK.)  These unit tests are set up in the
-			<code>dna-jcr-tck</code> project.
+			<code>modeshape-jcr-tck</code> project.
 		</para>
 		<para>
 		  The 0.7 release passes 96% of the JCR TCK tests, and all of the failures are because of a handful of known issues.

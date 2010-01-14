@@ -97,7 +97,7 @@
 	</note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
-		<para>The next step is to <ulink url="http://downloads.jboss.org/jbossdna/0.7/jboss-dna-0.7-gettingstarted-examples.zip">download</ulink>
+		<para>The next step is to <ulink url="http://downloads.jboss.org/modeshape/1.0.0.Beta1/modeshape-0.7-gettingstarted-examples.zip">download</ulink>
       the example for this Getting Started guide, and extract the contents to a convenient location on your local disk.
       You'll find the example contains the following files, which are organized according to the standard Maven directory structure:</para>
 		<programlisting><![CDATA[
@@ -158,7 +158,7 @@ $ ]]></programlisting>
 		<para>If there are errors, check whether you have the correct version of Maven installed and that you've correctly updated
       your Maven settings as described above.</para>
 		<para>If you've successfully built the examples, there will be a new <code>examples/sequencers/target/</code> directory that contains
-			all of the generated output for the sequencers example, including a <code>dna-example-sequencers-basic.dir/</code> subdirectory 
+			all of the generated output for the sequencers example, including a <code>modeshape-example-sequencers-basic.dir/</code> subdirectory 
 			that contains the following:
 			<itemizedlist>
 				<listitem>
@@ -203,7 +203,7 @@ $ ]]></programlisting>
 			</itemizedlist>
 		</para>
 		<para>Similarly, the <code>examples/repository/target/</code> directory contains all of the generated output for the repository example, including
-			a <code>dna-example-repository-basic.dir/</code> subdirectory that contains the following:
+			a <code>modeshape-example-repository-basic.dir/</code> subdirectory that contains the following:
 			<itemizedlist>
 				<listitem>
 					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the repository example application.</para>

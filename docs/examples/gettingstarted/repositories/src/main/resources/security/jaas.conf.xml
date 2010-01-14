@@ -3,7 +3,7 @@
 <policy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="urn:jboss:security-config:5.0" xmlns="urn:jboss:security-config:5.0"
 	xmlns:jbxb="urn:jboss:security-config:5.0">
-	<application-policy name="dna-jcr">
+	<application-policy name="modeshape-jcr">
 		<authentication>
 			<login-module code="org.jboss.security.auth.spi.UsersRolesLoginModule" flag="required">
                 <module-option name="usersProperties">security/users.properties</module-option>

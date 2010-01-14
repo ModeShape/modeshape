@@ -31,14 +31,14 @@
 <chapter id="mp3-sequencer">
   <title>MP3 Sequencer</title>
 	      <para>
-	      	Another sequencer that is included in ModeShape is the <emphasis role="strong">dna-sequencer-mp3</emphasis> sequencer project.
+	      	Another sequencer that is included in ModeShape is the <emphasis role="strong">modeshape-sequencer-mp3</emphasis> sequencer project.
 					This sequencer processes MP3 audio files added to a repository and extracts the <ulink url="http://www.id3.org/">ID3</ulink>
 				 	metadata for the file, including the track's title, author, album name, year, and comment.
 					After extracting this information from the audio files, the sequencer then writes this structure into the repository,
 					where it can be further processed, analyzed, searched, navigated, or referenced.
 	      </para>
 				<para>
-					To use this sequencer, simply include the <code>dna-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
+					To use this sequencer, simply include the <code>modeshape-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
 					library in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	      </para>
 		    <programlisting role="JAVA"><![CDATA[

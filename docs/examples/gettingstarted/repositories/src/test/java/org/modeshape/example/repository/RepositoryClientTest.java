@@ -68,7 +68,7 @@ public class RepositoryClientTest {
         stub(userInterface.getLocationOfCndFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
         stub(userInterface.getRepositoryConfiguration()).toReturn(new File("src/main/resources/configRepository.xml"));
 
-        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
             idtrustConfig.config("security/jaas.conf.xml");

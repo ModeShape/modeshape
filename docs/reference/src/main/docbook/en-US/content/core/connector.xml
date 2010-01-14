@@ -60,9 +60,9 @@
 		<para>How does ModeShape do this?  At the heart of ModeShape and it's JCR implementation is a simple graph-based 
 			<emphasis>connector</emphasis> system.  Essentially, ModeShape's JCR implementation uses a single 
 			connector to access all content:
-			<figure id="dnajcr-and-connector">
+			<figure id="modeshapejcr-and-connector">
 				<title>ModeShape's JCR implementation delegates to a connector</title>
-				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
+				<graphic align="center" scale="100" fileref="modeshapejcr-and-connector.png"/>
 			</figure>
 				That single repository connector could access:
 		</para>
@@ -92,9 +92,9 @@
 				<para>a federated repository that presents a unified, updatable view of the content in multiple other systems (which are accessed via connectors)</para>
 			</listitem>
 		</itemizedlist>
-		<figure id="dna-connectors">
+		<figure id="modeshape-connectors">
 			<title>ModeShape can put JCR on top of multiple kinds of systems</title>
-			<graphic align="center" scale="100" fileref="dna-connectors.png"/>
+			<graphic align="center" scale="100" fileref="modeshape-connectors.png"/>
 		</figure>
 		<para>
 			Really, the federated connector gives us all kinds of	possibilities, since we can use that connector on top of lots of connectors 
@@ -107,9 +107,9 @@
 	    can be accessed through JCR.  For more information, check out our
 			<ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 			Of course, if we don't have a connector to suit your needs, you can <link linkend="custom-connectors">write your own</link>.
-			<figure id="dna-connectors-future">
+			<figure id="modeshape-connectors-future">
 				<title>Future ModeShape connectors</title>
-				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
+				<graphic align="center" scale="100" fileref="modeshape-connectors-future.png"/>
 			</figure>
 		</para>
 		<para>
@@ -120,7 +120,7 @@
 			but it could be made even simpler by putting it on top of a ModeShape connector.  In both cases, it'd be a trivial mapping from nodes that represent
 			files and folders into JSR-203 files and directories, and events on those nodes could easily be translated into JSR-203 watch events.
 			Then, simply choose a ModeShape connector and configure it to use the source you want to use.
-			<figure id="dna-connectors-vfs">
+			<figure id="modeshape-connectors-vfs">
 				<title>Virtual File System with ModeShape</title>
 				<graphic align="center" scale="100" fileref="vfs-and-connector.png"/>
 			</figure>
@@ -173,7 +173,7 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
+				<ulink url="http://docs.jboss.org/jbossmodeshape/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
 				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
 				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
 			</para>
@@ -255,7 +255,7 @@
 		    <listitem>
 		      <para>
 						Configure ModeShape to use your connector.  This may involve just registering the source with the &RepositoryService;,
-			   		or it may involve adding a source to a configuration repository used by the <link linkend="dna-connector-federation">federated repository</link>.
+			   		or it may involve adding a source to a configuration repository used by the <link linkend="modeshape-connector-federation">federated repository</link>.
 					</para>
 		    </listitem>
 		    <listitem>
@@ -279,8 +279,8 @@
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
-					The <emphasis role="strong">dna-connector-filesystem</emphasis> project is small and provides good example of implementing a path-based repository.
-		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-connector-filesystem/">&Subversion;trunk/extensions/dna-connector-filesystem/</ulink>
+					The <emphasis role="strong">modeshape-connector-filesystem</emphasis> project is small and provides good example of implementing a path-based repository.
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/modeshape-connector-filesystem/">&Subversion;trunk/extensions/modeshape-connector-filesystem/</ulink>
 		    </para>
 		  </note>
 	    <para>
@@ -291,13 +291,13 @@
 	  	<programlisting role="XML"><![CDATA[
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-graph</artifactId>
+  <artifactId>modeshape-graph</artifactId>
   <version>0.7</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
 				This is the only dependency required for compiling a connector - Maven pulls in all of the dependencies needed by 
-				the 'dna-graph' artifact.  Of course, you'll still have to add dependencies for any library your connector needs
+				the 'modeshape-graph' artifact.  Of course, you'll still have to add dependencies for any library your connector needs
 				to talk to its underlying system.
 			</para>
 	  	<para>
@@ -307,14 +307,14 @@
 <!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-graph</artifactId>
+  <artifactId>modeshape-graph</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
-  <artifactId>dna-common</artifactId>
+  <artifactId>modeshape-common</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
@@ -350,7 +350,7 @@
 				Testing ModeShape connectors does not require a JCR repository or the ModeShape services.  (For more detail,
 	  		see the <link linkend="testing_custom_connectors">testing section</link>.) However, if you want to do
 	  		integration testing with a JCR repository and the ModeShape services, you'll need additional dependencies
-				(e.g., <code>dna-repository</code> and any other extensions).
+				(e.g., <code>modeshape-repository</code> and any other extensions).
 			</para>
 	    <para>
 				At this point, your project should be set up correctly, and you're ready to move on to 

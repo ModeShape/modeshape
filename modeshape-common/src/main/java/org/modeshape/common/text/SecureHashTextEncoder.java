@@ -31,7 +31,7 @@ import org.modeshape.common.util.SecureHash.Algorithm;
 
 /**
  * A text encoder that performs a secure hash of the input text and returns that hash as the encoded text. This encoder can be
- * configured to use different secure hash algorithsm and to return a fixed set of characters of the hash.
+ * configured to use different secure hash algorithms and to return a fixed number of characters from the hash.
  */
 public class SecureHashTextEncoder implements TextEncoder {
 

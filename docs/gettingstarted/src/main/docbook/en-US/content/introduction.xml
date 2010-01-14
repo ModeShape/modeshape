@@ -98,7 +98,7 @@
 		<title>JCR API features</title>
 		<graphic align="center" scale="100" fileref="jcr-features.png"/>
 	</figure>
-	<sect1 id="what_is_jboss_dna">
+	<sect1 id="what_is_jboss_modeshape">
 		<title>ModeShape</title>
 		<para>
 			What makes JCR interesting, however, is that a JCR implementation provides all these features and capabilities regardless
@@ -131,7 +131,7 @@
 		<para>
 			As we'll see in the <link linkend="use_cases">next chapter</link>, the ability of ModeShape to 
 			federate, integrate, and sequence information make ModeShape a powerful asset and tool.  
-			Then <link linkend="using_dna">Chapter 3</link> will show that once a ModeShape repository is set up, applications see
+			Then <link linkend="using_modeshape">Chapter 3</link> will show that once a ModeShape repository is set up, applications see
 			ModeShape just as another JCR <code>javax.jcr.Repository</code> instance and use the standard JCR API to obtain a <code>javax.jcr.Session</code>
 			and work with the content.
 		</para>

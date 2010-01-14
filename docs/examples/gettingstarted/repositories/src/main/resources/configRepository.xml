@@ -163,7 +163,7 @@
             <dna:source>Cars</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
@@ -181,7 +181,7 @@
             <dna:source>Aircraft</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
             </dna:options>
         </dna:repository>
         <!-- 
@@ -193,7 +193,7 @@
             <dna:source>UFOs</dna:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
@@ -211,7 +211,7 @@
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <dna:options jcr:primaryType="dna:options">
                 <projectNodeTypes jcr:primaryType="dna:option" dna:value="false"/>
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
+                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>

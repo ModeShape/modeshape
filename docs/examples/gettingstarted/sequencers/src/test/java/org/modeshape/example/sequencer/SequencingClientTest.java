@@ -89,7 +89,7 @@ public class SequencingClientTest {
               .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX,
                                  ClassFileSequencerLexicon.Namespace.URI)              
               .setSource("store")
-              .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+              .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         // Set up the image sequencer ...
         config.sequencer("Image Sequencer")
               .usingClass("org.modeshape.sequencer.image.ImageMetadataSequencer")

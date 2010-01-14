@@ -57,7 +57,7 @@
 			</figure>
 	  </para>
 		<para>
-      To run the client application, go to the <code>examples/repository/target/dna-example-repositories-basic.dir/</code>
+      To run the client application, go to the <code>examples/repository/target/modeshape-example-repositories-basic.dir/</code>
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
       <figure id="example-repositories-client">
 				<title>Example Client</title>
@@ -92,7 +92,7 @@
 					The first time you access any repository, the application is automatically logging you in to ModeShape's JAAS-based security
 					system.  To make the application easier to use, it always logs in with the "jsmith" as the username and "secret" as the
 					password.  This matches what is configured in the "jaas.conf.xml" and "users.properties" files.  If you want to confirm
-					that the security feature is working, change the password in target/dna-example-repositories-basic.dir/users.properties to
+					that the security feature is working, change the password in <code>target/modeshape-example-repositories-basic.dir/users.properties</code> to
 					something else and re-run the application.  After you select a repository and try to view a directory with 'ls', you
 					will get a LoginException!
 				</para>
@@ -106,7 +106,7 @@
 			<para>You can also choose to navigate the "Vehicles" repository, which projects the "Cars" repository content under the
 				<code>/Vehicles/Cars</code> node, the "Airplanes" content under the <code>/Vehicles/Airplanes</code> branch,
 				the "UFOs" content under the <code>/Vehicles/UFOs</code> branch,
-				and the "Configuration" content under <code>/dna:system</code>.
+				and the "Configuration" content under <code>/modeshape:system</code>.
 			</para>
 			<para>Try using the client to walk the different repositories.  And while this is a contrived application, it does demonstrate
 				the use of ModeShape to federate repositories and provide access through JCR.</para>
@@ -120,9 +120,9 @@
 		<para>How does ModeShape do this?  At the heart of ModeShape and it's JCR implementation is a simple connector
 			system that is designed around creating and accessing graphs.  The ModeShape JCR implementation actually just sits on
 			top of a single repository source, which it uses to access of the repositories content.
-			<figure id="dnajcr-and-connector">
+			<figure id="modeshapejcr-and-connector">
 				<title>ModeShape's JCR implementation delegates to a repository connector</title>
-				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
+				<graphic align="center" scale="100" fileref="modeshapejcr-and-connector.png"/>
 			</figure>
 			That single repository connector could access:
 		</para>
@@ -153,16 +153,16 @@
 			</listitem>
 		</itemizedlist>
 		<para>
-			<figure id="dna-connectors">
+			<figure id="modeshape-connectors">
 				<title>ModeShape can put JCR on top of multiple kinds of systems</title>
-				<graphic align="center" scale="100" fileref="dna-connectors.png"/>
+				<graphic align="center" scale="100" fileref="modeshape-connectors.png"/>
 			</figure>
 	  	And the ModeShape project has plans to create other connectors, too.  For instance, we're going to build a connector 
 	    to other JCR repositories.  And another to access existing databases so that some or all of the existing data (in whatever structure)
 	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
-			<figure id="dna-connectors-future">
+			<figure id="modeshape-connectors-future">
 				<title>Future ModeShape connectors</title>
-				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
+				<graphic align="center" scale="100" fileref="modeshape-connectors-future.png"/>
 			</figure>
 		</para>
 		<note>
@@ -225,7 +225,7 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
+				<ulink url="http://docs.jboss.org/modeshape/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
 				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
 				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
 			</para>
@@ -266,7 +266,7 @@
 	  creates the ModeShape configuration by loading it from a file.
 	</para>
 	<programlisting role="JAVA"><![CDATA[
-// Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
+// Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
 IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 try {
     idtrustConfig.config("security/jaas.conf.xml");
@@ -279,7 +279,7 @@ RepositoryClient client = new RepositoryClient();
 for (String arg : args) {
     arg = arg.trim();
     if (arg.equals("--api=jcr")) client.setApi(Api.JCR);
-    if (arg.equals("--api=dna")) client.setApi(Api.ModeShape);
+    if (arg.equals("--api=modeshape")) client.setApi(Api.ModeShape);
     if (arg.equals("--jaas")) client.setJaasContextName(JAAS_LOGIN_CONTEXT_NAME);
     if (arg.startsWith("--jaas=") && arg.length() > 7) client.setJaasContextName(arg.substring(7).trim());
 }
@@ -287,7 +287,7 @@ for (String arg : args) {
 client.setUserInterface(new ConsoleInput(client, args));
  ]]></programlisting>
 	<para>
-		The first block sets up the JAAS provider to be the IDTrust library and a policy file that defines the "dna-jcr" JAAS configuration.
+		The first block sets up the JAAS provider to be the IDTrust library and a policy file that defines the "modeshape-jcr" JAAS configuration.
 	</para>
 	<para>
 		The second block of code instantiates the <code>RepositoryClient</code> and passes in some options determined from the command-line.

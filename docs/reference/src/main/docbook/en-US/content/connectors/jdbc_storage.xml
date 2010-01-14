@@ -277,26 +277,26 @@ config.repositorySource("JPA Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
     ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'JPA Store' repository is an JPA source with a single default workspace (though 
         others could be created, too).
         -->
-        <dna:source jcr:name="JPA Store" 
-                    dna:classname="org.modeshape.graph.connector.store.jpa.JpaSource"
-                    dna:description="The database store for our content"
-                    dna:dialect="org.hibernate.dialect.MySQLDialect"
-                    dna:dataSourceJndiName="java:/MyDataSource"
-                    dna:defaultWorkspaceName="default"
-                    dna:autoGenerateSchema="validate"/>    
-    </dna:sources>
+        <mode:source jcr:name="JPA Store" 
+                    mode:classname="org.modeshape.graph.connector.store.jpa.JpaSource"
+                    mode:description="The database store for our content"
+                    mode:dialect="org.hibernate.dialect.MySQLDialect"
+                    mode:dataSourceJndiName="java:/MyDataSource"
+                    mode:defaultWorkspaceName="default"
+                    mode:autoGenerateSchema="validate"/>    
+    </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 
 </configuration>
@@ -311,7 +311,7 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
 	<para>
 	ModeShape users who prefer not to give DDL privileges to the ModeShape database user for this connector can use the ModeShape JPA DDL generation 
 	tool to create the proper DDL files for their database dialect.  This tool is packaged as an executable jar in the 
-	utils/dna-jpa-ddl-gen subproject and can be executed with the following syntax:
+	utils/modeshape-jpa-ddl-gen subproject and can be executed with the following syntax:
 	</para>
 <programlisting>
 java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
@@ -322,7 +322,7 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 	</para>
 	<para>
 	Running this executable will create two files in the output directory (or the current directory if no output directory
-	was specified): create.dna-jpa-connector.ddl and drop.dna-jpa-connector.ddl.  The former contains the DDL to create or replace the tables,
+	was specified): create.modeshape-jpa-connector.ddl and drop.modeshape-jpa-connector.ddl.  The former contains the DDL to create or replace the tables,
 	foreign keys, indices, and sequences needed by the JPA connector and the latter contains the DDL to drop any tables, foreign keys, indices, and 
 	sequences needed by the JPA connector.
 	</para>
